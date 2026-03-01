@@ -1,6 +1,6 @@
 {
-  "name": "Tailwind Admin Dashboard",
-  "short_name": "TailwindAdmin",
+  "name": "Silverow ERP",
+  "short_name": "Silverow",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

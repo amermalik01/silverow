@@ -1,3 +1,5 @@
+// app/login/page.tsx
+
 import { Login } from "@/app/components/auth/Login"
 
 const page = () => {

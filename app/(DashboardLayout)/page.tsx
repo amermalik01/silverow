@@ -9,13 +9,29 @@ import { Footer } from "../components/dashboard/Footer";
 import { TopCards } from "../components/dashboard/TopCards";
 import ProfileWelcome from "../components/dashboard/ProfileWelcome";
 
-const page = () => {
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "../api/auth/[...nextauth]/route";
+
+
+
+export default async function AdminDashboard()  {
+
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user.is_platform_admin) {
+    redirect("/login");
+  }
+
   return (
     <>
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12">
           <ProfileWelcome/>
         </div>
+
+        <div>Super Admin Dashboard</div>
+
         <div className="col-span-12">
           <TopCards />
         </div>
@@ -46,4 +62,3 @@ const page = () => {
   );
 };
 
-export default page;
