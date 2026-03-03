@@ -1,4 +1,4 @@
-// app/login/page.tsx
+// app/(public)/login/page.tsx
 
 import { Login } from "@/app/components/auth/Login"
 

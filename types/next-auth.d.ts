@@ -8,6 +8,7 @@ declare module "next-auth" {
       role: string;
       company_id?: string | null;
       is_platform_admin: boolean;
+      company_slug?: string | null;
     } & DefaultSession["user"];
   }
 
@@ -16,6 +17,7 @@ declare module "next-auth" {
     role: string;
     company_id?: string | null;
     is_platform_admin: boolean;
+    company_slug?: string | null;
   }
 
   interface JWT {
@@ -23,6 +25,7 @@ declare module "next-auth" {
     role: string;
     company_id?: string | null;
     is_platform_admin: boolean;
+    company_slug?: string | null;
   }
 }
 /* import NextAuth, { DefaultSession, DefaultUser } from "next-auth";

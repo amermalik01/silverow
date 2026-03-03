@@ -1,10 +1,13 @@
 // /app/api/auth/[...nextauth]/route.ts
 
-// /app/api/auth/[...nextauth]/route.ts
 import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import * as bcrypt from "bcryptjs";
 import { Pool } from "pg";
+
+import type { JWT } from "next-auth/jwt";
+import type { Session } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 // PostgreSQL pool
 const pool = new Pool({
@@ -12,7 +15,7 @@ const pool = new Pool({
 });
 
 // AuthOptions
-export const authOptions: AuthOptions = {
+/* export const authOptions: AuthOptions = {
   session: {
     strategy: "jwt",
   },
@@ -23,6 +26,7 @@ export const authOptions: AuthOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
+
       async authorize(credentials, req) {
         if (!credentials?.email || !credentials.password) return null;
 
@@ -37,24 +41,36 @@ export const authOptions: AuthOptions = {
 
           if (subdomain === "admin") {
             query = `
-              SELECT * FROM users
-              WHERE email = $1 AND is_platform_admin = true AND status = 'active'
+                SELECT * FROM users
+                WHERE email = $1
+                AND is_platform_admin = true
+                AND status = 'active'
             `;
             values = [credentials.email];
           } else {
             query = `
-              SELECT u.* FROM users u
-              JOIN companies c ON u.company_id = c.id
-              WHERE u.email = $1 AND c.slug = $2 AND u.status = 'active'
+                SELECT u.*, c.slug as company_slug
+                FROM users u
+                JOIN companies c ON u.company_id = c.id
+                WHERE u.email = $1
+                AND c.slug = $2
+                AND u.status = 'active'
             `;
             values = [credentials.email, subdomain];
           }
+
+          console.log("credentials === ", credentials);
+          console.log("subdomain === ", subdomain);
+          console.log("query === ", query);
 
           const result = await client.query(query, values);
           const user = result.rows[0];
           if (!user) return null;
 
-          const isValid = await bcrypt.compare(credentials.password, user.password_hash);
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.password_hash,
+          );
           if (!isValid) return null;
 
           return {
@@ -71,25 +87,27 @@ export const authOptions: AuthOptions = {
       },
     }),
   ],
-
   callbacks: {
-    async jwt(params) {
-      const { token, user } = params;
+    async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
         token.role = user.role;
-        token.company_id = user.company_id || null;
+        token.company_id = user.company_id ?? null;
         token.is_platform_admin = user.is_platform_admin;
+        token.company_slug = user.company_slug ?? null;
       }
       return token;
     },
-    async session(params) {
-      const { session, token } = params;
+
+    async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub as string;
         session.user.role = token.role as string;
-        session.user.company_id = (token.company_id as string | null) ?? null;
+        session.user.company_id =
+          (token.company_id as string | null | undefined) ?? null;
         session.user.is_platform_admin = token.is_platform_admin as boolean;
+        session.user.company_slug =
+          (token.company_slug as string | null) ?? null;
       }
       return session;
     },
@@ -100,12 +118,104 @@ export const authOptions: AuthOptions = {
   },
 
   secret: process.env.NEXTAUTH_SECRET,
-};
+}; */
 
-// Export NextAuth handler
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
 
+//   callbacks: {
+//     async jwt(params) {
+//       const { token, user } = params;
+//       if (user) {
+//         token.sub = user.id;
+//         token.role = user.role;
+//         token.company_id = user.company_id || null;
+//         token.is_platform_admin = user.is_platform_admin;
+//         token.company_slug = user.company_slug ?? null; // add this
+//       }
+//       return token;
+//     },
+//     async session(params) {
+//       const { session, token } = params;
+//       if (session.user) {
+//         session.user.id = token.sub as string;
+//         session.user.role = token.role as string;
+//         session.user.company_id = (token.company_id as string | null) ?? null;
+//         session.user.is_platform_admin = token.is_platform_admin as boolean;
+//         session.user.company_slug = token.company_slug ?? null;
+//       }
+//       return session;
+//     },
+//   },
+
+//   async authorize(credentials, req) {
+//     if (!credentials?.email || !credentials.password) return null;
+
+//     const host = req.headers?.host || "";
+//     const subdomain = host.split(".")[0];
+
+//     const client = await pool.connect();
+//     try {
+//       let query = "";
+//       let values: string[] = [];
+
+//       if (subdomain === "admin") {
+//         // Only platform admins
+//         query = `
+//     SELECT * FROM users
+//     WHERE email = $1
+//     AND is_platform_admin = true
+//     AND status = 'active'
+//   `;
+//         values = [credentials.email];
+//       } else {
+//         // Company users
+//         query = `
+//     SELECT u.*, c.slug as company_slug FROM users u
+//     JOIN companies c ON u.company_id = c.id
+//     WHERE u.email = $1
+//     AND c.slug = $2
+//     AND u.status = 'active'
+//   `;
+//         values = [credentials.email, subdomain];
+//       }
+
+//       const result = await client.query(query, values);
+//       const user = result.rows[0];
+//       if (!user) return null;
+
+//       const isValid = await bcrypt.compare(
+//         credentials.password,
+//         user.password_hash,
+//       );
+//       if (!isValid) return null;
+
+//       return {
+//         id: user.id,
+//         email: user.email,
+//         name: user.name,
+//         role: user.role,
+//         company_id: user.company_id,
+//         is_platform_admin: user.is_platform_admin,
+//         company_slug: user.company_slug ?? null,
+//       };
+//     } finally {
+//       client.release();
+//     }
+//   },
+
+// async redirect({ url, baseUrl, token }) {
+//   if (token?.is_platform_admin) {
+//     return `https://admin.crmsystem.com`;
+//   }
+
+//   if (token?.company_id) {
+//     // fetch company slug from DB if not stored in token
+//     return `https://${token.company_slug}.crmsystem.com`;
+//   }
+
+//   return baseUrl;
+// },
 
 /* import NextAuth, { AuthOptions, User as NextAuthUser, JWT as NextAuthJWT, Session as NextAuthSession } from "next-auth";
 

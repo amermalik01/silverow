@@ -8,15 +8,205 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import { signIn } from "next-auth/react";
-import { FormEvent, useState } from "react";
-import { Icon } from '@iconify/react'
+import { Icon } from "@iconify/react";
+
+import { useRouter } from "next/navigation";
+import { useState, FormEvent, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 
 export const Login = () => {
+  const { data: session, status } = useSession();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  async function handleLogin(e: FormEvent<HTMLFormElement>) {
+  const redirectUser = (user: Session["user"]) => {
+    if (user.is_platform_admin) {
+      window.location.href = "http://admin.localhost:3000/admin/dashboard";
+      return;
+    }
+
+    if (user.company_slug) {
+      window.location.href = `http://${user.company_slug}.localhost:3000/company/dashboard`;
+      return;
+    }
+  };
+
+  // 🚀 Auto redirect if already logged in
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      redirectUser(session.user);
+    }
+  }, [status, session]);
+
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const res = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (res?.error) {
+      setError("Invalid email or password");
+      setLoading(false);
+      return;
+    }
+
+    // Session will auto update → useEffect will redirect
+  };
+  return (
+    <>
+      <div className="h-screen w-full flex justify-center items-center bg-lightprimary">
+        <div className="md:min-w-[450px] min-w-max">
+          <CardBox>
+            <div className="flex justify-center mb-4">
+              <FullLogo />
+            </div>
+
+            <div className="flex items-center justify-center gap-2">
+              <hr className="grow border-ld" />
+              <p className="text-base text-ld font-medium">
+                GO BEYOND WITH SILVEROW
+              </p>
+              <hr className="grow border-ld" />
+            </div>
+
+            <h2 className=" text-center text-xl font-semibold">
+              Take full control of your business
+            </h2>
+
+            {error && (
+              <div className="mb-4 text-sm text-red-500 text-center">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin}>
+              <div>
+                <div className="mb-2 block">
+                  <Label htmlFor="email1" className="font-medium">
+                    Email
+                  </Label>
+                </div>
+                <Input
+                  id="email1"
+                  type="email"
+                  placeholder="Enter your email"
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="mt-6">
+                <div className="mb-2 block">
+                  <Label htmlFor="password1" className="font-medium">
+                    Password
+                  </Label>
+                </div>
+                <Input
+                  id="password1"
+                  type="password"
+                  placeholder="Enter your password"
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="flex items center gap-2 justify-center mt-6 flex-wrap">
+                {/* <Link
+                href="/auth/register"
+                className="text-sm font-medium text-primary hover:text-primaryemphasis"
+              >
+                Create an account
+              </Link> */}
+
+                <Button
+                  className="w-full mt-6 text-sm font-medium"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "Signing in..." : "Sign In"}
+                </Button>
+              </div>
+            </form>
+          </CardBox>
+
+          <div className=" w-[480px] min-h-[180px] mx-auto text-center ">
+            <div className=" w-full float-right px-5 mt-5">
+              <p className="mt-5 font-medium">Business in Motion</p>
+
+              <div className="flex flex-wrap justify-between mt-4">
+                <div className="icon-holder text-center ">
+                  <Icon
+                    icon="streamline:money-graph-analytics-business-product-graph-data-chart-analysis"
+                    height={21}
+                    width={21}
+                  />
+                  <div className="icon-name font-bold text-[10px] mt-2">
+                    Finance
+                  </div>
+                </div>
+
+                <div className="icon-holder text-center ">
+                  <Icon icon="solar:tag-price-bold" height={21} width={21} />
+                  <div className="icon-name font-bold text-[10px] mt-2">
+                    Sales
+                  </div>
+                </div>
+
+                <div className="icon-holder text-center">
+                  <Icon icon="solar:bag-4-linear" className="text-[20px]" />
+                  <div className="icon-name font-bold text-[10px] mt-2">
+                    Purchases
+                  </div>
+                </div>
+
+                <div className="icon-holder text-center">
+                  <Icon icon="solar:bag-4-linear" className="text-[20px]" />
+                  <div className="icon-name font-bold text-[10px] mt-2">
+                    Inventory
+                  </div>
+                </div>
+
+                <div className="icon-holder text-center ">
+                  <Icon icon="solar:bag-4-linear" className="text-[20px]" />
+                  <div className="icon-name font-bold text-[10px] mt-2">
+                    Mail
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// const { data: session } = useSession();
+// const router = useRouter();
+
+// useEffect(() => {
+//   if (!session) return;
+
+//   if (session.user.is_platform_admin) {
+//     window.location.href = "https://admin.crmsystem.com";
+//     return;
+//   }
+
+//   if (session.user.company_slug) {
+//     window.location.href = `https://${session.user.company_slug}.crmsystem.com`;
+//   }
+// }, [session]);
+
+/* async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     await signIn("credentials", {
@@ -24,12 +214,10 @@ export const Login = () => {
       password,
       callbackUrl: "/dashboard",
     });
-  }
+  } */
 
-  return (
-    <>
-      <div className="h-screen w-full flex justify-center items-center bg-lightprimary">
-        {/* <div className="main-panel__content2 bg-white/85 w-[680px] min-h-[180px] mx-auto text-center pt-5 mt-6">
+{
+  /* <div className="main-panel__content2 bg-white/85 w-[680px] min-h-[180px] mx-auto text-center pt-5 mt-6">
           <div className="enterprise-panel__content w-1/2 float-left px-5">
             <h2 className="enterprise-panel__header text-[#103701] text-xl font-semibold">
               <small className="enterprise-panel__subheader block text-[#103701] text-sm font-normal">
@@ -79,132 +267,8 @@ export const Login = () => {
               </div>
             </div>
           </div>
-        </div> */}
-
-        <div className="md:min-w-[450px] min-w-max">
-          <CardBox>
-            <div className="flex justify-center mb-4">
-              <FullLogo />
-            </div>
-            {/* <p className="text-sm text-muted-foreground text-center mb-6">
-              Welcome to Tailwind-Admin
-            </p> */}
-
-            <div className="flex items-center justify-center gap-2">
-              <hr className="grow border-ld" />
-              <p className="text-base text-ld font-medium">
-                GO BEYOND WITH SILVEROW
-              </p>
-              <hr className="grow border-ld" />
-            </div>
-
-            <h2 className=" text-center text-xl font-semibold">
-              Take full control of your business
-            </h2>
-
-            <form onSubmit={handleLogin}>
-              <div>
-                <div className="mb-2 block">
-                  <Label htmlFor="email1" className="font-medium">
-                    Email
-                  </Label>
-                </div>
-                <Input
-                  id="email1"
-                  type="email"
-                  placeholder="Enter your email"
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="mt-6">
-                <div className="mb-2 block">
-                  <Label htmlFor="password1" className="font-medium">
-                    Password
-                  </Label>
-                </div>
-                <Input
-                  id="password1"
-                  type="password"
-                  placeholder="Enter your password"
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="flex items center gap-2 justify-center mt-6 flex-wrap">
-                {/* <Link
-                href="/auth/register"
-                className="text-sm font-medium text-primary hover:text-primaryemphasis"
-              >
-                Create an account
-              </Link> */}
-
-                <Button className="w-full text-sm font-medium " type="submit">
-                  Sign In
-                </Button>
-              </div>
-            </form>
-          </CardBox>
-
-          <div className=" w-[480px] min-h-[180px] mx-auto text-center ">
-            <div className=" w-full float-right px-5 mt-5">
-              <p className="mt-5 font-medium">
-                Business in Motion
-              </p>
-
-              <div className="flex flex-wrap justify-between mt-4">
-                <div className="icon-holder text-center ">
-                  {/* <span className="mbri-growing-chart text-[20px]"></span> */}
-                  <Icon icon="streamline:money-graph-analytics-business-product-graph-data-chart-analysis" height={21} width={21} />
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Finance
-                  </div>
-                </div>
-
-                <div className="icon-holder text-center ">
-                  
-                  <Icon icon="solar:tag-price-bold" height={21} width={21} />
-
-
-
-                  {/* <span className="mbri-sale text-[20px]"></span> */}
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Sales
-                  </div>
-                </div>
-
-                <div className="icon-holder text-center">
-                  <Icon icon="solar:bag-4-linear" className="text-[20px]" />
-                  {/* <span className="mbri-shopping-bag text-[20px]"></span> */}
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Purchases
-                  </div>
-                </div>
-
-                <div className="icon-holder text-center">
-                  <span className="mbri-extension text-[20px]"></span>
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Inventory
-                  </div>
-                </div>
-
-                <div className="icon-holder text-center ">
-                  <span className="mbri-letter text-[20px]"></span>
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Mail
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
-
+        </div> */
+}
 /* 
 
 
