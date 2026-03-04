@@ -1,19 +1,20 @@
+//  app/components/auth/Login.tsx
 "use client";
 
-import FullLogo from "@/app/(DashboardLayout)/layout/shared/logo/FullLogo";
+import FullLogo from "@/app/DashboardLayout/layout/shared/logo/FullLogo";
 import CardBox from "../shared/CardBox";
-import Link from "next/link";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { Icon } from "@iconify/react";
 
-import { useRouter } from "next/navigation";
 import { useState, FormEvent, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import type { Session } from "next-auth";
+// import Link from "next/link";
+// import { Checkbox } from "@/components/ui/checkbox";
+// import { useRouter } from "next/navigation";
 
 export const Login = () => {
   const { data: session, status } = useSession();

@@ -1,5 +1,5 @@
 
-import BreadcrumbComp from "@/app/(DashboardLayout)/layout/shared/breadcrumb/BreadcrumbComp";
+import BreadcrumbComp from "@/app/DashboardLayout/layout/shared/breadcrumb/BreadcrumbComp";
 import BlogPost from "@/app/components/apps/blog/BlogPost";
 import { Metadata } from "next";
 const BCrumb = [

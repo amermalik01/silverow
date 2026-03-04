@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { isValid, format } from "date-fns";
-import { TicketType } from "@/app/(DashboardLayout)/types/ticket";
+import { TicketType } from "@/app/DashboardLayout/types/ticket";
 import CardBox from "../../shared/CardBox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

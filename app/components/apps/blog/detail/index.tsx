@@ -13,7 +13,7 @@ import {
   BlogContext,
   BlogContextProps,
 } from '../../../../context/blog-context/index'
-import { BlogType } from '@/app/(DashboardLayout)/types/blog'
+import { BlogType } from '@/app/DashboardLayout/types/blog'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'

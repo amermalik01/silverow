@@ -14,7 +14,7 @@ import {
   TooltipContent,
 } from '@/components/ui/tooltip'
 
-import { BlogPostType } from '@/app/(DashboardLayout)/types/blog'
+import { BlogPostType } from '@/app/DashboardLayout/types/blog'
 
 interface Btype {
   post: BlogPostType

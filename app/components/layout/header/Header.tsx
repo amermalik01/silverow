@@ -91,9 +91,9 @@ const Header = () => {
           <div className="hidden xl:flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
           
-              <div className="relative">
+              {/* <div className="relative">
                 <Search />
-              </div>
+              </div> */}
             </div>
             <div className="flex w-full justify-end items-end">
               <div className="flex gap-0 items-center ">

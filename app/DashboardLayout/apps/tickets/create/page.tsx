@@ -1,6 +1,6 @@
 import CreateTicketForm from "@/app/components/apps/tickets/CreateTicketForm";
 import type { Metadata } from "next";
-import BreadcrumbComp from "@/app/(DashboardLayout)/layout/shared/breadcrumb/BreadcrumbComp";
+import BreadcrumbComp from "@/app/DashboardLayout/layout/shared/breadcrumb/BreadcrumbComp";
 
 
 export const metadata: Metadata = {

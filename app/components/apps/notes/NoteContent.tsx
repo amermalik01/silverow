@@ -2,7 +2,7 @@
 import { Textarea } from "@/components/ui/textarea";
 import React, { useEffect, useState } from "react";
 import { TbCheck } from "react-icons/tb";
-import { NotesType } from "@/app/(DashboardLayout)/types/apps/notes";
+import { NotesType } from "@/app/DashboardLayout/types/apps/notes";
 
 interface ColorType {
   lineColor: string;

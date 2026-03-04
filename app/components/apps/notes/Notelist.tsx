@@ -2,7 +2,7 @@
 
 import { Icon } from "@iconify/react";
 import React, { useState, useEffect } from "react";
-import { NotesType } from "@/app/(DashboardLayout)/types/apps/notes";
+import { NotesType } from "@/app/DashboardLayout/types/apps/notes";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";

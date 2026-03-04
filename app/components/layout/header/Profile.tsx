@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import { LogoutButton } from '@/components/ui/LogoutButton'
 
 const Profile = () => {
   return (
@@ -56,9 +57,10 @@ const Profile = () => {
           <DropdownMenuSeparator className='my-2' />
 
           <div className='px-4'>
-            <Button variant='outline' asChild className='w-full rounded-md'>
+            {/* <Button variant='outline' asChild className='w-full rounded-md'>
               <Link href='/auth/login'>Logout</Link>
-            </Button>
+            </Button> */}
+            <LogoutButton />
           </div>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -1,4 +1,4 @@
-import { TicketType } from '@/app/(DashboardLayout)/types/ticket'
+import { TicketType } from '@/app/DashboardLayout/types/ticket'
 import { Chance } from 'chance'
 import { NextResponse, NextRequest } from 'next/server'
 

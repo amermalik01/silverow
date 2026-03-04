@@ -5,7 +5,7 @@ import { orderBy } from 'lodash'
 import BlogCard from './BlogCard'
 import { BlogContext } from '@/app/context/blog-context'
 import BlogFeaturedCard from './BlogFeaturedCard'
-import { BlogPostType } from '@/app/(DashboardLayout)/types/blog'
+import { BlogPostType } from '@/app/DashboardLayout/types/blog'
 
 const BlogListing = () => {
   const { posts, sortBy } = useContext(BlogContext)

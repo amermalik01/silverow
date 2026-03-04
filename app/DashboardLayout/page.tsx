@@ -11,7 +11,8 @@ import ProfileWelcome from "../components/dashboard/ProfileWelcome";
 
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+// import { authOptions } from "../api/auth/[...nextauth]/route";
 
 
 

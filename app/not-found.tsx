@@ -27,7 +27,7 @@ const Error = () => {
             asChild
             className="mt-6 mx-auto"
           >
-            <Link href="/">
+            <Link href="/dashboard">
               Go Back to Home
             </Link>
           </Button>

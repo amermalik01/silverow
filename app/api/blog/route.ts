@@ -1,9 +1,10 @@
+// app/api/blog/route.ts
 import { Chance } from 'chance'
 import { random } from 'lodash'
 import { sub } from 'date-fns'
 import { uniqueId } from 'lodash'
 import { NextResponse, NextRequest } from 'next/server'
-import { BlogPostType, BlogType } from '@/app/(DashboardLayout)/types/blog'
+import { BlogPostType, BlogType } from '@/app/DashboardLayout/types/blog'
 
 const chance = new Chance()
 

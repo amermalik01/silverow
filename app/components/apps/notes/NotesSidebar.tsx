@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Notelist from "./Notelist";
-import { NotesType } from "@/app/(DashboardLayout)/types/apps/notes";
+import { NotesType } from "@/app/DashboardLayout/types/apps/notes";
 
 interface NotesSidebarProps {
   notes: NotesType[];

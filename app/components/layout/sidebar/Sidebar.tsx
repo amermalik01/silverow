@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import SidebarContent from './sidebaritems'
 import SimpleBar from 'simplebar-react'
 import { Icon } from '@iconify/react'
-import FullLogo from '../shared/logo/FullLogo'
+// import FullLogo from '../shared/logo/FullLogo'
 import { Button } from '@/components/ui/button'
 import {
   AMLogo,
@@ -16,6 +16,7 @@ import {
   AMSubmenu,
 } from 'tailwind-sidebar'
 import 'tailwind-sidebar/styles.css'
+import FullLogo from '@/app/DashboardLayout/layout/shared/logo/FullLogo';
 
 interface SidebarItemType {
   heading?: string

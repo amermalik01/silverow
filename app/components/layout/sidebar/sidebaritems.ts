@@ -43,6 +43,12 @@ const SidebarContent: MenuItem[] = [
         url: '/',
         isPro: false,
       },
+      {
+        name: 'Companies',
+        icon: 'solar:chart-linear',
+        id: uniqueId(),
+        url: '/companies',
+      },
     ],
   },
 

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { TicketType } from '@/app/(DashboardLayout)/types/ticket'
+import { TicketType } from '@/app/DashboardLayout/types/ticket'
 
 interface TicketFilterProps {
   tickets: TicketType[]

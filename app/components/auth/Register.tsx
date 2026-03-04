@@ -1,6 +1,6 @@
 'use client'
 
-import FullLogo from '@/app/(DashboardLayout)/layout/shared/logo/FullLogo'
+import FullLogo from '@/app/DashboardLayout/layout/shared/logo/FullLogo'
 import CardBox from '../shared/CardBox'
 import Link from 'next/link'
 import { Label } from '@/components/ui/label'

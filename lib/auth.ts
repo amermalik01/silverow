@@ -3,11 +3,7 @@
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import * as bcrypt from "bcryptjs";
-import { Pool } from "pg";
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+import { pool } from "./db";
 
 export const authOptions: AuthOptions = {
   session: {
@@ -92,6 +88,21 @@ export const authOptions: AuthOptions = {
       return session;
     },
   },
+
+  // cookies: {
+  //   sessionToken: {
+  //     name: `__Secure-next-auth.session-token`,
+  //     options: {
+  //       httpOnly: true,
+  //       sameSite: 'lax',
+  //       path: '/',
+  //       domain: process.env.NODE_ENV === 'production' 
+  //         ? '.crmsystem.com' 
+  //         : '.localhost', 
+  //       secure: process.env.NODE_ENV === 'production',
+  //     },
+  //   },
+  // },
 
   pages: {
     signIn: "/login",

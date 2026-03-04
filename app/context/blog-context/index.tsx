@@ -7,7 +7,7 @@ import React, {
   Dispatch,
   SetStateAction,
 } from 'react'
-import { BlogPostType, BlogType } from '@/app/(DashboardLayout)/types/blog'
+import { BlogPostType, BlogType } from '@/app/DashboardLayout/types/blog'
 
 export interface BlogContextProps {
   posts: BlogPostType[]

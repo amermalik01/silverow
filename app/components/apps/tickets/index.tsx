@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import CardBox from "@/app/components/shared/CardBox";
 import TicketFilter from "@/app/components/apps/tickets/TicketFilter";
 import TicketListing from "@/app/components/apps/tickets/TicketListing";
-import { TicketType } from "@/app/(DashboardLayout)/types/ticket";
+import { TicketType } from "@/app/DashboardLayout/types/ticket";
 
 const TicketsApp = () => {
   const [tickets, setTickets] = useState<TicketType[]>([]);

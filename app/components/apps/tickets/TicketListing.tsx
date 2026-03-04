@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { format } from "date-fns";
 import { Icon } from "@iconify/react";
-import { TicketType } from "@/app/(DashboardLayout)/types/ticket";
+import { TicketType } from "@/app/DashboardLayout/types/ticket";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
