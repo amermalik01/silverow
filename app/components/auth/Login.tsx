@@ -1,7 +1,7 @@
 //  app/components/auth/Login.tsx
 "use client";
 
-import FullLogo from "@/app/DashboardLayout/layout/shared/logo/FullLogo";
+// import FullLogo from "@/app/DashboardLayout/layout/shared/logo/FullLogo";
 import CardBox from "../shared/CardBox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Icon } from "@iconify/react";
 
 import { useState, FormEvent, useEffect } from "react";
-import { signIn, useSession } from "next-auth/react";
+import { getSession, signIn, useSession } from "next-auth/react";
 import type { Session } from "next-auth";
+import FullLogo from "../layout/shared/logo/FullLogo";
 // import Link from "next/link";
 // import { Checkbox } from "@/components/ui/checkbox";
 // import { useRouter } from "next/navigation";
@@ -53,6 +54,22 @@ export const Login = () => {
       password,
       redirect: false,
     });
+
+    if (res?.ok) {
+      setTimeout(async () => {
+        const session = await getSession();
+
+        if (session?.user?.is_platform_admin) {
+          window.location.href = "http://admin.localhost:3000/admin/dashboard";
+          return;
+        }
+
+        if (session?.user?.company_slug) {
+          window.location.href = `http://company.localhost:3000/${session.user.company_slug}/dashboard`;
+          return;
+        }
+      }, 200);
+    }
 
     if (res?.error) {
       setError("Invalid email or password");
@@ -198,12 +215,12 @@ export const Login = () => {
 //   if (!session) return;
 
 //   if (session.user.is_platform_admin) {
-//     window.location.href = "https://admin.crmsystem.com";
+//     window.location.href = "https://admin.silverow.com";
 //     return;
 //   }
 
 //   if (session.user.company_slug) {
-//     window.location.href = `https://${session.user.company_slug}.crmsystem.com`;
+//     window.location.href = `https://${session.user.company_slug}.silverow.com`;
 //   }
 // }, [session]);
 

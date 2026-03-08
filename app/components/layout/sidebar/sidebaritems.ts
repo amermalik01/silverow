@@ -52,7 +52,7 @@ const SidebarContent: MenuItem[] = [
     ],
   },
 
-  {
+  /* {
     heading: 'pages',
     children: [
       {
@@ -584,9 +584,9 @@ const SidebarContent: MenuItem[] = [
         ],
       },
     ],
-  },
+  }, */
   // ==================== PRO SECTIONS ====================
-  {
+  /* {
     heading: 'Home',
     children: [
       {
@@ -1296,7 +1296,7 @@ const SidebarContent: MenuItem[] = [
         isPro: true,
       },
     ],
-  },
+  }, */
 ]
 
 export default SidebarContent

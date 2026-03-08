@@ -6,6 +6,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import DeleteCompanyButton from "@/app/components/admin/DeleteCompanyButton";
+import BreadcrumbComp from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
+import DataTable from "@/app/components/utilities/data-table/DataTable";
+import BasicTable from "@/app/components/utilities/basic-table/BasicTable";
+import StripedRowTable from "@/app/components/utilities/striped-row-table/StripedRowTable";
+import HoverTable from "@/app/components/utilities/hover-table/HoverTable";
 
 export interface Company {
   id: string;
@@ -16,6 +21,16 @@ export interface Company {
   created_at: string;
   updated_at: string;
 }
+
+const BCrumb = [
+  {
+    to: "/",
+    title: "Home",
+  },
+  {
+    title: "Companies",
+  },
+];
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -39,21 +54,27 @@ export default function CompaniesPage() {
 
   return (
     <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+      {/* <div className="flex justify-between items-center mb-8">
         <div>
-        <h1 className="text-2xl font-bold">Companies</h1>
-        <p className="text-muted-foreground">
-          Manage your SaaS tenants and subscriptions.
-        </p>
+          <h1 className="text-2xl font-bold">Companies</h1>
+          <p className="text-muted-foreground">
+            Manage your SaaS tenants and subscriptions.
+          </p>
         </div>
         <Button asChild>
           <Link href="/admin/companies/new">Add New</Link>
         </Button>
-      </div>
+      </div> */}
+
+      <BreadcrumbComp title="Companies" items={BCrumb} />
+
+      {/* <div className="flex gap-6 flex-col ">
+        <DataTable data={companies} />
+      </div> */}
 
       <div className="border rounded-md">
         <table className="w-full text-sm">
-          <thead className=" border-b">{/* bg-gray-50 */}
+          <thead className=" border-b">
             <tr>
               <th className="p-4 text-left">Name</th>
               <th className="p-4 text-left">Slug</th>
@@ -123,7 +144,7 @@ export default async function CompaniesPage() {
             {companies.map((company) => (
               <tr key={company.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="p-4 font-medium">{company.name}</td>
-                <td className="p-4 text-blue-600 font-mono text-xs">{company.slug}.crmsystem.com</td>
+                <td className="p-4 text-blue-600 font-mono text-xs">{company.slug}.silverow.com</td>
                 <td className="p-4"><span className="capitalize">{company.plan}</span></td>
                 <td className="p-4">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${

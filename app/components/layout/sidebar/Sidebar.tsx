@@ -16,7 +16,8 @@ import {
   AMSubmenu,
 } from 'tailwind-sidebar'
 import 'tailwind-sidebar/styles.css'
-import FullLogo from '@/app/DashboardLayout/layout/shared/logo/FullLogo';
+import FullLogo from '../shared/logo/FullLogo';
+// import FullLogo from '@/app/DashboardLayout/layout/shared/logo/FullLogo';
 
 interface SidebarItemType {
   heading?: string
@@ -143,16 +144,16 @@ const SidebarLayout = ({ onClose }: { onClose?: () => void }) => {
           ))}
 
           {/* Promo Section */}
-          <div className='mt-9  overflow-hidden'>
+          {/* <div className='mt-9  overflow-hidden'>
             <div className='flex w-full bg-lightprimary rounded-lg p-6'>
-              {/* <div className='lg:w-1/2 w-full'>
+              <div className='lg:w-1/2 w-full'>
                 <h5 className='text-base text-sidebar-foreground'>
                   Haven't Account?
                 </h5>
                 <Button className='whitespace-nowrap mt-2 text-[13px]'>
                   Get Pro
                 </Button>
-              </div> */}
+              </div>
               <div className='lg:w-1/2 w-full -mt-4 ml-[26px] scale-[1.2] shrink-0'>
                 <Image
                   src={'/images/backgrounds/rocket.png'}
@@ -162,7 +163,7 @@ const SidebarLayout = ({ onClose }: { onClose?: () => void }) => {
                 />
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </SimpleBar>
     </AMSidebar>

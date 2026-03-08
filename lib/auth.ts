@@ -8,6 +8,7 @@ import { pool } from "./db";
 export const authOptions: AuthOptions = {
   session: {
     strategy: "jwt",
+    maxAge: 60 * 60 * 2, // 2 hours
   },
 
   providers: [
@@ -32,15 +33,16 @@ export const authOptions: AuthOptions = {
             WHERE u.email = $1
             AND u.status = 'active'
             `,
-            [credentials.email]
+            [credentials.email],
           );
 
           const user = result.rows[0];
+
           if (!user) return null;
 
           const valid = await bcrypt.compare(
             credentials.password,
-            user.password_hash
+            user.password_hash,
           );
 
           if (!valid) return null;
@@ -64,6 +66,7 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
+        token.id = user.id;
         token.role = user.role;
         token.company_id = user.company_id ?? null;
         token.is_platform_admin = user.is_platform_admin;
@@ -73,14 +76,21 @@ export const authOptions: AuthOptions = {
       return token;
     },
 
+    async signIn() {
+      return true;
+    },
+
+    async redirect({ url, baseUrl }) {
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
+
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub as string;
         session.user.role = token.role as string;
         session.user.company_id =
           (token.company_id as string | null | undefined) ?? null;
-        session.user.is_platform_admin =
-          token.is_platform_admin as boolean;
+        session.user.is_platform_admin = token.is_platform_admin as boolean;
         session.user.company_slug =
           (token.company_slug as string | null | undefined) ?? null;
       }
@@ -89,20 +99,27 @@ export const authOptions: AuthOptions = {
     },
   },
 
-  // cookies: {
-  //   sessionToken: {
-  //     name: `__Secure-next-auth.session-token`,
-  //     options: {
-  //       httpOnly: true,
-  //       sameSite: 'lax',
-  //       path: '/',
-  //       domain: process.env.NODE_ENV === 'production' 
-  //         ? '.crmsystem.com' 
-  //         : '.localhost', 
-  //       secure: process.env.NODE_ENV === 'production',
-  //     },
-  //   },
-  // },
+  cookies:
+    process.env.NODE_ENV === "production"
+      ? {
+          sessionToken: {
+            name:
+              process.env.NODE_ENV === "production"
+                ? "__Secure-next-auth.session-token"
+                : "next-auth.session-token",
+            options: {
+              httpOnly: true,
+              sameSite: "lax",
+              path: "/",
+              secure: process.env.NODE_ENV === "production",
+              domain:
+                process.env.NODE_ENV === "production"
+                  ? ".vercel.app"
+                  : ".localhost",
+            },
+          },
+        }
+      : undefined,
 
   pages: {
     signIn: "/login",
@@ -110,3 +127,29 @@ export const authOptions: AuthOptions = {
 
   secret: process.env.NEXTAUTH_SECRET,
 };
+
+// async signIn({ user }) {
+//   const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+//   const url = new URL(base);
+
+//   console.log('base ==== ',base);
+//   console.log('user ==== ',user);
+
+//   if (user.is_platform_admin) {
+//     url.hostname = `admin.${url.hostname}`;
+//   console.log('url.hostname ==== ',`${url.origin}/dashboard`);
+//     return `${url.origin}/admin/dashboard`;
+//   }
+
+//   if (user.company_slug) {
+//     url.hostname = `company.${url.hostname}`;
+//     return `${url.origin}/${user.company_slug}/dashboard`;
+//   }
+
+//   return true;
+// },
+
+// export const SESSION_IDLE_TIME = {
+//   ADMIN: 30 * 60 * 1000,       // 30 minutes
+//   WEB: 7 * 24 * 60 * 60 * 1000 // 7 days
+// } as const;

@@ -8,47 +8,74 @@ export function middleware(req: NextRequest) {
   const hostname = req.headers.get("host") || "";
   const pathName = url.pathname;
 
-  const isPublicRoute = 
-    pathName === "/login" || 
-    pathName === "/signup" || 
-    pathName.startsWith("/api") || 
-    pathName.startsWith("/_next") || 
+  const isPublicRoute =
+    pathName === "/login" ||
+    pathName === "/signup" ||
+    pathName.startsWith("/api") ||
+    pathName.startsWith("/_next") ||
     pathName.includes("."); // catches favicon.ico, images, etc.
 
   if (isPublicRoute) {
     return NextResponse.next();
   }
-  
-  // Get subdomain (e.g., 'acme' from 'acme.localhost:3000')
-  const currentHost = process.env.NODE_ENV === "production" 
-    ? hostname.replace(`.crmsystem.com`, "") 
-    : hostname.replace(`.localhost:3000`, "");
 
-  const searchParams = url.searchParams.toString();
-  const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ""}`;
+  // const currentHost =
+  // process.env.NODE_ENV === "production"
+  //   ? hostname.replace(".vercel.app", "")
+  //   : hostname.replace(".localhost:3000", "");
 
-  // 1. Prevent infinite loops/double prefixing
-  if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/company')) {
-     return NextResponse.next();
+  // const searchParams = url.searchParams.toString();
+  // const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ""}`;
+
+  /* fixed based structure start */
+
+  const rootDomain = process.env.ROOT_DOMAIN || "vercel.app";
+
+  // remove root domain
+  const subdomain = hostname
+    .replace(`.${rootDomain}`, "")
+    .replace(`:${url.port}`, "");
+
+  const search = url.search;
+
+  // prevent double routing
+  if (pathName.startsWith("/admin") || pathName.startsWith("/company"))
+    return NextResponse.next();
+
+  // admin subdomain
+  if (subdomain === "admin") {
+    return NextResponse.rewrite(new URL(`/admin${pathName}${search}`, req.url));
   }
+
+  // company subdomain
+  if (subdomain === "company") {
+    return NextResponse.rewrite(
+      new URL(`/company${pathName}${search}`, req.url),
+    );
+  }
+
+  /* fixed based structure end */
 
   // 2. Route Super Admin
-  if (currentHost === "admin") {
-    return NextResponse.rewrite(new URL(`/admin${path}`, req.url));
-  }
+  // if (currentHost === "admin") {
+  //   return NextResponse.rewrite(new URL(`/admin${path}`, req.url));
+  // }
 
-  // 3. Route Company Subdomains
-  if (currentHost && currentHost !== "www" && currentHost !== "localhost") {
-    return NextResponse.rewrite(new URL(`/company/${currentHost}${path}`, req.url));
-  }
+  // // 3. Route Company Subdomains
+  // if (currentHost && currentHost !== "www" && currentHost !== "localhost") {
+  //   return NextResponse.rewrite(new URL(`/company/${currentHost}${path}`, req.url));
+  // }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // Matcher ignoring static files and specific folders
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
+
+// const currentHost = process.env.NODE_ENV === "production"
+//   ? hostname.replace(`.silverow.com`, "")
+//   : hostname.replace(`.localhost:3000`, "");
 
 /*  export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
@@ -78,7 +105,6 @@ export const config = {
   return NextResponse.rewrite(url);
 } 
  */
-
 
 // export function middleware(req: NextRequest) {
 //   const host = req.headers.get("host") || "";

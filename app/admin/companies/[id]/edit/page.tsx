@@ -79,10 +79,10 @@ export default function EditCompanyPage() {
               required 
               pattern="^[a-z0-9-]+$" 
             />
-            <span className="text-muted-foreground text-sm font-mono">.crmsystem.com</span>
+            <span className="text-muted-foreground text-sm font-mono">.silverow.com</span>
           </div>
           <p className="text-[10px] text-gray-400">
-            Preview: https://{company?.slug || "your-subdomain"}.crmsystem.com
+            Preview: https://{company?.slug || "your-subdomain"}.silverow.com
           </p>
           {/* <Input value={company?.slug} disabled className="" /> */}
         </div>

@@ -113,11 +113,11 @@ export default function NewCompanyPage() {
               pattern="^[a-z0-9-]+$"
             />
             <span className="text-muted-foreground text-sm font-mono">
-              .crmsystem.com
+              .silverow.com
             </span>
           </div>
           <p className="text-[10px] text-gray-400">
-            Preview: https://{slug || "your-subdomain"}.crmsystem.com
+            Preview: https://{slug || "your-subdomain"}.silverow.com
           </p>
         </div>
 
