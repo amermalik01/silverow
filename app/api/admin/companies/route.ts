@@ -10,8 +10,8 @@ export interface Company {
   id: string;
   name: string;
   slug: string;
-  plan: 'free' | 'pro' | 'enterprise';
-  status: 'active' | 'suspended';
+  plan: "free" | "pro" | "enterprise";
+  status: "active" | "suspended";
   created_at: string;
   updated_at: string;
 }
@@ -27,14 +27,16 @@ export async function GET() {
   }
 
   try {
-
     const result = await pool.query(
-      "SELECT * FROM companies ORDER BY created_at DESC"
+      "SELECT * FROM companies ORDER BY created_at DESC",
     );
     return NextResponse.json(result.rows);
   } catch (error) {
     console.error("GET Companies Error:", error);
-    return NextResponse.json({ error: "Failed to fetch companies" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch companies" },
+      { status: 500 },
+    );
   }
 }
 
@@ -47,11 +49,34 @@ export async function POST(req: Request) {
   const client = await pool.connect();
 
   try {
-    const { name, slug, plan, adminEmail, adminName, adminPassword } = await req.json();
+    const { name, slug, plan, adminEmail, adminName, adminPassword } =
+      await req.json();
 
     // 1. Validation
     if (!name || !slug || !adminEmail || !adminPassword) {
-      return NextResponse.json({ error: "Missing required company or admin info" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required company or admin info" },
+        { status: 400 },
+      );
+    }
+
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      return NextResponse.json(
+        { error: "Invalid company slug" },
+        { status: 400 },
+      );
+    }
+
+    const existingUser = await client.query(
+      "SELECT id FROM users WHERE email = $1",
+      [adminEmail.toLowerCase().trim()],
+    );
+
+    if (existingUser && existingUser.rowCount! > 0) {
+      return NextResponse.json(
+        { error: "Email already exists" },
+        { status: 409 },
+      );
     }
 
     // 2. Start Transaction
@@ -60,7 +85,7 @@ export async function POST(req: Request) {
     // 3. Create Company
     const companyRes = await client.query(
       "INSERT INTO companies (name, slug, plan) VALUES ($1, $2, $3) RETURNING id",
-      [name, slug.toLowerCase().trim(), plan || 'free']
+      [name, slug.toLowerCase().trim(), plan || "free"],
     );
     const companyId = companyRes.rows[0].id;
 
@@ -70,39 +95,44 @@ export async function POST(req: Request) {
       `INSERT INTO users (email, password_hash, name, company_id, role, is_platform_admin) 
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [
-        adminEmail.toLowerCase().trim(), 
-        hashedPassword, 
-        adminName, 
-        companyId, 
-        'admin', // Role inside the company
-        false    // Not a platform/super admin
-      ]
+        adminEmail.toLowerCase().trim(),
+        hashedPassword,
+        adminName,
+        companyId,
+        "admin", // Role inside the company
+        false, // Not a platform/super admin
+      ],
     );
 
     // 5. Commit Transaction
     await client.query("COMMIT");
 
-    return NextResponse.json({ message: "Company and Admin created successfully" }, { status: 201 });
-
+    return NextResponse.json(
+      { message: "Company and Admin created successfully" },
+      { status: 201 },
+    );
   } catch (error: unknown) {
     // Always rollback first to free up the client
-    await client.query("ROLLBACK"); 
+    await client.query("ROLLBACK");
 
     if (isDatabaseError(error)) {
-      if (error.code === '23505') {
+      if (error.code === "23505") {
         // detail will now be typed as string | undefined
         const detail = error.detail || "";
-        
-        const message = detail.includes("slug") 
-          ? "Subdomain already taken" 
+
+        const message = detail.includes("slug")
+          ? "Subdomain already taken"
           : "User email already exists";
-          
+
         return NextResponse.json({ error: message }, { status: 409 });
       }
     }
 
     console.error("Transaction Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   } finally {
     client.release();
   }

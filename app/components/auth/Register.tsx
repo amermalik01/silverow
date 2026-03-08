@@ -1,11 +1,12 @@
 'use client'
 
-import FullLogo from '@/app/DashboardLayout/layout/shared/logo/FullLogo'
+// import FullLogo from '@/app/DashboardLayout/layout/shared/logo/FullLogo'
 import CardBox from '../shared/CardBox'
 import Link from 'next/link'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import FullLogo from '../layout/shared/logo/FullLogo'
 
 export const Register = () => {
   return (

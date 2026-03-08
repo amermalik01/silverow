@@ -46,7 +46,14 @@ export default function NewCompanyPage() {
     setError("");
 
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData);
+    // const data = Object.fromEntries(formData);
+    const data = {
+      ...Object.fromEntries(formData),
+      name: formData.get("name")?.toString().trim(),
+      slug: slug.trim(),
+      adminEmail: formData.get("adminEmail")?.toString().trim(),
+      adminName: formData.get("adminName")?.toString().trim(),
+    };
 
     const res = await fetch("/api/admin/companies", {
       method: "POST",
@@ -163,6 +170,7 @@ export default function NewCompanyPage() {
               id="adminPassword"
               name="adminPassword"
               type="password"
+              minLength={8}
               required
             />
             <p className="text-xs text-muted-foreground">

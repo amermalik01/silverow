@@ -1,15 +1,12 @@
-// app/components/layout/sidebar/Sidebar.tsx
+// app/components/layout/sidebar/CompanySidebar.tsx
 
 "use client";
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
-import SidebarContent from './sidebaritems'
 import SimpleBar from 'simplebar-react'
 import { Icon } from '@iconify/react'
-// import FullLogo from '../shared/logo/FullLogo'
-import { Button } from '@/components/ui/button'
 import {
   AMLogo,
   AMMenu,
@@ -19,7 +16,7 @@ import {
 } from 'tailwind-sidebar'
 import 'tailwind-sidebar/styles.css'
 import FullLogo from '../shared/logo/FullLogo';
-// import FullLogo from '@/app/DashboardLayout/layout/shared/logo/FullLogo';
+import CompanySidebarContent from './company_sidebaritems';
 
 interface SidebarItemType {
   heading?: string
@@ -105,7 +102,7 @@ const renderSidebarItems = (
   })
 }
 
-const SidebarLayout = ({ onClose }: { onClose?: () => void }) => {
+const CompanySidebarLayout = ({ onClose }: { onClose?: () => void }) => {
   const pathname = usePathname()
   const { theme } = useTheme()
 
@@ -132,7 +129,7 @@ const SidebarLayout = ({ onClose }: { onClose?: () => void }) => {
 
       <SimpleBar className='h-[calc(100vh-100px)]'>
         <div className='px-6'>
-          {SidebarContent.map((section, index) => (
+          {CompanySidebarContent.map((section, index) => (
             <div key={index}>
               {renderSidebarItems(
                 [
@@ -145,31 +142,10 @@ const SidebarLayout = ({ onClose }: { onClose?: () => void }) => {
             </div>
           ))}
 
-          {/* Promo Section */}
-          {/* <div className='mt-9  overflow-hidden'>
-            <div className='flex w-full bg-lightprimary rounded-lg p-6'>
-              <div className='lg:w-1/2 w-full'>
-                <h5 className='text-base text-sidebar-foreground'>
-                  Haven't Account?
-                </h5>
-                <Button className='whitespace-nowrap mt-2 text-[13px]'>
-                  Get Pro
-                </Button>
-              </div>
-              <div className='lg:w-1/2 w-full -mt-4 ml-[26px] scale-[1.2] shrink-0'>
-                <Image
-                  src={'/images/backgrounds/rocket.png'}
-                  alt='rocket'
-                  width={100}
-                  height={100}
-                />
-              </div>
-            </div>
-          </div> */}
         </div>
       </SimpleBar>
     </AMSidebar>
   )
 }
 
-export default SidebarLayout
+export default CompanySidebarLayout

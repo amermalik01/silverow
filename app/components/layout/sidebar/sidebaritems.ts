@@ -1,3 +1,5 @@
+// app/components/layout/sidebar/sidebaritems.ts
+
 import { uniqueId } from 'lodash'
 
 export interface ChildItem {

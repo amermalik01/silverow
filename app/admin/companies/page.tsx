@@ -54,7 +54,7 @@ export default function CompaniesPage() {
 
   return (
     <div className="p-8">
-      {/* <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold">Companies</h1>
           <p className="text-muted-foreground">
@@ -64,7 +64,7 @@ export default function CompaniesPage() {
         <Button asChild>
           <Link href="/admin/companies/new">Add New</Link>
         </Button>
-      </div> */}
+      </div>
 
       <BreadcrumbComp title="Companies" items={BCrumb} />
 

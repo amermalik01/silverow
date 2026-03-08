@@ -7,7 +7,7 @@ import React, {
   Dispatch,
   SetStateAction,
 } from 'react'
-import { BlogPostType, BlogType } from '@/app/DashboardLayout/types/blog'
+/* import { BlogPostType, BlogType } from '@/app/DashboardLayout/types/blog'
 
 export interface BlogContextProps {
   posts: BlogPostType[]
@@ -126,3 +126,4 @@ export const BlogProvider: React.FC<{ children: ReactNode }> = ({
 
   return <BlogContext.Provider value={value}>{children}</BlogContext.Provider>
 }
+ */

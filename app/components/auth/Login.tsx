@@ -1,7 +1,6 @@
 //  app/components/auth/Login.tsx
 "use client";
 
-// import FullLogo from "@/app/DashboardLayout/layout/shared/logo/FullLogo";
 import CardBox from "../shared/CardBox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -13,9 +12,6 @@ import { useState, FormEvent, useEffect } from "react";
 import { getSession, signIn, useSession } from "next-auth/react";
 import type { Session } from "next-auth";
 import FullLogo from "../layout/shared/logo/FullLogo";
-// import Link from "next/link";
-// import { Checkbox } from "@/components/ui/checkbox";
-// import { useRouter } from "next/navigation";
 
 export const Login = () => {
   const { data: session, status } = useSession();
@@ -27,17 +23,31 @@ export const Login = () => {
 
   const redirectUser = (user: Session["user"]) => {
     if (user.is_platform_admin) {
+      // Fixed super admin subdomain
       window.location.href = "http://admin.localhost:3000/admin/dashboard";
       return;
     }
 
     if (user.company_slug) {
-      window.location.href = `http://${user.company_slug}.localhost:3000/company/dashboard`;
+      // Fixed company subdomain with slug as path
+      window.location.href = `http://company.localhost:3000/${user.company_slug}/dashboard`;
       return;
     }
   };
 
-  // 🚀 Auto redirect if already logged in
+  // const redirectUser = (user: Session["user"]) => {
+  //   if (user.is_platform_admin) {
+  //     window.location.href = "http://admin.localhost:3000/admin/dashboard";
+  //     return;
+  //   }
+
+  //   if (user.company_slug) {
+  //     window.location.href = `http://${user.company_slug}.localhost:3000/company/dashboard`;
+  //     return;
+  //   }
+  // };
+
+
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
       redirectUser(session.user);
@@ -164,8 +174,7 @@ export const Login = () => {
                 <div className="icon-holder text-center ">
                   <Icon
                     icon="streamline:money-graph-analytics-business-product-graph-data-chart-analysis"
-                    height={21}
-                    width={21}
+                    className="text-[20px] mx-auto"
                   />
                   <div className="icon-name font-bold text-[10px] mt-2">
                     Finance
@@ -173,28 +182,29 @@ export const Login = () => {
                 </div>
 
                 <div className="icon-holder text-center ">
-                  <Icon icon="solar:tag-price-bold" height={21} width={21} />
+                  <Icon icon="hugeicons:sale-tag-01" className="text-[20px] mx-auto" />
                   <div className="icon-name font-bold text-[10px] mt-2">
                     Sales
                   </div>
                 </div>
 
                 <div className="icon-holder text-center">
-                  <Icon icon="solar:bag-4-linear" className="text-[20px]" />
+                  <Icon icon="bx:purchase-tag-alt" className="text-[20px] mx-auto" />
                   <div className="icon-name font-bold text-[10px] mt-2">
                     Purchases
                   </div>
                 </div>
 
                 <div className="icon-holder text-center">
-                  <Icon icon="solar:bag-4-linear" className="text-[20px]" />
+                  <Icon icon="carbon:inventory-management" className="text-[20px] mx-auto" />
                   <div className="icon-name font-bold text-[10px] mt-2">
                     Inventory
                   </div>
                 </div>
 
                 <div className="icon-holder text-center ">
-                  <Icon icon="solar:bag-4-linear" className="text-[20px]" />
+                  {/* <Icon icon="solar:mail-outline-rounded" className="text-[20px]" /> */}
+                  <Icon icon="material-symbols:mail-outline-rounded" className="text-[20px]" />
                   <div className="icon-name font-bold text-[10px] mt-2">
                     Mail
                   </div>
