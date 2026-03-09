@@ -13,6 +13,7 @@ interface LayoutProps {
   params: Promise<{ slug: string }>; 
 }
 
+
 export default async function CompanyLayout({ children, params }: LayoutProps) {
   // 2. Await the params before using them
   const { slug } = await params;
@@ -22,7 +23,7 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
 
   if (!session) redirect("/login");
 
-  console.log('session.user ==== ',session.user);
+  // console.log('session.user ==== ',session.user);
 
   // 3. Use the awaited 'slug' for the check
   if (session.user.company_slug !== slug && !session.user.is_platform_admin) {

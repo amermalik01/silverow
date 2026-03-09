@@ -12,6 +12,7 @@ import { useState, FormEvent, useEffect } from "react";
 import { getSession, signIn, useSession } from "next-auth/react";
 import type { Session } from "next-auth";
 import FullLogo from "../layout/shared/logo/FullLogo";
+import { useRouter, useParams } from "next/navigation";
 
 export const Login = () => {
   const { data: session, status } = useSession();
@@ -21,32 +22,31 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const router = useRouter();
+
+  // const getBaseDomain = () => {
+  //   if (process.env.NODE_ENV === "development") {
+  //     return "localhost:3000";
+  //   }
+  //   return "crmsystem.vercel.app";
+  // };
+
   const redirectUser = (user: Session["user"]) => {
+
+    // const baseDomain = getBaseDomain();
+
     if (user.is_platform_admin) {
-      // Fixed super admin subdomain
-      window.location.href = "http://admin.localhost:3000/admin/dashboard";
+      // window.location.href = `https://${baseDomain}/admin/dashboard`; // admin.
+      window.location.href = `/admin/dashboard`;
       return;
     }
 
     if (user.company_slug) {
-      // Fixed company subdomain with slug as path
-      window.location.href = `http://company.localhost:3000/${user.company_slug}/dashboard`;
+      // window.location.href = `https://${baseDomain}/${user.company_slug}/dashboard`; // company.   /${user.company_slug}
+      window.location.href = `/${user.company_slug}/dashboard`;
       return;
     }
   };
-
-  // const redirectUser = (user: Session["user"]) => {
-  //   if (user.is_platform_admin) {
-  //     window.location.href = "http://admin.localhost:3000/admin/dashboard";
-  //     return;
-  //   }
-
-  //   if (user.company_slug) {
-  //     window.location.href = `http://${user.company_slug}.localhost:3000/company/dashboard`;
-  //     return;
-  //   }
-  // };
-
 
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
@@ -65,17 +65,36 @@ export const Login = () => {
       redirect: false,
     });
 
-    if (res?.ok) {
+    if (!res?.ok) {
+  setError("Invalid email or password");
+  setLoading(false);
+  return;
+}
+
+const session = await getSession();
+
+if (session?.user?.is_platform_admin) {
+  router.push("/admin/dashboard");
+}
+
+if (session?.user?.company_slug) {
+  router.push(`/${session.user.company_slug}/dashboard`);
+}
+
+    /* if (res?.ok) {
       setTimeout(async () => {
         const session = await getSession();
 
+        const baseDomain = getBaseDomain();
+
         if (session?.user?.is_platform_admin) {
-          window.location.href = "http://admin.localhost:3000/admin/dashboard";
+          // window.location.href = `https://admin.${baseDomain}/admin/dashboard`;
+          window.location.href = `https://${baseDomain}/admin/dashboard`;
           return;
         }
 
         if (session?.user?.company_slug) {
-          window.location.href = `http://company.localhost:3000/${session.user.company_slug}/dashboard`;
+          window.location.href = `https://${baseDomain}/${session.user.company_slug}/dashboard`;
           return;
         }
       }, 200);
@@ -85,7 +104,7 @@ export const Login = () => {
       setError("Invalid email or password");
       setLoading(false);
       return;
-    }
+    } */
 
     // Session will auto update → useEffect will redirect
   };

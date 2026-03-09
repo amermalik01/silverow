@@ -2,8 +2,48 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  const isPublicRoute =
+    pathname === "/login" ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/_next") ||
+    pathname.includes(".");
+
+  if (isPublicRoute) return NextResponse.next();
+
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (!token) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
+  // ADMIN ROUTES
+  if (pathname.startsWith("/admin")) {
+    if (!token.is_platform_admin) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+  }
+
+  // COMPANY ROUTES
+  const slug = pathname.split("/")[1];
+
+  if (slug && slug !== "admin") {
+    if (token.company_slug !== slug && !token.is_platform_admin) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+  }
+
+  return NextResponse.next();
+}
+
+/* export function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const hostname = req.headers.get("host") || "";
   const pathName = url.pathname;
@@ -27,7 +67,7 @@ export function middleware(req: NextRequest) {
   // const searchParams = url.searchParams.toString();
   // const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ""}`;
 
-  /* fixed based structure start */
+  // fixed based structure start
 
   const rootDomain = process.env.ROOT_DOMAIN || "vercel.app";
 
@@ -54,7 +94,7 @@ export function middleware(req: NextRequest) {
     );
   }
 
-  /* fixed based structure end */
+  // fixed based structure end
 
   // 2. Route Super Admin
   // if (currentHost === "admin") {
@@ -67,11 +107,12 @@ export function middleware(req: NextRequest) {
   // }
 
   return NextResponse.next();
-}
+} */
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
+
 
 // const currentHost = process.env.NODE_ENV === "production"
 //   ? hostname.replace(`.silverow.com`, "")

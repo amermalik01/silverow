@@ -99,27 +99,27 @@ export const authOptions: AuthOptions = {
     },
   },
 
-  cookies:
-    process.env.NODE_ENV === "production"
-      ? {
-          sessionToken: {
-            name:
-              process.env.NODE_ENV === "production"
-                ? "__Secure-next-auth.session-token"
-                : "next-auth.session-token",
-            options: {
-              httpOnly: true,
-              sameSite: "lax",
-              path: "/",
-              secure: process.env.NODE_ENV === "production",
-              domain:
-                process.env.NODE_ENV === "production"
-                  ? ".vercel.app"
-                  : ".localhost",
-            },
-          },
-        }
-      : undefined,
+  // cookies:
+  //   process.env.NODE_ENV === "production"
+  //     ? {
+  //         sessionToken: {
+  //           name:
+  //             process.env.NODE_ENV === "production"
+  //               ? "__Secure-next-auth.session-token"
+  //               : "next-auth.session-token",
+  //           options: {
+  //             httpOnly: true,
+  //             sameSite: "lax",
+  //             path: "/",
+  //             secure: process.env.NODE_ENV === "production",
+  //             domain:
+  //               process.env.NODE_ENV === "production"
+  //                 ? ".vercel.app"
+  //                 : ".localhost",
+  //           },
+  //         },
+  //       }
+  //     : undefined,
 
   pages: {
     signIn: "/login",
