@@ -104,6 +104,9 @@ export async function POST(req: Request) {
       ],
     );
 
+    createDefaultVatRates(companyId);
+    createDefaultPostingGroups(companyId);
+
     // 5. Commit Transaction
     await client.query("COMMIT");
 
@@ -133,6 +136,49 @@ export async function POST(req: Request) {
       { error: "Internal Server Error" },
       { status: 500 },
     );
+  } finally {
+    client.release();
+  }
+}
+
+async function createDefaultVatRates(companyId: string) {
+
+  const client = await pool.connect();
+
+  try {
+
+    const defaults = await client.query(
+      `SELECT name, rate FROM default_vat_rates`
+    );
+
+    for (const vat of defaults.rows) {
+
+      await client.query(
+        `
+        INSERT INTO vat_rates
+        (company_id, name, rate)
+        VALUES ($1,$2,$3)
+        `,
+        [companyId, vat.name, vat.rate]
+      );
+
+    }
+
+  } finally {
+    client.release();
+  }
+}
+
+async function createDefaultPostingGroups(companyId: string) {
+  const client = await pool.connect();
+  try {
+    const defaults = await client.query(`SELECT name FROM default_posting_groups`);
+    for (const pg of defaults.rows) {
+      await client.query(
+        `INSERT INTO posting_groups (company_id, name) VALUES ($1,$2)`,
+        [companyId, pg.name]
+      );
+    }
   } finally {
     client.release();
   }

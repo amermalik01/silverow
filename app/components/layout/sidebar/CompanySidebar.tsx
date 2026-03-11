@@ -16,7 +16,9 @@ import {
 } from 'tailwind-sidebar'
 import 'tailwind-sidebar/styles.css'
 import FullLogo from '../shared/logo/FullLogo';
-import CompanySidebarContent from './company_sidebaritems';
+import { getCompanySidebarItems } from './company_sidebaritems';
+import { useSession } from "next-auth/react";
+
 
 interface SidebarItemType {
   heading?: string
@@ -107,7 +109,16 @@ const CompanySidebarLayout = ({ onClose }: { onClose?: () => void }) => {
   const { theme } = useTheme()
 
   // Only allow "light" or "dark" for AMSidebar
-  const sidebarMode = theme === 'light' || theme === 'dark' ? theme : undefined
+  const sidebarMode = theme === 'light' || theme === 'dark' ? theme : undefined;
+
+  const { data: session } = useSession();
+
+  const slug = session?.user?.company_slug;
+
+  if (!slug) return null;
+
+  const menuItems = getCompanySidebarItems(slug);
+
 
   return (
     <AMSidebar
@@ -129,7 +140,7 @@ const CompanySidebarLayout = ({ onClose }: { onClose?: () => void }) => {
 
       <SimpleBar className='h-[calc(100vh-100px)]'>
         <div className='px-6'>
-          {CompanySidebarContent.map((section, index) => (
+          {menuItems.map((section, index) => (
             <div key={index}>
               {renderSidebarItems(
                 [

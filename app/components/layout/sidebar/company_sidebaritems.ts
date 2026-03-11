@@ -1,4 +1,6 @@
 // app/components/layout/sidebar/company_sidebaritems.ts
+"use client";
+
 import { uniqueId } from "lodash";
 
 export interface ChildItem {
@@ -32,7 +34,7 @@ export interface MenuItem {
   isPro?: boolean;
 }
 
-const CompanySidebarContent: MenuItem[] = [
+export const getCompanySidebarItems = (slug: string): MenuItem[] => [
   // ==================== NON-PRO SECTIONS ====================
   {
     heading: "Home",
@@ -41,7 +43,8 @@ const CompanySidebarContent: MenuItem[] = [
         name: "Dashboard",
         icon: "solar:widget-2-linear",
         id: uniqueId(),
-        url: "/",
+        // url: "/",
+        url: `/${slug}/dashboard`,
         isPro: false,
       },
 
@@ -53,22 +56,22 @@ const CompanySidebarContent: MenuItem[] = [
           {
             id: uniqueId(),
             name: "Chart of Accounts",
-            url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+            url: `/${slug}/finance/chart-of-accounts`,
           },
           {
             id: uniqueId(),
             name: "General Journal",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            url: `/${slug}/finance/general-journal`,
           },
           {
             id: uniqueId(),
             name: "Posted General Journal",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            url: `/${slug}/finance/posted-journal`,
           },
           {
             id: uniqueId(),
             name: "Finance Matrix",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            url: `/${slug}/finance/matrix`,
           },
         ],
       },
@@ -351,42 +354,42 @@ const CompanySidebarContent: MenuItem[] = [
               {
                 id: uniqueId(),
                 name: "VAT Rates",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/finance/vat-rates`,
               },
               {
                 id: uniqueId(),
                 name: "Posting Groups",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/finance/posting-groups`,
               },
               {
                 id: uniqueId(),
                 name: "VAT Posting Setup",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/finance/posting-groups`,
               },
               {
                 id: uniqueId(),
                 name: "Inventory Setup",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/finance/inventory-setup`,
               },
               {
                 id: uniqueId(),
                 name: "Posting Date Range",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/finance/posting-date-range`,
               },
               {
                 id: uniqueId(),
                 name: "Unit of Measure for G/L",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/finance/posting-groups`,
               },
               {
                 id: uniqueId(),
                 name: "G/L Account(s) Setup for Opening Balances",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/finance/posting-groups`,
               },
               {
                 id: uniqueId(),
                 name: "G/L Account for Goods Received Not Invoiced",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/finance/posting-groups`,
               },
             ],
           },
@@ -436,4 +439,4 @@ const CompanySidebarContent: MenuItem[] = [
   },
 ];
 
-export default CompanySidebarContent;
+// export default CompanySidebarContent;
