@@ -7,12 +7,13 @@ import { authOptions } from "@/lib/auth";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
 
   const session = await getServerSession(authOptions);
 
   const client = await pool.connect();
+  const { id } = await params;
 
   try {
 
@@ -35,7 +36,7 @@ export async function GET(
 
       ORDER BY j.entry_date DESC
       `,
-      [params.id, session?.user.company_id]
+      [id, session?.user.company_id]
     );
 
     return NextResponse.json(result.rows);
