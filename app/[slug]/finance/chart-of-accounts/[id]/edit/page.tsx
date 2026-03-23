@@ -1,6 +1,24 @@
-// app/[slug]/finance/chart-of-accounts/[id]/edit/page.js
+// app/[slug]/finance/chart-of-accounts/[id]/edit/page.tsx
 
 import EditAccountForm from "@/app/components/finance/EditAccountForm";
+
+export default function EditAccountPage({
+  params,
+}: {
+  params: { slug: string; id: string };
+}) {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">
+        Finance / Chart of Accounts / Edit
+      </h1>
+
+      <EditAccountForm slug={params.slug} id={params.id} />
+    </div>
+  );
+}
+
+/* import EditAccountForm from "@/app/components/finance/EditAccountForm";
 import { pool } from "@/lib/db";
 
 export default async function EditAccountPage(
@@ -71,4 +89,4 @@ export default async function EditAccountPage(
   } finally {
     client.release();
   }
-}
+} */

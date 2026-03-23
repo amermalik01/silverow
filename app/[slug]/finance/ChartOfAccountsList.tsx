@@ -12,9 +12,12 @@ type Account = {
   account_type: string;
   parent_name?: string | null;
 
-  total_debit: number;
-  total_credit: number;
-  balance: number;
+  display_debit: number;
+  display_credit: number;
+
+  // total_debit: number;
+  // total_credit: number;
+  // balance: number;
 };
 
 export default function ChartOfAccountsList() {
@@ -90,7 +93,7 @@ export default function ChartOfAccountsList() {
               <th className="p-2 text-left">Parent</th>
               <th className="p-2 text-right">Debit</th>
               <th className="p-2 text-right">Credit</th>
-              <th className="p-2 text-right">Balance</th>
+              {/* <th className="p-2 text-right">Balance</th> */}
               <th className="p-2 text-center">Actions</th>
             </tr>
 
@@ -141,24 +144,27 @@ export default function ChartOfAccountsList() {
                 </td>
 
                 {/* Parent */}
-
                 <td className="p-2">
                   {acc.parent_name || "-"}
                 </td>
-
+                
                 {/* Debit */}
-
                 <td className="p-2 text-right">
-                  {formatCurrency(acc.total_debit)}
+                  {acc.display_debit > 0 ? formatCurrency(acc.display_debit) : ""}
                 </td>
 
                 {/* Credit */}
+                <td className="p-2 text-right">
+                  {acc.display_credit > 0 ? formatCurrency(acc.display_credit) : ""}
+                </td>
+
+                {/* <td className="p-2 text-right">
+                  {formatCurrency(acc.total_debit)}
+                </td>
 
                 <td className="p-2 text-right">
                   {formatCurrency(acc.total_credit)}
                 </td>
-
-                {/* Balance */}
 
                 <td className="p-2 text-right font-semibold">
 
@@ -172,9 +178,9 @@ export default function ChartOfAccountsList() {
                     {formatCurrency(acc.balance)}
                   </span>
 
-                </td>
+                </td> */}
 
-                {/* Actions */}
+                
 
                 <td className="p-2 text-center space-x-2">
 
@@ -199,96 +205,3 @@ export default function ChartOfAccountsList() {
     </div>
   );
 }
-
-
-/* "use client";
-
-import { useEffect, useState } from "react";
-
-type Account = {
-  id: string;
-  code: string;
-  name: string;
-  account_type: string;
-  parent_name?: string;
-  is_active: boolean;
-};
-
-export default function ChartOfAccountsList() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchAccounts = async () => {
-    const res = await fetch("/api/finance/accounts");
-    const data = await res.json();
-
-    setAccounts(data);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  if (loading) {
-    return <p>Loading accounts...</p>;
-  }
-
-  return (
-    <div className="bg-white shadow rounded-lg p-6">
-
-      <div className="flex justify-between mb-4">
-        <h2 className="text-xl font-semibold">Chart of Accounts</h2>
-
-        <a
-          href="./chart-of-accounts/create"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Add Account
-        </a>
-      </div>
-
-      <table className="w-full border text-sm">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2 text-left">Code</th>
-            <th className="p-2 text-left">Account Name</th>
-            <th className="p-2 text-left">Type</th>
-            <th className="p-2 text-left">Parent</th>
-            <th className="p-2 text-left">Status</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {accounts.map((acc) => (
-            <tr key={acc.id} className="border-t">
-
-              <td className="p-2">{acc.code}</td>
-
-              <td className="p-2 font-medium">
-                {acc.name}
-              </td>
-
-              <td className="p-2">
-                {acc.account_type}
-              </td>
-
-              <td className="p-2">
-                {acc.parent_name || "-"}
-              </td>
-
-              <td className="p-2">
-                {acc.is_active ? (
-                  <span className="text-green-600">Active</span>
-                ) : (
-                  <span className="text-red-500">Inactive</span>
-                )}
-              </td>
-
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-} */

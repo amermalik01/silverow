@@ -14,7 +14,6 @@ type FormState = {
   account_type: string;
   parent_id: string;
   vat_rate_id: string;
-  posting_group_id: string;
   is_summary: boolean;
 };
 
@@ -29,7 +28,6 @@ export default function CreateAccountForm({ slug }: Props) {
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [vatRates, setVatRates] = useState<VatRate[]>([]);
-  const [postingGroups, setPostingGroups] = useState<PostingGroup[]>([]);
 
   const [form, setForm] = useState<FormState>({
     code: "",
@@ -37,9 +35,10 @@ export default function CreateAccountForm({ slug }: Props) {
     account_type: "ASSET",
     parent_id: "",
     vat_rate_id: "",
-    posting_group_id: "",
     is_summary: false,
   });
+
+  const is_posting = !form.is_summary;
 
   const [loading, setLoading] = useState(false);
 
@@ -48,19 +47,16 @@ export default function CreateAccountForm({ slug }: Props) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [accountsRes, vatRes, postingRes] = await Promise.all([
+        const [accountsRes, vatRes] = await Promise.all([
           fetch("/api/finance/accounts"),
           fetch("/api/setup/vat-rates"),
-          fetch("/api/setup/posting-groups"),
         ]);
 
         const accountsData: Account[] = await accountsRes.json();
         const vatData: VatRate[] = await vatRes.json();
-        const postingData: PostingGroup[] = await postingRes.json();
 
         setAccounts(accountsData);
         setVatRates(vatData);
-        setPostingGroups(postingData);
       } catch (error) {
         console.error("Failed to load form data", error);
       }
@@ -82,6 +78,7 @@ export default function CreateAccountForm({ slug }: Props) {
       setForm({
         ...form,
         [name]: checked,
+        vat_rate_id: checked ? "" : form.vat_rate_id,
       });
 
       return;
@@ -106,7 +103,10 @@ export default function CreateAccountForm({ slug }: Props) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          is_posting: !form.is_summary,
+        }),
       });
 
       if (res.ok) {
@@ -127,7 +127,7 @@ export default function CreateAccountForm({ slug }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded shadow space-y-4 max-w-xl"
+      className="p-6 rounded shadow space-y-4 max-w-xl"
     >
       {/* Code */}
 
@@ -190,12 +190,19 @@ export default function CreateAccountForm({ slug }: Props) {
           className="w-full border p-2 rounded mt-1"
         >
           <option value="">None</option>
+          {accounts
+            .filter((acc) => acc.is_summary) // only allow summary as parent
+            .map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.code} - {acc.name}
+              </option>
+            ))}
 
-          {accounts.map((acc) => (
+          {/* {accounts.map((acc) => (
             <option key={acc.id} value={acc.id}>
               {acc.code} - {acc.name}
             </option>
-          ))}
+          ))} */}
         </select>
       </div>
 
@@ -208,6 +215,7 @@ export default function CreateAccountForm({ slug }: Props) {
           name="vat_rate_id"
           value={form.vat_rate_id}
           onChange={handleChange}
+          disabled={form.is_summary}
           className="w-full border p-2 rounded mt-1"
         >
           <option value="">None</option>
@@ -215,27 +223,6 @@ export default function CreateAccountForm({ slug }: Props) {
           {vatRates.map((vat) => (
             <option key={vat.id} value={vat.id}>
               {vat.name} ({vat.rate}%)
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Posting Group */}
-
-      <div>
-        <label className="block text-sm font-medium">Posting Group</label>
-
-        <select
-          name="posting_group_id"
-          value={form.posting_group_id}
-          onChange={handleChange}
-          className="w-full border p-2 rounded mt-1"
-        >
-          <option value="">None</option>
-
-          {postingGroups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
             </option>
           ))}
         </select>

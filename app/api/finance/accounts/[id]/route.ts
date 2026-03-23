@@ -1,0 +1,219 @@
+// api/finance/accounts/[id]/route.ts
+
+import { NextResponse } from "next/server";
+import { pool } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+
+  const {
+    code,
+    name,
+    account_type,
+    parent_id,
+    vat_rate_id,
+    is_summary,
+    is_posting,
+  } = body;
+
+  const client = await pool.connect();
+
+  const {id} = await params;
+
+  try {
+    await client.query("BEGIN");
+
+    // 🔴 1. Prevent editing if transactions exist
+    const txCheck = await client.query(
+      `SELECT 1 FROM journal_entry_lines WHERE account_id = $1 LIMIT 1`,
+      [id]
+    );
+
+    if (txCheck.rows.length > 0) {
+      throw new Error(
+        "This account has transactions and cannot be modified"
+      );
+    }
+
+    // 🔴 2. VAT validation
+    if (is_summary && vat_rate_id) {
+      throw new Error("VAT not allowed on summary accounts");
+    }
+
+    // 🔴 3. Prevent self-parent
+    if (parent_id === id) {
+      throw new Error("Account cannot be its own parent");
+    }
+
+    // 🔴 4. Parent must be summary
+    if (parent_id) {
+      const parent = await client.query(
+        `SELECT is_summary FROM chart_of_accounts WHERE id = $1`,
+        [parent_id]
+      );
+
+      if (!parent.rows[0]?.is_summary) {
+        throw new Error("Parent must be a summary account");
+      }
+    }
+
+    // 🔴 5. Unique code check
+    const existing = await client.query(
+      `SELECT 1 FROM chart_of_accounts 
+       WHERE company_id = $1 AND code = $2 AND id != $3`,
+      [session.user.company_id, code, id]
+    );
+
+    if (existing.rows.length > 0) {
+      throw new Error("Account code already exists");
+    }
+
+    // ✅ UPDATE
+    const result = await client.query(
+      `
+      UPDATE chart_of_accounts
+      SET
+        code = $1,
+        name = $2,
+        account_type = $3,
+        parent_id = $4,
+        vat_rate_id = $5,
+        is_summary = $6,
+        is_posting = $7,
+        updated_at = now()
+      WHERE id = $8
+      AND company_id = $9
+      RETURNING *
+      `,
+      [
+        code,
+        name,
+        account_type,
+        parent_id || null,
+        vat_rate_id || null,
+        is_summary,
+        is_posting,
+        id,
+        session.user.company_id,
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    return NextResponse.json(result.rows[0]);
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    return NextResponse.json(
+      { error: error || "Update failed" },
+      { status: 400 }
+    );
+  } finally {
+    client.release();
+  }
+}
+
+/* export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+
+  const {
+    code,
+    name,
+    account_type,
+    parent_id,
+    vat_rate_id,
+    is_summary,
+    is_posting,
+  } = body;
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // ❗ VALIDATIONS
+
+    if (is_summary && vat_rate_id) {
+      throw new Error("VAT not allowed on summary accounts");
+    }
+
+    if (parent_id === id) {
+      throw new Error("Account cannot be its own parent");
+    }
+
+    if (parent_id) {
+      const parent = await client.query(
+        `SELECT is_summary FROM chart_of_accounts WHERE id = $1`,
+        [parent_id],
+      );
+
+      if (!parent.rows[0]?.is_summary) {
+        throw new Error("Parent must be summary account");
+      }
+    }
+
+    // ✅ UPDATE
+
+    const result = await client.query(
+      `
+      UPDATE chart_of_accounts
+      SET
+        code = $1,
+        name = $2,
+        account_type = $3,
+        parent_id = $4,
+        vat_rate_id = $5,
+        is_summary = $6,
+        is_posting = $7,
+        updated_at = now()
+      WHERE id = $8
+      AND company_id = $9
+      RETURNING *
+      `,
+      [
+        code,
+        name,
+        account_type,
+        parent_id || null,
+        vat_rate_id || null,
+        is_summary,
+        is_posting,
+        id,
+        session.user.company_id,
+      ],
+    );
+
+    await client.query("COMMIT");
+
+    return NextResponse.json(result.rows[0]);
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    return NextResponse.json(
+      { error: error || "Failed to update account" },
+      { status: 400 },
+    );
+  } finally {
+    client.release();
+  }
+} */
