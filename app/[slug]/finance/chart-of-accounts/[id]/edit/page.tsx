@@ -2,18 +2,18 @@
 
 import EditAccountForm from "@/app/components/finance/EditAccountForm";
 
-export default function EditAccountPage({
+export default async function EditAccountPage({
   params,
 }: {
-  params: { slug: string; id: string };
+  params: Promise<{ slug: string; id: string }>;
 }) {
+  const { slug, id } = await params;
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">
-        Finance / Chart of Accounts / Edit
-      </h1>
+      <h1 className="text-2xl font-bold">Finance / Chart of Accounts / Edit</h1>
 
-      <EditAccountForm slug={params.slug} id={params.id} />
+      <EditAccountForm slug={slug} id={id} />
     </div>
   );
 }

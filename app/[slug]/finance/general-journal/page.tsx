@@ -1,18 +1,22 @@
 // app/[slug]/finance/general-journal/page.tsx
 
+import GeneralJournalList from "@/app/components/finance/GeneralJournalList";
 
-// import ChartOfAccountsList from "../ChartOfAccountsList";
+export default async function GeneralJournalPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
 
-export default async function GeneralJournalPage() {
+  const { slug } = await params;
+
   return (
     <div className="space-y-6">
-
       <h1 className="text-2xl font-bold">
-        General Journal Page
+        Finance / General Journal
       </h1>
 
-      {/* <ChartOfAccountsList /> */}
-
+      <GeneralJournalList slug={slug} />
     </div>
   );
 }

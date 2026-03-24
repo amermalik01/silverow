@@ -60,13 +60,22 @@ export default function EditAccountForm({ slug, id }: Props) {
         setAccounts(accData);
         setVatRates(vatData);
 
+        // setForm({
+        //   code: current.code,
+        //   name: current.name,
+        //   account_type: current.account_type,
+        //   parent_id: current.parent_id || "",
+        //   vat_rate_id: current.vat_rate_id || "",
+        //   is_summary: current.is_summary,
+        // });
+
         setForm({
-          code: current.code,
-          name: current.name,
-          account_type: current.account_type,
+          code: current.code || "",
+          name: current.name || "",
+          account_type: current.account_type || "ASSET",
           parent_id: current.parent_id || "",
           vat_rate_id: current.vat_rate_id || "",
-          is_summary: current.is_summary,
+          is_summary: current.is_summary ?? false,
         });
       } catch (err) {
         console.error(err);
@@ -81,7 +90,7 @@ export default function EditAccountForm({ slug, id }: Props) {
   /* ---------------- CHANGE ---------------- */
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value, type } = e.target;
 
@@ -139,7 +148,7 @@ export default function EditAccountForm({ slug, id }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded shadow space-y-4 max-w-xl"
+      className=" p-6 rounded shadow space-y-4 max-w-xl"
     >
       {/* Code */}
       <input
@@ -160,7 +169,7 @@ export default function EditAccountForm({ slug, id }: Props) {
       {/* Type */}
       <select
         name="account_type"
-        value={form.account_type}
+        value={form.account_type || ""}
         onChange={handleChange}
         className="w-full border p-2 rounded"
       >
@@ -174,7 +183,7 @@ export default function EditAccountForm({ slug, id }: Props) {
       {/* Parent */}
       <select
         name="parent_id"
-        value={form.parent_id}
+        value={form.parent_id || ""}
         onChange={handleChange}
         className="w-full border p-2 rounded"
       >
@@ -192,7 +201,7 @@ export default function EditAccountForm({ slug, id }: Props) {
       {/* VAT */}
       <select
         name="vat_rate_id"
-        value={form.vat_rate_id}
+        value={form.vat_rate_id || ""}
         onChange={handleChange}
         disabled={form.is_summary}
         className="w-full border p-2 rounded"

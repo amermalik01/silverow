@@ -35,3 +35,48 @@ export type LedgerRow = {
   debit: number | string;
   credit: number | string;
 };
+
+export type JournalLine = {
+  id: string;
+  account_id: string;
+  account_code: string;
+  account_name: string;
+  debit: number;
+  credit: number;
+  description?: string | null;
+};
+
+export type Journal = {
+  id: string;
+  entry_no: number;
+  entry_date: string;
+  reference?: string | null;
+  description?: string | null;
+  is_posted: boolean;
+  lines: JournalLine[];
+};
+
+// export type JournalLine = {
+//   id: string;
+//   account_id: string;
+//   debit: number;
+//   credit: number;
+//   description?: string | null;
+// };
+
+// export type Journal = {
+//   id: string;
+//   entry_no: number;
+//   entry_date: string;
+//   reference?: string | null;
+//   description?: string | null;
+//   lines: JournalLine[];
+// };
+
+export type JournalListItem = {
+  id: string;
+  entry_no: number;
+  entry_date: string;
+  reference?: string | null;
+  description?: string | null;
+};

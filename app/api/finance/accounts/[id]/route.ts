@@ -5,6 +5,58 @@ import { pool } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const client = await pool.connect();
+
+  const {id} = await params;
+
+  try {
+    const result = await client.query(
+      `
+      SELECT
+        id,
+        code,
+        name,
+        account_type,
+        parent_id,
+        vat_rate_id,
+        is_summary,
+        is_posting
+      FROM chart_of_accounts
+      WHERE id = $1
+      AND company_id = $2
+      `,
+      [id, session.user.company_id]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: "Account not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
+  } finally {
+    client.release();
+  }
+}
+
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
