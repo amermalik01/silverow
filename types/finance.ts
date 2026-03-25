@@ -73,6 +73,33 @@ export type Journal = {
 //   lines: JournalLine[];
 // };
 
+export type CustomerJournalLine = {
+  id: string;
+  account_id: string;
+  account_name: string;
+  customer_id?: string | null;
+  debit: number;
+  credit: number;
+  description?: string | null;
+};
+
+export type CustomerJournal = {
+  id: string;
+  entry_no: number;
+  entry_date: string;
+  reference?: string | null;
+  description?: string | null;
+  is_posted: boolean;
+  lines: CustomerJournalLine[];
+};
+
+export type CustomerJournalListItem = {
+  id: string;
+  entry_no: number;
+  entry_date: string;
+  reference?: string | null;
+};
+
 export type JournalListItem = {
   id: string;
   entry_no: number;
@@ -80,3 +107,4 @@ export type JournalListItem = {
   reference?: string | null;
   description?: string | null;
 };
+
