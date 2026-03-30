@@ -17,7 +17,7 @@ export default function CRMList() {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch("/api/crm/accounts")
+    fetch("/api/sales/crm/accounts")
       .then((res) => res.json())
       .then((accounts: CRMAccount[]) => {
         setData(accounts);
@@ -31,7 +31,7 @@ export default function CRMList() {
 
   const convertToCustomer = async (id: string) => {
     try {
-      await fetch("/api/crm/convert", {
+      await fetch("/api/sales/crm/convert", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -60,7 +60,7 @@ export default function CRMList() {
     <div className="overflow-x-auto">
       <table className="w-full border-collapse border border-gray-300">
         <thead>
-          <tr className="bg-gray-100 border-b border-gray-300">
+          <tr className="border-b border-gray-300">
             <th className="p-2 text-left">Name</th>
             <th className="p-2 text-left">CRM Code</th>
             <th className="p-2 text-left">Customer Code</th>

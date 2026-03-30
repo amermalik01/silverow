@@ -104,7 +104,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             // id: uniqueId(),
             id: "CRM",
             name: "CRM",
-            url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+            url: `/${slug}/sales/crm`,
             icon: "solar:shield-keyhole-minimalistic-linear",
 
             children: [

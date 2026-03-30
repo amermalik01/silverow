@@ -16,7 +16,7 @@ export default function CRMList() {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch("/api/crm/accounts")
+    fetch("/api/sales/crm/accounts")
       .then((res) => res.json())
       .then((accounts: CRMAccount[]) => {
         setData(accounts);
@@ -30,7 +30,7 @@ export default function CRMList() {
 
   const convertToCustomer = async (id: string) => {
     try {
-      await fetch("/api/crm/convert", {
+      await fetch("/api/sales/crm/convert", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
