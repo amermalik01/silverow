@@ -99,57 +99,9 @@ export const authOptions: AuthOptions = {
     },
   },
 
-  // cookies:
-  //   process.env.NODE_ENV === "production"
-  //     ? {
-  //         sessionToken: {
-  //           name:
-  //             process.env.NODE_ENV === "production"
-  //               ? "__Secure-next-auth.session-token"
-  //               : "next-auth.session-token",
-  //           options: {
-  //             httpOnly: true,
-  //             sameSite: "lax",
-  //             path: "/",
-  //             secure: process.env.NODE_ENV === "production",
-  //             domain:
-  //               process.env.NODE_ENV === "production"
-  //                 ? ".vercel.app"
-  //                 : ".localhost",
-  //           },
-  //         },
-  //       }
-  //     : undefined,
-
   pages: {
     signIn: "/login",
   },
 
   secret: process.env.NEXTAUTH_SECRET,
 };
-
-// async signIn({ user }) {
-//   const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-//   const url = new URL(base);
-
-//   console.log('base ==== ',base);
-//   console.log('user ==== ',user);
-
-//   if (user.is_platform_admin) {
-//     url.hostname = `admin.${url.hostname}`;
-//   console.log('url.hostname ==== ',`${url.origin}/dashboard`);
-//     return `${url.origin}/admin/dashboard`;
-//   }
-
-//   if (user.company_slug) {
-//     url.hostname = `company.${url.hostname}`;
-//     return `${url.origin}/${user.company_slug}/dashboard`;
-//   }
-
-//   return true;
-// },
-
-// export const SESSION_IDLE_TIME = {
-//   ADMIN: 30 * 60 * 1000,       // 30 minutes
-//   WEB: 7 * 24 * 60 * 60 * 1000 // 7 days
-// } as const;

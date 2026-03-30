@@ -35,16 +35,9 @@ if (!globalForPool.poolInitialized) {
   globalForPool.poolInitialized = true;
 }
 
-
-// pool.on('error', (err) => {
-//   console.error('Unexpected error on idle client', err);
-// });
-
 if (process.env.NODE_ENV !== "production") {
   globalForPool.pool = pool;
 }
-
-
 
 // Generic parameterized query helper
 
@@ -54,13 +47,6 @@ export async function runQuery<T extends QueryResultRow = QueryResultRow>(
 ): Promise<QueryResult<T>> {
   ensureEnv();
   return pool.query<T>(query, params);
-
-  // const client = await pool.connect();
-  // try {
-  //   return await client.query<T>(query, params);
-  // } finally {
-  //   client.release();
-  // }
 }
 
 export function isDatabaseError(
@@ -75,3 +61,9 @@ export function isDatabaseError(
 }
 
 export default pool;
+
+
+
+// pool.on('error', (err) => {
+//   console.error('Unexpected error on idle client', err);
+// });

@@ -1,4 +1,4 @@
-// app/company/[slug]/layout.tsx
+// app/[slug]/layout.tsx
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";

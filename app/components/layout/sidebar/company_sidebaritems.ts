@@ -63,15 +63,27 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
           },
           {
             // id: uniqueId(),
-            id: "General Journal",
-            name: "General Journal",
+            id: "General Journals",
+            name: "General Journals",
             url: `/${slug}/finance/general-journal`,
           },
           {
             // id: uniqueId(),
-            id: "Posted General Journal",
-            name: "Posted General Journal",
+            id: "Posted General Journals",
+            name: "Posted General Journals",
             url: `/${slug}/finance/posted-journal`,
+          },
+          {
+            // id: uniqueId(),
+            id: "Customer Journals",
+            name: "Customer Journals",
+            url: `/${slug}/finance/customer-journal`,
+          },
+          {
+            // id: uniqueId(),
+            id: "Posted Customer Journals",
+            name: "Posted Customer Journals",
+            url: `/${slug}/finance/posted-customer-journal`,
           },
           {
             // id: uniqueId(),
@@ -385,7 +397,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 // id: uniqueId(),
                 id: "Module Codes",
                 name: "Module Codes",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/system/sequences`,
               },
               {
                 // id: uniqueId(),
