@@ -54,14 +54,14 @@ export default function ChartOfAccountsList() {
 
   if (loading) {
     return (
-      <div className="p-6 rounded shadow">
+      <div className="p-6 rounded shadow dark:shadow-white">
         <p>Loading Chart of Accounts...</p>
       </div>
     );
   }
 
   return (
-    <div className=" shadow rounded-lg p-6">
+    <div className=" shadow dark:shadow-white rounded-lg p-6">
 
       {/* Header */}
 

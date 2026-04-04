@@ -25,7 +25,7 @@ export default function CustomerJournalList({ slug }: { slug: string }) {
   };
 
   return (
-    <div className="p-6 rounded shadow">
+    <div className="p-6 rounded shadow dark:shadow-white">
       <div className="flex justify-between mb-4">
         <h2>Customer Journals</h2>
 

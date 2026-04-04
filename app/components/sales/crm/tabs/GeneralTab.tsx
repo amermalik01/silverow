@@ -34,7 +34,7 @@ export default function GeneralTab({
   return (
     <div className="space-y-6">
       {/* SECTION: General */}
-      <div className="bg-white p-6 rounded shadow space-y-4">
+      <div className="p-6 rounded shadow dark:shadow-white space-y-4">
         <h2 className="text-lg font-semibold border-b pb-2">
           General Information
         </h2>
@@ -119,8 +119,8 @@ export default function GeneralTab({
       </div>
 
       {/* SECTION: Address (Primary) */}
-      <div className="bg-white p-6 rounded shadow space-y-4">
-        <h2 className="text-lg font-semibold border-b pb-2">Primary Address</h2>
+      <div className=" p-6 rounded shadow dark:shadow-white space-y-4">
+        <h2 className="text-lg font-semibold border-b  pb-2">Primary Address</h2>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
@@ -215,7 +215,7 @@ export default function GeneralTab({
       </div>
 
       {/* SECTION: Business Info */}
-      <div className="bg-white p-6 rounded shadow space-y-4">
+      <div className=" p-6 rounded shadow dark:shadow-white space-y-4">
         <h2 className="text-lg font-semibold border-b pb-2">Business Info</h2>
 
         <div className="grid grid-cols-2 gap-4">

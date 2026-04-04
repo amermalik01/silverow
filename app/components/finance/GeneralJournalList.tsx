@@ -49,7 +49,7 @@ export default function GeneralJournalList({ slug }: { slug: string }) {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="p-6 rounded shadow">
+    <div className="p-6 rounded shadow dark:shadow-white">
       <div className="flex justify-between mb-4">
         <h2 className="text-lg font-semibold">Unposted Journals</h2>
 

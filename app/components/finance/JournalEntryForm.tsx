@@ -214,7 +214,7 @@ export default function JournalEntryForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-6 rounded shadow space-y-6"
+      className="p-6 rounded shadow dark:shadow-white space-y-6"
     >
       {/* HEADER */}
 

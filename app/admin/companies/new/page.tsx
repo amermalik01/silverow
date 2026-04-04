@@ -132,7 +132,7 @@ export default function NewCompanyPage() {
           <Label htmlFor="plan">Initial Plan</Label>
           <select
             name="plan"
-            className="w-full h-10 border rounded-md px-3 bg-white"
+            className="w-full h-10 border rounded-md px-3 "
           >
             <option value="free">Free</option>
             <option value="pro">Pro</option>

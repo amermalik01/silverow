@@ -148,7 +148,7 @@ export default function EditAccountForm({ slug, id }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className=" p-6 rounded shadow space-y-4 max-w-xl"
+      className=" p-6 rounded shadow dark:shadow-white space-y-4 max-w-xl"
     >
       {/* Code */}
       <input
@@ -302,7 +302,7 @@ export default function EditAccountForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded shadow space-y-4"
+      className=" p-6 rounded shadow dark:shadow-white space-y-4"
     >
 
       <div>

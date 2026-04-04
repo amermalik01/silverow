@@ -127,7 +127,7 @@ export default function CreateAccountForm({ slug }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-6 rounded shadow space-y-4 max-w-xl"
+      className="p-6 rounded shadow dark:shadow-white space-y-4 max-w-xl"
     >
       {/* Code */}
 

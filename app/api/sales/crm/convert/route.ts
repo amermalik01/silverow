@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 
   // 2. update account
   const result = await pool.query(`
-    UPDATE crm_accounts
+    UPDATE parties
     SET 
       type = 'customer',
       customer_code = $1

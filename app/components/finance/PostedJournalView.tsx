@@ -48,7 +48,7 @@ export default function PostedJournalView({ id }: { id: string }) {
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="p-6 rounded shadow space-y-6">
+    <div className="p-6 rounded shadow dark:shadow-white space-y-6">
       {/* HEADER */}
 
       <div className="grid grid-cols-4 gap-4 text-sm">

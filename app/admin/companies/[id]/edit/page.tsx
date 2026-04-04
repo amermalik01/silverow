@@ -89,7 +89,7 @@ export default function EditCompanyPage() {
 
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <select name="status" defaultValue={company?.status} className="w-full h-10 border rounded-md px-3 bg-white">
+          <select name="status" defaultValue={company?.status} className="w-full h-10 border rounded-md px-3 ">
             <option value="active">Active</option>
             <option value="suspended">Suspended</option>
           </select>
@@ -97,7 +97,7 @@ export default function EditCompanyPage() {
 
         <div className="space-y-2">
           <Label htmlFor="plan">Plan</Label>
-          <select name="plan" defaultValue={company?.plan} className="w-full h-10 border rounded-md px-3 bg-white">
+          <select name="plan" defaultValue={company?.plan} className="w-full h-10 border rounded-md px-3 ">
             <option value="free">Free</option>
             <option value="pro">Pro</option>
             <option value="enterprise">Enterprise</option>

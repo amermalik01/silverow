@@ -107,14 +107,13 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             url: `/${slug}/sales/crm`,
             icon: "solar:shield-keyhole-minimalistic-linear",
 
-            children: [
-              {
-                // id: uniqueId(),
-                id: "Retailer CRM",
-                name: "Retailer CRM",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
-              },
-            ],
+            // children: [
+            //   {
+            //     id: "Retailer CRM",
+            //     name: "Retailer CRM",
+            //     url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+            //   },
+            // ],
           },
           {
             // id: uniqueId(),

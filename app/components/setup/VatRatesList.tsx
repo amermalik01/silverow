@@ -89,7 +89,7 @@ export default function VatRatesList() {
   };
 
   return (
-    <div className=" p-6 rounded shadow">
+    <div className=" p-6 rounded shadow dark:shadow-white">
       <div className="flex gap-2 mb-4">
 
         <input

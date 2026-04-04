@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const body = await req.json();
 
   const result = await pool.query(`
-    INSERT INTO crm_contacts (
+    INSERT INTO party_contacts (
       account_id,
       name,
       email,

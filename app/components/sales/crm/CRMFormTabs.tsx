@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 
 type CRMAccount = {
   id: string;
@@ -57,7 +58,24 @@ export default function CRMList() {
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto p-6 space-y-4">
+
+
+      {/* Header */}
+      <div className="flex justify-between items-center">
+
+        <h1 className="text-xl font-semibold">
+          CRM Accounts
+        </h1>
+
+        <Link
+          href="./crm/new"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          + New CRM
+        </Link>
+
+      </div>
       <table className="w-full border-collapse border border-gray-300">
         <thead>
           <tr className="border-b border-gray-300">
