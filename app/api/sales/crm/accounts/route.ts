@@ -24,7 +24,9 @@ export async function GET(req: Request) {
   const offset = (page - 1) * limit;
 
   let where = `WHERE company_id = $1`;
-  const values: any[] = [session.user.company_id];
+  const values: (string | number | null | undefined)[] = [
+    session.user.company_id,
+  ];
   let i = 2;
 
   if (search) {
@@ -50,7 +52,7 @@ export async function GET(req: Request) {
     i++;
   }
 
-  const query = `
+  const dataQuery = `
     SELECT
       id,
       crm_code,
@@ -73,22 +75,29 @@ export async function GET(req: Request) {
 
   values.push(limit, offset);
 
-  const data = await pool.query(query, values);
-
-  const countQuery = `
-    SELECT COUNT(*) 
-    FROM parties
-    ${where}
+  const totalQuery = `
+    SELECT COUNT(*) FROM parties ${where}
   `;
 
-  const count = await pool.query(countQuery, values.slice(0, i - 1));
+  try {
+    const client = await pool.connect();
+    const dataResult = await client.query(dataQuery, values);
+    const totalResult = await client.query(totalQuery, values.slice(0, i - 1));
+    client.release();
 
-  return NextResponse.json({
-    data: data.rows,
-    total: Number(count.rows[0].count),
-    page,
-    limit,
-  });
+    return NextResponse.json({
+      data: dataResult.rows,
+      total: Number(totalResult.rows[0].count),
+      page,
+      limit,
+    });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Failed to fetch CRM accounts" },
+      { status: 500 },
+    );
+  }
 }
 
 // GET all accounts

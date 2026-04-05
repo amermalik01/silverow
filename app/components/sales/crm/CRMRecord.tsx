@@ -13,17 +13,12 @@ import AttachmentsTab from "./tabs/AttachmentsTab";
 
 import { CRMAccount, CRMContact, CRMAddress } from "@/types/crm";
 
-// type Props = {
-//   account: CRMAccount;
-//   contacts: CRMContact[];
-//   addresses: CRMAddress[];
-// };
-
 type Props = {
   id: string;
+  isReadonly?: boolean;
 };
 
-export default function CRMRecord({ id }: Props) {
+export default function CRMRecord({ id, isReadonly = false }: Props) {
   const [activeTab, setActiveTab] = useState("general");
 
   const [account, setAccount] = useState<CRMAccount | null>(null);
@@ -31,6 +26,9 @@ export default function CRMRecord({ id }: Props) {
   const [addresses, setAddresses] = useState<CRMAddress[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // console.log('isReadonly ==== ',isReadonly);
 
   useEffect(() => {
     const loadData = async () => {
@@ -51,6 +49,38 @@ export default function CRMRecord({ id }: Props) {
 
     loadData();
   }, [id]);
+
+  const handleSave = async () => {
+    if (!account) return;
+
+    try {
+      setSaving(true);
+
+      const res = await fetch(`/api/sales/crm/${id}`, {
+        method: "PUT",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          account,
+          contacts,
+          addresses,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) throw new Error(result.error);
+
+      alert("CRM Updated Successfully ✅");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return <p>Loading CRM record...</p>;
@@ -89,15 +119,19 @@ export default function CRMRecord({ id }: Props) {
       {/* TAB CONTENT */}
 
       {activeTab === "general" && (
-        <GeneralTab account={account} setAccount={() => {}} isReadonly />
+        <GeneralTab
+          account={account}
+          setAccount={setAccount}
+          isReadonly={isReadonly}
+        />
       )}
 
       {activeTab === "contacts" && (
-        <ContactsTab contacts={contacts} setContacts={() => {}} />
+        <ContactsTab contacts={contacts} setContacts={setContacts} />
       )}
 
       {activeTab === "addresses" && (
-        <AddressesTab addresses={addresses} setAddresses={() => {}} />
+        <AddressesTab addresses={addresses} setAddresses={setAddresses} />
       )}
 
       {activeTab === "opportunities" && (
@@ -114,6 +148,18 @@ export default function CRMRecord({ id }: Props) {
 
       {activeTab === "attachments" && (
         <AttachmentsTab module="crm_lead" recordId={account.id} />
+      )}
+
+      {!isReadonly && (
+        <div className="flex justify-end pt-4 border-t">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-blue-600 text-white px-6 py-2 rounded"
+          >
+            {saving ? "Saving..." : "Update CRM"}
+          </button>
+        </div>
       )}
     </div>
   );
