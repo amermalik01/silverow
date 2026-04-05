@@ -15,12 +15,6 @@ export default function GeneralTab({
   setAccount,
   isReadonly = false,
 }: Props) {
-  //   const updateField = (key: string, value: any) => {
-  //     setAccount((prev: any) => ({
-  //       ...prev,
-  //       [key]: value,
-  //     }));
-  //   };
 
   const isEditMode = !!account.id;
 

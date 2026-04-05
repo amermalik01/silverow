@@ -2,14 +2,7 @@
 
 import CRMForm from "@/app/components/sales/crm/CRMForm";
 
-// type PageProps = {
-//   params: {
-//     slug: string;
-//   };
-// };
-// { params }: PageProps
 export default function NewCRMPage() {
-//   const { slug } = params;
 
   return (
     <div className="p-6 space-y-6">
@@ -18,7 +11,6 @@ export default function NewCRMPage() {
       </div>
 
       <CRMForm />
-      {/* companySlug={slug} */}
     </div>
   );
 }

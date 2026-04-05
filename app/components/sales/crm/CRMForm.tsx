@@ -51,6 +51,52 @@ export default function CRMForm() {
       setLoading(false);
     }
   };
+  return (
+    <div className="p-6 space-y-6">
+      {/* Tabs */}
+      <div className="flex gap-4 border-b pb-2">
+        {["general", "contacts", "addresses"].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`capitalize px-3 py-1 ${
+              activeTab === tab ? "font-bold border-b-2 border-blue-600" : ""
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "general" && (
+        <GeneralTab account={account} setAccount={setAccount} />
+      )}
+
+      {activeTab === "contacts" && (
+        <ContactsTab contacts={contacts} setContacts={setContacts} />
+      )}
+
+      {activeTab === "addresses" && (
+        <AddressesTab addresses={addresses} setAddresses={setAddresses} />
+      )}
+
+      {/* ACTIONS */}
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+        >
+          {loading ? "Saving..." : "Save CRM"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+
 
   /* const handleSubmit = async () => {
     try {
@@ -137,50 +183,6 @@ export default function CRMForm() {
       setLoading(false);
     }
   }; */
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Tabs */}
-      <div className="flex gap-4 border-b pb-2">
-        {["general", "contacts", "addresses"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`capitalize px-3 py-1 ${
-              activeTab === tab ? "font-bold border-b-2 border-blue-600" : ""
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === "general" && (
-        <GeneralTab account={account} setAccount={setAccount} />
-      )}
-
-      {activeTab === "contacts" && (
-        <ContactsTab contacts={contacts} setContacts={setContacts} />
-      )}
-
-      {activeTab === "addresses" && (
-        <AddressesTab addresses={addresses} setAddresses={setAddresses} />
-      )}
-
-      {/* ACTIONS */}
-      <div className="flex justify-end gap-3 pt-4 border-t">
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-        >
-          {loading ? "Saving..." : "Save CRM"}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 /* "use client";
 

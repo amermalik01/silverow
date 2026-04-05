@@ -1,7 +1,6 @@
 // app/[slug]/sales/crm/[id]/page.tsx
-// app/[slug]/sales/crm/[id]/page.tsx
 
-import CRMForm from "@/app/components/sales/crm/CRMForm";
+import CRMRecord from "@/app/components/sales/crm/CRMRecord";
 
 type PageProps = {
   params: {
@@ -12,8 +11,6 @@ type PageProps = {
 
 export default function EditCRMPage({ params }: PageProps) {
 
-  const { slug, id } = params;
-
   return (
     <div className="p-6 space-y-6">
 
@@ -23,9 +20,7 @@ export default function EditCRMPage({ params }: PageProps) {
         </h1>
       </div>
 
-      {/* <CRMForm
-        accountId={id}
-      /> */}
+      <CRMRecord id={params.id} />
 
     </div>
   );
