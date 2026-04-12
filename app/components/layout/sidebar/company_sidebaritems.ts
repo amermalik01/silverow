@@ -488,16 +488,62 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             ],
           },
           {
-            // id: uniqueId(),
             id: "Sales",
             name: "Sales",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            children: [
+              {
+                id: "credit-ratings",
+                name: "Credit Ratings",
+                url: `/${slug}/setup/sales/credit_ratings`,
+              },
+              {
+                id: "segments",
+                name: "Segments",
+                url: `/${slug}/setup/sales/segments`,
+              },
+              {
+                id: "territories",
+                name: "Territories",
+                url: `/${slug}/setup/sales/territories`,
+              },
+              {
+                id: "buying_groups",
+                name: "Buying Groups",
+                url: `/${slug}/setup/sales/buying_groups`,
+              },
+              {
+                id: "sources_crm",
+                name: "Source Of CRM",
+                url: `/${slug}/setup/sales/sources`,
+              },
+              {
+                id: "order_sources",
+                name: "Source Of Order",
+                url: `/${slug}/setup/sales/order_sources`,
+              },
+            ],
           },
           {
             // id: uniqueId(),
             id: "Purchases",
             name: "Purchases",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            children: [
+              {
+                id: "segments",
+                name: "Segments",
+                url: `/${slug}/setup/purchases/segments`,
+              },
+              {
+                id: "territories",
+                name: "Territories",
+                url: `/${slug}/setup/purchases/territories`,
+              },
+              {
+                id: "selling_groups",
+                name: "Selling Groups",
+                url: `/${slug}/setup/purchases/selling_groups`,
+              },
+            ],
           },
           {
             // id: uniqueId(),
