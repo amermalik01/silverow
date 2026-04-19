@@ -387,10 +387,9 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
               },
               {
-                // id: uniqueId(),
                 id: "Currency Setup",
                 name: "Currency Setup",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/system/currencies`,
               },
               {
                 // id: uniqueId(),
@@ -546,10 +545,21 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             ],
           },
           {
-            // id: uniqueId(),
-            id: "Warehouse",
-            name: "Warehouse",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            id: "Warehouse Setup",
+            name: "Warehouse Setup",
+            // url: `/${slug}/setup/inventory/warehouses`,
+            children: [
+              {
+                id: "Warehouse",
+                name: "Warehouse",
+                url: `/${slug}/setup/inventory/warehouses`,
+              },
+              {
+                id: "Storage Types",
+                name: "Storage Types",
+                url: `/${slug}/setup/system/warehouse-storage-types`,
+              },
+            ],
           },
           {
             // id: uniqueId(),

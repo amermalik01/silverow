@@ -6,6 +6,7 @@ import { initializeSequences } from "./sequences";
 import { initializeChartOfAccounts } from "./chartOfAccounts";
 import { initializePostingGroups } from "./postingGroups";
 import { initializeVat } from "./vat";
+import { initializeCurrency } from "./currency";
 
 export async function initializeCompany(
   client: PoolClient,
@@ -15,4 +16,5 @@ export async function initializeCompany(
   await initializeChartOfAccounts(client, companyId);
   await initializePostingGroups(client, companyId);
   await initializeVat(client, companyId);
+  await initializeCurrency(client, companyId);
 }
