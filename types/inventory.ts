@@ -1,6 +1,47 @@
 // types/inventory.ts
 
 /* ---------------------------
+          Item
+---------------------------- */
+
+export type ItemListRow = {
+  id: string;
+  item_code: string;
+  barcode: string | null;
+  name: string;
+  category_name: string | null;
+  brand_name: string | null;
+  item_type: number;
+  item_type_label: string;
+  status: number;
+  status_label: string;
+};
+
+export type ItemLookupOption = {
+  id: string;
+  name: string;
+};
+
+export type ItemFormData = {
+  item_code: string;
+  barcode: string;
+  name: string;
+  description: string;
+  item_type: number;
+  status: number;
+  category_id: string;
+  brand_id: string;
+  base_uom_id: string;
+  purchase_uom_id: string;
+  sales_uom_id: string;
+  stock_tracking: boolean;
+  reorder_qty: string;
+  standard_sales_price: string;
+  standard_cost: string;
+  costing_method: number;
+};
+
+/* ---------------------------
    CATEGORY
 ---------------------------- */
 

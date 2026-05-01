@@ -272,10 +272,9 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
         icon: "solar:shield-keyhole-minimalistic-linear",
         children: [
           {
-            // id: uniqueId(),
             id: "Items",
             name: "Items",
-            url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+            url: `/${slug}/inventory/items`,
           },
           {
             // id: uniqueId(),
