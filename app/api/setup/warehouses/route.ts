@@ -13,10 +13,11 @@ export async function POST(req: Request) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const body = await req.json();
-    const parsed = warehouseSchema.parse(body);
 
     const companyId = session.user.company_id;
+    
+    const body = await req.json();
+    const parsed = warehouseSchema.parse(body);
 
     if (!companyId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

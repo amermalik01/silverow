@@ -1,0 +1,91 @@
+// app/api/setup/inventory/uoms/[id]/route.ts
+
+import {
+  deleteRecord,
+  getById,
+  updateRecord,
+} from "@/lib/services/master-data";
+
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+type Props = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export async function GET(req: NextRequest, { params }: Props) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const companyId = session.user.company_id;
+
+  if (!companyId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const data = await getById({
+    table: "uoms",
+    id,
+    companyId,
+  });
+
+  return NextResponse.json(data);
+}
+
+export async function PUT(req: NextRequest, { params }: Props) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const companyId = session.user.company_id;
+
+  if (!companyId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+
+  const data = await updateRecord({
+    table: "uoms",
+    id,
+    data: body,
+    companyId,
+  });
+
+  return NextResponse.json(data);
+}
+
+export async function DELETE(req: NextRequest, { params }: Props) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const companyId = session.user.company_id;
+
+  if (!companyId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  await deleteRecord({
+    table: "uoms",
+    id,
+    companyId,
+  });
+
+  return NextResponse.json({
+    success: true,
+  });
+}

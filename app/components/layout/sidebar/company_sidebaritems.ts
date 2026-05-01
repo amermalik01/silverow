@@ -1,7 +1,7 @@
 // app/components/layout/sidebar/company_sidebaritems.ts
 "use client";
 
-import { uniqueId } from "lodash";
+// import { uniqueId } from "lodash";
 
 export interface ChildItem {
   id?: number | string;
@@ -547,7 +547,6 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
           {
             id: "Warehouse Setup",
             name: "Warehouse Setup",
-            // url: `/${slug}/setup/inventory/warehouses`,
             children: [
               {
                 id: "Warehouse",
@@ -561,12 +560,29 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
               },
             ],
           },
+
           {
-            // id: uniqueId(),
-            id: "Inventory",
-            name: "Inventory",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            id: "Inventory Setup",
+            name: "Inventory Setup",
+            children: [
+              {
+                id: "Categories",
+                name: "Categories",
+                url: `/${slug}/setup/inventory/categories`,
+              },
+              {
+                id: "Brands",
+                name: "Brands",
+                url: `/${slug}/setup/inventory/brands`,
+              },
+              {
+                id: "UOM",
+                name: "Unit of measure",
+                url: `/${slug}/setup/inventory/uoms`,
+              },
+            ],
           },
+
           {
             // id: uniqueId(),
             id: "Human Resources",
