@@ -122,6 +122,94 @@ export type UOMOption = {
   name: string;
 };
 
+export type ItemUOM = {
+  id: string;
+
+  uom_id: string;
+  uom_name: string;
+
+  is_base: boolean;
+  conversion_factor: string;
+  barcode: string | null;
+  weight: string | null;
+  volume: string | null;
+};
+
+export type UOMForm = {
+  uom_id: string;
+  conversion_factor: string;
+  barcode: string;
+  weight: string;
+  volume: string;
+  is_base: boolean;
+};
+
+/* ---------------------------
+   Item Warehouse
+---------------------------- */
+
+export type WarehouseStock = {
+  id: string;
+
+  warehouse_id: string;
+  warehouse_name: string;
+
+  location_id: string | null;
+  location_name: string | null;
+
+  quantity: string;
+
+  reserved_quantity: string;
+
+  available_quantity: string;
+
+  average_cost: string | null;
+
+  batch_no: string | null;
+
+  serial_no: string | null;
+  consignment_no: string | null;
+
+  last_movement_at: string | null;
+};
+
+// export type WarehouseStock = {
+//   id: string;
+//   warehouse_id: string;
+//   warehouse_name: string;
+//   location_id: string;
+//   location_name: string;
+//   quantity: string;
+//   reserved_quantity: string;
+//   available_quantity: string;
+//   unit_cost: string | null;
+//   batch_no: string | null;
+//   serial_no: string | null;
+//   expiry_date: string | null;
+// };
+
+export type WarehouseOption = {
+  id: string;
+  name: string;
+};
+
+export type LocationOption = {
+  id: string;
+  name: string;
+  warehouse_id: string;
+};
+
+export type StockForm = {
+  warehouse_id: string;
+  location_id: string;
+  quantity: string;
+  reserved_quantity: string;
+  unit_cost: string;
+  batch_no: string;
+  serial_no: string;
+  expiry_date: string;
+};
+
 /* ---------------------------
    COMMON MASTER TYPES
 ---------------------------- */

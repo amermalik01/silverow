@@ -1,3 +1,5 @@
+// app/components/sales/crm/CRMRecord.tsx
+
 "use client";
 
 import { useState, useEffect } from "react";

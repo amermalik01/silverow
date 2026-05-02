@@ -119,7 +119,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             // id: uniqueId(),
             id: "Customers",
             name: "Customers",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            url: `/${slug}/sales/customer`,
           },
           {
             // id: uniqueId(),
@@ -203,13 +203,13 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             // id: uniqueId(),
             id: "SRM",
             name: "SRM",
-            url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+            url: `/${slug}/purchases/srm`,
           },
           {
             // id: uniqueId(),
             id: "Suppliers",
             name: "Suppliers",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            url: `/${slug}/purchases/supplier`,
           },
           {
             // id: uniqueId(),

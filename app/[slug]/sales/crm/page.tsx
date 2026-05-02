@@ -1,4 +1,20 @@
 // app/[slug]/sales/crm/page.tsx
+/* import PartyList from "@/app/components/parties/PartyList";
+
+export default function CRMPage() {
+  return (
+    <div className="p-6 space-y-6">
+
+      <PartyList
+        title="CRM Accounts"
+        module="crm"
+        basePath="./crm"
+        typeFilter={["lead", "customer"]}
+      />
+
+    </div>
+  );
+} */
 
 import CRMList from "@/app/components/sales/crm/CRMFormTabs";
 
