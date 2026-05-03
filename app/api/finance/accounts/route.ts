@@ -2,13 +2,12 @@
 
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const companyId = await getCompanyId();
 
-  if (!session) {
+  if (!companyId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -84,7 +83,14 @@ export async function GET() {
           AND j.is_posted = true
 
         WHERE a.company_id = $1
-         AND a.is_posting = true
+         AND (
+                a.is_posting = true
+                OR NOT EXISTS (
+                  SELECT 1
+                  FROM chart_of_accounts c2
+                  WHERE c2.parent_id = a.id
+                )
+              )
 
         GROUP BY a.id, t.category, t.sub_category
         ORDER BY a.code
@@ -92,7 +98,7 @@ export async function GET() {
 
 
       `,
-      [session?.user.company_id],
+      [companyId],
     );
 
     return NextResponse.json(result.rows);
@@ -105,9 +111,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const companyId = await getCompanyId();
 
-  if (!session) {
+  if (!companyId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -154,7 +160,7 @@ export async function POST(req: Request) {
     // 3. Unique code per company
     const existing = await client.query(
       `SELECT 1 FROM chart_of_accounts WHERE company_id = $1 AND code = $2`,
-      [session.user.company_id, code],
+      [companyId, code],
     );
 
     if (existing.rows.length > 0) {
@@ -179,7 +185,7 @@ export async function POST(req: Request) {
       RETURNING *
       `,
       [
-        session.user.company_id,
+        companyId,
         code,
         name,
         account_type,
@@ -195,7 +201,7 @@ export async function POST(req: Request) {
     return NextResponse.json(result.rows[0]);
   } catch (error) {
     await client.query("ROLLBACK");
-    
+
     return NextResponse.json({ error: error }, { status: 500 });
 
     // return NextResponse.json(

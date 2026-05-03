@@ -62,28 +62,45 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             url: `/${slug}/finance/chart-of-accounts`,
           },
           {
-            // id: uniqueId(),
             id: "General Journals",
             name: "General Journals",
             url: `/${slug}/finance/general-journal`,
           },
           {
-            // id: uniqueId(),
             id: "Posted General Journals",
             name: "Posted General Journals",
-            url: `/${slug}/finance/posted-journal`,
+            url: `/${slug}/finance/posted-general-journal`,
+            // url: `/${slug}/finance/posted-journal`,
           },
           {
-            // id: uniqueId(),
             id: "Customer Journals",
             name: "Customer Journals",
             url: `/${slug}/finance/customer-journal`,
           },
           {
-            // id: uniqueId(),
             id: "Posted Customer Journals",
             name: "Posted Customer Journals",
             url: `/${slug}/finance/posted-customer-journal`,
+          },
+          {
+            id: "Supplier Journals",
+            name: "Supplier Journals",
+            url: `/${slug}/finance/supplier-journal`,
+          },
+          {
+            id: "Posted Supplier Journals",
+            name: "Posted Supplier Journals",
+            url: `/${slug}/finance/posted-supplier-journal`,
+          },
+          {
+            id: "Item Journals",
+            name: "Item Journals",
+            url: `/${slug}/finance/item-journal`,
+          },
+          {
+            id: "Posted Item Journals",
+            name: "Posted Item Journals",
+            url: `/${slug}/finance/posted-item-journal`,
           },
           {
             // id: uniqueId(),
@@ -300,18 +317,18 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Posted Transfer Stock",
             url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
           },
-          {
-            // id: uniqueId(),
-            id: "Item Journal",
-            name: "Item Journal",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
-          {
-            // id: uniqueId(),
-            id: "Posted Item Journal",
-            name: "Posted Item Journal",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
+          // {
+          //   // id: uniqueId(),
+          //   id: "Item Journal",
+          //   name: "Item Journal",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
+          // {
+          //   // id: uniqueId(),
+          //   id: "Posted Item Journal",
+          //   name: "Posted Item Journal",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
           {
             // id: uniqueId(),
             id: "Inventory Matrix",
