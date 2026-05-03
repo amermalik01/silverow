@@ -29,10 +29,11 @@ type Props = {
 export default function PartyForm({ title, type, redirectPath }: Props) {
   const [activeTab, setActiveTab] = useState("general");
 
-  const [account, setAccount] = useState<Partial<Party>>({
-    name: "",
-    type,
-  });
+  // const [account, setAccount] = useState<Partial<Party>>({
+  //   name: "",
+  //   type,
+  // });
+  const [account, setAccount] = useState<Partial<Party> | null>(null);
   const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
   const [addresses, setAddresses] = useState<PartyAddressDraft[]>([]);
 

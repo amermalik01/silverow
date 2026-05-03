@@ -6,8 +6,12 @@ import type { Party } from "@/types/erp";
 import { PartySchema } from "@/lib/validations/party.schema";
 
 type Props = {
-  account: Partial<Party>;
-  setAccount: React.Dispatch<React.SetStateAction<Partial<Party>>>;
+  account: Partial<Party> | null;
+
+  setAccount: React.Dispatch<
+    React.SetStateAction<Partial<Party> | null>
+  >;
+
   isReadonly?: boolean;
 };
 
@@ -16,6 +20,10 @@ export default function GeneralTab({
   setAccount,
   isReadonly = false,
 }: Props) {
+
+  if (!account) {
+    return null;
+  }
 
   const isEditMode = !!account.id;
 
@@ -206,6 +214,26 @@ export default function GeneralTab({
         </h2>
 
         <div className="grid grid-cols-2 gap-4">
+
+          <div>
+            <label className="text-sm font-medium">
+              Type
+            </label>
+
+            <select
+              value={account.type || "lead"}
+              onChange={(e) =>
+                updateField("type", e.target.value as Party["type"])
+              }
+              disabled={isReadonly}
+              className="border p-2 rounded w-full"
+            >
+              <option value="lead">Lead</option>
+              <option value="customer">Customer</option>
+              <option value="supplier">Supplier</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
 
           <input
             type="number"
