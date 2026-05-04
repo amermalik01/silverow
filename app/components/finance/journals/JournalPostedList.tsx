@@ -45,9 +45,10 @@ export default function JournalPostedList({
 
       const res = await fetch(`${apiBase}?${params}`);
 
-      const result: Journal[] = await res.json();
+      const json: Journal[] = await res.json();
+    //   const json = await res.json();
 
-      setData(result);
+      setData(Array.isArray(json) ? json : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -78,7 +79,7 @@ export default function JournalPostedList({
           </thead>
 
           <tbody>
-            {data.map((row) => (
+            {data?.map((row) => (
               <tr key={row.id} className="border-b">
                 <td className="p-2">
                   <Link

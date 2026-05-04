@@ -179,13 +179,13 @@ const CompanySidebarLayout = () => {
   /**
    * ✅ Safe return AFTER hooks
    */
-  if (!slug) {
+  /* if (!slug) {
     return (
       <div className="w-[270px] h-screen flex items-center justify-center text-sm text-gray-500">
         Loading...
       </div>
     );
-  }
+  } */
 
   return (
     <div className="fixed left-0 top-0 h-screen w-[270px] border-r bg-white dark:bg-gray-900">

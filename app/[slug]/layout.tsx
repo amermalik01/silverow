@@ -19,6 +19,14 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
   const { slug } = await params;
   
   const session = await getServerSession(authOptions);
+
+  if (!session.user.company_slug) {
+    return (
+      <div className="w-[270px] h-screen flex items-center justify-center text-sm text-gray-500">
+        Loading...
+      </div>
+    );
+  }
   
 
   if (!session) redirect("/login");
