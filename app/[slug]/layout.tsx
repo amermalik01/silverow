@@ -20,7 +20,9 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
   
   const session = await getServerSession(authOptions);
 
-  if (!session.user.company_slug) {
+  const session_slug = session?.user?.company_slug;
+
+  if (!session_slug) {
     return (
       <div className="w-[270px] h-screen flex items-center justify-center text-sm text-gray-500">
         Loading...
