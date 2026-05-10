@@ -16,35 +16,6 @@ export type PartyType = "customer" | "supplier" | "lead" | "both";
 
 export type PartyModule = "crm" | "srm" | "hr" | "procurement";
 
-/* export interface Party {
-  id: string;
-  company_id: string;
-
-  name: string;
-
-  type: PartyType;
-
-  crm_code?: string;
-  srm_code?: string;
-  customer_code?: string;
-  supplier_code?: string;
-
-  email?: string;
-  phone?: string;
-  mobile?: string;
-
-  website?: string;
-
-  status: "active" | "inactive";
-
-  credit_limit?: number;
-  currency_id?: string;
-
-  salesperson_id?: string;
-  bucket_id?: string;
-
-  created_at: string;
-} */
 
 export interface PartyContact {
   id: string;
@@ -98,3 +69,33 @@ export type PartyAddressDraft = {
   is_billing?: boolean;
   is_shipping?: boolean;
 };
+
+/* export interface Party {
+  id: string;
+  company_id: string;
+
+  name: string;
+
+  type: PartyType;
+
+  crm_code?: string;
+  srm_code?: string;
+  customer_code?: string;
+  supplier_code?: string;
+
+  email?: string;
+  phone?: string;
+  mobile?: string;
+
+  website?: string;
+
+  status: "active" | "inactive";
+
+  credit_limit?: number;
+  currency_id?: string;
+
+  salesperson_id?: string;
+  bucket_id?: string;
+
+  created_at: string;
+} */

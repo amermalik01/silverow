@@ -56,39 +56,6 @@ export class JournalService {
 
     return result.rows;
   }
-  /* static async list(
-    companyId: string,
-    posted?: string,
-  ): Promise<JournalEntry[]> {
-    const values: (string | boolean)[] = [companyId];
-
-    let where = `
-      WHERE company_id = $1
-    `;
-
-    if (posted === "posted") {
-      where += `
-        AND is_posted = true
-      `;
-    }
-
-    if (posted === "unposted") {
-      where += `
-        AND is_posted = false
-      `;
-    }
-
-    const query = `
-      SELECT *
-      FROM journal_entries
-      ${where}
-      ORDER BY created_at DESC
-    `;
-
-    const result = await pool.query(query, values);
-
-    return result.rows;
-  } */
 
   /**
    * GET ONE
@@ -351,3 +318,37 @@ export class JournalService {
     }
   }
 }
+
+  /* static async list(
+    companyId: string,
+    posted?: string,
+  ): Promise<JournalEntry[]> {
+    const values: (string | boolean)[] = [companyId];
+
+    let where = `
+      WHERE company_id = $1
+    `;
+
+    if (posted === "posted") {
+      where += `
+        AND is_posted = true
+      `;
+    }
+
+    if (posted === "unposted") {
+      where += `
+        AND is_posted = false
+      `;
+    }
+
+    const query = `
+      SELECT *
+      FROM journal_entries
+      ${where}
+      ORDER BY created_at DESC
+    `;
+
+    const result = await pool.query(query, values);
+
+    return result.rows;
+  } */

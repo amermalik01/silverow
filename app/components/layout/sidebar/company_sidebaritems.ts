@@ -360,10 +360,29 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
         icon: "solar:shield-keyhole-minimalistic-linear",
         children: [
           {
-            // id: uniqueId(),
             id: "Employees",
             name: "Employees",
-            url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+            url: `/${slug}/hr/employees`,
+          },
+          {
+            id: "Departments",
+            name: "Departments",
+            url: `/${slug}/hr/departments`,
+          },
+          {
+            id: "Designations",
+            name: "Designations",
+            url: `/${slug}/hr/designations`,
+          },
+          {
+            id: "Leaves",
+            name: "Leaves",
+            url: `/${slug}/hr/leaves`,
+          },
+          {
+            id: "Attendance",
+            name: "Attendance",
+            url: `/${slug}/hr/attendance`,
           },
           {
             // id: uniqueId(),
@@ -603,7 +622,19 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             // id: uniqueId(),
             id: "Human Resources",
             name: "Human Resources",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+
+            children: [
+              {
+                id: "Roles",
+                name: "Roles",
+                url: `/${slug}/setup/system/roles`,
+              },
+              // {
+              //   id: "Storage Types",
+              //   name: "Storage Types",
+              //   url: `/${slug}/setup/system/roles`,
+              // },
+            ],
           },
           {
             // id: uniqueId(),

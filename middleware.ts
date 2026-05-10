@@ -43,6 +43,12 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};
+
+
+
 /* export function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const hostname = req.headers.get("host") || "";
@@ -108,12 +114,6 @@ export async function middleware(req: NextRequest) {
 
   return NextResponse.next();
 } */
-
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
-
-
 // const currentHost = process.env.NODE_ENV === "production"
 //   ? hostname.replace(`.silverow.com`, "")
 //   : hostname.replace(`.localhost:3000`, "");
