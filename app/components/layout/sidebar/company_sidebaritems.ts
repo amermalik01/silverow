@@ -236,10 +236,9 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
 
             children: [
               {
-                // id: uniqueId(),
                 id: "Purchase Orders",
                 name: "Purchase Orders",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/purchases/purchase-orders`,
               },
               {
                 // id: uniqueId(),
