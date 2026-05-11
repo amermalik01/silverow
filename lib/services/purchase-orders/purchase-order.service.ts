@@ -120,6 +120,20 @@ export class PurchaseOrderService {
 
       /**
        * -----------------------------------------------------
+       * GENERATE PURCHASE ORDER NUMBER
+       * -----------------------------------------------------
+       */
+      const seqResult = await client.query(
+        `
+      SELECT get_next_sequence($1,$2) AS code
+      `,
+        [companyId, "purchase_order"],
+      );
+
+      const orderNo = seqResult.rows[0].code;
+
+      /**
+       * -----------------------------------------------------
        * SUPPLIER
        * -----------------------------------------------------
        */
@@ -148,6 +162,7 @@ export class PurchaseOrderService {
         `
         INSERT INTO purchase_orders (
           company_id,
+          order_no,
           supplier_id,
           order_date,
           expected_date,
@@ -163,13 +178,14 @@ export class PurchaseOrderService {
         )
         VALUES (
           $1,$2,$3,$4,$5,$6,
-          $7,$8,$9,$10,$11,$12,
+          $7,$8,$9,$10,$11,$12,$13,
           now()
         )
         RETURNING *
         `,
         [
           companyId,
+          orderNo,
           supplier.id,
 
           order.order_date,
@@ -490,14 +506,11 @@ export class PurchaseOrderService {
         quantity,
         received_quantity,
         unit_cost,
-        tax_percent,
-        tax_amount,
-        line_total,
         created_at
       )
       VALUES (
         $1,$2,$3,$4,$5,$6,
-        $7,$8,$9,$10,$11,$12,
+        $7,$8,$9,
         now()
       )
       `,
@@ -520,11 +533,11 @@ export class PurchaseOrderService {
 
         line.unit_cost,
 
-        line.tax_percent || 0,
+        // line.tax_percent || 0,
 
-        line.tax_amount || 0,
+        // line.tax_amount || 0,
 
-        line.line_total || 0,
+        // line.line_total || 0,
       ],
     );
   }

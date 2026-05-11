@@ -15,6 +15,7 @@ import {
 import PurchaseOrderLines from "./PurchaseOrderLines";
 
 import PurchaseOrderTotals from "./PurchaseOrderTotals";
+import SupplierLookupModal, { SupplierLookupItem } from "../../shared/modals/SupplierLookupModal";
 
 type Props = {
   slug: string;
@@ -37,6 +38,8 @@ export default function PurchaseOrderForm({
     supplier_id: "",
     order_date: new Date().toISOString().split("T")[0],
   });
+
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
 
   const [billingAddress, setBillingAddress] = useState<PurchaseOrderAddress>({
     address_type: "billing",
@@ -74,7 +77,7 @@ export default function PurchaseOrderForm({
 
   const totals = useMemo(() => {
     const subtotal = lines.reduce(
-      (sum, line) => sum + Number(line.line_total || 0),
+      (sum, line) => sum + Number(line.net_amount || 0),
       0,
     );
 
@@ -84,6 +87,33 @@ export default function PurchaseOrderForm({
       total: subtotal,
     };
   }, [lines]);
+
+  const handleSupplierSelect = (supplier: SupplierLookupItem) => {
+    setOrder((prev) => ({
+      ...prev,
+      supplier_id: supplier.id,
+    }));
+
+    /**
+     * STAMP BILLING ADDRESS
+     */
+
+    if (supplier.billing_address) {
+      setBillingAddress({
+        ...supplier.billing_address,
+      });
+    }
+
+    /**
+     * STAMP SHIPPING ADDRESS
+     */
+
+    if (supplier.shipping_address) {
+      setShippingAddress({
+        ...supplier.shipping_address,
+      });
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -136,6 +166,56 @@ export default function PurchaseOrderForm({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 border rounded p-4">
+
+        <div className="border rounded-lg p-4 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-lg">Supplier</h3>
+
+            <button
+              type="button"
+              onClick={() => setSupplierModalOpen(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Select Supplier
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm text-gray-500">Supplier ID</label>
+
+              <input
+                value={order.supplier_id || ""}
+                readOnly
+                className="w-full border rounded px-3 py-2 bg-gray-50  mt-2"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-500">Billing City</label>
+
+              <input
+                value={billingAddress?.city || ""}
+                readOnly
+                className="w-full border rounded px-3 py-2 bg-gray-50  mt-2"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-500">Shipping City</label>
+
+              <input
+                value={shippingAddress?.city || ""}
+                readOnly
+                className="w-full border rounded px-3 py-2 bg-gray-50  mt-2"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+
+            
         <div>
           <label className="text-sm">Order Date</label>
 
@@ -168,6 +248,8 @@ export default function PurchaseOrderForm({
             className="border p-2 rounded w-full"
           />
         </div>
+        
+        </div>
       </div>
 
       <PurchaseOrderLines
@@ -194,6 +276,12 @@ export default function PurchaseOrderForm({
           </button>
         </div>
       )}
+
+      <SupplierLookupModal
+        open={supplierModalOpen}
+        onClose={() => setSupplierModalOpen(false)}
+        onSelect={handleSupplierSelect}
+      />
     </div>
   );
 }
