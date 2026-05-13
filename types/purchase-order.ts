@@ -5,8 +5,8 @@ export type PurchaseOrderStatus =
   | "open"
   | "partial_received"
   | "received"
-  | "cancelled"
-  | "posted";
+  | "closed"
+  | "cancelled";
 
 export interface PurchaseOrder {
   id?: string;

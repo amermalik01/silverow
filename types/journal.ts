@@ -33,6 +33,14 @@ export interface JournalPayload {
   lines: JournalLine[];
 }
 
+export interface JournalPayload2 {
+  entry_date: string;
+  source: JournalSource;
+  reference?: string;
+  description?: string;
+  lines: JournalLineInput[];   // ✅ FIX HERE
+}
+
 export interface Journal {
   id: string;
   company_id: string;
@@ -60,6 +68,9 @@ export interface JournalLine {
   // optional relations
   party_id?: string;
   item_id?: string;
+
+  reference_type?: string;
+  reference_id?: string;
 }
 
 export interface JournalWithLines {
@@ -76,16 +87,24 @@ export interface JournalListItem {
   is_posted: boolean;
 }
 
-// export interface JournalLine {
-//   id?: string;
-//   company_id?: string;
-//   journal_id?: string;
-//   account_id: string;
-//   debit: number;
-//   credit: number;
-//   description?: string;
+export interface JournalLineInput {
+  account_id: string;
 
-//   // optional relations
-//   party_id?: string;
-//   item_id?: string;
-// }
+  debit?: number;
+  credit?: number;
+
+  description?: string;
+
+  party_id?: string;
+  item_id?: string;
+
+  warehouse_id?: string;
+
+  quantity?: number;
+  unit_cost?: number;
+
+  reference_type?: string;
+  reference_id?: string;
+
+  currency_amount?: number;
+}

@@ -3,7 +3,12 @@ import { PoolClient } from "pg";
 
 import { pool } from "@/lib/db";
 
-import { JournalEntry, JournalLine, JournalPayload } from "@/types/journal";
+// import { JournalEntry, JournalLine, JournalLineInput, JournalPayload, JournalPayload2 } from "@/types/journal";
+import {
+  JournalEntry,
+  JournalLineInput,
+  JournalPayload2,
+} from "@/types/journal";
 
 export class JournalService {
   /**
@@ -46,11 +51,11 @@ export class JournalService {
     }
 
     const query = `
-    SELECT *
-    FROM journal_entries
-    ${where}
-    ORDER BY created_at DESC
-  `;
+      SELECT *
+      FROM journal_entries
+      ${where}
+      ORDER BY created_at DESC
+    `;
 
     const result = await pool.query(query, values);
 
@@ -60,7 +65,34 @@ export class JournalService {
   /**
    * GET ONE
    */
-  static async get(
+  static async get(companyId: string, id: string) {
+    const journalResult = await pool.query(
+      `
+      SELECT *
+      FROM journal_entries
+      WHERE id = $1 AND company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    if (!journalResult.rows.length) return null;
+
+    const linesResult = await pool.query(
+      `
+      SELECT *
+      FROM journal_entry_lines
+      WHERE journal_id = $1
+      ORDER BY created_at ASC
+      `,
+      [id],
+    );
+
+    return {
+      journal: journalResult.rows[0],
+      lines: linesResult.rows,
+    };
+  }
+  /* static async get(
     companyId: string,
     id: string,
   ): Promise<{
@@ -95,14 +127,15 @@ export class JournalService {
       journal: journalResult.rows[0],
       lines: linesResult.rows,
     };
-  }
+  } */
 
   /**
    * CREATE
    */
   static async create(
     companyId: string,
-    payload: JournalPayload,
+    // payload: JournalPayload,
+    payload: JournalPayload2,
   ): Promise<JournalEntry> {
     const client = await pool.connect();
 
@@ -118,9 +151,10 @@ export class JournalService {
           entry_date,
           source,
           reference,
-          description
+          description,
+          is_posted
         )
-        VALUES ($1,$2,$3,$4,$5)
+        VALUES ($1,$2,$3,$4,$5,false)
         RETURNING *
         `,
         [
@@ -156,7 +190,8 @@ export class JournalService {
   static async update(
     companyId: string,
     id: string,
-    payload: JournalPayload,
+    // payload: JournalPayload,
+    payload: JournalPayload2,
   ): Promise<void> {
     const client = await pool.connect();
 
@@ -190,7 +225,8 @@ export class JournalService {
           entry_date = $1,
           source = $2,
           reference = $3,
-          description = $4
+          description = $4,
+          updated_at = now()
         WHERE id = $5
         `,
         [
@@ -267,7 +303,8 @@ export class JournalService {
     client: PoolClient,
     companyId: string,
     journalId: string,
-    line: JournalLine,
+    // line: JournalLine,
+    line: JournalLineInput,
   ) {
     await client.query(
       `
@@ -277,17 +314,21 @@ export class JournalService {
         account_id,
         debit,
         credit,
-        description
+        description,
+        party_id,
+        item_id
       )
-      VALUES ($1,$2,$3,$4,$5,$6)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
       `,
       [
         companyId,
         journalId,
         line.account_id,
-        line.debit || 0,
-        line.credit || 0,
+        line.debit ?? 0,
+        line.credit ?? 0,
         line.description || null,
+        line.party_id || null,
+        line.item_id || null,
       ],
     );
   }
@@ -295,8 +336,9 @@ export class JournalService {
   /**
    * VALIDATE
    */
-  private static validateLines(lines: JournalLine[]) {
-    if (!lines.length) {
+
+  private static validateLines(lines: JournalLineInput[]) {
+    if (!lines || lines.length === 0) {
       throw new Error("Journal requires at least one line");
     }
 
@@ -304,13 +346,15 @@ export class JournalService {
     let totalCredit = 0;
 
     for (const line of lines) {
-      totalDebit += Number(line.debit || 0);
+      const debit = Number(line.debit || 0);
+      const credit = Number(line.credit || 0);
 
-      totalCredit += Number(line.credit || 0);
-
-      if (Number(line.debit || 0) > 0 && Number(line.credit || 0) > 0) {
-        throw new Error("Line cannot contain both debit and credit");
+      if (debit > 0 && credit > 0) {
+        throw new Error("Line cannot have both debit and credit");
       }
+
+      totalDebit += debit;
+      totalCredit += credit;
     }
 
     if (totalDebit !== totalCredit) {
@@ -318,37 +362,3 @@ export class JournalService {
     }
   }
 }
-
-  /* static async list(
-    companyId: string,
-    posted?: string,
-  ): Promise<JournalEntry[]> {
-    const values: (string | boolean)[] = [companyId];
-
-    let where = `
-      WHERE company_id = $1
-    `;
-
-    if (posted === "posted") {
-      where += `
-        AND is_posted = true
-      `;
-    }
-
-    if (posted === "unposted") {
-      where += `
-        AND is_posted = false
-      `;
-    }
-
-    const query = `
-      SELECT *
-      FROM journal_entries
-      ${where}
-      ORDER BY created_at DESC
-    `;
-
-    const result = await pool.query(query, values);
-
-    return result.rows;
-  } */

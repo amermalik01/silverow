@@ -16,7 +16,10 @@ export async function GET() {
 
     const data = await PurchaseOrderService.list(companyId);
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      success: true,
+      data,
+    });
   } catch (err) {
     console.error(err);
 
@@ -43,7 +46,10 @@ export async function POST(req: NextRequest) {
 
     const data = await PurchaseOrderService.create(companyId, body);
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      success: true,
+      data,
+    });
   } catch (err) {
     console.error(err);
 

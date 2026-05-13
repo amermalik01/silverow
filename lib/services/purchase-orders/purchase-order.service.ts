@@ -72,7 +72,8 @@ export class PurchaseOrderService {
       SELECT *
       FROM purchase_order_lines
       WHERE purchase_order_id = $1
-      ORDER BY created_at ASC
+      AND is_deleted = false
+      ORDER BY line_no ASC
       `,
       [id],
     );
@@ -217,8 +218,12 @@ export class PurchaseOrderService {
        * LINES
        * -----------------------------------------------------
        */
+      let lineNo = 10000;
+
       for (const line of payload.lines) {
-        await this.insertLine(client, companyId, createdOrder.id, line);
+        await this.insertLine(client, companyId, createdOrder.id, line, lineNo);
+
+        lineNo += 10000;
       }
 
       /**
@@ -352,24 +357,114 @@ export class PurchaseOrderService {
 
       /**
        * -----------------------------------------------------
-       * DELETE LINES
+       * EXISTING LINES
        * -----------------------------------------------------
        */
-      await client.query(
+      const existingLinesResult = await client.query(
         `
-        DELETE FROM purchase_order_lines
+        SELECT id
+        FROM purchase_order_lines
         WHERE purchase_order_id = $1
+        AND is_deleted = false
         `,
         [id],
       );
 
+      const existingLineIds = existingLinesResult.rows.map((x) => x.id);
+
+      const incomingLineIds = payload.lines
+        .filter((x) => x.id)
+        .map((x) => x.id);
+
       /**
        * -----------------------------------------------------
-       * INSERT LINES
+       * SOFT DELETE REMOVED LINES
        * -----------------------------------------------------
        */
+      for (const existingId of existingLineIds) {
+        if (!incomingLineIds.includes(existingId)) {
+          await client.query(
+            `
+      UPDATE purchase_order_lines
+      SET
+        is_deleted = true,
+        updated_at = now()
+      WHERE id = $1
+      `,
+            [existingId],
+          );
+        }
+      }
+
+      /**
+       * -----------------------------------------------------
+       * UPSERT LINES
+       * -----------------------------------------------------
+       */
+      let lineNo = 10000;
+
       for (const line of payload.lines) {
-        await this.insertLine(client, companyId, id, line);
+        /**
+         * EXISTING LINE
+         */
+        if (line.id) {
+          await client.query(
+            `
+              UPDATE purchase_order_lines
+              SET
+                line_type = $1,
+                item_id = $2,
+                gl_account_id = $3,
+                description = $4,
+                warehouse_id = $5,
+                warehouse_location_id = $6,
+                uom_id = $7,
+                quantity = $8,
+                unit_cost = $9,
+                discount_type = $10,
+                discount_value = $11,
+                discount_amount = $12,
+                vat_percent = $13,
+                vat_amount = $14,
+                net_amount = $15,
+                gross_amount = $16,
+                line_no = $17,
+                updated_at = now()
+              WHERE id = $18
+            `,
+            [
+              line.line_type,
+              line.item_id || null,
+              line.gl_account_id || null,
+              line.description || null,
+              line.warehouse_id || null,
+              line.warehouse_location_id || null,
+
+              line.uom_id || null,
+              line.quantity || 0,
+              line.unit_cost || 0,
+
+              line.discount_type || null,
+              line.discount_value || 0,
+              line.discount_amount || 0,
+
+              line.vat_percent || 0,
+              line.vat_amount || 0,
+              line.net_amount || 0,
+              line.gross_amount || 0,
+
+              lineNo,
+              line.id,
+            ],
+          );
+        } else {
+          /**
+           * NEW LINE
+           */
+          await this.insertLine(client, companyId, id, line, lineNo);
+        }
+
+        lineNo += 10000;
       }
 
       /**
@@ -402,6 +497,8 @@ export class PurchaseOrderService {
       if (payload.shipping_address) {
         await this.insertAddress(client, id, payload.shipping_address);
       }
+
+      await this.recalculateStatus(client, id);
 
       await client.query("COMMIT");
     } catch (err) {
@@ -458,18 +555,19 @@ export class PurchaseOrderService {
         throw new Error("Purchase order not found");
       }
 
-      if (result.rows[0].status === "posted") {
+      if (result.rows[0].is_posted) {
         throw new Error("Purchase order already posted");
       }
 
       await client.query(
         `
-        UPDATE purchase_orders
-        SET
-          status = 'posted',
-          updated_at = now()
-        WHERE id = $1
-        `,
+          UPDATE purchase_orders
+          SET
+            is_posted = true,
+            posted_at = now(),
+            updated_at = now()
+          WHERE id = $1
+          `,
         [id],
       );
 
@@ -493,51 +591,96 @@ export class PurchaseOrderService {
     companyId: string,
     purchaseOrderId: string,
     line: PurchaseOrderLine,
+    lineNo: number,
   ): Promise<void> {
     await client.query(
       `
-      INSERT INTO purchase_order_lines (
-        company_id,
-        purchase_order_id,
-        item_id,
-        description,
-        warehouse_id,
-        uom_id,
-        quantity,
-        received_quantity,
-        unit_cost,
-        created_at
-      )
-      VALUES (
-        $1,$2,$3,$4,$5,$6,
-        $7,$8,$9,
-        now()
-      )
-      `,
+    INSERT INTO purchase_order_lines (
+      company_id,
+      purchase_order_id,
+
+      line_no,
+      line_type,
+
+      item_id,
+      gl_account_id,
+
+      description,
+
+      warehouse_id,
+      warehouse_location_id,
+
+      uom_id,
+
+      quantity,
+      received_quantity,
+
+      unit_cost,
+
+      discount_type,
+      discount_value,
+      discount_amount,
+
+      vat_percent,
+      vat_amount,
+
+      net_amount,
+      gross_amount,
+
+      is_deleted,
+
+      created_at
+    )
+    VALUES (
+      $1,$2,$3,$4,
+      $5,$6,$7,$8,
+      $9,$10,$11,$12,
+      $13,$14,$15,$16,
+      $17,$18,$19,$20,
+      false,
+      now()
+    )
+    `,
       [
         companyId,
 
         purchaseOrderId,
 
-        line.item_id,
+        lineNo,
+
+        line.line_type,
+
+        line.item_id || null,
+
+        line.gl_account_id || null,
 
         line.description || null,
 
         line.warehouse_id || null,
 
+        line.warehouse_location_id || null,
+
         line.uom_id || null,
 
-        line.quantity,
+        line.quantity || 0,
 
         line.received_quantity || 0,
 
-        line.unit_cost,
+        line.unit_cost || 0,
 
-        // line.tax_percent || 0,
+        line.discount_type || null,
 
-        // line.tax_amount || 0,
+        line.discount_value || 0,
 
-        // line.line_total || 0,
+        line.discount_amount || 0,
+
+        line.vat_percent || 0,
+
+        line.vat_amount || 0,
+
+        line.net_amount || 0,
+
+        line.gross_amount || 0,
       ],
     );
   }
@@ -606,9 +749,15 @@ export class PurchaseOrderService {
    * VALIDATION
    * =========================================================
    */
+
   private static validatePayload(payload: PurchaseOrderPayload): void {
     const order = payload.order;
 
+    /**
+     * -------------------------------------------------------
+     * HEADER
+     * -------------------------------------------------------
+     */
     if (!order.supplier_id) {
       throw new Error("Supplier is required");
     }
@@ -621,16 +770,81 @@ export class PurchaseOrderService {
       throw new Error("At least one line is required");
     }
 
-    for (const line of payload.lines) {
-      if (!line.item_id) {
-        throw new Error("Item is required");
+    /**
+     * -------------------------------------------------------
+     * LINES
+     * -------------------------------------------------------
+     */
+    payload.lines.forEach((line, index) => {
+      const row = index + 1;
+
+      if (!line.line_type) {
+        throw new Error(`Line ${row}: line type is required`);
       }
 
-      if (Number(line.quantity) <= 0) {
-        throw new Error("Quantity must be greater than zero");
-      }
-    }
+      switch (line.line_type) {
+        /**
+         * ---------------------------------------------------
+         * ITEM
+         * ---------------------------------------------------
+         */
+        case "ITEM":
+          if (!line.item_id) {
+            throw new Error(`Line ${row}: item is required`);
+          }
 
+          if (!line.uom_id) {
+            throw new Error(`Line ${row}: UOM is required`);
+          }
+
+          if (Number(line.quantity) <= 0) {
+            throw new Error(`Line ${row}: quantity must be greater than zero`);
+          }
+
+          if (Number(line.unit_cost) < 0) {
+            throw new Error(`Line ${row}: invalid unit cost`);
+          }
+
+          break;
+
+        /**
+         * ---------------------------------------------------
+         * GL ACCOUNT
+         * ---------------------------------------------------
+         */
+        case "GL_ACCOUNT":
+          if (!line.gl_account_id) {
+            throw new Error(`Line ${row}: GL account is required`);
+          }
+
+          if (Number(line.quantity) <= 0) {
+            throw new Error(`Line ${row}: quantity must be greater than zero`);
+          }
+
+          if (Number(line.unit_cost) < 0) {
+            throw new Error(`Line ${row}: invalid amount`);
+          }
+
+          break;
+
+        /**
+         * ---------------------------------------------------
+         * COMMENT
+         * ---------------------------------------------------
+         */
+        case "COMMENT":
+          break;
+
+        default:
+          throw new Error(`Line ${row}: invalid line type`);
+      }
+    });
+
+    /**
+     * -------------------------------------------------------
+     * ADDRESSES
+     * -------------------------------------------------------
+     */
     if (!payload.billing_address) {
       throw new Error("Billing address is required");
     }
@@ -638,5 +852,108 @@ export class PurchaseOrderService {
     if (!payload.shipping_address) {
       throw new Error("Shipping address is required");
     }
+  }
+
+  /**
+   * =========================================================
+   * RECALCULATE STATUS
+   * =========================================================
+   */
+  static async recalculateStatus(
+    client: PoolClient,
+    purchaseOrderId: string,
+  ): Promise<void> {
+    const result = await client.query(
+      `
+    SELECT
+      quantity,
+      received_quantity,
+      cancelled_quantity
+
+    FROM purchase_order_lines
+
+    WHERE purchase_order_id = $1
+    AND is_deleted = false
+    AND line_type = 'ITEM'
+    `,
+      [purchaseOrderId],
+    );
+
+    const lines = result.rows;
+
+    if (!lines.length) {
+      return;
+    }
+
+    let fullyReceived = true;
+
+    let partiallyReceived = false;
+
+    for (const line of lines) {
+      const qty = Number(line.quantity || 0);
+
+      const received =
+        Number(line.received_quantity || 0) +
+        Number(line.cancelled_quantity || 0);
+
+      if (received > 0) {
+        partiallyReceived = true;
+      }
+
+      if (received < qty) {
+        fullyReceived = false;
+      }
+    }
+
+    let status = "open";
+
+    if (fullyReceived) {
+      status = "received";
+    } else if (partiallyReceived) {
+      status = "partial_received";
+    }
+
+    await client.query(
+      `
+    UPDATE purchase_orders
+    SET
+      status = $1,
+      updated_at = now()
+    WHERE id = $2
+    `,
+      [status, purchaseOrderId],
+    );
+  }
+
+  /**
+   * =========================================================
+   * UPDATE RECEIVED QUANTITY
+   * =========================================================
+   */
+  static async updateReceivedQuantity(
+    client: PoolClient,
+    purchaseOrderLineId: string,
+    receivedQty: number,
+  ): Promise<void> {
+    await client.query(
+      `
+    UPDATE purchase_order_lines
+    SET
+      received_quantity =
+        COALESCE(received_quantity, 0) + $1,
+
+      remaining_quantity =
+        quantity - (
+          COALESCE(received_quantity,0)
+          + $1
+          + COALESCE(cancelled_quantity,0)
+        ),
+
+      updated_at = now()
+
+    WHERE id = $2
+    `,
+      [receivedQty, purchaseOrderLineId],
+    );
   }
 }
