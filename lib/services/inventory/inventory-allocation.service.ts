@@ -19,20 +19,47 @@ export class InventoryAllocationService {
       await client.query("BEGIN");
 
       // insert reservation entry (soft allocation)
+
       await client.query(
         `
-        INSERT INTO inventory_reservations (
-          company_id,
-          item_id,
-          warehouse_id,
-          quantity,
-          reference_type,
-          reference_id
-        )
-        VALUES ($1,$2,$3,$4,'PURCHASE_ORDER',$5)
+            INSERT INTO inventory_reservations (
+            company_id,
+            item_id,
+            warehouse_id,
+            location_id,
+            reference_type,
+            reference_id,
+            line_reference_id,
+            reserved_quantity,
+            status
+            )
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'OPEN')
         `,
-        [companyId, itemId, warehouseId, quantity, poLineId],
+        [
+          companyId,
+          itemId,
+          warehouseId,
+          null,
+          "PURCHASE_ORDER",
+          poLineId,
+          poLineId,
+          quantity,
+        ],
       );
+      //   await client.query(
+      //     `
+      //     INSERT INTO inventory_reservations (
+      //       company_id,
+      //       item_id,
+      //       warehouse_id,
+      //       quantity,
+      //       reference_type,
+      //       reference_id
+      //     )
+      //     VALUES ($1,$2,$3,$4,'PURCHASE_ORDER',$5)
+      //     `,
+      //     [companyId, itemId, warehouseId, quantity, poLineId],
+      //   );
 
       await client.query("COMMIT");
     } catch (err) {

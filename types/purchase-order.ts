@@ -13,6 +13,7 @@ export interface PurchaseOrder {
   company_id?: string;
   order_no?: string;
   supplier_id: string;
+  supplier_name?: string;
   warehouse_id?: string;
   currency_id?: string;
   order_date: string;
@@ -24,6 +25,7 @@ export interface PurchaseOrder {
   total_amount?: number;
   status?: PurchaseOrderStatus;
   created_at?: string;
+  is_posted?: boolean;
 }
 
 export type PurchaseOrderAddressType = "billing" | "shipping";
@@ -133,6 +135,11 @@ export interface PurchaseOrderLine {
   purchase_gl_id?: string;
   sales_gl_id?: string;
   inventory_gl_id?: string;
+}
+
+export interface PurchaseOrderLineUI extends PurchaseOrderLine {
+  reserved_quantity?: number;
+  available_stock?: number;
 }
 // export interface PurchaseOrderLine {
 //   id?: string;

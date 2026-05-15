@@ -1,7 +1,5 @@
 // lib/services/purchase-invoices/purchase-invoice.service.ts
 
-// lib/services/purchase-invoices/purchase-invoice.service.ts
-
 import { PoolClient } from "pg";
 
 import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
@@ -12,10 +10,28 @@ import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 
 import { JournalLineInput } from "@/types/journal";
 import { PurchaseOrderStatusService } from "../purchase-orders/purchase-order-status.service";
-
-// import { PurchaseOrderStatusService } from "@/lib/services/purchase-orders/purchase-order-status.service";
-
 export class PurchaseInvoiceService {
+  private static async getPayableAccount(
+    client: PoolClient,
+    companyId: string,
+  ): Promise<string> {
+    const result = await client.query(
+      `
+    SELECT payable_account_id
+    FROM purchase_posting_groups
+    WHERE company_id = $1
+    LIMIT 1
+    `,
+      [companyId],
+    );
+
+    if (!result.rows.length) {
+      throw new Error("Purchase posting group not configured");
+    }
+
+    return result.rows[0].payable_account_id;
+  }
+
   /**
    * =========================================================
    * POST PURCHASE INVOICE
@@ -77,6 +93,8 @@ export class PurchaseInvoiceService {
      * BUILD GL LINES
      * -----------------------------------------------------
      */
+
+    const payableAccountId = await this.getPayableAccount(client, companyId);
     const glLines: JournalLineInput[] = [];
 
     for (const line of lines) {
@@ -106,12 +124,9 @@ export class PurchaseInvoiceService {
 
         const receivedQty = Number(poLine.quantity_received || 0);
 
-        const alreadyInvoiced = Number(
-          poLine.quantity_invoiced || 0,
-        );
+        const alreadyInvoiced = Number(poLine.quantity_invoiced || 0);
 
-        const remainingToInvoice =
-          receivedQty - alreadyInvoiced;
+        const remainingToInvoice = receivedQty - alreadyInvoiced;
 
         if (Number(line.quantity) > remainingToInvoice) {
           throw new Error(
@@ -125,16 +140,13 @@ export class PurchaseInvoiceService {
        * RESOLVE ACCOUNTS
        * ---------------------------------------------------
        */
-      const accounts =
-        await AccountResolutionService.resolvePurchaseAccounts(
-          client,
-          companyId,
-          line.item_id,
-        );
+      const accounts = await AccountResolutionService.resolvePurchaseAccounts(
+        client,
+        companyId,
+        line.item_id,
+      );
 
-      const amount =
-        Number(line.quantity) *
-        Number(line.unit_cost);
+      const amount = Number(line.quantity) * Number(line.unit_cost);
 
       /**
        * ---------------------------------------------------
@@ -165,7 +177,8 @@ export class PurchaseInvoiceService {
        * ---------------------------------------------------
        */
       glLines.push({
-        account_id: accounts.payable_account_id,
+        // account_id: accounts.payable_account_id,
+        account_id: payableAccountId,
 
         debit: 0,
 
@@ -195,26 +208,25 @@ export class PurchaseInvoiceService {
      * POST JOURNAL
      * -----------------------------------------------------
      */
-    const journal =
-      await GLPostingService.postJournal(client, {
-        company_id: companyId,
+    const journal = await GLPostingService.postJournal(client, {
+      company_id: companyId,
 
-        entry_date: invoice.invoice_date,
+      entry_date: invoice.invoice_date,
 
-        source: "PURCHASE",
+      source: "PURCHASE",
 
-        journal_type: "PURCHASE_INVOICE",
+      journal_type: "PURCHASE_INVOICE",
 
-        reference: invoice.invoice_no,
+      reference: invoice.invoice_no,
 
-        source_id: invoice.id,
+      source_id: invoice.id,
 
-        description: `Purchase Invoice ${invoice.invoice_no}`,
+      description: `Purchase Invoice ${invoice.invoice_no}`,
 
-        created_by: userId || null,
+      created_by: userId || null,
 
-        lines: glLines,
-      });
+      lines: glLines,
+    });
 
     /**
      * -----------------------------------------------------
@@ -237,13 +249,51 @@ export class PurchaseInvoiceService {
 
         WHERE id = $2
         `,
-        [
-          Number(line.quantity),
-
-          line.purchase_order_line_id,
-        ],
+        [Number(line.quantity), line.purchase_order_line_id],
       );
     }
+
+    /**
+     * -----------------------------------------------------
+     * CREATE AP LEDGER ENTRY
+     * -----------------------------------------------------
+     */
+    await client.query(
+      `
+  INSERT INTO vendor_ledger_entries (
+    company_id,
+    vendor_id,
+    document_type,
+    document_id,
+    document_no,
+    posting_date,
+    description,
+    original_amount,
+    remaining_amount,
+    currency_id,
+    is_open,
+    journal_entry_id
+  )
+  VALUES (
+    $1,$2,$3,$4,$5,
+    $6,$7,$8,$9,$10,
+    true,$11
+  )
+  `,
+      [
+        companyId,
+        invoice.supplier_id,
+        "PURCHASE_INVOICE",
+        invoice.id,
+        invoice.invoice_no,
+        invoice.invoice_date,
+        "Purchase invoice",
+        invoice.total_amount,
+        invoice.total_amount,
+        invoice.currency_id || null,
+        journal.id,
+      ],
+    );
 
     /**
      * -----------------------------------------------------
@@ -272,11 +322,7 @@ export class PurchaseInvoiceService {
         updated_at = now()
       WHERE id = $1
       `,
-      [
-        invoiceId,
-
-        journal.id,
-      ],
+      [invoiceId, journal.id],
     );
   }
 }

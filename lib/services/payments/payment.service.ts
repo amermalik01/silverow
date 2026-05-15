@@ -4,6 +4,7 @@ import { pool } from "@/lib/db";
 
 import { JournalService } from "@/lib/services/journal.service";
 import { JournalLineInput } from "@/types/journal";
+import { AllocationService } from "./allocation.service";
 
 export type PaymentType = "AP" | "AR";
 
@@ -12,19 +13,42 @@ export interface PaymentLine {
   amount: number;
 }
 
+export interface PaymentAllocation {
+  invoice_id: string;
+  amount: number;
+}
+
 export interface PaymentPayload {
   payment_date: string;
-  payment_type: PaymentType;
+
+  payment_type: "AP" | "AR";
 
   party_id: string;
+
   bank_account_id: string;
 
   currency_id?: string;
+
   reference?: string;
+
   description?: string;
 
-  lines: PaymentLine[];
+  allocations: PaymentAllocation[];
 }
+
+// export interface PaymentPayload {
+//   payment_date: string;
+//   payment_type: PaymentType;
+
+//   party_id: string;
+//   bank_account_id: string;
+
+//   currency_id?: string;
+//   reference?: string;
+//   description?: string;
+
+//   lines: PaymentLine[];
+// }
 
 export class PaymentService {
   /**
@@ -37,6 +61,16 @@ export class PaymentService {
 
     try {
       await client.query("BEGIN");
+
+      if (!payload.allocations.length) {
+        throw new Error("Payment requires at least one allocation");
+      }
+
+      for (const allocation of payload.allocations) {
+        if (Number(allocation.amount) <= 0) {
+          throw new Error("Allocation amount must be greater than zero");
+        }
+      }
 
       /**
        * -----------------------------------------------------
@@ -91,59 +125,115 @@ export class PaymentService {
           ? await this.getAPAccount(client, companyId)
           : await this.getARAccount(client, companyId);
 
-      for (const line of payload.lines) {
-        total += line.amount;
+      for (const allocation of payload.allocations) {
+        total += allocation.amount;
 
-        /**
-         * CORE POSTING PER INVOICE LINE
-         */
         if (payload.payment_type === "AP") {
-          // DR AP (reduce liability)
+          /**
+           * DR AP
+           */
           journalLines.push({
             account_id: controlAccount,
-            debit: line.amount,
+            debit: allocation.amount,
             credit: 0,
             reference_type: "AP_PAYMENT",
             reference_id: payment.id,
-            item_id: line.invoice_id,
-          });
-
-          // CR BANK
-          journalLines.push({
-            account_id: bankAccountId,
-            debit: 0,
-            credit: line.amount,
-            reference_type: "AP_PAYMENT",
-            reference_id: payment.id,
+            description: `Invoice Allocation ${allocation.invoice_id}`,
           });
         } else {
-          // DR BANK
-          journalLines.push({
-            account_id: bankAccountId,
-            debit: line.amount,
-            credit: 0,
-            reference_type: "AR_PAYMENT",
-            reference_id: payment.id,
-          });
-
-          // CR AR
+          /**
+           * CR AR
+           */
           journalLines.push({
             account_id: controlAccount,
             debit: 0,
-            credit: line.amount,
+            credit: allocation.amount,
             reference_type: "AR_PAYMENT",
             reference_id: payment.id,
-            item_id: line.invoice_id,
+            description: `Invoice Allocation ${allocation.invoice_id}`,
           });
         }
       }
 
       /**
        * -----------------------------------------------------
+       * BANK ENTRY
+       * -----------------------------------------------------
+       */
+      journalLines.push({
+        account_id: bankAccountId,
+
+        debit: payload.payment_type === "AR" ? total : 0,
+
+        credit: payload.payment_type === "AP" ? total : 0,
+
+        reference_type: "PAYMENT",
+
+        reference_id: payment.id,
+      });
+
+      //   for (const line of payload.lines) {
+      //   for (const allocation of payload.allocations) {
+      //     total += allocation.amount;
+
+      //     /**
+      //      * CORE POSTING PER INVOICE LINE
+      //      */
+      //     if (payload.payment_type === "AP") {
+      //       // DR AP (reduce liability)
+      //       journalLines.push({
+      //         account_id: controlAccount,
+      //         debit: allocation.amount,
+      //         credit: 0,
+      //         reference_type: "AP_PAYMENT",
+      //         reference_id: payment.id,
+      //         // item_id: allocation.invoice_id,
+      //       });
+
+      //       // CR BANK
+      //       journalLines.push({
+      //         account_id: bankAccountId,
+      //         debit: 0,
+      //         credit: allocation.amount,
+      //         reference_type: "AP_PAYMENT",
+      //         reference_id: payment.id,
+      //       });
+      //     } else {
+      //       // DR BANK
+      //       journalLines.push({
+      //         account_id: bankAccountId,
+      //         debit: allocation.amount,
+      //         credit: 0,
+      //         reference_type: "AR_PAYMENT",
+      //         reference_id: payment.id,
+      //       });
+
+      //       // CR AR
+      //       journalLines.push({
+      //         account_id: controlAccount,
+      //         debit: 0,
+      //         credit: allocation.amount,
+      //         reference_type: "AR_PAYMENT",
+      //         reference_id: payment.id,
+      //         // item_id: allocation.invoice_id,
+      //       });
+      //     }
+      //   }
+
+      /**
+       * -----------------------------------------------------
        * POST JOURNAL (FIXED)
        * -----------------------------------------------------
        */
-      const journal = await JournalService.create(companyId, {
+      /* const journal = await JournalService.create(companyId, {
+        entry_date: payload.payment_date,
+        source: payload.payment_type === "AP" ? "PAYMENT" : "RECEIPT",
+        reference: payment.id,
+        description: payload.description,
+        lines: journalLines,
+      }); */
+
+      const journal = await JournalService.createWithClient(companyId, {
         entry_date: payload.payment_date,
         source: payload.payment_type === "AP" ? "PAYMENT" : "RECEIPT",
         reference: payment.id,
@@ -166,6 +256,29 @@ export class PaymentService {
         `,
         [journal.id, payment.id],
       );
+
+      /**
+       * -----------------------------------------------------
+       * APPLY ALLOCATIONS
+       * -----------------------------------------------------
+       */
+      if (payload.payment_type === "AP") {
+        await AllocationService.applyAPPayment(
+          client,
+          companyId,
+          payment.id,
+          payload.party_id,
+          payload.allocations,
+        );
+      } else {
+        await AllocationService.applyARPayment(
+          client,
+          companyId,
+          payment.id,
+          payload.party_id,
+          payload.allocations,
+        );
+      }
 
       await client.query("COMMIT");
 

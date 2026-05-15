@@ -361,4 +361,53 @@ export class JournalService {
       throw new Error("Journal is not balanced");
     }
   }
+
+  /**
+   * =========================================================
+   * CREATE WITH EXISTING CLIENT
+   * =========================================================
+   */
+  static async createWithClient(
+    companyId: string,
+    payload: JournalPayload2,
+  ): Promise<JournalEntry> {
+
+    const client = await pool.connect();
+    this.validateLines(payload.lines);
+
+    const journalResult = await client.query(
+      `
+    INSERT INTO journal_entries (
+      company_id,
+      entry_date,
+      source,
+      reference,
+      description,
+      is_posted,
+      posted_at
+    )
+    VALUES ($1,$2,$3,$4,$5,true,now())
+    RETURNING *
+    `,
+      [
+        companyId,
+        payload.entry_date,
+        payload.source,
+        payload.reference || null,
+        payload.description || null,
+      ],
+    );
+
+    const journal = journalResult.rows[0];
+
+    // let lineNo = 10000;
+
+    for (const line of payload.lines) {
+      await this.insertLine(client, companyId, journal.id, line);// lineNo     
+
+      // lineNo += 10000;
+    }
+
+    return journal;
+  }
 }

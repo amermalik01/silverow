@@ -30,6 +30,23 @@ export class InventoryReservationService {
       notes?: string | null;
     },
   ) {
+    const stockCheck = await client.query(
+      `
+        SELECT available_qty
+        FROM inventory_stock
+        WHERE item_id = $1
+        AND warehouse_id = $2
+        `,
+      [data.item_id, data.warehouse_id],
+    );
+
+    if (
+      !stockCheck.rows.length ||
+      stockCheck.rows[0].available_qty < data.quantity
+    ) {
+      throw new Error("Insufficient stock in warehouse");
+    }
+
     await client.query(
       `
       INSERT INTO inventory_reservations (
@@ -94,9 +111,9 @@ export class InventoryReservationService {
 
     let status = "PARTIAL";
 
-    if (remaining <= 0) {
-      status = "CONSUMED";
-    }
+    if (consumed === 0) status = "OPEN";
+    else if (remaining > 0) status = "PARTIAL";
+    else status = "CONSUMED";
 
     await client.query(
       `

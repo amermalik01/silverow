@@ -4,7 +4,7 @@
 
 import { useMemo, useState } from "react";
 
-import { PurchaseOrderLine } from "@/types/purchase-order";
+import { PurchaseOrderLine, PurchaseOrderLineUI } from "@/types/purchase-order";
 
 import ItemLookupModal, {
   ItemLookupRecord,
@@ -19,9 +19,9 @@ import WarehouseLookupModal, {
 } from "@/app/components/shared/modals/WarehouseLookupModal";
 
 type Props = {
-  lines: PurchaseOrderLine[];
+  lines: PurchaseOrderLineUI[];
 
-  setLines: React.Dispatch<React.SetStateAction<PurchaseOrderLine[]>>;
+  setLines: React.Dispatch<React.SetStateAction<PurchaseOrderLineUI[]>>;
 
   isReadonly?: boolean;
 };
@@ -95,7 +95,7 @@ export default function PurchaseOrderLines({
    */
 
   const calculateLine = (
-    line: Partial<PurchaseOrderLine>,
+    line: Partial<PurchaseOrderLineUI>,
   ): PurchaseOrderLine => {
     const qty = Number(line.quantity || 0);
 
@@ -118,7 +118,7 @@ export default function PurchaseOrderLines({
     const gross = net + vat;
 
     return {
-      ...(line as PurchaseOrderLine),
+      ...(line as PurchaseOrderLineUI),
 
       original_amount: original,
 
@@ -138,10 +138,10 @@ export default function PurchaseOrderLines({
    * =====================================================
    */
 
-  const updateLine = <K extends keyof PurchaseOrderLine>(
+  const updateLine = <K extends keyof PurchaseOrderLineUI>(
     index: number,
     field: K,
-    value: PurchaseOrderLine[K],
+    value: PurchaseOrderLineUI[K],
   ) => {
     const updated = [...lines];
 
@@ -411,6 +411,26 @@ export default function PurchaseOrderLines({
                           {line.warehouse_name}
                         </div>
                       )}
+
+                      {/* ✅ RESERVED STOCK INDICATOR */}
+                      {line.reserved_quantity && (
+                        <div className="text-xs text-blue-600">
+                          Reserved: {line.reserved_quantity}
+                        </div>
+                      )}
+
+                      {/* ❗ STOCK WARNING */}
+                      {line.available_stock !== undefined &&
+                        line.quantity > line.available_stock && (
+                          <div className="text-red-600 text-xs">
+                            Insufficient stock
+                          </div>
+                        )}
+                    </div>
+                  )}
+                  {!line.warehouse_id && line.line_type === "ITEM" && (
+                    <div className="text-red-500 text-xs">
+                      Warehouse required
                     </div>
                   )}
                 </td>
