@@ -69,11 +69,16 @@ export class PurchaseOrderService {
 
     const linesResult = await pool.query(
       `
-      SELECT *
-      FROM purchase_order_lines
-      WHERE purchase_order_id = $1
-      AND is_deleted = false
-      ORDER BY line_no ASC
+      SELECT
+          pol.*,
+          (
+            pol.quantity -
+            COALESCE(pol.received_quantity,0)
+          ) AS remaining_quantity
+
+      FROM purchase_order_lines pol
+      WHERE pol.purchase_order_id = $1 AND pol.is_deleted = false
+      ORDER BY pol.line_no
       `,
       [id],
     );

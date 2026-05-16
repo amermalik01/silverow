@@ -19,9 +19,7 @@ type ApiResponse = {
   data: PurchaseOrder[];
 };
 
-export default function PurchaseOrderList({
-  slug,
-}: Props) {
+export default function PurchaseOrderList({ slug }: Props) {
   const [data, setData] = useState<PurchaseOrder[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -58,9 +56,7 @@ export default function PurchaseOrderList({
       console.error(err);
 
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load purchase orders",
+        err instanceof Error ? err.message : "Failed to load purchase orders",
       );
     } finally {
       setLoading(false);
@@ -77,11 +73,7 @@ export default function PurchaseOrderList({
    * =========================================================
    */
   if (loading) {
-    return (
-      <div className="rounded border p-6">
-        Loading purchase orders...
-      </div>
-    );
+    return <div className="rounded border p-6">Loading purchase orders...</div>;
   }
 
   /**
@@ -106,9 +98,7 @@ export default function PurchaseOrderList({
     <div className="rounded border bg-white p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">
-            Purchase Orders
-          </h2>
+          <h2 className="text-xl font-semibold">Purchase Orders</h2>
 
           <p className="text-sm text-gray-500">
             Manage supplier purchase orders
@@ -127,48 +117,30 @@ export default function PurchaseOrderList({
         <table className="w-full border text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="border-b p-2 text-left">
-                Order No
-              </th>
+              <th className="border-b p-2 text-left">Order No</th>
 
-              <th className="border-b p-2 text-left">
-                Supplier
-              </th>
+              <th className="border-b p-2 text-left">Supplier</th>
 
-              <th className="border-b p-2 text-left">
-                Date
-              </th>
+              <th className="border-b p-2 text-left">Date</th>
 
-              <th className="border-b p-2 text-left">
-                Status
-              </th>
+              <th className="border-b p-2 text-left">Status</th>
 
-              <th className="border-b p-2 text-right">
-                Total
-              </th>
+              <th className="border-b p-2 text-right">Total</th>
 
-              <th className="border-b p-2 text-center">
-                Actions
-              </th>
+              <th className="border-b p-2 text-center">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {!data.length ? (
               <tr>
-                <td
-                  colSpan={6}
-                  className="p-6 text-center text-gray-500"
-                >
+                <td colSpan={6} className="p-6 text-center text-gray-500">
                   No purchase orders found
                 </td>
               </tr>
             ) : (
               data.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b hover:bg-gray-50"
-                >
+                <tr key={row.id} className="border-b hover:bg-gray-50">
                   <td className="p-2">
                     <Link
                       href={`/${slug}/purchases/purchase-orders/${row.id}`}
@@ -178,24 +150,16 @@ export default function PurchaseOrderList({
                     </Link>
                   </td>
 
-                  <td className="p-2">
-                    {row.supplier_name || "-"}
-                  </td>
+                  <td className="p-2">{row.supplier_name || "-"}</td>
+
+                  <td className="p-2">{row.order_date}</td>
 
                   <td className="p-2">
-                    {row.order_date}
-                  </td>
-
-                  <td className="p-2">
-                    <PurchaseOrderStatusBadge
-                      status={row.status}
-                    />
+                    <PurchaseOrderStatusBadge status={row.status} />
                   </td>
 
                   <td className="p-2 text-right">
-                    {Number(
-                      row.total_amount || 0,
-                    ).toFixed(2)}
+                    {Number(row.total_amount || 0).toFixed(2)}
                   </td>
 
                   <td className="p-2">
@@ -209,7 +173,8 @@ export default function PurchaseOrderList({
 
                       {row.status === "open" && (
                         <Link
-                          href={`/${slug}/purchases/purchase-orders/${row.id}/receive`}
+                          // href={`/${slug}/purchases/purchase-orders/${row.id}/receive`}
+                          href={`/${slug}/purchases/receipts/create?po=${row.id}`}
                           className="rounded border border-green-600 px-2 py-1 text-xs text-green-600 hover:bg-green-50"
                         >
                           Receive

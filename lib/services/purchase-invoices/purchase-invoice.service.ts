@@ -108,8 +108,8 @@ export class PurchaseInvoiceService {
           `
           SELECT
             quantity,
-            quantity_received,
-            quantity_invoiced
+            received_quantity,
+            invoiced_quantity
           FROM purchase_order_lines
           WHERE id = $1
           `,
@@ -122,9 +122,9 @@ export class PurchaseInvoiceService {
 
         const poLine = poLineResult.rows[0];
 
-        const receivedQty = Number(poLine.quantity_received || 0);
+        const receivedQty = Number(poLine.received_quantity || 0);
 
-        const alreadyInvoiced = Number(poLine.quantity_invoiced || 0);
+        const alreadyInvoiced = Number(poLine.invoiced_quantity || 0);
 
         const remainingToInvoice = receivedQty - alreadyInvoiced;
 
@@ -242,8 +242,8 @@ export class PurchaseInvoiceService {
         `
         UPDATE purchase_order_lines
         SET
-          quantity_invoiced =
-            COALESCE(quantity_invoiced,0) + $1,
+          invoiced_quantity =
+            COALESCE(invoiced_quantity,0) + $1,
 
           updated_at = now()
 

@@ -294,4 +294,151 @@ export class SalesInvoiceService {
       [invoiceId, journal.id],
     );
   }
+
+  /* static async createFromShipment(
+    client: PoolClient,
+    companyId: string,
+    shipmentId: string,
+    userId?: string,
+  ) {
+    try {
+      await client.query("BEGIN");
+
+      const shipmentRes = await client.query(
+        `
+      SELECT * FROM inventory_shipments
+      WHERE id = $1
+      `,
+        [shipmentId],
+      );
+
+      const shipment = shipmentRes.rows[0];
+
+      if (!shipment) {
+        throw new Error("Shipment not found");
+      }
+
+      const lineRes = await client.query(
+        `
+      SELECT * FROM inventory_shipment_lines
+      WHERE shipment_id = $1
+      `,
+        [shipmentId],
+      );
+
+      const shipmentLines = lineRes.rows;
+
+      const invoiceRes = await client.query(
+        `
+      INSERT INTO sales_invoices (
+        company_id,
+        shipment_id,
+        invoice_date,
+        status
+      )
+      VALUES ($1,$2,now(),'DRAFT')
+      RETURNING *
+      `,
+        [companyId, shipmentId],
+      );
+
+      const invoice = invoiceRes.rows[0];
+
+      const glLines: any[] = [];
+
+      for (const line of shipmentLines) {
+        const invoiceLine = await client.query(
+          `
+        INSERT INTO sales_invoice_lines (
+          sales_invoice_id,
+          item_id,
+          quantity,
+          unit_price,
+          total_amount
+        )
+        VALUES ($1,$2,$3,$4,$5)
+        RETURNING *
+        `,
+          [
+            invoice.id,
+            line.item_id,
+            line.quantity,
+            line.unit_cost,
+            Number(line.quantity) * Number(line.unit_cost),
+          ],
+        );
+
+        const accounts = await AccountResolutionService.resolveSalesAccounts(
+          client,
+          companyId,
+          line.item_id,
+        );
+
+        const amount = Number(line.quantity) * Number(line.unit_cost);
+
+        // *
+        //  * DR: AR (Customer Receivable)
+        
+        glLines.push({
+          account_id: accounts.ar_account_id,
+          debit: amount,
+          credit: 0,
+          reference_type: "SALES_INVOICE",
+          reference_id: invoice.id,
+        });
+
+        // *
+        //  * CR: REVENUE
+        
+        glLines.push({
+          account_id: accounts.revenue_account_id,
+          debit: 0,
+          credit: amount,
+          reference_type: "SALES_INVOICE",
+          reference_id: invoice.id,
+        });
+
+        GLValidationService.validateBalanced(glLines);
+
+        await GLPostingService.postJournal(client, {
+          company_id: companyId,
+          entry_date: new Date().toISOString().split("T")[0],
+          source: "SALES",
+          journal_type: "SALES_INVOICE",
+          reference: invoice.invoice_no,
+          source_id: invoice.id,
+          description: "Sales Invoice Posting",
+          created_by: userId || null,
+          lines: glLines,
+        });
+
+        await client.query(
+          `
+      UPDATE sales_invoices
+      SET status = 'POSTED'
+      WHERE id = $1
+      `,
+          [invoice.id],
+        );
+
+        await client.query(
+          `
+      UPDATE inventory_shipments
+      SET is_invoiced = true
+      WHERE id = $1
+      `,
+          [shipmentId],
+        );
+      }
+
+      await client.query("COMMIT");
+
+      return invoice;
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  } */
 }
