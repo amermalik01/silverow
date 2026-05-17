@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
 
     const quote = await SalesQuoteService.create(
       client,
-      payload.quote.customer_id,
+      companyId,
+      // payload.quote.customer_id,
       payload,
       quoteNo,
     );

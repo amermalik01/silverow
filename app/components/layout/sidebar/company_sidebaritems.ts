@@ -151,7 +151,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
               {
                 id: "Sales Orders",
                 name: "Sales Orders",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/sales/orders`,
               },
               {
                 // id: uniqueId(),

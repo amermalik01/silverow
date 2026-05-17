@@ -1,5 +1,11 @@
 // types/sales-quote.ts
 
+// import { SalesLine } from "./sales-line";
+
+// export type SalesQuoteLine = SalesLine;
+
+// export type SalesQuoteLineUI = SalesLine;
+
 export type SalesQuoteStatus =
   | "DRAFT"
   | "SENT"
