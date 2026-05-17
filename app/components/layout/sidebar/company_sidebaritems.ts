@@ -133,26 +133,22 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             // ],
           },
           {
-            // id: uniqueId(),
             id: "Customers",
             name: "Customers",
             url: `/${slug}/sales/customer`,
           },
           {
-            // id: uniqueId(),
             id: "Orders",
             name: "Orders",
             icon: "solar:shield-keyhole-minimalistic-linear",
 
             children: [
               {
-                // id: uniqueId(),
                 id: "Sales Quotes",
                 name: "Sales Quotes",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/sales/quotes`,
               },
               {
-                // id: uniqueId(),
                 id: "Sales Orders",
                 name: "Sales Orders",
                 url: "https://react.tailwind-admin.com/auth/auth1/two-steps",

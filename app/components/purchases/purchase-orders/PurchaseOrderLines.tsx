@@ -304,7 +304,7 @@ export default function PurchaseOrderLines({
                         e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
                       )
                     }
-                    className="border rounded p-2 w-[120px] text-black bg-gray-50"
+                    className="border rounded p-2 w-[120px]  bg-gray-50"
                   >
                     <option value="ITEM">Item</option>
 
@@ -329,7 +329,7 @@ export default function PurchaseOrderLines({
                       </button>
 
                       {line.item_name && (
-                        <div className="text-xs   text-black">
+                        <div className="text-xs">
                           {line.item_name}
                         </div>
                       )}
@@ -348,7 +348,7 @@ export default function PurchaseOrderLines({
                       </button>
 
                       {line.account_name && (
-                        <div className="text-xs  text-black">
+                        <div className="text-xs ">
                           {line.account_name}
                         </div>
                       )}
@@ -401,13 +401,13 @@ export default function PurchaseOrderLines({
                         type="button"
                         disabled={isReadonly}
                         onClick={() => setWarehouseIndex(index)}
-                        className="border rounded px-3 py-2 bg-white hover:bg-gray-50 w-[160px] text-left"
+                        className="border rounded px-3 py-2 bg-white text-black hover:bg-gray-50 w-[160px] text-left"
                       >
                         {line.warehouse_code || "Select Warehouse"}
                       </button>
 
                       {line.warehouse_name && (
-                        <div className="text-xs text-gray-500 text-black">
+                        <div className="text-xs ">
                           {line.warehouse_name}
                         </div>
                       )}

@@ -23,8 +23,63 @@ export interface PurchaseReceipt {
 
   is_posted?: boolean;
 }
-
 export interface PurchaseReceiptLine {
+  id?: string;
+
+  purchase_order_line_id?: string;
+
+  line_no?: number;
+
+  item_id: string;
+
+  item_code?: string;
+
+  item_name?: string;
+
+  description?: string;
+
+  warehouse_id: string;
+
+  warehouse_name?: string;
+
+  location_id?: string;
+
+  location_code?: string;
+
+  batch_no?: string;
+
+  bin_code?: string;
+
+  serial_no?: string;
+
+  consignment_no?: string;
+
+  manufacture_date?: string;
+
+  expiry_date?: string;
+
+  quantity: number;
+
+  reserved_quantity?: number;
+
+  consumed_reservation_qty?: number;
+
+  available_reservation_qty?: number;
+
+  available_stock?: number;
+
+  unit_cost: number;
+
+  total_cost?: number;
+}
+export interface PurchaseReceiptPayload {
+  receipt: PurchaseReceipt;
+
+  lines: PurchaseReceiptLine[];
+}
+
+
+/* export interface PurchaseReceiptLine {
   id?: string;
 
   purchase_order_line_id?: string;
@@ -62,10 +117,4 @@ export interface PurchaseReceiptLine {
   unit_cost: number;
 
   total_cost?: number;
-}
-
-export interface PurchaseReceiptPayload {
-  receipt: PurchaseReceipt;
-
-  lines: PurchaseReceiptLine[];
-}
+} */

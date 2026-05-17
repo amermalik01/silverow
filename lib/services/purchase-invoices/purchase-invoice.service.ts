@@ -4,12 +4,13 @@ import { PoolClient } from "pg";
 
 import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
 
-import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
+// import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
 
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 
 import { JournalLineInput } from "@/types/journal";
 import { PurchaseOrderStatusService } from "../purchase-orders/purchase-order-status.service";
+import { GRNIClearingService } from "../grni/grni-clearing.service";
 export class PurchaseInvoiceService {
   private static async getPayableAccount(
     client: PoolClient,
@@ -140,55 +141,29 @@ export class PurchaseInvoiceService {
        * RESOLVE ACCOUNTS
        * ---------------------------------------------------
        */
-      const accounts = await AccountResolutionService.resolvePurchaseAccounts(
+
+      const grniLines = await GRNIClearingService.buildLines(
         client,
-        companyId,
-        line.item_id,
+        invoice.id,
       );
 
-      const amount = Number(line.quantity) * Number(line.unit_cost);
+      glLines.push(...grniLines);
 
-      /**
-       * ---------------------------------------------------
-       * DR GRNI
-       * ---------------------------------------------------
-       */
-      glLines.push({
-        account_id: accounts.grni_account_id,
-
-        debit: amount,
-
-        credit: 0,
-
-        item_id: line.item_id,
-
-        quantity: Number(line.quantity),
-
-        unit_cost: Number(line.unit_cost),
-
-        reference_type: "PURCHASE_INVOICE",
-
-        reference_id: invoice.id,
-      });
-
+      const totalAmount = lines.reduce(
+        (sum, line) => sum + Number(line.quantity) * Number(line.unit_cost),
+        0,
+      );
       /**
        * ---------------------------------------------------
        * CR AP LIABILITY
        * ---------------------------------------------------
        */
       glLines.push({
-        // account_id: accounts.payable_account_id,
         account_id: payableAccountId,
 
         debit: 0,
 
-        credit: amount,
-
-        item_id: line.item_id,
-
-        quantity: Number(line.quantity),
-
-        unit_cost: Number(line.unit_cost),
+        credit: totalAmount,
 
         reference_type: "PURCHASE_INVOICE",
 
@@ -260,26 +235,26 @@ export class PurchaseInvoiceService {
      */
     await client.query(
       `
-  INSERT INTO vendor_ledger_entries (
-    company_id,
-    vendor_id,
-    document_type,
-    document_id,
-    document_no,
-    posting_date,
-    description,
-    original_amount,
-    remaining_amount,
-    currency_id,
-    is_open,
-    journal_entry_id
-  )
-  VALUES (
-    $1,$2,$3,$4,$5,
-    $6,$7,$8,$9,$10,
-    true,$11
-  )
-  `,
+        INSERT INTO vendor_ledger_entries (
+          company_id,
+          vendor_id,
+          document_type,
+          document_id,
+          document_no,
+          posting_date,
+          description,
+          original_amount,
+          remaining_amount,
+          currency_id,
+          is_open,
+          journal_entry_id
+        )
+        VALUES (
+          $1,$2,$3,$4,$5,
+          $6,$7,$8,$9,$10,
+          true,$11
+        )
+        `,
       [
         companyId,
         invoice.supplier_id,
@@ -326,6 +301,57 @@ export class PurchaseInvoiceService {
     );
   }
 }
+
+// const accounts = await AccountResolutionService.resolvePurchaseAccounts(
+//   client,
+//   companyId,
+//   line.item_id,
+// );
+
+// const amount = Number(line.quantity) * Number(line.unit_cost);
+
+/**
+ * ---------------------------------------------------
+ * DR GRNI
+ * ---------------------------------------------------
+ */
+
+// glLines.push({
+//   account_id: accounts.grni_account_id,
+
+//   debit: amount,
+
+//   credit: 0,
+
+//   item_id: line.item_id,
+
+//   quantity: Number(line.quantity),
+
+//   unit_cost: Number(line.unit_cost),
+
+//   reference_type: "PURCHASE_INVOICE",
+
+//   reference_id: invoice.id,
+// });
+// glLines.push({
+//   // account_id: accounts.payable_account_id,
+//   account_id: payableAccountId,
+
+//   debit: 0,
+
+//   credit: amount,
+
+//   item_id: line.item_id,
+
+//   quantity: Number(line.quantity),
+
+//   unit_cost: Number(line.unit_cost),
+
+//   reference_type: "PURCHASE_INVOICE",
+
+//   reference_id: invoice.id,
+// });
+
 /* import { PoolClient } from "pg";
 
 import { GLPostingService } from "@/lib/services/gl/gl-posting.service";

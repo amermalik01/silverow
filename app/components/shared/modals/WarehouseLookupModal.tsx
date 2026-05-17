@@ -1,5 +1,4 @@
 // app/components/shared/modals/WarehouseLookupModal.tsx
-// app/components/shared/modals/WarehouseLookupModal.tsx
 
 "use client";
 

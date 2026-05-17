@@ -100,7 +100,7 @@ export class SalesInvoiceService {
      * GET AR ACCOUNT
      * -----------------------------------------------------
      */
-    const receivableAccountId = await this.getReceivableAccount(
+    await this.getReceivableAccount(
       client,
       companyId,
     );

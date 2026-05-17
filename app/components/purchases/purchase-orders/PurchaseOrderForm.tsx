@@ -297,54 +297,6 @@ export default function PurchaseOrderForm({
     }
   };
 
-  /* const handleSave = async () => {
-    try {
-      setSaving(true);
-
-      const payload = {
-        order: {
-          ...order,
-          subtotal: totals.subtotal,
-          tax_amount: totals.tax,
-          total_amount: totals.total,
-        },
-
-        billing_address: billingAddress,
-
-        shipping_address: shippingAddress,
-
-        lines,
-      };
-
-      const res = await fetch(
-        id ? `/api/purchase-orders/${id}` : "/api/purchase-orders",
-        {
-          method: id ? "PUT" : "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify(payload),
-        },
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-
-        throw new Error(err.error);
-      }
-
-      router.push(`/${slug}/purchases/purchase-orders`);
-    } catch (err) {
-      console.error(err);
-
-      alert(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  }; */
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 border rounded p-4">
@@ -474,3 +426,54 @@ export default function PurchaseOrderForm({
     </div>
   );
 }
+
+
+
+
+  /* const handleSave = async () => {
+    try {
+      setSaving(true);
+
+      const payload = {
+        order: {
+          ...order,
+          subtotal: totals.subtotal,
+          tax_amount: totals.tax,
+          total_amount: totals.total,
+        },
+
+        billing_address: billingAddress,
+
+        shipping_address: shippingAddress,
+
+        lines,
+      };
+
+      const res = await fetch(
+        id ? `/api/purchase-orders/${id}` : "/api/purchase-orders",
+        {
+          method: id ? "PUT" : "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+
+        throw new Error(err.error);
+      }
+
+      router.push(`/${slug}/purchases/purchase-orders`);
+    } catch (err) {
+      console.error(err);
+
+      alert(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }; */

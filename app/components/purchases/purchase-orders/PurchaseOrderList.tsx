@@ -95,10 +95,10 @@ export default function PurchaseOrderList({ slug }: Props) {
    * =========================================================
    */
   return (
-    <div className="rounded border bg-white p-6 space-y-6">
+    <div className="rounded border bg-white text-black p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Purchase Orders</h2>
+          <h2 className="text-xl font-semibold text-black">Purchase Orders</h2>
 
           <p className="text-sm text-gray-500">
             Manage supplier purchase orders

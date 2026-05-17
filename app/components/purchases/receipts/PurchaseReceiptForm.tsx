@@ -28,6 +28,10 @@ type POLoadLine = {
 
   remaining_quantity: number;
 
+  reserved_quantity?: number;
+
+  available_stock?: number;
+
   unit_cost: number;
 };
 
@@ -129,6 +133,24 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
 
   const save = async () => {
     try {
+      for (const line of lines) {
+        if (!line.item_id) {
+          throw new Error("Item missing");
+        }
+
+        if (!line.warehouse_id) {
+          throw new Error(`Warehouse missing for ${line.item_name}`);
+        }
+
+        if (!line.location_id) {
+          throw new Error(`Location missing for ${line.item_name}`);
+        }
+
+        if (Number(line.quantity) <= 0) {
+          throw new Error(`Invalid quantity for ${line.item_name}`);
+        }
+      }
+
       setSaving(true);
 
       const res = await fetch("/api/purchase-receipts", {
@@ -199,18 +221,15 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
           <thead className="bg-gray-100">
             <tr>
               <th className="p-2">Item</th>
-
+              <th className="p-2">Location</th>
               <th className="p-2">Batch</th>
-
               <th className="p-2">Bin</th>
-
               <th className="p-2">Expiry</th>
-
               <th className="p-2">Qty</th>
-
               <th className="p-2">Cost</th>
-
               <th className="p-2">Reserved</th>
+              <th className="p-2">Serial</th>
+              <th className="p-2">Consignment</th>
             </tr>
           </thead>
 
@@ -221,6 +240,16 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
                   <input
                     value={line.item_name || ""}
                     className="border rounded p-2 w-full"
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    value={line.location_code || ""}
+                    onChange={(e) =>
+                      updateLine(index, "location_code", e.target.value)
+                    }
+                    className="border rounded p-2"
                   />
                 </td>
 
@@ -264,6 +293,12 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
                     }
                     className="border rounded p-2"
                   />
+                  {line.available_stock !== undefined &&
+                    line.quantity > line.available_stock && (
+                      <div className="text-red-500 text-xs mt-1">
+                        Exceeds available stock
+                      </div>
+                    )}
                 </td>
 
                 <td className="p-2">
@@ -278,6 +313,26 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
                 </td>
 
                 <td className="p-2">{line.reserved_quantity || 0}</td>
+
+                <td className="p-2">
+                  <input
+                    value={line.serial_no || ""}
+                    onChange={(e) =>
+                      updateLine(index, "serial_no", e.target.value)
+                    }
+                    className="border rounded p-2"
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    value={line.consignment_no || ""}
+                    onChange={(e) =>
+                      updateLine(index, "consignment_no", e.target.value)
+                    }
+                    className="border rounded p-2"
+                  />
+                </td>
               </tr>
             ))}
           </tbody>

@@ -2,9 +2,9 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { ShipmentLine, PickingAllocationLine } from "@/types/shipment";
+import { ShipmentLine } from "@/types/shipment";
 
 type AllocationLine = {
   inbound_entry_id: string;
