@@ -15,6 +15,7 @@ import AttachmentsTab from "../shared/AttachmentsTab";
 import {
   Party,
   PartyModule,
+  PartyDraft,
   PartyContactDraft,
   PartyAddressDraft,
 } from "@/types/erp";
@@ -28,7 +29,19 @@ type Props = {
 export default function PartyRecord({ id, module, isReadonly = false }: Props) {
   const [activeTab, setActiveTab] = useState("general");
 
-  const [account, setAccount] = useState<Partial<Party> | null>(null);
+  // const [account, setAccount] = useState<Partial<Party> | null>(null);
+  const [account, setAccount] = useState<Partial<Party>>({
+    id: "",
+    type:
+      module === "crm"
+        ? "lead"
+        : module === "srm"
+          ? "vendor"
+          : module === "supplier"
+            ? "vendor"
+            : "customer",
+    status: "active",
+  });
 
   const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
 
@@ -45,7 +58,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
 
         const data = await res.json();
 
-        setAccount(data.account);
+        setAccount(data.account ?? {});
         setContacts(data.contacts || []);
         setAddresses(data.addresses || []);
       } catch (err) {
@@ -96,9 +109,9 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
     return <p>Loading record...</p>;
   }
 
-  if (!account) {
-    return <p>Record not found</p>;
-  }
+  // if (!account) {
+  //   return <p>Record not found</p>;
+  // }
 
   const tabs = [
     "general",

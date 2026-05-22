@@ -12,7 +12,7 @@ export type Party = z.infer<typeof PartySchema>;
    ENUM TYPES
 ========================= */
 
-export type PartyType = "customer" | "supplier" | "lead" | "both";
+export type PartyType = "customer" | "supplier" | "lead" | "vendor" | "both";
 
 export type PartyModule = "crm" | "srm" | "hr" | "procurement";
 
@@ -68,6 +68,19 @@ export type PartyAddressDraft = {
   is_primary: boolean;
   is_billing?: boolean;
   is_shipping?: boolean;
+};
+
+export type PartyDraft = {
+  id?: string;
+  name: string;
+  type: PartyType;
+  status: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  credit_limit?: number;
+  currency_id?: string;
+  salesperson_id?: string;
 };
 
 /* export interface Party {

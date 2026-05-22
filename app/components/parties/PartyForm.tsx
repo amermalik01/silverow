@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import type {
   Party,
@@ -14,6 +15,7 @@ import type {
 import GeneralTab from "./tabs/GeneralTab";
 import ContactsTab from "./tabs/ContactsTab";
 import AddressesTab from "./tabs/AddressesTab";
+import { PartySchema } from "@/lib/validations/party.schema";
 
 type Props = {
   title: string;
@@ -22,8 +24,17 @@ type Props = {
 };
 
 export default function PartyForm({ title, type, redirectPath }: Props) {
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState("general");
-  const [account, setAccount] = useState<Partial<Party> | null>(null);
+  // const [account, setAccount] = useState<Partial<Party> | null>(null);
+  const [account, setAccount] = useState<Partial<Party>>({
+    type,
+    status: "active",
+    is_billing: true,
+    is_shipping: true,
+  });
+
   const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
   const [addresses, setAddresses] = useState<PartyAddressDraft[]>([]);
 
@@ -33,13 +44,24 @@ export default function PartyForm({ title, type, redirectPath }: Props) {
     try {
       setLoading(true);
 
+      const validation = PartySchema.safeParse(account);
+
+      if (!validation.success) {
+        alert("Please fill required fields");
+        return;
+      }
+
       const res = await fetch("/api/parties", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          account: account as Partial<Party>,
+          // account: account as Partial<Party>,
+          account: {
+            ...account,
+            type,
+          },
           contacts,
           addresses,
         }),
@@ -51,7 +73,8 @@ export default function PartyForm({ title, type, redirectPath }: Props) {
 
       alert(`${title} Created Successfully ✅`);
 
-      window.location.href = redirectPath;
+      // window.location.href = redirectPath;
+      router.push(redirectPath);
     } catch (err) {
       console.error(err);
     } finally {

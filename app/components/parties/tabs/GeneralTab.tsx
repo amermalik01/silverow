@@ -6,11 +6,9 @@ import type { Party } from "@/types/erp";
 import { PartySchema } from "@/lib/validations/party.schema";
 
 type Props = {
-  account: Partial<Party> | null;
+  account: Partial<Party>;
 
-  setAccount: React.Dispatch<
-    React.SetStateAction<Partial<Party> | null>
-  >;
+  setAccount: React.Dispatch<React.SetStateAction<Partial<Party>>>;
 
   isReadonly?: boolean;
 };
@@ -21,21 +19,14 @@ export default function GeneralTab({
   isReadonly = false,
 }: Props) {
 
-  if (!account) {
-    return null;
-  }
-
   const isEditMode = !!account.id;
 
   /* =========================
      SAFE FIELD UPDATE
   ========================= */
-  const updateField = <K extends keyof Party>(
-    key: K,
-    value: Party[K],
-  ) => {
+  const updateField = <K extends keyof Party>(key: K, value: Party[K]) => {
     setAccount((prev) => ({
-      ...prev,
+      ...(prev || {}),
       [key]: value,
     }));
   };
@@ -55,7 +46,6 @@ export default function GeneralTab({
 
   return (
     <div className="space-y-6">
-
       {/* =========================
           GENERAL
       ========================= */}
@@ -65,7 +55,6 @@ export default function GeneralTab({
         </h2>
 
         <div className="grid grid-cols-2 gap-4">
-
           {/* CODE (CRM/SRM AUTO) */}
           <div>
             <label className="text-sm font-medium">Code</label>
@@ -74,6 +63,7 @@ export default function GeneralTab({
                 account.crm_code ||
                 account.srm_code ||
                 account.customer_code ||
+                account.supplier_code ||
                 ""
               }
               disabled
@@ -133,12 +123,9 @@ export default function GeneralTab({
           ADDRESS
       ========================= */}
       <div className="p-6 rounded shadow space-y-4">
-        <h2 className="text-lg font-semibold border-b pb-2">
-          Primary Address
-        </h2>
+        <h2 className="text-lg font-semibold border-b pb-2">Primary Address</h2>
 
         <div className="grid grid-cols-2 gap-4">
-
           <input
             placeholder="Address Line 1"
             value={account.address_1 || ""}
@@ -185,9 +172,7 @@ export default function GeneralTab({
             <input
               type="checkbox"
               checked={account.is_billing || false}
-              onChange={(e) =>
-                updateField("is_billing", e.target.checked)
-              }
+              onChange={(e) => updateField("is_billing", e.target.checked)}
             />
             Billing
           </label>
@@ -196,9 +181,7 @@ export default function GeneralTab({
             <input
               type="checkbox"
               checked={account.is_shipping || false}
-              onChange={(e) =>
-                updateField("is_shipping", e.target.checked)
-              }
+              onChange={(e) => updateField("is_shipping", e.target.checked)}
             />
             Shipping
           </label>
@@ -209,18 +192,13 @@ export default function GeneralTab({
           BUSINESS
       ========================= */}
       <div className="p-6 rounded shadow space-y-4">
-        <h2 className="text-lg font-semibold border-b pb-2">
-          Business Info
-        </h2>
+        <h2 className="text-lg font-semibold border-b pb-2">Business Info</h2>
 
         <div className="grid grid-cols-2 gap-4">
-
           <div>
-            <label className="text-sm font-medium">
-              Type
-            </label>
+            <label className="text-sm font-medium">Type: {account.type}</label>
 
-            <select
+            {/* <select
               value={account.type || "lead"}
               onChange={(e) =>
                 updateField("type", e.target.value as Party["type"])
@@ -230,9 +208,10 @@ export default function GeneralTab({
             >
               <option value="lead">Lead</option>
               <option value="customer">Customer</option>
+              <option value="vendor">Vendor</option>
               <option value="supplier">Supplier</option>
               <option value="both">Both</option>
-            </select>
+            </select> */}
           </div>
 
           <input
@@ -240,7 +219,10 @@ export default function GeneralTab({
             placeholder="Credit Limit"
             value={account.credit_limit || ""}
             onChange={(e) =>
-              updateField("credit_limit", Number(e.target.value))
+              updateField(
+                "credit_limit",
+                e.target.value === "" ? undefined : Number(e.target.value),
+              )
             }
             className="border p-2 rounded w-full"
           />
@@ -255,9 +237,7 @@ export default function GeneralTab({
           <input
             placeholder="Salesperson"
             value={account.salesperson_id || ""}
-            onChange={(e) =>
-              updateField("salesperson_id", e.target.value)
-            }
+            onChange={(e) => updateField("salesperson_id", e.target.value)}
             className="border p-2 rounded w-full"
           />
 
@@ -274,7 +254,6 @@ export default function GeneralTab({
           </select>
         </div>
       </div>
-
     </div>
   );
 }

@@ -7,7 +7,7 @@ export const PartySchema = z.object({
 
   name: z.string().min(1),
 
-  type: z.enum(["customer", "supplier", "lead", "both"]),
+  type: z.enum(["customer", "supplier", "lead", "vendor", "both"]),
 
   status: z.enum(["active", "inactive", "blocked"]).default("active"),
 
