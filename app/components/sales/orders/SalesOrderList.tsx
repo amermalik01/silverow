@@ -62,7 +62,7 @@ export default function SalesOrderList({ slug }: Props) {
 
       <div className="border rounded overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">Order No</th>
 

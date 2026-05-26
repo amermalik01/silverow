@@ -288,7 +288,7 @@ export default function SalesQuoteForm({
           <button
             type="button"
             onClick={() => setCustomerModalOpen(true)}
-            className="border rounded p-2 w-full text-left bg-white"
+            className="border rounded p-2 w-full text-left bg-white text-black"
           >
             {quote.customer_name || "Select Customer"}
           </button>

@@ -3,6 +3,26 @@
 
 import { useMemo, useState } from "react";
 
+// import { TbDotsVertical } from 'react-icons/tb'
+// import CardBox from '@/app/components/shared/CardBox'
+
+// import {
+//   Table,
+//   TableBody,
+//   TableCell,
+//   TableHead,
+//   TableHeader,
+//   TableRow,
+// } from '@/components/ui/table';
+
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuTrigger,
+// } from '@/components/ui/dropdown-menu'
+// import { Badge } from '@/components/ui/badge';
+
 import { SalesQuoteLineUI, SalesQuoteLine2 } from "@/types/sales-quote";
 
 import ItemLookupModal, {
@@ -178,17 +198,17 @@ export default function SalesQuoteLines({
       {/* TABLE */}
       <div className="border rounded overflow-auto">
         <table className="w-full text-sm min-w-[1200px]">
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-100 text-black text-left">
             <tr>
-              <th>Type</th>
-              <th>Item/GL/Service</th>
-              <th>Description</th>
-              <th>Qty</th>
-              <th>Unit Price</th>
-              <th>Discount</th>
-              <th>Tax %</th>
-              <th>Total</th>
-              {!isReadonly && <th>Action</th>}
+              <th className="px-1 py-2">Type</th>
+              <th className="px-1 py-2">Item/GL/Service</th>
+              <th className="px-1 py-2">Description</th>
+              <th className="px-1 py-2">Qty</th>
+              <th className="px-1 py-2">Unit Price</th>
+              <th className="px-1 py-2">Discount</th>
+              <th className="px-1 py-2">Tax %</th>
+              <th className="px-1 py-2">Total</th>
+              {!isReadonly && <th className="px-1 py-2">Action</th>}
             </tr>
           </thead>
 
@@ -196,7 +216,7 @@ export default function SalesQuoteLines({
             {lines.map((line, index) => (
               <tr key={index} className="border-t">
                 {/* TYPE */}
-                <td>
+                <td className="px-1 py-2">
                   <select
                     value={line.line_type || "ITEM"}
                     disabled={isReadonly}
@@ -216,7 +236,7 @@ export default function SalesQuoteLines({
                 </td>
 
                 {/* ITEM / GL / SERVICE */}
-                <td>
+                <td className="px-1 py-2">
                   {line.line_type === "ITEM" && (
                     <button
                       onClick={() => setItemIndex(index)}
@@ -248,7 +268,7 @@ export default function SalesQuoteLines({
                 </td>
 
                 {/* DESCRIPTION */}
-                <td>
+                <td className="px-1 py-2">
                   <input
                     value={line.description || ""}
                     onChange={(e) =>
@@ -259,7 +279,7 @@ export default function SalesQuoteLines({
                 </td>
 
                 {/* QTY */}
-                <td>
+                <td className="px-1 py-2">
                   <input
                     type="number"
                     value={line.quantity}
@@ -271,7 +291,7 @@ export default function SalesQuoteLines({
                 </td>
 
                 {/* PRICE */}
-                <td>
+                <td className="px-1 py-2">
                   <input
                     type="number"
                     value={line.unit_price}
@@ -283,7 +303,7 @@ export default function SalesQuoteLines({
                 </td>
 
                 {/* DISCOUNT */}
-                <td>
+                <td className="px-1 py-2">
                   <input
                     type="number"
                     value={line.discount_value}
@@ -299,7 +319,7 @@ export default function SalesQuoteLines({
                 </td>
 
                 {/* TAX */}
-                <td>
+                <td className="px-1 py-2">
                   <input
                     type="number"
                     value={line.tax_percent}
@@ -311,11 +331,11 @@ export default function SalesQuoteLines({
                 </td>
 
                 {/* TOTAL */}
-                <td>{Number(line.total_amount || 0).toFixed(2)}</td>
+                <td className="px-1 py-2">{Number(line.total_amount || 0).toFixed(2)}</td>
 
                 {/* ACTION */}
                 {!isReadonly && (
-                  <td>
+                  <td className="px-1 py-2">
                     <button
                       onClick={() => removeLine(index)}
                       className="text-red-600"
@@ -329,12 +349,12 @@ export default function SalesQuoteLines({
           </tbody>
 
           {/* TOTALS */}
-          <tfoot className="bg-gray-50 font-semibold">
+          <tfoot className="bg-gray-50 font-semibold text-black">
             <tr>
-              <td colSpan={6} className="text-right p-2">
+              <td colSpan={7} className="text-right p-2">
                 Totals
               </td>
-              <td>{totals.total.toFixed(2)}</td>
+              <td className="px-1 py-2">{totals.total.toFixed(2)}</td>
               <td />
             </tr>
           </tfoot>
@@ -387,4 +407,56 @@ export default function SalesQuoteLines({
       />
     </div>
   );
+}
+
+{
+  /* <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-sm font-semibold ">
+                    Assigned
+                  </TableHead>
+                  <TableHead className="text-sm font-semibold">
+                    Project
+                  </TableHead>
+                  <TableHead className="text-sm font-semibold">
+                    Priority
+                  </TableHead>
+                  <TableHead className="text-sm font-semibold"></TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {lines.map((line, index) => (
+                  <TableRow key={index} className="border-b border-border">
+      
+                    <TableCell className="min-w-[200px]">
+                      <div className="flex gap-3 items-center">
+                        <div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`text-sm rounded-full py-1 px-3 justify-center`}
+                      >
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <span className="h-9 w-9 flex justify-center items-center rounded-full hover:bg-lightprimary hover:text-primary cursor-pointer">
+                            <TbDotsVertical size={22} />
+                          </span>
+                        </DropdownMenuTrigger>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div> */
 }

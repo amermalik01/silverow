@@ -96,7 +96,7 @@ export async function GET(req: NextRequest, context: Context) {
       LEFT JOIN warehouses w
         ON w.id = sol.warehouse_id
 
-      LEFT JOIN gl_accounts ga
+      LEFT JOIN chart_of_accounts ga
         ON ga.id = sol.gl_account_id
 
       WHERE sol.sales_order_id = $1

@@ -104,8 +104,7 @@ export async function GET(req: NextRequest) {
           SELECT
             'billing' AS address_type,
 
-            name,
-            attention,
+            label AS name,
 
             address_1,
             address_2,
@@ -121,8 +120,8 @@ export async function GET(req: NextRequest) {
           FROM party_addresses
 
           WHERE party_id = $1
-          AND (
-            address_type = 'billing'
+          AND (            
+            is_billing = true
             OR is_primary = true
           )
 
@@ -130,7 +129,7 @@ export async function GET(req: NextRequest) {
           LIMIT 1
           `,
         [row.id],
-      );
+      ); // // address_type = 'billing'
 
       /**
        * SHIPPING ADDRESS
@@ -140,8 +139,7 @@ export async function GET(req: NextRequest) {
           SELECT
             'shipping' AS address_type,
 
-            name,
-            attention,
+            label AS name,
 
             address_1,
             address_2,
@@ -157,8 +155,8 @@ export async function GET(req: NextRequest) {
           FROM party_addresses
 
           WHERE party_id = $1
-          AND (
-            address_type = 'shipping'
+          AND (            
+            is_shipping = true
             OR is_primary = true
           )
 
@@ -167,6 +165,7 @@ export async function GET(req: NextRequest) {
           `,
         [row.id],
       );
+      // address_type = 'shipping'
 
       customers.push({
         ...row,

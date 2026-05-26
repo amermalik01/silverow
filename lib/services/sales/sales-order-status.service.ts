@@ -63,20 +63,20 @@ export class SalesOrderStatusService {
     const linesResult = await client.query<{
       quantity: string | number | null;
 
-      reserved_quantity: string | number | null;
+      quantity_reserved: string | number | null;
 
-      dispatched_quantity: string | number | null;
+      quantity_shipped: string | number | null;
 
-      invoiced_quantity: string | number | null;
+      quantity_invoiced: string | number | null;
 
       line_type: "ITEM" | "GL_ACCOUNT" | "COMMENT";
     }>(
       `
       SELECT
         quantity,
-        reserved_quantity,
-        dispatched_quantity,
-        invoiced_quantity,
+        quantity_reserved,
+        quantity_shipped,
+        quantity_invoiced,
         line_type
       FROM sales_order_lines
       WHERE sales_order_id = $1
@@ -124,17 +124,17 @@ export class SalesOrderStatusService {
     );
 
     const totalReserved = itemLines.reduce(
-      (sum, line) => sum + Number(line.reserved_quantity || 0),
+      (sum, line) => sum + Number(line.quantity_reserved || 0),
       0,
     );
 
     const totalDispatched = itemLines.reduce(
-      (sum, line) => sum + Number(line.dispatched_quantity || 0),
+      (sum, line) => sum + Number(line.quantity_shipped || 0),
       0,
     );
 
     const totalInvoiced = itemLines.reduce(
-      (sum, line) => sum + Number(line.invoiced_quantity || 0),
+      (sum, line) => sum + Number(line.quantity_invoiced || 0),
       0,
     );
 
@@ -190,7 +190,7 @@ export class SalesOrderStatusService {
       FROM sales_order_lines
       WHERE sales_order_id = $1
       AND line_type = 'ITEM'
-      AND COALESCE(invoiced_quantity,0) < COALESCE(quantity,0)
+      AND COALESCE(quantity_invoiced,0) < COALESCE(quantity,0)
       `,
       [salesOrderId],
     );
@@ -290,7 +290,7 @@ export class SalesOrderStatusService {
     }>(
       `
       SELECT
-        COALESCE(SUM(dispatched_quantity),0)::text AS dispatched_qty
+        COALESCE(SUM(quantity_shipped),0)::text AS dispatched_qty
       FROM sales_order_lines
       WHERE sales_order_id = $1
       `,
@@ -316,11 +316,11 @@ export class SalesOrderStatusService {
       `
       UPDATE inventory_stock
       SET
-        reserved_quantity =
+        quantity_reserved =
           GREATEST(
             0,
-            COALESCE(reserved_quantity,0)
-            - COALESCE(sol.reserved_quantity,0)
+            COALESCE(quantity_reserved,0)
+            - COALESCE(sol.quantity_reserved,0)
           )
       FROM sales_order_lines sol
       WHERE sol.sales_order_id = $1
@@ -339,7 +339,7 @@ export class SalesOrderStatusService {
       `
       UPDATE sales_order_lines
       SET
-        reserved_quantity = 0
+        quantity_reserved = 0
       WHERE sales_order_id = $1
       `,
       [salesOrderId],

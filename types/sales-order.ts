@@ -126,6 +126,10 @@ export interface SalesOrderAddress {
 
 export type SalesOrderPayload = {
   order: SalesOrder;
+  
+    billing_address?: SalesOrderAddress;
+  
+    shipping_address?: SalesOrderAddress;
 
   lines: SalesOrderLine[];
 };

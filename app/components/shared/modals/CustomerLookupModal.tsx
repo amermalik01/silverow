@@ -25,7 +25,7 @@ export type CustomerAddress = {
   address_type: "billing" | "shipping";
 
   name?: string;
-  attention?: string;
+  // attention?: string;
 
   address_1?: string;
   address_2?: string;
@@ -96,7 +96,7 @@ export default function CustomerLookupModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center overflow-auto p-6">
-      <div className="bg-white text-black rounded-xl shadow-xl w-full max-w-7xl px-4">
+      <div className="bg-white text-black rounded-xl shadow-xl w-full max-w-7xl p-4">
         {/* HEADER */}
         <div className="flex justify-between items-center border-b p-4">
           <h2 className="text-xl font-semibold text-black">Select Customer</h2>

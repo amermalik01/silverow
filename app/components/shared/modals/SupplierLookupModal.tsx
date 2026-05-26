@@ -25,7 +25,7 @@ export type SupplierAddress = {
   address_type: "billing" | "shipping";
 
   name?: string;
-  attention?: string;
+  // attention?: string;
 
   address_1?: string;
   address_2?: string;

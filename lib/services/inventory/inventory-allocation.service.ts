@@ -112,6 +112,7 @@ export class InventoryAllocationService {
         reference_id,
         line_reference_id,
 
+        quantity,
         reserved_quantity,
         allocated_quantity,
 
@@ -121,7 +122,7 @@ export class InventoryAllocationService {
         $1,$2,$3,$4,
         $5,$6,$7,
         $8,$9,
-        $10
+        $10,$11
       )
       `,
       [
@@ -134,6 +135,7 @@ export class InventoryAllocationService {
         params.referenceId,
         params.lineReferenceId || null,
 
+        params.quantity,
         params.quantity,
 
         Math.min(
@@ -570,10 +572,11 @@ export class InventoryAllocationService {
             reference_type,
             reference_id,
             line_reference_id,
+            quantity,
             reserved_quantity,
             status
             )
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'OPEN')
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,9,'OPEN')
         `,
         [
           companyId,
@@ -584,22 +587,10 @@ export class InventoryAllocationService {
           poLineId,
           poLineId,
           quantity,
+          quantity,
         ],
       );
-      //   await client.query(
-      //     `
-      //     INSERT INTO inventory_reservations (
-      //       company_id,
-      //       item_id,
-      //       warehouse_id,
-      //       quantity,
-      //       reference_type,
-      //       reference_id
-      //     )
-      //     VALUES ($1,$2,$3,$4,'PURCHASE_ORDER',$5)
-      //     `,
-      //     [companyId, itemId, warehouseId, quantity, poLineId],
-      //   );
+
 
       await client.query("COMMIT");
     } catch (err) {

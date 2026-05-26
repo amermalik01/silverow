@@ -193,7 +193,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
           <button
             type="button"
             onClick={() => setCustomerModalOpen(true)}
-            className="border rounded p-2 w-full text-left bg-white"
+            className="border rounded p-2 w-full text-left bg-white text-black"
           >
             {order.customer_name || "Select Customer"}
           </button>
