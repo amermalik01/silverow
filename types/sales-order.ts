@@ -30,6 +30,7 @@ export type SalesOrder = {
   tax_amount?: number;
 
   total_amount?: number;
+  invoiced_amount?: number;
 
   notes?: string;
 

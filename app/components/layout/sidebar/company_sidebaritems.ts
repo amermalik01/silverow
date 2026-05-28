@@ -411,10 +411,9 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "General",
             children: [
               {
-                // id: uniqueId(),
                 id: "Company",
                 name: "Company",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/setup/system/company`,
               },
               {
                 id: "Currency Setup",
@@ -422,7 +421,6 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 url: `/${slug}/setup/system/currencies`,
               },
               {
-                // id: uniqueId(),
                 id: "Module Codes",
                 name: "Module Codes",
                 url: `/${slug}/setup/system/sequences`,

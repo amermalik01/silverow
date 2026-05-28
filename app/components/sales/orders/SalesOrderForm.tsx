@@ -198,11 +198,86 @@ export default function SalesOrderForm({ slug, id }: Props) {
             {order.customer_name || "Select Customer"}
           </button>
         </div>
+
+        {order.invoice_status && (
+          <span
+            className={`
+                px-3 py-1 rounded text-sm font-medium
+                ${
+                  order.invoice_status === "INVOICED"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }
+                `}
+          >
+            {order.invoice_status}
+          </span>
+        )}
       </div>
 
       <SalesOrderLines lines={lines} setLines={setLines} />
 
+      <div className="border rounded p-4 bg-gray-50">
+        <div className="flex justify-between">
+          <span>Order Total</span>
+          <span>{order.total_amount || 0}</span>
+        </div>
+
+        <div className="flex justify-between mt-2">
+          <span>Invoiced Amount</span>
+          <span>{order.invoiced_amount || 0}</span>
+        </div>
+
+        <div className="flex justify-between mt-2 font-semibold">
+          <span>Remaining</span>
+          <span>
+            {(order.total_amount || 0) - (order.invoiced_amount || 0)}
+          </span>
+        </div>
+      </div>
+
       <div className="flex justify-end">
+        {/* 
+        {order.id && order.invoice_status !== "INVOICED" && (
+            <button
+                type="button"
+                onClick={handleConvertToInvoice}
+                className="px-4 py-2 rounded bg-green-600 text-white"
+            >
+                Convert To Invoice
+            </button>
+        )}
+        */}
+        {order.id && order.invoice_status !== "INVOICED" && (
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const res = await fetch(
+                  `/api/sales/sales-orders/${order.id}/convert-to-invoice`,
+                  {
+                    method: "POST",
+                  },
+                );
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                  throw new Error(data.error || "Conversion failed");
+                }
+
+                alert("Sales invoice created successfully");
+
+                router.push(`/${slug}/sales/invoices/${data.invoice_id}`);
+              } catch (err) {
+                alert(err instanceof Error ? err.message : "Conversion failed");
+              }
+            }}
+            className="px-4 py-2 rounded bg-green-600 text-white"
+          >
+            Convert To Invoice
+          </button>
+        )}
         <button
           type="button"
           disabled={saving}

@@ -28,6 +28,61 @@ export async function GET() {
     const result = await pool.query(
       `
       SELECT
+        so.id,
+        so.order_no,
+        so.order_date,
+        so.status,
+        so.invoice_status,
+        so.total_amount,
+        so.invoiced_amount,
+
+        p.name AS customer_name,
+
+        COALESCE(SUM(sol.quantity),0) AS ordered_qty,
+
+        COALESCE(SUM(sol.shipped_quantity),0) AS shipped_qty,
+
+        COALESCE(SUM(sol.invoiced_quantity),0) AS invoiced_qty,
+
+        COALESCE(
+          SUM(sol.quantity)
+          -
+          SUM(
+            COALESCE(sol.shipped_quantity,0)
+          ),
+          0
+        ) AS remaining_qty,
+
+        MAX(si.id) AS sales_invoice_id
+
+      FROM sales_orders so
+
+      LEFT JOIN parties p
+        ON p.id = so.customer_id
+
+      LEFT JOIN sales_order_lines sol
+        ON sol.sales_order_id = so.id
+
+      LEFT JOIN sales_invoice_lines sil
+        ON sil.sales_order_line_id = sol.id
+
+      LEFT JOIN sales_invoices si
+        ON si.id = sil.sales_invoice_id
+
+      WHERE so.company_id = $1
+
+      GROUP BY
+        so.id,
+        p.name
+
+      ORDER BY so.created_at DESC
+      `,
+      [companyId],
+    );
+
+    /*     
+    
+      SELECT
         so.*,
 
         p.name AS customer_name,
@@ -46,9 +101,7 @@ export async function GET() {
       WHERE so.company_id = $1
 
       ORDER BY so.created_at DESC
-      `,
-      [companyId],
-    );
+    */
 
     return NextResponse.json({
       rows: result.rows,

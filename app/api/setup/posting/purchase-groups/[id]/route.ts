@@ -1,4 +1,4 @@
-// app/api/setup/posting/sales-groups/[id]/route.ts
+// app/api/setup/posting/purchase-groups/[id]/route.ts
 
 import { pool } from "@/lib/db";
 import { NextResponse } from "next/server";
@@ -12,21 +12,22 @@ export async function PUT(
     const b = await req.json();
 
     await pool.query(
-      `UPDATE sales_posting_groups SET 
-        name = $1, receivable_account_id = $2, sales_account_id = $3, discount_account_id = $4, vat_account_id = $5
-       WHERE id = $6`,
+      `UPDATE purchase_posting_groups SET 
+        name = $1, payable_account_id = $2, purchase_account_id = $3, discount_account_id = $4, vat_account_id = $5, inventory_account_id = $6
+       WHERE id = $7`,
       [
         b.name,
-        b.receivable_account_id,
-        b.sales_account_id,
+        b.payable_account_id,
+        b.purchase_account_id,
         b.discount_account_id,
         b.vat_account_id,
+        b.inventory_account_id,
         id,
       ],
     );
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Sales Groups PUT Error:", error);
+    console.error("Purchase Groups PUT Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
@@ -40,31 +41,13 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params;
-    await pool.query(`DELETE FROM sales_posting_groups WHERE id = $1`, [id]);
+    await pool.query(`DELETE FROM purchase_posting_groups WHERE id = $1`, [id]);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Sales Groups DELETE Error:", error);
+    console.error("Purchase Groups DELETE Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
     );
   }
 }
-
-/* import { pool } from "@/lib/db";
-import { NextResponse } from "next/server";
-
-export async function DELETE(
-  req:Request,
-  context:{ params:Promise<{id:string}> }
-){
-
-  const {id} = await context.params;
-
-  await pool.query(
-    `DELETE FROM sales_posting_groups WHERE id=$1`,
-    [id]
-  );
-
-  return NextResponse.json({success:true});
-} */
