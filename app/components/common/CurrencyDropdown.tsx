@@ -23,7 +23,7 @@ export default function CurrencyDropdown({ value, onChange }: Props) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="border p-2 rounded w-full"
+      className="border p-2 rounded w-full text-black bg-gray"
     >
       <option value="">Select Currency</option>
       {currencies.map((c) => (

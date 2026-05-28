@@ -20,12 +20,14 @@ export async function GET(req: NextRequest) {
     const source = searchParams.get("source") || undefined;
     const isPosted = searchParams.get("is_posted");
 
-    const data = await JournalService.list(companyId, {
-      status: status || undefined,
-      source,
-      is_posted:
-        isPosted === "true" ? true : isPosted === "false" ? false : undefined,
-    });
+    const data = ""
+
+    // const data = await JournalService.list(companyId, {
+    //   status: status || undefined,
+    //   source,
+    //   is_posted:
+    //     isPosted === "true" ? true : isPosted === "false" ? false : undefined,
+    // });
 
     return NextResponse.json({
       data,

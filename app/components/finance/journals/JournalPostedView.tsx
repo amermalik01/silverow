@@ -1,5 +1,5 @@
 // app/components/finance/journals/JournalPostedView.tsx
-"use client";
+/* "use client";
 
 import { useEffect, useState } from "react";
 
@@ -72,7 +72,7 @@ export default function JournalPostedView({
 
   return (
     <div className="space-y-6">
-      {/* HEADER */}
+
 
       <div className="rounded shadow dark:shadow-white p-6">
         <div className="grid grid-cols-2 gap-4">
@@ -128,7 +128,7 @@ export default function JournalPostedView({
         </div>
       </div>
 
-      {/* LINES */}
+
 
       <div className="rounded shadow dark:shadow-white p-6">
         <h2 className="text-lg font-semibold mb-4">
@@ -181,7 +181,7 @@ export default function JournalPostedView({
               </tr>
             ))}
 
-            {/* TOTAL */}
+
 
             <tr className="font-semibold border-t">
               <td
@@ -204,4 +204,4 @@ export default function JournalPostedView({
       </div>
     </div>
   );
-}
+} */

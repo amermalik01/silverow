@@ -1,5 +1,4 @@
 // app/components/shared/modals/GLAccountLookupModal.tsx
-// app/components/shared/modals/GLAccountLookupModal.tsx
 
 "use client";
 

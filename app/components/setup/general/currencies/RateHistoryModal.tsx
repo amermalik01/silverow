@@ -68,10 +68,10 @@ export default function RateHistoryModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl w-[600px] shadow-xl p-5">
+      <div className="bg-white text-black rounded-xl w-[600px] shadow-xl p-5">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">
+          <h3 className="text-lg font-semibold text-black">
             Rate History - {currencyCode} ({currencySymbol})
           </h3>
           <button onClick={onClose} className="text-gray-500">
@@ -152,56 +152,4 @@ export default function RateHistoryModal({
     </div>
   );
 
-  /* return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center">
-      <div className="bg-white p-5 rounded-lg w-[500px]">
-        <h3 className="font-semibold mb-3">Rate History</h3>
-
-        <div className="flex gap-2 mb-3">
-          <input
-            type="number"
-            placeholder="Rate"
-            value={rate}
-            onChange={(e) => setRate(e.target.value)}
-            className="border p-2 flex-1"
-          />
-
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="border p-2"
-          />
-
-          <button
-            onClick={saveRate}
-            className="bg-blue-600 text-white px-3 rounded"
-          >
-            Add
-          </button>
-        </div>
-
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rates.map((r) => (
-              <tr key={r.id}>
-                <td>{r.effective_date}</td>
-                <td>{r.rate}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <button onClick={onClose} className="mt-3 text-red-500">
-          Close
-        </button>
-      </div>
-    </div>
-  ); */
 }

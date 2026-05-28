@@ -66,44 +66,42 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "General Journals",
             url: `/${slug}/finance/general-journal`,
           },
-          {
-            id: "Posted General Journals",
-            name: "Posted General Journals",
-            url: `/${slug}/finance/posted-general-journal`,
-            // url: `/${slug}/finance/posted-journal`,
-          },
+          // {
+          //   id: "Posted General Journals",
+          //   name: "Posted General Journals",
+          //   url: `/${slug}/finance/posted-general-journal`,
+          // },
           {
             id: "Customer Journals",
             name: "Customer Journals",
             url: `/${slug}/finance/customer-journal`,
           },
-          {
-            id: "Posted Customer Journals",
-            name: "Posted Customer Journals",
-            url: `/${slug}/finance/posted-customer-journal`,
-          },
+          // {
+          //   id: "Posted Customer Journals",
+          //   name: "Posted Customer Journals",
+          //   url: `/${slug}/finance/posted-customer-journal`,
+          // },
           {
             id: "Supplier Journals",
             name: "Supplier Journals",
             url: `/${slug}/finance/supplier-journal`,
           },
-          {
-            id: "Posted Supplier Journals",
-            name: "Posted Supplier Journals",
-            url: `/${slug}/finance/posted-supplier-journal`,
-          },
+          // {
+          //   id: "Posted Supplier Journals",
+          //   name: "Posted Supplier Journals",
+          //   url: `/${slug}/finance/posted-supplier-journal`,
+          // },
           {
             id: "Item Journals",
             name: "Item Journals",
             url: `/${slug}/finance/item-journal`,
           },
+          // {
+          //   id: "Posted Item Journals",
+          //   name: "Posted Item Journals",
+          //   url: `/${slug}/finance/posted-item-journal`,
+          // },
           {
-            id: "Posted Item Journals",
-            name: "Posted Item Journals",
-            url: `/${slug}/finance/posted-item-journal`,
-          },
-          {
-            // id: uniqueId(),
             id: "Finance Matrix",
             name: "Finance Matrix",
             url: `/${slug}/finance/matrix`,

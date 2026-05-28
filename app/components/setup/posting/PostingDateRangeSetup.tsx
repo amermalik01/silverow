@@ -105,12 +105,12 @@ export default function PostingDateRangeSetup() {
     );
 
   return (
-    <div className="border p-6 rounded bg-white text-black space-y-6 shadow-sm">
+    <div className="border p-6 rounded bg-white dark:bg-slate-900 text-black dark:text-white space-y-6 shadow-sm">
       <div>
-        <h2 className="font-semibold text-lg text-gray-800">
+        <h2 className="font-semibold text-lg ">
           Fiscal Years & Accounting Periods
         </h2>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs ">
           Define active entry parameters and lock closed cycles.
         </p>
       </div>
@@ -133,7 +133,7 @@ export default function PostingDateRangeSetup() {
           <input
             type="date"
             required
-            className="border px-3 py-1.5 rounded text-sm bg-white"
+            className="border px-3 py-1.5 rounded text-sm text-black"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
@@ -143,7 +143,7 @@ export default function PostingDateRangeSetup() {
           <input
             type="date"
             required
-            className="border px-3 py-1.5 rounded text-sm bg-white"
+            className="border px-3 py-1.5 rounded text-sm text-black"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />

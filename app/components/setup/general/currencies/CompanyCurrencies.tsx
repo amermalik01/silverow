@@ -35,7 +35,7 @@ export default function CompanyCurrencies() {
 
       <div className="border rounded-lg overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">Currency</th>
               <th className="p-3 text-left">Rate</th>

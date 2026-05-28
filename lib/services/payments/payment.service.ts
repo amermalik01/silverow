@@ -225,60 +225,54 @@ export class PaymentService {
        * POST JOURNAL (FIXED)
        * -----------------------------------------------------
        */
-      /* const journal = await JournalService.create(companyId, {
-        entry_date: payload.payment_date,
-        source: payload.payment_type === "AP" ? "PAYMENT" : "RECEIPT",
-        reference: payment.id,
-        description: payload.description,
-        lines: journalLines,
-      }); */
 
-      const journal = await JournalService.createWithClient(companyId, {
-        entry_date: payload.payment_date,
-        source: payload.payment_type === "AP" ? "PAYMENT" : "RECEIPT",
-        reference: payment.id,
-        description: payload.description,
-        lines: journalLines,
-      });
+
+      // const journal = await JournalService.createWithClient(companyId, {
+      //   entry_date: payload.payment_date,
+      //   source: payload.payment_type === "AP" ? "PAYMENT" : "RECEIPT",
+      //   reference: payment.id,
+      //   description: payload.description,
+      //   lines: journalLines,
+      // });
 
       /**
        * -----------------------------------------------------
        * LINK JOURNAL TO PAYMENT
        * -----------------------------------------------------
        */
-      await client.query(
-        `
-        UPDATE payments
-        SET is_posted = true,
-            posted_at = now(),
-            journal_id = $1
-        WHERE id = $2
-        `,
-        [journal.id, payment.id],
-      );
+      // await client.query(
+      //   `
+      //   UPDATE payments
+      //   SET is_posted = true,
+      //       posted_at = now(),
+      //       journal_id = $1
+      //   WHERE id = $2
+      //   `,
+      //   [journal.id, payment.id],
+      // );
 
       /**
        * -----------------------------------------------------
        * APPLY ALLOCATIONS
        * -----------------------------------------------------
        */
-      if (payload.payment_type === "AP") {
-        await AllocationService.applyAPPayment(
-          client,
-          companyId,
-          payment.id,
-          payload.party_id,
-          payload.allocations,
-        );
-      } else {
-        await AllocationService.applyARPayment(
-          client,
-          companyId,
-          payment.id,
-          payload.party_id,
-          payload.allocations,
-        );
-      }
+      // if (payload.payment_type === "AP") {
+      //   await AllocationService.applyAPPayment(
+      //     client,
+      //     companyId,
+      //     payment.id,
+      //     payload.party_id,
+      //     payload.allocations,
+      //   );
+      // } else {
+      //   await AllocationService.applyARPayment(
+      //     client,
+      //     companyId,
+      //     payment.id,
+      //     payload.party_id,
+      //     payload.allocations,
+      //   );
+      // }
 
       await client.query("COMMIT");
 

@@ -1,11 +1,12 @@
 // types/journal.ts
 
-export type JournalSource =
-  | "GENERAL"
-  | "SALES"
-  | "PURCHASE"
-  | "PAYMENT"
-  | "RECEIPT"
+export type JournalSource = 
+  | "GENERAL" 
+  | "CUSTOMER_JOURNAL"  // 🔥 Added
+  | "SUPPLIER_JOURNAL"  // 🔥 Added (Good to add now for the next module)
+  | "ITEM_JOURNAL"      // 🔥 Added (Good to add now for the next module)
+  | "SALES" 
+  | "PURCHASE" 
   | "INVENTORY";
 
 export type JournalModule = "customer" | "supplier" | "item" | "general";
