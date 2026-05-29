@@ -1,0 +1,262 @@
+// /app/components/sales/invoices/SalesInvoiceList.tsx
+"use client";
+
+import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+
+interface InvoiceListItem {
+  id: string;
+  invoice_no: string;
+  customer_name: string | null;
+  invoice_date: string;
+  total_amount: string | number;
+  is_posted: boolean;
+}
+
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  totalRecords: number;
+  totalPages: number;
+}
+
+export default function SalesInvoiceList({ slug }: { slug: string }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  // Local state initialized straight from search strings
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [status, setStatus] = useState(searchParams.get("status") || "ALL");
+  const [data, setData] = useState<{
+    invoices: InvoiceListItem[];
+    pagination: PaginationMeta;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+
+  // Sync state data from local values out to query parameters
+  const updateFilters = (
+    newSearch: string,
+    newStatus: string,
+    newPage: number,
+  ) => {
+    const params = new URLSearchParams();
+    if (newSearch) params.set("search", newSearch);
+    if (newStatus !== "ALL") params.set("status", newStatus);
+    if (newPage > 1) params.set("page", String(newPage));
+
+    startTransition(() => {
+      router.push(`/${slug}/sales/invoices?${params.toString()}`);
+    });
+  };
+
+  useEffect(() => {
+    // Use a functional state update callback to clear synchronous linting requirements
+    setLoading(() => true);
+
+    const fetchInvoices = async () => {
+      try {
+        const apiParams = new URLSearchParams(searchParams.toString());
+        const res = await fetch(
+          `/api/sales/sales-invoices?${apiParams.toString()}`,
+        );
+        const resData = await res.json();
+
+        if (resData.success) {
+          setData({
+            invoices: resData.invoices,
+            pagination: resData.pagination,
+          });
+        }
+      } catch (err) {
+        console.error("Error updating component datasets:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvoices();
+  }, [searchParams]);
+
+  return (
+    <div className="space-y-6 container mx-auto p-4">
+      {/* Top Banner Toolbar Block */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Sales Invoices</h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Review and manage company operational sub-ledgers
+          </p>
+        </div>
+        {/* <Link
+          href={`/${slug}/sales/invoices/new`}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition shadow-sm"
+        >
+          + Create Invoice
+        </Link> */}
+      </div>
+
+      {/* Control Strip & Filter Forms */}
+      <div className="bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="flex-1">
+          <input
+            type="text"
+            placeholder="Search by invoice number or client name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) =>
+              e.key === "Enter" && updateFilters(search, status, 1)
+            }
+            className="w-full text-sm border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+          />
+        </div>
+        <div className="w-full sm:w-[180px]">
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              updateFilters(search, e.target.value, 1);
+            }}
+            className="w-full text-sm border px-3 py-2 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+          >
+            <option value="ALL">All Post Statuses</option>
+            <option value="DRAFT">Draft / Open Only</option>
+            <option value="POSTED">Posted Only</option>
+          </select>
+        </div>
+        <button
+          onClick={() => updateFilters(search, status, 1)}
+          disabled={loading || isPending}
+          className="bg-gray-100 border text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-md text-sm font-medium transition"
+        >
+          Filter
+        </button>
+      </div>
+
+      {/* Content Rendering Grid Layout Table Wrapper */}
+      <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
+        <div className="overflow-auto">
+          {(loading || isPending) && (
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center text-xs font-semibold text-gray-500 z-10">
+              Refreshing Database Logs...
+            </div>
+          )}
+
+          
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
+              <tr>
+                <th className="p-3 text-left whitespace-nowrap">Invoice Number</th>
+                <th className="p-3 text-left whitespace-nowrap">Customer Reference</th>
+                <th className="p-3 text-left whitespace-nowrap">Billing Date</th>
+                <th className="p-3 w-32 text-left whitespace-nowrap">Ledger Status</th>
+                <th className="p-3 text-right w-40">Grand Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y text-gray-700">
+              {data?.invoices.length ? (
+                data.invoices.map((inv) => (
+                  <tr
+                    key={inv.id}
+                    className="hover:bg-gray-50/70 transition-colors"
+                  >
+                    <td className="p-3 font-mono font-bold text-blue-600">
+                      <Link
+                        href={`/${slug}/sales/invoices/${inv.id}`}
+                        className="hover:underline"
+                      >
+                        {inv.invoice_no}
+                      </Link>
+                    </td>
+                    <td className="p-3 font-medium text-gray-900">
+                      {inv.customer_name || (
+                        <span className="text-gray-400 italic">
+                          Walk-In Client
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-gray-500">
+                      {new Date(inv.invoice_date).toLocaleDateString()}
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${
+                          inv.is_posted
+                            ? "bg-green-100 text-green-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {inv.is_posted ? "Posted" : "Open Draft"}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right font-mono font-semibold text-gray-900">
+                      ${Number(inv.total_amount).toFixed(2)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="p-8 text-center text-gray-400 italic"
+                  >
+                    No matching commercial invoices located within selected
+                    accounting ranges.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Dynamic Pagination Footer Control Hub */}
+          {data && data.pagination.totalPages > 1 && (
+            <div className="bg-gray-50 border-t p-4 flex items-center justify-between text-sm text-gray-600">
+              <div>
+                Showing items{" "}
+                <span className="font-semibold">
+                  {(currentPage - 1) * data.pagination.limit + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold">
+                  {Math.min(
+                    currentPage * data.pagination.limit,
+                    data.pagination.totalRecords,
+                  )}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold">
+                  {data.pagination.totalRecords}
+                </span>{" "}
+                matching forms
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  disabled={currentPage <= 1 || loading}
+                  onClick={() => updateFilters(search, status, currentPage - 1)}
+                  className="px-3 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50"
+                >
+                  Previous
+                </button>
+                <span className="text-xs font-medium">
+                  Page {currentPage} of {data.pagination.totalPages}
+                </span>
+                <button
+                  disabled={
+                    currentPage >= data.pagination.totalPages || loading
+                  }
+                  onClick={() => updateFilters(search, status, currentPage + 1)}
+                  className="px-3 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

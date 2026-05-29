@@ -2,11 +2,8 @@
 import { PoolClient } from "pg";
 
 import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
-
 import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
-
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
-
 import { JournalLineInput } from "@/types/journal";
 
 export class SalesInvoiceService {
@@ -133,19 +130,12 @@ export class SalesInvoiceService {
        */
       glLines.push({
         account_id: accounts.receivable_account_id,
-
         debit: totalAmount,
-
         credit: 0,
-
         item_id: line.item_id,
-
         quantity: Number(line.quantity || 0),
-
         unit_cost: Number(line.unit_price || 0),
-
         reference_type: "SALES_INVOICE",
-
         reference_id: invoice.id,
       });
 
@@ -156,19 +146,12 @@ export class SalesInvoiceService {
        */
       glLines.push({
         account_id: accounts.sales_account_id,
-
         debit: 0,
-
         credit: baseAmount,
-
         item_id: line.item_id,
-
         quantity: Number(line.quantity || 0),
-
         unit_cost: Number(line.unit_price || 0),
-
         reference_type: "SALES_INVOICE",
-
         reference_id: invoice.id,
       });
 
@@ -180,19 +163,12 @@ export class SalesInvoiceService {
       if (vatAmount > 0) {
         glLines.push({
           account_id: accounts.vat_account_id,
-
           debit: 0,
-
           credit: vatAmount,
-
           item_id: line.item_id,
-
           quantity: Number(line.quantity || 0),
-
           unit_cost: Number(line.unit_price || 0),
-
           reference_type: "SALES_INVOICE",
-
           reference_id: invoice.id,
         });
       }
@@ -212,22 +188,13 @@ export class SalesInvoiceService {
      */
     const journal = await GLPostingService.postJournal(client, {
       company_id: companyId,
-
       entry_date: invoice.invoice_date,
-
       source: "SALES",
-
       journal_type: "SALES_INVOICE",
-
       reference: invoice.invoice_no,
-
       source_id: invoice.id,
-
-      // description: "Sales invoice posting",
       description: `Sales Invoice ${invoice.invoice_no}`,
-
       created_by: userId || null,
-
       lines: glLines,
     });
 
@@ -352,7 +319,7 @@ export class SalesInvoiceService {
     const invoiceableLines = orderLines.filter((line) => {
       const qty = Number(line.quantity || 0);
 
-      const invoiced = Number(line.invoiced_quantity || 0);
+      const invoiced = Number(line.quantity_invoiced || 0);
 
       return qty - invoiced > 0;
     });
@@ -368,8 +335,8 @@ export class SalesInvoiceService {
      */
     const seqResult = await client.query(
       `
-    SELECT get_next_sequence($1,$2) AS code
-    `,
+      SELECT get_next_sequence($1,$2) AS code
+      `,
       [companyId, "sales_invoice"],
     );
 
@@ -384,27 +351,18 @@ export class SalesInvoiceService {
       `
       INSERT INTO sales_invoices (
         company_id,
-
         invoice_no,
-
         customer_id,
-
         sales_order_id,
-
         invoice_date,
-
         currency_id,
         exchange_rate,
-
         subtotal,
-        tax_amount,
+        vat_amount,
         total_amount,
-
         status,
         is_posted,
-
-        notes,
-
+        remarks,
         created_at
       )
       VALUES (
@@ -427,20 +385,14 @@ export class SalesInvoiceService {
       `,
       [
         companyId,
-
         invoiceNo,
-
         order.customer_id,
-
         order.id,
-
         order.currency_id || null,
         order.exchange_rate || 1,
-
         0,
         0,
         0,
-
         order.notes || null,
       ],
     );
@@ -453,32 +405,22 @@ export class SalesInvoiceService {
      * -----------------------------------------------------
      */
     let subtotal = 0;
-
     let taxAmount = 0;
-
     let totalAmount = 0;
-
     let lineNo = 10000;
 
     for (const line of invoiceableLines) {
       const orderedQty = Number(line.quantity || 0);
-
-      const invoicedQty = Number(line.invoiced_quantity || 0);
-
+      const invoicedQty = Number(line.quantity_invoiced || 0);
       const remainingQty = orderedQty - invoicedQty;
-
       if (remainingQty <= 0) {
         continue;
       }
 
       const unitPrice = Number(line.unit_price || 0);
-
       const lineTax = Number(line.tax_amount || 0);
-
       const lineDiscount = Number(line.discount_amount || 0);
-
       const lineNet = remainingQty * unitPrice - lineDiscount;
-
       const lineTotal = lineNet + lineTax;
 
       /**
@@ -490,32 +432,20 @@ export class SalesInvoiceService {
         `
         INSERT INTO sales_invoice_lines (
           company_id,
-
           sales_invoice_id,
-
           sales_order_id,
           sales_order_line_id,
-
           line_no,
           line_type,
-
           item_id,
           gl_account_id,
-
           description,
-
           warehouse_id,
-
           quantity,
-
           unit_price,
-
           discount_amount,
-
           vat_amount,
-
-          line_total,
-
+          line_amount,
           created_at
         )
         VALUES (
@@ -539,30 +469,19 @@ export class SalesInvoiceService {
         `,
         [
           companyId,
-
           invoice.id,
-
           order.id,
           line.id,
-
           lineNo,
           line.line_type,
-
           line.item_id || null,
           line.gl_account_id || null,
-
           line.description || null,
-
           line.warehouse_id || null,
-
           remainingQty,
-
           unitPrice,
-
           lineDiscount,
-
           lineTax,
-
           lineTotal,
         ],
       );
@@ -576,8 +495,8 @@ export class SalesInvoiceService {
         `
         UPDATE sales_order_lines
         SET
-          invoiced_quantity =
-            COALESCE(invoiced_quantity,0) + $1,
+          quantity_invoiced =
+            COALESCE(quantity_invoiced,0) + $1,
 
           updated_at = now()
 
@@ -587,11 +506,8 @@ export class SalesInvoiceService {
       );
 
       subtotal += lineNet;
-
       taxAmount += lineTax;
-
       totalAmount += lineTotal;
-
       lineNo += 10000;
     }
 
@@ -605,7 +521,7 @@ export class SalesInvoiceService {
       UPDATE sales_invoices
       SET
         subtotal = $1,
-        tax_amount = $2,
+        vat_amount = $2,
         total_amount = $3,
         updated_at = now()
       WHERE id = $4
@@ -622,7 +538,7 @@ export class SalesInvoiceService {
       `
       SELECT
         quantity,
-        invoiced_quantity
+        quantity_invoiced
       FROM sales_order_lines
       WHERE sales_order_id = $1
       AND line_type = 'ITEM'
@@ -639,7 +555,7 @@ export class SalesInvoiceService {
     for (const row of statusLines) {
       const qty = Number(row.quantity || 0);
 
-      const invoiced = Number(row.invoiced_quantity || 0);
+      const invoiced = Number(row.quantity_invoiced || 0);
 
       if (invoiced > 0) {
         partiallyInvoiced = true;
@@ -678,8 +594,9 @@ export class SalesInvoiceService {
 
     return invoice;
   }
+}
 
-  /* static async createFromShipment(
+/* static async createFromShipment(
     client: PoolClient,
     companyId: string,
     shipmentId: string,
@@ -825,4 +742,3 @@ export class SalesInvoiceService {
       client.release();
     }
   } */
-}
