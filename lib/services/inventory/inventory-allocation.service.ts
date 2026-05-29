@@ -17,48 +17,33 @@ export type InventoryReferenceType =
   | "PRODUCTION_ORDER";
 
 export class InventoryAllocationService {
-  /**
-   * =========================================================
-   * CREATE INVENTORY RESERVATION
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * CREATE INVENTORY RESERVATION
+  //  * =========================================================
+
   static async createReservation(
     client: PoolClient,
     params: {
       companyId: string;
-
       itemId: string;
-
       warehouseId: string;
-
       quantity: number;
-
       referenceType: InventoryReferenceType;
-
       referenceId: string;
-
       lineReferenceId?: string;
-
       locationId?: string | null;
     },
   ): Promise<void> {
-    /**
-     * -------------------------------------------------------
-     * VALIDATION
-     * -------------------------------------------------------
-     */
     if (params.quantity <= 0) {
       throw new Error("Reservation quantity must be greater than zero");
     }
 
-    /**
-     * -------------------------------------------------------
-     * LOAD INVENTORY STOCK
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * LOAD INVENTORY STOCK
+    //  * -------------------------------------------------------
+
     const stockResult = await client.query<{
       quantity_on_hand: string | number | null;
-
       reserved_quantity: string | number | null;
     }>(
       `
@@ -75,18 +60,14 @@ export class InventoryAllocationService {
     );
 
     const stock = stockResult.rows[0];
-
     const quantityOnHand = Number(stock?.quantity_on_hand || 0);
-
     const reservedQuantity = Number(stock?.reserved_quantity || 0);
-
     const availableQuantity = quantityOnHand - reservedQuantity;
 
-    /**
-     * -------------------------------------------------------
-     * DETERMINE RESERVATION STATUS
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * DETERMINE RESERVATION STATUS
+    //  * -------------------------------------------------------
+
     let status: InventoryReservationStatus = "OPEN";
 
     if (availableQuantity >= params.quantity) {
@@ -95,11 +76,15 @@ export class InventoryAllocationService {
       status = "PARTIAL";
     }
 
-    /**
-     * -------------------------------------------------------
-     * INSERT RESERVATION
-     * -------------------------------------------------------
-     */
+    const allocatedAmount = Math.min(
+      availableQuantity > 0 ? availableQuantity : 0,
+      params.quantity,
+    );
+
+    //  * -------------------------------------------------------
+    //  * INSERT RESERVATION
+    //  * -------------------------------------------------------
+
     await client.query(
       `
       INSERT INTO inventory_reservations (
@@ -115,14 +100,14 @@ export class InventoryAllocationService {
         quantity,
         reserved_quantity,
         allocated_quantity,
+        consumed_quantity,
 
         status
       )
       VALUES (
         $1,$2,$3,$4,
-        $5,$6,$7,
-        $8,$9,
-        $10,$11
+        $5,$6,$7,$8,
+        $9,$10,0,$11
       )
       `,
       [
@@ -137,80 +122,64 @@ export class InventoryAllocationService {
 
         params.quantity,
         params.quantity,
-
-        Math.min(
-          availableQuantity > 0 ? availableQuantity : 0,
-          params.quantity,
-        ),
+        allocatedAmount,
 
         status,
       ],
     );
 
-    /**
-     * -------------------------------------------------------
-     * UPDATE INVENTORY STOCK RESERVATION
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * UPDATE INVENTORY STOCK RESERVATION
+    //  * -------------------------------------------------------
+
     await client.query(
       `
       INSERT INTO inventory_stock (
         company_id,
         item_id,
         warehouse_id,
+        location_id,
         quantity_on_hand,
         reserved_quantity
       )
-      VALUES (
-        $1,$2,$3,
-        0,
-        $4
-      )
-
-      ON CONFLICT (
-        company_id,
-        item_id,
-        warehouse_id
-      )
-
+      VALUES ($1, $2, $3, $4, 0, $5)
+      ON CONFLICT (company_id, item_id, warehouse_id)
       DO UPDATE SET
-        reserved_quantity =
-          inventory_stock.reserved_quantity + EXCLUDED.reserved_quantity,
+        reserved_quantity = inventory_stock.reserved_quantity + EXCLUDED.reserved_quantity,
         updated_at = now()
       `,
-      [params.companyId, params.itemId, params.warehouseId, params.quantity],
+      [
+        params.companyId,
+        params.itemId,
+        params.warehouseId,
+        params.locationId || null,
+        params.quantity,
+      ],
     );
   }
 
-  /**
-   * =========================================================
-   * RELEASE RESERVATION
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * RELEASE RESERVATION
+  //  * =========================================================
+
   static async releaseReservation(
     client: PoolClient,
     reservationId: string,
   ): Promise<void> {
-    /**
-     * -------------------------------------------------------
-     * LOAD RESERVATION
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * LOAD RESERVATION
+    //  * -------------------------------------------------------
+
     const reservationResult = await client.query<{
       id: string;
-
       company_id: string;
-
       item_id: string;
-
       warehouse_id: string;
-
       reserved_quantity: string | number;
-
       status: InventoryReservationStatus;
     }>(
       `
-      SELECT *
+      SELECT id, company_id, item_id, warehouse_id, reserved_quantity, status
       FROM inventory_reservations
       WHERE id = $1
       `,
@@ -223,22 +192,16 @@ export class InventoryAllocationService {
 
     const reservation = reservationResult.rows[0];
 
-    /**
-     * -------------------------------------------------------
-     * ALREADY CANCELLED
-     * -------------------------------------------------------
-     */
+    //  ALREADY CANCELLED
+
     if (reservation.status === "CANCELLED") {
       return;
     }
 
     const quantity = Number(reservation.reserved_quantity || 0);
 
-    /**
-     * -------------------------------------------------------
-     * RELEASE INVENTORY STOCK
-     * -------------------------------------------------------
-     */
+    //  RELEASE INVENTORY STOCK
+
     await client.query(
       `
       UPDATE inventory_stock
@@ -263,11 +226,8 @@ export class InventoryAllocationService {
       ],
     );
 
-    /**
-     * -------------------------------------------------------
-     * CLOSE RESERVATION
-     * -------------------------------------------------------
-     */
+    // CLOSE RESERVATION
+
     await client.query(
       `
       UPDATE inventory_reservations
@@ -280,34 +240,26 @@ export class InventoryAllocationService {
     );
   }
 
-  /**
-   * =========================================================
-   * CONSUME RESERVATION
-   * =========================================================
-   * Used during shipment / dispatch posting
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * CONSUME RESERVATION
+  //  * =========================================================
+  //  * Used during shipment / dispatch posting
+  //  * =========================================================
+
   static async consumeReservation(
     client: PoolClient,
     reservationId: string,
     quantity: number,
   ): Promise<void> {
-    /**
-     * -------------------------------------------------------
-     * LOAD RESERVATION
-     * -------------------------------------------------------
-     */
+    //  LOAD RESERVATION
     const reservationResult = await client.query<{
       reserved_quantity: string | number;
-
       allocated_quantity: string | number;
-
       consumed_quantity: string | number;
-
       status: InventoryReservationStatus;
     }>(
       `
-      SELECT *
+      SELECT reserved_quantity, allocated_quantity, consumed_quantity, status
       FROM inventory_reservations
       WHERE id = $1
       `,
@@ -325,9 +277,7 @@ export class InventoryAllocationService {
     }
 
     const reservedQty = Number(reservation.reserved_quantity || 0);
-
     const consumedQty = Number(reservation.consumed_quantity || 0);
-
     const newConsumed = consumedQty + quantity;
 
     if (newConsumed > reservedQty) {
@@ -340,11 +290,8 @@ export class InventoryAllocationService {
       status = "CONSUMED";
     }
 
-    /**
-     * -------------------------------------------------------
-     * UPDATE RESERVATION
-     * -------------------------------------------------------
-     */
+    //  UPDATE RESERVATION
+
     await client.query(
       `
       UPDATE inventory_reservations
@@ -358,11 +305,10 @@ export class InventoryAllocationService {
     );
   }
 
-  /**
-   * =========================================================
-   * RELEASE ALL BY DOCUMENT
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * RELEASE ALL BY DOCUMENT
+  //  * =========================================================
+
   static async releaseByReference(
     client: PoolClient,
     referenceType: InventoryReferenceType,
@@ -386,11 +332,10 @@ export class InventoryAllocationService {
     }
   }
 
-  /**
-   * =========================================================
-   * BACKWARD COMPATIBILITY
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * BACKWARD COMPATIBILITY
+  //  * =========================================================
+
   static async releaseBySource(
     client: PoolClient,
     sourceType: InventoryReferenceType,
@@ -399,115 +344,118 @@ export class InventoryAllocationService {
     await this.releaseByReference(client, sourceType, sourceId);
   }
 
-  /**
-   * =========================================================
-   * AUTO RESERVE SALES ORDER STOCK
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * AUTO RESERVE SALES ORDER STOCK
+  //  * =========================================================
+
   static async reserveSalesOrderStock(
     client: PoolClient,
     params: {
       companyId: string;
-
       salesOrderId: string;
-
       salesOrderLineId: string;
-
       itemId: string;
-
       warehouseId: string;
-
       quantity: number;
     },
   ): Promise<void> {
     await this.createReservation(client, {
       companyId: params.companyId,
-
       itemId: params.itemId,
-
       warehouseId: params.warehouseId,
-
       quantity: params.quantity,
-
       referenceType: "SALES_ORDER",
-
       referenceId: params.salesOrderId,
-
       lineReferenceId: params.salesOrderLineId,
     });
 
-    /**
-     * -------------------------------------------------------
-     * UPDATE SALES ORDER LINE
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * UPDATE SALES ORDER LINE
+    //  * -------------------------------------------------------
+
     await client.query(
       `
       UPDATE sales_order_lines
       SET
-        reserved_quantity =
-          COALESCE(reserved_quantity,0) + $1
+        quantity_reserved = COALESCE(quantity_reserved, 0) + $1
       WHERE id = $2
       `,
       [params.quantity, params.salesOrderLineId],
     );
+
+    // await client.query(
+    //   `
+    //   UPDATE sales_order_lines
+    //   SET
+    //     reserved_quantity =
+    //       COALESCE(reserved_quantity,0) + $1
+    //   WHERE id = $2
+    //   `,
+    //   [params.quantity, params.salesOrderLineId],
+    // );
   }
 
-  /**
-   * =========================================================
-   * BACKWARD COMPATIBILITY
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * BACKWARD COMPATIBILITY
+  //  * =========================================================
+
   static async allocate(params: {
     client: PoolClient;
-
     company_id: string;
-
     source_type: InventoryReferenceType;
-
     source_id: string;
-
     source_line_id?: string;
-
     warehouse_id: string;
-
     item_id: string;
-
     quantity: number;
   }): Promise<void> {
-    const {
-      client,
-      company_id,
-      source_type,
-      source_id,
-      source_line_id,
-      warehouse_id,
-      item_id,
-      quantity,
-    } = params;
-
-    await this.createReservation(client, {
-      companyId: company_id,
-
-      itemId: item_id,
-
-      warehouseId: warehouse_id,
-
-      quantity,
-
-      referenceType: source_type,
-
-      referenceId: source_id,
-
-      lineReferenceId: source_line_id,
+    await this.createReservation(params.client, {
+      companyId: params.company_id,
+      itemId: params.item_id,
+      warehouseId: params.warehouse_id,
+      quantity: params.quantity,
+      referenceType: params.source_type,
+      referenceId: params.source_id,
+      lineReferenceId: params.source_line_id,
     });
   }
 
-  /**
-   * =========================================================
-   * RELEASE SALES ORDER RESERVATION
-   * =========================================================
-   */
+  // static async allocate(params: {
+  //   client: PoolClient;
+  //   company_id: string;
+  //   source_type: InventoryReferenceType;
+  //   source_id: string;
+  //   source_line_id?: string;
+  //   warehouse_id: string;
+  //   item_id: string;
+  //   quantity: number;
+  // }): Promise<void> {
+  //   const {
+  //     client,
+  //     company_id,
+  //     source_type,
+  //     source_id,
+  //     source_line_id,
+  //     warehouse_id,
+  //     item_id,
+  //     quantity,
+  //   } = params;
+
+  //   await this.createReservation(client, {
+  //     companyId: company_id,
+  //     itemId: item_id,
+  //     warehouseId: warehouse_id,
+  //     quantity,
+  //     referenceType: source_type,
+  //     referenceId: source_id,
+  //     lineReferenceId: source_line_id,
+  //   });
+  // }
+
+  //  * =========================================================
+  //  * RELEASE SALES ORDER RESERVATION
+  //  * =========================================================
+
   static async releaseSalesOrderReservation(
     client: PoolClient,
     salesOrderLineId: string,
@@ -529,26 +477,75 @@ export class InventoryAllocationService {
       await this.releaseReservation(client, reservation.id);
     }
 
-    /**
-     * -------------------------------------------------------
-     * RESET RESERVED QUANTITY
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * RESET RESERVED QUANTITY
+    //  * -------------------------------------------------------
+
     await client.query(
       `
       UPDATE sales_order_lines
       SET
-        reserved_quantity = 0
+        quantity_reserved = 0
       WHERE id = $1
       `,
       [salesOrderLineId],
     );
+
+    // await client.query(
+    //   `
+    //   UPDATE sales_order_lines
+    //   SET
+    //     reserved_quantity = 0
+    //   WHERE id = $1
+    //   `,
+    //   [salesOrderLineId],
+    // );
   }
 
-  /**
-   * RESERVE STOCK FOR PURCHASE ORDER
-   */
+  // RESERVE STOCK FOR PURCHASE ORDER
   static async reservePOStock(
+    client: PoolClient,
+    params: {
+      companyId: string;
+      itemId: string;
+      warehouseId: string;
+      quantity: number;
+      poId: string;
+      poLineId: string;
+    },
+  ): Promise<void> {
+    await client.query(
+      `
+      INSERT INTO inventory_reservations (
+        company_id,
+        item_id,
+        warehouse_id,
+        location_id,
+        reference_type,
+        reference_id,
+        line_reference_id,
+        quantity,
+        reserved_quantity,
+        allocated_quantity,
+        status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0, 'OPEN')
+      `,
+      [
+        params.companyId,
+        params.itemId,
+        params.warehouseId,
+        null,
+        "PURCHASE_ORDER",
+        params.poId,
+        params.poLineId,
+        params.quantity,
+        params.quantity,
+      ],
+    );
+  }
+
+  /* static async reservePOStock(
     companyId: string,
     itemId: string,
     warehouseId: string,
@@ -576,7 +573,7 @@ export class InventoryAllocationService {
             reserved_quantity,
             status
             )
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,9,'OPEN')
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'OPEN')
         `,
         [
           companyId,
@@ -591,7 +588,6 @@ export class InventoryAllocationService {
         ],
       );
 
-
       await client.query("COMMIT");
     } catch (err) {
       await client.query("ROLLBACK");
@@ -599,5 +595,5 @@ export class InventoryAllocationService {
     } finally {
       client.release();
     }
-  }
+  } */
 }

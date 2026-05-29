@@ -28,7 +28,7 @@ export async function POST(_: Request, context: Context) {
 
     await client.query("BEGIN");
 
-    const order = await SalesQuoteConversionService.convertToOrder(
+    const orderMetadata = await SalesQuoteConversionService.convertToOrder(
       client,
       companyId,
       id,
@@ -38,18 +38,16 @@ export async function POST(_: Request, context: Context) {
 
     return NextResponse.json({
       success: true,
-      order_id: order.id,
+      message: `Successfully generated Sales Order ${orderMetadata.order_no}`,
+      orderId: orderMetadata.id,
+      orderNo: orderMetadata.order_no,
     });
   } catch (err) {
     await client.query("ROLLBACK");
-
+    const dbError = err as { code?: string; message?: string };
     return NextResponse.json(
-      {
-        error: err instanceof Error ? err.message : "Conversion failed",
-      },
-      {
-        status: 500,
-      },
+      { error: dbError.message || "Failed to convert quote to order" },
+      { status: 500 },
     );
   } finally {
     client.release();

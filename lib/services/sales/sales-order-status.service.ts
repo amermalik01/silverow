@@ -12,92 +12,59 @@ export type SalesOrderStatus =
   | "CANCELLED";
 
 export class SalesOrderStatusService {
-  /**
-   * =========================================================
-   * RECALCULATE SALES ORDER STATUS
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * RECALCULATE SALES ORDER STATUS
+  //  * =========================================================
+
   static async recalculate(
     client: PoolClient,
     salesOrderId: string,
   ): Promise<SalesOrderStatus> {
-    /**
-     * -------------------------------------------------------
-     * LOAD ORDER
-     * -------------------------------------------------------
-     */
     const orderResult = await client.query<{
       id: string;
       status: SalesOrderStatus;
-    }>(
-      `
-      SELECT
-        id,
-        status
-      FROM sales_orders
-      WHERE id = $1
-      `,
-      [salesOrderId],
-    );
+    }>(`SELECT id, status FROM sales_orders WHERE id = $1`, [salesOrderId]);
 
     if (!orderResult.rows.length) {
       throw new Error("Sales order not found");
     }
 
     const order = orderResult.rows[0];
-
-    /**
-     * -------------------------------------------------------
-     * CANCELLED ORDERS SHOULD NOT RECALCULATE
-     * -------------------------------------------------------
-     */
     if (order.status === "CANCELLED") {
       return "CANCELLED";
     }
 
-    /**
-     * -------------------------------------------------------
-     * LOAD LINE PROGRESS
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * LOAD LINE PROGRESS
+    //  * -------------------------------------------------------
+
     const linesResult = await client.query<{
       quantity: string | number | null;
-
       quantity_reserved: string | number | null;
-
       quantity_shipped: string | number | null;
-
       quantity_invoiced: string | number | null;
-
       line_type: "ITEM" | "GL_ACCOUNT" | "COMMENT";
     }>(
       `
-      SELECT
-        quantity,
-        quantity_reserved,
-        quantity_shipped,
-        quantity_invoiced,
-        line_type
+      SELECT quantity, quantity_reserved, quantity_shipped, quantity_invoiced, line_type
       FROM sales_order_lines
       WHERE sales_order_id = $1
       `,
       [salesOrderId],
     );
 
-    /**
-     * -------------------------------------------------------
-     * FILTER ITEM LINES ONLY
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * FILTER ITEM LINES ONLY
+    //  * -------------------------------------------------------
+
     const itemLines = linesResult.rows.filter(
       (line) => line.line_type === "ITEM",
     );
 
-    /**
-     * -------------------------------------------------------
-     * NO ITEM LINES
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * NO ITEM LINES
+    //  * -------------------------------------------------------
+
     if (itemLines.length === 0) {
       await client.query(
         `
@@ -113,11 +80,10 @@ export class SalesOrderStatusService {
       return "OPEN";
     }
 
-    /**
-     * -------------------------------------------------------
-     * TOTALS
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * TOTALS
+    //  * -------------------------------------------------------
+
     const totalQty = itemLines.reduce(
       (sum, line) => sum + Number(line.quantity || 0),
       0,
@@ -138,50 +104,26 @@ export class SalesOrderStatusService {
       0,
     );
 
-    /**
-     * -------------------------------------------------------
-     * DETERMINE STATUS
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * DETERMINE STATUS
+    //  * -------------------------------------------------------
+
     let status: SalesOrderStatus = "OPEN";
 
-    /**
-     * FULLY INVOICED
-     */
     if (totalInvoiced >= totalQty && totalQty > 0) {
-      status = "INVOICED";
+      status = "INVOICED"; //  * FULLY INVOICED
+    } else if (totalDispatched >= totalQty && totalQty > 0) {
+      status = "DISPATCHED"; //  * FULLY DISPATCHED
+    } else if (totalReserved >= totalQty && totalQty > 0) {
+      status = "RELEASED"; //  * STOCK RESERVED / RELEASED
+    } else if (totalReserved > 0 || totalDispatched > 0 || totalInvoiced > 0) {
+      status = "PARTIAL"; //  * PARTIAL ACTIVITY
     }
 
-    /**
-     * FULLY DISPATCHED
-     */
-    else if (totalDispatched >= totalQty && totalQty > 0) {
-      status = "DISPATCHED";
-    }
+    //  * -------------------------------------------------------
+    //  * AUTO CLOSE CHECK
+    //  * -------------------------------------------------------
 
-    /**
-     * STOCK RESERVED / RELEASED
-     */
-    else if (totalReserved >= totalQty && totalQty > 0) {
-      status = "RELEASED";
-    }
-
-    /**
-     * PARTIAL ACTIVITY
-     */
-    else if (
-      totalReserved > 0 ||
-      totalDispatched > 0 ||
-      totalInvoiced > 0
-    ) {
-      status = "PARTIAL";
-    }
-
-    /**
-     * -------------------------------------------------------
-     * AUTO CLOSE CHECK
-     * -------------------------------------------------------
-     */
     const closeResult = await client.query<{
       uninvoiced_count: string;
     }>(
@@ -195,19 +137,16 @@ export class SalesOrderStatusService {
       [salesOrderId],
     );
 
-    const uninvoicedCount = Number(
-      closeResult.rows[0]?.uninvoiced_count || 0,
-    );
+    const uninvoicedCount = Number(closeResult.rows[0]?.uninvoiced_count || 0);
 
     if (uninvoicedCount === 0 && totalQty > 0) {
       status = "CLOSED";
     }
 
-    /**
-     * -------------------------------------------------------
-     * UPDATE ORDER
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * UPDATE ORDER
+    //  * -------------------------------------------------------
+
     await client.query(
       `
       UPDATE sales_orders
@@ -222,69 +161,28 @@ export class SalesOrderStatusService {
     return status;
   }
 
-  /**
-   * =========================================================
-   * VALIDATE SALES ORDER STATUS
-   * =========================================================
-   */
-  static validateTransition(
-    current: SalesOrderStatus,
-    next: SalesOrderStatus,
-  ) {
-    /**
-     * -------------------------------------------------------
-     * CANCELLED
-     * -------------------------------------------------------
-     */
-    if (current === "CANCELLED") {
-      throw new Error(
-        "Cancelled sales order cannot be modified",
-      );
-    }
+  //  * =========================================================
+  //  * VALIDATE SALES ORDER STATUS
+  //  * =========================================================
 
-    /**
-     * -------------------------------------------------------
-     * CLOSED
-     * -------------------------------------------------------
-     */
-    if (
-      current === "CLOSED" &&
-      next !== "CLOSED"
-    ) {
-      throw new Error(
-        "Closed sales order cannot be reopened",
-      );
-    }
-
-    /**
-     * -------------------------------------------------------
-     * INVOICED
-     * -------------------------------------------------------
-     */
-    if (
-      current === "INVOICED" &&
-      next === "OPEN"
-    ) {
-      throw new Error(
-        "Invoiced sales order cannot return to OPEN",
-      );
-    }
+  static validateTransition(current: SalesOrderStatus, next: SalesOrderStatus) {
+    if (current === "CANCELLED")
+      throw new Error("Cancelled sales order cannot be modified");
+    if (current === "CLOSED" && next !== "CLOSED")
+      throw new Error("Closed sales order cannot be reopened");
+    if (current === "INVOICED" && next === "OPEN")
+      throw new Error("Invoiced sales order cannot return to OPEN");
   }
 
-  /**
-   * =========================================================
-   * CANCEL SALES ORDER
-   * =========================================================
-   */
-  static async cancel(
-    client: PoolClient,
-    salesOrderId: string,
-  ): Promise<void> {
-    /**
-     * -------------------------------------------------------
-     * CHECK DISPATCHED
-     * -------------------------------------------------------
-     */
+  //  * =========================================================
+  //  * CANCEL SALES ORDER
+  //  * =========================================================
+
+  static async cancel(client: PoolClient, salesOrderId: string): Promise<void> {
+    //  * -------------------------------------------------------
+    //  * CHECK DISPATCHED
+    //  * -------------------------------------------------------
+
     const dispatchResult = await client.query<{
       dispatched_qty: string;
     }>(
@@ -297,31 +195,22 @@ export class SalesOrderStatusService {
       [salesOrderId],
     );
 
-    const dispatchedQty = Number(
-      dispatchResult.rows[0]?.dispatched_qty || 0,
-    );
+    const dispatchedQty = Number(dispatchResult.rows[0]?.dispatched_qty || 0);
 
     if (dispatchedQty > 0) {
-      throw new Error(
-        "Cannot cancel dispatched sales order",
-      );
+      throw new Error("Cannot cancel dispatched sales order");
     }
 
-    /**
-     * -------------------------------------------------------
-     * RELEASE STOCK RESERVATIONS
-     * -------------------------------------------------------
-     */
+    //  * -------------------------------------------------------
+    //  * RELEASE STOCK RESERVATIONS
+    //  * -------------------------------------------------------
+
     await client.query(
       `
       UPDATE inventory_stock
       SET
-        quantity_reserved =
-          GREATEST(
-            0,
-            COALESCE(quantity_reserved,0)
-            - COALESCE(sol.quantity_reserved,0)
-          )
+        reserved_quantity = GREATEST(0, COALESCE(reserved_quantity, 0) - COALESCE(sol.quantity_reserved, 0)),
+        updated_at = now()
       FROM sales_order_lines sol
       WHERE sol.sales_order_id = $1
       AND sol.item_id = inventory_stock.item_id
@@ -330,34 +219,13 @@ export class SalesOrderStatusService {
       [salesOrderId],
     );
 
-    /**
-     * -------------------------------------------------------
-     * RESET LINE RESERVATIONS
-     * -------------------------------------------------------
-     */
     await client.query(
-      `
-      UPDATE sales_order_lines
-      SET
-        quantity_reserved = 0
-      WHERE sales_order_id = $1
-      `,
+      `UPDATE sales_order_lines SET quantity_reserved = 0 WHERE sales_order_id = $1`,
       [salesOrderId],
     );
 
-    /**
-     * -------------------------------------------------------
-     * UPDATE ORDER STATUS
-     * -------------------------------------------------------
-     */
     await client.query(
-      `
-      UPDATE sales_orders
-      SET
-        status = 'CANCELLED',
-        updated_at = now()
-      WHERE id = $1
-      `,
+      `UPDATE sales_orders SET status = 'CANCELLED', updated_at = now() WHERE id = $1`,
       [salesOrderId],
     );
   }

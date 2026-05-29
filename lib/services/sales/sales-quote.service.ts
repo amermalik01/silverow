@@ -31,19 +31,10 @@ export class SalesQuoteService {
     const quoteResult = await client.query(
       `
       INSERT INTO sales_quotes (
-        company_id,
-        quote_no,
-        customer_id,
-        quote_date,
-        valid_until,
-        currency_id,
-        exchange_rate,
-        subtotal,
-        tax_amount,
-        total_amount,
-        notes
+        company_id, quote_no, customer_id, quote_date, valid_until,
+        currency_id, exchange_rate, subtotal, tax_amount, total_amount, notes, status
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'DRAFT')
       RETURNING *
       `,
       [
@@ -51,7 +42,7 @@ export class SalesQuoteService {
         quoteNo,
         payload.quote.customer_id,
         payload.quote.quote_date,
-        payload.quote.valid_until || null,
+        payload.quote.valid_until || payload.quote.expiry_date || null,
         payload.quote.currency_id || null,
         payload.quote.exchange_rate || 1,
         payload.quote.subtotal || 0,
@@ -65,48 +56,65 @@ export class SalesQuoteService {
 
     /**
      * =====================================================
-     * INSERT LINES (HARDENED)
+     * INSERT LINES (UPDATED FOR GL_ACCOUNT & SCHEMA NAMES)
      * =====================================================
      */
+    let index = 0;
     for (const line of payload.lines) {
-      const qty = Number(line.quantity || 0);
-      const price = Number(line.unit_price || 0);
-      const discount = Number(line.discount_amount || 0);
-      const tax = Number(line.tax_amount || 0);
+      index++;
 
-      if (qty < 0) {
-        throw new Error("Invalid quantity in quote line");
+      const qty = Number(line.quantity ?? 0);
+      const price = Number(line.unit_price ?? 0);
+      const taxPercent = Number(line.tax_percent ?? 0);
+
+      // Safety validation for actual transactional lines
+      if (line.line_type !== "COMMENT" && qty < 0) {
+        throw new Error(`Invalid quantity in quote line row ${index}`);
       }
+
+      /**
+       * MAPPING FRONTEND DISCOUNTS TO BACKEND SCHEMA:
+       * Since your database expects a single `discount_percent` column:
+       * 1. If it's already a PERCENT type, use the value directly.
+       * 2. If it's an AMOUNT type, calculate what percent of the gross total it represents.
+       */
+      let computedDiscountPercent = 0;
+      const discountValue = Number(line.discount_value ?? 0);
+
+      if (discountValue > 0) {
+        if (line.discount_type === "PERCENT") {
+          computedDiscountPercent = discountValue;
+        } else {
+          const grossAmount = qty * price;
+          computedDiscountPercent =
+            grossAmount > 0 ? (discountValue / grossAmount) * 100 : 0;
+        }
+      }
+
+      // Map either total_amount, line_total, or fall back to an inline programmatic calculation
+      const lineAmount = Number(line.total_amount || line.line_total || 0);
 
       await client.query(
         `
         INSERT INTO sales_quote_lines (
-          company_id,
-          sales_quote_id,
-          line_no,
-          item_id,
-          description,
-          warehouse_id,
-          quantity,
-          unit_price,
-          discount_amount,
-          tax_amount,
-          line_amount
+          company_id, sales_quote_id, line_no, item_id, gl_account_id, description,
+          warehouse_id, quantity, unit_price, discount_percent, tax_percent, line_amount
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `,
         [
           companyId,
           quote.id,
-          line.line_no || 10000,
-          line.item_id || null,
+          line.line_no || index,
+          line.line_type === "ITEM" ? line.item_id || null : null,
+          line.line_type === "GL_ACCOUNT" ? line.gl_account_id || null : null,
           line.description || null,
           line.warehouse_id || null,
           qty,
           price,
-          discount,
-          tax,
-          qty * price - discount + tax,
+          Number(computedDiscountPercent.toFixed(2)),
+          taxPercent,
+          lineAmount,
         ],
       );
     }

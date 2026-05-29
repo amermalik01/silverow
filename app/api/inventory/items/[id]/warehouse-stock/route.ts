@@ -36,7 +36,7 @@ export async function GET(request: Request, { params }: Params) {
       w.name AS warehouse_name,
 
       wi.location_id,
-      wl.name AS location_name,
+      wl.title AS location_name,
 
       wi.quantity,
       wi.reserved_quantity,

@@ -8,11 +8,111 @@ export class SalesQuoteConversionService {
     companyId: string,
     quoteId: string,
   ) {
-    /**
-     * ============================================
-     * LOAD QUOTE
-     * ============================================
-     */
+    // 1. Load Quote Header
+    const quoteRes = await client.query(
+      `SELECT * FROM sales_quotes WHERE id = $1 AND company_id = $2`,
+      [quoteId, companyId],
+    );
+
+    if (!quoteRes.rows.length) throw new Error("Sales quote not found");
+
+    const quote = quoteRes.rows[0];
+    
+    if (quote.status === "CONVERTED")
+      throw new Error("Quote already converted");
+
+    // 2. Load Quote Lines
+    const linesRes = await client.query(
+      `SELECT * FROM sales_quote_lines WHERE sales_quote_id = $1 ORDER BY line_no ASC`,
+      [quoteId],
+    );
+    const lines = linesRes.rows;
+    if (!lines.length) throw new Error("Quote has no lines to convert");
+
+    // 3. Generate Sequence
+    const seqRes = await client.query(
+      `SELECT get_next_sequence($1,$2) AS code`,
+      [companyId, "sales_order"],
+    );
+    const orderNo = seqRes.rows[0].code;
+
+    // 4. Create Order Header (Mapping Quote fields to Order Schema)
+    const orderRes = await client.query(
+      `INSERT INTO sales_orders (
+        company_id, order_no, customer_id, sales_quote_id, order_date,
+        currency_id, exchange_rate, subtotal, vat_amount, total_amount, 
+        status, remarks, created_at
+      )
+      VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8, $9, 'OPEN', $10, NOW())
+      RETURNING id`,
+      [
+        companyId,
+        orderNo,
+        quote.customer_id,
+        quote.id,
+        quote.currency_id,
+        quote.exchange_rate || 1,
+        quote.subtotal || 0,
+        quote.tax_amount || 0, // Maps Quote tax to Order VAT
+        quote.total_amount || 0,
+        quote.notes || null,
+      ],
+    );
+
+    const orderId = orderRes.rows[0].id;
+
+    // 5. Copy Lines with Line Type Support
+    for (const line of lines) {
+      await client.query(
+        `INSERT INTO sales_order_lines (
+          company_id, sales_order_id, sales_quote_line_id, line_no,
+          line_type, item_id, gl_account_id, description, warehouse_id,
+          quantity, unit_price, discount_amount, vat_percent, vat_amount, line_amount
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        [
+          companyId,
+          orderId,
+          line.id,
+          line.line_no,
+          line.line_type || "ITEM", // Default to ITEM if not specified
+          line.item_id,
+          line.gl_account_id,
+          line.description,
+          line.warehouse_id,
+          line.quantity,
+          line.unit_price,
+          line.discount_amount || 0,
+          line.tax_percent || 0, // Map tax to VAT
+          line.tax_amount || 0, // Map tax to VAT
+          line.line_amount || 0,
+        ],
+      );
+    }
+
+    // 6. Update Quote Status
+    await client.query(
+      `UPDATE sales_quotes SET status = 'CONVERTED', converted_at = NOW(), converted_to_order_id = $1 WHERE id = $2`,
+      [orderId, quoteId],
+    );
+
+    return { id: orderId, order_no: orderNo };
+  }
+}
+
+/* import { PoolClient } from "pg";
+
+export class SalesQuoteConversionService {
+  static async convertToOrder(
+    client: PoolClient,
+    companyId: string,
+    quoteId: string,
+  ) {
+    // *
+    //  * ============================================
+    //  * LOAD QUOTE
+    //  * ============================================
+    
     const quoteResult = await client.query(
       `
       SELECT *
@@ -28,20 +128,20 @@ export class SalesQuoteConversionService {
 
     const quote = quoteResult.rows[0];
 
-    /**
-     * ============================================
-     * VALIDATE STATUS
-     * ============================================
-     */
+    // *
+    //  * ============================================
+    //  * VALIDATE STATUS
+    //  * ============================================
+    
     if (quote.status === "CONVERTED") {
       throw new Error("Quote already converted");
     }
 
-    /**
-     * ============================================
-     * LOAD LINES
-     * ============================================
-     */
+    // *
+    //  * ============================================
+    //  * LOAD LINES
+    //  * ============================================
+    
     const linesResult = await client.query(
       `
       SELECT *
@@ -58,11 +158,11 @@ export class SalesQuoteConversionService {
       throw new Error("Quote has no lines");
     }
 
-    /**
-     * ============================================
-     * GENERATE ORDER NUMBER
-     * ============================================
-     */
+    // *
+    //  * ============================================
+    //  * GENERATE ORDER NUMBER
+    //  * ============================================
+    
     const seqResult = await client.query(
       `
       SELECT get_next_sequence($1,$2) AS code
@@ -72,11 +172,11 @@ export class SalesQuoteConversionService {
 
     const orderNo = seqResult.rows[0].code;
 
-    /**
-     * ============================================
-     * CREATE ORDER HEADER
-     * ============================================
-     */
+    // *
+    //  * ============================================
+    //  * CREATE ORDER HEADER
+    //  * ============================================
+    
     const orderResult = await client.query(
       `
       INSERT INTO sales_orders (
@@ -117,11 +217,11 @@ export class SalesQuoteConversionService {
 
     const order = orderResult.rows[0];
 
-    /**
-     * ============================================
-     * COPY LINES
-     * ============================================
-     */
+    // *
+    //  * ============================================
+    //  * COPY LINES
+    //  * ============================================
+    
     for (const line of lines) {
       await client.query(
         `
@@ -162,11 +262,11 @@ export class SalesQuoteConversionService {
       );
     }
 
-    /**
-     * ============================================
-     * UPDATE QUOTE STATUS
-     * ============================================
-     */
+    // *
+    //  * ============================================
+    //  * UPDATE QUOTE STATUS
+    //  * ============================================
+    
     await client.query(
       `
       UPDATE sales_quotes
@@ -181,4 +281,4 @@ export class SalesQuoteConversionService {
 
     return order;
   }
-}
+} */
