@@ -65,7 +65,12 @@ export default function SalesReturnFormView({
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // New Data Source Tracking State
+  const [status, setStatus] = useState<"DRAFT" | "POSTED">("DRAFT");
+  const isPosted = status === "POSTED";
 
   // Database Dependency Setup States
   const [customers, setCustomers] = useState<CustomerSetupOption[]>([]);
@@ -78,6 +83,7 @@ export default function SalesReturnFormView({
   const [returnNo, setReturnNo] = useState("Draft Auto-Sequence");
   const [customerId, setCustomerId] = useState("");
   const [salesInvoiceId, setSalesInvoiceId] = useState("");
+
   const [returnDate, setReturnDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -115,6 +121,7 @@ export default function SalesReturnFormView({
         setAllInvoices(setupData.invoices);
 
         // Pre-set Default Base Currency parameters if creating a new entry
+
         if (!isEditMode) {
           const baseCurr = setupData.currencies.find(
             (c: CurrencySetupOption) => c.is_base,
@@ -123,6 +130,21 @@ export default function SalesReturnFormView({
             setCurrencyId(baseCurr.id);
             setExchangeRate(Number(baseCurr.exchange_rate));
           }
+          // Pre-populate empty single row item matrix on fresh setup
+          setLines([
+            {
+              lineNo: 10000,
+              lineType: "ITEM",
+              itemId: "",
+              glAccountId: "",
+              warehouseId: "",
+              description: "",
+              quantity: 1,
+              unitPrice: 0,
+              discountAmount: 0,
+              vatPercent: 0,
+            },
+          ]);
         }
 
         if (isEditMode) {
@@ -133,6 +155,7 @@ export default function SalesReturnFormView({
 
           const inv = detailData.invoice;
           setReturnNo(inv.return_no);
+          setStatus(inv.status || "DRAFT"); // Track and apply ledger state lock parameters
           setCustomerId(inv.customer_id);
           setSalesInvoiceId(inv.sales_invoice_id || "");
           setReturnDate(new Date(inv.return_date).toISOString().split("T")[0]);
@@ -165,6 +188,34 @@ export default function SalesReturnFormView({
     }
     initializeForm();
   }, [id, isEditMode]);
+
+  // Handle Post Action Worker Trigger
+  const handlePost = async () => {
+    if (
+      !id ||
+      !window.confirm(
+        "Are you sure you want to POST this Credit Note? This will lock the document permanently and update financial ledgers.",
+      )
+    )
+      return;
+    setPosting(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/sales/sales-returns/${id}/post`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Posting process failed.");
+
+      setStatus("POSTED"); // Immediately lock local interactive states
+      router.refresh();
+    } catch (err) {
+      if (err instanceof Error) setError(err.message);
+    } finally {
+      setPosting(false);
+    }
+  };
 
   // Safe Generic Form Field Matrix Mutator
   const updateLineField = <K extends keyof FormLine>(
@@ -253,6 +304,7 @@ export default function SalesReturnFormView({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPosted) return;
     setSubmitting(true);
     setError(null);
 
@@ -319,29 +371,51 @@ export default function SalesReturnFormView({
                   ? `Update Credit Note — ${returnNo}`
                   : "Log New Return Document"}
               </h1>
+              {isPosted ? (
+                <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-0.5 rounded text-xs font-bold border border-green-200 dark:border-green-800 tracking-wide uppercase select-none">
+                  Posted Ledger Record
+                </span>
+              ) : (
+                <span className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 py-0.5 rounded text-xs font-bold border border-amber-200 dark:border-amber-800 tracking-wide uppercase select-none">
+                  Draft Document
+                </span>
+              )}
             </div>
             <div className="flex gap-2">
-              {isEditMode && (
+              {isEditMode && !isPosted && (
+                <>
+                  <button
+                    type="button"
+                    disabled={deleting || submitting || posting}
+                    onClick={handleDelete}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition disabled:bg-gray-400"
+                  >
+                    {deleting ? "Purging Document..." : "Delete Credit Note"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deleting || submitting || posting}
+                    onClick={handlePost}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-medium transition disabled:bg-gray-400"
+                  >
+                    {posting ? "Posting..." : "Post Document"}
+                  </button>
+                </>
+              )}
+
+              {!isPosted && (
                 <button
-                  type="button"
-                  disabled={deleting || submitting}
-                  onClick={handleDelete}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition disabled:bg-gray-400"
+                  type="submit"
+                  disabled={submitting || deleting || posting}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition disabled:bg-gray-400"
                 >
-                  {deleting ? "Purging Document..." : "Delete Credit Note"}
+                  {submitting
+                    ? "Committing..."
+                    : isEditMode
+                      ? "Save Adjustments"
+                      : "Commit Document"}
                 </button>
               )}
-              <button
-                type="submit"
-                disabled={submitting || deleting}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition disabled:bg-gray-400"
-              >
-                {submitting
-                  ? "Committing Entry..."
-                  : isEditMode
-                    ? "Save Adjustments"
-                    : "Commit Document"}
-              </button>
             </div>
           </div>
         </div>
@@ -361,6 +435,7 @@ export default function SalesReturnFormView({
             </label>
             <select
               required
+              disabled={isPosted}
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
               className="mt-1 w-full text-sm border p-2 rounded-md bg-white dark:bg-slate-800 focus:ring-1 focus:ring-blue-500 dark:border-slate-700"
@@ -381,6 +456,7 @@ export default function SalesReturnFormView({
             </label>
             <div className="flex gap-1 mt-1">
               <select
+                disabled={isPosted}
                 value={salesInvoiceId}
                 onChange={(e) => {
                   setSalesInvoiceId(e.target.value);
@@ -398,6 +474,7 @@ export default function SalesReturnFormView({
               </select>
               <button
                 type="button"
+                disabled={isPosted}
                 onClick={() => setIsModalOpen(true)}
                 className="bg-gray-900 text-white text-xs px-2.5 rounded hover:bg-gray-800 transition dark:bg-slate-700 dark:hover:bg-slate-600"
                 title="Open Advanced Search Dialog"
@@ -414,6 +491,7 @@ export default function SalesReturnFormView({
             </label>
             <select
               required
+              disabled={isPosted}
               value={currencyId}
               onChange={(e) => handleCurrencyChange(e.target.value)}
               className="mt-1 w-full text-sm border p-2 rounded-md bg-white dark:bg-slate-800 focus:ring-1 focus:ring-blue-500 dark:border-slate-700"
@@ -435,6 +513,7 @@ export default function SalesReturnFormView({
               type="number"
               required
               step="any"
+              disabled={isPosted}
               min={0.000001}
               value={exchangeRate}
               onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 0)}
@@ -450,6 +529,7 @@ export default function SalesReturnFormView({
           </label>
           <textarea
             value={notes}
+            disabled={isPosted}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add administrative summary justifications here..."
             className="w-full text-sm border p-2 rounded-md bg-white dark:bg-slate-800 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 h-16 resize-none"
@@ -484,6 +564,7 @@ export default function SalesReturnFormView({
                   >
                     <td className="p-2">
                       <select
+                        disabled={isPosted}
                         value={line.lineType}
                         onChange={(e) =>
                           updateLineField(
@@ -501,6 +582,7 @@ export default function SalesReturnFormView({
                     <td className="p-2 space-y-1">
                       <input
                         type="text"
+                        disabled={isPosted}
                         required
                         value={
                           line.lineType === "ITEM"
@@ -518,6 +600,7 @@ export default function SalesReturnFormView({
                       />
                       <input
                         type="text"
+                        disabled={isPosted}
                         placeholder="Line descriptive remark text..."
                         value={line.description}
                         onChange={(e) =>
@@ -529,6 +612,7 @@ export default function SalesReturnFormView({
                     <td className="p-2">
                       <input
                         type="text"
+                        disabled={isPosted}
                         value={line.warehouseId}
                         onChange={(e) =>
                           updateLineField(idx, "warehouseId", e.target.value)
@@ -539,6 +623,7 @@ export default function SalesReturnFormView({
                     <td className="p-2">
                       <input
                         type="number"
+                        disabled={isPosted}
                         required
                         min={0.01}
                         step="any"
@@ -556,6 +641,7 @@ export default function SalesReturnFormView({
                     <td className="p-2">
                       <input
                         type="number"
+                        disabled={isPosted}
                         required
                         min={0}
                         step="any"
@@ -573,6 +659,7 @@ export default function SalesReturnFormView({
                     <td className="p-2">
                       <input
                         type="number"
+                        disabled={isPosted}
                         required
                         min={0}
                         max={100}
@@ -591,32 +678,36 @@ export default function SalesReturnFormView({
                     <td className="p-2 text-right font-mono font-semibold text-gray-900 dark:text-gray-100 pt-3.5 pr-4 select-none">
                       ${lineTotal.toFixed(2)}
                     </td>
-                    <td className="p-2 text-center pt-3">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveLine(idx)}
-                        disabled={lines.length === 1}
-                        className="text-red-500 hover:text-red-700 disabled:text-gray-300 font-bold text-xs"
-                        title="Delete Row"
-                      >
-                        ✕
-                      </button>
-                    </td>
+                    {!isPosted && (
+                      <td className="p-2 text-center pt-3">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLine(idx)}
+                          disabled={lines.length === 1}
+                          className="text-red-500 hover:text-red-700 disabled:text-gray-300 font-bold text-xs"
+                          title="Delete Row"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
             </tbody>
           </table>
 
-          <div className="p-3 bg-gray-50 dark:bg-slate-800/50 border-t dark:border-slate-800">
-            <button
-              type="button"
-              onClick={handleAddLine}
-              className="text-xs font-bold bg-white dark:bg-slate-800 border dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 px-3 py-1.5 rounded shadow-sm"
-            >
-              + Add Item Line Row
-            </button>
-          </div>
+          {!isPosted && (
+            <div className="p-3 bg-gray-50 dark:bg-slate-800/50 border-t dark:border-slate-800">
+              <button
+                type="button"
+                onClick={handleAddLine}
+                className="text-xs font-bold bg-white dark:bg-slate-800 border dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 px-3 py-1.5 rounded shadow-sm"
+              >
+                + Add Item Line Row
+              </button>
+            </div>
+          )}
 
           {/* Aggregated Ledger Totals Block Layout */}
           <div className="bg-gray-50/50 dark:bg-slate-800/20 p-4 border-t dark:border-slate-800 flex flex-col items-end space-y-1 text-sm select-none">

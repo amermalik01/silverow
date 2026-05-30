@@ -340,4 +340,43 @@ export class SalesReturnService {
 
     return result.rowCount ? result.rowCount > 0 : false;
   }
+
+
+  /**
+   * =========================================================
+   * POST CREDIT NOTE (LOCK & COMMIT TO LEDGERS)
+   * =========================================================
+   */
+  static async post(client: PoolClient, id: string, companyId: string) {
+    // 1. Fetch current status to prevent double-posting
+    const statusCheck = await client.query(
+      `SELECT status, return_no FROM sales_returns WHERE id = $1 AND company_id = $2`,
+      [id, companyId]
+    );
+
+    if (!statusCheck.rows.length) {
+      throw new Error("Credit Note not found.");
+    }
+
+    if (statusCheck.rows[0].status === "POSTED") {
+      throw new Error("This Credit Note has already been posted.");
+    }
+
+    // 2. Update status to POSTED
+    const result = await client.query(
+      `UPDATE sales_returns 
+       SET status = 'POSTED',
+           posted_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $1 AND company_id = $2
+       RETURNING return_no`,
+      [id, companyId]
+    );
+
+    // NOTE: If you have GL/Inventory ledger tables, you would loop through 
+    // the line items here and execute your sub-ledger insertion queries 
+    // within this same shared transaction context.
+
+    return { returnNo: result.rows[0].return_no };
+  }
 }
