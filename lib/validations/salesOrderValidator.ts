@@ -48,7 +48,7 @@ export class SalesOrderValidator {
 
     // Verify Active Customer State inside Parties list
     const customerCheck = await pool.query(
-      `SELECT status FROM parties WHERE id = $1 AND company_id = $2 AND type = 'CUSTOMER'`,
+      `SELECT status FROM parties WHERE id = $1 AND company_id = $2 AND type = 'customer'`,
       [payload.customer_id, companyId],
     );
     if (
