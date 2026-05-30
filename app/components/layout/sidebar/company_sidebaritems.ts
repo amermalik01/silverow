@@ -150,23 +150,12 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 url: `/${slug}/sales/returns`,
               },
               {
-                // id: uniqueId(),
                 id: "Posted Credit Notes",
                 name: "Posted Credit Notes",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/sales/posted-credit-notes`,
               },
             ],
           },
-          // {
-          //   id: "Customer Journal",
-          //   name: "Customer Journal",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   id: "Posted Customer Journal",
-          //   name: "Posted Customer Journal",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
           {
             id: "Support Tickets",
             name: "Support Tickets",
@@ -190,7 +179,6 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Purchases",
         name: "Purchases",
-        // id: uniqueId(),
         icon: "solar:shield-keyhole-minimalistic-linear",
         children: [
           {
@@ -231,16 +219,6 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
               },
             ],
           },
-          // {
-          //   id: "Supplier Journal",
-          //   name: "Supplier Journal",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   id: "Posted Supplier Journal",
-          //   name: "Posted Supplier Journal",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
           {
             // id: uniqueId(),
             id: "Purchase Matrix",
