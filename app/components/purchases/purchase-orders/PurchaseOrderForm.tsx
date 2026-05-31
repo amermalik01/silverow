@@ -298,7 +298,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
       );
 
       const result = await res.json();
-      if (!res.ok)
+      if (!result.ok)
         throw new Error(result.error || "Save sequence transaction rejected.");
 
       router.push(`/${slug}/purchases/purchase-orders`);
@@ -347,7 +347,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
             <div>
               <label className="text-sm text-gray-500">Supplier ID</label>
               <input
-                value={order.supplier_id || ""}
+                value={order?.supplier_id || ""}
                 readOnly
                 className="w-full border rounded px-3 py-2 bg-gray-50 mt-2 text-black"
               />
@@ -376,7 +376,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
             <label className="text-sm">Order Date</label>
             <input
               type="date"
-              value={order.order_date}
+              value={order?.order_date}
               disabled={isReadOnly}
               onChange={(e) =>
                 setOrder({ ...order, order_date: e.target.value })
@@ -387,7 +387,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
           <div>
             <label className="text-sm">Reference</label>
             <input
-              value={order.reference || ""}
+              value={order?.reference || ""}
               disabled={isReadOnly}
               onChange={(e) =>
                 setOrder({ ...order, reference: e.target.value })

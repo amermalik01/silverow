@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       SELECT id, name 
       FROM parties 
       WHERE company_id = $1 
-        AND type = 'customer' -- 🟢 Filters partitioned table for customers
+        AND is_customer = true -- 🟢 Filters partitioned table for customers
         AND status = 'active'
       ORDER BY name ASC
       `,

@@ -1,8 +1,8 @@
 // lib/services/purchase-orders/purchase-order.service.ts
 
-// lib/services/purchase-orders/purchase-order.service.ts
 import { PoolClient } from "pg";
 import { pool } from "@/lib/db";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { PurchaseOrderPayloadSchema } from "@/lib/validations/purchase-order.schema";
 import {
   PurchaseOrder,
@@ -63,8 +63,10 @@ export class PurchaseOrderService {
     companyId: string,
     rawPayload: unknown,
   ): Promise<PurchaseOrder> {
+
     // Validate runtime types strictly using schema
-    const payload = PurchaseOrderPayloadSchema.parse(rawPayload);
+    // const payload = PurchaseOrderPayloadSchema.parse(sanitizedPayload);
+    const payload = PurchaseOrderPayloadSchema.parse(rawPayload) as PurchaseOrderPayload;
     const client = await pool.connect();
 
     try {
@@ -167,6 +169,7 @@ export class PurchaseOrderService {
     rawPayload: unknown,
   ): Promise<void> {
     const payload = PurchaseOrderPayloadSchema.parse(rawPayload);
+    // const payload = PurchaseOrderPayloadSchema.parse(rawPayload) as PurchaseOrderPayload;
     const client = await pool.connect();
 
     try {
@@ -441,13 +444,15 @@ export class PurchaseOrderService {
     purchaseOrderId: string,
     address: PurchaseOrderAddress,
   ): Promise<void> {
+
+    const companyId = await getCompanyId();
+    
     await client.query(
       `
       INSERT INTO purchase_order_addresses (
         purchase_order_id,
         address_type,
-        contact_name,
-        company_name,
+        name,
         phone,
         email,
         address_1,
@@ -455,7 +460,8 @@ export class PurchaseOrderService {
         city,
         state,
         postcode,
-        country
+        country,
+        company_id
       )
       VALUES (
         $1,$2,$3,$4,$5,$6,
@@ -465,8 +471,7 @@ export class PurchaseOrderService {
       [
         purchaseOrderId,
         address.address_type,
-        address.contact_name || null,
-        address.company_name || null,
+        address.name || null,
         address.phone || null,
         address.email || null,
         address.address_1 || null,
@@ -475,6 +480,7 @@ export class PurchaseOrderService {
         address.state || null,
         address.postcode || null,
         address.country || null,
+        companyId
       ],
     );
   }

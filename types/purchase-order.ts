@@ -16,6 +16,7 @@ export interface PurchaseOrder {
   supplier_name?: string;
   warehouse_id?: string;
   currency_id?: string;
+  exchange_rate?: number;
   order_date: string;
   expected_date?: string;
   reference?: string;
@@ -38,8 +39,9 @@ export interface PurchaseOrderAddress {
   id?: string;
   purchase_order_id?: string;
   address_type: PurchaseOrderAddressType;
-  contact_name?: string;
-  company_name?: string;
+  // contact_name?: string;
+  // company_name?: string;
+  name?: string;
   phone?: string;
   email?: string;
   address_1?: string;
