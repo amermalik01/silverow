@@ -36,39 +36,24 @@ export type PurchaseOrderAddressType = "billing" | "shipping";
  */
 export interface PurchaseOrderAddress {
   id?: string;
-
   purchase_order_id?: string;
-
   address_type: PurchaseOrderAddressType;
-
   contact_name?: string;
-
   company_name?: string;
-
   phone?: string;
-
   email?: string;
-
   address_1?: string;
-
   address_2?: string;
-
   city?: string;
-
   state?: string;
-
   postcode?: string;
-
   country?: string;
 }
 
 export interface PurchaseOrderPayload {
   order: PurchaseOrder;
-
   billing_address?: PurchaseOrderAddress;
-
   shipping_address?: PurchaseOrderAddress;
-
   lines: PurchaseOrderLine[];
 }
 
@@ -76,13 +61,9 @@ export type PurchaseOrderLineType = "ITEM" | "GL_ACCOUNT" | "COMMENT";
 
 export interface PurchaseOrderLine {
   id?: string;
-
   purchase_order_id?: string;
-
   line_no?: number;
-
   line_type: PurchaseOrderLineType;
-
   /*
    * ITEM
    */
@@ -117,21 +98,13 @@ export interface PurchaseOrderLine {
   discount_value?: number;
 
   discount_amount?: number;
-
   original_amount?: number;
-
   vat_business_posting_group_id?: string;
-
   vat_product_posting_group_id?: string;
-
   vat_percent?: number;
-
   vat_amount?: number;
-
   net_amount?: number;
-
   gross_amount?: number;
-
   purchase_gl_id?: string;
   sales_gl_id?: string;
   inventory_gl_id?: string;
@@ -141,17 +114,3 @@ export interface PurchaseOrderLineUI extends PurchaseOrderLine {
   reserved_quantity?: number;
   available_stock?: number;
 }
-// export interface PurchaseOrderLine {
-//   id?: string;
-//   purchase_order_id?: string;
-//   item_id: string;
-//   description?: string;
-//   warehouse_id?: string;
-//   uom_id?: string;
-//   quantity: number;
-//   received_quantity?: number;
-//   unit_cost: number;
-//   tax_percent?: number;
-//   tax_amount?: number;
-//   line_total?: number;
-// }

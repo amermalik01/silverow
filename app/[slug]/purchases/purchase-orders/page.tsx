@@ -2,19 +2,17 @@
 
 import PurchaseOrderList from "@/app/components/purchases/purchase-orders/PurchaseOrderList";
 
-export default async function PurchaseOrdersPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+type Props = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
+
+export default async function PurchaseOrdersPage({ params }: Props) {
   const { slug } = await params;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">
-        Purchases / Purchase Orders
-      </h1>
-
+    <div>
       <PurchaseOrderList slug={slug} />
     </div>
   );

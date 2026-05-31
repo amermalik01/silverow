@@ -1,6 +1,5 @@
 // /app/components/sales/orders/SalesOrderList.tsx
 
-// /app/components/sales/orders/SalesOrderList.tsx
 "use client";
 
 import Link from "next/link";

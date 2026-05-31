@@ -30,21 +30,3 @@ export default async function Page({
     </div>
   );
 }
-
-/* export default async function Page({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">
-        Create Purchase Receipt
-      </h1>
-
-      <PurchaseReceiptForm slug={slug} />
-    </div>
-  );
-} */

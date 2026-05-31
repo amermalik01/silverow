@@ -1,6 +1,6 @@
 // app/[slug]/purchases/purchase-orders/[id]/edit/page.tsx
 
-import PurchaseOrderForm from "@/app/components/purchases/purchase-orders/PurchaseOrderForm";
+import { PurchaseOrderForm } from "@/app/components/purchases/purchase-orders/PurchaseOrderForm";
 
 export default async function EditPurchaseOrderPage({
   params,
@@ -14,14 +14,9 @@ export default async function EditPurchaseOrderPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">
-        Edit Purchase Order
-      </h1>
+      <h1 className="text-2xl font-bold">Edit Purchase Order</h1>
 
-      <PurchaseOrderForm
-        slug={slug}
-        id={id}
-      />
+      <PurchaseOrderForm slug={slug} id={id} />
     </div>
   );
 }
