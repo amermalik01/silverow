@@ -3,11 +3,10 @@
 import { pool } from "@/lib/db";
 
 export class GRNIReconciliationService {
-  /**
-   * =========================================================
-   * GET GRNI BALANCE BY ITEM
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * GET GRNI BALANCE BY ITEM
+  //  * =========================================================
+
   static async getGRNIBalance(companyId: string) {
     const result = await pool.query(
       `

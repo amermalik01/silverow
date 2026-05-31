@@ -9,22 +9,15 @@ export type AccountContext =
   | "INVENTORY_ADJUSTMENT";
 
 export class AccountResolutionService {
-  /**
-   * =========================================================
-   * RESOLVE PURCHASE ACCOUNTS
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * RESOLVE PURCHASE ACCOUNTS
+  //  * =========================================================
 
   static async resolvePurchaseAccounts(
     client: PoolClient,
     companyId: string,
     itemId: string,
   ) {
-    /**
-     * -----------------------------------------------------
-     * ITEM
-     * -----------------------------------------------------
-     */
     const itemResult = await client.query(
       `
         SELECT
@@ -43,11 +36,6 @@ export class AccountResolutionService {
 
     const item = itemResult.rows[0];
 
-    /**
-     * -----------------------------------------------------
-     * INVENTORY POSTING GROUP
-     * -----------------------------------------------------
-     */
     const inventoryGroupResult = await client.query(
       `
         SELECT
@@ -67,11 +55,6 @@ export class AccountResolutionService {
 
     const inventoryGroup = inventoryGroupResult.rows[0];
 
-    /**
-     * -----------------------------------------------------
-     * AP ACCOUNT
-     * -----------------------------------------------------
-     */
     const apResult = await client.query(
       `
         SELECT payable_account_id
@@ -88,11 +71,6 @@ export class AccountResolutionService {
 
     const ap = apResult.rows[0];
 
-    /**
-     * -----------------------------------------------------
-     * VAT
-     * -----------------------------------------------------
-     */
     let vatAccountId: string | null = null;
 
     if (item.vat_product_posting_group_id) {
@@ -114,82 +92,18 @@ export class AccountResolutionService {
 
     return {
       inventory_account_id: inventoryGroup.inventory_account_id,
-
       cogs_account_id: inventoryGroup.cogs_account_id,
-
       purchase_account_id: inventoryGroup.purchase_account_id,
-
       grni_account_id: inventoryGroup.grni_account_id,
-
       payable_account_id: ap.payable_account_id,
-
       vat_account_id: vatAccountId,
     };
   }
-  /* static async resolvePurchaseAccounts(
-    client: PoolClient,
-    companyId: string,
-    itemId: string,
-  ) {
 
-    const itemResult = await client.query(
-      `
-      SELECT inventory_posting_group_id
-      FROM items
-      WHERE id = $1
-      `,
-      [itemId],
-    );
+  //  * =========================================================
+  //  * RESOLVE VAT ACCOUNTS (PHASE READY)
+  //  * =========================================================
 
-    if (!itemResult.rows.length) {
-      throw new Error("Item not found");
-    }
-
-    const postingGroupId = itemResult.rows[0].inventory_posting_group_id;
-
-
-    const invResult = await client.query(
-      `
-      SELECT inventory_account_id, cogs_account_id
-      FROM inventory_posting_groups
-      WHERE id = $1
-      `,
-      [postingGroupId],
-    );
-
-    if (!invResult.rows.length) {
-      throw new Error("Inventory posting group not found");
-    }
-
-
-    const purchaseResult = await client.query(
-      `
-      SELECT purchase_account_id, grni_account_id, vat_account_id
-      FROM purchase_posting_groups
-      WHERE company_id = $1
-      LIMIT 1
-      `,
-      [companyId],
-    );
-
-    if (!purchaseResult.rows.length) {
-      throw new Error("Purchase posting group not configured");
-    }
-
-    return {
-      inventory_account_id: invResult.rows[0].inventory_account_id,
-      cogs_account_id: invResult.rows[0].cogs_account_id,
-      purchase_account_id: purchaseResult.rows[0].purchase_account_id,
-      grni_account_id: purchaseResult.rows[0].grni_account_id,
-      vat_account_id: purchaseResult.rows[0].vat_account_id,
-    };
-  } */
-
-  /**
-   * =========================================================
-   * RESOLVE VAT ACCOUNTS (PHASE READY)
-   * =========================================================
-   */
   static async resolveVatAccounts(
     client: PoolClient,
     companyId: string,
@@ -217,22 +131,15 @@ export class AccountResolutionService {
     return result.rows[0];
   }
 
-  /**
-   * =========================================================
-   * RESOLVE Sales ACCOUNTS
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * RESOLVE Sales ACCOUNTS
+  //  * =========================================================
 
   static async resolveSalesAccounts(
     client: PoolClient,
     companyId: string,
     itemId: string,
   ) {
-    /**
-     * -------------------------------------------------------
-     * ITEM POSTING GROUP
-     * -------------------------------------------------------
-     */
     const itemResult = await client.query(
       `
         SELECT inventory_posting_group_id
@@ -248,11 +155,6 @@ export class AccountResolutionService {
 
     const postingGroupId = itemResult.rows[0].inventory_posting_group_id;
 
-    /**
-     * -------------------------------------------------------
-     * INVENTORY POSTING GROUP (for COGS future use)
-     * -------------------------------------------------------
-     */
     const inventoryResult = await client.query(
       `
         SELECT inventory_account_id, cogs_account_id
@@ -266,11 +168,6 @@ export class AccountResolutionService {
       throw new Error("Inventory posting group not found");
     }
 
-    /**
-     * -------------------------------------------------------
-     * SALES POSTING GROUP
-     * -------------------------------------------------------
-     */
     const salesResult = await client.query(
       `
         SELECT sales_account_id, receivable_account_id, vat_account_id

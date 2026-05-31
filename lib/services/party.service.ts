@@ -1,17 +1,13 @@
 // lib/services/party.service.ts
 
 import { pool } from "@/lib/db";
-import { Party, PartyContact, PartyAddress } from "@/types/erp";
+import { Party } from "@/types/erp";
 
 import {
   PartyUpdateDTO,
   PartyContactDTO,
   PartyAddressDTO,
 } from "@/types/erp.dto";
-
-/* =========================
-   TYPES
-========================= */
 
 export type PartyType = "lead" | "customer" | "supplier" | "both";
 
@@ -31,45 +27,7 @@ export interface PartyListResponse<T> {
   total: number;
 }
 
-/* =========================
-   DB ENTITY TYPE
-========================= */
-
-/* export interface Party {
-  id: string;
-  company_id: string;
-
-  crm_code?: string | null;
-  customer_code?: string | null;
-  srm_code?: string | null;
-
-  name: string;
-  type: PartyType;
-  status: PartyStatus;
-
-  email?: string | null;
-  phone?: string | null;
-  mobile?: string | null;
-
-  website?: string | null;
-
-  credit_limit?: number | null;
-  currency_id?: string | null;
-
-  salesperson_id?: string | null;
-  bucket_id?: string | null;
-
-  created_at: string;
-} */
-
-/* =========================
-   SERVICE CLASS
-========================= */
-
 export class PartyService {
-  /* -------------------------
-     LIST
-  ------------------------- */
   static async list(filters: PartyFilters): Promise<PartyListResponse<Party>> {
     const { companyId, page, limit, search, type, status } = filters;
 
@@ -159,9 +117,6 @@ export class PartyService {
     }
   }
 
-  /* -------------------------
-     FIND BY ID (FULL DETAIL)
-  ------------------------- */
   static async findById(id: string) {
     const client = await pool.connect();
 
@@ -197,14 +152,10 @@ export class PartyService {
     }
   }
 
-  /* -------------------------
-     UPDATE
-  ------------------------- */
-
   static async update(
     id: string,
     body: {
-      account: PartyUpdateDTO; // ✅ FIXED
+      account: PartyUpdateDTO;
       contacts?: PartyContactDTO[];
       addresses?: PartyAddressDTO[];
     },
@@ -245,7 +196,6 @@ export class PartyService {
         ],
       );
 
-      /* contacts */
       await client.query(`DELETE FROM party_contacts WHERE party_id = $1`, [
         id,
       ]);
@@ -269,7 +219,6 @@ export class PartyService {
         );
       }
 
-      /* addresses */
       await client.query(`DELETE FROM party_addresses WHERE party_id = $1`, [
         id,
       ]);
@@ -303,92 +252,4 @@ export class PartyService {
       client.release();
     }
   }
-  /* static async update(
-    id: string,
-    body: {
-      account: Partial<Party>;
-      contacts?: any[];
-      addresses?: any[];
-    },
-  ) {
-    const client = await pool.connect();
-
-    const { account, contacts = [], addresses = [] } = body;
-
-    try {
-      await client.query("BEGIN");
-
-      await client.query(
-        `
-        UPDATE parties
-        SET
-          name = $1,
-          email = $2,
-          phone = $3,
-          mobile = $4,
-          website = $5,
-          credit_limit = $6,
-          currency_id = $7,
-          salesperson_id = $8,
-          status = $9
-        WHERE id = $10
-        `,
-        [
-          account.name,
-          account.email ?? null,
-          account.phone ?? null,
-          account.mobile ?? null,
-          account.website ?? null,
-          account.credit_limit ?? null,
-          account.currency_id ?? null,
-          account.salesperson_id ?? null,
-          account.status ?? "active",
-          id,
-        ],
-      );
-
-
-      await client.query(
-        `DELETE FROM party_contacts WHERE party_id = $1`,
-        [id],
-      );
-
-      for (const c of contacts) {
-        await client.query(
-          `
-          INSERT INTO party_contacts
-          (party_id, name, email, phone, is_primary)
-          VALUES ($1, $2, $3, $4, $5)
-          `,
-          [id, c.name, c.email, c.phone, c.is_primary || false],
-        );
-      }
-
-
-      await client.query(
-        `DELETE FROM party_addresses WHERE party_id = $1`,
-        [id],
-      );
-
-      for (const a of addresses) {
-        await client.query(
-          `
-          INSERT INTO party_addresses
-          (party_id, address_1, city, country, is_primary)
-          VALUES ($1, $2, $3, $4, $5)
-          `,
-          [id, a.address_1, a.city, a.country, a.is_primary || false],
-        );
-      }
-
-      await client.query("COMMIT");
-
-      return { success: true };
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
-  } */
 }

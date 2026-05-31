@@ -478,7 +478,7 @@ export default function WarehouseLookupModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-xl w-[95%] max-w-5xl p-6 max-h-[90vh] overflow-auto">
+      <div className="bg-white rounded-xl shadow-xl w-[95%] container p-6 max-h-[90vh] overflow-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">Warehouse Lookup</h2>
 

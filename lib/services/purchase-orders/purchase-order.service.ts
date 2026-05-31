@@ -12,11 +12,8 @@ import {
 } from "@/types/purchase-order";
 
 export class PurchaseOrderService {
-  /**
-   * =========================================================
-   * LIST
-   * =========================================================
-   */
+  //  LIST
+
   static async list(companyId: string): Promise<PurchaseOrder[]> {
     const result = await pool.query(
       `
@@ -39,11 +36,6 @@ export class PurchaseOrderService {
     return result.rows;
   }
 
-  /**
-   * =========================================================
-   * GET
-   * =========================================================
-   */
   static async get(
     companyId: string,
     id: string,
@@ -106,11 +98,6 @@ export class PurchaseOrderService {
     };
   }
 
-  /**
-   * =========================================================
-   * CREATE
-   * =========================================================
-   */
   static async create(
     companyId: string,
     payload: PurchaseOrderPayload,
@@ -124,11 +111,6 @@ export class PurchaseOrderService {
 
       const order = payload.order;
 
-      /**
-       * -----------------------------------------------------
-       * GENERATE PURCHASE ORDER NUMBER
-       * -----------------------------------------------------
-       */
       const seqResult = await client.query(
         `
       SELECT get_next_sequence($1,$2) AS code
@@ -138,11 +120,6 @@ export class PurchaseOrderService {
 
       const orderNo = seqResult.rows[0].code;
 
-      /**
-       * -----------------------------------------------------
-       * SUPPLIER
-       * -----------------------------------------------------
-       */
       const supplierResult = await client.query(
         `
         SELECT id, name
@@ -159,11 +136,6 @@ export class PurchaseOrderService {
 
       const supplier = supplierResult.rows[0];
 
-      /**
-       * -----------------------------------------------------
-       * HEADER
-       * -----------------------------------------------------
-       */
       const orderResult = await client.query(
         `
         INSERT INTO purchase_orders (
@@ -193,36 +165,21 @@ export class PurchaseOrderService {
           companyId,
           orderNo,
           supplier.id,
-
           order.order_date,
-
           order.expected_date || null,
-
           order.warehouse_id || null,
-
           order.currency_id || null,
-
           order.reference || null,
-
           order.notes || null,
-
           order.subtotal || 0,
-
           order.tax_amount || 0,
-
           order.total_amount || 0,
-
           order.status || "draft",
         ],
       );
 
       const createdOrder = orderResult.rows[0];
 
-      /**
-       * -----------------------------------------------------
-       * LINES
-       * -----------------------------------------------------
-       */
       let lineNo = 10000;
 
       for (const line of payload.lines) {
@@ -231,11 +188,8 @@ export class PurchaseOrderService {
         lineNo += 10000;
       }
 
-      /**
-       * -----------------------------------------------------
-       * BILLING ADDRESS
-       * -----------------------------------------------------
-       */
+      //  BILLING ADDRESS
+
       if (payload.billing_address) {
         await this.insertAddress(
           client,
@@ -244,11 +198,8 @@ export class PurchaseOrderService {
         );
       }
 
-      /**
-       * -----------------------------------------------------
-       * SHIPPING ADDRESS
-       * -----------------------------------------------------
-       */
+      // SHIPPING ADDRESS
+
       if (payload.shipping_address) {
         await this.insertAddress(
           client,
@@ -269,11 +220,6 @@ export class PurchaseOrderService {
     }
   }
 
-  /**
-   * =========================================================
-   * UPDATE
-   * =========================================================
-   */
   static async update(
     companyId: string,
     id: string,
@@ -288,11 +234,6 @@ export class PurchaseOrderService {
 
       const order = payload.order;
 
-      /**
-       * -----------------------------------------------------
-       * EXISTING
-       * -----------------------------------------------------
-       */
       const existingResult = await client.query(
         `
         SELECT *
@@ -313,11 +254,6 @@ export class PurchaseOrderService {
         throw new Error("Posted purchase order cannot be modified");
       }
 
-      /**
-       * -----------------------------------------------------
-       * UPDATE HEADER
-       * -----------------------------------------------------
-       */
       await client.query(
         `
         UPDATE purchase_orders
@@ -337,34 +273,19 @@ export class PurchaseOrderService {
         `,
         [
           order.supplier_id,
-
           order.order_date,
-
           order.expected_date || null,
-
           order.warehouse_id || null,
-
           order.currency_id || null,
-
           order.reference || null,
-
           order.notes || null,
-
           order.subtotal || 0,
-
           order.tax_amount || 0,
-
           order.total_amount || 0,
-
           id,
         ],
       );
 
-      /**
-       * -----------------------------------------------------
-       * EXISTING LINES
-       * -----------------------------------------------------
-       */
       const existingLinesResult = await client.query(
         `
         SELECT id
@@ -381,37 +302,28 @@ export class PurchaseOrderService {
         .filter((x) => x.id)
         .map((x) => x.id);
 
-      /**
-       * -----------------------------------------------------
-       * SOFT DELETE REMOVED LINES
-       * -----------------------------------------------------
-       */
       for (const existingId of existingLineIds) {
         if (!incomingLineIds.includes(existingId)) {
           await client.query(
             `
-      UPDATE purchase_order_lines
-      SET
-        is_deleted = true,
-        updated_at = now()
-      WHERE id = $1
-      `,
+            UPDATE purchase_order_lines
+            SET
+              is_deleted = true,
+              updated_at = now()
+            WHERE id = $1
+            `,
             [existingId],
           );
         }
       }
 
-      /**
-       * -----------------------------------------------------
-       * UPSERT LINES
-       * -----------------------------------------------------
-       */
+      // UPSERT LINES
+
       let lineNo = 10000;
 
       for (const line of payload.lines) {
-        /**
-         * EXISTING LINE
-         */
+        // EXISTING LINE
+
         if (line.id) {
           await client.query(
             `
@@ -463,20 +375,16 @@ export class PurchaseOrderService {
             ],
           );
         } else {
-          /**
-           * NEW LINE
-           */
+          // NEW LINE
+
           await this.insertLine(client, companyId, id, line, lineNo);
         }
 
         lineNo += 10000;
       }
 
-      /**
-       * -----------------------------------------------------
-       * DELETE ADDRESSES
-       * -----------------------------------------------------
-       */
+      // DELETE ADDRESSES
+
       await client.query(
         `
         DELETE FROM purchase_order_addresses
@@ -485,20 +393,14 @@ export class PurchaseOrderService {
         [id],
       );
 
-      /**
-       * -----------------------------------------------------
-       * BILLING ADDRESS
-       * -----------------------------------------------------
-       */
+      // BILLING ADDRESS
+
       if (payload.billing_address) {
         await this.insertAddress(client, id, payload.billing_address);
       }
 
-      /**
-       * -----------------------------------------------------
-       * SHIPPING ADDRESS
-       * -----------------------------------------------------
-       */
+      // SHIPPING ADDRESS
+
       if (payload.shipping_address) {
         await this.insertAddress(client, id, payload.shipping_address);
       }
@@ -515,11 +417,6 @@ export class PurchaseOrderService {
     }
   }
 
-  /**
-   * =========================================================
-   * DELETE
-   * =========================================================
-   */
   static async delete(companyId: string, id: string): Promise<void> {
     const result = await pool.query(
       `
@@ -535,11 +432,6 @@ export class PurchaseOrderService {
     }
   }
 
-  /**
-   * =========================================================
-   * POST
-   * =========================================================
-   */
   static async post(companyId: string, id: string): Promise<void> {
     const client = await pool.connect();
 
@@ -586,11 +478,6 @@ export class PurchaseOrderService {
     }
   }
 
-  /**
-   * =========================================================
-   * INSERT LINE
-   * =========================================================
-   */
   private static async insertLine(
     client: PoolClient,
     companyId: string,
@@ -648,53 +535,29 @@ export class PurchaseOrderService {
     `,
       [
         companyId,
-
         purchaseOrderId,
-
         lineNo,
-
         line.line_type,
-
         line.item_id || null,
-
         line.gl_account_id || null,
-
         line.description || null,
-
         line.warehouse_id || null,
-
         line.warehouse_location_id || null,
-
         line.uom_id || null,
-
         line.quantity || 0,
-
         line.received_quantity || 0,
-
         line.unit_cost || 0,
-
         line.discount_type || null,
-
         line.discount_value || 0,
-
         line.discount_amount || 0,
-
         line.vat_percent || 0,
-
         line.vat_amount || 0,
-
         line.net_amount || 0,
-
         line.gross_amount || 0,
       ],
     );
   }
 
-  /**
-   * =========================================================
-   * INSERT ADDRESS
-   * =========================================================
-   */
   private static async insertAddress(
     client: PoolClient,
     purchaseOrderId: string,
@@ -723,46 +586,24 @@ export class PurchaseOrderService {
       `,
       [
         purchaseOrderId,
-
         address.address_type,
-
         address.contact_name || null,
-
         address.company_name || null,
-
         address.phone || null,
-
         address.email || null,
-
         address.address_1 || null,
-
         address.address_2 || null,
-
         address.city || null,
-
         address.state || null,
-
         address.postcode || null,
-
         address.country || null,
       ],
     );
   }
 
-  /**
-   * =========================================================
-   * VALIDATION
-   * =========================================================
-   */
-
   private static validatePayload(payload: PurchaseOrderPayload): void {
     const order = payload.order;
 
-    /**
-     * -------------------------------------------------------
-     * HEADER
-     * -------------------------------------------------------
-     */
     if (!order.supplier_id) {
       throw new Error("Supplier is required");
     }
@@ -775,11 +616,6 @@ export class PurchaseOrderService {
       throw new Error("At least one line is required");
     }
 
-    /**
-     * -------------------------------------------------------
-     * LINES
-     * -------------------------------------------------------
-     */
     payload.lines.forEach((line, index) => {
       const row = index + 1;
 
@@ -788,11 +624,6 @@ export class PurchaseOrderService {
       }
 
       switch (line.line_type) {
-        /**
-         * ---------------------------------------------------
-         * ITEM
-         * ---------------------------------------------------
-         */
         case "ITEM":
           if (!line.item_id) {
             throw new Error(`Line ${row}: item is required`);
@@ -812,11 +643,6 @@ export class PurchaseOrderService {
 
           break;
 
-        /**
-         * ---------------------------------------------------
-         * GL ACCOUNT
-         * ---------------------------------------------------
-         */
         case "GL_ACCOUNT":
           if (!line.gl_account_id) {
             throw new Error(`Line ${row}: GL account is required`);
@@ -832,11 +658,6 @@ export class PurchaseOrderService {
 
           break;
 
-        /**
-         * ---------------------------------------------------
-         * COMMENT
-         * ---------------------------------------------------
-         */
         case "COMMENT":
           break;
 
@@ -845,11 +666,6 @@ export class PurchaseOrderService {
       }
     });
 
-    /**
-     * -------------------------------------------------------
-     * ADDRESSES
-     * -------------------------------------------------------
-     */
     if (!payload.billing_address) {
       throw new Error("Billing address is required");
     }
@@ -859,11 +675,6 @@ export class PurchaseOrderService {
     }
   }
 
-  /**
-   * =========================================================
-   * RECALCULATE STATUS
-   * =========================================================
-   */
   static async recalculateStatus(
     client: PoolClient,
     purchaseOrderId: string,
@@ -930,11 +741,6 @@ export class PurchaseOrderService {
     );
   }
 
-  /**
-   * =========================================================
-   * UPDATE RECEIVED QUANTITY
-   * =========================================================
-   */
   static async updateReceivedQuantity(
     client: PoolClient,
     purchaseOrderLineId: string,

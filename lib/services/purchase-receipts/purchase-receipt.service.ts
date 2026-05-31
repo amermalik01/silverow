@@ -1,12 +1,11 @@
 //  lib/services/purchase-receipts/purchase-receipt.service.ts
 
 import { pool } from "@/lib/db";
-// import { postInventoryTransaction } from "@/lib/services/inventory/inventory-movement.service";
+
 import { PurchaseReceiptPayload } from "@/types/purchase-receipt";
 import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
 
 import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
-
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 
 import { JournalLineInput } from "@/types/journal";
@@ -33,10 +32,6 @@ export class PurchaseReceiptService {
     try {
       await client.query("BEGIN");
 
-      /**
-       * HEADER
-       */
-
       const receiptResult = await client.query(
         `
           INSERT INTO purchase_receipts (
@@ -59,10 +54,6 @@ export class PurchaseReceiptService {
       );
 
       const receipt = receiptResult.rows[0];
-
-      /**
-       * LINES + INVENTORY POSTING
-       */
 
       const glLines: JournalLineInput[] = [];
 
@@ -137,9 +128,6 @@ export class PurchaseReceiptService {
 
         const receiptLine = lineResult.rows[0];
 
-        /**
-         * INVENTORY LEDGER IN
-         */
         await client.query(
           `
           INSERT INTO inventory_ledger_entries (
@@ -194,55 +182,35 @@ export class PurchaseReceiptService {
 
         const totalCost = Number(line.quantity) * Number(line.unit_cost);
 
-        /**
-         * DR INVENTORY
-         */
+        // DR INVENTORY
+
         glLines.push({
           account_id: accounts.inventory_account_id,
-
           debit: totalCost,
-
           credit: 0,
-
           item_id: line.item_id,
-
           warehouse_id: line.warehouse_id,
-
           quantity: line.quantity,
-
           unit_cost: line.unit_cost,
-
           reference_type: "PURCHASE_RECEIPT",
-
           reference_id: receipt.id,
         });
 
-        /**
-         * CR GRNI
-         */
+        // CR GRNI
+
         glLines.push({
           account_id: accounts.grni_account_id,
-
           debit: 0,
-
           credit: totalCost,
-
           item_id: line.item_id,
-
           warehouse_id: line.warehouse_id,
-
           quantity: line.quantity,
-
           unit_cost: line.unit_cost,
-
           reference_type: "PURCHASE_RECEIPT",
-
           reference_id: receipt.id,
         });
 
-        /**
-         * CONSUME RESERVATIONS
-         */
+        // CONSUME RESERVATIONS
 
         const reservationResult = await client.query(
           `
@@ -294,32 +262,6 @@ export class PurchaseReceiptService {
           remainingToConsume -= consumeQty;
         }
 
-        /* for (const reservation of reservationResult.rows) {
-          const consumed =
-            Number(reservation.consumed_quantity || 0) + Number(line.quantity);
-
-          const remaining =
-            Number(reservation.reserved_quantity || 0) - consumed;
-
-          let status = "PARTIAL";
-
-          if (remaining <= 0) {
-            status = "CONSUMED";
-          }
-
-          await client.query(
-            `
-            UPDATE inventory_reservations
-            SET
-                consumed_quantity = $1,
-                status = $2,
-                updated_at = now()
-            WHERE id = $3
-            `,
-            [consumed, status, reservation.id],
-          );
-        } */
-
         if (line.purchase_order_line_id) {
           await client.query(
             `
@@ -341,19 +283,12 @@ export class PurchaseReceiptService {
 
       await GLPostingService.postJournal(client, {
         company_id: companyId,
-
         entry_date: receipt.posting_date,
-
         source: "PURCHASE",
-
         journal_type: "PURCHASE_RECEIPT",
-
         reference: receipt.receipt_no || receipt.id,
-
         source_id: receipt.id,
-
         description: "Purchase receipt posting",
-
         lines: glLines,
       });
 
@@ -406,131 +341,3 @@ export class PurchaseReceiptService {
     }
   }
 }
-
-/* await client.query(
-    `
-    UPDATE inventory_reservations
-    SET
-    consumed_quantity =
-        consumed_quantity + $1,
-
-    status = 'CONSUMED',
-
-    updated_at = now()
-
-    WHERE reference_id = $2
-    `,
-    [line.quantity, line.purchase_order_line_id],
-); */
-/* 
-
-  static async createReceipt(
-    companyId: string,
-    payload: {
-      purchase_order_id: string;
-      receipt_date: string;
-      warehouse_id: string;
-      lines: {
-        purchase_order_line_id: string;
-        item_id: string;
-        quantity: number;
-        unit_cost: number;
-      }[];
-    },
-  ) {
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-      const receiptResult = await client.query(
-        `
-        INSERT INTO purchase_receipts (
-          company_id,
-          purchase_order_id,
-          receipt_date,
-          warehouse_id,
-          status,
-          created_at
-        )
-        VALUES ($1,$2,$3,$4,'POSTED',now())
-        RETURNING *
-        `,
-        [
-          companyId,
-          payload.purchase_order_id,
-          payload.receipt_date,
-          payload.warehouse_id,
-        ],
-      );
-
-      const receipt = receiptResult.rows[0];
-      for (const line of payload.lines) {
-        await client.query(
-          `
-          INSERT INTO purchase_receipt_lines (
-            purchase_receipt_id,
-            purchase_order_line_id,
-            item_id,
-            quantity,
-            warehouse_location_id
-          )
-          VALUES ($1,$2,$3,$4,NULL)
-          `,
-          [
-            receipt.id,
-            line.purchase_order_line_id,
-            line.item_id,
-            line.quantity,
-          ],
-        );
-
-        // *
-        //  * INVENTORY POSTING
-        
-        await postInventoryTransaction({
-          company_id: companyId,
-          item_id: line.item_id,
-          warehouse_id: payload.warehouse_id,
-          quantity: line.quantity,
-          unit_cost: line.unit_cost,
-          transaction_type: 1, // RECEIPT IN
-          reference_type: "PURCHASE_RECEIPT",
-          reference_id: receipt.id,
-        });
-
-        // *
-        //  * UPDATE PO LINE RECEIVED QTY
-        
-        await client.query(
-          `
-          UPDATE purchase_order_lines
-          SET received_quantity = COALESCE(received_quantity,0) + $1
-          WHERE id = $2
-          `,
-          [line.quantity, line.purchase_order_line_id],
-        );
-      }
-
-    //   *
-    //    * UPDATE PO STATUS
-      
-      await client.query(
-        `
-        UPDATE purchase_orders
-        SET status = 'partial_received'
-        WHERE id = $1
-        `,
-        [payload.purchase_order_id],
-      );
-
-      await client.query("COMMIT");
-
-      return receipt;
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
-  }
-*/

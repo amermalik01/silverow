@@ -1,12 +1,13 @@
 // app/[slug]/purchases/supplier/new/page.tsx
+
 import PartyForm from "@/app/components/parties/PartyForm";
 
 export default function NewSupplierPage() {
   return (
-    <div className="p-6">
+    <div>
       <PartyForm
-        title="Create Supplier"
-        type="supplier"
+        title="Register New Vendor"
+        initialFlags={{ is_supplier: true }}
         redirectPath="../supplier"
       />
     </div>

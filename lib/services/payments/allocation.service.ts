@@ -3,11 +3,10 @@
 import { PoolClient } from "pg";
 
 export class AllocationService {
-  /**
-   * =========================================================
-   * APPLY AP PAYMENT
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * APPLY AP PAYMENT
+  //  * =========================================================
+
   static async applyAPPayment(
     client: PoolClient,
     companyId: string,
@@ -19,11 +18,6 @@ export class AllocationService {
     }[],
   ) {
     for (const allocation of allocations) {
-      /**
-       * -----------------------------------------------------
-       * FIND OPEN LEDGER
-       * -----------------------------------------------------
-       */
       const ledgerResult = await client.query(
         `
         SELECT *
@@ -49,11 +43,10 @@ export class AllocationService {
         throw new Error("Allocation exceeds remaining balance");
       }
 
-      /**
-       * -----------------------------------------------------
-       * CREATE ALLOCATION
-       * -----------------------------------------------------
-       */
+      //  * -----------------------------------------------------
+      //  * CREATE ALLOCATION
+      //  * -----------------------------------------------------
+
       await client.query(
         `
         INSERT INTO ledger_allocations (
@@ -69,11 +62,10 @@ export class AllocationService {
         [companyId, "AP", paymentId, ledger.id, allocation.amount],
       );
 
-      /**
-       * -----------------------------------------------------
-       * UPDATE REMAINING
-       * -----------------------------------------------------
-       */
+      //  * -----------------------------------------------------
+      //  * UPDATE REMAINING
+      //  * -----------------------------------------------------
+
       const newRemaining = remaining - allocation.amount;
 
       await client.query(
@@ -89,11 +81,10 @@ export class AllocationService {
     }
   }
 
-  /**
-   * =========================================================
-   * APPLY AR PAYMENT
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * APPLY AR PAYMENT
+  //  * =========================================================
+
   static async applyARPayment(
     client: PoolClient,
     companyId: string,

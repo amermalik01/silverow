@@ -1,10 +1,9 @@
 // lib/services/payments/payment.service.ts
+
 import { PoolClient } from "pg";
 import { pool } from "@/lib/db";
 
-import { JournalService } from "@/lib/services/journal.service";
 import { JournalLineInput } from "@/types/journal";
-import { AllocationService } from "./allocation.service";
 
 export type PaymentType = "AP" | "AR";
 
@@ -20,42 +19,20 @@ export interface PaymentAllocation {
 
 export interface PaymentPayload {
   payment_date: string;
-
   payment_type: "AP" | "AR";
-
   party_id: string;
-
   bank_account_id: string;
-
   currency_id?: string;
-
   reference?: string;
-
   description?: string;
-
   allocations: PaymentAllocation[];
 }
 
-// export interface PaymentPayload {
-//   payment_date: string;
-//   payment_type: PaymentType;
-
-//   party_id: string;
-//   bank_account_id: string;
-
-//   currency_id?: string;
-//   reference?: string;
-//   description?: string;
-
-//   lines: PaymentLine[];
-// }
-
 export class PaymentService {
-  /**
-   * =========================================================
-   * CREATE PAYMENT
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * CREATE PAYMENT
+  //  * =========================================================
+
   static async create(companyId: string, payload: PaymentPayload) {
     const client = await pool.connect();
 
@@ -72,11 +49,6 @@ export class PaymentService {
         }
       }
 
-      /**
-       * -----------------------------------------------------
-       * CREATE PAYMENT HEADER
-       * -----------------------------------------------------
-       */
       const paymentResult = await client.query(
         `
         INSERT INTO payments (
@@ -106,11 +78,6 @@ export class PaymentService {
 
       const payment = paymentResult.rows[0];
 
-      /**
-       * -----------------------------------------------------
-       * BUILD JOURNAL LINES
-       * -----------------------------------------------------
-       */
       const journalLines: JournalLineInput[] = [];
 
       let total = 0;
@@ -129,9 +96,7 @@ export class PaymentService {
         total += allocation.amount;
 
         if (payload.payment_type === "AP") {
-          /**
-           * DR AP
-           */
+          //  DR AP
           journalLines.push({
             account_id: controlAccount,
             debit: allocation.amount,
@@ -141,9 +106,7 @@ export class PaymentService {
             description: `Invoice Allocation ${allocation.invoice_id}`,
           });
         } else {
-          /**
-           * CR AR
-           */
+          // CR AR
           journalLines.push({
             account_id: controlAccount,
             debit: 0,
@@ -155,124 +118,17 @@ export class PaymentService {
         }
       }
 
-      /**
-       * -----------------------------------------------------
-       * BANK ENTRY
-       * -----------------------------------------------------
-       */
+      //  * -----------------------------------------------------
+      //  * BANK ENTRY
+      //  * -----------------------------------------------------
+
       journalLines.push({
         account_id: bankAccountId,
-
         debit: payload.payment_type === "AR" ? total : 0,
-
         credit: payload.payment_type === "AP" ? total : 0,
-
         reference_type: "PAYMENT",
-
         reference_id: payment.id,
       });
-
-      //   for (const line of payload.lines) {
-      //   for (const allocation of payload.allocations) {
-      //     total += allocation.amount;
-
-      //     /**
-      //      * CORE POSTING PER INVOICE LINE
-      //      */
-      //     if (payload.payment_type === "AP") {
-      //       // DR AP (reduce liability)
-      //       journalLines.push({
-      //         account_id: controlAccount,
-      //         debit: allocation.amount,
-      //         credit: 0,
-      //         reference_type: "AP_PAYMENT",
-      //         reference_id: payment.id,
-      //         // item_id: allocation.invoice_id,
-      //       });
-
-      //       // CR BANK
-      //       journalLines.push({
-      //         account_id: bankAccountId,
-      //         debit: 0,
-      //         credit: allocation.amount,
-      //         reference_type: "AP_PAYMENT",
-      //         reference_id: payment.id,
-      //       });
-      //     } else {
-      //       // DR BANK
-      //       journalLines.push({
-      //         account_id: bankAccountId,
-      //         debit: allocation.amount,
-      //         credit: 0,
-      //         reference_type: "AR_PAYMENT",
-      //         reference_id: payment.id,
-      //       });
-
-      //       // CR AR
-      //       journalLines.push({
-      //         account_id: controlAccount,
-      //         debit: 0,
-      //         credit: allocation.amount,
-      //         reference_type: "AR_PAYMENT",
-      //         reference_id: payment.id,
-      //         // item_id: allocation.invoice_id,
-      //       });
-      //     }
-      //   }
-
-      /**
-       * -----------------------------------------------------
-       * POST JOURNAL (FIXED)
-       * -----------------------------------------------------
-       */
-
-
-      // const journal = await JournalService.createWithClient(companyId, {
-      //   entry_date: payload.payment_date,
-      //   source: payload.payment_type === "AP" ? "PAYMENT" : "RECEIPT",
-      //   reference: payment.id,
-      //   description: payload.description,
-      //   lines: journalLines,
-      // });
-
-      /**
-       * -----------------------------------------------------
-       * LINK JOURNAL TO PAYMENT
-       * -----------------------------------------------------
-       */
-      // await client.query(
-      //   `
-      //   UPDATE payments
-      //   SET is_posted = true,
-      //       posted_at = now(),
-      //       journal_id = $1
-      //   WHERE id = $2
-      //   `,
-      //   [journal.id, payment.id],
-      // );
-
-      /**
-       * -----------------------------------------------------
-       * APPLY ALLOCATIONS
-       * -----------------------------------------------------
-       */
-      // if (payload.payment_type === "AP") {
-      //   await AllocationService.applyAPPayment(
-      //     client,
-      //     companyId,
-      //     payment.id,
-      //     payload.party_id,
-      //     payload.allocations,
-      //   );
-      // } else {
-      //   await AllocationService.applyARPayment(
-      //     client,
-      //     companyId,
-      //     payment.id,
-      //     payload.party_id,
-      //     payload.allocations,
-      //   );
-      // }
 
       await client.query("COMMIT");
 
@@ -285,11 +141,9 @@ export class PaymentService {
     }
   }
 
-  /**
-   * =========================================================
-   * ACCOUNT RESOLVERS
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * ACCOUNT RESOLVERS
+  //  * =========================================================
 
   private static async getAPAccount(client: PoolClient, companyId: string) {
     const res = await client.query(

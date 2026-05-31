@@ -1,17 +1,28 @@
 // app/[slug]/purchases/srm/page.tsx
+
 import PartyList from "@/app/components/parties/PartyList";
 
 export default function SRMPage() {
   return (
-    <div className="p-6 space-y-6">
-
+    <div>
       <PartyList
-        title="Supplier Relationship Management"
-        module="srm"
+        title="SRM Vendors"
+        roleFlag="is_srm_vendor"
         basePath="./srm"
-        typeFilter={["supplier"]}
       />
-
     </div>
   );
 }
+
+// export default function SRMPage() {
+//   return (
+//     <div>
+//       <PartyList
+//         title="Supplier Relationship Management"
+//         module="srm"
+//         basePath="./srm"
+//         typeFilter={["supplier"]}
+//       />
+//     </div>
+//   );
+// }

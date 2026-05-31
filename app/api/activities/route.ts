@@ -1,6 +1,101 @@
 // app/api/activities/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+export async function GET(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.company_id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = req.nextUrl;
+    const current_module = searchParams.get("module");
+    const recordId = searchParams.get("record_id");
+
+    if (!current_module || !recordId) {
+      return NextResponse.json(
+        { error: "Missing module or record tracking key mappings" },
+        { status: 400 },
+      );
+    }
+
+    const result = await pool.query(
+      `SELECT id, module, record_id, type, title, description, due_date, status, assigned_to 
+       FROM activities 
+       WHERE company_id = $1 AND module = $2 AND record_id = $3 
+       ORDER BY created_at DESC`,
+      [session.user.company_id, current_module, recordId],
+    );
+
+    return NextResponse.json({ data: result.rows });
+  } catch (err) {
+    console.error("GET Activities Error Handling Execution Hook:", err);
+    return NextResponse.json(
+      { error: "Failed to read database activities stack" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.company_id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const {
+      module,
+      record_id,
+      type,
+      title,
+      description,
+      due_date,
+      status,
+      assigned_to,
+    } = body;
+
+    if (!module || !record_id || !title?.trim()) {
+      return NextResponse.json(
+        { error: "Context target rules or parameters fields unfulfilled" },
+        { status: 400 },
+      );
+    }
+
+    const result = await pool.query(
+      `INSERT INTO activities (company_id, module, record_id, type, title, description, due_date, status, assigned_to, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, module, record_id, type, title, description, due_date, status, assigned_to`,
+      [
+        session.user.company_id,
+        module,
+        record_id,
+        type || "task",
+        title.trim(),
+        description || null,
+        due_date ? new Date(due_date) : null,
+        status || "pending",
+        assigned_to || null,
+        session.user.id,
+      ],
+    );
+
+    return NextResponse.json({ data: result.rows[0] });
+  } catch (err) {
+    console.error("POST CRM Action Error:", err);
+    return NextResponse.json(
+      { error: "Data execution mutation dropped" },
+      { status: 500 },
+    );
+  }
+}
+
+/* import { NextRequest, NextResponse } from "next/server";
 
 import { pool } from "@/lib/db";
 
@@ -108,4 +203,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+} */

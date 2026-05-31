@@ -4,10 +4,10 @@ import PartyForm from "@/app/components/parties/PartyForm";
 
 export default function NewCustomerPage() {
   return (
-    <div className="p-6">
+    <div>
       <PartyForm
-        title="Create Customer"
-        type="customer"
+        title="Register New Customer Record"
+        initialFlags={{ is_customer: true }}
         redirectPath="../customer"
       />
     </div>

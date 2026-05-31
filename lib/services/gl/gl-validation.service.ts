@@ -3,11 +3,10 @@ import { PoolClient } from "pg";
 import { JournalLineInput } from "@/types/journal";
 
 export class GLValidationService {
-  /**
-   * =========================================================
-   * VALIDATE ACCOUNT
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * VALIDATE ACCOUNT
+  //  * =========================================================
+
   static async validateAccount(client: PoolClient, accountId: string) {
     const result = await client.query(
       `
@@ -33,11 +32,10 @@ export class GLValidationService {
     }
   }
 
-  /**
-   * =========================================================
-   * VALIDATE JOURNAL BALANCE
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * VALIDATE JOURNAL BALANCE
+  //  * =========================================================
+
   static validateBalanced(lines: JournalLineInput[]) {
     const debit = lines.reduce((sum, l) => sum + Number(l.debit || 0), 0);
 
@@ -48,11 +46,10 @@ export class GLValidationService {
     }
   }
 
-  /**
-   * =========================================================
-   * VALIDATE POSITIVE AMOUNT
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * VALIDATE POSITIVE AMOUNT
+  //  * =========================================================
+
   static validatePositiveAmount(amount: number) {
     if (amount <= 0) {
       throw new Error("Amount must be greater than zero");

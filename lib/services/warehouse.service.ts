@@ -9,7 +9,6 @@ export async function createWarehouse(data: CreateWarehouseInput) {
   try {
     await client.query("BEGIN");
 
-    // 1. Generate Sequence HERE (not in route)
     const seqRes = await client.query(
       `SELECT get_next_sequence($1,$2) AS code`,
       [data.company_id, "warehouse"],
@@ -17,7 +16,6 @@ export async function createWarehouse(data: CreateWarehouseInput) {
 
     const code = seqRes.rows[0].code;
 
-    // 2. Create warehouse
     const warehouseRes = await client.query(
       `
       INSERT INTO warehouses (
@@ -26,12 +24,19 @@ export async function createWarehouse(data: CreateWarehouseInput) {
       VALUES ($1,$2,$3,$4,$5,$6,$7)
       RETURNING *
       `,
-      [data.company_id, code, data.name, data.type, data.status || 1, data.currency_id, data.storage_type_id],
+      [
+        data.company_id,
+        code,
+        data.name,
+        data.type,
+        data.status || 1,
+        data.currency_id,
+        data.storage_type_id,
+      ],
     );
 
     const warehouse = warehouseRes.rows[0];
 
-    // 3. Create primary location
     const locRes = await client.query(
       `
       INSERT INTO warehouse_locations
@@ -44,7 +49,6 @@ export async function createWarehouse(data: CreateWarehouseInput) {
 
     const location = locRes.rows[0];
 
-    // 3. Update warehouse with primary_location_id
     await client.query(
       `
       UPDATE warehouses

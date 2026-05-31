@@ -4,9 +4,8 @@ import { JournalService } from "@/lib/services/journal.service";
 import { JournalLineInput } from "@/types/journal";
 
 export class PurchaseGLPostingService {
-  /**
-   * POST GRNI ENTRY ON RECEIPT
-   */
+  //  POST GRNI ENTRY ON RECEIPT
+
   static async postGRNI(
     companyId: string,
     receiptId: string,
@@ -18,11 +17,10 @@ export class PurchaseGLPostingService {
     const journalLines: JournalLineInput[] = [];
 
     for (const line of lines) {
-      /**
-       * DR Inventory (or GRNI)
-       */
+      // DR Inventory (or GRNI)
+
       journalLines.push({
-        account_id: "INVENTORY_ACCOUNT", // resolved later via posting group
+        account_id: "INVENTORY_ACCOUNT",
         debit: line.amount,
         credit: 0,
         reference_type: "GRNI",
@@ -30,9 +28,8 @@ export class PurchaseGLPostingService {
         item_id: line.item_id,
       });
 
-      /**
-       * CR GRNI Liability
-       */
+      // CR GRNI Liability
+
       journalLines.push({
         account_id: "GRNI_ACCOUNT",
         debit: 0,

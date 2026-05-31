@@ -50,11 +50,9 @@ export type PostGLTransactionInput = {
 };
 
 export class GLPostingService {
-  /**
-   * =========================================================
-   * POST JOURNAL
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * POST JOURNAL
+  //  * =========================================================
 
   static async postJournal(
     client: PoolClient,
@@ -63,11 +61,6 @@ export class GLPostingService {
     id: string;
     entry_no: string;
   }> {
-    /**
-     * -------------------------------------------------------
-     * VALIDATE BALANCING
-     * -------------------------------------------------------
-     */
     const totalDebit = data.lines.reduce(
       (sum, line) => sum + Number(line.debit || 0),
       0,
@@ -84,11 +77,6 @@ export class GLPostingService {
       );
     }
 
-    /**
-     * -------------------------------------------------------
-     * GENERATE ENTRY NO
-     * -------------------------------------------------------
-     */
     const seqResult = await client.query(
       `
       SELECT get_next_sequence($1,$2) AS code
@@ -98,11 +86,6 @@ export class GLPostingService {
 
     const entryNo = seqResult.rows[0].code;
 
-    /**
-     * -------------------------------------------------------
-     * INSERT HEADER
-     * -------------------------------------------------------
-     */
     const headerResult = await client.query(
       `
       INSERT INTO journal_entries (
@@ -146,17 +129,9 @@ export class GLPostingService {
 
     const journalId = journal.id;
 
-    /**
-     * -------------------------------------------------------
-     * INSERT LINES
-     * -------------------------------------------------------
-     */
     let lineNo = 10000;
 
     for (const line of data.lines) {
-      /**
-       * VALIDATE ACCOUNT
-       */
       const coaResult = await client.query(
         `
         SELECT

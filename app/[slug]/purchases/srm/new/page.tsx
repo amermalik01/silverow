@@ -4,10 +4,10 @@ import PartyForm from "@/app/components/parties/PartyForm";
 
 export default function NewSRMPage() {
   return (
-    <div className="p-6">
+    <div>
       <PartyForm
-        title="Create Supplier (SRM)"
-        type="supplier"
+        title="Register SRM Strategic Vendor"
+        initialFlags={{ is_srm_vendor: true }}
         redirectPath="../srm"
       />
     </div>

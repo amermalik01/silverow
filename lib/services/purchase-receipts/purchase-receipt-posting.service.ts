@@ -10,11 +10,10 @@ import { PurchaseOrderService } from "../purchase-orders/purchase-order.service"
 import { PurchaseGLPostingService } from "../purchase-orders/purchase-gl-posting.service";
 
 export class PurchaseReceiptPostingService {
-  /**
-   * =========================================================
-   * POST PURCHASE RECEIPT
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * POST PURCHASE RECEIPT
+  //  * =========================================================
+
   static async post(
     companyId: string,
     receiptId: string,
@@ -25,11 +24,6 @@ export class PurchaseReceiptPostingService {
     try {
       await client.query("BEGIN");
 
-      /**
-       * -----------------------------------------------------
-       * RECEIPT HEADER
-       * -----------------------------------------------------
-       */
       const receiptResult = await client.query(
         `
         SELECT *
@@ -46,20 +40,10 @@ export class PurchaseReceiptPostingService {
 
       const receipt = receiptResult.rows[0];
 
-      /**
-       * -----------------------------------------------------
-       * VALIDATE STATUS
-       * -----------------------------------------------------
-       */
       if (receipt.status === "posted") {
         throw new Error("Purchase receipt already posted");
       }
 
-      /**
-       * -----------------------------------------------------
-       * RECEIPT LINES
-       * -----------------------------------------------------
-       */
       const linesResult = await client.query(
         `
         SELECT
@@ -96,15 +80,9 @@ export class PurchaseReceiptPostingService {
         throw new Error("Purchase receipt has no lines");
       }
 
-      /**
-       * -----------------------------------------------------
-       * VALIDATE RECEIPT LINES
-       * -----------------------------------------------------
-       */
       for (const line of lines) {
-        /**
-         * ONLY ITEM LINES ALLOWED
-         */
+        // ONLY ITEM LINES ALLOWED
+
         if (line.line_type !== "ITEM") {
           throw new Error(
             `Purchase order line ${line.purchase_order_line_id} is not an ITEM line`,
@@ -112,11 +90,8 @@ export class PurchaseReceiptPostingService {
         }
 
         const orderedQty = Number(line.ordered_quantity || 0);
-
         const receivedQty = Number(line.received_quantity || 0);
-
         const cancelledQty = Number(line.cancelled_quantity || 0);
-
         const receivingQty = Number(line.quantity || 0);
 
         const remainingQty = orderedQty - receivedQty - cancelledQty;
@@ -134,51 +109,35 @@ export class PurchaseReceiptPostingService {
         }
       }
 
-      /**
-       * -----------------------------------------------------
-       * INVENTORY MOVEMENT LINES
-       * -----------------------------------------------------
-       */
+      //  * -----------------------------------------------------
+      //  * INVENTORY MOVEMENT LINES
+      //  * -----------------------------------------------------
+
       const inventoryLines: InventoryMovementLineInput[] = lines.map(
         (line) => ({
           item_id: line.item_id,
-
           warehouse_id: line.warehouse_id || receipt.warehouse_id,
-
           location_id: line.warehouse_location_id || null,
-
           quantity: Number(line.quantity),
-
           unit_cost: Number(line.unit_cost || 0),
-
           movement_direction: "IN",
-
           batch_no: line.batch_no || null,
-
           serial_no: line.serial_no || null,
-
           expiry_date: line.expiry_date || null,
         }),
       );
 
-      /**
-       * -----------------------------------------------------
-       * POST INVENTORY TRANSACTION
-       * -----------------------------------------------------
-       */
+      //  * -----------------------------------------------------
+      //  * POST INVENTORY TRANSACTION
+      //  * -----------------------------------------------------
+
       await InventoryMovementService.postTransaction(client, {
         company_id: companyId,
-
         transaction_type: "PURCHASE_RECEIPT",
-
         posting_date: receipt.receipt_date,
-
         reference_type: "PURCHASE_RECEIPT",
-
         reference_id: receipt.id,
-
         created_by: userId || null,
-
         lines: inventoryLines,
       });
 
@@ -189,11 +148,6 @@ export class PurchaseReceiptPostingService {
         userId,
       );
 
-      /**
-       * -----------------------------------------------------
-       * UPDATE PURCHASE ORDER LINES
-       * -----------------------------------------------------
-       */
       for (const line of lines) {
         const receivingQty = Number(line.quantity || 0);
 
@@ -219,24 +173,10 @@ export class PurchaseReceiptPostingService {
         );
       }
 
-      /**
-       * -----------------------------------------------------
-       * RECALCULATE PURCHASE ORDER STATUS
-       * -----------------------------------------------------
-       */
       const purchaseOrderId = lines[0].purchase_order_id;
 
-      /* await this.recalculatePurchaseOrderStatus(
-        client,
-        purchaseOrderId,
-      ); */
       await PurchaseOrderService.recalculateStatus(client, purchaseOrderId);
 
-      /**
-       * -----------------------------------------------------
-       * MARK RECEIPT AS POSTED
-       * -----------------------------------------------------
-       */
       await client.query(
         `
         UPDATE purchase_receipts
@@ -258,91 +198,4 @@ export class PurchaseReceiptPostingService {
       client.release();
     }
   }
-
-  /**
-   * =========================================================
-   * RECALCULATE PURCHASE ORDER STATUS
-   * =========================================================
-   */
-  /* private static async recalculatePurchaseOrderStatus(
-    client: PoolClient,
-    purchaseOrderId: string,
-  ): Promise<void> {
-    const result = await client.query(
-      `
-      SELECT
-        quantity,
-        received_quantity,
-        cancelled_quantity
-
-      FROM purchase_order_lines
-
-      WHERE purchase_order_id = $1
-      AND is_deleted = false
-      AND line_type = 'ITEM'
-      `,
-      [purchaseOrderId],
-    );
-
-    const lines = result.rows;
-
-    if (!lines.length) {
-      return;
-    }
-
-    let fullyReceived = true;
-
-    let partiallyReceived = false;
-
-    for (const line of lines) {
-      const qty = Number(line.quantity || 0);
-
-      const received =
-        Number(line.received_quantity || 0) +
-        Number(line.cancelled_quantity || 0);
-
-      
-    //     PARTIAL
-     
-      if (received > 0) {
-        partiallyReceived = true;
-      }
-
-      
-    //    NOT FULLY RECEIVED
-      
-      if (received < qty) {
-        fullyReceived = false;
-      }
-    }
-
-    
-    //  -------------------------------------------------------
-    //  STATUS
-    //  -------------------------------------------------------
-     
-    let status = "open";
-
-    if (fullyReceived) {
-      status = "received";
-    } else if (partiallyReceived) {
-      status = "partial_received";
-    }
-
-
-    // -------------------------------------------------------
-    // UPDATE HEADER
-    // -------------------------------------------------------
-    
-    await client.query(
-      `
-      UPDATE purchase_orders
-      SET
-        status = $1,
-        updated_at = now()
-      WHERE id = $2
-      `,
-      [status, purchaseOrderId],
-    );
-  } */
 }

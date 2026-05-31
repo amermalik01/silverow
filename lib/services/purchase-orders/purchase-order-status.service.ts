@@ -1,24 +1,16 @@
 // lib/services/purchase-orders/purchase-order-status.service.ts
 
-// lib/services/purchase-orders/purchase-order-status.service.ts
-
 import { PoolClient } from "pg";
 
 export class PurchaseOrderStatusService {
-  /**
-   * =========================================================
-   * RECALCULATE PO STATUS
-   * =========================================================
-   */
+  //  * =========================================================
+  //  * RECALCULATE PO STATUS
+  //  * =========================================================
+
   static async recalculate(
     client: PoolClient,
     purchaseOrderId: string,
   ): Promise<void> {
-    /**
-     * -----------------------------------------------------
-     * LOAD LINES
-     * -----------------------------------------------------
-     */
     const result = await client.query(
       `
       SELECT
@@ -36,24 +28,15 @@ export class PurchaseOrderStatusService {
     }
 
     let totalQty = 0;
-
     let totalReceived = 0;
-
     let totalInvoiced = 0;
 
     for (const row of result.rows) {
       totalQty += Number(row.quantity || 0);
-
       totalReceived += Number(row.received_quantity || 0);
-
       totalInvoiced += Number(row.invoiced_quantity || 0);
     }
 
-    /**
-     * -----------------------------------------------------
-     * DETERMINE STATUS
-     * -----------------------------------------------------
-     */
     let status = "OPEN";
 
     if (totalReceived <= 0) {
@@ -68,11 +51,6 @@ export class PurchaseOrderStatusService {
       status = "INVOICED";
     }
 
-    /**
-     * -----------------------------------------------------
-     * UPDATE HEADER
-     * -----------------------------------------------------
-     */
     await client.query(
       `
       UPDATE purchase_orders

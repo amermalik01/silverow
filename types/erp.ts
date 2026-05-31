@@ -3,20 +3,9 @@
 import { z } from "zod";
 import { PartySchema } from "@/lib/validations/party.schema";
 
-/* =========================
-   SINGLE SOURCE OF TRUTH
-========================= */
 export type Party = z.infer<typeof PartySchema>;
-
-/* =========================
-   ENUM TYPES
-========================= */
-
 export type PartyType = "customer" | "supplier" | "lead" | "vendor" | "both";
-
 export type PartyModule = "crm" | "srm" | "hr" | "procurement";
-
-
 export interface PartyContact {
   id: string;
   party_id: string;
@@ -40,7 +29,6 @@ export type PartyContactDraft = {
 
   is_primary: boolean;
 };
-
 export interface PartyAddress {
   id: string;
   party_id: string;
@@ -53,12 +41,14 @@ export interface PartyAddress {
 export type PartyAddressDraft = {
   id?: string;
   party_id?: string;
+  label?: string;
 
   address_1: string;
   address_2?: string;
 
   city?: string;
   county?: string;
+  country?: string;
   postcode?: string;
   country_id?: string;
 
@@ -79,36 +69,6 @@ export type PartyDraft = {
   phone?: string;
   website?: string;
   credit_limit?: number;
-  currency_id?: string;
+  currency_id?: number | null;
   salesperson_id?: string;
 };
-
-/* export interface Party {
-  id: string;
-  company_id: string;
-
-  name: string;
-
-  type: PartyType;
-
-  crm_code?: string;
-  srm_code?: string;
-  customer_code?: string;
-  supplier_code?: string;
-
-  email?: string;
-  phone?: string;
-  mobile?: string;
-
-  website?: string;
-
-  status: "active" | "inactive";
-
-  credit_limit?: number;
-  currency_id?: string;
-
-  salesperson_id?: string;
-  bucket_id?: string;
-
-  created_at: string;
-} */

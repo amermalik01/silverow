@@ -1,6 +1,20 @@
 // app/[slug]/sales/crm/new/page.tsx
 
-import CRMForm from "@/app/components/sales/crm/CRMForm";
+import PartyForm from "@/app/components/parties/PartyForm";
+
+export default function NewCRMPage() {
+  return (
+    <div>
+      <PartyForm
+        title="Create CRM Prospect Account"
+        initialFlags={{ is_crm_lead: true }}
+        redirectPath="../crm"
+      />
+    </div>
+  );
+}
+
+/* import CRMForm from "@/app/components/sales/crm/CRMForm";
 
 export default function NewCRMPage() {
 
@@ -13,4 +27,4 @@ export default function NewCRMPage() {
       <CRMForm />
     </div>
   );
-}
+} */

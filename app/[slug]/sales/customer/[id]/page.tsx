@@ -12,7 +12,9 @@ export default async function ViewCustomerPage({
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">View Customer</h1>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+          View Customer
+        </h1>
       </div>
 
       <PartyRecord id={id} module="customer" isReadonly={true} />
