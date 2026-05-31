@@ -51,7 +51,7 @@ export default function PartyForm({
   const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
   const [addresses, setAddresses] = useState<PartyAddressDraft[]>([]);
 
-  // Asynchronously query global currency settings directly inside mounting life-cycle 
+  // Asynchronously query global currency settings directly inside mounting life-cycle
   useEffect(() => {
     async function fetchCurrencies() {
       try {
@@ -73,6 +73,11 @@ export default function PartyForm({
 
     // 1. Evaluate general corporate base parameters
     const baseCheck = PartySchema.safeParse(account);
+
+    console.log("baseCheck ==== ", baseCheck);
+    console.log("contacts ==== ", contacts);
+    console.log("addresses ==== ", addresses);
+
     if (!baseCheck.success) {
       baseCheck.error.issues.forEach((issue) => {
         const fieldKey = issue.path[0];
@@ -108,6 +113,8 @@ export default function PartyForm({
       }
     });
 
+    console.log("FormErrors ==== ", formErrors);
+
     if (Object.keys(structuredErrors).length > 0) {
       setFormErrors(structuredErrors);
       if (Object.keys(structuredErrors).some((k) => k.startsWith("general."))) {
@@ -124,59 +131,12 @@ export default function PartyForm({
     return true;
   };
 
-  /* const handleFormSubmissionValidation = (): boolean => {
-    setFormErrors({});
-    const structuredErrors: Record<string, string> = {};
-
-    // 1. Evaluate general corporate base parameters
-    const baseCheck = PartySchema.safeParse(account);
-    if (!baseCheck.success) {
-      baseCheck.error.issues.forEach((err) => {
-        if (err.path[0])
-          structuredErrors[`general.${err.path[0]}`] = err.message;
-      });
-    }
-
-    // 2. Validate multi-contact matrix
-    contacts.forEach((contact, idx) => {
-      const contactCheck = PartyContactSchema.safeParse(contact);
-      if (!contactCheck.success) {
-        contactCheck.error.issues.forEach((err) => {
-          if (err.path[0])
-            structuredErrors[`contacts.${idx}.${err.path[0]}`] = err.message;
-        });
-      }
-    });
-
-    // 3. Validate logical shipping and billing locations
-    addresses.forEach((addr, idx) => {
-      const addressCheck = PartyAddressSchema.safeParse(addr);
-      if (!addressCheck.success) {
-        addressCheck.error.issues.forEach((err) => {
-          if (err.path[0])
-            structuredErrors[`addresses.${idx}.${err.path[0]}`] = err.message;
-        });
-      }
-    });
-
-    if (Object.keys(structuredErrors).length > 0) {
-      setFormErrors(structuredErrors);
-      // Automatically redirect tab layout context focus if error falls out of view
-      if (Object.keys(structuredErrors).some((k) => k.startsWith("general."))) {
-        setActiveTab("general");
-      } else if (
-        Object.keys(structuredErrors).some((k) => k.startsWith("contacts."))
-      ) {
-        setActiveTab("contacts");
-      } else {
-        setActiveTab("addresses");
-      }
-      return false;
-    }
-    return true;
-  }; */
-
   const handleSubmit = async () => {
+    console.log("handleSubmit ==== ", handleSubmit);
+    console.log(
+      "handleFormSubmissionValidation ==== ",
+      handleFormSubmissionValidation(),
+    );
     if (!handleFormSubmissionValidation()) return;
     setLoading(true);
 
@@ -218,9 +178,24 @@ export default function PartyForm({
         </div>
       </div>
 
-      {formErrors.global && (
-        <div className="p-3 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
-          {formErrors.global}
+      {Object.keys(formErrors).length > 0 && (
+        <div className="p-4 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
+          <p className="font-semibold mb-1">
+            Please fix the following validation errors:
+          </p>
+          <ul className="list-disc pl-5 space-y-0.5 text-xs">
+            {formErrors.global && <li>{formErrors.global}</li>}
+            {Object.entries(formErrors)
+              .filter(([key]) => key !== "global")
+              .map(([key, message]) => (
+                <li key={key}>
+                  <span className="capitalize font-medium">
+                    {key.replace(".", " ")}
+                  </span>
+                  : {message}
+                </li>
+              ))}
+          </ul>
         </div>
       )}
 

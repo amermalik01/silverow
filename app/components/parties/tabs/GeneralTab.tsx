@@ -4,6 +4,150 @@
 
 import type { Party } from "@/types/erp";
 
+export type CompanyCurrency = {
+  id: string; // Updated type designation explicitly to string to reflect UUID architecture
+  code: string;
+  name: string;
+  exchange_rate: string | number;
+  is_base: boolean;
+};
+
+type Props = {
+  account: Partial<Party>;
+  setAccount: React.Dispatch<React.SetStateAction<Partial<Party>>>;
+  isReadonly?: boolean;
+  errors: Record<string, string>;
+  currencies?: CompanyCurrency[];
+};
+
+export default function GeneralTab({
+  account,
+  setAccount,
+  isReadonly = false,
+  errors,
+  currencies = [],
+}: Props) {
+  const updateField = <K extends keyof Party>(key: K, value: Party[K]) => {
+    setAccount((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const getInputClass = (errorKey: string) => 
+    `w-full border p-2.5 rounded-lg text-sm bg-transparent focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-white ${
+      errors[errorKey] ? "border-red-500 focus:ring-red-500 bg-red-50/10" : "border-slate-300 dark:border-slate-700"
+    }`;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        {/* Company Name */}
+        <div className="md:col-span-2">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+            Company Name *
+          </label>
+          <input
+            type="text"
+            value={account.name || ""}
+            onChange={(e) => updateField("name", e.target.value)}
+            className={getInputClass("general.name")}
+            placeholder="Legal Enterprise Entity Name"
+          />
+          {errors["general.name"] && <p className="text-red-500 text-xs mt-1">{errors["general.name"]}</p>}
+        </div>
+
+        {/* Classification Summary Matrix */}
+        <div className="md:col-span-2 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Account Classification</h3>
+            <p className="text-xs text-slate-500">Record configuration parameters configuration settings status details.</p>
+          </div>
+          <div className="flex gap-2">
+            {account.is_customer && <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-md text-xs font-semibold dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900">Customer</span>}
+            {account.is_crm_lead && <span className="bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-md text-xs font-semibold dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900">CRM Lead</span>}
+            {account.is_supplier && <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-md text-xs font-semibold dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900">Supplier</span>}
+            {account.is_srm_vendor && <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-md text-xs font-semibold dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900">SRM Vendor</span>}
+          </div>
+        </div>
+
+        {/* Corporate Email Contact Area */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Email</label>
+          <input
+            type="email"
+            value={account.email || ""}
+            onChange={(e) => updateField("email", e.target.value)}
+            className={getInputClass("general.email")}
+            placeholder="corporate@domain.com"
+          />
+          {errors["general.email"] && <p className="text-red-500 text-xs mt-1">{errors["general.email"]}</p>}
+        </div>
+
+        {/* Corporate Phone Contact Line */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Phone Line</label>
+          <input
+            type="text"
+            value={account.phone || ""}
+            onChange={(e) => updateField("phone", e.target.value)}
+            className={getInputClass("general.phone")}
+            placeholder="Main Switchboard Connection"
+          />
+          {errors["general.phone"] && <p className="text-red-500 text-xs mt-1">{errors["general.phone"]}</p>}
+        </div>
+
+        {/* Corporate Link Endpoint */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Corporate Website</label>
+          <input
+            type="text"
+            value={account.website || ""}
+            onChange={(e) => updateField("website", e.target.value)}
+            className={getInputClass("general.website")}
+            placeholder="https://example.com"
+          />
+          {errors["general.website"] && <p className="text-red-500 text-xs mt-1">{errors["general.website"]}</p>}
+        </div>
+
+        {/* Operating Base Ledger Currency Selection Dropdown Element */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Operating Currency</label>
+          <select
+            disabled={isReadonly}
+            value={account.currency_id || ""}
+            onChange={(e) => updateField("currency_id", e.target.value ? e.target.value : undefined)}
+            className={getInputClass("general.currency_id")}
+          >
+            <option value="">Select Account Currency...</option>
+            {currencies.map((curr) => (
+              <option key={curr.id} value={curr.id}>
+                {curr.code} - {curr.name} {curr.is_base ? "(Base)" : ""}
+              </option>
+            ))}
+          </select>
+          {errors["general.currency_id"] && <p className="text-red-500 text-xs mt-1">{errors["general.currency_id"]}</p>}
+        </div>
+
+        {/* Credit Boundary Controls */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Credit Limit Ceiling</label>
+          <input
+            type="number"
+            value={account.credit_limit ?? 0}
+            onChange={(e) => updateField("credit_limit", Math.max(0, Number(e.target.value)))}
+            className={getInputClass("general.credit_limit")}
+          />
+          {errors["general.credit_limit"] && <p className="text-red-500 text-xs mt-1">{errors["general.credit_limit"]}</p>}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
+
+import type { Party } from "@/types/erp";
+
 // Structure matches your raw SQL select result
 export type CompanyCurrency = {
   id: number;
@@ -15,7 +159,8 @@ export type CompanyCurrency = {
 
 type Props = {
   account: Partial<Party>;
-  setAccount: React.SetStateAction<React.Dispatch<Partial<Party>>>;
+  // setAccount: React.SetStateAction<React.Dispatch<Partial<Party>>>;
+  setAccount: React.Dispatch<React.SetStateAction<Partial<Party>>>;
   isReadonly?: boolean;
   errors: Record<string, string>;
   currencies?: CompanyCurrency[]; // Received from parent data-fetchers
@@ -130,7 +275,7 @@ export default function GeneralTab({
           />
         </div>
 
-        {/* Currency Dropdown Block */}
+   
         <div>
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
             Operating Currency
@@ -142,7 +287,7 @@ export default function GeneralTab({
               updateField(
                 "currency_id",
                 (e.target.value
-                  ? Number(e.target.value)
+                  ? e.target.value
                   : null) as unknown as Party["currency_id"],
               )
             }
@@ -173,7 +318,7 @@ export default function GeneralTab({
       </div>
     </div>
   );
-}
+} */
 
 /* 
 

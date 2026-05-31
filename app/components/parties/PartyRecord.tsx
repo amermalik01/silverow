@@ -196,6 +196,30 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
 
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
+
+
+      {Object.keys(formErrors).length > 0 && (
+        <div className="p-4 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
+          <p className="font-semibold mb-1">
+            Please fix the following validation errors:
+          </p>
+          <ul className="list-disc pl-5 space-y-0.5 text-xs">
+            {formErrors.global && <li>{formErrors.global}</li>}
+            {Object.entries(formErrors)
+              .filter(([key]) => key !== "global")
+              .map(([key, message]) => (
+                <li key={key}>
+                  <span className="capitalize font-medium">
+                    {key.replace(".", " ")}
+                  </span>
+                  : {message}
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+
+      
       {/* Tab Navigation Menu */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
         {tabs.map((tab) => {

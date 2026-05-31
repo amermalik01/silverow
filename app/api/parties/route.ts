@@ -144,36 +144,62 @@ export async function POST(req: Request) {
       currency_id,
       salesperson_id,
       bucket_id,
+      // Destructure the boolean parameters out of the payload:
+      is_crm_lead = false,
+      is_srm_vendor = false,
+      is_customer = false,
+      is_supplier = false,
     } = account || {};
 
+    
     // Immediate sanity checks
-    if (!name?.trim())
+    if (!name?.trim()) {
       return NextResponse.json(
         { error: "Corporate name is required." },
         { status: 400 },
       );
-    if (!account.roleType)
+    }
+
+    // Modern Validation Check: At least one role flag must evaluate to true
+    if (!is_crm_lead && !is_srm_vendor && !is_customer && !is_supplier) {
       return NextResponse.json(
         { error: "Initial target deployment role definition state required." },
         { status: 400 },
       );
+    }
+
 
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
 
-      // Initialize all boolean role flags and code variables to a clear initial state
-      let is_crm_lead = false,
-        is_srm_vendor = false,
-        is_customer = false,
-        is_supplier = false;
+
+      // Initialize empty placeholders for system sequence codes
       let crm_code = null,
         srm_code = null,
         customer_code = null,
         supplier_code = null;
 
+      // Programmatically pull sequential numbering blocks based on your matching flags
+      if (is_crm_lead) {
+        const leadSeq = await client.query("SELECT get_next_sequence($1, 'crm_lead') AS code", [companyId]);
+        crm_code = leadSeq.rows[0].code;
+      }
+      if (is_srm_vendor) {
+        const vendorSeq = await client.query("SELECT get_next_sequence($1, 'srm_vendor') AS code", [companyId]);
+        srm_code = vendorSeq.rows[0].code;
+      }
+      if (is_customer) {
+        const custSeq = await client.query("SELECT get_next_sequence($1, 'customer') AS code", [companyId]);
+        customer_code = custSeq.rows[0].code;
+      }
+      if (is_supplier) {
+        const suppSeq = await client.query("SELECT get_next_sequence($1, 'supplier') AS code", [companyId]);
+        supplier_code = suppSeq.rows[0].code;
+      }
+
       // Map incoming legacy UI type requests to our new multi-role layout parameters
-      switch (account.roleType) {
+      /* switch (account.roleType) {
         case "lead":
           is_crm_lead = true;
           const leadSeq = await client.query(
@@ -224,7 +250,7 @@ export async function POST(req: Request) {
           throw new Error(
             "Invalid initialization category profile rule specified.",
           );
-      }
+      } */
 
       const partyInsertQuery = `
         INSERT INTO parties (

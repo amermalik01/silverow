@@ -26,6 +26,7 @@ export type PartyContactDraft = {
   email?: string;
   phone?: string;
   mobile?: string;
+  notes?: string;
 
   is_primary: boolean;
 };
@@ -49,6 +50,7 @@ export type PartyAddressDraft = {
   city?: string;
   county?: string;
   country?: string;
+  state?: string;
   postcode?: string;
   country_id?: string;
 

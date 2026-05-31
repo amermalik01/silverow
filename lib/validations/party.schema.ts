@@ -2,6 +2,144 @@
 
 import { z } from "zod";
 
+// Preprocessor to safely convert empty strings or null values to undefined
+const looseString = z.preprocess(
+  (val) => (val === "" || val === null ? undefined : String(val)),
+  z.string().optional()
+);
+
+// Preprocessor specifically tailored for email formatting rules
+const looseEmail = z.preprocess(
+  (val) => (val === "" || val === null ? undefined : String(val)),
+  z.string().email("Invalid email format").optional()
+);
+
+// Preprocessor to cast string inputs from form fields into numbers safely
+const looseNumber = z.preprocess((val) => {
+  if (val === "" || val === null || val === undefined) return 0;
+  const parsed = Number(val);
+  return isNaN(parsed) ? 0 : parsed;
+}, z.number().nonnegative("Credit ceiling bounds cannot be negative").default(0));
+
+
+
+export const PartyContactSchema = z.object({
+  name: z.string().min(1, "Contact name is required"),
+  job_title: looseString,
+  email: looseEmail,
+  phone: looseString,
+  mobile: looseString,
+  notes: looseString,
+  is_primary: z.boolean().default(false),
+});
+
+export const PartyAddressSchema = z.object({
+  label: z.string().min(1, "Address label required (e.g. Head Office)"),
+  address_1: z.string().min(1, "Street address location details are required"),
+  address_2: looseString,
+  city: z.string().min(1, "Target city is required"),
+  state: looseString,
+  postcode: z.string().min(1, "Postal code required"),
+  country: z.string().min(1, "Country designation code required"),
+  phone: looseString,
+  email: looseEmail,
+  is_primary: z.boolean().default(false),
+  is_billing: z.boolean().default(false),
+  is_shipping: z.boolean().default(false),
+});
+
+export const PartySchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Legal company identifier name is required"),
+  status: z.enum(["active", "inactive", "blocked"]).default("active"),
+  is_crm_lead: z.boolean().default(false),
+  is_srm_vendor: z.boolean().default(false),
+  is_customer: z.boolean().default(false),
+  is_supplier: z.boolean().default(false),
+
+  email: looseEmail,
+  phone: looseString,
+  mobile: looseString,
+  website: z.preprocess(
+    (val) => (val === "" || val === null ? undefined : String(val)),
+    z.string().url("Invalid website URL path structure").optional()
+  ),
+
+  credit_limit: looseNumber, // Resolves the "expected number, received string" error
+  currency_id: looseString,
+  salesperson_id: looseString,
+  bucket_id: looseString,
+});
+
+// Helper preprocessor to cleanly treat empty strings as undefined for optional validation routes
+/* const emptyToUndefined = z.preprocess(
+  (val) => (val === "" ? undefined : val),
+  z.string().optional(),
+);
+export const PartyContactSchema = z.object({
+  name: z.string().min(1, "Contact name is required"),
+  job_title: looseString,
+  email: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().email("Invalid email format").optional(),
+  ),
+  phone: emptyToUndefined,
+  mobile: emptyToUndefined,
+  notes: emptyToUndefined,
+  is_primary: z.boolean().default(false),
+});
+
+export const PartyAddressSchema = z.object({
+  label: z.string().min(1, "Address label required (e.g. Head Office)"),
+  address_1: z.string().min(1, "Street address location details are required"),
+  address_2: emptyToUndefined,
+  city: z.string().min(1, "Target city is required"),
+  state: emptyToUndefined, // Aligned with backend API column schema naming
+  postcode: z.string().min(1, "Postal code required"),
+  country: z.string().min(1, "Country designation code required"), // Aligned with API
+  phone: emptyToUndefined,
+  email: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().email("Invalid email format").optional(),
+  ),
+  is_primary: z.boolean().default(false),
+  is_billing: z.boolean().default(false),
+  is_shipping: z.boolean().default(false),
+});
+
+export const PartySchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Legal company identifier name is required"),
+  status: z.enum(["active", "inactive", "blocked"]).default("active"),
+  is_crm_lead: z.boolean().default(false),
+  is_srm_vendor: z.boolean().default(false),
+  is_customer: z.boolean().default(false),
+  is_supplier: z.boolean().default(false),
+
+  email: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().email("Invalid email format").optional(),
+  ),
+  phone: emptyToUndefined,
+  mobile: emptyToUndefined,
+  website: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().url("Invalid website URL path structure").optional(),
+  ),
+
+  credit_limit: z
+    .number()
+    .nonnegative("Credit ceiling bounds cannot be negative")
+    .default(0),
+  currency_id: emptyToUndefined,
+  salesperson_id: emptyToUndefined,
+  bucket_id: emptyToUndefined,
+});
+ */
+
+
+/* import { z } from "zod";
+
 export const PartyContactSchema = z.object({
   name: z.string().min(1, "Contact name is required"),
   job_title: z.string().optional(),
@@ -45,42 +183,4 @@ export const PartySchema = z.object({
   salesperson_id: z.string().optional(),
   bucket_id: z.string().optional(),
 });
-
-/* import { z } from "zod";
-
-export const PartySchema = z.object({
-  id: z.string().optional(),
-
-  name: z.string().min(1),
-
-  type: z.enum(["customer", "supplier", "lead", "vendor", "both"]),
-
-  status: z.enum(["active", "inactive", "blocked"]).default("active"),
-
-  email: z.string().optional(),
-  phone: z.string().optional(),
-  mobile: z.string().optional(),
-  website: z.string().optional(),
-
-  crm_code: z.string().optional(),
-  srm_code: z.string().optional(),
-  customer_code: z.string().optional(),
-  supplier_code: z.string().optional(),
-
-  credit_limit: z.number().optional(),
-  currency_id: z.string().optional(),
-  salesperson_id: z.string().optional(),
-  bucket_id: z.string().optional(),
-
-  
-  address_1: z.string().optional(),
-  country_id: z.string().optional(),
-  city: z.string().optional(),
-  county: z.string().optional(),
-  postcode: z.string().optional(),
-
-  is_billing: z.boolean().optional(),
-  is_shipping: z.boolean().optional(),
-
-  created_at: z.string().optional(),
-}); */
+ */
