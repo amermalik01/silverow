@@ -98,6 +98,8 @@ export interface JournalLineInput {
 
   party_id?: string;
   item_id?: string;
+  currency_id?: string;
+  exchange_rate?: number;
 
   warehouse_id?: string;
 

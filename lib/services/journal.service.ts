@@ -23,12 +23,6 @@ export class JournalService {
     const limit = filters.limit || 20;
     const offset = (page - 1) * limit;
 
-    // 1. Map the source filter value to match the strict database enum values
-    // let dbSource = filters.source;
-    // if (filters.source === "CUSTOMER_JOURNAL") dbSource = "RECEIPT";
-    // if (filters.source === "SUPPLIER_JOURNAL") dbSource = "PAYMENT";
-    // if (filters.source === "ITEM_JOURNAL") dbSource = "INVENTORY";
-
     // Use dbSource instead of filters.source for the query bindings array
     const values: (string | number)[] = [companyId, filters.source];
     let whereConditions = `WHERE j.company_id = $1 AND j.source = $2`;
@@ -55,7 +49,11 @@ export class JournalService {
       j.reference,
       j.description,
       j.is_posted,
-      COALESCE((SELECT SUM(debit) FROM journal_entry_lines WHERE journal_id = j.id), 0) as amount
+      COALESCE((
+        SELECT SUM(debit * COALESCE(exchange_rate, 1.0)) 
+        FROM journal_entry_lines 
+        WHERE journal_id = j.id
+      ), 0) as amount
     FROM journal_entries j
     ${whereConditions}
     ORDER BY j.entry_no DESC
@@ -337,9 +335,11 @@ export class JournalService {
         credit,
         description,
         party_id,
-        item_id
+        item_id,
+        currency_id,
+        exchange_rate
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, $9, $10)
       `,
       [
         companyId,
@@ -350,6 +350,8 @@ export class JournalService {
         line.description || null,
         line.party_id || null,
         line.item_id || null,
+        line.currency_id || null,
+        line.currency_id ? (line.exchange_rate ?? 1.0) : 1.0,
       ],
     );
   }
@@ -363,23 +365,32 @@ export class JournalService {
       throw new Error("Journal requires at least one line");
     }
 
-    let totalDebit = 0;
-    let totalCredit = 0;
+    let totalDebitConverted = 0;
+    let totalCreditConverted = 0;
 
     for (const line of lines) {
       const debit = Number(line.debit || 0);
       const credit = Number(line.credit || 0);
 
+      // Fall back to a multiplier of 1.0 if exchange_rate is missing or null
+      const rate = Number(line.exchange_rate || 1.0);
+
       if (debit > 0 && credit > 0) {
         throw new Error("Line cannot have both debit and credit");
       }
 
-      totalDebit += debit;
-      totalCredit += credit;
+      // Accumulate the normalized amounts converted to your base currency
+      totalDebitConverted += debit * rate;
+      totalCreditConverted += credit * rate;
     }
 
-    if (totalDebit !== totalCredit) {
-      throw new Error("Journal is not balanced");
+    // Use a variance threshold buffer to prevent strict floating point fraction blocks
+    const variance = Math.abs(totalDebitConverted - totalCreditConverted);
+
+    if (variance >= 0.001) {
+      throw new Error(
+        `Journal is not balanced in base currency. Difference: ${variance.toFixed(2)}`,
+      );
     }
   }
 
@@ -458,3 +469,27 @@ export class JournalService {
   }
 }
 
+// private static validateLines(lines: JournalLineInput[]) {
+//   if (!lines || lines.length === 0) {
+//     throw new Error("Journal requires at least one line");
+//   }
+
+//   let totalDebit = 0;
+//   let totalCredit = 0;
+
+//   for (const line of lines) {
+//     const debit = Number(line.debit || 0);
+//     const credit = Number(line.credit || 0);
+
+//     if (debit > 0 && credit > 0) {
+//       throw new Error("Line cannot have both debit and credit");
+//     }
+
+//     totalDebit += debit;
+//     totalCredit += credit;
+//   }
+
+//   if (totalDebit !== totalCredit) {
+//     throw new Error("Journal is not balanced");
+//   }
+// }

@@ -17,9 +17,19 @@ type SubEntity = {
   name: string;
 };
 
+type Currency = {
+  id: string;
+  code: string;
+  name: string;
+  exchange_rate: string | number;
+  is_base: boolean;
+};
+
 type JournalLineRow = {
   account_id: string;
   party_id: string;
+  currency_id: string;
+  exchange_rate: number;
   debit: number;
   credit: number;
   description: string;
@@ -29,6 +39,8 @@ interface ApiJournalLine {
   account_id: string;
   customer_id?: string | null;
   supplier_id?: string | null;
+  currency_id?: string | null;
+  exchange_rate?: string | number | null;
   debit: string | number;
   credit: string | number;
   description?: string | null;
@@ -61,6 +73,7 @@ export default function JournalForm({
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [subEntities, setSubEntities] = useState<SubEntity[]>([]); // Customer/Supplier list storage
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [loading, setLoading] = useState(false);
   const [isPosted, setIsPosted] = useState(false); // 🔒 View-only switch state
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -72,19 +85,52 @@ export default function JournalForm({
   });
 
   const [lines, setLines] = useState<JournalLineRow[]>([
-    { account_id: "", party_id: "", debit: 0, credit: 0, description: "" },
-    { account_id: "", party_id: "", debit: 0, credit: 0, description: "" },
+    {
+      account_id: "",
+      party_id: "",
+      currency_id: "",
+      exchange_rate: 1.0,
+      debit: 0,
+      credit: 0,
+      description: "",
+    },
+    {
+      account_id: "",
+      party_id: "",
+      currency_id: "",
+      exchange_rate: 1.0,
+      debit: 0,
+      credit: 0,
+      description: "",
+    },
   ]);
 
+  // const [lines, setLines] = useState<JournalLineRow[]>([
+  //   { account_id: "", party_id: "", debit: 0, credit: 0, description: "" },
+  //   { account_id: "", party_id: "", debit: 0, credit: 0, description: "" },
+  // ]);
+
+  // const totalDebit = lines.reduce(
+  //   (sum, line) => sum + Number(line.debit || 0),
+  //   0,
+  // );
+  // const totalCredit = lines.reduce(
+  //   (sum, line) => sum + Number(line.credit || 0),
+  //   0,
+  // );
+  // const isBalanced = totalDebit === totalCredit && totalDebit > 0;
+
   const totalDebit = lines.reduce(
-    (sum, line) => sum + Number(line.debit || 0),
+    (sum, line) => sum + Number(line.debit || 0) * (line.exchange_rate || 1.0),
     0,
   );
+
   const totalCredit = lines.reduce(
-    (sum, line) => sum + Number(line.credit || 0),
+    (sum, line) => sum + Number(line.credit || 0) * (line.exchange_rate || 1.0),
     0,
   );
-  const isBalanced = totalDebit === totalCredit && totalDebit > 0;
+  const isBalanced =
+    Math.abs(totalDebit - totalCredit) < 0.001 && totalDebit > 0;
 
   useEffect(() => {
     const loadData = async () => {
@@ -93,6 +139,17 @@ export default function JournalForm({
         const accountRes = await fetch(`/api/lookups/gl-accounts?all=true`);
         const accountData = await accountRes.json();
         setAccounts(accountData.data || []);
+
+        try {
+          const currencyRes = await fetch(`/api/parties/currencies`);
+
+          if (currencyRes.ok) {
+            const data = await currencyRes.json();
+            setCurrencies(data || []);
+          }
+        } catch (cErr) {
+          console.error("Failed to load currency lookup dictionary:", cErr);
+        }
 
         // 2. Dynamically fetch Sub-ledger lookup options if context requires it
         if (journalType === "customer") {
@@ -127,6 +184,8 @@ export default function JournalForm({
               data.lines.map((l) => ({
                 account_id: l.account_id,
                 party_id: l.customer_id || l.supplier_id || "",
+                currency_id: l.currency_id || "",
+                exchange_rate: Number(l.exchange_rate || 1.0),
                 debit: Number(l.debit),
                 credit: Number(l.credit),
                 description: l.description || "",
@@ -141,17 +200,32 @@ export default function JournalForm({
     loadData();
   }, [journalId, apiBase, journalType]);
 
+  // Find the base currency from our array state to extract code names/rates
+  const baseCurrencyObj = currencies.find((c) => c.is_base);
+  const baseCurrencyCode = baseCurrencyObj?.code || "GBP";
+
   const handleLineChange = (
     index: number,
     field: keyof JournalLineRow,
     value: string | number,
   ) => {
-    if (isPosted) return; // Prevent mutations if historical state is locked
+    if (isPosted) return;
     const updated = [...lines];
+
     if (field === "debit" && Number(value) > 0) {
       updated[index].credit = 0;
     } else if (field === "credit" && Number(value) > 0) {
       updated[index].debit = 0;
+    }
+    // UPDATE: If the user changes the currency dropdown, pull and set its default exchange rate
+    if (field === "currency_id") {
+      const selectedCurrency = currencies.find((c) => c.id === value);
+      if (selectedCurrency) {
+        updated[index].exchange_rate =
+          Number(selectedCurrency.exchange_rate) || 1.0;
+      } else {
+        updated[index].exchange_rate = 1.0; // Fallback for local currency
+      }
     }
 
     updated[index] = { ...updated[index], [field]: value } as JournalLineRow;
@@ -165,6 +239,8 @@ export default function JournalForm({
       {
         account_id: "",
         party_id: "",
+        currency_id: "",
+        exchange_rate: 1.0,
         debit: 0,
         credit: 0,
         description: "",
@@ -288,125 +364,197 @@ export default function JournalForm({
               {journalType !== "general" && (
                 <th className="p-2 w-1/4 capitalize">{journalType} Contact</th>
               )}
+
+              <th className="p-2 w-32">Currency</th>
+              <th className="p-2 w-28">Ex. Rate</th>
               <th className="p-2 w-1/6">Debit</th>
               <th className="p-2 w-1/6">Credit</th>
+              <th className="p-2 w-32 bg-zinc-100/50 dark:bg-zinc-800/50">
+                Amount ({baseCurrencyCode})
+              </th>
               <th className="p-2">Description</th>
               {!isPosted && <th className="p-2 text-center w-12">Action</th>}
             </tr>
           </thead>
           <tbody>
-            {lines.map((line, index) => (
-              <tr key={index} className="border-b text-sm">
-                {/* GENERAL LEDGER SELECTOR */}
-                <td className="p-2">
-                  <select
-                    required
-                    disabled={isPosted}
-                    value={line.account_id}
-                    onChange={(e) =>
-                      handleLineChange(index, "account_id", e.target.value)
-                    }
-                    className="border p-2 rounded w-full bg-transparent disabled:opacity-60"
-                  >
-                    <option value="">Select Account</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.code} - {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-
-                {/* SUB-LEDGER CONTACT SELECTION COLUMN (Renders dynamically if not general journal) */}
-                {journalType !== "general" && (
+            {lines.map((line, index) => {
+              // Calculate conversions for line-level visibility
+              const rawAmount = line.debit > 0 ? line.debit : line.credit;
+              const convertedBaseAmount =
+                rawAmount * (line.exchange_rate || 1.0);
+              const isDebitText = line.debit > 0;
+              return (
+                <tr key={index} className="border-b text-sm">
+                  {/* GENERAL LEDGER SELECTOR */}
                   <td className="p-2">
                     <select
+                      required
                       disabled={isPosted}
-                      value={line.party_id || ""}
+                      value={line.account_id}
                       onChange={(e) =>
-                        handleLineChange(index, "party_id", e.target.value)
+                        handleLineChange(index, "account_id", e.target.value)
                       }
-                      className="border p-2 rounded w-full bg-transparent disabled:opacity-60 font-medium"
+                      className="border p-2 rounded w-full bg-transparent disabled:opacity-60"
                     >
-                      <option value="">No Contact (Direct Offset)</option>
-                      {subEntities.map((entity) => (
-                        <option key={entity.id} value={entity.id}>
-                          {entity.name}
+                      <option value="">Select Account</option>
+                      {accounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.code} - {a.name}
                         </option>
                       ))}
                     </select>
                   </td>
-                )}
 
-                {/* DEBIT SPLIT */}
-                <td className="p-2">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    disabled={isPosted}
-                    value={line.debit || ""}
-                    onChange={(e) =>
-                      handleLineChange(
-                        index,
-                        "debit",
-                        parseFloat(e.target.value) || 0,
-                      )
-                    }
-                    className="border p-2 rounded w-full bg-transparent disabled:opacity-60 font-mono"
-                  />
-                </td>
-
-                {/* CREDIT SPLIT */}
-                <td className="p-2">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    disabled={isPosted}
-                    value={line.credit || ""}
-                    onChange={(e) =>
-                      handleLineChange(
-                        index,
-                        "credit",
-                        parseFloat(e.target.value) || 0,
-                      )
-                    }
-                    className="border p-2 rounded w-full bg-transparent disabled:opacity-60 font-mono"
-                  />
-                </td>
-
-                {/* NARRATION TEXT LINE */}
-                <td className="p-2">
-                  <input
-                    type="text"
-                    placeholder="Narration split notes"
-                    disabled={isPosted}
-                    value={line.description}
-                    onChange={(e) =>
-                      handleLineChange(index, "description", e.target.value)
-                    }
-                    className="border p-2 rounded w-full bg-transparent disabled:opacity-60"
-                  />
-                </td>
-
-                {/* DELETION BUTTON TRIGGER */}
-                {!isPosted && (
-                  <td className="p-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => removeLineRow(index)}
-                      disabled={lines.length <= 2}
-                      className="text-red-500 hover:text-red-700 disabled:opacity-30 px-2"
+                  {/* SUB-LEDGER CONTACT SELECTION COLUMN (Renders dynamically if not general journal) */}
+                  {journalType !== "general" && (
+                    <td className="p-2">
+                      <select
+                        disabled={isPosted}
+                        value={line.party_id || ""}
+                        onChange={(e) =>
+                          handleLineChange(index, "party_id", e.target.value)
+                        }
+                        className="border p-2 rounded w-full bg-transparent disabled:opacity-60 font-medium"
+                      >
+                        <option value="">No Contact (Direct Offset)</option>
+                        {subEntities.map((entity) => (
+                          <option key={entity.id} value={entity.id}>
+                            {entity.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  )}
+                  {/* CURRENCY SELECTOR */}
+                  <td className="p-2">
+                    <select
+                      disabled={isPosted}
+                      value={line.currency_id}
+                      onChange={(e) =>
+                        handleLineChange(index, "currency_id", e.target.value)
+                      }
+                      className="border p-2 rounded w-full bg-transparent disabled:opacity-60"
                     >
-                      ✕
-                    </button>
+                      <option value="">Local Currency</option>
+                      {currencies.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.code}
+                        </option>
+                      ))}
+                    </select>
                   </td>
-                )}
-              </tr>
-            ))}
+
+                  {/* EXCHANGE RATE VALUE */}
+                  <td className="p-2">
+                    <input
+                      type="number"
+                      min="0.000001"
+                      step="0.000001"
+                      disabled={isPosted || !line.currency_id}
+                      value={line.currency_id ? line.exchange_rate : 1.0}
+                      onChange={(e) =>
+                        handleLineChange(
+                          index,
+                          "exchange_rate",
+                          parseFloat(e.target.value) || 1.0,
+                        )
+                      }
+                      className="border p-2 rounded w-full bg-transparent disabled:opacity-60 font-mono"
+                    />
+                  </td>
+
+                  {/* DEBIT SPLIT */}
+                  <td className="p-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      disabled={isPosted}
+                      value={line.debit || ""}
+                      onChange={(e) =>
+                        handleLineChange(
+                          index,
+                          "debit",
+                          parseFloat(e.target.value) || 0,
+                        )
+                      }
+                      className="border p-2 rounded w-full bg-transparent disabled:opacity-60 font-mono"
+                    />
+                  </td>
+
+                  {/* CREDIT SPLIT */}
+                  <td className="p-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      disabled={isPosted}
+                      value={line.credit || ""}
+                      onChange={(e) =>
+                        handleLineChange(
+                          index,
+                          "credit",
+                          parseFloat(e.target.value) || 0,
+                        )
+                      }
+                      className="border p-2 rounded w-full bg-transparent disabled:opacity-60 font-mono"
+                    />
+                  </td>
+
+                  {/* ADDED: LINE BASE CURRENCY CALCULATION COLUMN */}
+                  <td className="p-2 font-mono bg-zinc-50 dark:bg-zinc-800/30 text-zinc-600 dark:text-zinc-400 vertical-middle align-middle font-medium">
+                    {rawAmount > 0 ? (
+                      <span
+                        className={
+                          isDebitText ? "text-emerald-600" : "text-blue-600"
+                        }
+                      >
+                        {baseCurrencyCode}{" "}
+                        {convertedBaseAmount.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                        <span className="text-[10px] block text-zinc-400 italic">
+                          {isDebitText ? "Converted Dr." : "Converted Cr."}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-zinc-300">-</span>
+                    )}
+                  </td>
+
+                  {/* NARRATION TEXT LINE */}
+                  <td className="p-2">
+                    <input
+                      type="text"
+                      placeholder="Narration split notes"
+                      disabled={isPosted}
+                      value={line.description}
+                      onChange={(e) =>
+                        handleLineChange(index, "description", e.target.value)
+                      }
+                      className="border p-2 rounded w-full bg-transparent disabled:opacity-60"
+                    />
+                  </td>
+
+                  {/* DELETION BUTTON TRIGGER */}
+                  {!isPosted && (
+                    <td className="p-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => removeLineRow(index)}
+                        disabled={lines.length <= 2}
+                        className="text-red-500 hover:text-red-700 disabled:opacity-30 px-2"
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -431,13 +579,13 @@ export default function JournalForm({
           <div>
             Total Debits:{" "}
             <span className="font-bold text-emerald-600">
-              ${totalDebit.toFixed(2)}
+              {baseCurrencyCode} {totalDebit.toFixed(2)}
             </span>
           </div>
           <div>
             Total Credits:{" "}
             <span className="font-bold text-blue-600">
-              ${totalCredit.toFixed(2)}
+              {baseCurrencyCode} {totalCredit.toFixed(2)}
             </span>
           </div>
           <div
