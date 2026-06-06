@@ -4,43 +4,42 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import ItemLookupModal, {
+  ItemLookupRecord,
+} from "../../shared/modals/ItemLookupModal";
+import StockAllocationModal, {
+  StockAllocationRecord,
+} from "../../shared/modals/StockAllocationModal";
 
 // --- Lookups & Type Definitions ---
-type Account = {
+interface Account {
   id: string;
   code: string;
   name: string;
-};
+}
 
-type Currency = {
+interface Currency {
   id: string;
   code: string;
   name: string;
   is_base: boolean;
-};
+}
 
-type InventoryItem = {
-  id: string;
-  code: string;
-  name: string;
-  uom: string;
-};
-
-type Warehouse = {
+interface Warehouse {
   id: string;
   name: string;
-};
+}
 
-type StorageLocation = {
+interface StorageLocation {
   id: string;
   warehouse_id: string;
-  name: string;
-};
-
-// Modeled explicitly after your legacy system's tabular requirements
-type ItemJournalLineRow = {
+  title: string;
+  code: string | null;
+}
+interface ItemJournalLineRow {
   transaction_type: "Positive Entry" | "Negative Entry";
   item_id: string;
+  item_code: string;
   item_description: string;
   warehouse_id: string;
   location_id: string;
@@ -48,8 +47,11 @@ type ItemJournalLineRow = {
   uom: string;
   cost_per_unit: number;
   amount: number;
-  account_id: string; // The selected G/L Offset Account
-};
+  account_id: string;
+
+  allocations: StockAllocationRecord[];
+  is_allocated: boolean;
+}
 
 // Define what a raw database row looks like coming back from the API
 interface RawBackendJournalLine {
@@ -58,6 +60,7 @@ interface RawBackendJournalLine {
   debit: string | number;
   credit: string | number;
   item_id?: string | null;
+  item_code?: string | null;
   item_description?: string | null;
   warehouse_id?: string | null;
   location_id?: string | null;
@@ -73,15 +76,21 @@ interface ApiResponsePayload {
     description?: string | null;
     is_posted?: boolean;
   };
-  lines?: RawBackendJournalLine[]; // 🌟 Replaced any[] with our strict interface
+  lines?: RawBackendJournalLine[];
 }
 
-type Props = {
+interface Props {
   slug: string;
   journalId?: string;
   apiBase: string;
   redirectPath: string;
-};
+}
+
+interface ItemJournalFormProps {
+  journalId?: string;       // Present if editing an existing voucher
+  initialStatus?: boolean;  // is_posted flag from DB
+  onPostSuccess?: () => void;
+}
 
 export default function ItemJournalForm({
   journalId,
@@ -92,10 +101,32 @@ export default function ItemJournalForm({
 
   // Lookup data states
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [items, setItems] = useState<InventoryItem[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
+
+  // 🌟 Dynamic state tracking reactive location caches per-row unique mappings
+  // Formatted structure as: Record<RowIndex, StorageLocation[]>
+  const [rowLocationsCache, setRowLocationsCache] = useState<
+    Record<number, StorageLocation[]>
+  >({});
+
+  // 🌟 Modal UI Interaction Tracking Flags
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeModalRowIndex, setActiveModalRowIndex] = useState<number | null>(
+    null,
+  );
+
+  // State to control the visibility of the Stock Allocation Modal
+  const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
+  // Tracks which row index we are currently configuring allocations for
+  const [activeAllocationRowIndex, setActiveAllocationRowIndex] = useState<
+    number | null
+  >(null);
+
+  const openStockAllocationModal = (index: number) => {
+    setActiveAllocationRowIndex(index);
+    setIsAllocationModalOpen(true);
+  };
 
   // Status states
   const [loading, setLoading] = useState(false);
@@ -114,6 +145,7 @@ export default function ItemJournalForm({
     {
       transaction_type: "Positive Entry",
       item_id: "",
+      item_code: "",
       item_description: "",
       warehouse_id: "",
       location_id: "",
@@ -122,45 +154,37 @@ export default function ItemJournalForm({
       cost_per_unit: 0,
       amount: 0,
       account_id: "",
+      allocations: [],
+      is_allocated: false,
     },
   ]);
 
-  // --- Initial Data Hydration ---
+  // --- Initial Dictionaries Load Hydration ---
   useEffect(() => {
-    const loadFormLookups = async () => {
+    const loadCoreLookups = async () => {
       try {
         setLoading(true);
-        // 1. Fetch cross-cutting financial and inventory dictionaries
-        const [accountRes, itemRes, whRes, currencyRes] =
-          await Promise.all([
-            fetch(`/api/lookups/gl-accounts?all=true`),
-            fetch(`/api/lookups/items`),
-            fetch(`/api/lookups/warehouses`),
-            // fetch(`/api/lookups/locations`),
-            fetch(`/api/parties/currencies`),
-          ]);
-          // locRes, 
+        const [accountRes, whRes, currencyRes] = await Promise.all([
+          fetch(`/api/lookups/gl-accounts?all=true`),
+          fetch(`/api/lookups/warehouses`),
+          fetch(`/api/parties/currencies`),
+        ]);
 
-        const [accountData, itemData, whData,  currencyData] =
-          await Promise.all([
-            accountRes.json(),
-            itemRes.json(),
-            whRes.json(),
-            currencyRes.ok ? currencyRes.json() : Promise.resolve([]),
-          ]);
-          // locData, locRes?.json(),
+        const [accountData, whData, currencyData] = await Promise.all([
+          accountRes.json(),
+          whRes.json(),
+          currencyRes.ok ? currencyRes.json() : Promise.resolve([]),
+        ]);
 
         setAccounts(accountData.data || []);
-        setItems(itemData.data || []);
         setWarehouses(whData.data || []);
-        // setLocations(locData.data || []);
         setCurrencies(currencyData || []);
 
-        // 2. Hydrate data fields if working with an existing Voucher ID (Edit / View Mode)
+        // Rehydrate transactional record variables if an ID exists
         if (journalId) {
           const detailRes = await fetch(`${apiBase}/${journalId}`);
           if (!detailRes.ok)
-            throw new Error("Failed to pull individual voucher data records");
+            throw new Error("Failed to load historical record voucher context");
 
           const data: ApiResponsePayload = await detailRes.json();
           setIsPosted(!!data.journal.is_posted);
@@ -174,16 +198,12 @@ export default function ItemJournalForm({
           if (data.lines && data.lines.length > 0) {
             const structuralLines: ItemJournalLineRow[] = [];
 
-            data.lines.forEach((l: RawBackendJournalLine) => {
-              // 🌟 Replaced l: any
+            for (let i = 0; i < data.lines.length; i++) {
+              const l = data.lines[i];
               if (l.item_id) {
                 const isPositive = Number(l.debit) > 0;
-
-                // Find matching offset account id within the database result payload array
-                const associatedOffset = data.lines?.find(
-                  (
-                    o: RawBackendJournalLine, // 🌟 Replaced o: any
-                  ) =>
+                const associatedOffset = data.lines.find(
+                  (o) =>
                     o.id !== l.id &&
                     Math.abs(Number(o.debit) - Number(l.credit)) < 0.01,
                 );
@@ -193,6 +213,7 @@ export default function ItemJournalForm({
                     ? "Positive Entry"
                     : "Negative Entry",
                   item_id: l.item_id,
+                  item_code: l.item_code || "",
                   item_description: l.item_description || "",
                   warehouse_id: l.warehouse_id || "",
                   location_id: l.location_id || "",
@@ -202,9 +223,19 @@ export default function ItemJournalForm({
                   amount: isPositive ? Number(l.debit) : Number(l.credit),
                   account_id:
                     l.account_id || associatedOffset?.account_id || "",
+                  allocations: [],
+                  is_allocated: false,
                 });
+
+                // Fetch location listings for existing rows immediately
+                if (l.warehouse_id) {
+                  await fetchLocationsForSpecificRow(
+                    structuralLines.length - 1,
+                    l.warehouse_id,
+                  );
+                }
               }
-            });
+            }
 
             if (structuralLines.length > 0) {
               setLines(structuralLines);
@@ -212,19 +243,58 @@ export default function ItemJournalForm({
           }
         }
       } catch (err) {
-        console.error(
-          "Critical Exception caught while loading item journal layouts:",
-          err,
-        );
-        setErrorMsg("Failed to fully synchronize lookups and data elements.");
+        console.error("Hydration runtime issue:", err);
+        setErrorMsg("Failed to synchronize component schema records.");
       } finally {
         setLoading(false);
       }
     };
 
-    loadFormLookups();
+    loadCoreLookups();
   }, [journalId, apiBase]);
 
+  // 🌟 REACTIVE REFETCH HANDLER FOR LOCATIONS
+  const fetchLocationsForSpecificRow = async (
+    rowIndex: number,
+    warehouseId: string,
+  ) => {
+    if (!warehouseId) {
+      setRowLocationsCache((prev) => ({ ...prev, [rowIndex]: [] }));
+      return;
+    }
+    try {
+      // Query filter points to your target specific warehouse_id parameters
+      const res = await fetch(
+        `/api/lookups/locations?warehouse_id=${warehouseId}`,
+      );
+      if (res.ok) {
+        const payload = await res.json();
+        setRowLocationsCache((prev) => ({
+          ...prev,
+          [rowIndex]: payload.data || [],
+        }));
+      }
+    } catch (err) {
+      console.error("Failed pulling targeted location indices:", err);
+    }
+  };
+
+  const handleSaveAllocations = (
+    index: number,
+    allocationsData: StockAllocationRecord[],
+  ) => {
+    const updated = [...lines];
+    updated[index].allocations = allocationsData;
+
+    // Calculate if assigned total quantities perfectly match the line's order quantity
+    const totalAllocated = allocationsData.reduce(
+      (sum, alloc) => sum + alloc.quantity,
+      0,
+    );
+    updated[index].is_allocated = totalAllocated === updated[index].quantity;
+
+    setLines(updated);
+  };
   // Extract base currency symbol
   const baseCurrencyCode = currencies.find((c) => c.is_base)?.code || "GBP";
 
@@ -235,28 +305,16 @@ export default function ItemJournalForm({
   );
 
   // --- Grid Matrix Mutator Event Handlers ---
+
   const handleLineChange = <K extends keyof ItemJournalLineRow>(
     index: number,
     field: K,
-    value: ItemJournalLineRow[K], // 🌟 Resolves perfectly to either string or number based on the field key
+    value: ItemJournalLineRow[K],
   ) => {
     if (isPosted) return;
     const updated = [...lines];
+    updated[index] = { ...updated[index], [field]: value };
 
-    if (field === "item_id") {
-      const selectedItem = items.find((i) => i.id === (value as string));
-      updated[index].item_id = value as string;
-      updated[index].item_description = selectedItem ? selectedItem.name : "";
-      updated[index].uom = selectedItem ? selectedItem.uom : "Pcs";
-    } else {
-      // Safely assign the dynamic property using a clean shallow assignment
-      updated[index] = {
-        ...updated[index],
-        [field]: value,
-      };
-    }
-
-    // Reactively recompute running subtotals immediately upon quantitative data shifts
     if (field === "quantity" || field === "cost_per_unit") {
       updated[index].amount =
         Number(updated[index].quantity || 0) *
@@ -266,6 +324,33 @@ export default function ItemJournalForm({
     setLines(updated);
   };
 
+  // 🌟 TRIGGERED EXCLUSIVELY VIA SELECTION MODAL
+  // 🌟 Handles selection using your exact shared ItemLookupRecord structure safely
+  const handleModalItemSelect = (selectedItem: ItemLookupRecord) => {
+    if (activeModalRowIndex === null) return;
+
+    const updated = [...lines];
+    updated[activeModalRowIndex].item_id = selectedItem.id;
+    updated[activeModalRowIndex].item_code = selectedItem.item_code;
+    updated[activeModalRowIndex].item_description = selectedItem.name;
+
+    // Fallback to "Pcs" or read from your custom setup if needed since base_uom_name isn't in the shared record
+    updated[activeModalRowIndex].uom = "Pcs";
+
+    // Map cost if provided safely, fallback to 0 if it is undefined
+    updated[activeModalRowIndex].cost_per_unit = Number(
+      selectedItem.standard_cost || 0,
+    );
+
+    // Compute total line valuation changes immediately
+    updated[activeModalRowIndex].amount =
+      updated[activeModalRowIndex].quantity *
+      updated[activeModalRowIndex].cost_per_unit;
+
+    setLines(updated);
+    setActiveModalRowIndex(null);
+  };
+
   const addLineRow = () => {
     if (isPosted) return;
     setLines([
@@ -273,6 +358,7 @@ export default function ItemJournalForm({
       {
         transaction_type: "Positive Entry",
         item_id: "",
+        item_code: "",
         item_description: "",
         warehouse_id: "",
         location_id: "",
@@ -281,6 +367,8 @@ export default function ItemJournalForm({
         cost_per_unit: 0,
         amount: 0,
         account_id: "",
+        allocations: [],
+        is_allocated: false,
       },
     ]);
   };
@@ -288,6 +376,10 @@ export default function ItemJournalForm({
   const removeLineRow = (index: number) => {
     if (isPosted || lines.length <= 1) return;
     setLines(lines.filter((_, i) => i !== index));
+    // Re-index cache layout mappings safely
+    const cleanCache = { ...rowLocationsCache };
+    delete cleanCache[index];
+    setRowLocationsCache(cleanCache);
   };
 
   // --- Document Save Action ---
@@ -334,8 +426,7 @@ export default function ItemJournalForm({
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(
-          errData.error ||
-            "Server engine failed to save item journal entry parameters.",
+          errData.error || "Failed database ledger ingestion routine.",
         );
       }
 
@@ -356,8 +447,7 @@ export default function ItemJournalForm({
       {/* Dynamic View Restrictions banner check */}
       {isPosted && (
         <div className="p-3 text-sm bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 rounded font-medium">
-          🔒 View Only: This inventory adjustment document batch has been
-          officially posted and is locked from inline modifications.
+          🔒 View Only: Document batch has been posted.
         </div>
       )}
 
@@ -436,10 +526,12 @@ export default function ItemJournalForm({
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {lines.map((line, index) => {
+              // Extract current unique locations filtered list for this row index configuration
+              const activeRowLocations = rowLocationsCache[index] || [];
               // Context-driven filtering targeting location scopes mapping to the distinct selected warehouse row
-              const contextLocations = locations.filter(
-                (l) => l.warehouse_id === line.warehouse_id,
-              );
+              //   const contextLocations = locations.filter(
+              //     (l) => l.warehouse_id === line.warehouse_id,
+              //   );
 
               return (
                 <tr
@@ -465,24 +557,28 @@ export default function ItemJournalForm({
                     </select>
                   </td>
 
-                  {/* MASTER ITEM LINK SELECTOR */}
+                  {/* 🌟 ITEM PICKER TRIGGER ELEMENT BUTTON BLOCK */}
                   <td className="p-2">
-                    <select
-                      required
-                      disabled={isPosted}
-                      value={line.item_id}
-                      onChange={(e) =>
-                        handleLineChange(index, "item_id", e.target.value)
-                      }
-                      className="border p-2 rounded w-full bg-transparent text-xs focus:ring-1 focus:ring-emerald-500 disabled:opacity-60"
-                    >
-                      <option value="">Select Item</option>
-                      {items.map((i) => (
-                        <option key={i.id} value={i.id}>
-                          {i.code}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex gap-1">
+                      <input
+                        type="text"
+                        readOnly
+                        placeholder="Click Find"
+                        value={line.item_code}
+                        className="border p-2 rounded w-full bg-zinc-50 dark:bg-zinc-800 text-xs font-mono font-bold text-zinc-700 dark:text-zinc-200"
+                      />
+                      <button
+                        type="button"
+                        disabled={isPosted}
+                        onClick={() => {
+                          setActiveModalRowIndex(index);
+                          setIsModalOpen(true);
+                        }}
+                        className="bg-zinc-100 hover:bg-zinc-200 border px-2.5 rounded text-xs transition font-medium text-zinc-600"
+                      >
+                        Find
+                      </button>
+                    </div>
                   </td>
 
                   {/* ITEM NARRATIVE DISPLAY PROFILE */}
@@ -503,8 +599,10 @@ export default function ItemJournalForm({
                       disabled={isPosted}
                       value={line.warehouse_id}
                       onChange={(e) => {
-                        handleLineChange(index, "warehouse_id", e.target.value);
-                        handleLineChange(index, "location_id", ""); // Clear location child block down sequence cascading adjustments
+                        const nextWhId = e.target.value;
+                        handleLineChange(index, "warehouse_id", nextWhId);
+                        handleLineChange(index, "location_id", "");
+                        fetchLocationsForSpecificRow(index, nextWhId);
                       }}
                       className="border p-2 rounded w-full bg-transparent text-xs focus:ring-1 focus:ring-emerald-500 disabled:opacity-60"
                     >
@@ -517,7 +615,7 @@ export default function ItemJournalForm({
                     </select>
                   </td>
 
-                  {/* CASCADING STORAGE BIN / LOCATION SELECTOR */}
+                  {/* 🌟 REACTIVE WAREHOUSE LOCATIONS POPULATION */}
                   <td className="p-2">
                     <select
                       required
@@ -529,9 +627,9 @@ export default function ItemJournalForm({
                       className="border p-2 rounded w-full bg-transparent text-xs focus:ring-1 focus:ring-emerald-500 disabled:opacity-50"
                     >
                       <option value="">Select Location</option>
-                      {contextLocations.map((loc) => (
+                      {activeRowLocations.map((loc) => (
                         <option key={loc.id} value={loc.id}>
-                          {loc.name}
+                          {loc.title} {loc.code ? `(${loc.code})` : ""}
                         </option>
                       ))}
                     </select>
@@ -541,8 +639,8 @@ export default function ItemJournalForm({
                   <td className="p-2">
                     <input
                       type="number"
-                      min="0.000001"
-                      step="any"
+                      min="0"
+                      step="1"
                       required
                       disabled={isPosted}
                       value={line.quantity || ""}
@@ -568,7 +666,7 @@ export default function ItemJournalForm({
                     <input
                       type="number"
                       min="0"
-                      step="0.000001"
+                      step="0.01"
                       required
                       disabled={isPosted}
                       value={line.cost_per_unit || ""}
@@ -613,19 +711,39 @@ export default function ItemJournalForm({
                   </td>
 
                   {/* ACTION CONTROLS */}
-                  {!isPosted && (
-                    <td className="p-2 text-center">
+                  <td className="p-2 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      {/* Allocation Trigger Button */}
                       <button
                         type="button"
-                        onClick={() => removeLineRow(index)}
-                        disabled={lines.length <= 1}
-                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-20 transition px-2"
-                        title="Remove Row"
+                        disabled={!line.item_id || !line.warehouse_id}
+                        onClick={() => {
+                          // Open your Stock Allocation Modal for this row index
+                          openStockAllocationModal(index);
+                        }}
+                        className="p-1 text-zinc-500 hover:text-zinc-700 disabled:opacity-30"
+                        title="Configure Stock Allocation"
                       >
-                        ✕
+                        {/* 🟢/🔴 Status dot based on allocation completion matching line.quantity */}
+                        <span
+                          className={`inline-block w-2.5 h-2.5 rounded-full mr-1 ${
+                            line.is_allocated ? "bg-green-500" : "bg-red-500"
+                          }`}
+                        />
                       </button>
-                    </td>
-                  )}
+
+                      {!isPosted && (
+                        <button
+                          type="button"
+                          onClick={() => removeLineRow(index)}
+                          disabled={lines.length <= 1}
+                          className="text-red-500 hover:text-red-700 disabled:opacity-20 px-1"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               );
             })}
@@ -644,13 +762,11 @@ export default function ItemJournalForm({
             + Add Adjustment Row
           </button>
         ) : (
-          <div className="text-xs text-zinc-400 italic">
-            Matrix structural updates locked
-          </div>
+          <div className="text-xs text-zinc-400 italic">Layout immutable</div>
         )}
 
         <div className="text-sm font-mono text-zinc-600 dark:text-zinc-400 text-right">
-          Total Batch Operational Valuation:{" "}
+          Total Batch Valuation:{" "}
           <span className="font-bold text-base text-zinc-900 dark:text-zinc-100 pl-1">
             {baseCurrencyCode}{" "}
             {totalBatchValuation.toLocaleString(undefined, {
@@ -674,6 +790,45 @@ export default function ItemJournalForm({
               : "Save Item Journal Adjustments"}
           </button>
         </div>
+      )}
+
+      {/* 🌟 INLINE SEARCH LOOKUP MODAL INJECTION */}
+      <ItemLookupModal
+        open={isModalOpen} // Matches 'open' prop from your file
+        onClose={() => {
+          setIsModalOpen(false);
+          setActiveModalRowIndex(null);
+        }}
+        onSelect={handleModalItemSelect}
+      />
+
+      {/* 🌟 SHARED STOCK ALLOCATION MODAL INJECTION */}
+      {activeAllocationRowIndex !== null && (
+        <StockAllocationModal
+          key={`allocation-row-${activeAllocationRowIndex}`}
+          open={isAllocationModalOpen}
+          onClose={() => {
+            setIsAllocationModalOpen(false);
+            setActiveAllocationRowIndex(null);
+          }}
+          targetQuantity={lines[activeAllocationRowIndex].quantity}
+          itemCode={lines[activeAllocationRowIndex].item_code}
+          itemName={lines[activeAllocationRowIndex].item_description}
+          warehouseName={
+            warehouses.find(
+              (w) => w.id === lines[activeAllocationRowIndex].warehouse_id,
+            )?.name || ""
+          }
+          locationName={
+            (rowLocationsCache[activeAllocationRowIndex] || []).find(
+              (l) => l.id === lines[activeAllocationRowIndex].location_id,
+            )?.title || ""
+          }
+          initialAllocations={lines[activeAllocationRowIndex].allocations || []}
+          onSave={(allocationsPayload) =>
+            handleSaveAllocations(activeAllocationRowIndex, allocationsPayload)
+          }
+        />
       )}
     </form>
   );

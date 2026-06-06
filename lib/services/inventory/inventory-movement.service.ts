@@ -15,39 +15,24 @@ export type InventoryTransactionType =
 
 export type InventoryMovementLineInput = {
   item_id: string;
-
   warehouse_id: string;
-
   location_id?: string | null;
-
   uom_id?: string | null;
-
   quantity: number;
-
   unit_cost?: number;
-
   movement_direction: "IN" | "OUT";
-
   batch_no?: string | null;
-
   serial_no?: string | null;
-
   expiry_date?: string | null;
 };
 
 export type PostInventoryTransactionInput = {
   company_id: string;
-
   transaction_type: InventoryTransactionType;
-
   posting_date: string;
-
   reference_type?: string | null;
-
   reference_id?: string | null;
-
   created_by?: string | null;
-
   lines: InventoryMovementLineInput[];
 };
 
@@ -101,19 +86,12 @@ export class InventoryMovementService {
       `,
       [
         data.company_id,
-
         transactionNo,
-
         data.transaction_type,
-
         data.reference_type || null,
-
         data.reference_id || null,
-
         data.posting_date,
-
         "posted",
-
         data.created_by || null,
       ],
     );
@@ -166,33 +144,19 @@ export class InventoryMovementService {
         `,
         [
           data.company_id,
-
           transactionId,
-
           lineNo,
-
           line.warehouse_id,
-
           line.location_id || null,
-
           line.item_id,
-
           line.uom_id || null,
-
           qty,
-
           qty,
-
           line.movement_direction,
-
           unitCost,
-
           totalCost,
-
           line.batch_no || null,
-
           line.serial_no || null,
-
           line.expiry_date || null,
         ],
       );
@@ -210,19 +174,12 @@ export class InventoryMovementService {
         `,
         [
           data.company_id,
-
           line.item_id,
-
           line.warehouse_id,
-
           line.location_id || null,
-
           qty,
-
           unitCost,
-
           line.batch_no || null,
-
           line.serial_no || null,
         ],
       );
@@ -231,6 +188,66 @@ export class InventoryMovementService {
     }
 
     return transactionId;
+  }
+
+  // Add this method inside your InventoryMovementService class:
+
+  /**
+   * =========================================================
+   * DELETE TRANSACTION BY REFERENCE
+   * =========================================================
+   * Wipes unposted/modified journal records and updates the snapshots backward
+   */
+  static async deleteTransactionByReference(
+    client: PoolClient,
+    referenceId: string,
+    referenceType: string,
+  ): Promise<void> {
+    // 1. Find the transaction lines to reverse out stock snapshot counters
+    const existingLines = await client.query(
+      `
+      SELECT tl.item_id, tl.warehouse_id, tl.location_id, tl.quantity, tl.unit_cost, tl.batch_no, tl.serial_no
+      FROM inventory_transaction_lines tl
+      JOIN inventory_transactions t ON t.id = tl.transaction_id
+      WHERE t.reference_id = $1 AND t.reference_type = $2
+      `,
+      [referenceId, referenceType],
+    );
+
+    // 2. Reverse stock snapshot balance impacts (Multiply existing quantity by -1)
+    for (const line of existingLines.rows) {
+      await client.query(
+        `
+        SELECT post_inventory_transaction(
+          $1, $2, $3, $4, $5, $6, $7, $8
+        )
+        `,
+        [
+          line.company_id,
+          line.item_id,
+          line.warehouse_id,
+          line.location_id,
+          -Number(line.quantity), // Negate the movement quantity to reverse it
+          Number(line.unit_cost || 0),
+          line.batch_no,
+          line.serial_no,
+        ],
+      );
+    }
+
+    // 3. Cascade delete the transaction header (assuming your DB schema contains ON DELETE CASCADE on lines,
+    // otherwise manually delete lines first)
+    await client.query(
+      `DELETE FROM inventory_transaction_lines WHERE transaction_id IN (
+         SELECT id FROM inventory_transactions WHERE reference_id = $1 AND reference_type = $2
+      )`,
+      [referenceId, referenceType],
+    );
+
+    await client.query(
+      `DELETE FROM inventory_transactions WHERE reference_id = $1 AND reference_type = $2`,
+      [referenceId, referenceType],
+    );
   }
 }
 

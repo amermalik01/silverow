@@ -1,5 +1,4 @@
 // app/components/shared/modals/ItemLookupModal.tsx
-// app/components/shared/modals/ItemLookupModal.tsx
 
 "use client";
 
@@ -7,43 +6,26 @@ import { useEffect, useState } from "react";
 
 export type ItemLookupRecord = {
   id: string;
-
   item_code: string;
-
   barcode?: string;
-
   name: string;
-
   description?: string;
-
   item_type: number;
-
   standard_cost?: number;
-
   standard_sales_price?: number;
-
   purchase_gl_id?: string;
-
   sales_gl_id?: string;
-
   inventory_gl_id?: string;
-
   base_uom_id?: string;
-
   category_name?: string;
-
   brand_name?: string;
-
   item_type_name?: string;
-
   stock_tracking?: boolean;
 };
 
 type Props = {
   open: boolean;
-
   onClose: () => void;
-
   onSelect: (item: ItemLookupRecord) => void;
 };
 
