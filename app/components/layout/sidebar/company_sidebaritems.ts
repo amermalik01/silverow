@@ -251,7 +251,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
           {
             id: "Transfer Stock",
             name: "Transfer Stock",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+            url: `/${slug}/inventory/transfer-stock`,
           },
           {
             id: "Posted Transfer Stock",

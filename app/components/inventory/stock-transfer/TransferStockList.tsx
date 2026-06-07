@@ -1,61 +1,63 @@
-// app/components/finance/journals/JournalList.tsx
+// app/components/inventory/stock-transfer/TransferStockList.tsx
 
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
-export interface JournalListItem {
+export interface StockTransferListItem {
   id: string;
-  entry_no: string | number;
-  entry_date: string;
-  reference?: string | null;
-  description?: string | null;
-  amount: number | string;
+  transfer_no: string;
+  transfer_date: string;
+  warehouse_from_id: string;
+  warehouse_to_id: string;
+  in_transit_code: string;
+  shipping_charge: number | string;
   is_posted: boolean;
 }
 
 type Props = {
   slug: string;
   title: string;
-  journalType: "customer" | "supplier" | "item" | "general";
   apiBase: string;
   createPath: string;
 };
 
 type StatusFilter = "all" | "posted" | "unposted";
 
-export default function JournalList({ title, apiBase, createPath }: Props) {
-  const [data, setData] = useState<JournalListItem[]>([]);
+export default function StockTransferList({
+  title,
+  apiBase,
+  createPath,
+}: Props) {
+  const [data, setData] = useState<StockTransferListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<StatusFilter>("unposted");
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Update fetch to pass the page parameter
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(
-        `${apiBase}?status=${status}&page=${page}&limit=20`,
-      );
+      // Query filters append matching status and server-side page indices
+      const res = await fetch(`${apiBase}?status=${status}&page=${page}&limit=20`);
       const result = await res.json();
 
-      setData(result.rows || []); // Adjusted from result.data to result.rows
+      setData(result.rows || []);
       setTotalPages(result.pagination?.totalPages || 1);
     } catch (err) {
-      console.error(err);
+      console.error("[LOAD_STOCK_TRANSFER_LIST_ERROR]", err);
     } finally {
       setLoading(false);
     }
   }, [apiBase, status, page]);
 
-  // Reset page back to 1 if the user switches tabs
   const handleStatusChange = (newStatus: StatusFilter) => {
     setStatus(newStatus);
     setPage(1);
   };
+
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -63,17 +65,20 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
   const handlePost = async (id: string) => {
     if (
       !confirm(
-        "Are you sure you want to lock and post this journal entry to general ledgers?",
+        "Are you sure you want to lock and finalize this stock transfer? This will move physical quantities across warehouses.",
       )
     )
       return;
+
     try {
-      const res = await fetch(`${apiBase}/${id}/post`, { method: "POST" });
-      if (!res.ok) throw new Error("Posting execution failed.");
+      const res = await fetch(`${apiBase}/${id}/post`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Posting runtime calculations aborted.");
       await loadData();
     } catch (err) {
       console.error(err);
-      alert("Error posting transactional item.");
+      alert("Error posting transactional stock transfer document.");
     }
   };
 
@@ -86,14 +91,15 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
             {title}
           </h2>
           <p className="text-xs text-zinc-500">
-            Manage, balance and verify double entry book adjustments.
+            Monitor, track and verify multi-warehouse stock fulfillment
+            movements and drafts.
           </p>
         </div>
         <Link
           href={createPath}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium rounded transition"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm font-medium rounded transition"
         >
-          + New Entry
+          + New Transfer
         </Link>
       </div>
 
@@ -102,11 +108,10 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
         {(["unposted", "posted", "all"] as StatusFilter[]).map((tab) => (
           <button
             key={tab}
-            // onClick={() => setStatus(tab)}
             onClick={() => handleStatusChange(tab)}
             className={`px-4 py-2 font-medium border-b-2 -mb-[2px] transition capitalize ${
               status === tab
-                ? "border-blue-600 text-blue-600 font-semibold"
+                ? "border-emerald-600 text-emerald-600 font-semibold"
                 : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
             }`}
           >
@@ -114,7 +119,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
               ? "Drafts"
               : tab === "posted"
                 ? "Posted"
-                : "All Entries"}
+                : "All Transfers"}
           </button>
         ))}
       </div>
@@ -122,7 +127,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
       {/* DATA VIEW GRID */}
       {loading ? (
         <div className="py-12 text-center text-sm text-zinc-500 font-medium">
-          Loading general journals documentation entries...
+          Loading general inventory distribution records...
         </div>
       ) : data.length === 0 ? (
         <div className="py-12 text-center text-sm text-zinc-400 border border-dashed rounded">
@@ -133,13 +138,14 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">
-                <th className="p-3 w-24">Entry No</th>
+                <th className="p-3 w-32">Transfer No</th>
                 <th className="p-3 w-32">Date</th>
-                <th className="p-3 w-36">Reference</th>
-                <th className="p-3">Memo Description</th>
-                <th className="p-3 w-36 text-right">Total Amount</th>
+                <th className="p-3">Source Warehouse</th>
+                <th className="p-3">Dest Warehouse</th>
+                <th className="p-3 w-28">Transit Method</th>
+                <th className="p-3 w-32 text-right">Freight Cost</th>
                 <th className="p-3 w-28 text-center">Status</th>
-                <th className="p-3 w-24 text-center">Action</th>
+                <th className="p-3 w-28 text-center">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -151,37 +157,32 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
                   <td className="p-3 font-medium">
                     <Link
                       href={`${createPath.replace("/create", "")}/${row.id}`}
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-emerald-600 dark:text-emerald-400 hover:underline font-mono"
                     >
-                      #{row.entry_no}
+                      {row.transfer_no}
                     </Link>
                   </td>
                   <td className="p-3 text-zinc-600 dark:text-zinc-400">
-                    {new Date(row.entry_date).toLocaleDateString()}
+                    {new Date(row.transfer_date).toLocaleDateString()}
                   </td>
-                  <td className="p-3 font-mono text-xs max-w-[140px] truncate">
-                    {row.reference || (
-                      <span className="text-zinc-300 dark:text-zinc-700">
-                        —
-                      </span>
-                    )}
+                  <td className="p-3 text-zinc-700 dark:text-zinc-300 font-medium">
+                    {row.warehouse_from_id}
                   </td>
-                  <td
-                    className="p-3 max-w-xs truncate text-zinc-600 dark:text-zinc-400"
-                    title={row.description || ""}
-                  >
-                    {row.description || (
-                      <span className="text-zinc-400 italic">
-                        No entry text log provided
-                      </span>
-                    )}
+                  <td className="p-3 text-zinc-700 dark:text-zinc-300 font-medium">
+                    {row.warehouse_to_id}
                   </td>
-                  <td className="p-3 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                  <td className="p-3 text-zinc-500 font-mono text-xs">
+                    {row.in_transit_code || "Direct"}
+                  </td>
+                  <td className="p-3 text-right font-mono text-zinc-600 dark:text-zinc-400">
                     $
-                    {Number(row.amount || 0).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    {Number(row.shipping_charge || 0).toLocaleString(
+                      undefined,
+                      {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      },
+                    )}
                   </td>
                   <td className="p-3 text-center">
                     <span
@@ -200,7 +201,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
                         onClick={() => handlePost(row.id)}
                         className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline text-xs bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-800/40"
                       >
-                        Post Book
+                        Post Stock
                       </button>
                     ) : (
                       <span className="text-xs text-zinc-400 italic">
@@ -213,11 +214,12 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
             </tbody>
           </table>
 
-          <div className="flex justify-between items-center pt-4 border-t border-zinc-200 dark:border-zinc-800 text-sm">
+          {/* PAGINATION PANEL CONTROLS */}
+          <div className="flex justify-between items-center p-4 border-t border-zinc-200 dark:border-zinc-800 text-sm">
             <button
               disabled={page <= 1 || loading}
               onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 border rounded disabled:opacity-40 text-xs font-medium bg-zinc-50 dark:bg-zinc-800"
+              className="px-3 py-1.5 border rounded disabled:opacity-40 text-xs font-medium bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
             >
               ← Previous
             </button>
@@ -226,8 +228,8 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
             </span>
             <button
               disabled={page >= totalPages || loading}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 border rounded disabled:opacity-40 text-xs font-medium bg-zinc-50 dark:bg-zinc-800"
+              onClick={() => setPage((p) => p - 1)}
+              className="px-3 py-1.5 border rounded disabled:opacity-40 text-xs font-medium bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
             >
               Next →
             </button>

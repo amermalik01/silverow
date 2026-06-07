@@ -469,27 +469,3 @@ export class JournalService {
   }
 }
 
-// private static validateLines(lines: JournalLineInput[]) {
-//   if (!lines || lines.length === 0) {
-//     throw new Error("Journal requires at least one line");
-//   }
-
-//   let totalDebit = 0;
-//   let totalCredit = 0;
-
-//   for (const line of lines) {
-//     const debit = Number(line.debit || 0);
-//     const credit = Number(line.credit || 0);
-
-//     if (debit > 0 && credit > 0) {
-//       throw new Error("Line cannot have both debit and credit");
-//     }
-
-//     totalDebit += debit;
-//     totalCredit += credit;
-//   }
-
-//   if (totalDebit !== totalCredit) {
-//     throw new Error("Journal is not balanced");
-//   }
-// }

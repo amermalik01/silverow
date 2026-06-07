@@ -382,17 +382,6 @@ export class InventoryAllocationService {
       `,
       [params.quantity, params.salesOrderLineId],
     );
-
-    // await client.query(
-    //   `
-    //   UPDATE sales_order_lines
-    //   SET
-    //     reserved_quantity =
-    //       COALESCE(reserved_quantity,0) + $1
-    //   WHERE id = $2
-    //   `,
-    //   [params.quantity, params.salesOrderLineId],
-    // );
   }
 
   //  * =========================================================
@@ -419,38 +408,6 @@ export class InventoryAllocationService {
       lineReferenceId: params.source_line_id,
     });
   }
-
-  // static async allocate(params: {
-  //   client: PoolClient;
-  //   company_id: string;
-  //   source_type: InventoryReferenceType;
-  //   source_id: string;
-  //   source_line_id?: string;
-  //   warehouse_id: string;
-  //   item_id: string;
-  //   quantity: number;
-  // }): Promise<void> {
-  //   const {
-  //     client,
-  //     company_id,
-  //     source_type,
-  //     source_id,
-  //     source_line_id,
-  //     warehouse_id,
-  //     item_id,
-  //     quantity,
-  //   } = params;
-
-  //   await this.createReservation(client, {
-  //     companyId: company_id,
-  //     itemId: item_id,
-  //     warehouseId: warehouse_id,
-  //     quantity,
-  //     referenceType: source_type,
-  //     referenceId: source_id,
-  //     lineReferenceId: source_line_id,
-  //   });
-  // }
 
   //  * =========================================================
   //  * RELEASE SALES ORDER RESERVATION
@@ -490,16 +447,6 @@ export class InventoryAllocationService {
       `,
       [salesOrderLineId],
     );
-
-    // await client.query(
-    //   `
-    //   UPDATE sales_order_lines
-    //   SET
-    //     reserved_quantity = 0
-    //   WHERE id = $1
-    //   `,
-    //   [salesOrderLineId],
-    // );
   }
 
   // RESERVE STOCK FOR PURCHASE ORDER
@@ -545,55 +492,4 @@ export class InventoryAllocationService {
     );
   }
 
-  /* static async reservePOStock(
-    companyId: string,
-    itemId: string,
-    warehouseId: string,
-    quantity: number,
-    poLineId: string,
-  ) {
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      // insert reservation entry (soft allocation)
-
-      await client.query(
-        `
-            INSERT INTO inventory_reservations (
-            company_id,
-            item_id,
-            warehouse_id,
-            location_id,
-            reference_type,
-            reference_id,
-            line_reference_id,
-            quantity,
-            reserved_quantity,
-            status
-            )
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'OPEN')
-        `,
-        [
-          companyId,
-          itemId,
-          warehouseId,
-          null,
-          "PURCHASE_ORDER",
-          poLineId,
-          poLineId,
-          quantity,
-          quantity,
-        ],
-      );
-
-      await client.query("COMMIT");
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
-  } */
 }
