@@ -7,6 +7,7 @@ import "./css/globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import ServiceWorkerRegister from "@/app/components/service-worker/ServiceWorkerRegister";
 import { Providers } from "./providers";
+import { Toaster } from "sonner";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -44,6 +45,8 @@ export default function RootLayout({
             {children}
           </Providers>
         </ThemeProvider>
+
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );
