@@ -238,26 +238,26 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Items",
             url: `/${slug}/inventory/items`,
           },
-          {
-            id: "Stock Sheet",
-            name: "Stock Sheet",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
-          {
-            id: "Items Activity",
-            name: "Items Activity",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
+          // {
+          //   id: "Stock Sheet",
+          //   name: "Stock Sheet",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
+          // {
+          //   id: "Items Activity",
+          //   name: "Items Activity",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
           {
             id: "Transfer Stock",
             name: "Transfer Stock",
             url: `/${slug}/inventory/transfer-stock`,
           },
-          {
-            id: "Posted Transfer Stock",
-            name: "Posted Transfer Stock",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
+          // {
+          //   id: "Posted Transfer Stock",
+          //   name: "Posted Transfer Stock",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
           // {
           //   // id: uniqueId(),
           //   id: "Item Journal",
@@ -285,10 +285,9 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
         icon: "solar:shield-keyhole-minimalistic-linear",
         children: [
           {
-            // id: uniqueId(),
             id: "All Reports",
             name: "All Reports",
-            url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+            url: `/${slug}/reports`,
           },
         ],
       },
