@@ -116,8 +116,8 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
       {/* Main UI Data Matrix Grid */}
       <div className="border rounded-xl bg-white dark:bg-slate-900 shadow-sm overflow-hidden border-slate-200 dark:border-slate-800">
         <div className="overflow-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium">
+          <table className="w-full text-sm text-left border-collapse">
+              <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold">
               <tr>
                 <th className="p-3">Reference Code</th>
                 <th className="p-3">Corporate Identity Name</th>

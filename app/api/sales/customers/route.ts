@@ -1,9 +1,7 @@
 // app/api/sales/customers/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-
 import { pool } from "@/lib/db";
-
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function GET(req: NextRequest) {
@@ -22,29 +20,20 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-
     const customerCode = searchParams.get("customer_code") || "";
-
     const name = searchParams.get("name") || "";
-
     const city = searchParams.get("city") || "";
-
     const postcode = searchParams.get("postcode") || "";
-
     const email = searchParams.get("email") || "";
 
     const result = await pool.query(
       `
       SELECT
         p.id,
-
         p.customer_code,
-
         p.name,
-
         p.email,
         p.phone,
-
         pa.city,
         pa.postcode,
         pa.country

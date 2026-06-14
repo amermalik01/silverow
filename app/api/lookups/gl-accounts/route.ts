@@ -2,17 +2,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.company_id) {
+  const companyId = await getCompanyId();
+  if (!companyId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
-  const companyId = session.user.company_id;
   const { searchParams } = new URL(req.url);
 
   // Check if we want everything (perfect for small-to-medium lookups/dropdowns)

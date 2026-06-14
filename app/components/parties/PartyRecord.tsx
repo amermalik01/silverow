@@ -70,28 +70,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
     };
     loadData();
   }, [id]);
-
-  // useEffect(() => {
-  //   const loadData = async () => {
-  //     try {
-  //       const res = await fetch(`/api/parties/${id}`);
-  //       if (!res.ok)
-  //         throw new Error("Entity target footprint retrieval failed.");
-  //       const data = await res.json();
-
-  //       setAccount(data.account ?? {});
-  //       setContacts(data.contacts || []);
-  //       setAddresses(data.addresses || []);
-  //     } catch (err) {
-  //       console.error(err);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   loadData();
-  // }, [id]);
-
-  // Client Side Zod Validation Engine Interceptor Logic
+  
   const validateForm = (): boolean => {
     setFormErrors({});
     const structuredErrors: Record<string, string> = {};

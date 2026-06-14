@@ -12,7 +12,7 @@ export default async function EmployeeRecordPage({
   const { id } = await params;
 
   return (
-    <div className="p-6">
+    <div>
       <EmployeeRecord id={id} />
     </div>
   );

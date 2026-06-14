@@ -202,6 +202,35 @@ export const setupConfig = {
       },
     ],
   } satisfies SetupConfig,
+  
+
+  salesOrderStages: {
+    title: "Sales Order Stages",
+    api: "/api/setup/sales/order_stages",
+    fields: [{ name: "name", label: "Stage Name", required: true, type: "text" }],
+    columns: [{ name: "name", label: "Stage Name", sortable: false }],
+  } satisfies SetupConfig,
+
+  creditNoteStages: {
+    title: "Credit Note Stages",
+    api: "/api/setup/sales/credit_note_stages",
+    fields: [{ name: "name", label: "Stage Name", required: true, type: "text" }],
+    columns: [{ name: "name", label: "Stage Name", sortable: false }],
+  } satisfies SetupConfig,
+
+  purchaseOrderStages: {
+    title: "Purchase Order Stages",
+    api: "/api/setup/sales/purchase_order_stages",
+    fields: [{ name: "name", label: "Stage Name", required: true, type: "text" }],
+    columns: [{ name: "name", label: "Stage Name", sortable: false }],
+  } satisfies SetupConfig,
+
+  debitNoteStages: {
+    title: "Debit Note Stages",
+    api: "/api/setup/sales/debit_note_stages",
+    fields: [{ name: "name", label: "Stage Name", required: true, type: "text" }],
+    columns: [{ name: "name", label: "Stage Name", sortable: false }],
+  } satisfies SetupConfig,
 
   
 

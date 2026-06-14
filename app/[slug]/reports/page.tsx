@@ -19,8 +19,17 @@ export default function ReportsPage() {
   // 2. Client-side state handling search and bookmarks (favorites)
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<string[]>([
-    "FIN_TRIAL_SUM",
-    "SALES_COMM",
+    "FIN_TRIAL_BALANCE",
+    "FIN_VAT_REP",
+    "FIN_PL_STMT",
+    "FIN_BAL_SHEET",
+    "FIN_CUST_LIST",
+    "FIN_CRM_LIST",
+    "FIN_FIG_GL",
+    "FIN_HAULIER_ACCR",
+    "SALES_UNPOSTED_SO",
+    "SALES_POSTED_INV",
+    
   ]);
 
   // Toggle favorite status safely
@@ -33,10 +42,10 @@ export default function ReportsPage() {
   // 3. Complete structural data registry matching your legacy application screenshots
   const reportData: ReportGroups = {
     Finance: [
-      { id: "FIN_TRIAL_SUM", name: "Trial Balance - Summary" },
-      { id: "FIN_TRIAL_DET", name: "Trial Balance - Detailed" },
+      { id: "FIN_TRIAL_BALANCE", name: "Trial Balance Report" },
+    //   { id: "FIN_TRIAL_DET", name: "Trial Balance - Detailed  - Summary" },
       { id: "FIN_VAT_REP", name: "VAT Report" },
-      { id: "FIN_OSS_VAT", name: "One Stop VAT Report" },
+    //   { id: "FIN_OSS_VAT", name: "One Stop VAT Report" },
       { id: "FIN_EC_SALES", name: "EC Sales List" },
       { id: "FIN_PL_STMT", name: "Profit and Loss Statement" },
       { id: "FIN_BAL_SHEET", name: "Balance Sheet" },

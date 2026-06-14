@@ -10,7 +10,7 @@ export default async function EditEmployeePage({
   const { id } = await params;
 
   return (
-    <div className="p-6 space-y-6">
+    <div>
       <h1 className="text-2xl font-bold">Edit Employee</h1>
 
       <EmployeeRecord id={id} />

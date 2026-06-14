@@ -476,6 +476,16 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 name: "Source Of Order",
                 url: `/${slug}/setup/sales/order_sources`,
               },
+              {
+                id: "order_stages",
+                name: "Sales Order Stages",
+                url: `/${slug}/setup/sales/order_stages`,
+              },
+              {
+                id: "credit_note_stages",
+                name: "Credit Note Stages",
+                url: `/${slug}/setup/sales/credit_note_stages`,
+              },
             ],
           },
           {
@@ -496,6 +506,16 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 id: "selling_groups",
                 name: "Selling Groups",
                 url: `/${slug}/setup/purchases/selling_groups`,
+              },
+              {
+                id: "purchase_order_stages",
+                name: "Purchase Order Stages",
+                url: `/${slug}/setup/purchases/purchase_order_stages`,
+              },
+              {
+                id: "debit_note_stages",
+                name: "Debit Note Stages",
+                url: `/${slug}/setup/purchases/debit_note_stages`,
               },
             ],
           },
