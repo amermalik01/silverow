@@ -1,6 +1,7 @@
 // app/[slug]/finance/chart-of-accounts/[id]/edit/page.tsx
 
-import EditAccountForm from "@/app/components/finance/EditAccountForm";
+import AccountForm from "@/app/components/finance/AccountForm";
+// import EditAccountForm from "@/app/components/finance/EditAccountForm";
 
 export default async function EditAccountPage({
   params,
@@ -13,7 +14,8 @@ export default async function EditAccountPage({
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Finance / Chart of Accounts / Edit</h1>
 
-      <EditAccountForm slug={slug} id={id} />
+      {/* <EditAccountForm slug={slug} id={id} /> */}
+      <AccountForm slug={slug} id={id} />
     </div>
   );
 }

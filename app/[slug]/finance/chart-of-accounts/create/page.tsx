@@ -1,6 +1,7 @@
 // /app/[slug]/finance/chart-of-accounts/create/page.tsx
 
-import CreateAccountForm from "@/app/components/finance/CreateAccountForm";
+import AccountForm from "@/app/components/finance/AccountForm";
+// import CreateAccountForm from "@/app/components/finance/CreateAccountForm";
 
 export default async function CreateAccountPage({
   params,
@@ -15,7 +16,8 @@ export default async function CreateAccountPage({
         Finance / Chart of Accounts / Create
       </h1>
 
-      <CreateAccountForm slug={slug} />
+      {/* <CreateAccountForm slug={slug} /> */}
+      <AccountForm slug={slug} />
     </div>
   );
 }
