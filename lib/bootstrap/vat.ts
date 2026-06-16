@@ -8,18 +8,18 @@ export async function initializeVat(
 ) {
   // 1. Seed the default VAT rates for this company
   const vatRatesResult = await client.query(`
-    SELECT name, rate
+    SELECT ref_id,vat_name, vat_value
     FROM default_vat_rates
   `);
 
   for (const vat of vatRatesResult.rows) {
     await client.query(
       `
-      INSERT INTO vat_rates (company_id, name, rate)
-      VALUES ($1, $2, $3)
+      INSERT INTO vat_rates (company_id, name, rate,ref_id)
+      VALUES ($1, $2, $3, $4)
       ON CONFLICT (company_id, name) DO NOTHING
       `,
-      [companyId, vat.name, vat.rate]
+      [companyId, vat.name, vat.rate, vat.ref_id]
     );
   }
 

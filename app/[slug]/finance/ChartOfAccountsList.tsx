@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import LedgerDrilldownModal from "@/app/components/finance/LedgerDrilldownModal";
 
 interface GLAccountNode {
   id: string;
@@ -28,6 +29,8 @@ export default function ChartOfAccountsList() {
   const [accounts, setAccounts] = useState<GLAccountNode[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const [selectedAccount, setSelectedAccount] = useState<{ id: string; name: string; code: string } | null>(null);
 
   useEffect(() => {
     async function loadAccounts() {
@@ -192,9 +195,22 @@ export default function ChartOfAccountsList() {
 
                     {/* Indented Name Label */}
                     <td className="p-3 truncate">
-                      <div className={`${indentClass} truncate`}>
+                      {/* <div className={`${indentClass} truncate`}>
                         {acc.name}
-                      </div>
+                      </div> */}
+
+                      <div className={`${indentClass} truncate`}>
+                      {acc.gl_account_type === "Posting" ? (
+                        <button
+                          onClick={() => setSelectedAccount({ id: acc.id, name: acc.name, code: acc.code })}
+                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium text-left transition"
+                        >
+                          {acc.name}
+                        </button>
+                      ) : (
+                        acc.name
+                      )}
+                    </div>
                     </td>
 
                     {/* Core Class Hierarchy Context */}
@@ -229,9 +245,15 @@ export default function ChartOfAccountsList() {
 
                     {/* Calculation range for rollups */}
                     <td className="p-3 font-mono text-slate-400 dark:text-slate-500 text-[11px]">
-                      {acc.gl_account_type === "End Total" ||
+                      {/* {acc.gl_account_type === "End Total" ||
                       acc.gl_account_type === "Heading" ||
                       acc.gl_account_type === "Category"
+                        ? `${acc.range_start_code || acc.code} → ${acc.range_end_code || "EOF"}`
+                        : "—"} */}
+
+                      {["End Total", "Heading", "Category"].includes(
+                        acc.gl_account_type,
+                      )
                         ? `${acc.range_start_code || acc.code} → ${acc.range_end_code || "EOF"}`
                         : "—"}
                     </td>
@@ -273,6 +295,16 @@ export default function ChartOfAccountsList() {
           </tbody>
         </table>
       </div>
+
+      {/* Render overlay modal portal frame safely when requested */}
+      {selectedAccount && (
+        <LedgerDrilldownModal
+          accountId={selectedAccount.id}
+          accountName={selectedAccount.name}
+          accountCode={selectedAccount.code}
+          onClose={() => setSelectedAccount(null)}
+        />
+      )}
     </div>
   );
 }

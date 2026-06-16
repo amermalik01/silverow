@@ -10,9 +10,7 @@ export type JournalSource =
   | "INVENTORY";
 
 export type JournalModule = "customer" | "supplier" | "item" | "general";
-
 export type JournalType = "customer" | "supplier" | "item" | "general";
-
 export interface JournalEntry {
   id: string;
   company_id: string;
@@ -65,11 +63,8 @@ export interface JournalLine {
   debit: number;
   credit: number;
   description?: string;
-
-  // optional relations
   party_id?: string;
   item_id?: string;
-
   reference_type?: string;
   reference_id?: string;
 }
@@ -90,24 +85,17 @@ export interface JournalListItem {
 
 export interface JournalLineInput {
   account_id: string;
-
   debit?: number;
   credit?: number;
-
   description?: string;
-
   party_id?: string;
   item_id?: string;
   currency_id?: string;
   exchange_rate?: number;
-
   warehouse_id?: string;
-
   quantity?: number;
   unit_cost?: number;
-
   reference_type?: string;
   reference_id?: string;
-
   currency_amount?: number;
 }
