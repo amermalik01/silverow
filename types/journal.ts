@@ -83,7 +83,26 @@ export interface JournalListItem {
   is_posted: boolean;
 }
 
+// export interface JournalLineInput {
+//   account_id: string;
+//   debit?: number;
+//   credit?: number;
+//   description?: string;
+//   party_id?: string;
+//   item_id?: string;
+//   currency_id?: string;
+//   exchange_rate?: number;
+//   warehouse_id?: string;
+//   quantity?: number;
+//   unit_cost?: number;
+//   reference_type?: string;
+//   reference_id?: string;
+//   currency_amount?: number;
+// }
+
+
 export interface JournalLineInput {
+  transaction_type?: "gl_no" | "customer" | "supplier" | "item"; // 🔥 Added to prevent type "any" errors
   account_id: string;
   debit?: number;
   credit?: number;

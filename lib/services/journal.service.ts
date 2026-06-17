@@ -318,7 +318,101 @@ export class JournalService {
   /**
    * INSERT LINE
    */
+  /**
+   * INSERT LINE
+   */
   private static async insertLine(
+    client: PoolClient,
+    companyId: string,
+    journalId: string,
+    line: JournalLineInput,
+  ) {
+    let resolvedAccountId = line.account_id?.trim() || null;
+    const transType = line.transaction_type || "gl_no"; // Incoming UI tracking field
+
+    // Map your UI structural names to your exact database ENUM values ('customer', 'supplier')
+    // If it's a standard gl_no line, we leave the party_type blank (null)
+    const dbPartyType = transType === "customer" || transType === "supplier" ? transType : null;
+
+    // If the frontend didn't pass an account_id, look it up via the sub-ledger relationship
+    if (!resolvedAccountId && line.party_id) {
+      resolvedAccountId = await this.getControlAccountForParty(
+        client, 
+        companyId, 
+        line.party_id, 
+        dbPartyType || "customer" // Falls back to looking up customer tables if unclear
+      );
+      
+      if (!resolvedAccountId) {
+         throw new Error(
+           `A valid G/L control account configuration could not be found for Sub-Ledger Party: ${line.party_id}`
+         );
+      }
+    }
+
+    await client.query(
+      `
+      INSERT INTO journal_entry_lines (
+        company_id,
+        journal_id,
+        party_type,       -- ✅ FIXED: Matches your exact ALTER TABLE name
+        account_id,
+        debit,
+        credit,
+        description,
+        party_id,
+        item_id,
+        currency_id,
+        exchange_rate
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `,
+      [
+        companyId,
+        journalId,
+        dbPartyType,                  // Parameter $3 -> Maps cleanly into your sub_ledger_type enum
+        resolvedAccountId,            // Parameter $4
+        line.debit ?? 0,              // Parameter $5
+        line.credit ?? 0,             // Parameter $6
+        line.description || null,     // Parameter $7
+        line.party_id?.trim() || null,// Parameter $8
+        line.item_id?.trim() || null, // Parameter $9
+        line.currency_id?.trim() || null, // Parameter $10
+        line.currency_id?.trim() ? (line.exchange_rate ?? 1.0) : 1.0, // Parameter $11
+      ],
+    );
+  }
+
+  /**
+   * Helper to fetch the control account from customer/supplier tables
+   */
+  private static async getControlAccountForParty(
+    client: PoolClient,
+    companyId: string,
+    partyId: string,
+    type: "customer" | "supplier"
+  ): Promise<string | null> {
+    // If it's a customer, find their Receivables Control Account setup
+    if (type === "customer") {
+      const res = await client.query(
+        `SELECT receivable_account_id FROM customers WHERE id = $1 AND company_id = $2`,
+        [partyId, companyId]
+      );
+      return res.rows[0]?.receivable_account_id || null;
+    }
+
+    // If it's a supplier/vendor, find their Payables Control Account setup
+    if (type === "supplier") {
+      const res = await client.query(
+        `SELECT payable_account_id FROM suppliers WHERE id = $1 AND company_id = $2`,
+        [partyId, companyId]
+      );
+      return res.rows[0]?.payable_account_id || null;
+    }
+
+    return null;
+  }
+  /* private static async insertLine(
     client: PoolClient,
     companyId: string,
     journalId: string,
@@ -354,13 +448,45 @@ export class JournalService {
         line.currency_id ? (line.exchange_rate ?? 1.0) : 1.0,
       ],
     );
-  }
+  } */
 
   /**
    * VALIDATE
    */
 
   private static validateLines(lines: JournalLineInput[]) {
+    if (!lines || lines.length === 0) {
+      throw new Error("Journal requires at least one line");
+    }
+
+    let totalDebitConverted = 0;
+    let totalCreditConverted = 0;
+
+    for (const line of lines) {
+      const debit = Number(line.debit || 0);
+      const credit = Number(line.credit || 0);
+      const rate = Number(line.exchange_rate || 1.0);
+
+      if (debit > 0 && credit > 0) {
+        throw new Error("Line cannot have both debit and credit");
+      }
+
+      // Fix: Round each converted leg to 2 decimal points to avoid micro-fraction stack ups
+      totalDebitConverted += Number((debit * rate).toFixed(2));
+      totalCreditConverted += Number((credit * rate).toFixed(2));
+    }
+
+    // Fix: Match variance constraint validation threshold to two decimal precision (0.01)
+    const variance = Math.abs(totalDebitConverted - totalCreditConverted);
+
+    if (variance >= 0.01) {
+      throw new Error(
+        `Journal is not balanced in base currency. Difference: ${variance.toFixed(2)}`,
+      );
+    }
+  }
+
+  /* private static validateLines(lines: JournalLineInput[]) {
     if (!lines || lines.length === 0) {
       throw new Error("Journal requires at least one line");
     }
@@ -392,7 +518,7 @@ export class JournalService {
         `Journal is not balanced in base currency. Difference: ${variance.toFixed(2)}`,
       );
     }
-  }
+  } */
 
   /**
    * =========================================================

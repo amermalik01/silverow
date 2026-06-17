@@ -2,8 +2,9 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import SearchableDropdown from "@/components/ui/SearchableDropdown";
 
 type Account = {
   id: string;
@@ -68,6 +69,93 @@ type Props = {
   redirectPath: string;
 };
 
+/* // Searchable Combobox Component for Dropdown Input Selections
+function SearchableDropdown({
+  options,
+  selectedValue,
+  onSelect,
+  placeholder,
+  disabled = false,
+}: {
+  options: { id: string; label: string }[];
+  selectedValue: string;
+  onSelect: (id: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((o) => o.id === selectedValue);
+
+  // Synchronize dynamic updates on baseline entity selections
+  useEffect(() => {
+    if (selectedOption) {
+      setSearch(selectedOption.label);
+    } else {
+      setSearch("");
+    }
+  }, [selectedValue, selectedOption]);
+
+  const filtered = options.filter((o) =>
+    o.label.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <input
+        type="text"
+        disabled={disabled}
+        placeholder={placeholder}
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        className="w-full border p-1 rounded bg-white outline-none focus:ring-1 focus:ring-blue-500 text-zinc-800 font-medium"
+      />
+      {isOpen && !disabled && (
+        <div className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded shadow-lg">
+          {filtered.length === 0 ? (
+            <div className="p-2 text-zinc-400 text-center">
+              No matches found
+            </div>
+          ) : (
+            filtered.map((opt) => (
+              <div
+                key={opt.id}
+                onClick={() => {
+                  onSelect(opt.id);
+                  setSearch(opt.label);
+                  setIsOpen(false);
+                }}
+                className="p-2 hover:bg-zinc-100 cursor-pointer text-zinc-700 truncate"
+              >
+                {opt.label}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+} */
+
 export default function JournalForm({
   journalId,
   apiBase,
@@ -86,7 +174,7 @@ export default function JournalForm({
     entry_date: new Date().toISOString().split("T")[0],
     reference: "",
     description: "",
-    journal_no: "",//GJ" + Math.floor(1000 + Math.random() * 9000), // Visual match for placeholder
+    journal_no: "", //GJ" + Math.floor(1000 + Math.random() * 9000), // Visual match for placeholder
   });
 
   const [lines, setLines] = useState<JournalLineRow[]>([
@@ -103,18 +191,18 @@ export default function JournalForm({
     },
   ]);
 
-  // Combined Conversion-Based Balancing Logic
-  const totalDebit = lines.reduce(
-    (sum, line) => sum + Number(line.debit || 0) * (line.exchange_rate || 1.0),
-    0,
-  );
+  const totalDebit = lines.reduce((sum, line) => {
+    // If it has a balancing account, it handles its own debit balance leg internally
+    if (line.balancing_account_id) return sum;
+    return sum + Number(line.debit || 0) * (line.exchange_rate || 1.0);
+  }, 0);
 
-  const totalCredit = lines.reduce(
-    (sum, line) => sum + Number(line.credit || 0) * (line.exchange_rate || 1.0),
-    0,
-  );
+  const totalCredit = lines.reduce((sum, line) => {
+    // If it has a balancing account, it handles its own credit balance leg internally
+    if (line.balancing_account_id) return sum;
+    return sum + Number(line.credit || 0) * (line.exchange_rate || 1.0);
+  }, 0);
 
-  // If a line features an inline balancing offset account, it internally satisfies its own double entry status
   const difference = totalDebit - totalCredit;
   const isBalanced = Math.abs(difference) < 0.01;
 
@@ -128,7 +216,10 @@ export default function JournalForm({
           fetch(`/api/lookups/suppliers`),
         ]);
 
-        if (glRes.ok) setGlAccounts((await glRes.json()).data || []);
+        if (glRes.ok)
+          setGlAccounts(
+            ((await glRes.ok) ? await glRes.json() : {}).data || [],
+          );
         if (curRes.ok) setCurrencies((await curRes.json()) || []);
         if (custRes.ok) setCustomers((await custRes.json()).data || []);
         if (suppRes.ok) setSuppliers((await suppRes.json()).data || []);
@@ -241,7 +332,46 @@ export default function JournalForm({
     return "";
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePersistAction = async (postToLedger: boolean) => {
+    if (isPosted) return;
+    setErrorMsg(null);
+
+    if (postToLedger && !isBalanced) {
+      setErrorMsg(
+        `Posting blocked: Journal entries must be perfectly balanced. Discrepancy: ${difference.toFixed(2)}`,
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const payload = { ...metadata, lines, is_posted: postToLedger };
+      const method = journalId ? "PUT" : "POST";
+      const url = journalId ? `${apiBase}/${journalId}` : apiBase;
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(
+          errData.error || "Failed to commit journal ledger status layout.",
+        );
+      }
+
+      router.push(redirectPath);
+      router.refresh();
+    } catch (err) {
+      if (err instanceof Error) setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isPosted) return;
     setErrorMsg(null);
@@ -279,10 +409,10 @@ export default function JournalForm({
     } finally {
       setLoading(false);
     }
-  };
+  }; */
 
-  return (
-    <form
+  {
+    /* <form
       onSubmit={handleSubmit}
       className="w-full space-y-4 bg-zinc-100 p-4 rounded text-xs text-zinc-800"
     >
@@ -290,9 +420,7 @@ export default function JournalForm({
         <div className="p-2 bg-red-200 text-red-800 rounded font-medium">
           {errorMsg}
         </div>
-      )}
-
-      {/* HEADER METADATA CONTAINER PANEL */}
+      )} 
       <div className="flex flex-wrap items-center gap-6 bg-white p-3 rounded shadow-sm border border-zinc-200">
         <div className="flex items-center gap-2">
           <span className="font-medium text-zinc-600">Journal No.</span>
@@ -303,16 +431,30 @@ export default function JournalForm({
             value={metadata.journal_no}
           />
         </div>
-        {/* <div className="flex items-center gap-2">
-          <span className="font-medium text-zinc-600">Select Template</span>
-          <select className="border p-1 rounded bg-white outline-none min-w-[140px]">
-            <option>--New Template--</option>
-          </select>
-        </div> */}
+      </div> */
+  }
+  return (
+    <div className="w-full space-y-4 bg-zinc-100 p-4 rounded text-xs text-zinc-800">
+      {errorMsg && (
+        <div className="p-2 bg-red-200 text-red-800 rounded font-medium">
+          {errorMsg}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-6 bg-white p-3 rounded shadow-sm border border-zinc-200">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-zinc-600">Journal No.</span>
+          <input
+            type="text"
+            readOnly
+            className="border bg-zinc-50 p-1 px-2 rounded w-32 font-bold tracking-wide outline-none text-zinc-700"
+            value={metadata.journal_no || "DRAFT"}
+          />
+        </div>
       </div>
 
       {/* TRANSACTION MATRIX WORKSPACE */}
-      <div className="overflow-x-auto bg-white rounded border border-zinc-200 shadow-sm">
+      {/* <div className="overflow-x-auto bg-white rounded border border-zinc-200 shadow-sm">
         <table className="w-full border-collapse text-left min-w-[1200px]">
           <thead>
             <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-600 font-semibold select-none shadow-sm">
@@ -342,7 +484,7 @@ export default function JournalForm({
                   key={index}
                   className="hover:bg-zinc-50/50 transition-colors"
                 >
-                  {/* POSTING DATE */}
+                  
                   <td className="p-1.5">
                     <input
                       type="date"
@@ -355,7 +497,7 @@ export default function JournalForm({
                     />
                   </td>
 
-                  {/* DOCUMENT TYPE */}
+ 
                   <td className="p-1.5">
                     <select className="w-full border p-1 rounded bg-white outline-none">
                       <option>General Journal</option>
@@ -364,7 +506,7 @@ export default function JournalForm({
                     </select>
                   </td>
 
-                  {/* DOCUMENT NO */}
+       
                   <td className="p-1.5">
                     <input
                       type="text"
@@ -377,7 +519,7 @@ export default function JournalForm({
                     />
                   </td>
 
-                  {/* TRANSACTION TYPE DROP-DOWN */}
+ 
                   <td className="p-1.5">
                     <select
                       value={line.transaction_type}
@@ -396,7 +538,7 @@ export default function JournalForm({
                     </select>
                   </td>
 
-                  {/* TARGET SELECTION LOOKUP COLUMN */}
+  
                   <td className="p-1.5">
                     {line.transaction_type === "gl_no" && (
                       <select
@@ -409,7 +551,7 @@ export default function JournalForm({
                         <option value="">Select G/L Account</option>
                         {glAccounts.map((a) => (
                           <option key={a.id} value={a.id}>
-                            {a.code}
+                            {a.code}-{a.name}
                           </option>
                         ))}
                       </select>
@@ -448,7 +590,7 @@ export default function JournalForm({
                     )}
                   </td>
 
-                  {/* RESOLVED ACCOUNT NAME DISPLAY */}
+      
                   <td className="p-1.5 text-zinc-500 max-w-[180px] truncate select-none">
                     {getTargetAccountName(line) || (
                       <span className="text-zinc-300 font-normal">
@@ -457,7 +599,7 @@ export default function JournalForm({
                     )}
                   </td>
 
-                  {/* CURRENCY CODES */}
+ 
                   <td className="p-1.5">
                     <select
                       value={line.currency_id}
@@ -477,7 +619,7 @@ export default function JournalForm({
                     </select>
                   </td>
 
-                  {/* DEBIT SPLIT VALUE */}
+ 
                   <td className="p-1.5">
                     <input
                       type="number"
@@ -494,7 +636,7 @@ export default function JournalForm({
                     />
                   </td>
 
-                  {/* CREDIT SPLIT VALUE */}
+    
                   <td className="p-1.5">
                     <input
                       type="number"
@@ -511,7 +653,7 @@ export default function JournalForm({
                     />
                   </td>
 
-                  {/* CONVERSION FACTOR CONTEXT */}
+  
                   <td className="p-1.5">
                     <input
                       type="number"
@@ -529,12 +671,12 @@ export default function JournalForm({
                     />
                   </td>
 
-                  {/* DYNAMIC READ-ONLY CALCULATED BASE AMOUNT */}
+ 
                   <td className="p-1.5 text-right font-mono bg-zinc-50/60 text-zinc-600 font-semibold select-none pr-3">
                     {convertedValue > 0 ? convertedValue.toFixed(2) : "0.00"}
                   </td>
 
-                  {/* INLINE BALANCING OFFSET ACCOUNT */}
+       
                   <td className="p-1.5">
                     <select
                       value={line.balancing_account_id}
@@ -550,25 +692,274 @@ export default function JournalForm({
                       <option value="">Select Balance G/L</option>
                       {glAccounts.map((a) => (
                         <option key={a.id} value={a.id}>
-                          {a.code}
+                          {a.code}-{a.name}
                         </option>
                       ))}
                     </select>
                   </td>
 
-                  {/* BALANCING ACCOUNT DESCRIPTION NAME */}
+       
                   <td className="p-1.5 text-zinc-500 max-w-[150px] truncate select-none">
                     {glAccounts.find((a) => a.id === line.balancing_account_id)
                       ?.name || ""}
                   </td>
 
-                  {/* ACTIONS DISMISS ICON */}
+     
                   <td className="p-1.5 text-center">
                     <button
                       type="button"
                       disabled={lines.length === 1}
                       onClick={() => removeLineRow(index)}
                       className="w-5 h-5 bg-zinc-100 hover:bg-red-100 hover:text-red-600 rounded text-zinc-400 font-bold transition flex items-center justify-center disabled:opacity-20"
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div> */}
+
+      <div className="overflow-x-auto bg-white rounded border border-zinc-200 shadow-sm">
+        <table className="w-full border-collapse text-left min-w-[1250px]">
+          <thead>
+            <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-600 font-semibold select-none">
+              <th className="p-2 w-28">Posting Date</th>
+              <th className="p-2 w-32">Doc. Type</th>
+              <th className="p-2 w-24">Doc. No.</th>
+              <th className="p-2 w-32">Tx Type</th>
+              <th className="p-2 w-52">Account Search selection</th>
+              <th className="p-2">Account Name</th>
+              <th className="p-2 w-20">Currency</th>
+              <th className="p-2 w-24">Debit</th>
+              <th className="p-2 w-24">Credit</th>
+              <th className="p-2 w-20 text-center">Cnv. Rate</th>
+              <th className="p-2 w-28">Converted</th>
+              <th className="p-2 w-52">Balancing G/L Selector</th>
+              <th className="p-2 w-8 text-center"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-100 font-medium">
+            {lines.map((line, index) => {
+              const localAmount = line.debit > 0 ? line.debit : line.credit;
+              const convertedValue = localAmount * line.exchange_rate;
+
+              return (
+                <tr
+                  key={index}
+                  className="hover:bg-zinc-50/50 transition-colors"
+                >
+                  <td className="p-1.5">
+                    <input
+                      type="date"
+                      disabled={isPosted}
+                      value={metadata.entry_date}
+                      onChange={(e) =>
+                        setMetadata({ ...metadata, entry_date: e.target.value })
+                      }
+                      className="w-full border p-1 rounded text-zinc-700 bg-white"
+                    />
+                  </td>
+                  <td className="p-1.5">
+                    <select
+                      disabled={isPosted}
+                      className="w-full border p-1 rounded bg-white"
+                    >
+                      <option>General Journal</option>
+                      <option>Payment</option>
+                      <option>Refund</option>
+                    </select>
+                  </td>
+                  <td className="p-1.5">
+                    <input
+                      type="text"
+                      disabled={isPosted}
+                      placeholder="REF"
+                      value={metadata.reference}
+                      onChange={(e) =>
+                        setMetadata({ ...metadata, reference: e.target.value })
+                      }
+                      className="w-full border p-1 rounded text-center uppercase font-mono"
+                    />
+                  </td>
+                  <td className="p-1.5">
+                    <select
+                      disabled={isPosted}
+                      value={line.transaction_type}
+                      onChange={(e) =>
+                        handleLineChange(
+                          index,
+                          "transaction_type",
+                          e.target.value,
+                        )
+                      }
+                      className="w-full border p-1 rounded bg-white text-zinc-700 font-semibold"
+                    >
+                      <option value="gl_no">G/L No.</option>
+                      <option value="customer">Customer</option>
+                      <option value="supplier">Supplier</option>
+                    </select>
+                  </td>
+
+                  {/* SEARCHABLE SELECTION COMBOBOX INTERFACES */}
+                  <td className="p-1.5">
+                    {line.transaction_type === "gl_no" && (
+                      <SearchableDropdown<Account>
+                        disabled={isPosted}
+                        placeholder="Search G/L Account..."
+                        options={glAccounts}
+                        selectedValue={line.account_id}
+                        getOptionId={(a) => a.id}
+                        getOptionLabel={(a) => `${a.code} - ${a.name}`}
+                        onSelect={(account) =>
+                          handleLineChange(index, "account_id", account.id)
+                        }
+                      />
+                    )}
+
+                    {/* Customer Search Select */}
+                    {line.transaction_type === "customer" && (
+                      <SearchableDropdown<SubEntity>
+                        disabled={isPosted}
+                        placeholder="Search Customer..."
+                        options={customers}
+                        selectedValue={line.party_id}
+                        getOptionId={(c) => c.id}
+                        getOptionLabel={(c) =>
+                          `${c.code || "CUST"} - ${c.name}`
+                        }
+                        onSelect={(customer) =>
+                          handleLineChange(index, "party_id", customer.id)
+                        }
+                      />
+                    )}
+
+                    {/* Customer Search Select */}
+                    {line.transaction_type === "supplier" && (
+                      <SearchableDropdown<SubEntity>
+                        disabled={isPosted}
+                        placeholder="Search Supplier..."
+                        options={suppliers}
+                        selectedValue={line.party_id}
+                        getOptionId={(c) => c.id}
+                        getOptionLabel={(c) =>
+                          `${c.code || "SUPP"} - ${c.name}`
+                        }
+                        onSelect={(supplier) =>
+                          handleLineChange(index, "party_id", supplier.id)
+                        }
+                      />
+                    )}
+                  </td>
+
+                  <td className="p-1.5 text-zinc-500 max-w-[150px] truncate select-none">
+                    {getTargetAccountName(line) || (
+                      <span className="text-zinc-300 font-normal">
+                        No account bound
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="p-1.5">
+                    <select
+                      disabled={isPosted}
+                      value={line.currency_id}
+                      onChange={(e) =>
+                        handleLineChange(index, "currency_id", e.target.value)
+                      }
+                      className="w-full border p-1 rounded bg-white font-bold text-center"
+                    >
+                      <option value="">{baseCurrencyCode}</option>
+                      {currencies
+                        .filter((c) => !c.is_base)
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.code}
+                          </option>
+                        ))}
+                    </select>
+                  </td>
+
+                  <td className="p-1.5">
+                    <input
+                      type="number"
+                      step="0.01"
+                      disabled={isPosted}
+                      value={line.debit || ""}
+                      onChange={(e) =>
+                        handleLineChange(
+                          index,
+                          "debit",
+                          parseFloat(e.target.value) || 0,
+                        )
+                      }
+                      className="w-full border p-1 rounded text-right font-mono"
+                    />
+                  </td>
+                  <td className="p-1.5">
+                    <input
+                      type="number"
+                      step="0.01"
+                      disabled={isPosted}
+                      value={line.credit || ""}
+                      onChange={(e) =>
+                        handleLineChange(
+                          index,
+                          "credit",
+                          parseFloat(e.target.value) || 0,
+                        )
+                      }
+                      className="w-full border p-1 rounded text-right font-mono"
+                    />
+                  </td>
+
+                  <td className="p-1.5">
+                    <input
+                      type="number"
+                      step="0.000001"
+                      disabled={!line.currency_id || isPosted}
+                      value={line.currency_id ? line.exchange_rate : 1}
+                      onChange={(e) =>
+                        handleLineChange(
+                          index,
+                          "exchange_rate",
+                          parseFloat(e.target.value) || 1.0,
+                        )
+                      }
+                      className="w-full border p-1 rounded text-center bg-zinc-50 font-mono"
+                    />
+                  </td>
+
+                  <td className="p-1.5 text-right font-mono bg-zinc-50/60 text-zinc-600 font-semibold pr-3">
+                    {convertedValue > 0 ? convertedValue.toFixed(2) : "0.00"}
+                  </td>
+
+                  <td className="p-1.5">
+                    <SearchableDropdown<Account>
+                      disabled={isPosted}
+                      placeholder="Search Balance G/L..."
+                      options={glAccounts}
+                      selectedValue={line.balancing_account_id}
+                      getOptionId={(a) => a.id}
+                      getOptionLabel={(a) => `${a.code} - ${a.name}`}
+                      onSelect={(account) =>
+                        handleLineChange(
+                          index,
+                          "balancing_account_id",
+                          account.id,
+                        )
+                      }
+                    />
+                  </td>
+
+                  <td className="p-1.5 text-center">
+                    <button
+                      type="button"
+                      disabled={lines.length === 1 || isPosted}
+                      onClick={() => removeLineRow(index)}
+                      className="w-5 h-5 bg-zinc-100 hover:bg-red-100 hover:text-red-600 rounded text-zinc-400 font-bold flex items-center justify-center disabled:opacity-20"
                     >
                       ✕
                     </button>
@@ -604,7 +995,7 @@ export default function JournalForm({
       </div>
 
       {/* FOOTER ACTIONS BAR */}
-      <div className="flex justify-end gap-2 pt-2">
+      {/* <div className="flex justify-end gap-2 pt-2">
         <button
           type="submit"
           disabled={loading || !isBalanced}
@@ -619,8 +1010,38 @@ export default function JournalForm({
         >
           Cancel
         </button>
+      </div> */}
+
+      <div className="flex justify-end gap-2 pt-2">
+        {!isPosted && (
+          <>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => handlePersistAction(false)}
+              className="px-5 py-1.5 bg-zinc-600 hover:bg-zinc-700 text-white font-semibold rounded shadow-sm transition"
+            >
+              Save Draft
+            </button>
+            <button
+              type="button"
+              disabled={loading || !isBalanced}
+              onClick={() => handlePersistAction(true)}
+              className="px-5 py-1.5 bg-green-700 hover:bg-green-800 text-white font-semibold rounded shadow-sm disabled:opacity-40 transition"
+            >
+              {loading ? "Posting..." : "Post Journal"}
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={() => router.push(redirectPath)}
+          className="px-5 py-1.5 bg-white hover:bg-zinc-50 border rounded font-semibold text-zinc-700 transition"
+        >
+          {isPosted ? "Back" : "Cancel"}
+        </button>
       </div>
-    </form>
+    </div>
   );
 }
 

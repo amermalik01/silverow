@@ -4,6 +4,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { JournalService } from "@/lib/services/journal.service";
 
+interface IncomingJournalLine {
+  transaction_type: "gl_no" | "customer" | "supplier";
+  account_id: string;
+  party_id: string;
+  currency_id: string;
+  exchange_rate: number | string;
+  debit: number | string;
+  credit: number | string;
+  description?: string;
+  balancing_account_id: string;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const companyId = await getCompanyId();
@@ -38,14 +50,22 @@ export async function POST(req: NextRequest) {
     const companyId = await getCompanyId();
     if (!companyId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await req.json(); // Contains entry_date, reference, description, lines
+    const body = await req.json();
+    
+    const normalizedLines = (body.lines || []).map((line: IncomingJournalLine) => ({
+      ...line,
+      debit: Number(Number(line.debit || 0).toFixed(2)),
+      credit: Number(Number(line.credit || 0).toFixed(2)),
+      exchange_rate: Number(Number(line.exchange_rate || 1.0).toFixed(6)), // Maintain conversion precision
+    }));
 
     const balancedPayload = {
       entry_date: body.entry_date,
       source: "GENERAL" as const,
       reference: body.reference,
       description: body.description,
-      lines: body.lines, // Pass array straight to service
+      is_posted: !!body.is_posted,
+      lines: normalizedLines, 
     };
 
     const result = await JournalService.create(companyId, balancedPayload);
