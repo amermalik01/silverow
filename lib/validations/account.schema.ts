@@ -6,12 +6,13 @@ export const accountFormSchema = z
   .object({
     code: z.string().min(2, "G/L No. must be at least 2 characters").max(20),
     name: z.string().min(2, "Account name must be at least 2 characters").max(150),
-    category_id: z.string().uuid().nullable().or(z.literal("")).transform(v => v === "" ? null : v),
-    sub_category_id: z.string().uuid().nullable().or(z.literal("")).transform(v => v === "" ? null : v),
-    heading_id: z.string().uuid().nullable().or(z.literal("")).transform(v => v === "" ? null : v),
+    // Changed to accept random strings or UUID structure directly from legacy drop-downs safely
+    category_id: z.string().nullable().or(z.literal("")).transform(v => v === "" || !v ? null : v),
+    sub_category_id: z.string().nullable().or(z.literal("")).transform(v => v === "" || !v ? null : v),
+    heading_id: z.string().nullable().or(z.literal("")).transform(v => v === "" || !v ? null : v),
     gl_account_type: z.enum(['Category', 'Sub-Category', 'Heading', 'Posting', 'End Total']),
     gl_no_display_as: z.string().max(50).nullable().or(z.literal("")).transform(v => v === "" ? null : v),
-    vat_rate_id: z.string().uuid().nullable().or(z.literal("")).transform(v => v === "" ? null : v),
+    vat_rate_id: z.string().nullable().or(z.literal("")).transform(v => v === "" || !v ? null : v),
     status: z.string().default("Active"),
     range_start_code: z.string().max(20).nullable().or(z.literal("")).transform(v => v === "" ? null : v),
     range_end_code: z.string().max(20).nullable().or(z.literal("")).transform(v => v === "" ? null : v),
