@@ -56,7 +56,7 @@ interface ApiResponsePayload {
     reference?: string | null;
     description?: string | null;
     is_posted?: boolean;
-    journal_no?: string;
+    entry_no?: string;
   };
   lines?: ApiJournalLine[];
 }
@@ -174,7 +174,7 @@ export default function JournalForm({
     entry_date: new Date().toISOString().split("T")[0],
     reference: "",
     description: "",
-    journal_no: "", //GJ" + Math.floor(1000 + Math.random() * 9000), // Visual match for placeholder
+    entry_no: "", //GJ" + Math.floor(1000 + Math.random() * 9000), // Visual match for placeholder
   });
 
   const [lines, setLines] = useState<JournalLineRow[]>([
@@ -233,7 +233,7 @@ export default function JournalForm({
             entry_date: data.journal.entry_date?.split("T")[0] || "",
             reference: data.journal.reference || "",
             description: data.journal.description || "",
-            journal_no: data.journal.journal_no || "",
+            entry_no: data.journal.entry_no || "",
           });
 
           if (data.lines && data.lines.length > 0) {
@@ -428,7 +428,7 @@ export default function JournalForm({
             type="text"
             readOnly
             className="border bg-zinc-50 p-1 px-2 rounded w-32 font-bold tracking-wide outline-none text-zinc-700"
-            value={metadata.journal_no}
+            value={metadata.entry_no}
           />
         </div>
       </div> */
@@ -448,7 +448,7 @@ export default function JournalForm({
             type="text"
             readOnly
             className="border bg-zinc-50 p-1 px-2 rounded w-32 font-bold tracking-wide outline-none text-zinc-700"
-            value={metadata.journal_no || "DRAFT"}
+            value={metadata.entry_no || "DRAFT"}
           />
         </div>
       </div>

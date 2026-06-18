@@ -9,7 +9,6 @@ import {
 } from "@/types/journal";
 
 export class JournalService {
-
   static async list(
     companyId: string,
     filters: {
@@ -144,7 +143,10 @@ export class JournalService {
       this.validateLines(payload.lines);
 
       // 1. Get sequence module key
-      const moduleKey = this.getModuleKey(payload.source);
+      const moduleKey =
+        payload.source == "GENERAL"
+          ? this.getModuleKey("gl_journal")
+          : this.getModuleKey(payload.source);
 
       // 2. Fetch the formatted sequence string
       const seqResult = await client.query(
@@ -153,8 +155,10 @@ export class JournalService {
       );
       const sequenceCode = seqResult.rows[0].sequence_code;
 
+      console.log("sequenceCode === ", sequenceCode);
+
       // 3. Extract purely digits for integer entry_no configuration
-      const entryNo = parseInt(sequenceCode.replace(/\D/g, ""), 10) || 1;
+      // const entryNo = parseInt(sequenceCode.replace(/\D/g, ""), 10) || 1;
 
       // 4. Resolve the lowercase journal type string ("general", "customer", etc.)
       const journalType = this.getJournalType(payload.source);
@@ -177,7 +181,7 @@ export class JournalService {
       `,
         [
           companyId,
-          entryNo,
+          sequenceCode,
           payload.entry_date,
           payload.source,
           journalType, // Added here
@@ -221,7 +225,7 @@ export class JournalService {
 
       const existing = await client.query(
         `
-        SELECT is_posted
+        SELECT is_posted,entry_no
         FROM journal_entries
         WHERE id = $1
         AND company_id = $2
@@ -237,6 +241,28 @@ export class JournalService {
         throw new Error("Posted journal cannot be modified");
       }
 
+      let sequenceCode = "";
+
+      const entryNo = existing.rows[0].entry_no;
+      const isOnlyNumber = /^\d+$/.test(String(entryNo));
+
+      const isNumberType =
+        typeof entryNo === "number" && Number.isInteger(entryNo);
+
+      if (isOnlyNumber && isNumberType) {
+        const moduleKey =
+          payload.source == "GENERAL"
+            ? this.getModuleKey("gl_journal")
+            : this.getModuleKey(payload.source);
+
+        const seqResult = await client.query(
+          `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
+          [companyId, moduleKey],
+        );
+
+        sequenceCode = seqResult.rows[0].sequence_code; 
+      } else sequenceCode = existing.rows[0].entry_no;
+
       await client.query(
         `
         UPDATE journal_entries
@@ -245,14 +271,16 @@ export class JournalService {
           source = $2,
           reference = $3,
           description = $4,
-          updated_at = now()
-        WHERE id = $5
+          updated_at = now(),
+          entry_no = $5
+        WHERE id = $6
         `,
         [
           payload.entry_date,
           payload.source,
           payload.reference || null,
           payload.description || null,
+          sequenceCode || null,
           id,
         ],
       );
@@ -332,21 +360,22 @@ export class JournalService {
 
     // Map your UI structural names to your exact database ENUM values ('customer', 'supplier')
     // If it's a standard gl_no line, we leave the party_type blank (null)
-    const dbPartyType = transType === "customer" || transType === "supplier" ? transType : null;
+    const dbPartyType =
+      transType === "customer" || transType === "supplier" ? transType : null;
 
     // If the frontend didn't pass an account_id, look it up via the sub-ledger relationship
     if (!resolvedAccountId && line.party_id) {
       resolvedAccountId = await this.getControlAccountForParty(
-        client, 
-        companyId, 
-        line.party_id, 
-        dbPartyType || "customer" // Falls back to looking up customer tables if unclear
+        client,
+        companyId,
+        line.party_id,
+        dbPartyType || "customer", // Falls back to looking up customer tables if unclear
       );
-      
+
       if (!resolvedAccountId) {
-         throw new Error(
-           `A valid G/L control account configuration could not be found for Sub-Ledger Party: ${line.party_id}`
-         );
+        throw new Error(
+          `A valid G/L control account configuration could not be found for Sub-Ledger Party: ${line.party_id}`,
+        );
       }
     }
 
@@ -370,12 +399,12 @@ export class JournalService {
       [
         companyId,
         journalId,
-        dbPartyType,                  // Parameter $3 -> Maps cleanly into your sub_ledger_type enum
-        resolvedAccountId,            // Parameter $4
-        line.debit ?? 0,              // Parameter $5
-        line.credit ?? 0,             // Parameter $6
-        line.description || null,     // Parameter $7
-        line.party_id?.trim() || null,// Parameter $8
+        dbPartyType, // Parameter $3 -> Maps cleanly into your sub_ledger_type enum
+        resolvedAccountId, // Parameter $4
+        line.debit ?? 0, // Parameter $5
+        line.credit ?? 0, // Parameter $6
+        line.description || null, // Parameter $7
+        line.party_id?.trim() || null, // Parameter $8
         line.item_id?.trim() || null, // Parameter $9
         line.currency_id?.trim() || null, // Parameter $10
         line.currency_id?.trim() ? (line.exchange_rate ?? 1.0) : 1.0, // Parameter $11
@@ -390,13 +419,13 @@ export class JournalService {
     client: PoolClient,
     companyId: string,
     partyId: string,
-    type: "customer" | "supplier"
+    type: "customer" | "supplier",
   ): Promise<string | null> {
     // If it's a customer, find their Receivables Control Account setup
     if (type === "customer") {
       const res = await client.query(
         `SELECT receivable_account_id FROM customers WHERE id = $1 AND company_id = $2`,
-        [partyId, companyId]
+        [partyId, companyId],
       );
       return res.rows[0]?.receivable_account_id || null;
     }
@@ -405,7 +434,7 @@ export class JournalService {
     if (type === "supplier") {
       const res = await client.query(
         `SELECT payable_account_id FROM suppliers WHERE id = $1 AND company_id = $2`,
-        [partyId, companyId]
+        [partyId, companyId],
       );
       return res.rows[0]?.payable_account_id || null;
     }
@@ -594,4 +623,3 @@ export class JournalService {
     }
   }
 }
-
