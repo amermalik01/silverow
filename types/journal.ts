@@ -81,28 +81,11 @@ export interface JournalListItem {
   reference?: string;
   description?: string;
   is_posted: boolean;
-}
-
-// export interface JournalLineInput {
-//   account_id: string;
-//   debit?: number;
-//   credit?: number;
-//   description?: string;
-//   party_id?: string;
-//   item_id?: string;
-//   currency_id?: string;
-//   exchange_rate?: number;
-//   warehouse_id?: string;
-//   quantity?: number;
-//   unit_cost?: number;
-//   reference_type?: string;
-//   reference_id?: string;
-//   currency_amount?: number;
-// }
-
+} 
 
 export interface JournalLineInput {
-  transaction_type?: "gl_no" | "customer" | "supplier" | "item"; // 🔥 Added to prevent type "any" errors
+  posting_date?: string;          // Made optional to support fallbacks
+  transaction_type?: "gl_no" | "customer" | "supplier" | "item"; 
   account_id: string;
   debit?: number;
   credit?: number;
@@ -114,7 +97,28 @@ export interface JournalLineInput {
   warehouse_id?: string;
   quantity?: number;
   unit_cost?: number;
+  balancing_account_id?: string; // 🟢 Ensure this is marked optional so it doesn't cause errors elsewhere
   reference_type?: string;
   reference_id?: string;
   currency_amount?: number;
 }
+
+// export interface JournalLineInput {
+//   posting_date: string;
+//   transaction_type?: "gl_no" | "customer" | "supplier" | "item"; // 🔥 Added to prevent type "any" errors
+//   account_id: string;
+//   debit?: number;
+//   credit?: number;
+//   description?: string;
+//   party_id?: string;
+//   item_id?: string;
+//   currency_id?: string;
+//   exchange_rate?: number;
+//   warehouse_id?: string;
+//   quantity?: number;
+//   unit_cost?: number;
+//   balancing_account_id: string;
+//   reference_type?: string;
+//   reference_id?: string;
+//   currency_amount?: number;
+// }

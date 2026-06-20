@@ -14,6 +14,59 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await params;
+
+  try {
+    const query = `
+      SELECT 
+        gle.id,
+        gle.posting_date,
+        gle.source_type::text AS document_type,
+        gle.entry_no AS document_no,
+        coa.code AS gl_no,
+        gle.reference AS source_no,
+        gle.description AS name,
+        gle.debit,
+        gle.credit,
+        gle.net_amount AS amount,
+        gle.transaction_id,
+        gle.vat_transaction_id,
+        gle.party_type AS balancing_account_type, -- Maps subledger type context if relevant
+        gle.party_id::text AS balancing_account_no,
+        'System User' AS posted_by
+      FROM gl_ledger_entries gle
+      INNER JOIN chart_of_accounts coa ON gle.account_id = coa.id
+      WHERE gle.account_id = $1 
+        AND gle.company_id = $2
+      ORDER BY gle.posting_date DESC, gle.posted_at DESC;
+    `;
+
+    const result = await pool.query(query, [id, companyId]);
+    return NextResponse.json(result.rows);
+
+  } catch (error) {
+    console.error("Ledger Drilldown Data Parsing Error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch ledger rows" },
+      { status: 500 },
+    );
+  }
+}
+
+/* import { NextResponse } from "next/server";
+import { pool } from "@/lib/db";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
+
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const companyId = await getCompanyId();
+
+  if (!companyId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const client = await pool.connect();
   const { id } = await params;
 
@@ -45,30 +98,30 @@ export async function GET(
     const result = await pool.query(query, [id, companyId]);
     return NextResponse.json(result.rows);
 
-    /* const result = await client.query(
-      `
-      SELECT
-        j.entry_date,
-        j.reference,
-        j.description,
-        l.debit,
-        l.credit
+    // const result = await client.query(
+    //   `
+    //   SELECT
+    //     j.entry_date,
+    //     j.reference,
+    //     j.description,
+    //     l.debit,
+    //     l.credit
 
-      FROM journal_entry_lines l
+    //   FROM journal_entry_lines l
 
-      JOIN journal_entries j
-        ON j.id = l.journal_id
+    //   JOIN journal_entries j
+    //     ON j.id = l.journal_id
 
-      WHERE l.account_id = $1
-      AND j.company_id = $2
-      AND j.is_posted = true
+    //   WHERE l.account_id = $1
+    //   AND j.company_id = $2
+    //   AND j.is_posted = true
 
-      ORDER BY j.entry_date DESC
-      `,
-      [id, companyId],
-    ); 
+    //   ORDER BY j.entry_date DESC
+    //   `,
+    //   [id, companyId],
+    // ); 
 
-    return NextResponse.json(result.rows);*/
+    // return NextResponse.json(result.rows);
   } catch (error) {
     console.error("Ledger Drilldown Data Parsing Error:", error);
     return NextResponse.json(
@@ -78,4 +131,4 @@ export async function GET(
   } finally {
     client.release();
   }
-}
+} */

@@ -116,19 +116,6 @@ export default function ItemJournalForm({
   const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
     string | null
   >(null);
-  // const [activeModalRowIndex, setActiveModalRowIndex] = useState<number | null>(
-  //   null,
-  // );
-
-  // const [activeAllocationRowIndex, setActiveAllocationRowIndex] = useState<
-  //   number | null
-  // >(null);
-
-  // const openStockAllocationModal = (index: number) => {
-  //   setActiveAllocationRowIndex(index);
-  //   setIsAllocationModalOpen(true);
-  // };
-
   // Header metadata fields
   const [metadata, setMetadata] = useState({
     entry_date: new Date().toISOString().split("T")[0],

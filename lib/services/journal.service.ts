@@ -41,23 +41,23 @@ export class JournalService {
     values.push(limit, offset);
 
     const dataQuery = `
-    SELECT 
-      j.id,
-      j.entry_no,
-      j.entry_date,
-      j.reference,
-      j.description,
-      j.is_posted,
-      COALESCE((
-        SELECT SUM(debit * COALESCE(exchange_rate, 1.0)) 
-        FROM journal_entry_lines 
-        WHERE journal_id = j.id
-      ), 0) as amount
-    FROM journal_entries j
-    ${whereConditions}
-    ORDER BY j.entry_no DESC
-    LIMIT $${values.length - 1} OFFSET $${values.length}
-  `;
+          SELECT 
+            j.id,
+            j.entry_no,
+            j.entry_date,
+            j.reference,
+            j.description,
+            j.is_posted,
+            COALESCE((
+              SELECT SUM(debit * COALESCE(exchange_rate, 1.0)) 
+              FROM journal_entry_lines 
+              WHERE journal_id = j.id
+            ), 0) as amount
+          FROM journal_entries j
+          ${whereConditions}
+          ORDER BY j.entry_no DESC
+          LIMIT $${values.length - 1} OFFSET $${values.length}
+        `;
 
     const result = await pool.query(dataQuery, values);
 
@@ -85,14 +85,25 @@ export class JournalService {
     if (!journalResult.rows.length) return null;
 
     const linesResult = await pool.query(
-      `
-      SELECT *
-      FROM journal_entry_lines
-      WHERE journal_id = $1
-      ORDER BY created_at ASC
-      `,
-      [id],
-    );
+          `
+          SELECT 
+            l.*, 
+            a.code AS account_code,
+            a.name AS account_name, 
+            p.name AS party_name,
+            p.customer_code,
+            p.supplier_code, 
+            bal.code AS balancing_account_code,
+            bal.name AS balancing_account_name
+          FROM journal_entry_lines l
+          LEFT JOIN chart_of_accounts a ON l.account_id = a.id
+          LEFT JOIN public.parties p ON l.party_id = p.id
+          LEFT JOIN chart_of_accounts bal ON l.reference_id = bal.id AND l.reference_type = 'G/L Account'
+          WHERE l.journal_id = $1
+          ORDER BY l.line_no ASC, l.created_at ASC
+          `,
+          [id],
+        );
 
     return {
       journal: journalResult.rows[0],
@@ -260,7 +271,7 @@ export class JournalService {
           [companyId, moduleKey],
         );
 
-        sequenceCode = seqResult.rows[0].sequence_code; 
+        sequenceCode = seqResult.rows[0].sequence_code;
       } else sequenceCode = existing.rows[0].entry_no;
 
       await client.query(
@@ -308,21 +319,138 @@ export class JournalService {
   }
 
   /**
-   * POST
+   * POST - Moves entries to the optimized ledger and marks draft document as posted
    */
   static async post(companyId: string, id: string): Promise<void> {
-    await pool.query(
-      `
-      UPDATE journal_entries
-      SET
-        is_posted = true,
-        posted_at = now()
-      WHERE id = $1
-      AND company_id = $2
-      AND is_posted = false
-      `,
-      [id, companyId],
-    );
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      // 1. Fetch the original draft unposted header to verify status
+      const journalResult = await client.query(
+        `
+        SELECT id, entry_no, entry_date, source, reference, description
+        FROM journal_entries
+        WHERE id = $1 AND company_id = $2 AND is_posted = false
+        FOR UPDATE
+        `,
+        [id, companyId],
+      );
+
+      if (journalResult.rows.length === 0) {
+        throw new Error(
+          "Journal entry not found, or it has already been posted.",
+        );
+      }
+
+      const journal = journalResult.rows[0];
+
+      // 2. Fetch the draft lines associated with this document
+      const linesResult = await client.query(
+        `
+        SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate
+        FROM journal_entry_lines
+        WHERE journal_id = $1
+        `,
+        [id],
+      );
+
+      if (linesResult.rows.length === 0) {
+        throw new Error("Cannot post a journal entry with zero lines.");
+      }
+
+      // Optional: Re-run this.validateLines(linesResult.rows) here if you want final safety
+
+      // 3. Obtain next global GL transaction key from the PostgreSQL sequence
+      const txKeyResult = await client.query(
+        "SELECT nextval('gl_transaction_id_seq') AS tx_id",
+      );
+      const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
+
+      // 4. (Optional) Check if VAT tracking numbers are required based on source type
+      let vatTransactionId: number | null = null;
+      const vatSettlementId: number | null = null;
+
+      if (
+        journal.source === "VAT_POSTING" ||
+        journal.source === "SALES" ||
+        journal.source === "PURCHASE"
+      ) {
+        const vatKeyResult = await client.query(
+          "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
+        );
+        vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
+      }
+
+      // 5. Bulk insert lines cleanly into the 'gl_ledger_entries' table
+      for (const line of linesResult.rows) {
+        // Calculate Base Currency Amount (LCY) exactly as done during verification
+        const rate = Number(line.exchange_rate || 1.0);
+        const debitLCY = Number((Number(line.debit || 0) * rate).toFixed(2));
+        const creditLCY = Number((Number(line.credit || 0) * rate).toFixed(2));
+
+        await client.query(
+          `
+          INSERT INTO gl_ledger_entries (
+            company_id,
+            account_id,
+            transaction_id,
+            vat_transaction_id,
+            vat_settlement_transaction_id,
+            source_journal_id,
+            entry_no,
+            posting_date,
+            source_type,
+            reference,
+            description,
+            debit,
+            credit,
+            party_type,
+            party_id,
+            posted_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())
+          `,
+          [
+            companyId,
+            line.account_id,
+            nextTransactionId,
+            vatTransactionId,
+            vatSettlementId,
+            journal.id,
+            journal.entry_no,
+            journal.entry_date,
+            journal.source, // maps to journal_source_enum
+            journal.reference,
+            line.description || journal.description, // Fallback to header note if lines are empty
+            debitLCY,
+            creditLCY,
+            line.party_type,
+            line.party_id,
+          ],
+        );
+      }
+
+      // 6. Update the header flag on the draft workspace so it shows as 'posted'
+      await client.query(
+        `
+        UPDATE journal_entries
+        SET
+          is_posted = true,
+          posted_at = now()
+        WHERE id = $1
+        `,
+        [id],
+      );
+
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   /**
@@ -343,9 +471,6 @@ export class JournalService {
     }
   }
 
-  /**
-   * INSERT LINE
-   */
   /**
    * INSERT LINE
    */
@@ -379,35 +504,57 @@ export class JournalService {
       }
     }
 
+    // Resolve structural balancing fields for persistence mapping
+    const balancingAccountId = line.balancing_account_id?.trim() || null;
+
+    // If a balancing account is present on this line, mark reference fields to match ledger query patterns
+    const resolvedRefType = balancingAccountId
+      ? "G/L Account"
+      : line.reference_type || null;
+    const resolvedRefId = balancingAccountId
+      ? balancingAccountId
+      : line.reference_id || null;
+
+    const fallbackDate = new Date().toISOString().split("T")[0];
+    const finalLineDate = line.posting_date || fallbackDate;
+
     await client.query(
       `
       INSERT INTO journal_entry_lines (
         company_id,
         journal_id,
-        party_type,       -- ✅ FIXED: Matches your exact ALTER TABLE name
+        posting_date,
+        party_type,
         account_id,
         debit,
         credit,
         description,
         party_id,
         item_id,
+        warehouse_id,
         currency_id,
-        exchange_rate
+        exchange_rate,
+        reference_type,
+        reference_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       `,
       [
         companyId,
         journalId,
-        dbPartyType, // Parameter $3 -> Maps cleanly into your sub_ledger_type enum
-        resolvedAccountId, // Parameter $4
-        line.debit ?? 0, // Parameter $5
-        line.credit ?? 0, // Parameter $6
-        line.description || null, // Parameter $7
-        line.party_id?.trim() || null, // Parameter $8
-        line.item_id?.trim() || null, // Parameter $9
-        line.currency_id?.trim() || null, // Parameter $10
-        line.currency_id?.trim() ? (line.exchange_rate ?? 1.0) : 1.0, // Parameter $11
+        finalLineDate,
+        dbPartyType,
+        resolvedAccountId,
+        line.debit ?? 0,
+        line.credit ?? 0,
+        line.description || null,
+        line.party_id?.trim() || null,
+        line.item_id?.trim() || null,
+        line.warehouse_id?.trim() || null,
+        line.currency_id?.trim() || null,
+        line.currency_id?.trim() ? (line.exchange_rate ?? 1.0) : 1.0,
+        resolvedRefType,
+        resolvedRefId,
       ],
     );
   }
@@ -421,19 +568,29 @@ export class JournalService {
     partyId: string,
     type: "customer" | "supplier",
   ): Promise<string | null> {
-    // If it's a customer, find their Receivables Control Account setup
     if (type === "customer") {
+      // Join the unified parties row to its assigned Sales Posting Group profile
       const res = await client.query(
-        `SELECT receivable_account_id FROM customers WHERE id = $1 AND company_id = $2`,
+        `SELECT spg.receivable_account_id 
+       FROM public.parties p
+       INNER JOIN public.sales_posting_groups spg ON p.sales_posting_group_id = spg.id
+       WHERE p.id = $1 
+         AND p.company_id = $2 
+         AND p.is_customer = true`,
         [partyId, companyId],
       );
       return res.rows[0]?.receivable_account_id || null;
     }
 
-    // If it's a supplier/vendor, find their Payables Control Account setup
     if (type === "supplier") {
+      // Join the unified parties row to its assigned Purchase Posting Group profile
       const res = await client.query(
-        `SELECT payable_account_id FROM suppliers WHERE id = $1 AND company_id = $2`,
+        `SELECT ppg.payable_account_id 
+       FROM public.parties p
+       INNER JOIN public.purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
+       WHERE p.id = $1 
+         AND p.company_id = $2 
+         AND p.is_supplier = true`,
         [partyId, companyId],
       );
       return res.rows[0]?.payable_account_id || null;
@@ -441,48 +598,10 @@ export class JournalService {
 
     return null;
   }
-  /* private static async insertLine(
-    client: PoolClient,
-    companyId: string,
-    journalId: string,
-    // line: JournalLine,
-    line: JournalLineInput,
-  ) {
-    await client.query(
-      `
-      INSERT INTO journal_entry_lines (
-        company_id,
-        journal_id,
-        account_id,
-        debit,
-        credit,
-        description,
-        party_id,
-        item_id,
-        currency_id,
-        exchange_rate
-      )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, $9, $10)
-      `,
-      [
-        companyId,
-        journalId,
-        line.account_id,
-        line.debit ?? 0,
-        line.credit ?? 0,
-        line.description || null,
-        line.party_id || null,
-        line.item_id || null,
-        line.currency_id || null,
-        line.currency_id ? (line.exchange_rate ?? 1.0) : 1.0,
-      ],
-    );
-  } */
 
   /**
-   * VALIDATE
+   * VALIDATE - Matches legacy balancing account bypass rules with LCY decimal precision tracking
    */
-
   private static validateLines(lines: JournalLineInput[]) {
     if (!lines || lines.length === 0) {
       throw new Error("Journal requires at least one line");
@@ -500,12 +619,25 @@ export class JournalService {
         throw new Error("Line cannot have both debit and credit");
       }
 
-      // Fix: Round each converted leg to 2 decimal points to avoid micro-fraction stack ups
-      totalDebitConverted += Number((debit * rate).toFixed(2));
-      totalCreditConverted += Number((credit * rate).toFixed(2));
+      // Legacy rule: If a line handles its own offset via a balancing account,
+      // it bypasses the global document cross-line validation total sums.
+      if (
+        line.balancing_account_id &&
+        line.balancing_account_id.trim() !== ""
+      ) {
+        continue;
+      }
+
+      if (debit > 0) {
+        totalDebitConverted += Number((debit * rate).toFixed(2));
+      }
+
+      if (credit > 0) {
+        totalCreditConverted += Number((credit * rate).toFixed(2));
+      }
     }
 
-    // Fix: Match variance constraint validation threshold to two decimal precision (0.01)
+    // Match variance constraint validation threshold to two decimal precision (0.01)
     const variance = Math.abs(totalDebitConverted - totalCreditConverted);
 
     if (variance >= 0.01) {
@@ -514,46 +646,6 @@ export class JournalService {
       );
     }
   }
-
-  /* private static validateLines(lines: JournalLineInput[]) {
-    if (!lines || lines.length === 0) {
-      throw new Error("Journal requires at least one line");
-    }
-
-    let totalDebitConverted = 0;
-    let totalCreditConverted = 0;
-
-    for (const line of lines) {
-      const debit = Number(line.debit || 0);
-      const credit = Number(line.credit || 0);
-
-      // Fall back to a multiplier of 1.0 if exchange_rate is missing or null
-      const rate = Number(line.exchange_rate || 1.0);
-
-      if (debit > 0 && credit > 0) {
-        throw new Error("Line cannot have both debit and credit");
-      }
-
-      // Accumulate the normalized amounts converted to your base currency
-      totalDebitConverted += debit * rate;
-      totalCreditConverted += credit * rate;
-    }
-
-    // Use a variance threshold buffer to prevent strict floating point fraction blocks
-    const variance = Math.abs(totalDebitConverted - totalCreditConverted);
-
-    if (variance >= 0.001) {
-      throw new Error(
-        `Journal is not balanced in base currency. Difference: ${variance.toFixed(2)}`,
-      );
-    }
-  } */
-
-  /**
-   * =========================================================
-   * CREATE WITH EXISTING CLIENT
-   * =========================================================
-   */
 
   /**
    * CREATE WITH EXISTING CLIENT
@@ -623,3 +715,89 @@ export class JournalService {
     }
   }
 }
+/* private static async insertLine(
+    client: PoolClient,
+    companyId: string,
+    journalId: string,
+    // line: JournalLine,
+    line: JournalLineInput,
+  ) {
+    await client.query(
+      `
+      INSERT INTO journal_entry_lines (
+        company_id,
+        journal_id,
+        account_id,
+        debit,
+        credit,
+        description,
+        party_id,
+        item_id,
+        currency_id,
+        exchange_rate
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, $9, $10)
+      `,
+      [
+        companyId,
+        journalId,
+        line.account_id,
+        line.debit ?? 0,
+        line.credit ?? 0,
+        line.description || null,
+        line.party_id || null,
+        line.item_id || null,
+        line.currency_id || null,
+        line.currency_id ? (line.exchange_rate ?? 1.0) : 1.0,
+      ],
+    );
+  } */
+
+/* private static validateLines(lines: JournalLineInput[]) {
+    if (!lines || lines.length === 0) {
+      throw new Error("Journal requires at least one line");
+    }
+
+    let totalDebitConverted = 0;
+    let totalCreditConverted = 0;
+
+    for (const line of lines) {
+      const debit = Number(line.debit || 0);
+      const credit = Number(line.credit || 0);
+
+      // Fall back to a multiplier of 1.0 if exchange_rate is missing or null
+      const rate = Number(line.exchange_rate || 1.0);
+
+      if (debit > 0 && credit > 0) {
+        throw new Error("Line cannot have both debit and credit");
+      }
+
+      // Accumulate the normalized amounts converted to your base currency
+      totalDebitConverted += debit * rate;
+      totalCreditConverted += credit * rate;
+    }
+
+    // Use a variance threshold buffer to prevent strict floating point fraction blocks
+    const variance = Math.abs(totalDebitConverted - totalCreditConverted);
+
+    if (variance >= 0.001) {
+      throw new Error(
+        `Journal is not balanced in base currency. Difference: ${variance.toFixed(2)}`,
+      );
+    }
+  } */
+
+/* static async post(companyId: string, id: string): Promise<void> {
+    await pool.query(
+      `
+      UPDATE journal_entries
+      SET
+        is_posted = true,
+        posted_at = now()
+      WHERE id = $1
+      AND company_id = $2
+      AND is_posted = false
+      `,
+      [id, companyId],
+    );
+  } */
