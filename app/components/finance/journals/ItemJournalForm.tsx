@@ -2,7 +2,9 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Trash2, Plus } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 import ItemLookupModal, {
   ItemLookupRecord,
@@ -38,6 +40,7 @@ interface StorageLocation {
 }
 interface ItemJournalLineRow {
   local_key: string;
+  postingDate: string;
   transaction_type: "Positive Entry" | "Negative Entry";
   item_id: string;
   item_code: string;
@@ -56,6 +59,7 @@ interface ItemJournalLineRow {
 
 interface RawBackendJournalLine {
   id: string;
+  postingDate: string;
   account_id: string;
   debit: string | number;
   credit: string | number;
@@ -118,7 +122,7 @@ export default function ItemJournalForm({
   >(null);
   // Header metadata fields
   const [metadata, setMetadata] = useState({
-    entry_date: new Date().toISOString().split("T")[0],
+    // entry_date: new Date().toISOString().split("T")[0],
     reference: "",
     description: "",
   });
@@ -126,6 +130,7 @@ export default function ItemJournalForm({
   // Default row helper
   const createBlankRow = (): ItemJournalLineRow => ({
     local_key: Math.random().toString(36).substring(2, 9),
+    postingDate: new Date().toISOString().split("T")[0],
     transaction_type: "Positive Entry",
     item_id: "",
     item_code: "",
@@ -176,7 +181,7 @@ export default function ItemJournalForm({
           setIsPosted(!!data.journal.is_posted);
 
           setMetadata({
-            entry_date: data.journal.entry_date?.split("T")[0] || "",
+            // entry_date: data.journal.entry_date?.split("T")[0] || "",
             reference: data.journal.reference || "",
             description: data.journal.description || "",
           });
@@ -199,6 +204,9 @@ export default function ItemJournalForm({
 
                 structuralLines.push({
                   local_key: generatedKey,
+                  postingDate: l.postingDate
+                    ? l.postingDate.split("T")[0]
+                    : new Date().toISOString().split("T")[0],
                   transaction_type: isPositive
                     ? "Positive Entry"
                     : "Negative Entry",
@@ -367,7 +375,7 @@ export default function ItemJournalForm({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (isPosted) return;
     setErrorMsg(null);
 
@@ -377,7 +385,8 @@ export default function ItemJournalForm({
         !l.warehouse_id ||
         !l.location_id ||
         l.quantity <= 0 ||
-        !l.account_id,
+        !l.account_id ||
+        !l.postingDate,
     );
 
     if (hasInvalidEntries) {
@@ -390,10 +399,24 @@ export default function ItemJournalForm({
     try {
       setLoading(true);
 
+      // const payload = {
+      //   ...metadata,
+      //   is_item_journal: true,
+      //   lines,
+      // };
+
       const payload = {
-        ...metadata,
+        entry_date: new Date().toISOString().split('T')[0],// metadata.entry_date || metadata.postingDate || 
+        reference: metadata.reference || "",
+        description: metadata.description || "",
         is_item_journal: true,
-        lines,
+        lines: lines.map((line) => ({
+          ...line,
+          // Ensure transaction_type, quantities, and numeric values pass clearly
+          quantity: Number(line.quantity),
+          cost_per_unit: Number(line.cost_per_unit || 0),
+          amount: Number(line.amount || 0),
+        })),
       };
 
       const method = journalId ? "PUT" : "POST";
@@ -491,8 +514,486 @@ export default function ItemJournalForm({
   };
 
   return (
+    <div className="space-y-6">
+      {/* HEADER SECTION METADATA ACTION BAR */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+        <div>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            Item Journal Voucher {journalId ? `#${journalId}` : "(New Draft)"}
+            {isPosted && (
+              <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded border dark:border-slate-700">
+                Posted
+              </span>
+            )}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Synchronize warehouse registers and configure balanced inventory
+            ledger corrections.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {!isPosted ? (
+            <>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading || isPosting}
+                className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
+              >
+                {loading ? "Saving..." : "Save Draft"}
+              </button>
+              <button
+                type="button"
+                onClick={handlePostJournal}
+                disabled={loading || isPosting || !journalId}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isPosting ? "Posting..." : "Post Journal"}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => router.push(redirectPath)}
+              className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded bg-white dark:bg-slate-800 hover:bg-slate-50 shadow-sm"
+            >
+              Back to Catalog
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ERROR RIBBONS */}
+      {errorMsg && (
+        <div className="p-3 text-xs bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 rounded-lg">
+          {errorMsg}
+        </div>
+      )}
+
+      {/* COMPACT HEAD METADATA ROW PANEL */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg shadow-sm">
+        {/* <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+            Posting Date *
+          </label>
+          <input
+            type="date"
+            disabled={isPosted}
+            value={metadata.entry_date}
+            onChange={(e) =>
+              setMetadata({ ...metadata, entry_date: e.target.value })
+            }
+            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-sm bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+          />
+        </div> */}
+
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+            Journal No.
+          </label>
+          <input
+            type="text"
+            disabled
+            value={journalId ? `#${journalId}` : "Auto-Generated on Save"}
+            className="w-full border border-slate-200 dark:border-slate-800 p-2 rounded text-sm bg-slate-50 dark:bg-slate-950 font-mono text-slate-400 dark:text-slate-500 outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+            Document Reference No.
+          </label>
+          <input
+            type="text"
+            disabled={isPosted}
+            value={metadata.reference}
+            onChange={(e) =>
+              setMetadata({ ...metadata, reference: e.target.value })
+            }
+            placeholder="e.g. ADJ-STK-002"
+            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-sm bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+            Narration / Memo Description
+          </label>
+          <input
+            type="text"
+            disabled={isPosted}
+            value={metadata.description}
+            onChange={(e) =>
+              setMetadata({ ...metadata, description: e.target.value })
+            }
+            placeholder="Reconciliation adjustment note..."
+            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-sm bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+          />
+        </div>
+      </div>
+
+      {/* MATRIX TABLE WORKSPACE CONTAINER */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse table-fixed min-w-[1450px]">
+            <thead>
+              <tr className="border-b bg-slate-50/70 dark:bg-slate-800/40 text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
+                <th className="p-2 w-36">Posting Date *</th>
+                <th className="p-2 w-36">Type</th>
+                <th className="p-2 w-44">Item Code *</th>
+                <th className="p-2 min-w-[180px]">Description</th>
+                <th className="p-2 w-40">Warehouse *</th>
+                <th className="p-2 w-40">Location *</th>
+                <th className="p-2 w-24 text-right">Qty *</th>
+                <th className="p-2 w-16 text-center">UOM</th>
+                <th className="p-2 w-28 text-right">Unit Cost</th>
+                <th className="p-2 w-32 text-right">Amount</th>
+                <th className="p-2 w-52">G/L Account Offset *</th>
+                <th className="p-2 text-center w-16">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {lines.map((line) => {
+                const activeRowLocations =
+                  rowLocationsCache[line.local_key] || [];
+
+                return (
+                  <tr
+                    key={line.local_key}
+                    className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/10"
+                  >
+                    <td className="p-1">
+                      <input
+                        type="date"
+                        disabled={isPosted}
+                        value={line.postingDate}
+                        onChange={(e) =>
+                          handleLineChange(
+                            line.local_key,
+                            "postingDate",
+                            e.target.value,
+                          )
+                        }
+                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
+                      />
+                    </td>
+
+                    {/* TRANSACTION ENTRY TYPE */}
+                    <td className="p-1">
+                      <select
+                        disabled={isPosted}
+                        value={line.transaction_type}
+                        onChange={(e) =>
+                          handleLineChange(
+                            line.local_key,
+                            "transaction_type",
+                            e.target.value as
+                              | "Positive Entry"
+                              | "Negative Entry",
+                          )
+                        }
+                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
+                      >
+                        <option value="Positive Entry">Positive (+)</option>
+                        <option value="Negative Entry">Negative (-)</option>
+                      </select>
+                    </td>
+
+                    {/* ITEM LOOKUP CODE CELL */}
+                    <td className="p-1">
+                      <div className="flex items-center gap-1 bg-transparent rounded group/cell">
+                        <input
+                          type="text"
+                          readOnly
+                          value={line.item_code}
+                          placeholder="Find Item..."
+                          className="w-full bg-transparent p-1.5 text-xs font-mono text-slate-900 dark:text-white border-none outline-none truncate"
+                        />
+                        {!isPosted && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveItemRowKey(line.local_key);
+                              setIsItemModalOpen(true);
+                            }}
+                            className="mr-1 px-1.5 py-0.5 text-[10px] bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600 dark:text-slate-400 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                          >
+                            Find
+                          </button>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* READONLY SYSTEM NAME DESCRIPTION */}
+                    <td className="p-1">
+                      <input
+                        type="text"
+                        disabled
+                        value={line.item_description}
+                        placeholder="--"
+                        className="w-full bg-transparent p-1.5 text-xs text-slate-400 dark:text-slate-500 border-none truncate"
+                      />
+                    </td>
+
+                    {/* WAREHOUSE ALLOCATION NODES */}
+                    <td className="p-1">
+                      <select
+                        disabled={isPosted}
+                        value={line.warehouse_id}
+                        onChange={(e) => {
+                          const nextWhId = e.target.value;
+                          handleLineChange(
+                            line.local_key,
+                            "warehouse_id",
+                            nextWhId,
+                          );
+                          handleLineChange(line.local_key, "location_id", "");
+                          fetchLocationsForSpecificRow(
+                            line.local_key,
+                            nextWhId,
+                          );
+                        }}
+                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
+                      >
+                        <option value="">Select Whse</option>
+                        {warehouses.map((w) => (
+                          <option key={w.id} value={w.id}>
+                            {w.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* CONDITIONAL STRATEGIC LOCATION BINS */}
+                    <td className="p-1">
+                      <select
+                        disabled={isPosted || !line.warehouse_id}
+                        value={line.location_id}
+                        onChange={(e) =>
+                          handleLineChange(
+                            line.local_key,
+                            "location_id",
+                            e.target.value,
+                          )
+                        }
+                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded disabled:opacity-40"
+                      >
+                        <option value="">Select Loc.</option>
+                        {activeRowLocations.map((loc) => (
+                          <option key={loc.id} value={loc.id}>
+                            {loc.title} {loc.code ? `(${loc.code})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* PIECE QUANTITY INPUT MATRIX */}
+                    <td className="p-1">
+                      <input
+                        type="number"
+                        min="0"
+                        disabled={isPosted}
+                        value={line.quantity || ""}
+                        onChange={(e) =>
+                          handleLineChange(
+                            line.local_key,
+                            "quantity",
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
+                        placeholder="0"
+                        className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
+                      />
+                    </td>
+
+                    {/* UNIT STANDARD MEASUREMENT METRIC DISPLAY */}
+                    <td className="p-1 text-center text-xs font-medium text-slate-400 dark:text-slate-500">
+                      {line.uom}
+                    </td>
+
+                    {/* COST VALUATION MODIFIER */}
+                    <td className="p-1">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        disabled={isPosted}
+                        value={line.cost_per_unit || ""}
+                        onChange={(e) =>
+                          handleLineChange(
+                            line.local_key,
+                            "cost_per_unit",
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
+                        placeholder="0.00"
+                        className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
+                      />
+                    </td>
+
+                    {/* SUM TOTAL MATRIX RECALCULATION DISPLAY ROW */}
+                    <td className="p-1.5 text-right font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                      {line.amount.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+
+                    {/* SUB-LEDGER BALANCING INTEGRATION CONTROL */}
+                    <td className="p-1">
+                      <select
+                        disabled={isPosted}
+                        value={line.account_id}
+                        onChange={(e) =>
+                          handleLineChange(
+                            line.local_key,
+                            "account_id",
+                            e.target.value,
+                          )
+                        }
+                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
+                      >
+                        <option value="">Select Offset Account</option>
+                        {accounts.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.code} - {a.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* DESTRUCTIVE MUTATOR ACTION ICONS */}
+                    <td className="p-1 text-center align-middle">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={!line.item_id || !line.warehouse_id}
+                          onClick={() => {
+                            setActiveAllocationRowKey(line.local_key);
+                            setIsAllocationModalOpen(true);
+                          }}
+                          className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-20"
+                          title="Lot/Serial Allocations"
+                        >
+                          <span
+                            className={`inline-block w-2 h-2 rounded-full ${line.is_allocated ? "bg-emerald-500" : "bg-rose-500"}`}
+                          />
+                        </button>
+                        {!isPosted && (
+                          <button
+                            type="button"
+                            onClick={() => removeLineRow(line.local_key)}
+                            disabled={lines.length <= 1}
+                            className="p-1 rounded text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 disabled:opacity-20 text-xs transition"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* BOTTOM MATRIX CONTROLS ACTION RIBBON */}
+        <div className="p-2 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          {!isPosted ? (
+            <button
+              type="button"
+              onClick={addLineRow}
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            >
+              + Add Voucher Entry Line
+            </button>
+          ) : (
+            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium px-2">
+              Voucher ledger entries locked.
+            </span>
+          )}
+
+          {/* REALTIME AGGREGATED RUNNING BALANCE MATRIX FIELD */}
+          <div className="flex items-center gap-2 text-xs pr-4">
+            <span className="font-semibold text-slate-500 dark:text-slate-400">
+              Total Adjustment Batch Value:
+            </span>
+            <span className="font-mono font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-900 px-2 py-1 rounded border dark:border-slate-700 shadow-sm">
+              {baseCurrencyCode}{" "}
+              {totalBatchValuation.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {isItemModalOpen && (
+        <ItemLookupModal
+          open={isItemModalOpen}
+          onClose={() => {
+            setIsItemModalOpen(false);
+            setActiveItemRowKey(null);
+          }}
+          onSelect={handleModalItemSelect}
+        />
+      )}
+
+      {isAllocationModalOpen &&
+        activeAllocationRowKey &&
+        activeAllocationLine && (
+          <StockAllocationModal
+            key={`allocation-row-${activeAllocationRowKey}`}
+            open={isAllocationModalOpen}
+            onClose={() => {
+              setIsAllocationModalOpen(false);
+              setActiveAllocationRowKey(null);
+            }}
+            targetQuantity={activeAllocationLine.quantity}
+            itemCode={activeAllocationLine.item_code}
+            itemName={activeAllocationLine.item_description}
+            warehouseName={
+              warehouses.find((w) => w.id === activeAllocationLine.warehouse_id)
+                ?.name || ""
+            }
+            locationName={
+              (rowLocationsCache[activeAllocationRowKey] || []).find(
+                (l) => l.id === activeAllocationLine.location_id,
+              )?.title || ""
+            }
+            initialAllocations={activeAllocationLine.allocations || []}
+            onSave={(allocationsPayload) =>
+              handleSaveAllocations(allocationsPayload)
+            }
+          />
+        )}
+
+      {/* {isAllocationModalOpen && activeAllocationLine && (
+        <StockAllocationModal
+          isOpen={isAllocationModalOpen}
+          onClose={() => {
+            setIsAllocationModalOpen(false);
+            setActiveAllocationRowKey(null);
+          }}
+          itemId={activeAllocationLine.item_id}
+          warehouseId={activeAllocationLine.warehouse_id}
+          locationId={activeAllocationLine.location_id}
+          requiredQty={activeAllocationLine.quantity}
+          initialAllocations={activeAllocationLine.allocations}
+          onSave={handleSaveAllocations}
+          isReadonly={isPosted}
+        />
+      )} */}
+    </div>
+  );
+}
+
+/* 
+return (
     <div className="space-y-6 p-6 border rounded-xl shadow-sm bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800">
-      {/* HEADER BAR AND GLOBAL ACTIONS SETUP */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-5 gap-4 border-zinc-100 dark:border-zinc-800">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
@@ -535,7 +1036,7 @@ export default function ItemJournalForm({
         </div>
       </div>
 
-      {/* SYSTEM WARNING RIBBONS AND INPUT ALERTS */}
+
       {isPosted && (
         <div className="p-4 text-sm bg-zinc-50 border border-zinc-200 text-zinc-600 dark:bg-zinc-800/40 dark:border-zinc-700 dark:text-zinc-300 rounded-lg font-medium flex items-center gap-2">
           <span>🔒 View Only: Document batch has been posted.</span>
@@ -553,7 +1054,7 @@ export default function ItemJournalForm({
         className="space-y-6 p-6 border rounded shadow-sm bg-white dark:bg-zinc-900"
       >
         <fieldset disabled={isPosted} className="space-y-6 disabled:opacity-90">
-          {/* HEADER INFO FIELD CONTAINER */}
+       
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-zinc-50/50 dark:bg-zinc-800/20 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
@@ -602,7 +1103,7 @@ export default function ItemJournalForm({
             </div>
           </div>
 
-          {/* DATA INPUT MATRIX CONTROL SHEET */}
+
           <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
             <table className="w-full text-left border-collapse min-w-[1250px]">
               <thead>
@@ -632,7 +1133,7 @@ export default function ItemJournalForm({
                       key={line.local_key}
                       className="text-sm align-middle hover:bg-zinc-50/40 dark:hover:bg-zinc-800/20"
                     >
-                      {/* TRANSACTION TYPE SELECTION */}
+ 
                       <td className="p-2">
                         <select
                           disabled={isPosted}
@@ -657,7 +1158,7 @@ export default function ItemJournalForm({
                         </select>
                       </td>
 
-                      {/* 🌟 ITEM PICKER TRIGGER ELEMENT BUTTON BLOCK */}
+     
                       <td className="p-2">
                         <div className="flex gap-1">
                           <input
@@ -681,7 +1182,7 @@ export default function ItemJournalForm({
                         </div>
                       </td>
 
-                      {/* ITEM NARRATIVE DISPLAY PROFILE */}
+    
                       <td className="p-2">
                         <input
                           type="text"
@@ -692,7 +1193,7 @@ export default function ItemJournalForm({
                         />
                       </td>
 
-                      {/* WAREHOUSE SELECTOR */}
+         
                       <td className="p-2">
                         <select
                           required
@@ -722,7 +1223,7 @@ export default function ItemJournalForm({
                         </select>
                       </td>
 
-                      {/* 🌟 REACTIVE WAREHOUSE LOCATIONS POPULATION */}
+     
                       <td className="p-2">
                         <select
                           required
@@ -746,7 +1247,7 @@ export default function ItemJournalForm({
                         </select>
                       </td>
 
-                      {/* RECORD QUANTITY INPUT */}
+   
                       <td className="p-2">
                         <input
                           type="number"
@@ -765,12 +1266,12 @@ export default function ItemJournalForm({
                         />
                       </td>
 
-                      {/* UOM TEXT TRACK SIGNPOST */}
+        
                       <td className="p-2 text-center font-medium text-xs text-zinc-500">
                         {line.uom}
                       </td>
 
-                      {/* COST PER UNIT METRIC INPUT */}
+          
                       <td className="p-2">
                         <input
                           type="number"
@@ -790,7 +1291,7 @@ export default function ItemJournalForm({
                         />
                       </td>
 
-                      {/* CALCULATED VALUE DISPLAY FIELD ($AMOUNT = QTY * COST) */}
+              
                       <td className="p-2 text-right font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                         {line.amount.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
@@ -798,7 +1299,7 @@ export default function ItemJournalForm({
                         })}
                       </td>
 
-                      {/* COMPLEMENTARY BALANCING G/L ACCOUNT OFFSET SELECTOR */}
+         
                       <td className="p-2">
                         <select
                           required
@@ -821,7 +1322,7 @@ export default function ItemJournalForm({
                         </select>
                       </td>
 
-                      {/* ACTION CONTROLS */}
+  
                       <td className="p-2 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
@@ -860,7 +1361,7 @@ export default function ItemJournalForm({
         </fieldset>
       </form>
 
-      {/* MATRIX CALCULATIONS FOOTER SECTION */}
+
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-zinc-50 dark:bg-zinc-800/40 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
         {!isPosted ? (
           <button
@@ -926,4 +1427,4 @@ export default function ItemJournalForm({
         )}
     </div>
   );
-}
+*/

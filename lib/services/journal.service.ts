@@ -85,7 +85,7 @@ export class JournalService {
     if (!journalResult.rows.length) return null;
 
     const linesResult = await pool.query(
-          `
+      `
           SELECT 
             l.*, 
             a.code AS account_code,
@@ -102,8 +102,8 @@ export class JournalService {
           WHERE l.journal_id = $1
           ORDER BY l.line_no ASC, l.created_at ASC
           `,
-          [id],
-        );
+      [id],
+    );
 
     return {
       journal: journalResult.rows[0],
@@ -602,9 +602,22 @@ export class JournalService {
   /**
    * VALIDATE - Matches legacy balancing account bypass rules with LCY decimal precision tracking
    */
-  private static validateLines(lines: JournalLineInput[]) {
+  private static validateLines(lines: JournalLineInput[], source?: string) {
     if (!lines || lines.length === 0) {
       throw new Error("Journal requires at least one line");
+    }
+
+    // Skip global balancing constraint if it's an Item Journal
+    if (source === "ITEM_JOURNAL" || source === "INVENTORY") {
+      // Basic structural validation per line only
+      for (const line of lines) {
+        const debit = Number(line.debit || 0);
+        const credit = Number(line.credit || 0);
+        if (debit > 0 && credit > 0) {
+          throw new Error("Line cannot have both debit and credit");
+        }
+      }
+      return; // Bypass balancing checks entirely
     }
 
     let totalDebitConverted = 0;
