@@ -104,10 +104,29 @@ export default function EditCompanyPage() {
           </select>
         </div>
 
-        <div className="flex gap-4 pt-4">
+        {/* <div className="flex gap-4 pt-4">
           <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
           <Button variant="ghost" onClick={() => router.back()}>Cancel</Button>
-        </div>
+        </div> */}
+
+        <div className="flex gap-2 pt-4"> {/* Adjusted gap from 4 to 2 to match previous button group spacing */}
+  <Button 
+    type="submit" 
+    disabled={saving}
+    className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
+  >
+    {saving ? "Saving..." : "Save Changes"}
+  </Button>
+  
+  <Button 
+    type="button" // Always good practice to explicitly define type="button" to prevent accidental submits
+    variant="outline" // Swapped from "ghost" to "outline" to perfectly match the "Cancel" action look from your other screens
+    onClick={() => router.back()}
+    className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
+  >
+    Cancel
+  </Button>
+</div>
       </form>
     </div>
   );

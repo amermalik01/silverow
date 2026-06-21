@@ -13,6 +13,7 @@ import EmployeeGeneralTab from "./tabs/EmployeeGeneralTab";
 import EmployeeContactsTab from "./tabs/EmployeeContactsTab";
 import EmployeeAddressesTab from "./tabs/EmployeeAddressesTab";
 import EmployeeAccessTab from "./tabs/EmployeeAccessTab";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   id: string;
@@ -147,8 +148,7 @@ export default function EmployeeRecord({ id }: Props) {
       )}
 
       {/* Header Profile Summary */}
-      
-    
+
       <div className="border-b border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex items-center justify-between">
         <div>
           <span className="text-xs uppercase tracking-wider font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
@@ -161,7 +161,20 @@ export default function EmployeeRecord({ id }: Props) {
             ID Reference: {employee.id}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-2">
+          {" "}
+          {/* Adjusted gap to 2 for workspace uniformity */}
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm min-w-[140px] justify-center"
+          >
+            {saving ? "Synchronizing..." : "Save Changes"}
+          </Button>
+        </div>
+        {/* <div className="flex items-center gap-3">
           <button
             onClick={handleSave}
             disabled={saving}
@@ -169,7 +182,7 @@ export default function EmployeeRecord({ id }: Props) {
           >
             {saving ? "Synchronizing..." : "Save Changes"}
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* ERP Navigation Submenu */}

@@ -181,16 +181,16 @@ const CompanySidebarLayout = () => {
    */
   /* if (!slug) {
     return (
-      <div className="w-[270px] h-screen flex items-center justify-center text-sm text-gray-500">
+      <div className="w-[270px] h-screen flex items-center justify-center text-sm text-gray-500">bg-emerald-950 p-4 text-white
         Loading...
       </div>
     );
   } */
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-[270px] border-r bg-white dark:bg-gray-900">
+    <div className="fixed left-0 top-0 h-screen w-[270px] border-r bg-gray-900">{/* bg-emerald-950 text-white dark: */}
       {/* Logo */}
-      <div className="px-6 py-4 border-b">
+      <div className="px-6 py-4 border-b bg-gray-900">
         <FullLogo />
       </div>
 

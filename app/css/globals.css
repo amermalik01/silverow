@@ -1,3 +1,279 @@
+/* app/css/globals.css */
+
+@import 'tailwindcss';
+@import './app.css';
+@import './layouts/container.css' layer(utilities);
+@import './layouts/sidebar.css' layer(utilities);
+@import './layouts/header.css' layer(utilities);
+@import './override/reboot.css' layer(utilities);
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+html,
+main {
+  scroll-behavior: smooth;
+}
+
+@theme {
+  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-md: 0 1px 4px rgba(133, 146, 173, 0.2);
+  --shadow-btn-shadow: 0 9px 17.5px rgba(0, 0, 0, 0.05);
+
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 7px;
+  --radius-tw: 12px;
+
+  --leading-21: 21px;
+  --gap-30: 30px;
+
+  --padding-15: 15px;
+  --padding-30: 30px;
+
+  --margin-30: 30px;  
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* custom colors mapping to primary colors instead of cyan */
+  --color-green-500: var(--primary);
+  --color-green-600: var(--primary);
+  --color-green-700: var(--primary);
+  
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-dark: var(--dark);
+  --color-bodytext: var(--bodytext);
+  --color-lightprimary: var(--lightprimary);
+  --color-lightsecondary: var(--lightsecondary);
+  --color-lightsuccess: var(--lightsuccess);
+  --color-lighterror: var(--lighterror);
+  --color-lightinfo: var(--lightinfo);
+  --color-lightwarning: var(--lightwarning);
+  --color-primaryemphasis: var(--primary-emphasis);
+  --color-secondaryemphasis: var(--secondary-emphasis);
+  --color-warningemphasis: var(--warning-emphasis);
+  --color-erroremphasis: var(--error-emphasis);
+  --color-successemphasis: var(--success-emphasis);
+  --color-infoemphasis: var(--info-emphasis);
+}
+
+:root {
+  --radius: 10px;
+  
+  /* GREEN SYSTEM: Layout Components */
+  --background: #f0fdf4;                 /* Light Green Tint Main Body (green-50) */
+  --foreground: #14532d;                 /* Dark Green Forest for main text */
+  --card: #ffffff;
+  --card-foreground: #1c2536;
+  --popover: #ffffff;
+  --popover-foreground: #1c2536;
+
+  /* Primary Accent: Emerald/Green */
+  --primary: #16a34a;                    /* Elegant Emerald Green (green-600) */
+  --primary-foreground: var(--white);
+  --secondary: #10b981;                  /* Muted accent mint green (emerald-500) */
+  --secondary-foreground: var(--white);
+  
+  --muted: #f4f5f7;
+  --muted-foreground: #5a6a85bf;
+  --accent: var(--lightprimary);
+  --accent-foreground: var(--primary);
+  --destructive: var(--error);
+  --destructive-foreground: var(--white);
+  --border: #e2e8f0;
+  --input: #e5e7eb;
+  --ring: var(--lightprimary);
+  
+  --chart-1: var(--primary);
+  --chart-2: var(--secondary);
+  --chart-3: var(--success);
+  --chart-4: var(--warning);
+  --chart-5: var(--error);
+  
+  /* Green Layout Theme (Sidebar & Topbar Header Dark Green) */
+  --sidebar: #14532d;                    /* Solid Dark Green Sidebar */
+  --sidebar-foreground: #f0fdf4;         /* Off-white light green text */
+  --sidebar-primary: #22c55e;
+  --sidebar-primary-foreground: var(--white);
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent-foreground: var(--white);
+  --sidebar-border: #166534;
+  --sidebar-ring: #22c55e;
+
+  /* CUSTOM COLOR PALETTES */
+  --info: #3b82f6;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --white: #ffffff;
+  --dark: #0f172a;
+  --bodytext: #475569;
+
+  /* Light Variants */
+  --lightprimary: color-mix(in oklab, var(--primary) 12%, transparent);
+  --lightsecondary: color-mix(in oklab, var(--secondary) 12%, transparent);
+  --lightsuccess: color-mix(in oklab, var(--success) 12%, transparent);
+  --lightwarning: color-mix(in oklab, var(--warning) 12%, transparent);
+  --lighterror: color-mix(in oklab, var(--error) 12%, transparent);
+  --lightinfo: color-mix(in oklab, var(--info) 12%, transparent);
+
+  /* Emphasis Variants */
+  --primary-emphasis: color-mix(in oklab, var(--primary) 85%, black);
+  --secondary-emphasis: color-mix(in oklab, var(--secondary) 85%, black);
+  --success-emphasis: color-mix(in oklab, var(--success) 85%, black);
+  --warning-emphasis: color-mix(in oklab, var(--warning) 85%, black);
+  --error-emphasis: color-mix(in oklab, var(--error) 85%, black);
+  --info-emphasis: color-mix(in oklab, var(--info) 85%, black);  
+}
+
+.dark {
+  /* DARK MODE: Traditional readable slate/gray tones for high contrast ERP view data */
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+  
+  --primary: #22c55e;                    /* Brighter glowing green for dark screens */
+  --primary-foreground: #ffffff;
+  --secondary: #10b981;
+  --secondary-foreground: #ffffff;
+  
+  --muted: #334155;
+  --muted-foreground: #94a3b8;
+  --border: #334155;
+  --input: var(--border);
+  --ring: var(--lightprimary);
+  
+  /* Dark Mode Layout Configurations */
+  --sidebar: #0f172a;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-border: #1e293b;
+
+  /* Light Variants Mix adjustments for Dark Base */
+  --lightprimary: color-mix(in oklab, var(--primary) 22%, transparent);
+  --lightsecondary: color-mix(in oklab, var(--secondary) 22%, transparent);
+  --lightsuccess: color-mix(in oklab, var(--success) 22%, transparent);
+  --lightwarning: color-mix(in oklab, var(--warning) 22%, transparent);
+  --lighterror: color-mix(in oklab, var(--error) 22%, transparent);
+  --lightinfo: color-mix(in oklab, var(--info) 22%, transparent);
+
+  /* Emphasis Variants */
+  --primary-emphasis: color-mix(in oklab, var(--primary) 80%, white);
+  --secondary-emphasis: color-mix(in oklab, var(--secondary) 80%, white);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border, currentcolor);
+  }
+}
+
+/* --- Added Type Date Utilities --- */
+@utility form-control-date {
+  @apply border rounded-md border-border bg-transparent ring-transparent dark:ring-transparent dark:bg-transparent w-full text-sm p-2 text-foreground;
+  
+  &::-webkit-calendar-picker-indicator {
+    @apply cursor-pointer opacity-70 transition-opacity hover:opacity-100 dark:invert;
+  }
+
+  &:focus {
+    @apply border-primary dark:border-primary outline-none ring-0 ring-offset-0;
+  }
+}
+
+@utility form-control {
+  & input {
+    @apply border rounded-md border-border bg-transparent ring-transparent dark:ring-transparent dark:bg-transparent w-full text-sm;
+  }
+  & input:focus {
+    @apply border-primary dark:border-primary outline-hidden shadow-none ring-offset-0 ring-transparent;
+  }
+}
+
+@utility form-control-textarea {
+  @apply rounded-md border border-border bg-transparent dark:bg-transparent w-full text-sm p-4;
+  &:focus {
+    @apply border-primary dark:border-primary outline-hidden shadow-none ring-offset-0 ring-transparent;
+  }
+}
+
+@utility card-title { @apply text-lg font-semibold text-foreground; }
+@utility border-ld { @apply border-border; }
+@utility bg-hover { @apply hover:bg-lightprimary; }
+
+@layer utilities {
+  .left-part { @apply p-6 border-e border-border; }
+}
+
+@layer components {
+  body { @apply text-sm overflow-x-hidden; }
+  h1, h2, h3, h4, h5, h6 { @apply text-foreground font-semibold; }
+  input::placeholder { @apply text-muted-foreground; }
+  button { @apply !cursor-pointer; }
+  #fileUpload input { @apply flex items-center gap-4 p-3; }
+  .sales-overview select{ @apply pr-9!; }
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator { display: none; -webkit-appearance: none; }
+input[type="time"] { -moz-appearance: textfield; }
+[data-testid="flowbite-drawer"] { will-change: transform; -webkit-transform: translate3d(0, 0, 0); }
+
+/* 
 @import 'tailwindcss';
 @import './app.css';
 @import './layouts/container.css' layer(utilities);
@@ -72,7 +348,7 @@ main {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* custom colors */
+  // custom colors
   --color-cyan-500: var(--primary);
   --color-cyan-600: var(--primary);
   --color-cyan-700: var(--primary);
@@ -132,7 +408,7 @@ main {
   --sidebar-border: var(--border);
   --sidebar-ring: #a1a1a1;
 
-  /* CUSTOM COLORS */
+  // CUSTOM COLORS
   --info: #8754ec;
   --success: #13deb9;
   --warning: #f6b51e;
@@ -141,7 +417,7 @@ main {
   --dark: #1c2536;
   --bodytext: #5a6a85bf;
 
-  /* Light Variants */
+  // Light Variants
   --lightprimary: color-mix(in oklab, var(--primary) 12%, transparent);
   --lightsecondary: color-mix(in oklab, var(--secondary) 12%, transparent);
   --lightsuccess: color-mix(in oklab, var(--success) 12%, transparent);
@@ -149,7 +425,7 @@ main {
   --lighterror: color-mix(in oklab, var(--error) 12%, transparent);
   --lightinfo: color-mix(in oklab, var(--info) 12%, transparent);
 
-  /* Emphasis Variants */
+  // Emphasis Variants
   --primary-emphasis: color-mix(in oklab, var(--primary) 80%, black);
   --secondary-emphasis: color-mix(in oklab, var(--secondary) 80%, black);
   --success-emphasis: color-mix(in oklab, var(--success) 80%, black);
@@ -191,7 +467,7 @@ main {
   --sidebar-border: var(--sidebar-border);
   --sidebar-ring: var(--sidebar-ring);
 
-  /* CUSTOM COLORS */
+  // CUSTOM COLORS
   --info: #8754ec;
   --success: #13deb9;
   --warning: #f6b51e;
@@ -200,7 +476,7 @@ main {
   --dark: #1c2536;
   --bodytext: #5a6a85bf;
 
-  /* Light Variants */
+  // Light Variants
   --lightprimary: color-mix(in oklab, var(--primary) 20%, transparent);
   --lightsecondary: color-mix(in oklab, var(--secondary) 20%, transparent);
   --lightsuccess: color-mix(in oklab, var(--success) 20%, transparent);
@@ -208,7 +484,7 @@ main {
   --lighterror: color-mix(in oklab, var(--error) 20%, transparent);
   --lightinfo: color-mix(in oklab, var(--info) 20%, transparent);
 
-  /* Emphasis Variants */
+  // Emphasis Variants
   --primary-emphasis: color-mix(in oklab, var(--primary) 80%, black);
   --secondary-emphasis: color-mix(in oklab, var(--secondary) 80%, black);
   --success-emphasis: color-mix(in oklab, var(--success) 80%, black);
@@ -282,7 +558,7 @@ main {
   }
 
 
-  /*heading text color*/
+  // heading text color
   h1,
   h2,
   h3,
@@ -315,7 +591,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   -webkit-appearance: none;
 }
 
-/* Hide in Firefox */
+// Hide in Firefox
 input[type="time"] {
   -moz-appearance: textfield;
 }
@@ -324,3 +600,4 @@ input[type="time"] {
   will-change: transform;
   -webkit-transform: translate3d(0, 0, 0);
 }
+ */

@@ -3,6 +3,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
 
 import GeneralTab, { type CompanyCurrency } from "./tabs/GeneralTab";
 
@@ -24,7 +27,6 @@ import type {
   PartyContactDraft,
   PartyAddressDraft,
 } from "@/types/erp";
-
 type Props = {
   id: string;
   module: PartyModule | "customer" | "supplier";
@@ -32,6 +34,8 @@ type Props = {
 };
 
 export default function PartyRecord({ id, module, isReadonly = false }: Props) {
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState("general");
   const [account, setAccount] = useState<Partial<Party>>({ id: "" });
   const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
@@ -48,11 +52,12 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
         // Fetch core ledger parameters & currencies list concurrently
         const [partyRes, currencyRes] = await Promise.all([
           fetch(`/api/parties/${id}`),
-          fetch("/api/parties/currencies")
+          fetch("/api/parties/currencies"),
         ]);
 
-        if (!partyRes.ok) throw new Error("Entity target footprint retrieval failed.");
-        
+        if (!partyRes.ok)
+          throw new Error("Entity target footprint retrieval failed.");
+
         const data = await partyRes.json();
         setAccount(data.account ?? {});
         setContacts(data.contacts || []);
@@ -70,7 +75,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
     };
     loadData();
   }, [id]);
-  
+
   const validateForm = (): boolean => {
     setFormErrors({});
     const structuredErrors: Record<string, string> = {};
@@ -175,8 +180,6 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
 
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
-
-
       {Object.keys(formErrors).length > 0 && (
         <div className="p-4 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
           <p className="font-semibold mb-1">
@@ -198,7 +201,6 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
         </div>
       )}
 
-      
       {/* Tab Navigation Menu */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
         {tabs.map((tab) => {
@@ -261,7 +263,41 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
       </div>
 
       {/* Persistent Bottom Action Drawer */}
+
       {!isReadonly && (
+        <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
+          {/* Cancel Button */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()} // Or your custom close/cancel action handler
+            className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
+          >
+            Cancel
+          </Button>
+
+          {/* Save/Commit Changes Button */}
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm flex items-center gap-2 min-w-[140px] justify-center"
+          >
+            {saving ? (
+              <>
+                <Icon
+                  icon="svg-spinners:180-ring-with-bg"
+                  className="w-4 h-4"
+                />
+                <span>Committing...</span>
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
+        </div>
+      )}
+      {/* {!isReadonly && (
         <div className="flex justify-end pt-5 border-t border-slate-100 dark:border-slate-800">
           <button
             onClick={handleSave}
@@ -274,7 +310,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
             {saving ? "Commiting changes..." : "Save Changes"}
           </button>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

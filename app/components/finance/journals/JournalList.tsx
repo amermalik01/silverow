@@ -4,6 +4,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export interface JournalListItem {
   id: string;
@@ -89,12 +90,21 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
             Manage, balance and verify double entry book adjustments.
           </p>
         </div>
-        <Link
+        {/* <Link
           href={createPath}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium rounded transition"
         >
           + New Entry
-        </Link>
+        </Link> */}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/50 border-emerald-200"
+        >
+          <Link href={createPath}>+ New Entry</Link>
+        </Button>
       </div>
 
       {/* FILTER TABS */}

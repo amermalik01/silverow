@@ -186,7 +186,7 @@ export default function ChartOfAccountsList() {
                 return (
                   <tr
                     key={acc.id}
-                    className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors duration-100 ${rowStyles}`}
+                    className={`hover:bg-slate-200/50 dark:hover:bg-slate-800/30 transition-colors duration-100 ${rowStyles}`}
                   >
                     {/* Code Reference */}
                     <td className="p-3 pl-4 font-mono font-medium tracking-wide text-slate-900 dark:text-slate-200">

@@ -5,6 +5,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { DatePicker } from "@/components/ui/date-picker";
+import { Button } from "@/components/ui/button";
+
 // Lookup Modal Imports
 import GLAccountLookupModal, {
   GLAccountLookupRecord,
@@ -55,7 +58,6 @@ type JournalLineRow = {
   balancing_display_name?: string;
 };
 
-
 interface ApiJournalLine {
   posting_date: string;
   document_type: string;
@@ -72,7 +74,7 @@ interface ApiJournalLine {
   description?: string | null;
   balancing_account_id?: string | null;
   reference_id?: string | null;
-  reference_type?: string | null; 
+  reference_type?: string | null;
   account_code?: string;
   account_name?: string;
   customer_code?: string;
@@ -115,7 +117,6 @@ export default function JournalForm({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isGeneral = journalType === "general";
-
 
   const [activeModal, setActiveModal] = useState<{
     index: number;
@@ -230,7 +231,9 @@ export default function JournalForm({
 
                 return {
                   posting_date: finalLineDate,
-                  document_type: l.document_type || (isGeneral ? "General Journal" : "Payment"),
+                  document_type:
+                    l.document_type ||
+                    (isGeneral ? "General Journal" : "Payment"),
                   transaction_type: txType,
                   account_id: l.account_id || "",
                   party_id: l.party_id || "",
@@ -245,7 +248,7 @@ export default function JournalForm({
                   balancing_display_name: l.balancing_account_name
                     ? `${l.balancing_account_code || ""} - ${l.balancing_account_name}`
                     : "",
-                }; 
+                };
               }),
             );
           }
@@ -291,7 +294,7 @@ export default function JournalForm({
           : 1.0;
       }
     }
-    
+
     updated[index] = { ...updated[index], [field]: value } as JournalLineRow;
     setLines(updated);
   };
@@ -307,7 +310,6 @@ export default function JournalForm({
     const updated = [...lines];
 
     if (type === "main_account") {
-
       if (updated[index].transaction_type === "gl_no") {
         updated[index].account_id = selectedRecord.id;
         updated[index].party_id = "";
@@ -318,9 +320,7 @@ export default function JournalForm({
 
       updated[index].display_code = selectedRecord.code || "";
       updated[index].display_name = selectedRecord.name;
-
     } else if (type === "balancing_account") {
-
       updated[index].balancing_account_id = selectedRecord.id;
       updated[index].balancing_display_name = selectedRecord.code
         ? `${selectedRecord.code} - ${selectedRecord.name}`
@@ -346,7 +346,9 @@ export default function JournalForm({
     setErrorMsg(null);
 
     if (!metadata.entry_date) {
-      setErrorMsg("Journal entry header requires a valid Entry Date definition.");
+      setErrorMsg(
+        "Journal entry header requires a valid Entry Date definition.",
+      );
       return;
     }
 
@@ -368,11 +370,15 @@ export default function JournalForm({
       }
 
       if (Number(line.debit || 0) === 0 && Number(line.credit || 0) === 0) {
-        setErrorMsg(`Line ${i + 1}: Entry legs require an amount value greater than 0 (Debit or Credit)`);
+        setErrorMsg(
+          `Line ${i + 1}: Entry legs require an amount value greater than 0 (Debit or Credit)`,
+        );
         return;
       }
       if (Number(line.exchange_rate || 0) <= 0) {
-        setErrorMsg(`Line ${i + 1}: Exchange conversion rate cannot be zero or a negative expression`);
+        setErrorMsg(
+          `Line ${i + 1}: Exchange conversion rate cannot be zero or a negative expression`,
+        );
         return;
       }
 
@@ -404,7 +410,8 @@ export default function JournalForm({
           document_type: line.document_type,
           account_id: line.account_id || null,
           party_id: line.party_id || null,
-          party_type: line.transaction_type === "gl_no" ? null : line.transaction_type,
+          party_type:
+            line.transaction_type === "gl_no" ? null : line.transaction_type,
           currency_id: line.currency_id || null,
           exchange_rate: rate,
           debit: line.debit,
@@ -415,15 +422,15 @@ export default function JournalForm({
           reference_type: line.balancing_account_id ? "G/L Account" : null,
         };
       });
-      
+
       // const payload = { ...metadata, sanitizedLines, is_posted: postToLedger };
 
-      const payload = { 
+      const payload = {
         entry_date: metadata.entry_date,
         reference: metadata.reference,
         description: metadata.description,
-        lines: sanitizedLines, 
-        is_posted: postToLedger 
+        lines: sanitizedLines,
+        is_posted: postToLedger,
       };
 
       const method = journalId ? "PUT" : "POST";
@@ -482,21 +489,24 @@ export default function JournalForm({
           />
         </div> */}
         <div className="flex items-center gap-2">
-          <span className="font-medium text-zinc-600 shrink-0">Header Desc.</span>
+          <span className="font-medium text-zinc-600 shrink-0">
+            Header Desc.
+          </span>
           <input
             type="text"
             disabled={isPosted}
             placeholder="Global transaction remarks..."
             className="border p-1 px-2 rounded w-full text-zinc-700 outline-none bg-white"
             value={metadata.description}
-            onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
+            onChange={(e) =>
+              setMetadata({ ...metadata, description: e.target.value })
+            }
           />
         </div>
-
       </div>
 
       {/* MATRIX LAYOUT */}
-      <div className="overflow-x-auto bg-white rounded border border-zinc-200 shadow-sm">
+      <div className="overflow-x-auto bg-white text-zinc-600 rounded border border-zinc-200 shadow-sm">
         <table className="w-full border-collapse text-left min-w-[1250px]">
           <thead>
             <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-600 font-semibold select-none">
@@ -515,7 +525,7 @@ export default function JournalForm({
               <th className="p-2 w-8 text-center"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 font-medium">
+          <tbody className="divide-y divide-zinc-100 font-medium text-zinc-600">
             {lines.map((line, index) => {
               const localAmount = line.debit > 0 ? line.debit : line.credit;
               const convertedValue = localAmount * line.exchange_rate;
@@ -523,9 +533,9 @@ export default function JournalForm({
               return (
                 <tr
                   key={index}
-                  className="hover:bg-zinc-50/50 transition-colors"
+                  className="hover:bg-zinc-200/50 transition-colors"
                 >
-                  <td className="p-1.5">
+                  {/* <td className="p-1.5">
                     <input
                       type="date"
                       disabled={isPosted}
@@ -533,7 +543,35 @@ export default function JournalForm({
                       onChange={(e) =>
                         handleLineChange(index, "posting_date", e.target.value)
                       }
-                      className="w-full border p-1 rounded text-zinc-700 bg-white"
+                      className="form-control-date"
+                    />
+                  </td> */}
+                  <td className="p-1.5 min-w-[130px]">
+                    <DatePicker
+                      id={`posting-date-${index}`}
+                      disabled={isPosted}
+                      // Convert string "YYYY-MM-DD" securely to a standard JS Date object instance
+                      value={
+                        line.posting_date
+                          ? new Date(line.posting_date)
+                          : undefined
+                      }
+                      onChange={(selectedDate) => {
+                        if (!selectedDate) return;
+
+                        // Extract local date parameters to prevent UTC midnight shifts
+                        const year = selectedDate.getFullYear();
+                        const month = String(
+                          selectedDate.getMonth() + 1,
+                        ).padStart(2, "0");
+                        const day = String(selectedDate.getDate()).padStart(
+                          2,
+                          "0",
+                        );
+                        const localIsoString = `${year}-${month}-${day}`;
+
+                        handleLineChange(index, "posting_date", localIsoString);
+                      }}
                     />
                   </td>
 
@@ -709,7 +747,6 @@ export default function JournalForm({
                     {convertedValue > 0 ? convertedValue.toFixed(2) : "0.00"}
                   </td>
 
-
                   <td className="p-1.5">
                     <div className="flex gap-1">
                       <input
@@ -771,21 +808,40 @@ export default function JournalForm({
 
       {/* FOOTER BAR */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 bg-white rounded border border-zinc-200">
-        <button
+        {/* <button
           type="button"
           onClick={addLineRow}
-          className="flex items-center gap-1.5 px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-semibold transition shadow-sm"
+          className="secondary"
+          // className="flex items-center gap-1.5 px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-semibold transition shadow-sm"
         >
           <span className="text-base font-bold leading-none">+</span> Add Row
           Line
-        </button>
+        </button> */}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isPosted}
+          onClick={addLineRow}
+          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/50 border-emerald-200"
+        >
+          <span className="text-sm font-bold">+</span>
+          Add Row Line
+        </Button>
 
         <div className="flex items-center gap-6 font-mono text-zinc-600 bg-zinc-50 border p-2 px-4 rounded font-bold">
           <div>
-            Total Converted Debit: <span className="text-zinc-800">{totalDebitConverted.toFixed(2)}</span>
+            Total Converted Debit:{" "}
+            <span className="text-zinc-800">
+              {totalDebitConverted.toFixed(2)}
+            </span>
           </div>
           <div>
-            Total Converted Credit: <span className="text-zinc-800">{totalCreditConverted.toFixed(2)}</span>
+            Total Converted Credit:{" "}
+            <span className="text-zinc-800">
+              {totalCreditConverted.toFixed(2)}
+            </span>
           </div>
           <div className="border-l pl-6">
             Difference:{" "}
@@ -805,7 +861,7 @@ export default function JournalForm({
         </div> */}
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
+      {/* <div className="flex justify-end gap-2 pt-2">
         {!isPosted && (
           <>
             <button
@@ -818,7 +874,10 @@ export default function JournalForm({
             </button>
             <button
               type="button"
-              disabled={loading || (!isBalanced && lines.every(l => !l.balancing_account_id))}
+              disabled={
+                loading ||
+                (!isBalanced && lines.every((l) => !l.balancing_account_id))
+              }
               onClick={() => handlePersistAction(true)}
               className="px-5 py-1.5 bg-green-700 hover:bg-green-800 text-white font-semibold rounded shadow-sm disabled:opacity-40 transition"
             >
@@ -833,6 +892,46 @@ export default function JournalForm({
         >
           {isPosted ? "Back" : "Cancel"}
         </button>
+      </div> */}
+
+      <div className="flex justify-end gap-2 pt-2">
+        {!isPosted && (
+          <>
+            {/* Save Draft Button */}
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={loading}
+              onClick={() => handlePersistAction(false)}
+              className="px-5 font-semibold shadow-sm"
+            >
+              Save Draft
+            </Button>
+
+            {/* Post Journal Button */}
+            <Button
+              type="button"
+              disabled={
+                loading ||
+                (!isBalanced && lines.every((l) => !l.balancing_account_id))
+              }
+              onClick={() => handlePersistAction(true)}
+              className="px-5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm disabled:opacity-40"
+            >
+              {loading ? "Posting..." : "Post Journal"}
+            </Button>
+          </>
+        )}
+
+        {/* Cancel / Back Button */}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push(redirectPath)}
+          className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
+        >
+          {isPosted ? "Back" : "Cancel"}
+        </Button>
       </div>
 
       {/* LOOKUP MODALS RENDER OVERLAYS */}

@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 /* ---------------- CONSTANT LEGACY MAPPINGS ---------------- */
 /* const LEGACY_STRUCTURE = {
@@ -29,7 +30,6 @@ type AccountTypeKeys = keyof typeof LEGACY_STRUCTURE; */
 
 /* ---------------- EXPLICIT TYPING INTERFACES ---------------- */
 
-
 interface DropdownItem {
   id: string;
   name: string;
@@ -42,7 +42,6 @@ interface PreDataResponse {
   subCategories: DropdownItem[];
   Headings: DropdownItem[];
 }
-
 
 interface LookupAccount {
   id: string;
@@ -85,7 +84,7 @@ export default function AccountForm({ slug, id }: Props) {
   const [form, setForm] = useState({
     code: "",
     name: "",
-    account_type: "ASSET",//  as AccountTypeKeys
+    account_type: "ASSET", //  as AccountTypeKeys
     gl_account_type: "Posting",
     category_id: "",
     sub_category_id: "",
@@ -130,20 +129,26 @@ export default function AccountForm({ slug, id }: Props) {
           let inferredHeadingId = "";
 
           if (current.parent_id) {
-            const directParent = accData.find((a) => a.id === current.parent_id);
+            const directParent = accData.find(
+              (a) => a.id === current.parent_id,
+            );
             if (directParent) {
               if (directParent.gl_account_type === "Heading") {
                 inferredHeadingId = directParent.id;
                 if (directParent.parent_id) {
-                  const subParent = accData.find((a) => a.id === directParent.parent_id);
+                  const subParent = accData.find(
+                    (a) => a.id === directParent.parent_id,
+                  );
                   if (subParent) {
                     inferredSubCategoryId = subParent.id;
-                    if (subParent.parent_id) inferredCategoryId = subParent.parent_id;
+                    if (subParent.parent_id)
+                      inferredCategoryId = subParent.parent_id;
                   }
                 }
               } else if (directParent.gl_account_type === "Sub-Category") {
                 inferredSubCategoryId = directParent.id;
-                if (directParent.parent_id) inferredCategoryId = directParent.parent_id;
+                if (directParent.parent_id)
+                  inferredCategoryId = directParent.parent_id;
               } else if (directParent.gl_account_type === "Category") {
                 inferredCategoryId = directParent.id;
               }
@@ -335,14 +340,18 @@ export default function AccountForm({ slug, id }: Props) {
     }
   };
 
-  if (loading) return <p className="p-6 text-sm text-gray-500 font-sans">Syncing layout components...</p>;
+  if (loading)
+    return (
+      <p className="p-6 text-sm text-gray-500 font-sans">
+        Syncing layout components...
+      </p>
+    );
 
   // Filter static hardcoded subcategories matched to the selected top-level classification
   // const availableSubCategories = LEGACY_STRUCTURE[form.account_type] || [];
 
   return (
     <div className="bg-white border rounded-xl shadow-md max-w-4xl mx-auto overflow-hidden font-sans text-xs text-gray-700">
-
       <div className="bg-gray-50 border-b p-3 font-semibold text-sm text-gray-800 tracking-wide text-center">
         G/L No. Configuration Terminal
       </div>
@@ -352,8 +361,10 @@ export default function AccountForm({ slug, id }: Props) {
           : "G/L Ledger Entry: Provision Terminal"}
       </div> */}
 
-
-      <form onSubmit={handleSubmit} className="p-6 grid grid-cols-2 gap-x-8 gap-y-4 bg-white">
+      <form
+        onSubmit={handleSubmit}
+        className="p-6 grid grid-cols-2 gap-x-8 gap-y-4 bg-white"
+      >
         {/* Left Column Controls */}
         <div className="space-y-4">
           {/* <div>
@@ -417,7 +428,9 @@ export default function AccountForm({ slug, id }: Props) {
           </div>
 
           <div>
-            <label className="block font-medium text-gray-600 mb-1">Heading</label>
+            <label className="block font-medium text-gray-600 mb-1">
+              Heading
+            </label>
             <select
               name="heading_id"
               value={form.heading_id}
@@ -589,7 +602,32 @@ export default function AccountForm({ slug, id }: Props) {
         </div>
 
         {/* Form Submission Actions Panel */}
-        <div className="col-span-2 border-t pt-4 flex justify-end gap-3">
+        <div className="col-span-2 border-t border-border pt-4 flex justify-end gap-2">
+          {" "}
+          {/* Adjusted gap to 2 for uniform layout alignment */}
+          {/* Cancel Navigation Button */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
+            className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
+          >
+            Cancel
+          </Button>
+          {/* Form Action Submission Button */}
+          <Button
+            type="submit"
+            disabled={loading}
+            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm min-w-[150px] justify-center"
+          >
+            {loading
+              ? "Processing..."
+              : isEditMode
+                ? "Save Changes"
+                : "Create G/L Account"}
+          </Button>
+        </div>
+        {/* <div className="col-span-2 border-t pt-4 flex justify-end gap-3">
           <button
             type="button"
             onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
@@ -608,14 +646,14 @@ export default function AccountForm({ slug, id }: Props) {
                 ? "Save Changes"
                 : "Create G/L Account"}
           </button>
-        </div>
+        </div> */}
       </form>
     </div>
   );
 }
 
-
-          {/* 
+{
+  /* 
 
           <div>
             <label className="block font-medium text-gray-600 mb-1">
@@ -637,9 +675,11 @@ export default function AccountForm({ slug, id }: Props) {
                   </option>
                 ))}
             </select>
-          </div> */}
+          </div> */
+}
 
-          {/* <div>
+{
+  /* <div>
             <label className="block font-medium text-gray-600 mb-1">
               Custom Display Mapping Override (Alias)
             </label>
@@ -650,4 +690,5 @@ export default function AccountForm({ slug, id }: Props) {
               onChange={handleChange}
               className="w-full border p-2 rounded outline-none"
             />
-          </div> */}
+          </div> */
+}

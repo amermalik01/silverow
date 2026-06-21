@@ -13,6 +13,7 @@ import EmployeeGeneralTab from "./tabs/EmployeeGeneralTab";
 import EmployeeAccessTab from "./tabs/EmployeeAccessTab";
 import EmployeeContactsTab from "./tabs/EmployeeContactsTab";
 import EmployeeAddressesTab from "./tabs/EmployeeAddressesTab";
+import { Button } from "@/components/ui/button";
 
 export default function EmployeeForm() {
   const [activeTab, setActiveTab] = useState("general");
@@ -118,7 +119,17 @@ export default function EmployeeForm() {
       )}
 
       {/* SAVE */}
-      <div className="flex justify-end border-t pt-4">
+      <div className="flex justify-end border-t border-border pt-4">
+        <Button
+          type="button" // Change to type="submit" if nested inside a native HTML <form> element
+          onClick={save}
+          disabled={loading}
+          className="px-6 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm min-w-[140px] justify-center"
+        >
+          {loading ? "Saving..." : "Save Employee"}
+        </Button>
+      </div>
+      {/* <div className="flex justify-end border-t pt-4">
         <button
           onClick={save}
           disabled={loading}
@@ -126,7 +137,7 @@ export default function EmployeeForm() {
         >
           {loading ? "Saving..." : "Save Employee"}
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }

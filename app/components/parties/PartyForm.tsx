@@ -51,7 +51,6 @@ export default function PartyForm({
   const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
   const [addresses, setAddresses] = useState<PartyAddressDraft[]>([]);
 
-  // Asynchronously query global currency settings directly inside mounting life-cycle
   useEffect(() => {
     async function fetchCurrencies() {
       try {
@@ -71,7 +70,6 @@ export default function PartyForm({
     setFormErrors({});
     const structuredErrors: Record<string, string> = {};
 
-    // 1. Evaluate general corporate base parameters
     const baseCheck = PartySchema.safeParse(account);
 
     console.log("baseCheck ==== ", baseCheck);
@@ -87,7 +85,6 @@ export default function PartyForm({
       });
     }
 
-    // 2. Validate multi-contact matrix
     contacts.forEach((contact, idx) => {
       const contactCheck = PartyContactSchema.safeParse(contact);
       if (!contactCheck.success) {
@@ -100,7 +97,6 @@ export default function PartyForm({
       }
     });
 
-    // 3. Validate logical shipping and billing locations
     addresses.forEach((addr, idx) => {
       const addressCheck = PartyAddressSchema.safeParse(addr);
       if (!addressCheck.success) {
@@ -198,8 +194,7 @@ export default function PartyForm({
           </ul>
         </div>
       )}
-
-      {/* Tabs Layout */}
+      
       <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800">
         {(["general", "contacts", "addresses"] as const).map((tab) => {
           const matchingTabErrors = Object.keys(formErrors).some((k) =>
@@ -272,130 +267,3 @@ export default function PartyForm({
     </div>
   );
 }
-
-/* "use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-import type {
-  Party,
-  PartyType,
-  PartyContactDraft,
-  PartyAddressDraft,
-} from "@/types/erp";
-
-import GeneralTab from "./tabs/GeneralTab";
-import ContactsTab from "./tabs/ContactsTab";
-import AddressesTab from "./tabs/AddressesTab";
-import { PartySchema } from "@/lib/validations/party.schema";
-
-type Props = {
-  title: string;
-  type: PartyType;
-  redirectPath: string;
-};
-
-export default function PartyForm({ title, type, redirectPath }: Props) {
-  const router = useRouter();
-
-  const [activeTab, setActiveTab] = useState("general");
-
-  const [account, setAccount] = useState<Partial<Party>>({
-    type,
-    status: "active",
-    is_billing: true,
-    is_shipping: true,
-  });
-
-  const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
-  const [addresses, setAddresses] = useState<PartyAddressDraft[]>([]);
-
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async () => {
-    try {
-      setLoading(true);
-
-      const validation = PartySchema.safeParse(account);
-
-      if (!validation.success) {
-        alert("Please fill required fields");
-        return;
-      }
-
-      const res = await fetch("/api/parties", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          account: {
-            ...account,
-            type,
-          },
-          contacts,
-          addresses,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error);
-
-      alert(`${title} Created Successfully ✅`);
-
-      router.push(redirectPath);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-
-      <h1 className="text-xl font-semibold">{title}</h1>
-
-
-      <div className="flex gap-4 border-b pb-2">
-        {["general", "contacts", "addresses"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`capitalize px-3 py-1 ${
-              activeTab === tab ? "font-bold border-b-2 border-blue-600" : ""
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-
-      {activeTab === "general" && (
-        <GeneralTab account={account} setAccount={setAccount} />
-      )}
-
-      {activeTab === "contacts" && (
-        <ContactsTab contacts={contacts} setContacts={setContacts} />
-      )}
-
-      {activeTab === "addresses" && (
-        <AddressesTab addresses={addresses} setAddresses={setAddresses} />
-      )}
-
-
-      <div className="flex justify-end pt-4 border-t">
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded"
-        >
-          {loading ? "Saving..." : "Save"}
-        </button>
-      </div>
-    </div>
-  );
-} */

@@ -4,6 +4,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
 
 type Party = {
   id: string;
@@ -94,12 +96,23 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
             Manage directory records and system visibility configurations.
           </p>
         </div>
-        <Link
+
+        <Button
+  asChild
+  size="sm"
+  className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+>
+  <Link href={`${basePath}/new`}>
+    <Icon icon="solar:add-circle-linear" width={16} height={16} />
+    Create New Account
+  </Link>
+</Button>
+        {/* <Link
           href={`${basePath}/new`}
           className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm shadow transition-colors"
         >
           + Create New Account
-        </Link>
+        </Link> */}
       </div>
 
       {/* Filtering Toolbar */}
