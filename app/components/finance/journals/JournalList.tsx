@@ -5,6 +5,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
 
 export interface JournalListItem {
   id: string;
@@ -27,6 +28,9 @@ type Props = {
 type StatusFilter = "all" | "posted" | "unposted";
 
 export default function JournalList({ title, apiBase, createPath }: Props) {
+  const { data: session } = useSession();
+  const currencyCode = session?.user?.base_currency_code || "GBP";
+
   const [data, setData] = useState<JournalListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<StatusFilter>("unposted");
@@ -187,7 +191,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
                     )}
                   </td>
                   <td className="p-3 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
-                    $
+                    {currencyCode}&nbsp;
                     {Number(row.amount || 0).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
