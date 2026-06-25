@@ -1,12 +1,14 @@
 // types/purchase-order.ts
 
-export type PurchaseOrderStatus =
-  | "draft"
-  | "open"
-  | "partial_received"
-  | "received"
-  | "closed"
-  | "cancelled";
+export type PurchaseOrderStatus = string;
+
+// export type PurchaseOrderStatus =
+//   | "draft"
+//   | "open"
+//   | "partial_received"
+//   | "received"
+//   | "closed"
+//   | "cancelled";
 
 export interface PurchaseOrder {
   id?: string;
@@ -19,6 +21,7 @@ export interface PurchaseOrder {
   exchange_rate?: number;
   order_date: string;
   expected_date?: string;
+  invoice_date?: string;
   reference?: string;
   notes?: string;
   subtotal?: number;
@@ -39,8 +42,6 @@ export interface PurchaseOrderAddress {
   id?: string;
   purchase_order_id?: string;
   address_type: PurchaseOrderAddressType;
-  // contact_name?: string;
-  // company_name?: string;
   name?: string;
   phone?: string;
   email?: string;
