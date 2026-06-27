@@ -1,15 +1,6 @@
 // types/purchase-order.ts
 
 export type PurchaseOrderStatus = string;
-
-// export type PurchaseOrderStatus =
-//   | "draft"
-//   | "open"
-//   | "partial_received"
-//   | "received"
-//   | "closed"
-//   | "cancelled";
-
 export interface PurchaseOrder {
   id?: string;
   company_id?: string;
@@ -116,4 +107,19 @@ export interface PurchaseOrderLine {
 export interface PurchaseOrderLineUI extends PurchaseOrderLine {
   reserved_quantity?: number;
   available_stock?: number;
+
+  is_allocated?: boolean;
+  allocations?: Array<{
+    quantity: number;
+    [key: string]: unknown; // Avoids 'any' while remaining structurally open for StockAllocationRecord
+  }>;
 }
+
+
+// export type PurchaseOrderStatus =
+//   | "draft"
+//   | "open"
+//   | "partial_received"
+//   | "received"
+//   | "closed"
+//   | "cancelled";

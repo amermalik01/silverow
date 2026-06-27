@@ -297,6 +297,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       if (response.ok) {
         setOrder((prev) => ({ ...prev, status: standardizedStatus }));
         toast.success(`Stage updated successfully to: ${stageName}`);
+
+        // Context Alert: Triggering execution pipelines automatically via Server hook
+        if (standardizedStatus === "received") {
+          toast.info("Stock intake processing & item allocations executed successfully.");
+        }
+        
         router.refresh();
       } else {
         const errData = await response.json();
