@@ -23,12 +23,6 @@ export type SalesOrder = {
   tax_amount?: number;
   total_amount?: number;
   invoiced_amount?: number;
-
-  // link_to_po: "",
-  //   sq_no: "",
-  //   source_of_order: "Others",
-  //   currency_code: "GBP",
-
   email?: string;
   salesperson?: string;
   cust_order_no?: string;
