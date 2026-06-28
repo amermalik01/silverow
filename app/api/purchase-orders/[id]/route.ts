@@ -6,6 +6,7 @@ import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { PurchaseOrderService } from "@/lib/services/purchase-orders/purchase-order.service";
 import { InventoryAllocationEngineService } from "@/lib/services/inventory/inventory-allocation-engine.service";
 import { PurchaseReceiptService } from "@/lib/services/purchase-receipts/purchase-receipt.service";
+import { PurchaseReceiptPayload } from "@/types/purchase-receipt";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function PUT(req: NextRequest, { params }: RouteContext) {
+  const client = await pool.connect();
   try {
     const companyId = await getCompanyId();
     const { id } = await params;
@@ -68,57 +70,85 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const client = await pool.connect();
-
     const body = await req.json();
     const { order, lines } = body;
 
-    // 1. Core transactional write to the database using your service wrapper
+    await client.query("BEGIN");
+
+    // 1. Transactional update to the core PO document fields
     const data = await PurchaseOrderService.update(companyId, id, body);
 
-    // 2. Integration hook: If status has moved to a receipt stage, trigger downstream engines
-
+    // 2. Downstream Integration Engine hooks
     if (order?.status === "received") {
-      // 1. Process physical incoming stock ledger rows
-      await PurchaseReceiptService.create(id, lines);
+      // Build standard payload envelope required by the Receipt system
 
-      // 2. Loop through the received lines to run your strict transactional matching allocation engine
-      // Note: Ensure your db layer exposes or accepts your PoolClient transaction handle if managing locks
+      const receiptPayload: PurchaseReceiptPayload = {
+        receipt: {
+          purchase_order_id: id,
+          vendor_id: order.supplier_id, // Maps correctly here
+          receipt_date:
+            order.receipt_date || new Date().toISOString().split("T")[0],
+          posting_date:
+            order.posting_date || new Date().toISOString().split("T")[0],
+          reference_no: order.reference, // Maps your 'reference' field cleanly
+          notes: order.notes,
+        },
+        lines: lines, // lines mapping directly match PurchaseReceiptLine structure
+      };
+
+      // Create physical goods receipts and generate financial vectors using the shared transaction client
+      const postedReceipt = await PurchaseReceiptService.createTransactional(
+        client,
+        companyId,
+        receiptPayload,
+      );
+
+      // 3. Match inbound stock allocation components to waiting outbound documents (FIFO/FEFO)
+
       for (const line of lines) {
-        if (line.quantity > 0) {
+        if (Number(line.quantity) > 0) {
+          // 🌟 THIS IS WHERE IT CALLS UNDER THE HOOD 🌟
+          await PurchaseOrderService.updateReceivedQuantity(
+            client,
+            line.purchase_order_line_id,
+            Number(line.quantity),
+          );
+
+          // Allocation engine hooks
           await InventoryAllocationEngineService.allocate(
-            client, // Pass your database PoolClient context here for 'FOR UPDATE' row locks
+            client,
             companyId,
             line.item_id,
             line.warehouse_id,
-            line.quantity,
-            id, // outboundEntryId (or matching cross-reference context)
-            line.id, // outboundLineId
-            "FIFO", // Default matching method rule
+            Number(line.quantity),
+            id,
+            line.id,
+            "FIFO",
           );
         }
       }
+
+      // 4. Finally, update the top-level PO status ("partial_received" vs "received")
+      await PurchaseOrderService.recalculateStatus(client, id);
     }
 
-    return NextResponse.json({
-      success: true,
-      data,
-    });
+    await client.query("COMMIT");
+    return NextResponse.json({ success: true, data });
   } catch (err) {
-    console.error("Purchase order update error:", err);
-
+    await client.query("ROLLBACK");
+    console.error("Purchase order update transactional engine crash:", err);
     return NextResponse.json(
       {
         success: false,
         error:
           err instanceof Error
             ? err.message
-            : "Failed to update purchase order",
+            : "Failed to update purchase order pipeline",
       },
-      {
-        status: 500,
-      },
+      { status: 500 },
     );
+  } finally {
+    client.release();
   }
 }
 
@@ -134,11 +164,20 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
       );
     }
 
-    await PurchaseOrderService.delete(companyId, id);
+    const { searchParams } = new URL(req.url);
+    const purchaseReceiptLineId = searchParams.get("purchaseReceiptLineId");
 
-    return NextResponse.json({
-      success: true,
-    });
+    // Pattern: Safe Line Deletion & Modification Hook
+    if (purchaseReceiptLineId) {
+      const result = await PurchaseReceiptService.safeDeleteReceiptLine(
+        companyId,
+        purchaseReceiptLineId,
+      );
+      return NextResponse.json({ success: true, data: result });
+    }
+
+    await PurchaseOrderService.delete(companyId, id);
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Purchase order delete error:", err);
 

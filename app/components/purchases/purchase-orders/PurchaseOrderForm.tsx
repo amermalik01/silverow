@@ -244,6 +244,162 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   };
 
   const handleStageClick = async (stageName: string) => {
+    const standardizedStatus =
+      stageName.toLowerCase() as PurchaseOrder["status"];
+
+    if (
+      !id ||
+      isUpdatingStatus ||
+      order.status?.toLowerCase() === stageName.toLowerCase()
+    ) {
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      // 1. Check if the user is triggering a physical intake posting workflow
+      if (standardizedStatus === "received") {
+        const confirmPosting = confirm(
+          "Are you sure you want to change status to Received? This will generate a Purchase Receipt, commit stock lines to inventory, and write entries to the G/L ledger automatically.",
+        );
+        if (!confirmPosting) {
+          setIsUpdatingStatus(false);
+          return;
+        }
+
+        toast.loading("Generating purchase receipt draft context...", {
+          id: "posting-toast",
+        });
+
+        // Step A: Generate the Purchase Receipt Draft matching your order scope
+        const receiptDraftRes = await fetch("/api/purchase-receipts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            purchase_order_id: id,
+            receipt_date: new Date().toISOString().split("T")[0],
+            // Map order lines into receipt line inputs
+            lines: lines
+              .map((l) => ({
+                purchase_order_line_id: l.id,
+                item_id: l.item_id,
+                // If your UI tracks a specific quantity to receive, replace l.quantity here
+                quantity:
+                  Number(l.quantity || 0) - Number(l.received_quantity || 0),
+                warehouse_location_id: l.warehouse_id || null,
+              }))
+              .filter((l) => l.quantity > 0), // Only include rows that have open balances remaining
+          }),
+        });
+
+        const receiptDraftData = await receiptDraftRes.json();
+        if (!receiptDraftRes.ok) {
+          throw new Error(
+            receiptDraftData.error ||
+              "Failed to initialize receipt master record.",
+          );
+        }
+
+        const targetReceiptId = receiptDraftData.id;
+
+        toast.loading(
+          "Executing inventory posting and general ledger adjustments...",
+          { id: "posting-toast" },
+        );
+
+        // Step B: Submit the newly fetched ID to your PurchaseReceiptPostingService integration endpoint
+        const postRes = await fetch(
+          `/api/purchase-receipts/${targetReceiptId}/post`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-company-id": session?.user?.company_id || "",
+            },
+          },
+        );
+
+        const postData = await postRes.json();
+        if (!postRes.ok) {
+          throw new Error(
+            postData.error || "Ledger transaction allocation failure.",
+          );
+        }
+
+        toast.success(
+          "Stock intake processing & item allocations executed successfully.",
+          { id: "posting-toast" },
+        );
+        setOrder((prev) => ({ ...prev, status: "received" }));
+        router.refresh();
+        return;
+      }
+
+      // 2. Standard state fallback for non-received workflow triggers
+      const response = await fetch(`/api/purchase-orders/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order: {
+            ...order,
+            ...currencyConfig,
+            supplier_id: order.supplier_id || "",
+            order_date:
+              order.order_date || new Date().toISOString().split("T")[0],
+            status: standardizedStatus,
+            subtotal: financials.amount,
+            tax_amount: financials.vat,
+            total_amount: financials.amountInclVat,
+          },
+          billing_address: {
+            address_type: "billing",
+            address_1: billingAddress.address_1 || "",
+            address_2: billingAddress.address_2 || "",
+            city: billingAddress.city || "",
+            postcode: billingAddress.postcode || "",
+            country: billingAddress.country || "",
+          },
+          shipping_address: {
+            address_type: "shipping",
+            name: shippingAddress.name || "",
+            address_1: shippingAddress.address_1 || "",
+            address_2: shippingAddress.address_2 || "",
+            city: shippingAddress.city || "",
+            country: shippingAddress.country || "",
+          },
+          lines: lines,
+        }),
+      });
+
+      if (response.ok) {
+        setOrder((prev) => ({ ...prev, status: standardizedStatus }));
+        toast.success(`Stage updated successfully to: ${stageName}`);
+        router.refresh();
+      } else {
+        const errData = await response.json();
+        toast.error(
+          `Failed to update stage: ${errData.error || "Unknown error"}`,
+        );
+      }
+    } catch (error) {
+      console.error("Error updating purchase order stage:", error);
+      if (error instanceof Error) {
+        toast.error(
+          error.message ||
+            "Network error updating purchase order stage status.",
+          { id: "posting-toast" },
+        );
+      } else {
+        toast.error("Network error updating purchase order stage status.", {
+          id: "posting-toast",
+        });
+      }
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  /* const handleStageClick = async (stageName: string) => {
     // Convert stage name to lowercase so it passes Zod validation ("Draft" -> "draft")
     const standardizedStatus =
       stageName.toLowerCase() as PurchaseOrder["status"];
@@ -302,54 +458,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         if (standardizedStatus === "received") {
           toast.info("Stock intake processing & item allocations executed successfully.");
         }
-        
-        router.refresh();
-      } else {
-        const errData = await response.json();
-        toast.error(
-          `Failed to update stage: ${errData.error || "Unknown error"}`,
-        );
-      }
-    } catch (error) {
-      console.error("Error updating purchase order stage:", error);
-      toast.error("Network error updating purchase order stage status.");
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
 
-  /* const handleStageClick = async (stageName: string) => {
-    // const nextStatus = stageName as PurchaseOrder["status"];
-    const standardizedStatus = stageName.toLowerCase() as PurchaseOrder["status"];
-
-    if (
-      !id ||
-      isUpdatingStatus ||
-      order.status?.toLowerCase() === stageName.toLowerCase()
-    ) {
-      return;
-    }
-
-    setIsUpdatingStatus(true);
-
-    try {
-      const response = await fetch(`/api/purchase-orders/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order: {
-            ...order,
-            status: nextStatus,
-          },
-          lines,
-          billing_address: billingAddress,
-          shipping_address: shippingAddress,
-        }),
-      });
-
-      if (response.ok) {
-        setOrder((prev) => ({ ...prev, status: nextStatus }));
-        toast.success(`Stage updated successfully to: ${stageName}`);
         router.refresh();
       } else {
         const errData = await response.json();

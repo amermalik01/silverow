@@ -209,6 +209,45 @@ export class GLPostingService {
         ],
       );
 
+      // 2. 🌟 NEW: Directly populate the gl_ledger_entries table for real-time reporting!
+      await client.query(
+        `
+    INSERT INTO gl_ledger_entries (
+      company_id,
+      account_id,
+      source_journal_id,
+      entry_no,
+      posting_date,
+      source_type,
+      reference,
+      description,
+      debit,
+      credit,
+      party_type,
+      party_id,
+      document_no,
+      posted_by
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+    `,
+        [
+          data.company_id,
+          line.account_id,
+          journalId, // Links back to the source document header
+          entryNo, // E.g., 'JV-00004'
+          data.entry_date, // Your posting date
+          data.source, // 'PURCHASE'
+          data.reference || null, // The PO or Receipt No
+          line.description || data.description,
+          line.debit || 0,
+          line.credit || 0,
+          data.source === "PURCHASE" ? "VENDOR" : null, // Sets your sub-ledger dimension type
+          line.party_id || null, // Vendor ID
+          data.reference || null,
+          data.created_by || null,
+        ],
+      );
+
       lineNo += 10000;
     }
 

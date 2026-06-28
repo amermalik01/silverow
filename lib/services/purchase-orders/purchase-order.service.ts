@@ -315,60 +315,48 @@ export class PurchaseOrderService {
   }
 
   static async delete(companyId: string, id: string): Promise<void> {
+    const existing = await pool.query(
+      `SELECT status FROM purchase_orders WHERE id = $1 AND company_id = $2`,
+      [id, companyId],
+    );
+    if (!existing.rows.length) throw new Error("Purchase order not found");
+    if (
+      existing.rows[0].status === "received" ||
+      existing.rows[0].status === "partial_received"
+    ) {
+      throw new Error(
+        "Cannot delete document shell while historical ledger entries remain linked.",
+      );
+    }
+
     const result = await pool.query(
-      `
-      DELETE FROM purchase_orders
-      WHERE id = $1
-      AND company_id = $2
-      `,
+      `DELETE FROM purchase_orders WHERE id = $1 AND company_id = $2`,
       [id, companyId],
     );
 
-    if (!result.rowCount) {
-      throw new Error("Purchase order not found");
-    }
+    if (!result.rowCount) throw new Error("Purchase order not found");
   }
 
   static async post(companyId: string, id: string): Promise<void> {
     const client = await pool.connect();
-
     try {
       await client.query("BEGIN");
-
       const result = await client.query(
-        `
-        SELECT status
-        FROM purchase_orders
-        WHERE id = $1
-        AND company_id = $2
-        `,
+        `SELECT status, is_posted FROM purchase_orders WHERE id = $1 AND company_id = $2`,
         [id, companyId],
       );
 
-      if (!result.rows.length) {
-        throw new Error("Purchase order not found");
-      }
-
-      if (result.rows[0].is_posted) {
+      if (!result.rows.length) throw new Error("Purchase order not found");
+      if (result.rows[0].is_posted)
         throw new Error("Purchase order already posted");
-      }
 
       await client.query(
-        `
-          UPDATE purchase_orders
-          SET
-            is_posted = true,
-            posted_at = now(),
-            updated_at = now()
-          WHERE id = $1
-          `,
+        `UPDATE purchase_orders SET is_posted = true, posted_at = now(), updated_at = now() WHERE id = $1`,
         [id],
       );
-
       await client.query("COMMIT");
     } catch (err) {
       await client.query("ROLLBACK");
-
       throw err;
     } finally {
       client.release();
@@ -501,6 +489,73 @@ export class PurchaseOrderService {
     );
   }
 
+  static async recalculateStatus(
+    client: PoolClient,
+    purchaseOrderId: string,
+  ): Promise<void> {
+    const result = await client.query(
+      `
+      SELECT quantity, received_quantity, COALESCE(cancelled_quantity, 0) as cancelled_quantity
+      FROM purchase_order_lines
+      WHERE purchase_order_id = $1 AND is_deleted = false AND line_type = 'ITEM'
+      `,
+      [purchaseOrderId],
+    );
+
+    const lines = result.rows;
+    if (!lines.length) return;
+
+    let fullyReceived = true;
+    let partiallyReceived = false;
+
+    for (const line of lines) {
+      const qty = Number(line.quantity || 0);
+      const received =
+        Number(line.received_quantity || 0) + Number(line.cancelled_quantity);
+
+      if (received > 0) partiallyReceived = true;
+      if (received < qty) fullyReceived = false;
+    }
+
+    const status = fullyReceived
+      ? "received"
+      : partiallyReceived
+        ? "partial_received"
+        : "open";
+
+    await client.query(
+      `UPDATE purchase_orders SET status = $1, updated_at = now() WHERE id = $2`,
+      [status, purchaseOrderId],
+    );
+  }
+
+  static async updateReceivedQuantity(
+    client: PoolClient,
+    purchaseOrderLineId: string,
+    receivedQty: number,
+  ): Promise<void> {
+    await client.query(
+      `
+    UPDATE purchase_order_lines
+    SET
+      received_quantity =
+        COALESCE(received_quantity, 0) + $1,
+
+      remaining_quantity =
+        quantity - (
+          COALESCE(received_quantity,0)
+          + $1
+          + COALESCE(cancelled_quantity,0)
+        ),
+
+      updated_at = now()
+
+    WHERE id = $2
+    `,
+      [receivedQty, purchaseOrderLineId],
+    );
+  }
+
   private static validatePayload(payload: PurchaseOrderPayload): void {
     const order = payload.order;
 
@@ -573,98 +628,5 @@ export class PurchaseOrderService {
     if (!payload.shipping_address) {
       throw new Error("Shipping address is required");
     }
-  }
-
-  static async recalculateStatus(
-    client: PoolClient,
-    purchaseOrderId: string,
-  ): Promise<void> {
-    const result = await client.query(
-      `
-    SELECT
-      quantity,
-      received_quantity,
-      cancelled_quantity
-
-    FROM purchase_order_lines
-
-    WHERE purchase_order_id = $1
-    AND is_deleted = false
-    AND line_type = 'ITEM'
-    `,
-      [purchaseOrderId],
-    );
-
-    const lines = result.rows;
-
-    if (!lines.length) {
-      return;
-    }
-
-    let fullyReceived = true;
-
-    let partiallyReceived = false;
-
-    for (const line of lines) {
-      const qty = Number(line.quantity || 0);
-
-      const received =
-        Number(line.received_quantity || 0) +
-        Number(line.cancelled_quantity || 0);
-
-      if (received > 0) {
-        partiallyReceived = true;
-      }
-
-      if (received < qty) {
-        fullyReceived = false;
-      }
-    }
-
-    let status = "open";
-
-    if (fullyReceived) {
-      status = "received";
-    } else if (partiallyReceived) {
-      status = "partial_received";
-    }
-
-    await client.query(
-      `
-    UPDATE purchase_orders
-    SET
-      status = $1,
-      updated_at = now()
-    WHERE id = $2
-    `,
-      [status, purchaseOrderId],
-    );
-  }
-
-  static async updateReceivedQuantity(
-    client: PoolClient,
-    purchaseOrderLineId: string,
-    receivedQty: number,
-  ): Promise<void> {
-    await client.query(
-      `
-    UPDATE purchase_order_lines
-    SET
-      received_quantity =
-        COALESCE(received_quantity, 0) + $1,
-
-      remaining_quantity =
-        quantity - (
-          COALESCE(received_quantity,0)
-          + $1
-          + COALESCE(cancelled_quantity,0)
-        ),
-
-      updated_at = now()
-
-    WHERE id = $2
-    `,
-      [receivedQty, purchaseOrderLineId],
-    );
   }
 }
