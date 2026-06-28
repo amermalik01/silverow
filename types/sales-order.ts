@@ -12,17 +12,32 @@ export type SalesOrder = {
   customer_name?: string;
   reference?: string;
   order_date: string;
-  requested_delivery_date?: string;
+  posting_date: string;
+  dispatch_date: string;
+  req_delivery_date?: string;
+  delivery_date?: string;
   currency_id?: string;
+  currency_code?: string;
   exchange_rate?: number;
   subtotal?: number;
   tax_amount?: number;
   total_amount?: number;
   invoiced_amount?: number;
 
+  // link_to_po: "",
+  //   sq_no: "",
+  //   source_of_order: "Others",
+  //   currency_code: "GBP",
+
+  email?: string;
+  salesperson?: string;
+  cust_order_no?: string;
+  link_to_po?: string;
+  sq_no?: string;
   notes?: string;
   status?: string;
   shipment_status?: string;
+  source_of_order?: string;
   invoice_status?: string;
   created_at?: string;
   updated_at?: string;

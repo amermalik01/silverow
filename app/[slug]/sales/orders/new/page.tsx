@@ -14,7 +14,6 @@ export default async function NewSalesOrderPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">New Sales Order</h1>
-
       <SalesOrderForm slug={slug} />
     </div>
   );
