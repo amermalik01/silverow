@@ -65,7 +65,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
     order_date: new Date().toISOString().split("T")[0],
     posting_date: new Date().toISOString().split("T")[0],
     dispatch_date: new Date().toISOString().split("T")[0],
-    req_delivery_date: new Date().toISOString().split("T")[0],
+    requested_delivery_date: new Date().toISOString().split("T")[0],
     delivery_date: new Date().toISOString().split("T")[0],
     status: "order processing",
     subtotal: 0,
@@ -562,9 +562,9 @@ export default function SalesOrderForm({ slug, id }: Props) {
               <input
                 type="date"
                 className={inputStyle}
-                value={order.req_delivery_date || ""}
+                value={order.requested_delivery_date || ""}
                 onChange={(e) =>
-                  updateOrderField("req_delivery_date", e.target.value)
+                  updateOrderField("requested_delivery_date", e.target.value)
                 }
               />
             </div>

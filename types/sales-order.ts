@@ -14,7 +14,7 @@ export type SalesOrder = {
   order_date: string;
   posting_date: string;
   dispatch_date: string;
-  req_delivery_date?: string;
+  requested_delivery_date?: string;
   delivery_date?: string;
   currency_id?: string;
   currency_code?: string;
