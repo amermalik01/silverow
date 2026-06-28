@@ -86,4 +86,8 @@ export interface DebitNoteLine {
   vat_amount?: number;
   net_amount?: number;
   gross_amount?: number;
+  
+  purchase_gl_id?: string;
+  sales_gl_id?: string;
+  inventory_gl_id?: string;
 }
