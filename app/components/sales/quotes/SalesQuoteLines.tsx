@@ -235,7 +235,7 @@ export default function SalesQuoteLines({
                   >
                     <option value="ITEM">Item</option>
                     <option value="GL_ACCOUNT">GL</option>
-                    <option value="COMMENT">Comment</option>
+                    {/* <option value="COMMENT">Comment</option> */}
                   </select>
                 </td>
 

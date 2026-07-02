@@ -205,7 +205,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
               {
                 id: "Purchase Invoices",
                 name: "Purchase Invoices",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/purchases/purchase-invoices`,
               },
               {
                 id: "Debit Notes",
@@ -215,7 +215,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
               {
                 id: "Posted Debit Notes",
                 name: "Posted Debit Notes",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+                url: `/${slug}/purchases/posted-debit-notes`,
               },
             ],
           },

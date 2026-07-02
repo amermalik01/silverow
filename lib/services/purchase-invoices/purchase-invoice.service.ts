@@ -1,6 +1,7 @@
 // lib/services/purchase-invoices/purchase-invoice.service.ts
 
 import { PoolClient } from "pg";
+import { pool } from "@/lib/db";
 
 import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
@@ -8,6 +9,18 @@ import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 import { JournalLineInput } from "@/types/journal";
 import { PurchaseOrderStatusService } from "../purchase-orders/purchase-order-status.service";
 import { GRNIClearingService } from "../grni/grni-clearing.service";
+
+import { PurchaseInvoice } from "@/types/purchase-invoice";
+
+interface ListFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 export class PurchaseInvoiceService {
   private static async getPayableAccount(
     client: PoolClient,
@@ -28,6 +41,79 @@ export class PurchaseInvoiceService {
     }
 
     return result.rows[0].payable_account_id;
+  }
+
+  static async list(companyId: string, filters: ListFilters = {}) {
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const queryParams: unknown[] = [companyId];
+    let paramIndex = 2;
+
+    let whereClause = "WHERE pi.company_id = $1";
+
+    // Filter by Invoice No or Purchase Order No
+    if (filters.search) {
+      whereClause += ` AND (pi.invoice_no ILIKE $${paramIndex} OR po.order_no ILIKE $${paramIndex})`;
+      queryParams.push(`%${filters.search}%`);
+      paramIndex++;
+    }
+
+    // Filter by explicit Status
+    if (filters.status) {
+      whereClause += ` AND pi.status = $${paramIndex}`;
+      queryParams.push(filters.status.toUpperCase());
+      paramIndex++;
+    }
+
+    // Filter by Date Ranges
+    if (filters.startDate) {
+      whereClause += ` AND pi.invoice_date >= $${paramIndex}`;
+      queryParams.push(filters.startDate);
+      paramIndex++;
+    }
+    if (filters.endDate) {
+      whereClause += ` AND pi.invoice_date <= $${paramIndex}`;
+      queryParams.push(filters.endDate);
+      paramIndex++;
+    }
+
+    // Count total matching records for pagination metadata
+    const countQuery = `
+      SELECT COUNT(DISTINCT pi.id) as total
+      FROM purchase_invoices pi
+      LEFT JOIN purchase_orders po ON pi.purchase_order_id = po.id
+      ${whereClause}
+    `;
+    const countResult = await pool.query(countQuery, queryParams);
+    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    // Retrieve data row payloads
+    const dataQuery = `
+      SELECT 
+        pi.*,
+        po.order_no as purchase_order_no
+      FROM purchase_invoices pi
+      LEFT JOIN purchase_orders po ON pi.purchase_order_id = po.id
+      ${whereClause}
+      ORDER BY pi.invoice_date DESC, pi.created_at DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    queryParams.push(limit, offset);
+    const dataResult = await pool.query(dataQuery, queryParams);
+
+    return {
+      data: dataResult.rows,
+      pagination: {
+        page,
+        limit,
+        totalRecords,
+        totalPages,
+      },
+    };
   }
 
   //  * =========================================================

@@ -310,7 +310,7 @@ export default function DebitNoteLines({
                   >
                     <option value="ITEM">Item</option>
                     <option value="GL_ACCOUNT">G/L</option>
-                    <option value="COMMENT">Comment</option>
+                    {/* <option value="COMMENT">Comment</option> */}
                   </select>
                 </td>
 

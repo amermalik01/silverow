@@ -231,7 +231,7 @@ export default function SalesOrderLines({
                       >
                         <option value="ITEM">Item</option>
                         <option value="GL_ACCOUNT">GL Account</option>
-                        <option value="COMMENT">Comment</option>
+                        {/* <option value="COMMENT">Comment</option> */}
                       </select>
                     </td>
 
