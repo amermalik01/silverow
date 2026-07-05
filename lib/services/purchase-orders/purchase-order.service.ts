@@ -34,14 +34,33 @@ export class PurchaseOrderService {
 
     if (!orderResult.rows.length) return null;
 
+    // Modified query using LEFT JOINs to fetch codes and names for the frontend UI components
     const linesResult = await pool.query(
       `
-      SELECT pol.*, (pol.quantity - COALESCE(pol.received_quantity, 0)) AS remaining_quantity
+      SELECT 
+        pol.*, 
+        (pol.quantity - COALESCE(pol.received_quantity, 0)) AS remaining_quantity,
+        
+        i.item_code,
+        i.name AS item_name,        
+
+        gl.code AS account_code,
+        gl.name AS account_name,
+        
+
+        w.code AS warehouse_code,
+        w.name AS warehouse_name,
+
+        u.name AS uom_name
       FROM purchase_order_lines pol
+      LEFT JOIN items i ON pol.item_id = i.id AND i.company_id = $2
+      LEFT JOIN chart_of_accounts gl ON pol.gl_account_id = gl.id AND gl.company_id = $2
+      LEFT JOIN warehouses w ON pol.warehouse_id = w.id AND w.company_id = $2
+      LEFT JOIN uoms u ON pol.uom_id = u.id AND u.company_id = $2
       WHERE pol.purchase_order_id = $1 AND pol.is_deleted = false
       ORDER BY pol.line_no
       `,
-      [id],
+      [id, companyId],
     );
 
     const addressResult = await pool.query(

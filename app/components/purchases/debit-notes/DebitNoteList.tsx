@@ -222,10 +222,10 @@ export default function DebitNoteList({ slug }: Props) {
                     </td>
                     <td className="p-3 text-center">
                       <Link
-                        href={`/${slug}/purchases/debit-notes/${row.id}`}
+                        href={`/${slug}/purchases/debit-notes/${row.id}/edit`}
                         className="rounded border dark:border-slate-700 px-2 py-1 text-xs hover:bg-gray-100 dark:hover:bg-slate-800"
                       >
-                        View
+                        Edit
                       </Link>
                     </td>
                   </tr>

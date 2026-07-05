@@ -234,10 +234,10 @@ export default function PurchaseOrderList({ slug }: Props) {
                     <td className="p-3">
                       <div className="flex items-center justify-center gap-2">
                         <Link
-                          href={`/${slug}/purchases/purchase-orders/${row.id}`}
+                          href={`/${slug}/purchases/purchase-orders/${row.id}/edit`}
                           className="rounded border dark:border-slate-700 px-2 py-1 text-xs hover:bg-gray-100 dark:hover:bg-slate-800"
                         >
-                          View
+                          Edit
                         </Link>
                         {row.status?.toLowerCase() === "open" && (
                           <Link

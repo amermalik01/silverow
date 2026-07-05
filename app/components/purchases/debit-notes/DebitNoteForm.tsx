@@ -92,21 +92,26 @@ export const DebitNoteForm: React.FC<Props> = ({
     if (!id) return;
     fetch(`/api/debit-notes/${id}`)
       .then((r) => r.json())
-      .then((data) => {
-        if (data) {
-          setNote(data.debitNote || data.note || {});
-          setLines(data.lines || []);
+      .then((payload) => {
+
+        if (payload && payload.success && payload.data) {
+          const actualData = payload.data;
+
+          console.log("API payload parsed successfully:", actualData);
+
+          setNote(actualData.debitNote || actualData.note || {});
+          setLines(actualData.lines || []);
           setBillingAddress(
-            data.billing_address || { address_type: "billing" },
+            actualData.billing_address || { address_type: "billing" },
           );
           setShippingAddress(
-            data.shipping_address || { address_type: "shipping" },
+            actualData.shipping_address || { address_type: "shipping" },
           );
           setCurrencyConfig({
             currency_id:
-              data.debitNote?.currency_id || data.note?.currency_id || "",
+              actualData.debitNote?.currency_id || actualData.note?.currency_id || "",
             exchange_rate:
-              data.debitNote?.exchange_rate || data.note?.exchange_rate || 1,
+              actualData.debitNote?.exchange_rate || actualData.note?.exchange_rate || 1,
           });
         }
       })

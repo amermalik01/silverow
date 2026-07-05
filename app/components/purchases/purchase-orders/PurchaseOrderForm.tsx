@@ -99,12 +99,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     fetch(`/api/purchase-orders/${id}`)
       .then((r) => r.json())
       .then((payload) => {
-        // Access the inner 'data' property containing the order details
         if (payload && payload.success && payload.data) {
           const actualData = payload.data;
 
-          console.log("API payload parsed successfully:", actualData);
-          
+          // console.log("API payload parsed successfully:", actualData);
+
           setOrder(actualData.order || {});
           setLines(actualData.lines || []);
           setBillingAddress(
@@ -124,17 +123,16 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       );
   }, [id]);
 
-  useEffect(() => {
-    console.log("State updated! Current lines:", lines);
-    console.log("State updated! Current currencyConfig:", currencyConfig);
+  // useEffect(() => {
+  //   console.log("State updated! Current lines:", lines);
+  //   console.log("State updated! Current currencyConfig:", currencyConfig);
 
-    console.log("purchase-order data ==== ", order);
+  //   console.log("purchase-order data ==== ", order);
 
-          console.log("billingAddress ==== ", billingAddress);
-          console.log("shippingAddress ==== ", shippingAddress); 
-          console.log("currencies ==== ", currencies);
-
-  }, [lines, currencyConfig]);
+  //   console.log("billingAddress ==== ", billingAddress);
+  //   console.log("shippingAddress ==== ", shippingAddress);
+  //   console.log("currencies ==== ", currencies);
+  // }, [lines, currencyConfig]);
 
   useEffect(() => {
     fetch("/api/parties/currencies")
@@ -497,10 +495,18 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5";
 
   return (
-    <div className="space-y-4 container mx-auto p-1">
+    // <div className="space-y-4 container mx-auto p-1">
+      <div className="space-y-4 w-full max-w-[100vw] px-4 py-2 mx-auto overflow-x-auto">
       {isUpdateMode && !isLoadingStages && stages.length > 0 && (
+        // <div
+        //   className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
+        // >
+
+        <div className="w-full overflow-x-auto pb-2 focus:outline-none">
         <div
-          className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
+          className={`flex items-center min-w-max gap-1 text-xs font-bold text-slate-400 select-none ${
+            isUpdatingStatus ? "opacity-60 pointer-events-none" : ""
+          }`}
         >
           {stages.map((stage, index) => {
             const isFirst = index === 0;
@@ -534,6 +540,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             );
           })}
         </div>
+        </div>
       )}
 
       {/* Validation Banner UI Display Component */}
@@ -551,8 +558,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         </div>
       )}
 
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2">
-        {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
+      {/* <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2"> */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 overflow-x-auto w-full no-scrollbar">
+      {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
           <button
             key={tab}
             type="button"
@@ -568,9 +576,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         ))}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm">
+      {/* <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm"> */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm w-full">
         {activeTab === "general" && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className={labelStyle}>Order No.</label>
               <input

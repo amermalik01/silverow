@@ -1,5 +1,7 @@
 // app/components/layout/sidebar/CompanySidebar.tsx
 
+// app/components/layout/sidebar/CompanySidebar.tsx
+
 "use client";
 
 import Link from "next/link";
@@ -21,9 +23,185 @@ interface SidebarItemType {
   children?: SidebarItemType[];
 }
 
-/**
- * ✅ Check if item OR any child is active
- */
+const isItemActive = (item: SidebarItemType, currentPath: string): boolean => {
+  if (item.url && currentPath.startsWith(item.url)) return true;
+  if (item.children) {
+    return item.children.some((child) => isItemActive(child, currentPath));
+  }
+  return false;
+};
+
+const getActiveParentIds = (
+  items: SidebarItemType[],
+  currentPath: string,
+): (string | number)[] => {
+  let result: (string | number)[] = [];
+  for (const item of items) {
+    if (item.children) {
+      const active = isItemActive(item, currentPath);
+      if (active && item.id) {
+        result.push(item.id);
+      }
+      result = [...result, ...getActiveParentIds(item.children, currentPath)];
+    }
+  }
+  return result;
+};
+
+const CompanySidebarLayout = () => {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const [manualOpenMenus, setManualOpenMenus] = useState<(string | number)[]>(
+    [],
+  );
+
+  const slug = session?.user?.company_slug;
+  const menuItems = slug ? getCompanySidebarItems(slug) : [];
+
+  const autoOpenMenus = slug
+    ? getActiveParentIds(
+        menuItems.flatMap((section) => section.children || []),
+        pathname,
+      )
+    : [];
+
+  const openMenus = Array.from(new Set([...autoOpenMenus, ...manualOpenMenus]));
+
+  const toggleMenu = (id: string | number) => {
+    setManualOpenMenus((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const renderItems = (
+    items: SidebarItemType[],
+    level = 0,
+  ): React.ReactNode => {
+    return items.map((item) => {
+      const isActive = isItemActive(item, pathname);
+      const isOpen = openMenus.includes(item.id!);
+      const isSelected = item.url && pathname.startsWith(item.url);
+      const hasChildren = item.children?.length;
+
+      if (item.heading) {
+        return (
+          <div
+            key={item.heading}
+            className="text-[10px] font-bold uppercase tracking-wider text-slate-400/80 mt-5 mb-1.5 px-2"
+          >
+            {item.heading}
+          </div>
+        );
+      }
+
+      return (
+        <div key={item.id} className="w-full">
+          <div
+            onClick={(e) => {
+              if (hasChildren) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMenu(item.id!);
+              }
+            }}
+            className={`flex items-center justify-between cursor-pointer px-2.5 py-2 rounded-md transition-all duration-150 text-[13px] group mb-0.5
+              ${isSelected ? "text-emerald-400 font-semibold bg-slate-800/40" : "text-slate-300"}
+              ${isActive && !isSelected ? "bg-slate-800/30 text-white" : ""}
+              hover:bg-slate-800/60 hover:text-white`}
+            style={{ paddingLeft: `${level * 12 + 10}px` }}
+          >
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <Icon
+                icon={item.icon || "ri:circle-line"}
+                width={16}
+                className={`shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
+              />
+              {item.url ? (
+                <Link href={item.url} className="truncate flex-1">
+                  {item.title || item.name}
+                </Link>
+              ) : (
+                <span className="truncate flex-1">
+                  {item.title || item.name}
+                </span>
+              )}
+            </div>
+
+            {hasChildren && (
+              <Icon
+                icon="heroicons:chevron-down-20-solid"
+                className={`w-4 h-4 text-slate-500 transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180 text-slate-300" : ""}`}
+              />
+            )}
+          </div>
+
+          {/* Children with pure CSS height transition flags */}
+          {hasChildren && (
+            <div
+              className={`overflow-hidden transition-all duration-200 ease-in-out ${
+                isOpen
+                  ? "max-h-[1000px] opacity-100 mt-0.5"
+                  : "max-h-0 opacity-0 pointer-events-none"
+              }`}
+            >
+              {renderItems(item.children!, level + 1)}
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
+
+  return (
+    <div className="fixed left-0 top-0 h-screen w-[240px] border-r border-slate-800 bg-slate-950 z-30 flex flex-col overflow-hidden select-none">
+      {/* Logo Container */}
+      <div className="px-5 py-4 border-b border-slate-800 flex items-center h-[65px] bg-slate-950 shrink-0">
+        <div className="scale-90 origin-left">
+          <FullLogo />
+        </div>
+      </div>
+
+      {/* Navigation Links Scroll Container */}
+      <SimpleBar
+        className="flex-1 px-2.5 py-3 overflow-y-auto overflow-x-hidden"
+        style={{ maxHeight: "calc(100vh - 65px)" }}
+      >
+        {menuItems.map((section, index) => (
+          <div key={index} className="space-y-0.5 mb-4">
+            {renderItems([
+              ...(section.heading ? [{ heading: section.heading }] : []),
+              ...(section.children || []),
+            ])}
+          </div>
+        ))}
+      </SimpleBar>
+    </div>
+  );
+};
+
+export default CompanySidebarLayout;
+
+/* "use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useState } from "react";
+import { Icon } from "@iconify/react";
+import SimpleBar from "simplebar-react";
+import FullLogo from "../shared/logo/FullLogo";
+import { getCompanySidebarItems } from "./company_sidebaritems";
+
+interface SidebarItemType {
+  heading?: string;
+  id?: number | string;
+  name?: string;
+  title?: string;
+  icon?: string;
+  url?: string;
+  children?: SidebarItemType[];
+}
+
 const isItemActive = (item: SidebarItemType, currentPath: string): boolean => {
   if (item.url && currentPath.startsWith(item.url)) return true;
 
@@ -34,9 +212,6 @@ const isItemActive = (item: SidebarItemType, currentPath: string): boolean => {
   return false;
 };
 
-/**
- * ✅ Get all parent IDs that should be open based on route
- */
 const getActiveParentIds = (
   items: SidebarItemType[],
   currentPath: string,
@@ -62,9 +237,6 @@ const CompanySidebarLayout = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  /**
-   * ✅ Controlled user toggles
-   */
   const [manualOpenMenus, setManualOpenMenus] = useState<(string | number)[]>(
     [],
   );
@@ -73,9 +245,6 @@ const CompanySidebarLayout = () => {
 
   const menuItems = slug ? getCompanySidebarItems(slug) : [];
 
-  /**
-   * ✅ Auto-open menus from route (NO useEffect)
-   */
   const autoOpenMenus = slug
     ? getActiveParentIds(
         menuItems.flatMap((section) => section.children || []),
@@ -83,14 +252,8 @@ const CompanySidebarLayout = () => {
       )
     : [];
 
-  /**
-   * ✅ Merge auto + manual
-   */
   const openMenus = Array.from(new Set([...autoOpenMenus, ...manualOpenMenus]));
 
-  /**
-   * 🔥 Toggle handler
-   */
   const toggleMenu = (id: string | number) => {
     setManualOpenMenus((prev) => {
       const exists = prev.includes(id);
@@ -103,9 +266,6 @@ const CompanySidebarLayout = () => {
     });
   };
 
-  /**
-   * 🔁 Recursive renderer
-   */
   const renderItems = (
     items: SidebarItemType[],
     level = 0,
@@ -131,7 +291,7 @@ const CompanySidebarLayout = () => {
 
       return (
         <div key={item.id}>
-          {/* Item */}
+     
           <div
             onClick={(e) => {
               if (hasChildren) {
@@ -158,7 +318,7 @@ const CompanySidebarLayout = () => {
               )}
             </div>
 
-            {/* Arrow */}
+    
             {hasChildren && (
               <Icon
                 icon="mdi:chevron-down"
@@ -167,7 +327,6 @@ const CompanySidebarLayout = () => {
             )}
           </div>
 
-          {/* Children */}
           {hasChildren && isOpen && (
             <div className="mt-1">{renderItems(item.children!, level + 1)}</div>
           )}
@@ -176,25 +335,14 @@ const CompanySidebarLayout = () => {
     });
   };
 
-  /**
-   * ✅ Safe return AFTER hooks
-   */
-  /* if (!slug) {
-    return (
-      <div className="w-[270px] h-screen flex items-center justify-center text-sm text-gray-500">bg-emerald-950 p-4 text-white
-        Loading...
-      </div>
-    );
-  } */
-
   return (
-    <div className="fixed left-0 top-0 h-screen w-[270px] border-r bg-gray-900">{/* bg-emerald-950 text-white dark: */}
-      {/* Logo */}
+    <div className="fixed left-0 top-0 h-screen w-[270px] border-r bg-gray-900">
+   
       <div className="px-6 py-4 border-b bg-gray-900">
         <FullLogo />
       </div>
 
-      {/* Menu */}
+ 
       <SimpleBar className="h-[calc(100vh-80px)] px-3">
         {menuItems.map((section, index) => (
           <div key={index}>
@@ -209,145 +357,4 @@ const CompanySidebarLayout = () => {
   );
 };
 
-export default CompanySidebarLayout;
-
-/* 
-
-
-
-// import {
-//   AMLogo,
-//   AMMenu,
-//   AMMenuItem,
-//   AMSidebar,
-//   AMSubmenu,
-// } from "tailwind-sidebar";
-// import "tailwind-sidebar/styles.css";
-
-const renderSidebarItems = (
-  items: SidebarItemType[],
-  currentPath: string,
-  onClose?: () => void,
-  isSubItem: boolean = false
-) => {
-  return items.map((item, index) => {
-    const isSelected = currentPath === item?.url
-    const IconComp = item.icon || null
-
-    const iconElement = IconComp ? (
-      <Icon icon={IconComp} height={21} width={21} />
-    ) : (
-      <Icon icon={'ri:checkbox-blank-circle-line'} height={9} width={9} />
-    )
-
-    // Heading
-    if (item.heading) {
-      return (
-        <div className='mb-1' key={item.heading}>
-          <AMMenu
-            subHeading={item.heading}
-            ClassName='hide-menu leading-21 text-sidebar-foreground dark:text-sidebar-foreground font-bold uppercase text-xs'
-          />
-        </div>
-      )
-    }
-
-    // Submenu
-    if (item.children?.length) {
-      return (
-        <AMSubmenu
-          key={item.id}
-          icon={iconElement}
-          title={item.name}
-          ClassName='mt-0.5 text-sidebar-foreground dark:text-sidebar-foreground'>
-          {renderSidebarItems(item.children, currentPath, onClose, true)}
-        </AMSubmenu>
-      )
-    }
-
-    // Regular menu item
-    const linkTarget = item.url?.startsWith('https') ? '_blank' : '_self'
-
-    const itemClassNames = isSubItem
-      ? `mt-0.5 text-sidebar-foreground dark:text-sidebar-foreground !hover:bg-transparent ${
-          isSelected ? '!bg-transparent !text-primary' : ''
-        } !px-1.5`
-      : `mt-0.5 text-sidebar-foreground dark:text-sidebar-foreground`
-
-    return (
-      <div onClick={onClose} key={index}>
-        <AMMenuItem
-          key={item.id}
-          icon={iconElement}
-          isSelected={isSelected}
-          link={item.url || undefined}
-          target={linkTarget}
-          badge={!!item.isPro}
-          badgeColor='bg-lightsecondary'
-          badgeTextColor='text-secondary'
-          disabled={item.disabled}
-          badgeContent={item.isPro ? 'Pro' : undefined}
-          component={Link}
-          className={`${itemClassNames}`}>
-          <span className='truncate flex-1'>{item.title || item.name}</span>
-        </AMMenuItem>
-      </div>
-    )
-  })
-} 
-  
-const CompanySidebarLayout = ({ onClose }: { onClose?: () => void }) => {
-  const pathname = usePathname()
-  const { theme } = useTheme()
-
-  // Only allow "light" or "dark" for AMSidebar
-  const sidebarMode = theme === 'light' || theme === 'dark' ? theme : undefined;
-
-  const { data: session } = useSession();
-
-  const slug = session?.user?.company_slug;
-
-  if (!slug) return null;
-
-  const menuItems = getCompanySidebarItems(slug);
-
-
-  return (
-    <AMSidebar
-      collapsible='none'
-      animation={true}
-      showProfile={false}
-      width={'270px'}
-      showTrigger={false}
-      mode={sidebarMode}
-      className='fixed left-0 top-0 border border-border bg-sidebar dark:bg-sidebar z-10 h-screen'>
-
-      <div className='px-6 flex items-center brand-logo overflow-hidden'>
-        <AMLogo component={Link} href='/' img=''>
-          <FullLogo />
-        </AMLogo>
-      </div>
-
-      <SimpleBar className='h-[calc(100vh-100px)]'>
-        <div className='px-6'>
-          {menuItems.map((section, index) => (
-            <div key={index}>
-              {renderSidebarItems(
-                [
-                  ...(section.heading ? [{ heading: section.heading }] : []),
-                  ...(section.children || []),
-                ],
-                pathname,
-                onClose
-              )}
-            </div>
-          ))}
-
-        </div>
-      </SimpleBar>
-    </AMSidebar>
-  )
-}
-
-export default CompanySidebarLayout
-*/
+export default CompanySidebarLayout; */
