@@ -98,19 +98,24 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     if (!id) return;
     fetch(`/api/purchase-orders/${id}`)
       .then((r) => r.json())
-      .then((data) => {
-        if (data) {
-          setOrder(data.order || {});
-          setLines(data.lines || []);
+      .then((payload) => {
+        // Access the inner 'data' property containing the order details
+        if (payload && payload.success && payload.data) {
+          const actualData = payload.data;
+
+          console.log("API payload parsed successfully:", actualData);
+          
+          setOrder(actualData.order || {});
+          setLines(actualData.lines || []);
           setBillingAddress(
-            data.billing_address || { address_type: "billing" },
+            actualData.billing_address || { address_type: "billing" },
           );
           setShippingAddress(
-            data.shipping_address || { address_type: "shipping" },
+            actualData.shipping_address || { address_type: "shipping" },
           );
           setCurrencyConfig({
-            currency_id: data.order?.currency_id || "",
-            exchange_rate: data.order?.exchange_rate || 1,
+            currency_id: actualData.order?.currency_id || "",
+            exchange_rate: actualData.order?.exchange_rate || 1,
           });
         }
       })
@@ -118,6 +123,18 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         console.error("Error hydrating historical document matrix:", err),
       );
   }, [id]);
+
+  useEffect(() => {
+    console.log("State updated! Current lines:", lines);
+    console.log("State updated! Current currencyConfig:", currencyConfig);
+
+    console.log("purchase-order data ==== ", order);
+
+          console.log("billingAddress ==== ", billingAddress);
+          console.log("shippingAddress ==== ", shippingAddress); 
+          console.log("currencies ==== ", currencies);
+
+  }, [lines, currencyConfig]);
 
   useEffect(() => {
     fetch("/api/parties/currencies")
@@ -595,7 +612,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
               <input
                 type="date"
                 className={inputStyle}
-                value={order.order_date?.split("T")[0]}
+                value={order.order_date?.split("T")[0] ?? ""}
                 onChange={(e) => updateField("order_date", e.target.value)}
               />
             </div>
@@ -676,7 +693,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
               <label className={labelStyle}>Currency *</label>
               <select
                 className={inputStyle}
-                value={currencyConfig.currency_id}
+                value={currencyConfig.currency_id ?? ""}
                 onChange={(e) => {
                   const targetId = e.target.value;
                   const matched = currencies.find((c) => c.id === targetId);
@@ -799,7 +816,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
               type="number"
               step="any"
               className={`${inputStyle} font-mono max-w-[180px]`}
-              value={currencyConfig.exchange_rate}
+              value={currencyConfig.exchange_rate ?? ""}
               onChange={(e) =>
                 setCurrencyConfig({
                   ...currencyConfig,

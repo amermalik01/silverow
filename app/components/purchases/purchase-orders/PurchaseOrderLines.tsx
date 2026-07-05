@@ -692,7 +692,7 @@ export default function PurchaseOrderLines({
               setIsAllocationModalOpen(false);
               setActiveAllocationRowKey(null);
             }}
-            targetQuantity={activeAllocationLine.quantity || 0}
+            targetQuantity={Number(activeAllocationLine.quantity || 0)}
             itemId={activeAllocationLine.item_id || ""}
             itemCode={activeAllocationLine.item_code || ""}
             itemName={activeAllocationLine.item_name || ""}
