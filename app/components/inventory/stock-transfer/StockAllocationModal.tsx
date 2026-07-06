@@ -62,32 +62,6 @@ const StockAllocationModal: React.FC<ModalProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [batches, setBatches] = useState<StockBatchRow[]>(INITIAL_MOCK_BATCHES);
 
-  // Simulation tracking lookups
-  /* useEffect(() => {
-    // This data would be fetched from database where item_id = current row and warehouse_id = warehouseFrom
-    const mockFetchedBatches: StockBatchRow[] = [
-      {
-        production_date: "13/10/2022",
-        use_by_date: "13/10/2023",
-        date_received: "09/06/2022",
-        storage_location: "Bikes",
-        cons_no: "",
-        ref_no: "CAAU6592879",
-        serial_no: "RD801010",
-        total_qty: 1,
-        sold_qty: 1,
-        returned_qty: 0,
-        allocated_qty: 0,
-        available_qty: 0,
-        current_allocation: 0,
-      },
-    ];
-    
-    setTimeout(() => {
-        setBatches(mockFetchedBatches);
-    }, 0);
-  }, [itemCode]); */
-
   const totalAllocated = batches.reduce(
     (sum, b) => sum + b.current_allocation,
     0,
@@ -255,3 +229,32 @@ const StockAllocationModal: React.FC<ModalProps> = ({
 };
 
 export default StockAllocationModal;
+
+
+
+
+  // Simulation tracking lookups
+  /* useEffect(() => {
+    // This data would be fetched from database where item_id = current row and warehouse_id = warehouseFrom
+    const mockFetchedBatches: StockBatchRow[] = [
+      {
+        production_date: "13/10/2022",
+        use_by_date: "13/10/2023",
+        date_received: "09/06/2022",
+        storage_location: "Bikes",
+        cons_no: "",
+        ref_no: "CAAU6592879",
+        serial_no: "RD801010",
+        total_qty: 1,
+        sold_qty: 1,
+        returned_qty: 0,
+        allocated_qty: 0,
+        available_qty: 0,
+        current_allocation: 0,
+      },
+    ];
+    
+    setTimeout(() => {
+        setBatches(mockFetchedBatches);
+    }, 0);
+  }, [itemCode]); */

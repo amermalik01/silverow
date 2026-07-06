@@ -27,39 +27,76 @@ type Props = {
   isReadonly?: boolean;
 };
 
+interface LocationLookupRecord {
+  id: string;
+  warehouse_id: string;
+  parent_id: string | null;
+  type: string;
+  title: string;
+  code: string | null;
+  is_primary: boolean;
+  capacity: number | null;
+  parent_location_title: string | null;
+}
+
 export default function PurchaseOrderLines({
   lines,
   setLines,
   isReadonly = false,
 }: Props) {
-  /**
-   * =====================================================
-   * LOOKUP INDEXES
-   * =====================================================
-   */
-
+  // LOOKUP INDEXES
   const [itemIndex, setItemIndex] = useState<number | null>(null);
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
 
-  // Allocation Modal state wrappers using index keys
+  // Dynamic Locations states
+  const [rowLocationsCache, setRowLocationsCache] = useState<
+    Record<number, LocationLookupRecord[]>
+  >({});
+  const [activeLocationSelectorIndex, setActiveLocationSelectorIndex] =
+    useState<number | null>(null);
+
+  // Allocation Modal handles
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
   const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
     string | null
   >(null);
 
-  // Derive the active line component via parsed row-index safely
   const activeAllocationLine = useMemo(() => {
     if (activeAllocationRowKey === null) return null;
     const idx = parseInt(activeAllocationRowKey, 10);
     return lines[idx] || null;
   }, [activeAllocationRowKey, lines]);
 
-  /**
-   * =====================================================
-   * ADD LINE
-   * =====================================================
-   */
+  // Dynamic Location API retrieval mapping row index
+  const fetchLocationsForSpecificRow = async (
+    rowIndex: number,
+    warehouseId: string,
+  ) => {
+    if (!warehouseId) {
+      setRowLocationsCache((prev) => ({ ...prev, [rowIndex]: [] }));
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/lookups/locations?warehouse_id=${warehouseId}`,
+      );
+      if (res.ok) {
+        const payload = await res.json();
+
+        const data: LocationLookupRecord[] = payload.data || [];
+
+        setRowLocationsCache((prev) => ({
+          ...prev,
+          [rowIndex]: data,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed pulling targeted location indices:", err);
+    }
+  };
+
+  // ADD LINE
 
   const addLine = () => {
     setLines([
@@ -76,35 +113,28 @@ export default function PurchaseOrderLines({
         net_amount: 0,
         vat_amount: 0,
         gross_amount: 0,
+        is_allocated: false,
       },
     ]);
   };
 
-  /**
-   * =====================================================
-   * REMOVE LINE
-   * =====================================================
-   */
-
+  // REMOVE LINE
   const removeLine = (index: number) => {
     setLines(lines.filter((_, i) => i !== index));
+    setRowLocationsCache((prev) => {
+      const copy = { ...prev };
+      delete copy[index];
+      return copy;
+    });
   };
 
-  /**
-   * =====================================================
-   * CALCULATE LINE
-   * =====================================================
-   */
-
+  // CALCULATE LINE
   const calculateLine = (
     line: Partial<PurchaseOrderLineUI>,
   ): PurchaseOrderLine => {
     const qty = Number(line.quantity || 0);
-
     const price = Number(line.unit_cost || 0);
-
     const original = qty * price;
-
     let discountAmount = 0;
 
     if (line.discount_type === "PERCENT") {
@@ -114,9 +144,7 @@ export default function PurchaseOrderLines({
     }
 
     const net = original - discountAmount;
-
     const vat = net * (Number(line.vat_percent || 0) / 100);
-
     const gross = net + vat;
 
     return {
@@ -129,35 +157,26 @@ export default function PurchaseOrderLines({
     };
   };
 
-  /**
-   * =====================================================
-   * UPDATE LINE
-   * =====================================================
-   */
-
+  // UPDATE LINE
   const updateLine = <K extends keyof PurchaseOrderLineUI>(
     index: number,
     field: K,
     value: PurchaseOrderLineUI[K],
   ) => {
     const updated = [...lines];
+    updated[index] = { ...updated[index], [field]: value };
 
-    updated[index] = {
-      ...updated[index],
-      [field]: value,
-    };
+    // Wipe downstream allocations clean if quantity modifiers change
+    if (field === "quantity") {
+      updated[index].allocations = undefined;
+      updated[index].is_allocated = false;
+    }
 
     updated[index] = calculateLine(updated[index]);
-
     setLines(updated);
   };
 
-  /**
-   * =====================================================
-   * CHANGE LINE TYPE
-   * =====================================================
-   */
-
+  // CHANGE LINE TYPE
   const changeLineType = (
     index: number,
     type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
@@ -180,18 +199,40 @@ export default function PurchaseOrderLines({
       warehouse_id: undefined,
       warehouse_code: undefined,
       warehouse_name: undefined,
+
+      location_id: undefined,
+      location_code: undefined,
+      location_name: undefined,
+
       allocations: undefined,
       is_allocated: false,
     };
 
     setLines(updated);
   };
+  /* 
+  const changeLineType = (index: number, type: "ITEM" | "GL_ACCOUNT" | "COMMENT") => {
+    const updated = [...lines];
+    updated[index] = {
+      line_type: type,
+      quantity: 1,
+      unit_cost: 0,
+      discount_type: "PERCENT",
+      discount_value: 0,
+      vat_percent: 0,
+      original_amount: 0,
+      discount_amount: 0,
+      net_amount: 0,
+      vat_amount: 0,
+      gross_amount: 0,
+      is_allocated: false,
+    };
+    setLines(updated);
+  };
+  */
 
-  /**
-   * =====================================================
-   * ALLOCATION SAVE HANDLER
-   * =====================================================
-   */
+  // ALLOCATION SAVE HANDLER
+
   const handleSaveAllocations = (allocationsData: StockAllocationRecord[]) => {
     if (activeAllocationRowKey === null) return;
     const targetIdx = parseInt(activeAllocationRowKey, 10);
@@ -248,9 +289,11 @@ export default function PurchaseOrderLines({
   };
 
   return (
-    <div className="space-y-2 w-full">
+    <div className="space-y-2 w-full text-slate-900 dark:text-slate-100">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Purchase Order Lines</h3>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Purchase Order Lines
+        </h3>
 
         {!isReadonly && (
           <button
@@ -262,47 +305,29 @@ export default function PurchaseOrderLines({
           </button>
         )}
       </div>
-      
 
       <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
-      <table className="w-full text-left text-xs border-collapse min-w-[1450px]">
-        <thead>
-          <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 uppercase font-semibold text-slate-600 dark:text-slate-400">
-            <th className="p-2 text-left w-[110px]">Type</th>
-            <th className="p-2 text-left w-[130px]">No.</th>
-            <th className="p-2 text-left w-[220px]">Description</th>
-            <th className="p-2 text-right w-[90px]">Qty</th>
-            <th className="p-2 text-left w-[80px]">UOM</th>
-            <th className="p-2 text-left w-[170px]">Warehouse</th>
-            <th className="p-2 text-right w-[100px]">Unit Cost</th>
-            <th className="p-2 text-left w-[85px]">Disc Type</th>
-            <th className="p-2 text-right w-[95px]">Discount</th>
-            <th className="p-2 text-right w-[80px]">VAT %</th>
-            <th className="p-2 text-right w-[100px]">Original</th>
-            <th className="p-2 text-right w-[100px]">Discount</th>
-            <th className="p-2 text-right w-[100px]">Net</th>
-            <th className="p-2 text-right w-[90px]">VAT</th>
-            <th className="p-2 text-right w-[110px]">Gross</th>
-            {!isReadonly && <th className="p-2 text-center w-[100px]">Action</th>}
-          </tr>
-            {/* <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 uppercase font-semibold text-slate-600 dark:text-slate-400">
-              <th className="p-2 text-left">Type</th>
-              <th className="p-2 text-left">No.</th>
-              <th className="p-2 text-left">Description</th>
-              <th className="p-2 text-right">Qty</th>
-              <th className="p-2 text-left">UOM</th>
-              <th className="p-2 text-left">Warehouse</th>
-              <th className="p-2 text-right">Unit Cost</th>
-              <th className="p-2 text-left">Disc Type</th>
-              <th className="p-2 text-right">Discount</th>
-              <th className="p-2 text-right">VAT %</th>
-              <th className="p-2 text-right">Original</th>
-              <th className="p-2 text-right">Discount</th>
-              <th className="p-2 text-right">Net</th>
-              <th className="p-2 text-right">VAT</th>
-              <th className="p-2 text-right">Gross</th>
-              {!isReadonly && <th className="p-2 text-center">Action</th>}
-            </tr> */}
+        <table className="w-full text-left text-xs border-collapse min-w-[1600px]">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 uppercase font-semibold text-slate-600 dark:text-slate-400">
+              <th className="p-2 w-[110px]">Type</th>
+              <th className="p-2 w-[130px]">No.</th>
+              <th className="p-2 w-[200px]">Description</th>
+              <th className="p-2 text-right w-[80px]">Qty</th>
+              <th className="p-2 w-[70px]">UOM</th>
+              <th className="p-2 w-[160px]">Warehouse</th>
+              <th className="p-2 w-[160px]">Location</th>
+              <th className="p-2 text-right w-[95px]">Unit Cost</th>
+              <th className="p-2 w-[85px]">Disc Type</th>
+              <th className="p-2 text-right w-[85px]">Discount</th>
+              <th className="p-2 text-right w-[75px]">VAT %</th>
+              <th className="p-2 text-right w-[95px]">Net</th>
+              <th className="p-2 text-right w-[100px]">Gross</th>
+              {!isReadonly && (
+                <th className="p-2 text-center w-[110px]">Action</th>
+              )}
+            </tr>
+            
           </thead>
 
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
@@ -324,14 +349,16 @@ export default function PurchaseOrderLines({
                   ? Number(line.available_stock)
                   : undefined;
 
+              const currentLocations = rowLocationsCache[index] || [];
+              const isAllocationDisabled =
+                !line.item_id || !line.warehouse_id || !line.location_id;
+
               return (
                 <tr
                   key={index}
                   className="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
                   // className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
                 >
-                  {/* TYPE */}
-
                   <td className="p-2">
                     <select
                       value={line.line_type || "ITEM"}
@@ -342,7 +369,8 @@ export default function PurchaseOrderLines({
                           e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
                         )
                       }
-                      className="border rounded p-2 w-[120px]  bg-gray-50"
+                      // className="border rounded p-2 w-[120px]  bg-gray-50"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-[100px]"
                     >
                       <option value="ITEM">Item</option>
 
@@ -361,13 +389,16 @@ export default function PurchaseOrderLines({
                           type="button"
                           disabled={isReadonly}
                           onClick={() => setItemIndex(index)}
-                          className="border rounded px-3 py-2 bg-white  text-black hover:bg-gray-50 w-[140px] text-left"
+                          // className="border rounded px-3 py-2 bg-white  text-black hover:bg-gray-50 w-[140px] text-left"
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
                         >
                           {line.item_code || "Select Item"}
                         </button>
 
                         {line.item_name && (
-                          <div className="text-xs">{line.item_name}</div>
+                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate">
+                            {line.item_name}
+                          </div>
                         )}
                       </div>
                     )}
@@ -378,13 +409,16 @@ export default function PurchaseOrderLines({
                           type="button"
                           disabled={isReadonly}
                           onClick={() => setGlIndex(index)}
-                          className="border rounded px-3 py-2 bg-white  text-black hover:bg-gray-50 w-[140px] text-left"
+                          // className="border rounded px-3 py-2 bg-white  text-black hover:bg-gray-50 w-[140px] text-left"
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
                         >
                           {line.account_code || "Select GL"}
                         </button>
 
                         {line.account_name && (
-                          <div className="text-xs ">{line.account_name}</div>
+                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate">
+                            {line.account_name}
+                          </div>
                         )}
                       </div>
                     )}
@@ -399,7 +433,8 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "description", e.target.value)
                       }
-                      className="border rounded p-2"
+                      // className="border rounded p-2"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-xs"
                       rows={2}
                     />
                   </td>
@@ -414,14 +449,18 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "quantity", Number(e.target.value))
                       }
-                      className="border rounded p-2 w-[90px] text-right"
+                      // className="border rounded p-2 w-[90px] text-right"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
                     />
                   </td>
 
                   {/* UOM */}
 
                   <td className="p-2">
-                    <div className="border rounded p-2 min-w-[80px] text-black bg-gray-50">
+                    <div
+                      // className="border rounded p-2 min-w-[80px] text-black bg-gray-50"
+                      className="p-1 text-gray-500"
+                    >
                       {line.uom_name || "-"}
                     </div>
                   </td>
@@ -435,7 +474,8 @@ export default function PurchaseOrderLines({
                           type="button"
                           disabled={isReadonly}
                           onClick={() => setWarehouseIndex(index)}
-                          className="border rounded px-3 py-2 bg-white text-black hover:bg-gray-50 w-[160px] text-left"
+                          // className="border rounded px-3 py-2 bg-white text-black hover:bg-gray-50 w-[160px] text-left"
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-full truncate"
                         >
                           {line.warehouse_code || "Select Warehouse"}
                         </button>
@@ -466,6 +506,58 @@ export default function PurchaseOrderLines({
                       </div>
                     )}
                   </td>
+                  {/* Location Dropdown linked directly to Row Warehouse context */}
+                  <td className="p-2">
+                    {line.line_type === "ITEM" ? (
+                      <select
+                        value={line.location_id || ""}
+                        disabled={isReadonly || !line.warehouse_id}
+                        onFocus={() => {
+                          if (
+                            line.warehouse_id &&
+                            currentLocations.length === 0
+                          ) {
+                            fetchLocationsForSpecificRow(
+                              index,
+                              line.warehouse_id,
+                            );
+                          }
+                        }}
+                        onChange={(e) => {
+                          const selectedLoc = currentLocations.find(
+                            (l) => l.id === e.target.value,
+                          );
+                          const updated = [...lines];
+                          updated[index] = {
+                            ...updated[index],
+                            location_id: selectedLoc?.id || undefined,
+                            location_code:
+                              selectedLoc?.code ||
+                              selectedLoc?.title ||
+                              undefined,
+                            location_name: selectedLoc?.title || undefined,
+
+                            allocations: undefined, // Reset allocations upon layout adjustments
+                            is_allocated: false,
+                          };
+                          setLines(updated);
+                        }}
+                        className="border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded p-1.5 w-full text-xs text-black dark:text-slate-100 disabled:opacity-50"
+                        // className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-full disabled:opacity-50"
+                      >
+                        <option value="">-- Select Location --</option>
+                        {currentLocations.map((loc) => (
+                          <option key={loc.id} value={loc.id}>
+                            {loc.code
+                              ? `${loc.code} - ${loc.title}`
+                              : loc.title}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-gray-400">-</div>
+                    )}
+                  </td>
 
                   {/* UNIT COST */}
 
@@ -477,7 +569,8 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "unit_cost", Number(e.target.value))
                       }
-                      className="border rounded p-2 w-[110px] text-right"
+                      // className="border rounded p-2 w-[110px] text-right"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
                     />
                   </td>
 
@@ -487,13 +580,14 @@ export default function PurchaseOrderLines({
                     <select
                       value={line.discount_type || "PERCENT"}
                       disabled={isReadonly}
+                      // onChange={(e) => updateLine(index, "discount_type", e.target.value as "PERCENT" | "FIXED"
                       onChange={(e) =>
                         handleDiscountTypeChange(index, e.target.value)
                       }
-                      className="border rounded p-2 w-[100px] text-black bg-gray-50"
+                      // className="border rounded p-2 w-[100px] text-black bg-gray-50"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full"
                     >
                       <option value="PERCENT">%</option>
-
                       <option value="FIXED">Fixed</option>
                     </select>
                   </td>
@@ -512,7 +606,8 @@ export default function PurchaseOrderLines({
                           Number(e.target.value),
                         )
                       }
-                      className="border rounded p-2 w-[100px] text-right "
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                      // className="border rounded p-2 w-[100px] text-right "
                     />
                   </td>
 
@@ -526,35 +621,14 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "vat_percent", Number(e.target.value))
                       }
-                      className="border rounded p-2 w-[90px] text-right"
+                      // className="border rounded p-2 w-[90px] text-right"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
                     />
                   </td>
-
-                  {/* ORIGINAL */}
-
-                  <td className="p-2 text-right">
-                    {Number(line.original_amount || 0).toFixed(2)}
-                  </td>
-
-                  {/* DISCOUNT */}
-
-                  <td className="p-2 text-right">
-                    {Number(line.discount_amount || 0).toFixed(2)}
-                  </td>
-
-                  {/* NET */}
 
                   <td className="p-2 text-right font-medium">
                     {Number(line.net_amount || 0).toFixed(2)}
                   </td>
-
-                  {/* VAT */}
-
-                  <td className="p-2 text-right">
-                    {Number(line.vat_amount || 0).toFixed(2)}
-                  </td>
-
-                  {/* GROSS */}
 
                   <td className="p-2 text-right font-semibold">
                     {Number(line.gross_amount || 0).toFixed(2)}
@@ -568,13 +642,18 @@ export default function PurchaseOrderLines({
                         {line.line_type === "ITEM" ? (
                           <button
                             type="button"
-                            disabled={!line.item_id || !line.warehouse_id}
+                            disabled={isAllocationDisabled}
+                            // disabled={!line.item_id || !line.warehouse_id}
                             onClick={() => {
                               setActiveAllocationRowKey(index.toString());
                               setIsAllocationModalOpen(true);
                             }}
-                            className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-20"
-                            title="Lot/Serial Allocation Matrix"
+                            className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={
+                              isAllocationDisabled
+                                ? "Requires Whse & Location assignment first"
+                                : "Open Allocation Matrix"
+                            }
                           >
                             <span
                               className={`inline-block w-2.5 h-2.5 rounded-full ${
@@ -591,7 +670,7 @@ export default function PurchaseOrderLines({
                         <button
                           type="button"
                           onClick={() => removeLine(index)}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-red-600 hover:text-red-800 font-medium"
                         >
                           Remove
                         </button>
@@ -606,33 +685,22 @@ export default function PurchaseOrderLines({
           {/* FOOTER */}
 
           <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
-          <tr>
-            <td colSpan={10} className="p-2.5 text-right uppercase tracking-wider text-xs">
-              Totals
-            </td>
-            <td className="p-2.5 text-right font-mono">{totals.original.toFixed(2)}</td>
-            <td className="p-2.5 text-right font-mono">{totals.discount.toFixed(2)}</td>
-            <td className="p-2.5 text-right font-mono">{totals.net.toFixed(2)}</td>
-            <td className="p-2.5 text-right font-mono">{totals.vat.toFixed(2)}</td>
-            <td className="p-2.5 text-right font-mono">{totals.gross.toFixed(2)}</td>
-            {!isReadonly && <td />}
-          </tr>
-        </tfoot>
-
-          {/* <tfoot className="bg-gray-50 border-t font-semibold text-black">
             <tr>
-              <td colSpan={10} className="p-3 text-right">
+              <td
+                colSpan={11}
+                className="p-2.5 text-right uppercase tracking-wider text-xs"
+              >
                 Totals
               </td>
-
-              <td className="p-3 text-right">{totals.original.toFixed(2)}</td>
-              <td className="p-3 text-right">{totals.discount.toFixed(2)}</td>
-              <td className="p-3 text-right">{totals.net.toFixed(2)}</td>
-              <td className="p-3 text-right">{totals.vat.toFixed(2)}</td>
-              <td className="p-3 text-right">{totals.gross.toFixed(2)}</td>
+              <td className="p-2.5 text-right font-mono">
+                {totals.net.toFixed(2)}
+              </td>
+              <td className="p-2.5 text-right font-mono">
+                {totals.gross.toFixed(2)}
+              </td>
               {!isReadonly && <td />}
             </tr>
-          </tfoot> */}
+          </tfoot>
         </table>
       </div>
 
@@ -656,6 +724,7 @@ export default function PurchaseOrderLines({
             description: item.description || item.name,
             unit_cost: Number(item.standard_cost || 0),
             uom_id: item.base_uom_id,
+            // uom_name: item.base_uom_code,
             purchase_gl_id: item.purchase_gl_id,
             sales_gl_id: item.sales_gl_id,
             inventory_gl_id: item.inventory_gl_id,
@@ -708,6 +777,11 @@ export default function PurchaseOrderLines({
             warehouse_id: warehouse.id,
             warehouse_code: warehouse.code,
             warehouse_name: warehouse.name,
+            location_id: undefined, // Enforce clearing location when warehouse transitions
+            location_code: undefined,
+            location_name: undefined,
+            allocations: undefined,
+            is_allocated: false,
           };
 
           setLines(updated);
@@ -732,7 +806,9 @@ export default function PurchaseOrderLines({
             itemName={activeAllocationLine.item_name || ""}
             warehouseId={activeAllocationLine.warehouse_id || ""}
             warehouseName={activeAllocationLine.warehouse_name || ""}
-            locationName=""
+            locationId={activeAllocationLine.location_id || ""}
+            locationName={activeAllocationLine.location_name || ""}
+            uomName={activeAllocationLine.uom_name || ""}
             // Explicit map allocation fields back into strict StockAllocationRecord items
             initialAllocations={(activeAllocationLine.allocations || []).map(
               (alloc) => ({

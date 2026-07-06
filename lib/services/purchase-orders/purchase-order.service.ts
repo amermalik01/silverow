@@ -28,7 +28,10 @@ export class PurchaseOrderService {
 
   static async get(companyId: string, id: string) {
     const orderResult = await pool.query(
-      `SELECT * FROM purchase_orders WHERE id = $1 AND company_id = $2`,
+      `SELECT po.*, p.name AS supplier_name
+      FROM purchase_orders po
+      LEFT JOIN parties p ON p.id = po.supplier_id
+      WHERE po.id = $1 AND po.company_id = $2`,
       [id, companyId],
     );
 
@@ -63,6 +66,43 @@ export class PurchaseOrderService {
       [id, companyId],
     );
 
+    const allocationsResult = await pool.query(
+      `
+      SELECT 
+        id,
+        purchase_order_line_id,
+        item_id,
+        warehouse_id,
+        quantity,
+        batch_no,
+        serial_no,
+        TO_CHAR(date_received, 'YYYY-MM-DD') as date_received,
+        TO_CHAR(prod_date, 'YYYY-MM-DD') as prod_date,
+        TO_CHAR(expiry_date, 'YYYY-MM-DD') as expiry_date
+      FROM inventory_allocations
+      WHERE purchase_order_id = $1 AND company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    const linesWithAllocations = linesResult.rows.map((line) => {
+      const lineAllocations = allocationsResult.rows
+        .filter((alloc) => alloc.purchase_order_line_id === line.id)
+        .map((alloc) => ({
+          date_received: alloc.date_received || "",
+          prod_date: alloc.prod_date || "",
+          expiry_date: alloc.expiry_date || "",
+          batch_no: alloc.batch_no || "",
+          serial_no: alloc.serial_no || "",
+          quantity: Number(alloc.quantity) || 0,
+        }));
+
+      return {
+        ...line,
+        initialAllocations: lineAllocations,
+      };
+    });
+
     const addressResult = await pool.query(
       `SELECT * FROM purchase_order_addresses WHERE purchase_order_id = $1`,
       [id],
@@ -70,7 +110,8 @@ export class PurchaseOrderService {
 
     return {
       order: orderResult.rows[0],
-      lines: linesResult.rows,
+      lines: linesWithAllocations,
+      // lines: linesResult.rows,
       billing_address:
         addressResult.rows.find((x) => x.address_type === "billing") || null,
       shipping_address:
@@ -82,8 +123,7 @@ export class PurchaseOrderService {
     companyId: string,
     rawPayload: unknown,
   ): Promise<PurchaseOrder> {
-    // Validate runtime types strictly using schema
-    // const payload = PurchaseOrderPayloadSchema.parse(sanitizedPayload);
+
     const payload = PurchaseOrderPayloadSchema.parse(
       rawPayload,
     ) as PurchaseOrderPayload;
@@ -109,7 +149,7 @@ export class PurchaseOrderService {
         `
           INSERT INTO purchase_orders (
             company_id, order_no, supplier_id, order_date, expected_date,
-            warehouse_id, currency_id, exchange_rate, reference, notes, 
+            currency_id, exchange_rate, reference, notes, 
             subtotal, tax_amount, total_amount, status, created_at
           )
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now())
@@ -121,7 +161,7 @@ export class PurchaseOrderService {
           order.supplier_id,
           order.order_date || null,
           order.expected_date === "" ? null : order.expected_date || null,
-          order.warehouse_id || null,
+          // order.warehouse_id || null,
           order.currency_id,
           order.exchange_rate,
           order.reference || null,
@@ -190,8 +230,8 @@ export class PurchaseOrderService {
     id: string,
     rawPayload: unknown,
   ): Promise<void> {
-    const payload = PurchaseOrderPayloadSchema.parse(rawPayload);
-    // const payload = PurchaseOrderPayloadSchema.parse(rawPayload) as PurchaseOrderPayload;
+    
+    const payload = PurchaseOrderPayloadSchema.parse(rawPayload);    
     const client = await pool.connect();
 
     try {
@@ -202,6 +242,7 @@ export class PurchaseOrderService {
         `SELECT status FROM purchase_orders WHERE id = $1 AND company_id = $2`,
         [id, companyId],
       );
+      
       if (!existingResult.rows.length)
         throw new Error("Purchase order not found");
       if (existingResult.rows[0].status === "posted") {
@@ -212,16 +253,15 @@ export class PurchaseOrderService {
         `
         UPDATE purchase_orders
         SET
-          supplier_id = $1, order_date = $2, expected_date = $3, warehouse_id = $4,
-          currency_id = $5, exchange_rate = $6, reference = $7, notes = $8,
-          subtotal = $9, tax_amount = $10, total_amount = $11, updated_at = now()
-        WHERE id = $12
+          supplier_id = $1, order_date = $2, expected_date = $3,
+          currency_id = $4, exchange_rate = $5, reference = $6, notes = $7,
+          subtotal = $8, tax_amount = $9, total_amount = $10, updated_at = now()
+        WHERE id = $11
         `,
         [
           order.supplier_id,
           order.order_date || null,
           order.expected_date === "" ? null : order.expected_date || null,
-          order.warehouse_id || null,
           order.currency_id,
           order.exchange_rate,
           order.reference || null,
@@ -446,7 +486,7 @@ export class PurchaseOrderService {
         line.gl_account_id || null,
         line.description || null,
         line.warehouse_id || null,
-        line.warehouse_location_id || null,
+        line.location_id || null,
         line.uom_id || null,
         line.quantity || 0,
         line.received_quantity || 0,

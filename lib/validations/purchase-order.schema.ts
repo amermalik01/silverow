@@ -55,15 +55,15 @@ export const PurchaseOrderLineSchema = z.object({
   line_no: z.coerce.number().optional(),
   line_type: z.enum(["ITEM", "GL_ACCOUNT", "COMMENT"]),
   item_id: z.string().uuid().optional().nullable(),
-  item_code: z.string().optional(),
+  item_code: z.string().optional().nullable(),
   gl_account_id: z.string().uuid().optional().nullable(),
-  account_code: z.string().optional(),
-  description: z.string().max(500).optional(),
+  account_code: z.string().optional().nullable(),
+  description: z.string().max(500).optional().nullable(),
   warehouse_id: z.string().uuid().optional().nullable(),
   warehouse_location_id: z.string().uuid().optional().nullable(),
   uom_id: z.string().uuid().optional().nullable(),
   quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
-  received_quantity: z.coerce.number().min(0).optional(),
+  received_quantity: z.coerce.number().min(0).optional().nullable(),
   unit_cost: looseNumber, 
   discount_type: z.enum(["PERCENT", "FIXED"]).optional().nullable(),
   discount_value: looseNumber,
@@ -89,26 +89,85 @@ export const PurchaseOrderLineSchema = z.object({
   }
 });
 
-
 export const PurchaseOrderSchema = z.object({
   id: z.string().uuid().optional(),
   company_id: z.string().uuid().optional(),
-  order_no: z.string().optional(),
+  order_no: z.string().optional().nullable(), // 👈 FIXED: Added .nullable()
   supplier_id: z.string().uuid("Supplier selection is required"),
   warehouse_id: z.string().uuid().optional().nullable(),
   currency_id: z.string().uuid("An operational currency selection token is required"),
   exchange_rate: z.coerce.number().positive("Exchange rate factor must be greater than 0").default(1),
   order_date: z.string().min(1, "Order execution transaction date required"),
   expected_date: z.string().optional().nullable(),
-  invoice_date: z.string().optional().nullable(), // 👈 Added here
-  reference: z.string().max(100).optional(),
-  notes: z.string().max(5000).optional(),
+  invoice_date: z.string().optional().nullable(),
+  reference: z.string().max(100).optional().nullable(), // 👈 FIXED: Added .nullable() to fix reference crash
+  notes: z.string().max(5000).optional().nullable(), // 👈 FIXED: Added .nullable() to fix notes crash
   subtotal: looseNumber,
   tax_amount: looseNumber,
   total_amount: looseNumber,
-  // status: z.enum(["draft", "open", "partial_received", "received", "cancelled", "posted", "closed"]).default("draft"),
   status: z.string().min(1, "Status stage is required"),
 });
+
+// export const PurchaseOrderLineSchema = z.object({
+//   id: z.string().uuid().optional(),
+//   purchase_order_id: z.string().uuid().optional(),
+//   line_no: z.coerce.number().optional(),
+//   line_type: z.enum(["ITEM", "GL_ACCOUNT", "COMMENT"]),
+//   item_id: z.string().uuid().optional().nullable(),
+//   item_code: z.string().optional(),
+//   gl_account_id: z.string().uuid().optional().nullable(),
+//   account_code: z.string().optional(),
+//   description: z.string().max(500).optional(),
+//   warehouse_id: z.string().uuid().optional().nullable(),
+//   warehouse_location_id: z.string().uuid().optional().nullable(),
+//   uom_id: z.string().uuid().optional().nullable(),
+//   quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
+//   received_quantity: z.coerce.number().min(0).optional(),
+//   unit_cost: looseNumber, 
+//   discount_type: z.enum(["PERCENT", "FIXED"]).optional().nullable(),
+//   discount_value: looseNumber,
+//   discount_amount: looseNumber,
+//   vat_percent: looseNumber,
+//   vat_amount: looseNumber,
+//   net_amount: looseNumber,
+//   gross_amount: looseNumber,
+// }).superRefine((line, ctx) => {
+//   if (line.line_type === "ITEM") {
+//     if (!line.item_id) {
+//       ctx.addIssue({ code: "custom", message: "Item allocation is required", path: ["item_id"] });
+//     }
+//     if (!line.uom_id) {
+//       ctx.addIssue({ code: "custom", message: "Unit of measure is required", path: ["uom_id"] });
+//     }
+//     if (line.quantity <= 0) {
+//       ctx.addIssue({ code: "custom", message: "Quantity metric must be greater than 0", path: ["quantity"] });
+//     }
+//   }
+//   if (line.line_type === "GL_ACCOUNT" && !line.gl_account_id) {
+//     ctx.addIssue({ code: "custom", message: "GL Account routing identification required", path: ["gl_account_id"] });
+//   }
+// });
+
+
+// export const PurchaseOrderSchema = z.object({
+//   id: z.string().uuid().optional(),
+//   company_id: z.string().uuid().optional(),
+//   order_no: z.string().optional(),
+//   supplier_id: z.string().uuid("Supplier selection is required"),
+//   warehouse_id: z.string().uuid().optional().nullable(),
+//   currency_id: z.string().uuid("An operational currency selection token is required"),
+//   exchange_rate: z.coerce.number().positive("Exchange rate factor must be greater than 0").default(1),
+//   order_date: z.string().min(1, "Order execution transaction date required"),
+//   expected_date: z.string().optional().nullable(),
+//   invoice_date: z.string().optional().nullable(), // 👈 Added here
+//   reference: z.string().max(100).optional(),
+//   notes: z.string().max(5000).optional(),
+//   subtotal: looseNumber,
+//   tax_amount: looseNumber,
+//   total_amount: looseNumber,
+//   // status: z.enum(["draft", "open", "partial_received", "received", "cancelled", "posted", "closed"]).default("draft"),
+//   status: z.string().min(1, "Status stage is required"),
+// });
 
 export const PurchaseOrderPayloadSchema = z.object({
   order: PurchaseOrderSchema,

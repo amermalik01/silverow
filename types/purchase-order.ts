@@ -6,8 +6,9 @@ export interface PurchaseOrder {
   company_id?: string;
   order_no?: string;
   supplier_id: string;
+  supplier_no?: string;
   supplier_name?: string;
-  warehouse_id?: string;
+  // warehouse_id?: string;
   currency_id?: string;
   exchange_rate?: string | number;
   order_date: string;
@@ -87,7 +88,10 @@ export interface PurchaseOrderLine {
   warehouse_id?: string;
   warehouse_code?: string;
   warehouse_name?: string;
-  warehouse_location_id?: string;
+  location_id?: string;
+  location_code?: string;
+  location_name?: string;
+  is_allocated?: boolean;
 
   uom_id?: string;
   uom_name?: string;
@@ -135,6 +139,17 @@ export interface PurchaseOrderLineUI extends PurchaseOrderLine {
     quantity: number;
     [key: string]: unknown; // Avoids 'any' while remaining structurally open for StockAllocationRecord
   }>;
+}
+
+export interface StockAllocationRecord {
+  production_date?: string;
+  use_by_date?: string;
+  date_received?: string;
+  storage_location?: string;
+  cons_no?: string;
+  ref_no?: string;
+  serial_no: string;
+  quantity: number;
 }
 
 // export type PurchaseOrderStatus =
