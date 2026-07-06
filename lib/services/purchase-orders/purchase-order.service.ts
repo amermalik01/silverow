@@ -10,6 +10,7 @@ import {
   PurchaseOrderLine,
   PurchaseOrderPayload,
 } from "@/types/purchase-order";
+import { StockAllocationRecord } from "@/app/components/shared/modals/StockAllocationModal";
 
 export class PurchaseOrderService {
   static async list(companyId: string): Promise<PurchaseOrder[]> {
@@ -28,10 +29,12 @@ export class PurchaseOrderService {
 
   static async get(companyId: string, id: string) {
     const orderResult = await pool.query(
-      `SELECT po.*, p.name AS supplier_name
-     FROM purchase_orders po
-     LEFT JOIN parties p ON p.id = po.supplier_id
-     WHERE po.id = $1 AND po.company_id = $2`,
+      `
+      SELECT po.*, p.name AS supplier_name
+      FROM purchase_orders po
+      LEFT JOIN parties p ON p.id = po.supplier_id
+      WHERE po.id = $1 AND po.company_id = $2
+      `,
       [id, companyId],
     );
 
@@ -40,49 +43,55 @@ export class PurchaseOrderService {
     // Fetch PO Lines with standard UI components metadata
     const linesResult = await pool.query(
       `
-    SELECT 
-      pol.*, 
-      (pol.quantity - COALESCE(pol.received_quantity, 0)) AS remaining_quantity,
-      
-      i.item_code,
-      i.name AS item_name,        
+      SELECT 
+        pol.*, 
+        (pol.quantity - COALESCE(pol.received_quantity, 0)) AS remaining_quantity,
+        
+        i.item_code,
+        i.name AS item_name,        
 
-      gl.code AS account_code,
-      gl.name AS account_name,
-      
+        gl.code AS account_code,
+        gl.name AS account_name,        
 
-      w.code AS warehouse_code,
-      w.name AS warehouse_name,
+        w.code AS warehouse_code,
+        w.name AS warehouse_name,
 
-      u.name AS uom_name
-    FROM purchase_order_lines pol
-    LEFT JOIN items i ON pol.item_id = i.id AND i.company_id = $2
-    LEFT JOIN chart_of_accounts gl ON pol.gl_account_id = gl.id AND gl.company_id = $2
-    LEFT JOIN warehouses w ON pol.warehouse_id = w.id AND w.company_id = $2
-    LEFT JOIN uoms u ON pol.uom_id = u.id AND u.company_id = $2
-    WHERE pol.purchase_order_id = $1 AND pol.is_deleted = false
-    ORDER BY pol.line_no
-    `,
+        pol.warehouse_location_id AS location_id,
+        wl.code AS location_code,
+        wl.title AS location_name,
+
+        u.name AS uom_name
+
+      FROM purchase_order_lines pol
+      LEFT JOIN items i ON pol.item_id = i.id AND i.company_id = $2
+      LEFT JOIN chart_of_accounts gl ON pol.gl_account_id = gl.id AND gl.company_id = $2
+      LEFT JOIN warehouses w ON pol.warehouse_id = w.id AND w.company_id = $2
+      LEFT JOIN warehouse_locations wl ON pol.warehouse_id = wl.warehouse_id AND pol.warehouse_location_id = wl.id AND w.company_id = $2
+      LEFT JOIN uoms u ON pol.uom_id = u.id AND u.company_id = $2
+
+      WHERE pol.purchase_order_id = $1 AND pol.is_deleted = false
+      ORDER BY pol.line_no
+      `,
       [id, companyId],
     );
 
     // 🌟 FIX: Join with purchase_order_lines to look up by PO ID and select correct columns
     const allocationsResult = await pool.query(
       `
-    SELECT 
-      ia.id,
-      ia.purchase_order_line_id,
-      ia.item_id,
-      ia.warehouse_id,
-      ia.allocated_quantity AS quantity,
-      ia.batch_no,
-      ia.bin_code,
-      TO_CHAR(ia.expiry_date, 'YYYY-MM-DD') AS expiry_date,
-      TO_CHAR(ia.created_at, 'YYYY-MM-DD') AS date_received
-    FROM inventory_allocations ia
-    INNER JOIN purchase_order_lines pol ON ia.purchase_order_line_id = pol.id
-    WHERE pol.purchase_order_id = $1 AND ia.company_id = $2
-    `,
+      SELECT 
+        ia.id,
+        ia.purchase_order_line_id,
+        ia.item_id,
+        ia.warehouse_id,
+        ia.allocated_quantity AS quantity,
+        ia.batch_no,
+        ia.bin_code,
+        TO_CHAR(ia.expiry_date, 'YYYY-MM-DD') AS expiry_date,
+        TO_CHAR(ia.created_at, 'YYYY-MM-DD') AS date_received
+      FROM inventory_allocations ia
+      INNER JOIN purchase_order_lines pol ON ia.purchase_order_line_id = pol.id
+      WHERE pol.purchase_order_id = $1 AND ia.company_id = $2
+      `,
       [id, companyId],
     );
 
@@ -120,98 +129,6 @@ export class PurchaseOrderService {
     };
   }
 
-  /* static async get(companyId: string, id: string) {
-    const orderResult = await pool.query(
-      `SELECT po.*, p.name AS supplier_name
-      FROM purchase_orders po
-      LEFT JOIN parties p ON p.id = po.supplier_id
-      WHERE po.id = $1 AND po.company_id = $2`,
-      [id, companyId],
-    );
-
-    if (!orderResult.rows.length) return null;
-
-    // Modified query using LEFT JOINs to fetch codes and names for the frontend UI components
-    const linesResult = await pool.query(
-      `
-      SELECT 
-        pol.*, 
-        (pol.quantity - COALESCE(pol.received_quantity, 0)) AS remaining_quantity,
-        
-        i.item_code,
-        i.name AS item_name,        
-
-        gl.code AS account_code,
-        gl.name AS account_name,
-        
-
-        w.code AS warehouse_code,
-        w.name AS warehouse_name,
-
-        u.name AS uom_name
-      FROM purchase_order_lines pol
-      LEFT JOIN items i ON pol.item_id = i.id AND i.company_id = $2
-      LEFT JOIN chart_of_accounts gl ON pol.gl_account_id = gl.id AND gl.company_id = $2
-      LEFT JOIN warehouses w ON pol.warehouse_id = w.id AND w.company_id = $2
-      LEFT JOIN uoms u ON pol.uom_id = u.id AND u.company_id = $2
-      WHERE pol.purchase_order_id = $1 AND pol.is_deleted = false
-      ORDER BY pol.line_no
-      `,
-      [id, companyId],
-    );
-
-    const allocationsResult = await pool.query(
-      `
-      SELECT 
-        id,
-        purchase_order_line_id,
-        item_id,
-        warehouse_id,
-        quantity,
-        batch_no,
-        serial_no,
-        TO_CHAR(date_received, 'YYYY-MM-DD') as date_received,
-        TO_CHAR(prod_date, 'YYYY-MM-DD') as prod_date,
-        TO_CHAR(expiry_date, 'YYYY-MM-DD') as expiry_date
-      FROM inventory_allocations
-      WHERE purchase_order_id = $1 AND company_id = $2
-      `,
-      [id, companyId],
-    );
-
-    const linesWithAllocations = linesResult.rows.map((line) => {
-      const lineAllocations = allocationsResult.rows
-        .filter((alloc) => alloc.purchase_order_line_id === line.id)
-        .map((alloc) => ({
-          date_received: alloc.date_received || "",
-          prod_date: alloc.prod_date || "",
-          expiry_date: alloc.expiry_date || "",
-          batch_no: alloc.batch_no || "",
-          serial_no: alloc.serial_no || "",
-          quantity: Number(alloc.quantity) || 0,
-        }));
-
-      return {
-        ...line,
-        initialAllocations: lineAllocations,
-      };
-    });
-
-    const addressResult = await pool.query(
-      `SELECT * FROM purchase_order_addresses WHERE purchase_order_id = $1`,
-      [id],
-    );
-
-    return {
-      order: orderResult.rows[0],
-      lines: linesWithAllocations,
-      // lines: linesResult.rows,
-      billing_address:
-        addressResult.rows.find((x) => x.address_type === "billing") || null,
-      shipping_address:
-        addressResult.rows.find((x) => x.address_type === "shipping") || null,
-    };
-  } */
 
   static async create(
     companyId: string,
@@ -319,30 +236,32 @@ export class PurchaseOrderService {
   }
 
   static async update(
+    client: PoolClient,
     companyId: string,
     id: string,
     rawPayload: unknown,
-  ): Promise<void> {
+  ): Promise<
+    { id: string; item_id: string; warehouse_id: string; line_no: number }[]
+  > {
     const payload = PurchaseOrderPayloadSchema.parse(rawPayload);
-    const client = await pool.connect();
 
-    try {
-      await client.query("BEGIN");
-      const order = payload.order;
+    // try {
+    //   await client.query("BEGIN");
+    const order = payload.order;
 
-      const existingResult = await client.query(
-        `SELECT status FROM purchase_orders WHERE id = $1 AND company_id = $2`,
-        [id, companyId],
-      );
+    const existingResult = await client.query(
+      `SELECT status FROM purchase_orders WHERE id = $1 AND company_id = $2`,
+      [id, companyId],
+    );
 
-      if (!existingResult.rows.length)
-        throw new Error("Purchase order not found");
-      if (existingResult.rows[0].status === "posted") {
-        throw new Error("Posted purchase order cannot be modified");
-      }
+    if (!existingResult.rows.length)
+      throw new Error("Purchase order not found");
+    if (existingResult.rows[0].status === "posted") {
+      throw new Error("Posted purchase order cannot be modified");
+    }
 
-      await client.query(
-        `
+    await client.query(
+      `
         UPDATE purchase_orders
         SET
           supplier_id = $1, order_date = $2, expected_date = $3,
@@ -350,43 +269,43 @@ export class PurchaseOrderService {
           subtotal = $8, tax_amount = $9, total_amount = $10, updated_at = now()
         WHERE id = $11
         `,
-        [
-          order.supplier_id,
-          order.order_date || null,
-          order.expected_date === "" ? null : order.expected_date || null,
-          order.currency_id,
-          order.exchange_rate,
-          order.reference || null,
-          order.notes || null,
-          order.subtotal,
-          order.tax_amount,
-          order.total_amount,
-          id,
-        ],
-      );
+      [
+        order.supplier_id,
+        order.order_date || null,
+        order.expected_date === "" ? null : order.expected_date || null,
+        order.currency_id,
+        order.exchange_rate,
+        order.reference || null,
+        order.notes || null,
+        order.subtotal,
+        order.tax_amount,
+        order.total_amount,
+        id,
+      ],
+    );
 
-      // Soft delete unlinked line entries
-      const existingLinesResult = await client.query(
-        `SELECT id FROM purchase_order_lines WHERE purchase_order_id = $1 AND is_deleted = false`,
-        [id],
-      );
-      const existingLineIds = existingLinesResult.rows.map((x) => x.id);
-      const incomingLineIds = payload.lines.map((x) => x.id).filter(Boolean);
+    // Soft delete unlinked line entries
+    const existingLinesResult = await client.query(
+      `SELECT id FROM purchase_order_lines WHERE purchase_order_id = $1 AND is_deleted = false`,
+      [id],
+    );
+    const existingLineIds = existingLinesResult.rows.map((x) => x.id);
+    const incomingLineIds = payload.lines.map((x) => x.id).filter(Boolean);
 
-      for (const existingId of existingLineIds) {
-        if (!incomingLineIds.includes(existingId)) {
-          await client.query(
-            `UPDATE purchase_order_lines SET is_deleted = true, updated_at = now() WHERE id = $1`,
-            [existingId],
-          );
-        }
+    for (const existingId of existingLineIds) {
+      if (!incomingLineIds.includes(existingId)) {
+        await client.query(
+          `UPDATE purchase_order_lines SET is_deleted = true, updated_at = now() WHERE id = $1`,
+          [existingId],
+        );
       }
+    }
 
-      let lineNo = 10000;
-      for (const line of payload.lines) {
-        if (line.id) {
-          await client.query(
-            `
+    let lineNo = 10000;
+    for (const line of payload.lines) {
+      if (line.id) {
+        await client.query(
+          `
             UPDATE purchase_order_lines
             SET
               line_type = $1, item_id = $2, gl_account_id = $3, description = $4,
@@ -396,73 +315,76 @@ export class PurchaseOrderService {
               line_no = $17, updated_at = now()
             WHERE id = $18
             `,
-            [
-              line.line_type,
-              line.item_id,
-              line.gl_account_id,
-              line.description,
-              line.warehouse_id,
-              line.warehouse_location_id,
-              line.uom_id,
-              line.quantity,
-              line.unit_cost,
-              line.discount_type,
-              line.discount_value,
-              line.discount_amount,
-              line.vat_percent,
-              line.vat_amount,
-              line.net_amount,
-              line.gross_amount,
-              lineNo,
-              line.id,
-            ],
-          );
-        } else {
-          // 1. Convert all explicit 'null' values inside the Zod line object into standard 'undefined'
-          const entriesWithUndefined = Object.entries(line).map(
-            ([key, value]) => [key, value === null ? undefined : value],
-          );
-
-          // 2. Re-assemble into a valid database PurchaseOrderLine instance
-          const sanitizedLine = Object.fromEntries(
-            entriesWithUndefined,
-          ) as PurchaseOrderLine;
-
-          await this.insertLine(client, companyId, id, sanitizedLine, lineNo);
-        }
-        lineNo += 10000;
-      }
-
-      await client.query(
-        `DELETE FROM purchase_order_addresses WHERE purchase_order_id = $1`,
-        [id],
-      );
-
-      if (payload.billing_address) {
-        await this.insertAddress(
-          client,
-          id,
-          payload.billing_address,
-          companyId,
+          [
+            line.line_type,
+            line.item_id,
+            line.gl_account_id,
+            line.description,
+            line.warehouse_id,
+            line.warehouse_location_id,
+            line.uom_id,
+            line.quantity,
+            line.unit_cost,
+            line.discount_type,
+            line.discount_value,
+            line.discount_amount,
+            line.vat_percent,
+            line.vat_amount,
+            line.net_amount,
+            line.gross_amount,
+            lineNo,
+            line.id,
+          ],
         );
-      }
-      if (payload.shipping_address) {
-        await this.insertAddress(
-          client,
-          id,
-          payload.shipping_address,
-          companyId,
+      } else {
+        // 1. Convert all explicit 'null' values inside the Zod line object into standard 'undefined'
+        const entriesWithUndefined = Object.entries(line).map(
+          ([key, value]) => [key, value === null ? undefined : value],
         );
-      }
 
-      await this.recalculateStatus(client, id);
-      await client.query("COMMIT");
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
+        // 2. Re-assemble into a valid database PurchaseOrderLine instance
+        const sanitizedLine = Object.fromEntries(
+          entriesWithUndefined,
+        ) as PurchaseOrderLine;
+
+        await this.insertLine(client, companyId, id, sanitizedLine, lineNo);
+      }
+      lineNo += 10000;
     }
+
+    await client.query(
+      `DELETE FROM purchase_order_addresses WHERE purchase_order_id = $1`,
+      [id],
+    );
+
+    if (payload.billing_address) {
+      await this.insertAddress(client, id, payload.billing_address, companyId);
+    }
+    if (payload.shipping_address) {
+      await this.insertAddress(client, id, payload.shipping_address, companyId);
+    }
+
+    await this.recalculateStatus(client, id);
+
+    const finalLines = await client.query<{
+      id: string;
+      item_id: string;
+      warehouse_id: string;
+      line_no: number;
+    }>(
+      `SELECT id, item_id, warehouse_id, line_no FROM purchase_order_lines 
+       WHERE purchase_order_id = $1 AND is_deleted = false ORDER BY line_no`,
+      [id],
+    );
+
+    return finalLines.rows;
+    //   await client.query("COMMIT");
+    // } catch (err) {
+    //   await client.query("ROLLBACK");
+    //   throw err;
+    // } finally {
+    //   client.release();
+    // }
   }
 
   static async delete(companyId: string, id: string): Promise<void> {
@@ -707,6 +629,66 @@ export class PurchaseOrderService {
     );
   }
 
+  // Add this inside your PurchaseOrderService class
+
+  static async saveLineAllocations(
+    client: PoolClient,
+    companyId: string,
+    purchaseOrderId: string,
+    purchaseOrderLineId: string,
+    itemId: string,
+    warehouseId: string,
+    initialAllocations: StockAllocationRecord[],
+  ): Promise<void> {
+    // 1. Clear any existing manual entries for this specific line to prevent duplicates on update
+    await client.query(
+      `
+      DELETE FROM inventory_allocations
+      WHERE purchase_order_line_id = $1 AND company_id = $2
+      `,
+      [purchaseOrderLineId, companyId],
+    );
+
+    if (!initialAllocations || !initialAllocations.length) return;
+
+    // 2. Insert the fresh mock/planned allocation array from the UI modal
+    for (const alloc of initialAllocations) {
+      await client.query(
+        `
+        INSERT INTO inventory_allocations (
+          company_id,
+          outbound_entry_id,
+          inbound_entry_id,
+          purchase_order_line_id,
+          item_id,
+          warehouse_id,
+          batch_no,
+          expiry_date,
+          allocated_quantity,
+          unit_cost,
+          total_cost,
+          allocation_method,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'FIFO', 'ACTIVE')
+        `,
+        [
+          companyId,
+          null,
+          null,
+          purchaseOrderLineId,
+          itemId,
+          warehouseId,
+          alloc.batch_no || null,
+          alloc.expiry_date === "" ? null : alloc.expiry_date || null,
+          Number(alloc.quantity) || 0,
+          0,
+          0,
+        ],
+      );
+    }
+  }
+
   private static validatePayload(payload: PurchaseOrderPayload): void {
     const order = payload.order;
 
@@ -781,3 +763,96 @@ export class PurchaseOrderService {
     }
   }
 }
+
+  /* static async get(companyId: string, id: string) {
+    const orderResult = await pool.query(
+      `SELECT po.*, p.name AS supplier_name
+      FROM purchase_orders po
+      LEFT JOIN parties p ON p.id = po.supplier_id
+      WHERE po.id = $1 AND po.company_id = $2`,
+      [id, companyId],
+    );
+
+    if (!orderResult.rows.length) return null;
+
+    // Modified query using LEFT JOINs to fetch codes and names for the frontend UI components
+    const linesResult = await pool.query(
+      `
+      SELECT 
+        pol.*, 
+        (pol.quantity - COALESCE(pol.received_quantity, 0)) AS remaining_quantity,
+        
+        i.item_code,
+        i.name AS item_name,        
+
+        gl.code AS account_code,
+        gl.name AS account_name,
+        
+
+        w.code AS warehouse_code,
+        w.name AS warehouse_name,
+
+        u.name AS uom_name
+      FROM purchase_order_lines pol
+      LEFT JOIN items i ON pol.item_id = i.id AND i.company_id = $2
+      LEFT JOIN chart_of_accounts gl ON pol.gl_account_id = gl.id AND gl.company_id = $2
+      LEFT JOIN warehouses w ON pol.warehouse_id = w.id AND w.company_id = $2
+      LEFT JOIN uoms u ON pol.uom_id = u.id AND u.company_id = $2
+      WHERE pol.purchase_order_id = $1 AND pol.is_deleted = false
+      ORDER BY pol.line_no
+      `,
+      [id, companyId],
+    );
+
+    const allocationsResult = await pool.query(
+      `
+      SELECT 
+        id,
+        purchase_order_line_id,
+        item_id,
+        warehouse_id,
+        quantity,
+        batch_no,
+        serial_no,
+        TO_CHAR(date_received, 'YYYY-MM-DD') as date_received,
+        TO_CHAR(prod_date, 'YYYY-MM-DD') as prod_date,
+        TO_CHAR(expiry_date, 'YYYY-MM-DD') as expiry_date
+      FROM inventory_allocations
+      WHERE purchase_order_id = $1 AND company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    const linesWithAllocations = linesResult.rows.map((line) => {
+      const lineAllocations = allocationsResult.rows
+        .filter((alloc) => alloc.purchase_order_line_id === line.id)
+        .map((alloc) => ({
+          date_received: alloc.date_received || "",
+          prod_date: alloc.prod_date || "",
+          expiry_date: alloc.expiry_date || "",
+          batch_no: alloc.batch_no || "",
+          serial_no: alloc.serial_no || "",
+          quantity: Number(alloc.quantity) || 0,
+        }));
+
+      return {
+        ...line,
+        initialAllocations: lineAllocations,
+      };
+    });
+
+    const addressResult = await pool.query(
+      `SELECT * FROM purchase_order_addresses WHERE purchase_order_id = $1`,
+      [id],
+    );
+
+    return {
+      order: orderResult.rows[0],
+      lines: linesWithAllocations,
+      // lines: linesResult.rows,
+      billing_address:
+        addressResult.rows.find((x) => x.address_type === "billing") || null,
+      shipping_address:
+        addressResult.rows.find((x) => x.address_type === "shipping") || null,
+    };
+  } */
