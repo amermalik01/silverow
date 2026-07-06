@@ -29,6 +29,100 @@ export class PurchaseOrderService {
   static async get(companyId: string, id: string) {
     const orderResult = await pool.query(
       `SELECT po.*, p.name AS supplier_name
+     FROM purchase_orders po
+     LEFT JOIN parties p ON p.id = po.supplier_id
+     WHERE po.id = $1 AND po.company_id = $2`,
+      [id, companyId],
+    );
+
+    if (!orderResult.rows.length) return null;
+
+    // Fetch PO Lines with standard UI components metadata
+    const linesResult = await pool.query(
+      `
+    SELECT 
+      pol.*, 
+      (pol.quantity - COALESCE(pol.received_quantity, 0)) AS remaining_quantity,
+      
+      i.item_code,
+      i.name AS item_name,        
+
+      gl.code AS account_code,
+      gl.name AS account_name,
+      
+
+      w.code AS warehouse_code,
+      w.name AS warehouse_name,
+
+      u.name AS uom_name
+    FROM purchase_order_lines pol
+    LEFT JOIN items i ON pol.item_id = i.id AND i.company_id = $2
+    LEFT JOIN chart_of_accounts gl ON pol.gl_account_id = gl.id AND gl.company_id = $2
+    LEFT JOIN warehouses w ON pol.warehouse_id = w.id AND w.company_id = $2
+    LEFT JOIN uoms u ON pol.uom_id = u.id AND u.company_id = $2
+    WHERE pol.purchase_order_id = $1 AND pol.is_deleted = false
+    ORDER BY pol.line_no
+    `,
+      [id, companyId],
+    );
+
+    // 🌟 FIX: Join with purchase_order_lines to look up by PO ID and select correct columns
+    const allocationsResult = await pool.query(
+      `
+    SELECT 
+      ia.id,
+      ia.purchase_order_line_id,
+      ia.item_id,
+      ia.warehouse_id,
+      ia.allocated_quantity AS quantity,
+      ia.batch_no,
+      ia.bin_code,
+      TO_CHAR(ia.expiry_date, 'YYYY-MM-DD') AS expiry_date,
+      TO_CHAR(ia.created_at, 'YYYY-MM-DD') AS date_received
+    FROM inventory_allocations ia
+    INNER JOIN purchase_order_lines pol ON ia.purchase_order_line_id = pol.id
+    WHERE pol.purchase_order_id = $1 AND ia.company_id = $2
+    `,
+      [id, companyId],
+    );
+
+    // Map the accurate database properties to your frontend modal structures safely
+    const linesWithAllocations = linesResult.rows.map((line) => {
+      const lineAllocations = allocationsResult.rows
+        .filter((alloc) => alloc.purchase_order_line_id === line.id)
+        .map((alloc) => ({
+          date_received: alloc.date_received || "",
+          prod_date: "", // Set to blank string since it is not saved on this table
+          expiry_date: alloc.expiry_date || "",
+          batch_no: alloc.batch_no || "",
+          bin_code: alloc.bin_code || "",
+          quantity: Number(alloc.quantity) || 0,
+        }));
+
+      return {
+        ...line,
+        initialAllocations: lineAllocations,
+      };
+    });
+
+    const addressResult = await pool.query(
+      `SELECT * FROM purchase_order_addresses WHERE purchase_order_id = $1`,
+      [id],
+    );
+
+    return {
+      order: orderResult.rows[0],
+      lines: linesWithAllocations,
+      billing_address:
+        addressResult.rows.find((x) => x.address_type === "billing") || null,
+      shipping_address:
+        addressResult.rows.find((x) => x.address_type === "shipping") || null,
+    };
+  }
+
+  /* static async get(companyId: string, id: string) {
+    const orderResult = await pool.query(
+      `SELECT po.*, p.name AS supplier_name
       FROM purchase_orders po
       LEFT JOIN parties p ON p.id = po.supplier_id
       WHERE po.id = $1 AND po.company_id = $2`,
@@ -117,13 +211,12 @@ export class PurchaseOrderService {
       shipping_address:
         addressResult.rows.find((x) => x.address_type === "shipping") || null,
     };
-  }
+  } */
 
   static async create(
     companyId: string,
     rawPayload: unknown,
   ): Promise<PurchaseOrder> {
-
     const payload = PurchaseOrderPayloadSchema.parse(
       rawPayload,
     ) as PurchaseOrderPayload;
@@ -230,8 +323,7 @@ export class PurchaseOrderService {
     id: string,
     rawPayload: unknown,
   ): Promise<void> {
-    
-    const payload = PurchaseOrderPayloadSchema.parse(rawPayload);    
+    const payload = PurchaseOrderPayloadSchema.parse(rawPayload);
     const client = await pool.connect();
 
     try {
@@ -242,7 +334,7 @@ export class PurchaseOrderService {
         `SELECT status FROM purchase_orders WHERE id = $1 AND company_id = $2`,
         [id, companyId],
       );
-      
+
       if (!existingResult.rows.length)
         throw new Error("Purchase order not found");
       if (existingResult.rows[0].status === "posted") {

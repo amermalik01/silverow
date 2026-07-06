@@ -2,10 +2,12 @@
 
 import { z } from "zod";
 
-const looseString = z.preprocess(
-  (val) => (val === "" || val === null ? undefined : String(val)),
-  z.string().optional()
-);
+const looseString = z.preprocess((val) => {
+  if (val === "" || val === null || val === undefined || val === "undefined") {
+    return undefined;
+  }
+  return String(val);
+}, z.string().optional());
 
 const looseNumber = z.preprocess((val) => {
   if (val === "" || val === null || val === undefined) return 0;
@@ -13,34 +15,43 @@ const looseNumber = z.preprocess((val) => {
   return isNaN(parsed) ? 0 : parsed;
 }, z.number().nonnegative("Numeric values cannot be negative").default(0));
 
-
 export const PurchaseOrderAddressSchema = z.object({
   id: z.string().uuid().optional(),
   purchase_order_id: z.string().uuid().optional(),
   address_type: z.enum(["billing", "shipping"]),
-  
+
   // FIXED: Changed from standard .optional() to looseString to capture and clean database nulls
   contact_name: looseString.superRefine((val, ctx) => {
     if (val && val.length > 150) {
-      ctx.addIssue({ code: "custom", message: "String must contain at most 150 character(s)" });
+      ctx.addIssue({
+        code: "custom",
+        message: "String must contain at most 150 character(s)",
+      });
     }
   }),
   name: looseString.superRefine((val, ctx) => {
     if (val && val.length > 150) {
-      ctx.addIssue({ code: "custom", message: "String must contain at most 150 character(s)" });
+      ctx.addIssue({
+        code: "custom",
+        message: "String must contain at most 150 character(s)",
+      });
     }
   }),
   phone: looseString.superRefine((val, ctx) => {
     if (val && val.length > 50) {
-      ctx.addIssue({ code: "custom", message: "String must contain at most 50 character(s)" });
+      ctx.addIssue({
+        code: "custom",
+        message: "String must contain at most 50 character(s)",
+      });
     }
   }),
   email: looseString.superRefine((val, ctx) => {
-    if (val && !/^\S+@\S+\.\S+$/.test(val)) {
+    // Only apply regex constraint if the variable contains content and is not empty/undefined
+    if (val && val !== "undefined" && !/^\S+@\S+\.\S+$/.test(val)) {
       ctx.addIssue({ code: "custom", message: "Invalid email structure" });
     }
   }),
-  
+
   address_1: z.string().min(1, "Street address coordinates required").max(255),
   address_2: looseString,
   city: z.string().min(1, "Target destination city required").max(100),
@@ -49,45 +60,63 @@ export const PurchaseOrderAddressSchema = z.object({
   country: z.string().min(1, "Country designation code required").max(100),
 });
 
-export const PurchaseOrderLineSchema = z.object({
-  id: z.string().uuid().optional(),
-  purchase_order_id: z.string().uuid().optional(),
-  line_no: z.coerce.number().optional(),
-  line_type: z.enum(["ITEM", "GL_ACCOUNT", "COMMENT"]),
-  item_id: z.string().uuid().optional().nullable(),
-  item_code: z.string().optional().nullable(),
-  gl_account_id: z.string().uuid().optional().nullable(),
-  account_code: z.string().optional().nullable(),
-  description: z.string().max(500).optional().nullable(),
-  warehouse_id: z.string().uuid().optional().nullable(),
-  warehouse_location_id: z.string().uuid().optional().nullable(),
-  uom_id: z.string().uuid().optional().nullable(),
-  quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
-  received_quantity: z.coerce.number().min(0).optional().nullable(),
-  unit_cost: looseNumber, 
-  discount_type: z.enum(["PERCENT", "FIXED"]).optional().nullable(),
-  discount_value: looseNumber,
-  discount_amount: looseNumber,
-  vat_percent: looseNumber,
-  vat_amount: looseNumber,
-  net_amount: looseNumber,
-  gross_amount: looseNumber,
-}).superRefine((line, ctx) => {
-  if (line.line_type === "ITEM") {
-    if (!line.item_id) {
-      ctx.addIssue({ code: "custom", message: "Item allocation is required", path: ["item_id"] });
+export const PurchaseOrderLineSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    purchase_order_id: z.string().uuid().optional(),
+    line_no: z.coerce.number().optional(),
+    line_type: z.enum(["ITEM", "GL_ACCOUNT", "COMMENT"]),
+    item_id: z.string().uuid().optional().nullable(),
+    item_code: z.string().optional().nullable(),
+    gl_account_id: z.string().uuid().optional().nullable(),
+    account_code: z.string().optional().nullable(),
+    description: z.string().max(500).optional().nullable(),
+    warehouse_id: z.string().uuid().optional().nullable(),
+    warehouse_location_id: z.string().uuid().optional().nullable(),
+    uom_id: z.string().uuid().optional().nullable(),
+    quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
+    received_quantity: z.coerce.number().min(0).optional().nullable(),
+    unit_cost: looseNumber,
+    discount_type: z.enum(["PERCENT", "FIXED"]).optional().nullable(),
+    discount_value: looseNumber,
+    discount_amount: looseNumber,
+    vat_percent: looseNumber,
+    vat_amount: looseNumber,
+    net_amount: looseNumber,
+    gross_amount: looseNumber,
+  })
+  .superRefine((line, ctx) => {
+    if (line.line_type === "ITEM") {
+      if (!line.item_id) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Item allocation is required",
+          path: ["item_id"],
+        });
+      }
+      if (!line.uom_id) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Unit of measure is required",
+          path: ["uom_id"],
+        });
+      }
+      if (line.quantity <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Quantity metric must be greater than 0",
+          path: ["quantity"],
+        });
+      }
     }
-    if (!line.uom_id) {
-      ctx.addIssue({ code: "custom", message: "Unit of measure is required", path: ["uom_id"] });
+    if (line.line_type === "GL_ACCOUNT" && !line.gl_account_id) {
+      ctx.addIssue({
+        code: "custom",
+        message: "GL Account routing identification required",
+        path: ["gl_account_id"],
+      });
     }
-    if (line.quantity <= 0) {
-      ctx.addIssue({ code: "custom", message: "Quantity metric must be greater than 0", path: ["quantity"] });
-    }
-  }
-  if (line.line_type === "GL_ACCOUNT" && !line.gl_account_id) {
-    ctx.addIssue({ code: "custom", message: "GL Account routing identification required", path: ["gl_account_id"] });
-  }
-});
+  });
 
 export const PurchaseOrderSchema = z.object({
   id: z.string().uuid().optional(),
@@ -95,8 +124,13 @@ export const PurchaseOrderSchema = z.object({
   order_no: z.string().optional().nullable(), // 👈 FIXED: Added .nullable()
   supplier_id: z.string().uuid("Supplier selection is required"),
   warehouse_id: z.string().uuid().optional().nullable(),
-  currency_id: z.string().uuid("An operational currency selection token is required"),
-  exchange_rate: z.coerce.number().positive("Exchange rate factor must be greater than 0").default(1),
+  currency_id: z
+    .string()
+    .uuid("An operational currency selection token is required"),
+  exchange_rate: z.coerce
+    .number()
+    .positive("Exchange rate factor must be greater than 0")
+    .default(1),
   order_date: z.string().min(1, "Order execution transaction date required"),
   expected_date: z.string().optional().nullable(),
   invoice_date: z.string().optional().nullable(),
@@ -107,6 +141,27 @@ export const PurchaseOrderSchema = z.object({
   total_amount: looseNumber,
   status: z.string().min(1, "Status stage is required"),
 });
+
+export const PurchaseOrderPayloadSchema = z.object({
+  order: PurchaseOrderSchema,
+  lines: z
+    .array(PurchaseOrderLineSchema)
+    .min(
+      1,
+      "Transactional document records must contain at least 1 visual item line entry",
+    ),
+  billing_address: PurchaseOrderAddressSchema.nullable().optional(),
+  shipping_address: PurchaseOrderAddressSchema.nullable().optional(),
+});
+
+export type PurchaseOrderInput = z.infer<typeof PurchaseOrderSchema>;
+export type PurchaseOrderAddressInput = z.infer<
+  typeof PurchaseOrderAddressSchema
+>;
+export type PurchaseOrderLineInput = z.infer<typeof PurchaseOrderLineSchema>;
+export type PurchaseOrderPayloadInput = z.infer<
+  typeof PurchaseOrderPayloadSchema
+>;
 
 // export const PurchaseOrderLineSchema = z.object({
 //   id: z.string().uuid().optional(),
@@ -123,7 +178,7 @@ export const PurchaseOrderSchema = z.object({
 //   uom_id: z.string().uuid().optional().nullable(),
 //   quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
 //   received_quantity: z.coerce.number().min(0).optional(),
-//   unit_cost: looseNumber, 
+//   unit_cost: looseNumber,
 //   discount_type: z.enum(["PERCENT", "FIXED"]).optional().nullable(),
 //   discount_value: looseNumber,
 //   discount_amount: looseNumber,
@@ -148,7 +203,6 @@ export const PurchaseOrderSchema = z.object({
 //   }
 // });
 
-
 // export const PurchaseOrderSchema = z.object({
 //   id: z.string().uuid().optional(),
 //   company_id: z.string().uuid().optional(),
@@ -168,15 +222,3 @@ export const PurchaseOrderSchema = z.object({
 //   // status: z.enum(["draft", "open", "partial_received", "received", "cancelled", "posted", "closed"]).default("draft"),
 //   status: z.string().min(1, "Status stage is required"),
 // });
-
-export const PurchaseOrderPayloadSchema = z.object({
-  order: PurchaseOrderSchema,
-  lines: z.array(PurchaseOrderLineSchema).min(1, "Transactional document records must contain at least 1 visual item line entry"),
-  billing_address: PurchaseOrderAddressSchema.nullable().optional(),
-  shipping_address: PurchaseOrderAddressSchema.nullable().optional(),
-});
-
-export type PurchaseOrderInput = z.infer<typeof PurchaseOrderSchema>;
-export type PurchaseOrderAddressInput = z.infer<typeof PurchaseOrderAddressSchema>;
-export type PurchaseOrderLineInput = z.infer<typeof PurchaseOrderLineSchema>;
-export type PurchaseOrderPayloadInput = z.infer<typeof PurchaseOrderPayloadSchema>;
