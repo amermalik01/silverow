@@ -26,8 +26,7 @@ export async function GET(req: NextRequest) {
     const postcode = searchParams.get("postcode") || "";
     const email = searchParams.get("email") || "";
 
-    const result = await pool.query(
-      `
+    const query = `
       SELECT
         p.id,
         p.customer_code,
@@ -46,10 +45,12 @@ export async function GET(req: NextRequest) {
 
       WHERE p.company_id = $1
 
-      AND (
-        p.type = 'customer'
-        OR p.type = 'both'
-      )
+      AND p.is_customer = true
+
+      -- AND (
+      --   p.type = 'customer'
+      --   OR p.type = 'both'
+      -- )
 
       AND (
         $2 = ''
@@ -76,11 +77,21 @@ export async function GET(req: NextRequest) {
         OR p.email ILIKE '%' || $6 || '%'
       )
 
-      ORDER BY p.name ASC
+      ORDER BY p.customer_code DESC
       LIMIT 100
-      `,
-      [companyId, customerCode, name, city, postcode, email],
-    );
+      `;
+
+    // console.log('query === ',query);
+    // console.log('companyId ===  ',companyId);
+
+    const result = await pool.query(query, [
+      companyId,
+      customerCode,
+      name,
+      city,
+      postcode,
+      email,
+    ]);
 
     const customers = [];
 

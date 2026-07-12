@@ -1,5 +1,4 @@
 // types/erp.ts
-// types/erp.ts
 
 import { z } from "zod";
 import { PartySchema } from "@/lib/validations/party.schema";
@@ -40,7 +39,8 @@ export interface PartyAddress {
   address_2?: string;
   city?: string;
   state?: string;
-  country?: string;
+  country?: string | null;
+  country_id?: string | null;
   postcode?: string;
   phone?: string;
   email?: string;
@@ -57,7 +57,8 @@ export type PartyAddressDraft = {
   address_2?: string;
   city?: string;
   state?: string; // Maps to County / State input field
-  country?: string;
+  country?: string | null;
+  country_id?: string | null;
   postcode?: string;
   phone?: string;
   email?: string;
@@ -89,6 +90,7 @@ export type PartyDraft = {
   phone?: string | null;
   mobile?: string | null;
   website?: string | null;
+  country?: string | null;
 
   // Ledger Control Pointers
   credit_limit?: number;
@@ -98,78 +100,3 @@ export type PartyDraft = {
   sales_posting_group_id?: string | null;   // 🟢 Critical for Customer G/L Control Group routing
   purchase_posting_group_id?: string | null; // 🟢 Critical for Supplier G/L Control Group routing
 };
-
-/* import { z } from "zod";
-import { PartySchema } from "@/lib/validations/party.schema";
-
-export type Party = z.infer<typeof PartySchema>;
-export type PartyType = "customer" | "supplier" | "lead" | "vendor" | "both";
-export type PartyModule = "crm" | "srm" | "hr" | "procurement";
-export interface PartyContact {
-  id: string;
-  party_id: string;
-  name: string;
-  job_title?: string;
-  email?: string;
-  phone?: string;
-  mobile?: string;
-  is_primary: boolean;
-}
-
-export type PartyContactDraft = {
-  id?: string;
-  party_id?: string;
-
-  name: string;
-  job_title?: string;
-  email?: string;
-  phone?: string;
-  mobile?: string;
-  notes?: string;
-
-  is_primary: boolean;
-};
-export interface PartyAddress {
-  id: string;
-  party_id: string;
-  address_1?: string;
-  city?: string;
-  country?: string;
-  is_primary?: boolean;
-}
-
-export type PartyAddressDraft = {
-  id?: string;
-  party_id?: string;
-  label?: string;
-
-  address_1: string;
-  address_2?: string;
-
-  city?: string;
-  county?: string;
-  country?: string;
-  state?: string;
-  postcode?: string;
-  country_id?: string;
-
-  phone?: string;
-  email?: string;
-
-  is_primary: boolean;
-  is_billing?: boolean;
-  is_shipping?: boolean;
-};
-
-export type PartyDraft = {
-  id?: string;
-  name: string;
-  type: PartyType;
-  status: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  credit_limit?: number;
-  currency_id?: number | null;
-  salesperson_id?: string;
-}; */

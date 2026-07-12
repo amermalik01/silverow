@@ -9,18 +9,25 @@ type Props = {
   type: MasterType;
   value?: string | null;
   onChange: (value: string | null) => void;
+  className?: string;
+  disabled?: boolean;
 };
 
-export default function MasterDropdown({ type, value, onChange }: Props) {
+export default function MasterDropdown({
+  type,
+  value,
+  onChange,
+  className = "border p-2 w-full rounded",
+  disabled,
+}: Props) {
   const options = useMaster(type);
 
   return (
     <select
       value={value ?? ""}
-      onChange={(e) =>
-        onChange(e.target.value ? e.target.value : null)
-      }
-      className="border p-2 w-full rounded"
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value ? e.target.value : null)}
+      className={className}
     >
       <option value="">Select {type}</option>
 

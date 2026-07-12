@@ -201,7 +201,7 @@ export default function CRMLookupModal({
         </div>
 
         {/* Matrix Ledger view panel */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto px-2 pb-10">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-slate-50 text-slate-600 font-bold sticky top-0 border-b border-slate-200 z-10">
               <tr>

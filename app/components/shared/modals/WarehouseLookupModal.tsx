@@ -275,7 +275,7 @@ export default function WarehouseLookupModal({
 
         {/* TABLE */}
 
-        <div className="overflow-auto border rounded">
+        <div className="overflow-auto border rounded px-2 pb-10">
           <table className="w-full text-sm">
             <thead className="bg-gray-100">
               <tr>

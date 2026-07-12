@@ -84,6 +84,17 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
     return "N/A";
   };
 
+  const partyCode =
+    roleFlag === "is_crm_lead"
+      ? "CRM No."
+      : roleFlag === "is_srm_vendor"
+        ? "SRM No."
+        : roleFlag === "is_customer"
+          ? "Customer No."
+          : roleFlag === "is_supplier"
+            ? "Supplier No."
+            : "";
+
   return (
     <div className="space-y-6 container mx-auto p-4">
       {/* Action Header */}
@@ -98,21 +109,15 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
         </div>
 
         <Button
-  asChild
-  size="sm"
-  className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
->
-  <Link href={`${basePath}/new`}>
-    <Icon icon="solar:add-circle-linear" width={16} height={16} />
-    Create New Account
-  </Link>
-</Button>
-        {/* <Link
-          href={`${basePath}/new`}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm shadow transition-colors"
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
-          + Create New Account
-        </Link> */}
+          <Link href={`${basePath}/new`}>
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create New Account
+          </Link>
+        </Button>
       </div>
 
       {/* Filtering Toolbar */}
@@ -130,15 +135,15 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
       <div className="border rounded-xl bg-white dark:bg-slate-900 shadow-sm overflow-hidden border-slate-200 dark:border-slate-800">
         <div className="overflow-auto">
           <table className="w-full text-sm text-left border-collapse">
-              <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold">
+            <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold">
               <tr>
-                <th className="p-3">Reference Code</th>
-                <th className="p-3">Corporate Identity Name</th>
-                <th className="p-3">Email Access Line</th>
-                <th className="p-3">Primary Contact Phone</th>
+                <th className="p-3">{partyCode}</th>
+                <th className="p-3">Name</th>
+                <th className="p-3">Email</th>
+                <th className="p-3">Phone</th>
                 <th className="p-3">Active Roles</th>
                 <th className="p-3">Status</th>
-                <th className="p-3 text-center">Action Options</th>
+                <th className="p-3 text-center">Action</th>
               </tr>
             </thead>
 
@@ -272,213 +277,3 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
     </div>
   );
 }
-
-/* "use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-
-type Party = {
-  id: string;
-
-  name: string;
-
-  crm_code?: string;
-  srm_code?: string;
-  customer_code?: string;
-  supplier_code?: string;
-
-  email?: string;
-  phone?: string;
-
-  type: string;
-  status: string;
-};
-
-type Props = {
-  title: string;
-  module: "crm" | "srm";
-
-  typeFilter: string[]; // ["lead","customer"] OR ["supplier"]
-
-  basePath: string; // "/crm" or "/purchases/srm"
-};
-
-export default function PartyList({
-  title,
-  module,
-  typeFilter,
-  basePath,
-}: Props) {
-  const [data, setData] = useState<Party[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-
-  const [search, setSearch] = useState("");
-
-  const [totalRecords, setTotalRecords] = useState(0);
-
-  const limit = 10;
-
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        search,
-        type: typeFilter.join(","),
-      });
-
-      const res = await fetch(`/api/parties?${params}`);
-
-      const result = await res.json();
-
-      setData(result.data);
-      setTotal(result.total);
-
-      setTotalRecords(result?.total || 0);
-
-      setLoading(false);
-    };
-    loadData();
-  }, [page, search]);
-
-  const totalPages = Math.ceil(total / limit);
-
-  const getCode = (row: Party) => {
-    if (module === "crm") return row.crm_code;
-    if (module === "srm") return row.srm_code;
-    return row.customer_code;
-  };
-
-  return (
-    <div className="space-y-6 container mx-auto p-4">
-   
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-semibold">{title}</h2>
-        </div>
-        <Link
-          href={`${basePath}/new`}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          + New
-        </Link>
-      </div>
-
-
-      <div className="bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
-        <input
-          placeholder="Search..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border p-2 rounded w-full md:w-1/3"
-        />
-      </div>
-
-
-      <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
-        <div className="overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
-              <tr>
-                <th className="p-2 text-left whitespace-nowrap">Code</th>
-                <th className="p-2 text-left whitespace-nowrap">Name</th>
-                <th className="p-2 text-left whitespace-nowrap">Email</th>
-                <th className="p-2 text-left whitespace-nowrap">Phone</th>
-                <th className="p-2 text-left whitespace-nowrap">Type</th>
-                <th className="p-2 text-left whitespace-nowrap">Status</th>
-                <th className="p-2 text-left whitespace-nowrap">Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={10} className="p-8 text-center text-gray-500">
-                    Loading List...
-                  </td>
-                </tr>
-              ) : data.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="p-8 text-center text-gray-500">
-                    No record found
-                  </td>
-                </tr>
-              ) : (
-                data.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-t hover:bg-gray-50 dark:hover:bg-slate-800/40"
-                  >
-                    <td className="p-2">{getCode(row)}</td>
-
-                    <td className="p-2">
-                      <Link
-                        href={`${basePath}/${row.id}`}
-                        className="text-blue-600"
-                      >
-                        {row.name}
-                      </Link>
-                    </td>
-
-                    <td className="p-2">{row.email}</td>
-                    <td className="p-2">{row.phone}</td>
-                    <td className="p-2">{row.type}</td>
-                    <td className="p-2">{row.status}</td>
-
-                    <td className="p-2">
-                      <Link
-                        href={`${basePath}/${row.id}`}
-                        className="text-blue-600"
-                      >
-                        View
-                      </Link>{" "}
-                      |{" "}
-                      <Link
-                        href={`${basePath}/${row.id}/edit`}
-                        className="text-green-600"
-                      >
-                        Edit
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-
-
-          {!loading && totalRecords > 0 && (
-            <div className="bg-gray-50 dark:bg-slate-800/50 p-4 border-t flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
-              <span className="text-gray-500">
-                Showing page <b>{page}</b> of <b>{totalPages}</b> (
-                {totalRecords} total orders)
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1.5 border rounded bg-white dark:bg-slate-800 disabled:opacity-50 font-medium"
-                >
-                  Previous
-                </button>
-                <button
-                  disabled={page === totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="px-3 py-1.5 border rounded bg-white dark:bg-slate-800 disabled:opacity-50 font-medium"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-} */

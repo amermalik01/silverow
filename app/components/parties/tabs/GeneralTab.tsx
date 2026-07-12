@@ -4,9 +4,10 @@
 
 import React, { useEffect, useState } from "react";
 import type { Party } from "@/types/erp";
+import MasterDropdown from "../../common/MasterDropdown";
 
 export type CompanyCurrency = {
-  id: string; 
+  id: string;
   code: string;
   name: string;
   exchange_rate: string | number;
@@ -33,7 +34,6 @@ export default function GeneralTab({
   errors,
   currencies = [],
 }: Props) {
-  // Setup module state hooks for dropdown populating
   const [segments, setSegments] = useState<SetupDropdownItem[]>([]);
   const [territories, setTerritories] = useState<SetupDropdownItem[]>([]);
   const [buyingGroups, setBuyingGroups] = useState<SetupDropdownItem[]>([]);
@@ -43,15 +43,16 @@ export default function GeneralTab({
     setAccount((prev) => ({ ...prev, [key]: value }));
   };
 
-  const getInputClass = (errorKey: string) => 
+  const getInputClass = (errorKey: string) =>
     `w-full border p-2 rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white ${
-      errors[errorKey] ? "border-red-500 bg-red-50/10" : "border-slate-300 dark:border-slate-700"
+      errors[errorKey]
+        ? "border-red-500 bg-red-50/10"
+        : "border-slate-300 dark:border-slate-700"
     }`;
 
-  // Core module resolution
-  const activeModule = account.is_customer || account.is_crm_lead ? "sales" : "purchases";
+  const activeModule =
+    account.is_customer || account.is_crm_lead ? "sales" : "purchases";
 
-  // Fetch setup config dropdown items based on active role context
   useEffect(() => {
     async function fetchSetupDropdowns() {
       try {
@@ -59,7 +60,7 @@ export default function GeneralTab({
           fetch(`/api/setup/sales/segments?module=${activeModule}`),
           fetch(`/api/setup/sales/territories?module=${activeModule}`),
           fetch("/api/setup/sales/buying_groups"),
-          fetch("/api/setup/sales/credit_ratings")
+          fetch("/api/setup/sales/credit_ratings"),
         ]);
 
         if (segRes.ok) setSegments(await segRes.json());
@@ -75,16 +76,15 @@ export default function GeneralTab({
 
   return (
     <div className="space-y-6">
-      {/* TWO COLUMN MASTER WORKSPACE GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        
-        {/* LEFT COLUMN: IDENTITY & PRIMARY CONTACT PARAMETERS */}
         <div className="space-y-4">
-          
-          {/* Row 1: Code / Index Counter Identifier */}
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {account.is_customer ? "Customer No." : account.is_supplier ? "Supplier No." : "CRM Lead No."}
+              {account.is_customer
+                ? "Customer No."
+                : account.is_supplier
+                  ? "Supplier No."
+                  : "CRM Lead No."}
             </label>
             <div className="col-span-2">
               <input
@@ -92,15 +92,18 @@ export default function GeneralTab({
                 disabled
                 className="w-full bg-slate-50 dark:bg-slate-800 p-2 border border-slate-200 dark:border-slate-700 rounded text-sm font-mono text-slate-500"
                 value={
-                  (account.is_customer ? account.customer_code : 
-                   account.is_supplier ? account.supplier_code : 
-                   account.is_crm_lead ? account.crm_code : account.srm_code) || "[Auto-Generated]"
+                  (account.is_customer
+                    ? account.customer_code
+                    : account.is_supplier
+                      ? account.supplier_code
+                      : account.is_crm_lead
+                        ? account.crm_code
+                        : account.srm_code) || "[Auto-Generated]"
                 }
               />
             </div>
           </div>
 
-          {/* Row 2: Corporate Name */}
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Name <span className="text-red-500">*</span>
@@ -113,30 +116,69 @@ export default function GeneralTab({
                 className={getInputClass("general.name")}
                 placeholder="Legal Business Name"
               />
-              {errors["general.name"] && <p className="text-red-500 text-xs mt-0.5">{errors["general.name"]}</p>}
+              {errors["general.name"] && (
+                <p className="text-red-500 text-xs mt-0.5">
+                  {errors["general.name"]}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Row 3: Inline Primary Location Address Fields */}
           <div className="grid grid-cols-3 gap-2 items-start">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 pt-1">Address Lines</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 pt-1">
+              Address Lines
+            </label>
             <div className="col-span-2 space-y-2">
-              <input type="text" placeholder="Address Line 1" className={getInputClass("general.address_1")} />
-              <input type="text" placeholder="Address Line 2 (Optional)" className={getInputClass("general.address_2")} />
+              <input
+                type="text"
+                placeholder="Address Line 1"
+                className={getInputClass("general.address_1")}
+              />
+              <input
+                type="text"
+                placeholder="Address Line 2 (Optional)"
+                className={getInputClass("general.address_2")}
+              />
               <div className="grid grid-cols-2 gap-2">
-                <input type="text" placeholder="City" className={getInputClass("general.city")} />
-                <input type="text" placeholder="County / State" className={getInputClass("general.state")} />
+                <input
+                  type="text"
+                  placeholder="City"
+                  className={getInputClass("general.city")}
+                />
+                <input
+                  type="text"
+                  placeholder="County / State"
+                  className={getInputClass("general.state")}
+                />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input type="text" placeholder="Postcode" className={getInputClass("general.postcode")} />
-                <input type="text" placeholder="Country" defaultValue="United Kingdom" className={getInputClass("general.country")} />
+                <input
+                  type="text"
+                  placeholder="Postcode"
+                  className={getInputClass("general.postcode")}
+                />
+                {/* <input
+                  type="text"
+                  placeholder="Country"
+                  defaultValue="United Kingdom"
+                  className={getInputClass("general.country")}
+                /> */}
+
+                <MasterDropdown
+                  type="country"
+                  value={account.country ?? null}
+                  onChange={(val) => updateField("country", val)}
+                  className={getInputClass("general.country")}
+                  disabled={isReadonly}
+                />
               </div>
             </div>
           </div>
 
-          {/* Row 4: Switchboard Connections */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Telephone</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Telephone
+            </label>
             <div className="col-span-2">
               <input
                 type="text"
@@ -148,9 +190,10 @@ export default function GeneralTab({
             </div>
           </div>
 
-          {/* Row 5: Central Electronic Correspondence Email */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Company Email</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Company Email
+            </label>
             <div className="col-span-2">
               <input
                 type="email"
@@ -162,9 +205,10 @@ export default function GeneralTab({
             </div>
           </div>
 
-          {/* Row 6: Corporate Website */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Web</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Web
+            </label>
             <div className="col-span-2">
               <input
                 type="text"
@@ -176,13 +220,23 @@ export default function GeneralTab({
             </div>
           </div>
 
-          {/* Row 7: Functional Operational State */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Status <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Status <span className="text-red-500">*</span>
+            </label>
             <div className="col-span-2">
               <select
                 value={account.status || "active"}
-                onChange={(e) => updateField("status", e.target.value as "active" | "inactive" | "prospect" | "suspended")}
+                onChange={(e) =>
+                  updateField(
+                    "status",
+                    e.target.value as
+                      | "active"
+                      | "inactive"
+                      | "prospect"
+                      | "suspended",
+                  )
+                }
                 className={getInputClass("general.status")}
               >
                 <option value="active">Active</option>
@@ -193,9 +247,10 @@ export default function GeneralTab({
             </div>
           </div>
 
-          {/* Row 8: VAT Registration Identification Field (From Screen Layout) */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">VAT Reg No.</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              VAT Reg No.
+            </label>
             <div className="col-span-2">
               <input
                 type="text"
@@ -204,61 +259,80 @@ export default function GeneralTab({
               />
             </div>
           </div>
-
         </div>
 
-        {/* RIGHT COLUMN: REVENUE ARCHITECTURE & DYNAMIC ROUTING DROP-DOWNS */}
         <div className="space-y-4">
-          
-          {/* Missing Checklist Block: Account Location Profile Matrix (From Screen Layout) */}
           <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-lg">
-            <span className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Location Type Rules</span>
+            <span className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+              Location Type Rules
+            </span>
             <div className="flex flex-wrap gap-4 text-sm font-medium">
               <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <input type="checkbox" defaultChecked className="rounded text-blue-600 focus:ring-blue-500" /> Billing
+                <input
+                  type="checkbox"
+                  defaultChecked
+                  className="rounded text-blue-600 focus:ring-blue-500"
+                />{" "}
+                Billing
               </label>
               <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <input type="checkbox" defaultChecked className="rounded text-blue-600 focus:ring-blue-500" /> Shipping
+                <input
+                  type="checkbox"
+                  defaultChecked
+                  className="rounded text-blue-600 focus:ring-blue-500"
+                />{" "}
+                Shipping
               </label>
               {account.is_supplier && (
                 <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-500" /> Collection
+                  <input
+                    type="checkbox"
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />{" "}
+                  Collection
                 </label>
               )}
             </div>
           </div>
 
-          {/* Setup Config Dropdown 1: Credit Rating Framework */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Credit Rating</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Credit Rating
+            </label>
             <div className="col-span-2">
               <select className={getInputClass("general.credit_rating_id")}>
                 <option value="">Select Credit Rating...</option>
                 {creditRatings.map((cr) => (
-                  <option key={cr.id} value={cr.id}>{cr.name}</option>
+                  <option key={cr.id} value={cr.id}>
+                    {cr.name}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Setup Config Field 2: Conditional Risk Boundary Limits */}
           {(account.is_customer || account.is_crm_lead) && (
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Credit Limit</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Credit Limit
+              </label>
               <div className="col-span-2">
                 <input
                   type="number"
                   value={account.credit_limit ?? 0}
-                  onChange={(e) => updateField("credit_limit", Number(e.target.value))}
+                  onChange={(e) =>
+                    updateField("credit_limit", Number(e.target.value))
+                  }
                   className={getInputClass("general.credit_limit")}
                 />
               </div>
             </div>
           )}
 
-          {/* Core System Matrix Field 3: Currency Node Mapping */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Currency <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Currency <span className="text-red-500">*</span>
+            </label>
             <div className="col-span-2">
               <select
                 value={account.currency_id || ""}
@@ -275,86 +349,131 @@ export default function GeneralTab({
             </div>
           </div>
 
-          {/* Setup Config Dropdown 4: Target Segment Selection */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Segment <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Segment <span className="text-red-500">*</span>
+            </label>
             <div className="col-span-2">
               <select className={getInputClass("general.segment_id")}>
                 <option value="">Select Segment...</option>
                 {segments.map((seg) => (
-                  <option key={seg.id} value={seg.id}>{seg.name}</option>
+                  <option key={seg.id} value={seg.id}>
+                    {seg.name}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Setup Config Dropdown 5: Regional Allocation Territory */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Territory</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Territory
+            </label>
             <div className="col-span-2">
               <select className={getInputClass("general.territory_id")}>
                 <option value="">Select Territory...</option>
                 {territories.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Setup Config Dropdown 6: Bulk Commercial Buying/Selling Groups */}
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {account.is_customer ? "Buying Group" : "Selling Group"}
+              {account.is_crm_lead || account.is_customer
+                ? "Buying Group"
+                : "Selling Group"}
             </label>
             <div className="col-span-2">
               <select className={getInputClass("general.buying_group_id")}>
                 <option value="">Select Group Allocation...</option>
                 {buyingGroups.map((bg) => (
-                  <option key={bg.id} value={bg.id}>{bg.name}</option>
+                  <option key={bg.id} value={bg.id}>
+                    {bg.name}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Financial Architecture Dropdown 7: Dynamic Subledger Posting Integration Rules */}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Posting Group</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Posting Group
+            </label>
             <div className="col-span-2">
               <select
-                value={(account.is_customer ? account.sales_posting_group_id : account.purchase_posting_group_id) || ""}
-                onChange={(e) => updateField(account.is_customer ? "sales_posting_group_id" : "purchase_posting_group_id", e.target.value)}
+                value={
+                  (account.is_customer
+                    ? account.sales_posting_group_id
+                    : account.purchase_posting_group_id) || ""
+                }
+                onChange={(e) =>
+                  updateField(
+                    account.is_customer
+                      ? "sales_posting_group_id"
+                      : "purchase_posting_group_id",
+                    e.target.value,
+                  )
+                }
                 className={getInputClass("general.posting_group_id")}
               >
                 <option value="">Select Ledger Control Profile...</option>
               </select>
             </div>
           </div>
-
         </div>
       </div>
 
-      {/* FOOTER BLOCK: DIRECT EXTENDED AUDIT / REFERENCE CONTROLS FROM WORKSPACE */}
       <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Primary Contact Quick View</h3>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
+          Primary Contact
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-500">Contact Name</label>
-              <input type="text" className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-sm dark:bg-slate-900" placeholder="John Doe" />
+              <label className="text-xs font-medium text-slate-500">
+                Contact Name
+              </label>
+              <input
+                type="text"
+                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-sm dark:bg-slate-900"
+                placeholder="John Doe"
+              />
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-500">Job Title</label>
-              <input type="text" className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-sm dark:bg-slate-900" placeholder="Procurement Manager" />
+              <label className="text-xs font-medium text-slate-500">
+                Job Title
+              </label>
+              <input
+                type="text"
+                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-sm dark:bg-slate-900"
+                placeholder="Procurement Manager"
+              />
             </div>
           </div>
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-500">Direct Line</label>
-              <input type="text" className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-sm dark:bg-slate-900" placeholder="Ext 401" />
+              <label className="text-xs font-medium text-slate-500">
+                Direct Line
+              </label>
+              <input
+                type="text"
+                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-sm dark:bg-slate-900"
+                placeholder="Ext 401"
+              />
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-500">Mobile Connection</label>
-              <input type="text" className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-sm dark:bg-slate-900" placeholder="07xxx xxxxxx" />
+              <label className="text-xs font-medium text-slate-500">
+                Mobile Connection
+              </label>
+              <input
+                type="text"
+                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-sm dark:bg-slate-900"
+                placeholder="07xxx xxxxxx"
+              />
             </div>
           </div>
         </div>

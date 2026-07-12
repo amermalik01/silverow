@@ -97,7 +97,6 @@ export default function PurchaseOrderLines({
   };
 
   // ADD LINE
-
   const addLine = () => {
     setLines([
       ...lines,
@@ -258,12 +257,7 @@ export default function PurchaseOrderLines({
     setActiveAllocationRowKey(null);
   };
 
-  /**
-   * =====================================================
-   * TOTALS
-   * =====================================================
-   */
-
+  // TOTALS
   const totals = useMemo(() => {
     return lines.reduce(
       (acc, line) => {
@@ -327,7 +321,6 @@ export default function PurchaseOrderLines({
                 <th className="p-2 text-center w-[110px]">Action</th>
               )}
             </tr>
-            
           </thead>
 
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
@@ -357,7 +350,6 @@ export default function PurchaseOrderLines({
                 <tr
                   key={index}
                   className="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
-                  // className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
                 >
                   <td className="p-2">
                     <select
@@ -369,18 +361,12 @@ export default function PurchaseOrderLines({
                           e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
                         )
                       }
-                      // className="border rounded p-2 w-[120px]  bg-gray-50"
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-[100px]"
                     >
                       <option value="ITEM">Item</option>
-
                       <option value="GL_ACCOUNT">G/L</option>
-
-                      {/* <option value="COMMENT">Comment</option> */}
                     </select>
                   </td>
-
-                  {/* ITEM / GL */}
 
                   <td className="p-2">
                     {line.line_type === "ITEM" && (
@@ -389,7 +375,6 @@ export default function PurchaseOrderLines({
                           type="button"
                           disabled={isReadonly}
                           onClick={() => setItemIndex(index)}
-                          // className="border rounded px-3 py-2 bg-white  text-black hover:bg-gray-50 w-[140px] text-left"
                           className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
                         >
                           {line.item_code || "Select Item"}
@@ -409,7 +394,6 @@ export default function PurchaseOrderLines({
                           type="button"
                           disabled={isReadonly}
                           onClick={() => setGlIndex(index)}
-                          // className="border rounded px-3 py-2 bg-white  text-black hover:bg-gray-50 w-[140px] text-left"
                           className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
                         >
                           {line.account_code || "Select GL"}
@@ -424,8 +408,6 @@ export default function PurchaseOrderLines({
                     )}
                   </td>
 
-                  {/* DESCRIPTION  w-[260px]*/}
-
                   <td className="p-2">
                     <textarea
                       value={line.description || ""}
@@ -433,13 +415,10 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "description", e.target.value)
                       }
-                      // className="border rounded p-2"
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-xs"
                       rows={2}
                     />
                   </td>
-
-                  {/* QTY */}
 
                   <td className="p-2">
                     <input
@@ -449,23 +428,15 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "quantity", Number(e.target.value))
                       }
-                      // className="border rounded p-2 w-[90px] text-right"
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
                     />
                   </td>
 
-                  {/* UOM */}
-
                   <td className="p-2">
-                    <div
-                      // className="border rounded p-2 min-w-[80px] text-black bg-gray-50"
-                      className="p-1 text-gray-500"
-                    >
+                    <div className="p-1 text-gray-500">
                       {line.uom_name || "-"}
                     </div>
                   </td>
-
-                  {/* WAREHOUSE */}
 
                   <td className="p-2">
                     {line.line_type === "ITEM" && (
@@ -474,7 +445,6 @@ export default function PurchaseOrderLines({
                           type="button"
                           disabled={isReadonly}
                           onClick={() => setWarehouseIndex(index)}
-                          // className="border rounded px-3 py-2 bg-white text-black hover:bg-gray-50 w-[160px] text-left"
                           className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-full truncate"
                         >
                           {line.warehouse_code || "Select Warehouse"}
@@ -506,7 +476,6 @@ export default function PurchaseOrderLines({
                       </div>
                     )}
                   </td>
-                  {/* Location Dropdown linked directly to Row Warehouse context */}
                   <td className="p-2">
                     {line.line_type === "ITEM" ? (
                       <select
@@ -537,13 +506,12 @@ export default function PurchaseOrderLines({
                               undefined,
                             location_name: selectedLoc?.title || undefined,
 
-                            allocations: undefined, // Reset allocations upon layout adjustments
+                            allocations: undefined,
                             is_allocated: false,
                           };
                           setLines(updated);
                         }}
                         className="border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded p-1.5 w-full text-xs text-black dark:text-slate-100 disabled:opacity-50"
-                        // className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-full disabled:opacity-50"
                       >
                         <option value="">-- Select Location --</option>
                         {currentLocations.map((loc) => (
@@ -558,9 +526,6 @@ export default function PurchaseOrderLines({
                       <div className="text-gray-400">-</div>
                     )}
                   </td>
-
-                  {/* UNIT COST */}
-
                   <td className="p-2">
                     <input
                       type="number"
@@ -569,12 +534,9 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "unit_cost", Number(e.target.value))
                       }
-                      // className="border rounded p-2 w-[110px] text-right"
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
                     />
                   </td>
-
-                  {/* DISC TYPE */}
 
                   <td className="p-2">
                     <select
@@ -584,15 +546,12 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         handleDiscountTypeChange(index, e.target.value)
                       }
-                      // className="border rounded p-2 w-[100px] text-black bg-gray-50"
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full"
                     >
                       <option value="PERCENT">%</option>
                       <option value="FIXED">Fixed</option>
                     </select>
                   </td>
-
-                  {/* DISCOUNT */}
 
                   <td className="p-2">
                     <input
@@ -607,11 +566,8 @@ export default function PurchaseOrderLines({
                         )
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
-                      // className="border rounded p-2 w-[100px] text-right "
                     />
                   </td>
-
-                  {/* VAT */}
 
                   <td className="p-2">
                     <input
@@ -621,7 +577,6 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "vat_percent", Number(e.target.value))
                       }
-                      // className="border rounded p-2 w-[90px] text-right"
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
                     />
                   </td>
@@ -633,8 +588,6 @@ export default function PurchaseOrderLines({
                   <td className="p-2 text-right font-semibold">
                     {Number(line.gross_amount || 0).toFixed(2)}
                   </td>
-
-                  {/* ACTION */}
 
                   {!isReadonly && (
                     <td className="p-2 text-center">
@@ -682,8 +635,6 @@ export default function PurchaseOrderLines({
             })}
           </tbody>
 
-          {/* FOOTER */}
-
           <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
             <tr>
               <td
@@ -704,9 +655,7 @@ export default function PurchaseOrderLines({
         </table>
       </div>
 
-      {/* =====================================================
-          ITEM LOOKUP
-      ===================================================== */}
+      {/* ITEM LOOKUP */}
 
       <ItemLookupModal
         open={itemIndex !== null}
@@ -735,9 +684,7 @@ export default function PurchaseOrderLines({
         }}
       />
 
-      {/* =====================================================
-          GL ACCOUNT LOOKUP
-      ===================================================== */}
+      {/* GL ACCOUNT LOOKUP */}
 
       <GLAccountLookupModal
         open={glIndex !== null}
@@ -760,9 +707,7 @@ export default function PurchaseOrderLines({
         }}
       />
 
-      {/* =====================================================
-          WAREHOUSE LOOKUP
-      ===================================================== */}
+      {/* WAREHOUSE LOOKUP */}
 
       <WarehouseLookupModal
         open={warehouseIndex !== null}
@@ -777,7 +722,7 @@ export default function PurchaseOrderLines({
             warehouse_id: warehouse.id,
             warehouse_code: warehouse.code,
             warehouse_name: warehouse.name,
-            location_id: undefined, // Enforce clearing location when warehouse transitions
+            location_id: undefined,
             location_code: undefined,
             location_name: undefined,
             allocations: undefined,
@@ -809,7 +754,6 @@ export default function PurchaseOrderLines({
             locationId={activeAllocationLine.location_id || ""}
             locationName={activeAllocationLine.location_name || ""}
             uomName={activeAllocationLine.uom_name || ""}
-            // Explicit map allocation fields back into strict StockAllocationRecord items
             initialAllocations={(activeAllocationLine.allocations || []).map(
               (alloc) => ({
                 date_received: String(alloc.date_received || ""),

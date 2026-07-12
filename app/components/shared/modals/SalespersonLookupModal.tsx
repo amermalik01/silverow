@@ -131,7 +131,7 @@ export default function SalespersonLookupModal({
         </div>
 
         {/* Grid Presentation Ledger Sheet */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto px-2 pb-10">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-[#093009] text-white font-bold sticky top-0 z-10">
               <tr>
