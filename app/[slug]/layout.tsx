@@ -49,7 +49,7 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
         
         {/* Main horizontal data scroll boundary layer */}
         <div className="flex-1 w-full overflow-x-auto">
-          <div className="container mx-auto px-4 sm:px-6 py-6 min-w-0">
+          <div className="container mx-auto py-6 min-w-0">{/* px-4 sm:px-6  */}
             {children}
           </div>
         </div>

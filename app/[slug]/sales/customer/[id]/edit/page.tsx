@@ -10,7 +10,7 @@ export default async function EditCustomerPage({
   const { id } = await params;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Edit Customer</h1>
       </div>

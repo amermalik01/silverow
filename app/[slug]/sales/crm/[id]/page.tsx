@@ -10,7 +10,7 @@ export default async function ViewCRMPage({
   const { id } = await params;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold text-slate-900 dark:text-white">View CRM</h1>
       </div>
@@ -30,7 +30,7 @@ export default async function ViewCRMPage({
 //   const { slug, id } = await params;
 
 //   return (
-//     <div className="p-6 space-y-6">
+//     <div className="py-6 space-y-6">
 //       <div className="flex justify-between items-center">
 //         <h1 className="text-xl font-semibold">View CRM Account</h1>
 //       </div>

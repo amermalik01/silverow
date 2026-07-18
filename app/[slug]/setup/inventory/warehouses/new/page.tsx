@@ -4,7 +4,7 @@ import WarehouseForm from "@/app/components/setup/inventory/warehouses/Warehouse
 
 export default function NewWarehousePage() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="py-6 space-y-6">
       <h1 className="text-xl font-semibold">Create Warehouse</h1>
 
       <WarehouseForm />

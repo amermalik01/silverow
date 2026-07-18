@@ -170,6 +170,7 @@ export default function GeneralTab({
                   onChange={(val) => updateField("country", val)}
                   className={getInputClass("general.country")}
                   disabled={isReadonly}
+                  defaultFilter={(item) => item.country_id === 225}
                 />
               </div>
             </div>

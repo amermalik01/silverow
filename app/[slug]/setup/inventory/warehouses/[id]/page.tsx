@@ -10,7 +10,7 @@ export default async function ViewWarehousePage({
   const { id } = await params;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="py-6 space-y-6">
       <h1 className="text-xl font-semibold">Warehouse</h1>
 
       <WarehouseRecord id={id} />

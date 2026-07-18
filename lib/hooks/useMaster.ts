@@ -7,6 +7,7 @@ import { MASTER_API_MAP, MasterType } from "@/lib/master/masterRegistry";
 
 export type MasterItem = {
   id: string;
+  country_id?: number;
   name: string;
   code?: string | null;
 };

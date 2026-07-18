@@ -2,8 +2,9 @@
 
 "use client";
 
-import { useMaster } from "@/lib/hooks/useMaster";
+import { MasterItem, useMaster } from "@/lib/hooks/useMaster";
 import { MasterType } from "@/lib/master/masterRegistry";
+import { useEffect } from "react";
 
 type Props = {
   type: MasterType;
@@ -11,6 +12,7 @@ type Props = {
   onChange: (value: string | null) => void;
   className?: string;
   disabled?: boolean;
+  defaultFilter?: (item: MasterItem) => boolean;
 };
 
 export default function MasterDropdown({
@@ -19,8 +21,19 @@ export default function MasterDropdown({
   onChange,
   className = "border p-2 w-full rounded",
   disabled,
+  defaultFilter,
 }: Props) {
   const options = useMaster(type);
+
+  useEffect(() => {
+    if (value || !defaultFilter || options.length === 0) return;
+
+    const item = options.find(defaultFilter);
+
+    if (item) {
+      onChange(item.id);
+    }
+  }, [value, options, defaultFilter, onChange]);
 
   return (
     <select

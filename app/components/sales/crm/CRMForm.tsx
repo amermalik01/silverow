@@ -52,7 +52,7 @@ export default function CRMForm() {
     }
   };
   return (
-    <div className="p-6 space-y-6">
+    <div className="py-6 space-y-6">
       {/* Tabs */}
       <div className="flex gap-4 border-b pb-2">
         {["general", "contacts", "addresses"].map((tab) => (
@@ -248,7 +248,7 @@ export default function CRMForm() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="py-6 space-y-6">
 
       <div className="flex gap-4 border-b pb-2">
         {["general", "contacts", "addresses"].map((tab) => (
