@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       const payloadLine = lines[i];
       const dbLine = savedLinesResult.rows[i];
 
-      if (dbLine && payloadLine.initialAllocations?.length > 0) {
+      if (dbLine && payloadLine.allocations?.length > 0) {
         await PurchaseOrderService.saveLineAllocations(
           client,
           companyId,
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
           dbLine.id,
           dbLine.item_id,
           dbLine.warehouse_id,
-          payloadLine.initialAllocations,
+          payloadLine.allocations,
         );
       }
     }

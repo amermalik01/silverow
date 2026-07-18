@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { PurchaseOrderLine, PurchaseOrderLineUI } from "@/types/purchase-order";
 
 import ItemLookupModal, {
@@ -44,19 +44,18 @@ export default function PurchaseOrderLines({
   setLines,
   isReadonly = false,
 }: Props) {
-  // LOOKUP INDEXES
+
   const [itemIndex, setItemIndex] = useState<number | null>(null);
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
 
-  // Dynamic Locations states
+
   const [rowLocationsCache, setRowLocationsCache] = useState<
     Record<number, LocationLookupRecord[]>
   >({});
   const [activeLocationSelectorIndex, setActiveLocationSelectorIndex] =
     useState<number | null>(null);
 
-  // Allocation Modal handles
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
   const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
     string | null
@@ -68,7 +67,7 @@ export default function PurchaseOrderLines({
     return lines[idx] || null;
   }, [activeAllocationRowKey, lines]);
 
-  // Dynamic Location API retrieval mapping row index
+
   const fetchLocationsForSpecificRow = async (
     rowIndex: number,
     warehouseId: string,
@@ -95,6 +94,14 @@ export default function PurchaseOrderLines({
       console.error("Failed pulling targeted location indices:", err);
     }
   };
+
+  useEffect(() => {
+    lines.forEach((line, index) => {
+      if (line.line_type === "ITEM" && line.warehouse_id && !rowLocationsCache[index]) {
+        fetchLocationsForSpecificRow(index, line.warehouse_id);
+      }
+    });
+  }, [lines, rowLocationsCache]);
 
   // ADD LINE
   const addLine = () => {
@@ -165,9 +172,9 @@ export default function PurchaseOrderLines({
     const updated = [...lines];
     updated[index] = { ...updated[index], [field]: value };
 
-    // Wipe downstream allocations clean if quantity modifiers change
     if (field === "quantity") {
       updated[index].allocations = undefined;
+      updated[index].initialAllocations = undefined;
       updated[index].is_allocated = false;
     }
 
@@ -209,26 +216,6 @@ export default function PurchaseOrderLines({
 
     setLines(updated);
   };
-  /* 
-  const changeLineType = (index: number, type: "ITEM" | "GL_ACCOUNT" | "COMMENT") => {
-    const updated = [...lines];
-    updated[index] = {
-      line_type: type,
-      quantity: 1,
-      unit_cost: 0,
-      discount_type: "PERCENT",
-      discount_value: 0,
-      vat_percent: 0,
-      original_amount: 0,
-      discount_amount: 0,
-      net_amount: 0,
-      vat_amount: 0,
-      gross_amount: 0,
-      is_allocated: false,
-    };
-    setLines(updated);
-  };
-  */
 
   // ALLOCATION SAVE HANDLER
 
@@ -248,6 +235,7 @@ export default function PurchaseOrderLines({
         return {
           ...line,
           allocations: allocationsData,
+          initialAllocations: allocationsData,
           is_allocated: totalAllocated === (line.quantity || 0),
         };
       }),
@@ -754,12 +742,13 @@ export default function PurchaseOrderLines({
             locationId={activeAllocationLine.location_id || ""}
             locationName={activeAllocationLine.location_name || ""}
             uomName={activeAllocationLine.uom_name || ""}
-            initialAllocations={(activeAllocationLine.allocations || []).map(
+            initialAllocations={(activeAllocationLine.allocations || activeAllocationLine.initialAllocations || []).map(
               (alloc) => ({
                 date_received: String(alloc.date_received || ""),
                 prod_date: String(alloc.prod_date || ""),
                 expiry_date: String(alloc.expiry_date || ""),
                 batch_no: String(alloc.batch_no || ""),
+                bin_code: String(alloc.bin_code || ""),
                 serial_no: String(alloc.serial_no || ""),
                 quantity: Number(alloc.quantity || 0),
               }),

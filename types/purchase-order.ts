@@ -133,11 +133,16 @@ export interface PurchaseOrderLine {
 export interface PurchaseOrderLineUI extends PurchaseOrderLine {
   reserved_quantity?: string | number;
   available_stock?: string | number;
-
   is_allocated?: boolean;
+
   allocations?: Array<{
     quantity: number;
-    [key: string]: unknown; // Avoids 'any' while remaining structurally open for StockAllocationRecord
+    [key: string]: unknown;
+  }>;
+
+  initialAllocations?: Array<{
+    quantity: number;
+    [key: string]: unknown;
   }>;
 }
 

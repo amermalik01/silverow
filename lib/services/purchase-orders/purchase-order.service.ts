@@ -110,7 +110,12 @@ export class PurchaseOrderService {
 
       return {
         ...line,
+        allocations: lineAllocations,
         initialAllocations: lineAllocations,
+        is_allocated:
+          lineAllocations.length > 0 &&
+          lineAllocations.reduce((sum, a) => sum + a.quantity, 0) ===
+            Number(line.quantity),
       };
     });
 
@@ -128,7 +133,6 @@ export class PurchaseOrderService {
         addressResult.rows.find((x) => x.address_type === "shipping") || null,
     };
   }
-
 
   static async create(
     companyId: string,
@@ -159,10 +163,10 @@ export class PurchaseOrderService {
         `
           INSERT INTO purchase_orders (
             company_id, order_no, supplier_id, order_date, expected_date,
-            currency_id, exchange_rate, reference, notes, 
+            currency_id, exchange_rate, reference, notes,
             subtotal, tax_amount, total_amount, status, created_at
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now())
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())
           RETURNING *
         `,
         [
@@ -170,8 +174,7 @@ export class PurchaseOrderService {
           orderNo,
           order.supplier_id,
           order.order_date || null,
-          order.expected_date === "" ? null : order.expected_date || null,
-          // order.warehouse_id || null,
+          order.expected_date || null,
           order.currency_id,
           order.exchange_rate,
           order.reference || null,
@@ -764,7 +767,7 @@ export class PurchaseOrderService {
   }
 }
 
-  /* static async get(companyId: string, id: string) {
+/* static async get(companyId: string, id: string) {
     const orderResult = await pool.query(
       `SELECT po.*, p.name AS supplier_name
       FROM purchase_orders po

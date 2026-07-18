@@ -44,43 +44,33 @@ export default function StockAllocationModal({
   uomName,
   initialAllocations = [],
 }: Props) {
-  // 🌟 Initialize state directly from props layer
   const [allocations, setAllocations] =
     useState<StockAllocationRecord[]>(initialAllocations);
 
-  // Track ad-hoc text inputs on the entry bar line independently
   const [newRowInput, setNewRowInput] = useState({
     date_received: new Date().toISOString().split("T")[0],
     prod_date: "",
     expiry_date: "",
     batch_no: "",
     serial_no: "",
-    quantity: "", // Tracked as a string to handle fluent typing natively
+    quantity: "",
   });
 
-  // 📈 Derive calculations dynamically during the render cycle (No useEffect needed)
   const totalAllocated = allocations.reduce(
     (sum, item) => sum + item.quantity,
     0,
   );
   const qtyToAllocate = targetQuantity - totalAllocated;
 
-  // Determine the smart default for when the user hasn't explicitly typed an ad-hoc value
   const derivedDefaultQty = Math.max(0, qtyToAllocate);
   const currentInputQty =
     newRowInput.quantity === ""
       ? derivedDefaultQty
       : parseFloat(newRowInput.quantity) || 0;
 
-  // Dynamically blend input changes with derived context quantity for the visual input display value
-  // const visualRowQuantity = Math.max(0, qtyToAllocate);
-
   const handleAddRow = () => {
-    // 🛑 Rule 1: Prevent negative stock allocations or 0 entries
-    // 🛑 Rule 2: Prevent adding lines if the target stock allocation is already completed (qtyToAllocate <= 0)
     if (currentInputQty <= 0 || qtyToAllocate <= 0) return;
 
-    // 🛑 Rule 3: Cap the entry to prevent accidental over-allocation beyond target limits
     const allowedQty = Math.min(currentInputQty, qtyToAllocate);
 
     const rowToAdd: StockAllocationRecord = {
@@ -91,7 +81,6 @@ export default function StockAllocationModal({
     const updatedAllocations = [...allocations, rowToAdd];
     setAllocations(updatedAllocations);
 
-    // Clear inputs cleanly and reset quantity field for the next remaining balance chunk
     const nextTotalAllocated = updatedAllocations.reduce(
       (sum, item) => sum + item.quantity,
       0,
@@ -122,7 +111,6 @@ export default function StockAllocationModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 backdrop-blur-xs">
       <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-xl w-full max-w-7xl overflow-hidden border border-slate-200 dark:border-slate-800">
-        {/* HEADER */}
         <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
           <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">
             Stock Allocation - Purchase Intake Pipeline ({itemCode})
@@ -135,7 +123,6 @@ export default function StockAllocationModal({
           </button>
         </div>
 
-        {/* DETAILS PANEL */}
         <div className="p-5 grid grid-cols-1 lg:grid-cols-5 gap-4 bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-200 dark:border-slate-800 text-sm">
           <div>
             <div className="text-slate-500 dark:text-slate-400 font-medium">
@@ -211,7 +198,6 @@ export default function StockAllocationModal({
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
-                {/* <tr className="bg-gray-100 uppercase font-semibold text-gray-600 border-b"> */}
                 <th className="p-3 w-40">Date Received</th>
                 <th className="p-3 w-40">Prod. Date</th>
                 <th className="p-3 w-40">Use By Date</th>
@@ -222,7 +208,6 @@ export default function StockAllocationModal({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {/* CURRENT RECORDS STACK */}
               {allocations.map((item, index) => (
                 <tr
                   key={index}
@@ -248,7 +233,6 @@ export default function StockAllocationModal({
                 </tr>
               ))}
 
-              {/* NEW AD-HOC ENTRY COMPONENT LINE */}
               <tr className="bg-slate-50/60 dark:bg-slate-800/20">
                 <td className="p-2">
                   <input
@@ -326,12 +310,11 @@ export default function StockAllocationModal({
                     placeholder={
                       derivedDefaultQty > 0 ? derivedDefaultQty.toString() : "0"
                     }
-                    // value={newRowInput.quantity}
                     value={qtyToAllocate <= 0 ? "0" : newRowInput.quantity}
                     onChange={(e) =>
                       setNewRowInput({
                         ...newRowInput,
-                        quantity: e.target.value, // Keep it fluid as a string so backspacing/typing partial numbers works perfectly
+                        quantity: e.target.value,
                       })
                     }
                     className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full text-right bg-white dark:bg-slate-900 font-semibold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-green-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500"
@@ -343,7 +326,6 @@ export default function StockAllocationModal({
                     onClick={handleAddRow}
                     disabled={currentInputQty <= 0 || qtyToAllocate <= 0}
                     className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-full w-7 h-7 inline-flex items-center justify-center shadow-xs font-bold text-lg disabled:opacity-30 transition-opacity"
-                    
                   >
                     +
                   </button>
@@ -353,12 +335,10 @@ export default function StockAllocationModal({
           </table>
         </div>
 
-        {/* FOOTER ACTIONS */}
         <div className="bg-slate-50 dark:bg-slate-800/40 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            
             className="border border-slate-200 dark:border-slate-700 px-4 py-2 rounded text-sm hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors"
           >
             Close
@@ -368,7 +348,6 @@ export default function StockAllocationModal({
             onClick={handleCommitSave}
             disabled={qtyToAllocate !== 0}
             className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2 rounded text-sm disabled:opacity-40 font-medium transition-opacity"
-            
           >
             Save Allocation
           </button>

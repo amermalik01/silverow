@@ -414,80 +414,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     }
   };
 
-  /* const handleStageClick = async (stageName: string) => {
-    // Convert stage name to lowercase so it passes Zod validation ("Draft" -> "draft")
-    const standardizedStatus =
-      stageName.toLowerCase() as PurchaseOrder["status"];
-
-    if (
-      !id ||
-      isUpdatingStatus ||
-      order.status?.toLowerCase() === stageName.toLowerCase()
-    ) {
-      return;
-    }
-
-    setIsUpdatingStatus(true);
-    try {
-      const response = await fetch(`/api/purchase-orders/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order: {
-            ...order,
-            ...currencyConfig, // Safely includes currency_id and exchange_rate
-            supplier_id: order.supplier_id || "",
-            order_date:
-              order.order_date || new Date().toISOString().split("T")[0],
-            status: standardizedStatus, // Passes Zod enum option check safely
-            subtotal: financials.amount,
-            tax_amount: financials.vat,
-            total_amount: financials.amountInclVat,
-          },
-          // Provide string fallbacks to avoid Zod expected string, received undefined errors
-          billing_address: {
-            address_type: "billing",
-            address_1: billingAddress.address_1 || "",
-            address_2: billingAddress.address_2 || "",
-            city: billingAddress.city || "",
-            postcode: billingAddress.postcode || "",
-            country: billingAddress.country || "",
-          },
-          shipping_address: {
-            address_type: "shipping",
-            name: shippingAddress.name || "",
-            address_1: shippingAddress.address_1 || "",
-            address_2: shippingAddress.address_2 || "",
-            city: shippingAddress.city || "",
-            country: shippingAddress.country || "",
-          },
-          lines: lines, // Ensures at least 1 visual item line entry array check passes
-        }),
-      });
-
-      if (response.ok) {
-        setOrder((prev) => ({ ...prev, status: standardizedStatus }));
-        toast.success(`Stage updated successfully to: ${stageName}`);
-
-        // Context Alert: Triggering execution pipelines automatically via Server hook
-        if (standardizedStatus === "received") {
-          toast.info("Stock intake processing & item allocations executed successfully.");
-        }
-
-        router.refresh();
-      } else {
-        const errData = await response.json();
-        toast.error(
-          `Failed to update stage: ${errData.error || "Unknown error"}`,
-        );
-      }
-    } catch (error) {
-      console.error("Error updating purchase order stage:", error);
-      toast.error("Network error updating purchase order stage status.");
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  }; */
+  
 
   const inputStyle =
     "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
@@ -495,12 +422,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5";
 
   return (
-    // <div className="space-y-4 container mx-auto p-1">
       <div className="space-y-4 w-full max-w-[100vw] px-4 py-2 mx-auto overflow-x-auto">
       {isUpdateMode && !isLoadingStages && stages.length > 0 && (
-        // <div
-        //   className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
-        // >
+
 
         <div className="w-full overflow-x-auto pb-2 focus:outline-none">
         <div
@@ -905,3 +829,79 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     </div>
   );
 };
+
+
+/* const handleStageClick = async (stageName: string) => {
+    // Convert stage name to lowercase so it passes Zod validation ("Draft" -> "draft")
+    const standardizedStatus =
+      stageName.toLowerCase() as PurchaseOrder["status"];
+
+    if (
+      !id ||
+      isUpdatingStatus ||
+      order.status?.toLowerCase() === stageName.toLowerCase()
+    ) {
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/purchase-orders/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order: {
+            ...order,
+            ...currencyConfig, // Safely includes currency_id and exchange_rate
+            supplier_id: order.supplier_id || "",
+            order_date:
+              order.order_date || new Date().toISOString().split("T")[0],
+            status: standardizedStatus, // Passes Zod enum option check safely
+            subtotal: financials.amount,
+            tax_amount: financials.vat,
+            total_amount: financials.amountInclVat,
+          },
+          // Provide string fallbacks to avoid Zod expected string, received undefined errors
+          billing_address: {
+            address_type: "billing",
+            address_1: billingAddress.address_1 || "",
+            address_2: billingAddress.address_2 || "",
+            city: billingAddress.city || "",
+            postcode: billingAddress.postcode || "",
+            country: billingAddress.country || "",
+          },
+          shipping_address: {
+            address_type: "shipping",
+            name: shippingAddress.name || "",
+            address_1: shippingAddress.address_1 || "",
+            address_2: shippingAddress.address_2 || "",
+            city: shippingAddress.city || "",
+            country: shippingAddress.country || "",
+          },
+          lines: lines, // Ensures at least 1 visual item line entry array check passes
+        }),
+      });
+
+      if (response.ok) {
+        setOrder((prev) => ({ ...prev, status: standardizedStatus }));
+        toast.success(`Stage updated successfully to: ${stageName}`);
+
+        // Context Alert: Triggering execution pipelines automatically via Server hook
+        if (standardizedStatus === "received") {
+          toast.info("Stock intake processing & item allocations executed successfully.");
+        }
+
+        router.refresh();
+      } else {
+        const errData = await response.json();
+        toast.error(
+          `Failed to update stage: ${errData.error || "Unknown error"}`,
+        );
+      }
+    } catch (error) {
+      console.error("Error updating purchase order stage:", error);
+      toast.error("Network error updating purchase order stage status.");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  }; */
