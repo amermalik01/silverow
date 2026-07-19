@@ -37,7 +37,7 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
   }
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background">{/* bg-[#F9FAFB] */}
       {/* Sidebar is fixed on desktop and isolated from horizontal scrolls */}
       <div className="xl:block hidden">
         <CompanySidebar />

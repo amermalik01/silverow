@@ -155,7 +155,7 @@ const CompanySidebarLayout = () => {
   return (
     <div className="fixed left-0 top-0 h-screen w-[240px] border-r border-slate-800 bg-slate-950 z-30 flex flex-col overflow-hidden select-none">
       {/* Logo Container */}
-      <div className="px-5 py-4 border-b border-slate-800 flex items-center h-[65px] bg-slate-950 shrink-0">
+      <div className="px-5 py-4 border-b border-slate-800 flex items-center h-[65px] bg-slate-950 dark:bg-[#11161D] shrink-0">
         <div className="scale-90 origin-left">
           <FullLogo />
         </div>
@@ -163,7 +163,7 @@ const CompanySidebarLayout = () => {
 
       {/* Navigation Links Scroll Container */}
       <SimpleBar
-        className="flex-1 px-2.5 py-3 overflow-y-auto overflow-x-hidden"
+        className="flex-1 px-2.5 py-3 overflow-y-auto overflow-x-hidden dark:bg-[#11161D] dark:text-[#8C9DAF]"
         style={{ maxHeight: "calc(100vh - 65px)" }}
       >
         {menuItems.map((section, index) => (

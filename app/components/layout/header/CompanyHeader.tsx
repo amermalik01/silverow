@@ -37,9 +37,9 @@ const CompanyHeader = () => {
         className={`sticky top-0 z-20 transition-all duration-200 ${
           isSticky 
             ? "bg-background/95 backdrop-blur shadow-sm border-b dark:border-slate-800 fixed w-full" 
-            : "bg-transparent border-b border-transparent"
+            : "bg-[#103701] dark:bg-[#262F3C] text-white border-b border-transparent"
         }`}
-      >
+      >{/*  */}
         <nav className="h-[65px] px-6 flex justify-between items-center w-full">
           {/* Mobile Toggle Icon */}
           <div
@@ -69,8 +69,8 @@ const CompanyHeader = () => {
               {/* Theme Switcher */}
               <button
                 onClick={toggleMode}
-                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition"
-              >
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800  transition"
+              >{/* text-slate-600 dark:text-slate-400 */}
                 <Icon icon={theme === "light" ? "tabler:moon" : "solar:sun-bold-duotone"} width="20" />
               </button>
 
