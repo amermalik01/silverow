@@ -96,7 +96,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
         </div>
         {/* <Link
           href={createPath}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium rounded transition"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-medium rounded transition"
         >
           + New Entry
         </Link> */}
@@ -112,7 +112,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
       </div>
 
       {/* FILTER TABS */}
-      <div className="flex border-b border-zinc-200 dark:border-zinc-700 text-sm">
+      <div className="flex border-b border-zinc-200 dark:border-zinc-700 text-xs">
         {(["unposted", "posted", "all"] as StatusFilter[]).map((tab) => (
           <button
             key={tab}
@@ -135,16 +135,16 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
 
       {/* DATA VIEW GRID */}
       {loading ? (
-        <div className="py-12 text-center text-sm text-zinc-500 font-medium">
+        <div className="py-12 text-center text-xs text-zinc-500 font-medium">
           Loading general journals documentation entries...
         </div>
       ) : data.length === 0 ? (
-        <div className="py-12 text-center text-sm text-zinc-400 border border-dashed rounded">
+        <div className="py-12 text-center text-xs text-zinc-400 border border-dashed rounded">
           No records located matching current filter scope.
         </div>
       ) : (
         <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full text-left border-collapse text-sm">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">
                 <th className="p-3 w-24">Entry No</th>
@@ -227,7 +227,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
             </tbody>
           </table>
 
-          <div className="flex justify-between items-center pt-4 border-t border-zinc-200 dark:border-zinc-800 text-sm">
+          <div className="flex justify-between items-center pt-4 border-t border-zinc-200 dark:border-zinc-800 text-xs">
             <button
               disabled={page <= 1 || loading}
               onClick={() => setPage((p) => p - 1)}

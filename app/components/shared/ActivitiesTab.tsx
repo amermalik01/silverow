@@ -132,7 +132,7 @@ export default function ActivitiesTab({
                 onChange={(e) =>
                   setForm((p) => ({ ...p, type: e.target.value }))
                 }
-                className="border p-2 rounded text-sm w-full bg-slate-50 focus:bg-white"
+                className="border p-2 rounded text-xs w-full bg-slate-50 focus:bg-white"
               >
                 <option value="task">Task</option>
                 <option value="call">Call</option>
@@ -148,7 +148,7 @@ export default function ActivitiesTab({
                 onChange={(e) =>
                   setForm((p) => ({ ...p, status: e.target.value }))
                 }
-                className="border p-2 rounded text-sm w-full bg-slate-50 focus:bg-white"
+                className="border p-2 rounded text-xs w-full bg-slate-50 focus:bg-white"
               >
                 <option value="pending">Pending</option>
                 <option value="completed">Completed</option>
@@ -164,7 +164,7 @@ export default function ActivitiesTab({
                 onChange={(e) =>
                   setForm((p) => ({ ...p, title: e.target.value }))
                 }
-                className="border p-2 rounded text-sm w-full focus:ring-1 focus:ring-blue-500"
+                className="border p-2 rounded text-xs w-full focus:ring-1 focus:ring-blue-500"
                 placeholder="Brief summary objective..."
               />
             </div>
@@ -177,7 +177,7 @@ export default function ActivitiesTab({
                 onChange={(e) =>
                   setForm((p) => ({ ...p, description: e.target.value }))
                 }
-                className="border p-2 rounded text-sm w-full focus:ring-1 focus:ring-blue-500"
+                className="border p-2 rounded text-xs w-full focus:ring-1 focus:ring-blue-500"
                 rows={3}
                 placeholder="Action items details context text block placeholder..."
               />
@@ -192,7 +192,7 @@ export default function ActivitiesTab({
                 onChange={(e) =>
                   setForm((p) => ({ ...p, due_date: e.target.value }))
                 }
-                className="border p-2 rounded text-sm w-full"
+                className="border p-2 rounded text-xs w-full"
               />
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function ActivitiesTab({
             <button
               onClick={handleSave}
               disabled={saving || !form.title?.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-5 py-2 rounded shadow-sm disabled:opacity-50 transition"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-5 py-2 rounded shadow-sm disabled:opacity-50 transition"
             >
               {saving ? "Saving..." : "Save Activity"}
             </button>
@@ -213,11 +213,11 @@ export default function ActivitiesTab({
           Activity Log Timeline Trace
         </h2>
         {loading ? (
-          <p className="text-sm text-gray-400 animate-pulse">
+          <p className="text-xs text-gray-400 animate-pulse">
             Loading tracking parameters historical layer...
           </p>
         ) : activities.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">
+          <p className="text-xs text-gray-400 italic">
             No tracked milestones mapped here.
           </p>
         ) : (
@@ -241,13 +241,13 @@ export default function ActivitiesTab({
                       {item.type}
                     </span>
                     <h3
-                      className={`font-semibold text-sm ${item.status === "completed" ? "line-through text-gray-400" : "text-gray-800"}`}
+                      className={`font-semibold text-xs ${item.status === "completed" ? "line-through text-gray-400" : "text-gray-800"}`}
                     >
                       {item.title}
                     </h3>
                   </div>
                   {item.description && (
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                    <p className="text-xs text-gray-600 whitespace-pre-wrap">
                       {item.description}
                     </p>
                   )}
@@ -401,7 +401,7 @@ export default function ActivitiesTab({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium">Type</label>
+              <label className="text-xs font-medium">Type</label>
 
               <select
                 value={form.type}
@@ -420,7 +420,7 @@ export default function ActivitiesTab({
             </div>
 
             <div>
-              <label className="text-sm font-medium">Status</label>
+              <label className="text-xs font-medium">Status</label>
 
               <select
                 value={form.status}
@@ -438,7 +438,7 @@ export default function ActivitiesTab({
             </div>
 
             <div className="col-span-2">
-              <label className="text-sm font-medium">Title</label>
+              <label className="text-xs font-medium">Title</label>
 
               <input
                 type="text"
@@ -454,7 +454,7 @@ export default function ActivitiesTab({
             </div>
 
             <div className="col-span-2">
-              <label className="text-sm font-medium">Description</label>
+              <label className="text-xs font-medium">Description</label>
 
               <textarea
                 value={form.description || ""}
@@ -470,7 +470,7 @@ export default function ActivitiesTab({
             </div>
 
             <div>
-              <label className="text-sm font-medium">Due Date</label>
+              <label className="text-xs font-medium">Due Date</label>
 
               <input
                 type="datetime-local"
@@ -511,12 +511,12 @@ export default function ActivitiesTab({
               <div className="flex justify-between">
                 <h3 className="font-semibold">{item.title}</h3>
 
-                <span className="text-sm capitalize">{item.status}</span>
+                <span className="text-xs capitalize">{item.status}</span>
               </div>
 
-              <p className="text-sm capitalize">{item.type}</p>
+              <p className="text-xs capitalize">{item.type}</p>
 
-              <p className="text-sm">{item.description}</p>
+              <p className="text-xs">{item.description}</p>
 
               {item.due_date && (
                 <p className="text-xs text-gray-500">

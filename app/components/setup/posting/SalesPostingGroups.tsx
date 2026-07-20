@@ -16,7 +16,7 @@ export default function SalesPostingGroupsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="p-4 text-sm text-gray-500">Loading configurations...</div>;
+  if (loading) return <div className="p-4 text-xs text-gray-500">Loading configurations...</div>;
 
   return (
     <SetupDataGrid

@@ -88,7 +88,7 @@ export default function ItemList() {
 
       {/* TABLE */}
       <div className="border rounded overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="">
             <tr>
               <th className="p-3 text-left">Code</th>

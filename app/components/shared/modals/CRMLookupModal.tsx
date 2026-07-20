@@ -131,7 +131,7 @@ export default function CRMLookupModal({
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition text-sm"
+            className="text-slate-400 hover:text-slate-600 transition text-xs"
           >
             ✕
           </button>

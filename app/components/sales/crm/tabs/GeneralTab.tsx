@@ -36,7 +36,7 @@ export default function GeneralTab({
         <div className="grid grid-cols-2 gap-4">
           {/* CRM CODE */}
           <div>
-            <label className="text-sm font-medium">CRM Code</label>
+            <label className="text-xs font-medium">CRM Code</label>
             <input
               type="text"
               value={account.crm_code || ""}
@@ -49,7 +49,7 @@ export default function GeneralTab({
 
           {/* CUSTOMER CODE */}
           <div>
-            <label className="text-sm font-medium">Customer Code</label>
+            <label className="text-xs font-medium">Customer Code</label>
             <input
               type="text"
               value={account.customer_code || ""}
@@ -61,7 +61,7 @@ export default function GeneralTab({
 
           {/* NAME */}
           <div className="col-span-2">
-            <label className="text-sm font-medium">Name *</label>
+            <label className="text-xs font-medium">Name *</label>
             <input
               type="text"
               value={account.name || ""}
@@ -74,7 +74,7 @@ export default function GeneralTab({
 
           {/* EMAIL */}
           <div>
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-xs font-medium">Email</label>
             <input
               type="email"
               value={account.email || ""}
@@ -87,7 +87,7 @@ export default function GeneralTab({
 
           {/* PHONE */}
           <div>
-            <label className="text-sm font-medium">Phone</label>
+            <label className="text-xs font-medium">Phone</label>
             <input
               type="text"
               value={account.phone || ""}
@@ -99,7 +99,7 @@ export default function GeneralTab({
 
           {/* WEBSITE */}
           <div className="col-span-2">
-            <label className="text-sm font-medium">Website</label>
+            <label className="text-xs font-medium">Website</label>
             <input
               type="text"
               value={account.website || ""}
@@ -118,7 +118,7 @@ export default function GeneralTab({
 
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <label className="text-sm font-medium">Address Line 1</label>
+            <label className="text-xs font-medium">Address Line 1</label>
             <input
               type="text"
               value={account.address_1 || ""}
@@ -129,7 +129,7 @@ export default function GeneralTab({
           </div>
 
           <div className="col-span-2">
-            <label className="text-sm font-medium">Address Line 2</label>
+            <label className="text-xs font-medium">Address Line 2</label>
             <input
               type="text"
               value={account.address_2 || ""}
@@ -215,7 +215,7 @@ export default function GeneralTab({
         <div className="grid grid-cols-2 gap-4">
           {/* CREDIT LIMIT */}
           <div>
-            <label className="text-sm font-medium">Credit Limit</label>
+            <label className="text-xs font-medium">Credit Limit</label>
             <input
               type="number"
               value={account.credit_limit || ""}
@@ -227,7 +227,7 @@ export default function GeneralTab({
 
           {/* CURRENCY */}
           <div>
-            <label className="text-sm font-medium">Currency ID</label>
+            <label className="text-xs font-medium">Currency ID</label>
             <input
               type="text"
               value={account.currency_id || ""}
@@ -239,7 +239,7 @@ export default function GeneralTab({
 
           {/* SALESPERSON */}
           <div>
-            <label className="text-sm font-medium">Salesperson ID</label>
+            <label className="text-xs font-medium">Salesperson ID</label>
             <input
               type="text"
               value={account.salesperson_id || ""}
@@ -251,7 +251,7 @@ export default function GeneralTab({
 
           {/* STATUS */}
           <div>
-            <label className="text-sm font-medium">Status</label>
+            <label className="text-xs font-medium">Status</label>
             <select
               value={account.status || "active"}
               onChange={(e) => updateField("status", e.target.value)}

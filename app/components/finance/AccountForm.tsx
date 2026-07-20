@@ -342,7 +342,7 @@ export default function AccountForm({ slug, id }: Props) {
 
   if (loading)
     return (
-      <p className="p-6 text-sm text-gray-500 font-sans">
+      <p className="p-6 text-xs text-gray-500 font-sans">
         Syncing layout components...
       </p>
     );
@@ -352,10 +352,10 @@ export default function AccountForm({ slug, id }: Props) {
 
   return (
     <div className="bg-white border rounded-xl shadow-md max-w-4xl mx-auto overflow-hidden font-sans text-xs text-gray-700">
-      <div className="bg-gray-50 border-b p-3 font-semibold text-sm text-gray-800 tracking-wide text-center">
+      <div className="bg-gray-50 border-b p-3 font-semibold text-xs text-gray-800 tracking-wide text-center">
         G/L No. Configuration Terminal
       </div>
-      {/* <div className="bg-gray-50 border-b p-3 font-semibold text-center text-sm text-gray-800 tracking-wide">
+      {/* <div className="bg-gray-50 border-b p-3 font-semibold text-center text-xs text-gray-800 tracking-wide">
         {isEditMode
           ? "G/L Ledger Entry: Modification Terminal"
           : "G/L Ledger Entry: Provision Terminal"}

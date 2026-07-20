@@ -98,11 +98,11 @@ export default function AttachmentsTab({
 
       <div className="lg:col-span-2 space-y-2">
         {loading ? (
-          <p className="text-sm text-slate-400 text-center py-6 animate-pulse">
+          <p className="text-xs text-slate-400 text-center py-6 animate-pulse">
             Scanning file directories...
           </p>
         ) : files.length === 0 ? (
-          <div className="text-center py-12 border rounded-xl border-slate-100 dark:border-slate-800 text-slate-400 text-sm">
+          <div className="text-center py-12 border rounded-xl border-slate-100 dark:border-slate-800 text-slate-400 text-xs">
             No active asset attachments verified for this record link.
           </div>
         ) : (
@@ -116,7 +116,7 @@ export default function AttachmentsTab({
                   {item.mime_type?.split("/")[1] || "DOC"}
                 </div>
                 <div className="overflow-hidden">
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                  <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
                     {item.file_name}
                   </p>
                   <p className="text-[10px] text-slate-400 truncate">

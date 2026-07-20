@@ -287,7 +287,7 @@ export default function HaulierAccrualsReport() {
                   <td className="px-4 py-3 text-right font-mono text-emerald-800">
                     {formatCurrency(totalCleared)}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-sm border-l border-slate-100 bg-slate-100/30">
+                  <td className="px-4 py-3 text-right font-mono text-xs border-l border-slate-100 bg-slate-100/30">
                     {formatCurrency(totalRemaining)}
                   </td>
                   <td></td>

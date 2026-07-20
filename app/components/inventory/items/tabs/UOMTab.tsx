@@ -182,7 +182,7 @@ export default function UOMTab({ itemId }: Props) {
       {/* TABLE */}
 
       <div className="border rounded overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">UOM</th>
@@ -249,7 +249,7 @@ export default function UOMTab({ itemId }: Props) {
         </table>
         
       </div>
-      <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
 
       {/* MODAL */}
 
@@ -500,7 +500,7 @@ export default function UOMTab({ itemId }: Props) {
 
 
       <div className="border rounded overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">UOM</th>

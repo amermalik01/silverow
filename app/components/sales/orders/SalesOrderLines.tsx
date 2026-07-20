@@ -172,7 +172,7 @@ export default function SalesOrderLines({
           <button
             type="button"
             onClick={addLine}
-            className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700 transition"
           >
             Add Line
           </button>
@@ -442,7 +442,7 @@ export default function SalesOrderLines({
                 >
                   Total
                 </td>
-                <td className="p-3 text-right font-bold text-sm">
+                <td className="p-3 text-right font-bold text-xs">
                   {totals.total.toFixed(2)}
                 </td>
                 <td />
@@ -686,7 +686,7 @@ export default function SalesOrderLines({
           <button
             type="button"
             onClick={addLine}
-            className="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white text-xs px-4 py-2 rounded hover:bg-blue-700 transition"
           >
             Add Line
           </button>
@@ -695,7 +695,7 @@ export default function SalesOrderLines({
 
       <div className="border rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
         <div className="overflow-auto">
-          <table className="w-full text-sm min-w-[1000px]">
+          <table className="w-full text-xs min-w-[1000px]">
             <thead className="bg-gray-50 dark:bg-slate-800 text-black dark:text-white text-left border-b">
               <tr>
                 <th className="p-3 w-32">Type</th>
@@ -738,7 +738,7 @@ export default function SalesOrderLines({
                             e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
                           )
                         }
-                        className="border dark:border-slate-700 rounded p-1.5 w-full text-sm bg-transparent dark:bg-slate-800 text-black dark:text-white"
+                        className="border dark:border-slate-700 rounded p-1.5 w-full text-xs bg-transparent dark:bg-slate-800 text-black dark:text-white"
                       >
                         <option value="ITEM">Item</option>
                         <option value="GL_ACCOUNT">GL Account</option>
@@ -792,7 +792,7 @@ export default function SalesOrderLines({
                             ? "Enter narrative notes..."
                             : "Description"
                         }
-                        className="border dark:border-slate-700 rounded p-1.5 w-full text-sm bg-transparent dark:bg-slate-800 text-black dark:text-white"
+                        className="border dark:border-slate-700 rounded p-1.5 w-full text-xs bg-transparent dark:bg-slate-800 text-black dark:text-white"
                       />
                     </td>
 
@@ -808,7 +808,7 @@ export default function SalesOrderLines({
                             parseFloat(e.target.value) || 0,
                           )
                         }
-                        className="border dark:border-slate-700 rounded p-1.5 w-full text-sm text-right bg-transparent disabled:opacity-40"
+                        className="border dark:border-slate-700 rounded p-1.5 w-full text-xs text-right bg-transparent disabled:opacity-40"
                       />
                     </td>
 
@@ -824,7 +824,7 @@ export default function SalesOrderLines({
                             parseFloat(e.target.value) || 0,
                           )
                         }
-                        className="border dark:border-slate-700 rounded p-1.5 w-full text-sm text-right bg-transparent disabled:opacity-40"
+                        className="border dark:border-slate-700 rounded p-1.5 w-full text-xs text-right bg-transparent disabled:opacity-40"
                       />
                     </td>
 
@@ -840,7 +840,7 @@ export default function SalesOrderLines({
                             parseFloat(e.target.value) || 0,
                           )
                         }
-                        className="border dark:border-slate-700 rounded p-1.5 w-full text-sm text-right bg-transparent disabled:opacity-40"
+                        className="border dark:border-slate-700 rounded p-1.5 w-full text-xs text-right bg-transparent disabled:opacity-40"
                       />
                     </td>
 
@@ -856,7 +856,7 @@ export default function SalesOrderLines({
                             parseFloat(e.target.value) || 0,
                           )
                         }
-                        className="border dark:border-slate-700 rounded p-1.5 w-full text-sm text-right bg-transparent disabled:opacity-40"
+                        className="border dark:border-slate-700 rounded p-1.5 w-full text-xs text-right bg-transparent disabled:opacity-40"
                       />
                     </td>
 

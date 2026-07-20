@@ -32,7 +32,7 @@ export default function AttendanceList() {
         </Link>
       </div>
 
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead>
           <tr>
             <th className="p-2 text-left">No</th>

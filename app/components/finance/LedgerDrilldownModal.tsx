@@ -97,7 +97,7 @@ export default function LedgerDrilldownModal({
       <div className="bg-white dark:bg-slate-900 w-full max-w-[95vw] h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
         {/* Modal Top Bar */}
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+          <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">
             {accountCode} - {accountName}
           </h3>
           <button

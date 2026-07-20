@@ -34,7 +34,7 @@ export default function PurchaseReceiptLines({
 
   return (
     <div className="border rounded-xl overflow-auto">
-      <table className="w-full text-sm min-w-[1800px]">
+      <table className="w-full text-xs min-w-[1800px]">
         <thead className="bg-gray-100">
           <tr>
             <th className="p-2 text-left">Item</th>

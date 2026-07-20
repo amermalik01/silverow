@@ -159,7 +159,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
           {
             id: "Support Tickets",
             name: "Support Tickets",
-                url: `/${slug}/sales/support-ticket`,
+            url: `/${slug}/sales/support-ticket`,
           },
           {
             // id: uniqueId(),
@@ -467,14 +467,34 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 url: `/${slug}/setup/sales/buying_groups`,
               },
               {
+                id: "classification",
+                name: "Classification",
+                url: `/${slug}/setup/sales/classification`,
+              },
+              {
                 id: "sources_crm",
                 name: "Source Of CRM",
                 url: `/${slug}/setup/sales/sources`,
               },
               {
+                id: "ownership_type",
+                name: "Ownership Type",
+                url: `/${slug}/setup/sales/ownership_type`,
+              },
+              {
+                id: "status",
+                name: "Status",
+                url: `/${slug}/setup/sales/status`,
+              },
+              {
                 id: "order_sources",
                 name: "Source Of Order",
                 url: `/${slug}/setup/sales/order_sources`,
+              },
+              {
+                id: "type",
+                name: "CRM Type",
+                url: `/${slug}/setup/sales/type`,
               },
               {
                 id: "order_stages",
@@ -501,6 +521,11 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 id: "territories",
                 name: "Territories",
                 url: `/${slug}/setup/purchases/territories`,
+              },
+              {
+                id: "classification",
+                name: "Classification",
+                url: `/${slug}/setup/purchases/classification`,
               },
               {
                 id: "selling_groups",

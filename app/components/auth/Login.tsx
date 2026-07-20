@@ -91,7 +91,7 @@ export const Login = () => {
             </h2>
 
             {error && (
-              <div className="mb-4 text-sm text-red-500 text-center">
+              <div className="mb-4 text-xs text-red-500 text-center">
                 {error}
               </div>
             )}
@@ -129,7 +129,7 @@ export const Login = () => {
 
               <div className="flex items center gap-2 justify-center mt-6 flex-wrap">
                 <Button
-                  className="w-full mt-6 text-sm font-medium"
+                  className="w-full mt-6 text-xs font-medium"
                   type="submit"
                   disabled={loading}
                 >

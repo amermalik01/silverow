@@ -75,7 +75,7 @@ export default function OrderStagesSetupPage({ params }: PageProps) {
 
         <div className="divide-y border rounded dark:border-slate-700 dark:divide-slate-700">
           {stages.length === 0 ? (
-            <div className="p-4 text-center text-sm text-gray-400">
+            <div className="p-4 text-center text-xs text-gray-400">
               No stages registered to arrange layout views context.
             </div>
           ) : (
@@ -88,7 +88,7 @@ export default function OrderStagesSetupPage({ params }: PageProps) {
                   <span className="text-xs bg-gray-100 dark:bg-slate-800 border px-2 py-0.5 rounded text-gray-500">
                     Pos: {idx + 1}
                   </span>
-                  <span className="text-sm font-medium dark:text-slate-300">
+                  <span className="text-xs font-medium dark:text-slate-300">
                     {stage.name}
                   </span>
                 </div>

@@ -417,7 +417,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   
 
   const inputStyle =
-    "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+    "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const labelStyle =
     "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5";
 
@@ -771,7 +771,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="space-y-1 text-sm font-medium text-right font-mono ml-auto w-full max-w-sm">
+        <div className="space-y-1 text-xs font-medium text-right font-mono ml-auto w-full max-w-sm">
           <div className="flex justify-between border-b dark:border-slate-800 pb-1">
             <span className="text-slate-400 font-sans">Gross Net Amount:</span>
             <span>

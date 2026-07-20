@@ -108,7 +108,7 @@ export default function RateHistoryModal({
 
         {/* Table */}
         <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-3 text-left">Effective Date</th>
@@ -144,7 +144,7 @@ export default function RateHistoryModal({
 
         {/* Footer */}
         <div className="mt-4 text-right">
-          <button onClick={onClose} className="text-red-500 text-sm">
+          <button onClick={onClose} className="text-red-500 text-xs">
             Close
           </button>
         </div>

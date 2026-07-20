@@ -75,12 +75,12 @@ export default function ContactsTab({
           >
             <div>
               <div className="font-semibold">{c.name}</div>
-              <div className="text-sm text-gray-500">
+              <div className="text-xs text-gray-500">
                 {c.type} • {c.email}
               </div>
             </div>
 
-            <div className="flex gap-2 text-sm">
+            <div className="flex gap-2 text-xs">
               <button
                 onClick={() => {
                   setEditContact(c);

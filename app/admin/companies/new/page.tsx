@@ -80,7 +80,7 @@ export default function NewCompanyPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
-          <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
+          <div className="p-3 bg-red-100 text-red-700 rounded-md text-xs">
             {error}
           </div>
         )}
@@ -119,7 +119,7 @@ export default function NewCompanyPage() {
               required
               pattern="^[a-z0-9-]+$"
             />
-            <span className="text-muted-foreground text-sm font-mono">
+            <span className="text-muted-foreground text-xs font-mono">
               .silverow.com
             </span>
           </div>

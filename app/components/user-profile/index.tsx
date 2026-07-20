@@ -110,11 +110,11 @@ const UserProfile = () => {
                   {personal.firstName} {personal.lastName}
                 </h5>
                 <div className='flex flex-wrap items-center gap-1 md:gap-3'>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>
                     {personal.position}
                   </p>
                   <div className='hidden h-4 w-px bg-gray-300 dark:bg-gray-700 xl:block'></div>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>
                     {address.location}
                   </p>
                 </div>

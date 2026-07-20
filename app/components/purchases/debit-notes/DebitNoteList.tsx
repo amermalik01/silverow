@@ -104,14 +104,14 @@ export default function DebitNoteList({ slug }: Props) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-semibold">Debit Notes</h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-gray-500">
             Manage supplier return notes, debit reversals and purchase
             adjustments
           </p>
         </div>
         <Link
           href={`/${slug}/purchases/debit-notes/create`}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-sm font-medium transition-colors"
+          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-xs font-medium transition-colors"
         >
           New Debit Note
         </Link>
@@ -127,11 +127,11 @@ export default function DebitNoteList({ slug }: Props) {
             placeholder="Search Debit Note No..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border dark:border-slate-700 rounded p-2 text-sm w-full bg-transparent text-black dark:text-white"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
           />
           <button
             type="submit"
-            className="bg-gray-100 dark:bg-slate-800 text-black dark:text-white px-3 py-2 rounded text-sm hover:bg-gray-200 dark:hover:bg-slate-700 font-medium transition-colors"
+            className="bg-gray-100 dark:bg-slate-800 text-black dark:text-white px-3 py-2 rounded text-xs hover:bg-gray-200 dark:hover:bg-slate-700 font-medium transition-colors"
           >
             Go
           </button>
@@ -144,7 +144,7 @@ export default function DebitNoteList({ slug }: Props) {
               setStatus(e.target.value);
               setPage(1);
             }}
-            className="border dark:border-slate-700 rounded p-2 text-sm w-full bg-white dark:bg-slate-800 text-black dark:text-white"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-white dark:bg-slate-800 text-black dark:text-white"
           >
             <option value="">All Statuses</option>
             <option value="OPEN">Open</option>
@@ -161,7 +161,7 @@ export default function DebitNoteList({ slug }: Props) {
               setStartDate(e.target.value);
               setPage(1);
             }}
-            className="border dark:border-slate-700 rounded p-2 text-sm w-full bg-transparent text-black dark:text-white"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
           />
           <span className="text-xs text-gray-400">to</span>
           <input
@@ -171,14 +171,14 @@ export default function DebitNoteList({ slug }: Props) {
               setEndDate(e.target.value);
               setPage(1);
             }}
-            className="border dark:border-slate-700 rounded p-2 text-sm w-full bg-transparent text-black dark:text-white"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
           />
         </div>
       </div>
 
       <div className="border dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
         <div className="overflow-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-50 dark:bg-slate-800/60 border-b dark:border-slate-800 text-black dark:text-white">
               <tr>
                 <th className="p-3 text-left whitespace-nowrap">Document No</th>

@@ -119,7 +119,7 @@ export default function EmployeeRecord({ id }: Props) {
         <h3 className="text-lg font-semibold text-slate-800">
           Record Not Available
         </h3>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-xs text-slate-500 mt-1">
           The specified employee could not be found or has been archived.
         </p>
       </div>
@@ -137,12 +137,12 @@ export default function EmployeeRecord({ id }: Props) {
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
       {/* Dynamic Notifications */}
       {successMessage && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-lg shadow-sm flex items-center gap-2">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg shadow-sm flex items-center gap-2">
           <span>✅</span> {successMessage}
         </div>
       )}
       {errorMessage && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-sm rounded-lg shadow-sm flex items-center gap-2">
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-lg shadow-sm flex items-center gap-2">
           <span>⚠️</span> {errorMessage}
         </div>
       )}
@@ -157,7 +157,7 @@ export default function EmployeeRecord({ id }: Props) {
           <h1 className="text-2xl font-bold mt-2">
             {employee.first_name} {employee.last_name}
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             ID Reference: {employee.id}
           </p>
         </div>
@@ -178,7 +178,7 @@ export default function EmployeeRecord({ id }: Props) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium text-sm px-5 py-2.5 rounded-lg shadow-sm transition-colors duration-150 flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium text-xs px-5 py-2.5 rounded-lg shadow-sm transition-colors duration-150 flex items-center gap-2"
           >
             {saving ? "Synchronizing..." : "Save Changes"}
           </button>
@@ -192,7 +192,7 @@ export default function EmployeeRecord({ id }: Props) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`capitalize px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
+              className={`capitalize px-4 py-2.5 text-xs font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
                 activeTab === tab.id
                   ? "border-blue-600 text-blue-600 font-semibold"
                   : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"

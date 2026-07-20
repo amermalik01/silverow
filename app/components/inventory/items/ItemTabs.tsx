@@ -136,7 +136,7 @@ export default function ItemTabs({ id }: Props) {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`px-5 py-3 border-r text-sm font-medium text-black
+              className={`px-5 py-3 border-r text-xs font-medium text-black
               ${activeTab === tab.key ? "bg-blue-600 text-white" : "bg-white"}`}
             >
               {tab.label}
@@ -189,7 +189,7 @@ function AccountingTab({ itemId }: { itemId: string }) {
         <div className="border rounded p-4">Purchase GL</div>
       </div>
 
-      <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
     </div>
   );
 }
@@ -213,7 +213,7 @@ function AttributeTab({ itemId }: { itemId: string }) {
       </div>
 
       <div className="border rounded overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">Attribute</th>
@@ -232,7 +232,7 @@ function AttributeTab({ itemId }: { itemId: string }) {
         </table>
       </div>
 
-      <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
     </div>
   );
 }

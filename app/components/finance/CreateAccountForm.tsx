@@ -85,7 +85,7 @@ export default function CreateAccountForm({ slug }: { slug: string }) {
 
   return (
     <div className="bg-white border rounded-xl shadow-md max-w-4xl mx-auto overflow-hidden font-sans text-xs text-gray-700">
-      <div className="bg-gray-50 border-b p-3 font-semibold text-center text-sm text-gray-800 tracking-wide">
+      <div className="bg-gray-50 border-b p-3 font-semibold text-center text-xs text-gray-800 tracking-wide">
         G/L No. Configuration Terminal
       </div>
       <form
@@ -431,7 +431,7 @@ export default function CreateAccountForm({ slug }: Props) {
     >
 
       <div>
-        <label className="block text-sm font-medium">Account Code</label>
+        <label className="block text-xs font-medium">Account Code</label>
 
         <input
           type="text"
@@ -445,7 +445,7 @@ export default function CreateAccountForm({ slug }: Props) {
 
 
       <div>
-        <label className="block text-sm font-medium">Account Name</label>
+        <label className="block text-xs font-medium">Account Name</label>
 
         <input
           type="text"
@@ -459,7 +459,7 @@ export default function CreateAccountForm({ slug }: Props) {
 
 
       <div>
-        <label className="block text-sm font-medium">Account Type</label>
+        <label className="block text-xs font-medium">Account Type</label>
 
         <select
           name="account_type"
@@ -477,7 +477,7 @@ export default function CreateAccountForm({ slug }: Props) {
 
 
       <div>
-        <label className="block text-sm font-medium">Parent Account</label>
+        <label className="block text-xs font-medium">Parent Account</label>
 
         <select
           name="parent_id"
@@ -500,7 +500,7 @@ export default function CreateAccountForm({ slug }: Props) {
 
 
       <div>
-        <label className="block text-sm font-medium">VAT Rate</label>
+        <label className="block text-xs font-medium">VAT Rate</label>
 
         <select
           name="vat_rate_id"

@@ -225,7 +225,7 @@ main {
 
 /* --- Added Type Date Utilities --- */
 @utility form-control-date {
-  @apply border rounded-md border-border bg-transparent ring-transparent dark:ring-transparent dark:bg-transparent w-full text-sm p-2 text-foreground;
+  @apply border rounded-md border-border bg-transparent ring-transparent dark:ring-transparent dark:bg-transparent w-full text-xs p-2 text-foreground;
   
   &::-webkit-calendar-picker-indicator {
     @apply cursor-pointer opacity-70 transition-opacity hover:opacity-100 dark:invert;
@@ -238,7 +238,7 @@ main {
 
 @utility form-control {
   & input {
-    @apply border rounded-md border-border bg-transparent ring-transparent dark:ring-transparent dark:bg-transparent w-full text-sm;
+    @apply border rounded-md border-border bg-transparent ring-transparent dark:ring-transparent dark:bg-transparent w-full text-xs;
   }
   & input:focus {
     @apply border-primary dark:border-primary outline-hidden shadow-none ring-offset-0 ring-transparent;
@@ -246,7 +246,7 @@ main {
 }
 
 @utility form-control-textarea {
-  @apply rounded-md border border-border bg-transparent dark:bg-transparent w-full text-sm p-4;
+  @apply rounded-md border border-border bg-transparent dark:bg-transparent w-full text-xs p-4;
   &:focus {
     @apply border-primary dark:border-primary outline-hidden shadow-none ring-offset-0 ring-transparent;
   }
@@ -261,7 +261,7 @@ main {
 }
 
 @layer components {
-  body { @apply text-sm overflow-x-hidden; }
+  body { @apply text-xs overflow-x-hidden; }
   h1, h2, h3, h4, h5, h6 { @apply text-foreground font-semibold; }
   input::placeholder { @apply text-muted-foreground; }
   button { @apply !cursor-pointer; }
@@ -514,7 +514,7 @@ main {
 
 @utility form-control {
   & input {
-    @apply border rounded-md border-border bg-transparent ring-transparent dark:ring-transparent dark:bg-transparent w-full text-sm;
+    @apply border rounded-md border-border bg-transparent ring-transparent dark:ring-transparent dark:bg-transparent w-full text-xs;
   }
 
   & input:focus {
@@ -527,7 +527,7 @@ main {
 }
 
 @utility form-control-textarea {
-  @apply rounded-md border border-border bg-transparent dark:bg-transparent w-full text-sm p-4;
+  @apply rounded-md border border-border bg-transparent dark:bg-transparent w-full text-xs p-4;
 
   &:focus {
     @apply border-primary dark:border-primary outline-hidden shadow-none ring-offset-0 ring-transparent;
@@ -554,7 +554,7 @@ main {
 
 @layer components {
   body {
-    @apply text-sm overflow-x-hidden;
+    @apply text-xs overflow-x-hidden;
   }
 
 

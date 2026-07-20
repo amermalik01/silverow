@@ -89,7 +89,7 @@ export default function EmployeeList() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Employees Directory
           </h1>
-          <p className="text-sm  text-slate-500">
+          <p className="text-xs  text-slate-500">
             Manage internal workflows and organization records.
           </p>
         </div>
@@ -105,7 +105,7 @@ export default function EmployeeList() {
         </Button>
         {/* <Link
           href="./employees/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition-colors text-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition-colors text-xs"
         >
           + Add New Employee
         </Link> */}
@@ -118,18 +118,18 @@ export default function EmployeeList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or code..."
-            className="border border-slate-300 rounded p-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-slate-300 rounded p-2 text-xs w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div className="w-full md:w-auto flex gap-4 justify-end items-center">
-          <label className="text-sm text-slate-600 font-medium whitespace-nowrap">
+          <label className="text-xs text-slate-600 font-medium whitespace-nowrap">
             Status:
           </label>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="border border-slate-300 rounded p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px]"
+            className="border border-slate-300 rounded p-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px]"
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -142,14 +142,14 @@ export default function EmployeeList() {
       {/* DATA VIEW TABLE */}
       {loading ? (
         <div className="flex justify-center items-center h-32">
-          <p className="text-sm font-medium text-slate-500 animate-pulse">
+          <p className="text-xs font-medium text-slate-500 animate-pulse">
             Fetching records...
           </p>
         </div>
       ) : (
         <div className="border-slate-200 dark:border-slate-800 border rounded-xl bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left border-collapse">
+            <table className="w-full text-xs text-left border-collapse">
               <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold">
                 <tr>
                   <th className="p-3">Code</th>

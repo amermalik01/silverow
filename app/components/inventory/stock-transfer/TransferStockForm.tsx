@@ -450,7 +450,7 @@ export default function TransferStockForm({
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
+        <div className="flex items-center space-x-2 text-xs text-gray-600">
           <span>Inventory</span> <span>/</span> <span>Transfer Stock</span>
         </div>
         {isPosted && (
@@ -461,7 +461,7 @@ export default function TransferStockForm({
       </div>
 
       {errorMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-xs">
           <strong>Error:</strong> {errorMessage}
         </div>
       )}
@@ -478,7 +478,7 @@ export default function TransferStockForm({
             placeholder="Auto Sequence Generated"
             value={transferNo}
             disabled
-            className="w-full text-sm border p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
+            className="w-full text-xs border p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
           />
         </div>
 
@@ -491,7 +491,7 @@ export default function TransferStockForm({
             value={transferDate}
             disabled={isPosted || isFormDisabled || isLoading}
             onChange={(e) => setTransferDate(e.target.value)}
-            className="w-full text-sm border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+            className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
           />
         </div>
 
@@ -504,7 +504,7 @@ export default function TransferStockForm({
             value={inTransitCode}
             disabled={isPosted || isFormDisabled || isLoading}
             onChange={(e) => setInTransitCode(e.target.value)}
-            className="w-full text-sm border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+            className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
           />
         </div>
 
@@ -520,7 +520,7 @@ export default function TransferStockForm({
               // Clear previous line details to preserve location constraints
               setLines([]);
             }}
-            className="w-full text-sm border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+            className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
           >
             <option value="">-- Select Source Whse --</option>
             {warehouses.map((wh) => (
@@ -542,7 +542,7 @@ export default function TransferStockForm({
               setWarehouseTo(e.target.value);
               setLines([]);
             }}
-            className="w-full text-sm border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+            className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
           >
             <option value="">-- Select Dest Whse --</option>
             {warehouses.map((wh) => (
@@ -562,7 +562,7 @@ export default function TransferStockForm({
             value={poNo}
             onChange={(e) => setPoNo(e.target.value)}
             disabled={isPosted || isFormDisabled || isLoading}
-            className="w-full text-sm border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
+            className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
           />
         </div>
         <div>
@@ -574,7 +574,7 @@ export default function TransferStockForm({
             value={shippingAgent}
             onChange={(e) => setShippingAgent(e.target.value)}
             disabled={isPosted || isFormDisabled || isLoading}
-            className="w-full text-sm border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
+            className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
           />
         </div>
         <div>
@@ -586,7 +586,7 @@ export default function TransferStockForm({
             value={shippingCharge}
             onChange={(e) => setShippingCharge(Number(e.target.value))}
             disabled={isPosted || isFormDisabled || isLoading}
-            className="w-full text-sm border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
+            className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
           />
         </div>
       </div>
@@ -597,7 +597,7 @@ export default function TransferStockForm({
 
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          <h3 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             Material Allocation Lines
           </h3>
           <button
@@ -778,7 +778,7 @@ export default function TransferStockForm({
         {mode !== "create" && (
           <button
             disabled={isLoading}
-            className="border px-4 py-2 rounded text-sm font-medium bg-white shadow-sm hover:bg-gray-50 disabled:opacity-50"
+            className="border px-4 py-2 rounded text-xs font-medium bg-white shadow-sm hover:bg-gray-50 disabled:opacity-50"
           >
             Print/View Transfer
           </button>
@@ -789,14 +789,14 @@ export default function TransferStockForm({
             <button
               onClick={handleSaveDraft}
               disabled={isLoading}
-              className="border px-4 py-2 rounded text-sm font-medium bg-white text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+              className="border px-4 py-2 rounded text-xs font-medium bg-white text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
             >
               {isLoading ? "Saving..." : "Save Draft"}
             </button>
             <button
               onClick={handlePostTransfer}
               disabled={isLoading}
-              className="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+              className="bg-emerald-600 text-white px-4 py-2 rounded text-xs font-medium shadow-sm hover:bg-emerald-700 disabled:opacity-50"
             >
               {isLoading ? "Processing..." : "Post Transfer"}
             </button>
@@ -842,25 +842,25 @@ export default function TransferStockForm({
   /* <div className="bg-white p-6 rounded shadow-sm border border-gray-200 mb-6 grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">
+            <label className="w-1/3 text-xs font-medium text-gray-700">
               Transfer Stock No.
             </label>
             <input
               type="text"
               value={transferNo || "AUTO-GENERATED"}
               disabled
-              className="w-2/3 border p-2 bg-gray-100 rounded text-sm font-mono text-gray-600"
+              className="w-2/3 border p-2 bg-gray-100 rounded text-xs font-mono text-gray-600"
             />
           </div>
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">
+            <label className="w-1/3 text-xs font-medium text-gray-700">
               Warehouse From *
             </label>
             <select
               value={warehouseFrom}
               onChange={(e) => setWarehouseFrom(e.target.value)}
               disabled={isFormDisabled}
-              className="w-2/3 border p-2 rounded text-sm disabled:bg-gray-50"
+              className="w-2/3 border p-2 rounded text-xs disabled:bg-gray-50"
             >
               <option value="">Select Origin...</option>
               <option value="WHS-MAIN-UUID">Main Central Warehouse</option>
@@ -868,14 +868,14 @@ export default function TransferStockForm({
             </select>
           </div>
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">
+            <label className="w-1/3 text-xs font-medium text-gray-700">
               Warehouse To *
             </label>
             <select
               value={warehouseTo}
               onChange={(e) => setWarehouseTo(e.target.value)}
               disabled={isFormDisabled}
-              className="w-2/3 border p-2 rounded text-sm disabled:bg-gray-50"
+              className="w-2/3 border p-2 rounded text-xs disabled:bg-gray-50"
             >
               <option value="">Select Destination...</option>
               <option value="WHS-MAIN-UUID">Main Central Warehouse</option>
@@ -883,14 +883,14 @@ export default function TransferStockForm({
             </select>
           </div>
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">
+            <label className="w-1/3 text-xs font-medium text-gray-700">
               In-transit Code *
             </label>
             <select
               value={inTransitCode}
               onChange={(e) => setInTransitCode(e.target.value)}
               disabled={isFormDisabled}
-              className="w-2/3 border p-2 rounded text-sm disabled:bg-gray-50"
+              className="w-2/3 border p-2 rounded text-xs disabled:bg-gray-50"
             >
               <option value="Road">Road Logistics</option>
               <option value="Air">Air Freight</option>
@@ -901,7 +901,7 @@ export default function TransferStockForm({
 
         <div className="space-y-4">
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">
+            <label className="w-1/3 text-xs font-medium text-gray-700">
               Transfer Stock Date
             </label>
             <input
@@ -909,11 +909,11 @@ export default function TransferStockForm({
               value={transferDate}
               onChange={(e) => setTransferDate(e.target.value)}
               disabled={isFormDisabled}
-              className="w-2/3 border p-2 rounded text-sm disabled:bg-gray-50"
+              className="w-2/3 border p-2 rounded text-xs disabled:bg-gray-50"
             />
           </div>
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">
+            <label className="w-1/3 text-xs font-medium text-gray-700">
               P.O No.
             </label>
             <input
@@ -921,11 +921,11 @@ export default function TransferStockForm({
               value={poNo}
               onChange={(e) => setPoNo(e.target.value)}
               disabled={isFormDisabled}
-              className="w-2/3 border p-2 rounded text-sm disabled:bg-gray-50"
+              className="w-2/3 border p-2 rounded text-xs disabled:bg-gray-50"
             />
           </div>
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">
+            <label className="w-1/3 text-xs font-medium text-gray-700">
               Shipping Agent Name
             </label>
             <input
@@ -933,11 +933,11 @@ export default function TransferStockForm({
               value={shippingAgent}
               onChange={(e) => setShippingAgent(e.target.value)}
               disabled={isFormDisabled}
-              className="w-2/3 border p-2 rounded text-sm disabled:bg-gray-50"
+              className="w-2/3 border p-2 rounded text-xs disabled:bg-gray-50"
             />
           </div>
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">
+            <label className="w-1/3 text-xs font-medium text-gray-700">
               Shipping Charge
             </label>
             <input
@@ -945,14 +945,14 @@ export default function TransferStockForm({
               value={shippingCharge}
               onChange={(e) => setShippingCharge(Number(e.target.value))}
               disabled={isFormDisabled}
-              className="w-2/3 border p-2 rounded text-sm disabled:bg-gray-50"
+              className="w-2/3 border p-2 rounded text-xs disabled:bg-gray-50"
             />
           </div>
         </div>
       </div> 
       
       <div className="bg-white rounded shadow-sm border border-gray-200 overflow-x-auto p-4">
-        <table className="w-full text-left border-collapse text-sm">
+        <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 font-medium">
               <th className="p-3">Item No.</th>
@@ -1069,7 +1069,7 @@ export default function TransferStockForm({
         {!isFormDisabled && (
           <button
             onClick={handleAddLine}
-            className="mt-4 flex items-center text-sm font-medium text-emerald-600 hover:text-emerald-700"
+            className="mt-4 flex items-center text-xs font-medium text-emerald-600 hover:text-emerald-700"
           >
             <span className="mr-1 text-lg">+</span> Add Line Item
           </button>

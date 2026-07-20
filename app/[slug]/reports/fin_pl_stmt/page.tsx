@@ -245,7 +245,7 @@ export default function ProfitAndLossReport() {
                     className="text-center py-20 text-slate-400 font-normal"
                   >
                     <div className="flex flex-col items-center justify-center space-y-2 max-w-sm mx-auto">
-                      <p className="text-sm font-semibold text-slate-700">
+                      <p className="text-xs font-semibold text-slate-700">
                         Statement Ready to Compile
                       </p>
                       <p className="text-xs text-slate-400">

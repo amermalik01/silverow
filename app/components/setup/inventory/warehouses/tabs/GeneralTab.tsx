@@ -24,7 +24,7 @@ export default function GeneralTab({
     <div className="grid grid-cols-2 gap-4">
       {/* CODE (READ ONLY) */}
       <div className="col-span-2">
-        <label className="text-sm text-gray-600">Code</label>
+        <label className="text-xs text-gray-600">Code</label>
         <input
           value={warehouse.code || ""}
           disabled
@@ -105,7 +105,7 @@ export default function GeneralTab({
       {/* PRIMARY LOCATION */}
       <div>
         <label>Primary Location</label>
-      <div className="text-sm text-gray-600 mt-1">
+      <div className="text-xs text-gray-600 mt-1">
         Current Primary:{" "}
         <span className="font-medium">
           {primaryLocationName || "Not selected"}

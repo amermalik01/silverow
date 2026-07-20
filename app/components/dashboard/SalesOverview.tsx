@@ -98,7 +98,7 @@ const SalesOverview: React.FC = () => {
       <div className="sm:flex items-center justify-between mb-6">
         <div>
           <h5 className="card-title">Revenue updates</h5>
-          <p className="text-sm text-muted-foreground font-normal">
+          <p className="text-xs text-muted-foreground font-normal">
             Overview of Profit
           </p>
         </div>

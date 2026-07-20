@@ -51,8 +51,8 @@ export default function SalesInvoiceDetail({ slug, invoiceId }: { slug: string; 
       .finally(() => setLoading(false));
   }, [invoiceId]);
 
-  if (loading) return <div className="p-6 text-sm font-medium text-gray-500 animate-pulse">Loading Invoice Parameters...</div>;
-  if (error || !data) return <div className="p-6 text-sm font-semibold text-red-500">⚠️ Error: {error || "Invoice context unreachable"}</div>;
+  if (loading) return <div className="p-6 text-xs font-medium text-gray-500 animate-pulse">Loading Invoice Parameters...</div>;
+  if (error || !data) return <div className="p-6 text-xs font-semibold text-red-500">⚠️ Error: {error || "Invoice context unreachable"}</div>;
 
   const { invoice, lines } = data;
 
@@ -79,15 +79,15 @@ export default function SalesInvoiceDetail({ slug, invoiceId }: { slug: string; 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-5 border rounded-lg shadow-sm">
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Customer / Bill To</label>
-          <p className="text-sm font-semibold text-gray-800 mt-1">{invoice.customer_name || "Unassigned Customer Walk-In"}</p>
+          <p className="text-xs font-semibold text-gray-800 mt-1">{invoice.customer_name || "Unassigned Customer Walk-In"}</p>
         </div>
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Posting Date</label>
-          <p className="text-sm font-medium text-gray-800 mt-1">{new Date(invoice.invoice_date).toLocaleDateString()}</p>
+          <p className="text-xs font-medium text-gray-800 mt-1">{new Date(invoice.invoice_date).toLocaleDateString()}</p>
         </div>
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Financial Audit Stamp</label>
-          <p className="text-sm font-mono text-gray-600 mt-1">
+          <p className="text-xs font-mono text-gray-600 mt-1">
             {invoice.is_posted && invoice.posted_at ? new Date(invoice.posted_at).toLocaleString() : "Awaiting Ledger Execution"}
           </p>
         </div>
@@ -95,7 +95,7 @@ export default function SalesInvoiceDetail({ slug, invoiceId }: { slug: string; 
 
       {/* Line Items Functional Matrix Table */}
       <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-        <table className="w-full text-sm text-left">
+        <table className="w-full text-xs text-left">
           <thead className="bg-gray-50 border-b font-medium text-gray-600">
             <tr>
               <th className="p-3 w-12 text-center">#</th>
@@ -143,7 +143,7 @@ export default function SalesInvoiceDetail({ slug, invoiceId }: { slug: string; 
         </table>
 
         {/* Aggregated Financial Ledger Totals Block Layout */}
-        <div className="bg-gray-50/50 p-4 border-t flex flex-col items-end space-y-1.5 text-sm">
+        <div className="bg-gray-50/50 p-4 border-t flex flex-col items-end space-y-1.5 text-xs">
           <div className="w-[280px] flex justify-between text-gray-600">
             <span>Net Subtotal:</span>
             <span className="font-mono">${Number(invoice.subtotal).toFixed(2)}</span>

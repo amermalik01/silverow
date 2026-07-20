@@ -50,16 +50,16 @@ const BasicTable = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className='text-sm font-semibold '>
+                      <TableHead className='text-xs font-semibold '>
                         Assigned
                       </TableHead>
-                      <TableHead className='text-sm font-semibold'>
+                      <TableHead className='text-xs font-semibold'>
                         Project
                       </TableHead>
-                      <TableHead className='text-sm font-semibold'>
+                      <TableHead className='text-xs font-semibold'>
                         Priority
                       </TableHead>
-                      <TableHead className='text-sm font-semibold'></TableHead>
+                      <TableHead className='text-xs font-semibold'></TableHead>
                     </TableRow>
                   </TableHeader>
 
@@ -77,7 +77,7 @@ const BasicTable = () => {
                               className='h-10 w-10 rounded-full'
                             />
                             <div>
-                              <h6 className='text-sm font-semibold mb-1'>
+                              <h6 className='text-xs font-semibold mb-1'>
                                 {item.username}
                               </h6>
                               <p className='text-xs text-muted-foreground font-medium'>
@@ -89,7 +89,7 @@ const BasicTable = () => {
 
                         {/* Project */}
                         <TableCell>
-                          <p className='text-muted-foreground text-sm font-medium'>
+                          <p className='text-muted-foreground text-xs font-medium'>
                             {item.project}
                           </p>
                         </TableCell>
@@ -97,7 +97,7 @@ const BasicTable = () => {
                         {/* Priority */}
                         <TableCell>
                           <Badge
-                            className={`text-sm rounded-full py-1 px-3 justify-center ${item.bgcolor}`}>
+                            className={`text-xs rounded-full py-1 px-3 justify-center ${item.bgcolor}`}>
                             {item.priority}
                           </Badge>
                         </TableCell>

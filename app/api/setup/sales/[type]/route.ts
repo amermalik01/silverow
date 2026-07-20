@@ -38,12 +38,15 @@ export async function GET(
       return NextResponse.json(result.rows);
     }
 
-    const commonTables = ["segments", "territories"];
+    const commonTables = ["segments", "territories", "classification"];
     const crmTables = [
       "credit_ratings",
       "buying_groups",
       "sources",
       "order_sources",
+      "ownership_type",
+      "type",
+      "status",
     ];
 
     const table_name = commonTables.includes(type)
@@ -97,7 +100,7 @@ export async function POST(
       return NextResponse.json(result.rows[0]);
     }
 
-    const commonTables = ["segments", "territories"];
+    const commonTables = ["segments", "territories", "classification"];
     const table_name = commonTables.includes(type)
       ? type
       : [
@@ -105,6 +108,9 @@ export async function POST(
             "buying_groups",
             "sources",
             "order_sources",
+            "ownership_type",
+            "type",
+            "status",
           ].includes(type)
         ? `crm_${type}`
         : `srm_${type}`;
@@ -166,13 +172,16 @@ export async function GET(
       return NextResponse.json(result.rows);
     }
 
-    const commonTables = ["segments", "territories"];
+    const commonTables = ["segments", "territories", "classification"];
 
     const crmTables = [
       "credit_ratings",
       "buying_groups",
       "sources",
       "order_sources",
+      "ownership_type",
+      "type",
+      "status",
     ];
 
     const table_name = commonTables.includes(type)
@@ -229,7 +238,7 @@ export async function POST(
     }
 
     // --- FALLBACK FOR PRE-EXISTING TABLES ---
-    const commonTables = ["segments", "territories"];
+    const commonTables = ["segments", "territories", "classification"];
     const table_name = commonTables.includes(type)
       ? type
       : [
@@ -237,6 +246,9 @@ export async function POST(
             "buying_groups",
             "sources",
             "order_sources",
+            "ownership_type",
+            "type",
+            "status",
           ].includes(type)
         ? `crm_${type}`
         : `srm_${type}`;

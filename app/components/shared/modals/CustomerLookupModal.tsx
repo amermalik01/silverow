@@ -124,7 +124,7 @@ export default function CustomerLookupModal({
         {/* Header Block Row */}
         <div className="flex justify-between items-center px-6 py-4 bg-slate-50 border-b border-slate-200">
           <h2 className="text-base font-bold text-slate-900">Select Customer Scope Target</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition text-sm">✕</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition text-xs">✕</button>
         </div>
 
         {/* Filter Input Board */}

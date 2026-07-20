@@ -125,7 +125,7 @@ export default function SalesQuoteList({ slug }: Props) {
       {/* GLOBAL SYSTEM ALERTS */}
       {alertMsg && (
         <div
-          className={`p-4 rounded-xl text-sm border font-medium ${
+          className={`p-4 rounded-xl text-xs border font-medium ${
             alertMsg.type === "success"
               ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-950/20 dark:border-green-900/50 dark:text-green-400"
               : "bg-red-50 border-red-200 text-red-800 dark:bg-red-950/20 dark:border-red-900/50 dark:text-red-400"
@@ -148,7 +148,7 @@ export default function SalesQuoteList({ slug }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by quote number or customer..."
-            className="w-full text-sm border rounded px-3 py-1.5 dark:bg-slate-900 text-black dark:text-white"
+            className="w-full text-xs border rounded px-3 py-1.5 dark:bg-slate-900 text-black dark:text-white"
           />
         </div>
 
@@ -163,7 +163,7 @@ export default function SalesQuoteList({ slug }: Props) {
               setStatus(e.target.value);
               setPage(1);
             }}
-            className="w-full text-sm border rounded px-2 py-1.5 dark:bg-slate-900 text-black dark:text-white"
+            className="w-full text-xs border rounded px-2 py-1.5 dark:bg-slate-900 text-black dark:text-white"
           >
             <option value="">All Statuses</option>
             <option value="DRAFT">Draft</option>
@@ -177,7 +177,7 @@ export default function SalesQuoteList({ slug }: Props) {
 
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-1.5 rounded transition-colors"
         >
           Apply Filters
         </button>
@@ -186,15 +186,15 @@ export default function SalesQuoteList({ slug }: Props) {
       {/* EXTENDED VIEWS TABLE CONTAINER */}
       <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white overflow-hidden shadow-sm p-4 overflow-auto">
         {loading ? (
-          <div className="py-8 text-center text-sm opacity-70">
+          <div className="py-8 text-center text-xs opacity-70">
             Loading quote ledger data...
           </div>
         ) : rows.length === 0 ? (
-          <div className="py-8 text-center text-sm opacity-70">
+          <div className="py-8 text-center text-xs opacity-70">
             No sales quotes found matching current filter context.
           </div>
         ) : (
-          <table className="w-full text-sm min-w-[900px]">
+          <table className="w-full text-xs min-w-[900px]">
             <thead className="bg-gray-100 dark:bg-slate-800 text-black dark:text-white">
               <tr>
                 <th className="p-3 text-left">Quote No</th>
@@ -279,7 +279,7 @@ export default function SalesQuoteList({ slug }: Props) {
       </div>
 
       {/* FOOTER PAGINATION BAR */}
-      <div className="flex items-center justify-between bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm text-sm">
+      <div className="flex items-center justify-between bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm text-xs">
         <div className="opacity-70">
           Showing {rows.length} of {pagination.total} records found
         </div>

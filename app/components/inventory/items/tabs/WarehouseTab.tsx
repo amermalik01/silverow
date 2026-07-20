@@ -51,7 +51,7 @@ export default function WarehouseTab({
       </div>
 
       <div className="border rounded overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">
@@ -164,7 +164,7 @@ export default function WarehouseTab({
           </tbody>
         </table>
       </div>
-      <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
     </div>
   );
 }
@@ -363,7 +363,7 @@ export default function WarehouseTab({ itemId }: Props) {
 
 
       <div className="border rounded overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">Warehouse</th>
@@ -626,7 +626,7 @@ export default function WarehouseTab({ itemId }: { itemId: string }) {
       <h2 className="text-lg font-semibold">Warehouse Stock</h2>
 
       <div className="border rounded overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">Warehouse</th>
@@ -651,7 +651,7 @@ export default function WarehouseTab({ itemId }: { itemId: string }) {
         </table>
       </div>
 
-      <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
     </div>
   );
 } */

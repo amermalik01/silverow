@@ -77,20 +77,20 @@ export default function NotesWidget({ module, recordId }: Props) {
         value={noteText}
         onChange={(e) => setNoteText(e.target.value)}
         placeholder="Write a clear transactional progress record note..."
-        className="border p-2 rounded w-full text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        className="border p-2 rounded w-full text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
         rows={3}
       />
       <button
         onClick={addNote}
         disabled={loading || !noteText.trim()}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-2 rounded transition disabled:opacity-50"
+        className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2 rounded transition disabled:opacity-50"
       >
         {loading ? "Saving..." : "Add Note"}
       </button>
 
       <div className="space-y-2 max-h-72 overflow-y-auto pt-2">
         {notes.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">
+          <p className="text-xs text-gray-400 italic">
             No notes linked to this workflow entity.
           </p>
         ) : (
@@ -100,7 +100,7 @@ export default function NotesWidget({ module, recordId }: Props) {
               className="border p-3 rounded bg-gray-50 flex justify-between items-start group"
             >
               <div className="space-y-1 max-w-[85%]">
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                <p className="text-xs text-gray-800 whitespace-pre-wrap">
                   {n.note}
                 </p>
                 <p className="text-xs text-gray-400">

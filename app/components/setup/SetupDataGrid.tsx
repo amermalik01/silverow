@@ -233,7 +233,7 @@ export default function SetupDataGrid({
       <h2 className="text-lg font-semibold">{title}</h2>
 
       {errorMessage && (
-        <div className="p-3 bg-red-100 text-red-700 border border-red-300 rounded text-sm font-medium">
+        <div className="p-3 bg-red-100 text-red-700 border border-red-300 rounded text-xs font-medium">
           {errorMessage}
         </div>
       )}
@@ -304,7 +304,7 @@ export default function SetupDataGrid({
         </div>
       ) : (
         <div className="overflow-x-auto border rounded-lg dark:border-slate-700">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-xs text-left">
             <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 uppercase text-xs tracking-wider">
               <tr>
                 {columns.map((c) => (
@@ -462,7 +462,7 @@ export default function SetupDataGrid({
       )}
 
       {/* Pagination Controls Footer Block */}
-      <div className="flex justify-between items-center mt-4 text-sm text-gray-600 dark:text-gray-400">
+      <div className="flex justify-between items-center mt-4 text-xs text-gray-600 dark:text-gray-400">
         <button
           onClick={() => setPage((p) => Math.max(p - 1, 1))}
           disabled={page === 1 || loading}

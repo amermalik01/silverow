@@ -153,7 +153,7 @@ export default function ShipmentPickingPanel({
         Shipment Picking (FIFO / FEFO Engine)
       </h2>
 
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead>
           <tr className="bg-gray-100">
             <th className="p-2">Item</th>

@@ -328,7 +328,7 @@ export default function SalesQuoteForm({
   return (
     <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white overflow-hidden shadow-sm p-4">
       {isReadonly && (
-        <div className="mb-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 px-4 py-2 rounded-lg text-sm font-medium">
+        <div className="mb-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 px-4 py-2 rounded-lg text-xs font-medium">
           This quote has been processed ({quote.status}) and is view-only.
         </div>
       )}

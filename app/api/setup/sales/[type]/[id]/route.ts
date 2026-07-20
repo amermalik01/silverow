@@ -34,17 +34,22 @@ export async function PUT(
     }
 
     // --- FALLBACK PRE-EXISTING LOGIC ---
-    const table_name = ["segments", "territories"].includes(type)
+    const table_name = ["segments", "territories", "classification"].includes(
+      type,
+    )
       ? type
       : [
             "credit_ratings",
             "buying_groups",
             "sources",
             "order_sources",
+            "ownership_type",
+            "type",
+            "status",
           ].includes(type)
         ? `crm_${type}`
         : `srm_${type}`;
-        
+
     const result = await client.query(
       `UPDATE ${table_name} SET name = $1, updated_at = now() WHERE id = $2 AND company_id = $3 RETURNING *`,
       [name, id, companyId],
@@ -142,13 +147,18 @@ export async function DELETE(
       return NextResponse.json({ success: true });
     }
 
-    const table_name = ["segments", "territories"].includes(type)
+    const table_name = ["segments", "territories", "classification"].includes(
+      type,
+    )
       ? type
       : [
             "credit_ratings",
             "buying_groups",
             "sources",
             "order_sources",
+            "ownership_type",
+            "type",
+            "status",
           ].includes(type)
         ? `crm_${type}`
         : `srm_${type}`;

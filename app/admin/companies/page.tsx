@@ -73,7 +73,7 @@ export default function CompaniesPage() {
       </div> */}
 
       <div className="border rounded-md">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className=" border-b">
             <tr>
               <th className="p-4 text-left">Name</th>
@@ -130,7 +130,7 @@ export default async function CompaniesPage() {
       </div>
 
       <div className="rounded-md border">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-slate-50 border-b">
             <tr>
               <th className="p-4 text-left font-semibold">Company</th>

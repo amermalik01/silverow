@@ -305,7 +305,7 @@ export default function ItemLookupModal({ open, onClose, onSelect }: Props) {
         {/* TABLE */}
 
         <div className="overflow-auto border rounded px-2 pb-10">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-2 text-left">Code</th>
@@ -394,7 +394,7 @@ export default function ItemLookupModal({ open, onClose, onSelect }: Props) {
         {/* PAGINATION */}
 
         <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-gray-600">
+          <div className="text-xs text-gray-600">
             Showing page {pagination.page} of {pagination.totalPages}
             {" · "}
             Total: {pagination.total}

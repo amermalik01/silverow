@@ -276,7 +276,7 @@ export default function WarehouseLookupModal({
         {/* TABLE */}
 
         <div className="overflow-auto border rounded px-2 pb-10">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-2 text-left">
@@ -369,7 +369,7 @@ export default function WarehouseLookupModal({
         {/* PAGINATION */}
 
         <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-gray-600">
+          <div className="text-xs text-gray-600">
             Total: {pagination.total}
           </div>
 
@@ -386,7 +386,7 @@ export default function WarehouseLookupModal({
               Prev
             </button>
 
-            <span className="text-sm">
+            <span className="text-xs">
               Page {pagination.page} of{" "}
               {pagination.totalPages}
             </span>
@@ -538,7 +538,7 @@ export default function WarehouseLookupModal({
 
 
         <div className="overflow-auto border rounded">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-2 text-left">Code</th>

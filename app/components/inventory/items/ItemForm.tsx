@@ -223,7 +223,7 @@ export default function ItemForm({ id }: Props) {
             <div className="flex items-center justify-between">
               <label className="block">Item Code</label>
 
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-xs">
                 <input
                   type="checkbox"
                   checked={autoCode}

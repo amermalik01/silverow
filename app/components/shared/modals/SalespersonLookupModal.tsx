@@ -100,7 +100,7 @@ export default function SalespersonLookupModal({
         
         {/* Modal Window Top Header Line */}
         <div className="flex justify-between items-center px-5 py-3 border-b border-slate-200 bg-slate-50">
-          <h3 className="margin-0 text-sm font-bold text-slate-900">Select Salesperson(s) Reference</h3>
+          <h3 className="margin-0 text-xs font-bold text-slate-900">Select Salesperson(s) Reference</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition text-lg bg-none border-none cursor-pointer">×</button>
         </div>
 

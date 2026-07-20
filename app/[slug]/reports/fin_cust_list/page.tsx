@@ -308,12 +308,12 @@ export default function LegacyCustomerListing() {
       {/* Report Canvas Print Document View Frame Area */}
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-8 min-h-[500px]">
         {!hasGenerated ? (
-          <div className="text-center py-20 text-slate-400 italic text-sm">
+          <div className="text-center py-20 text-slate-400 italic text-xs">
             Configure report parameters and click Generate Report to build the
             document preview matrix canvas.
           </div>
         ) : records.length === 0 ? (
-          <div className="text-center py-20 text-slate-400 italic text-sm">
+          <div className="text-center py-20 text-slate-400 italic text-xs">
             No matching customer registry profiles correspond to the specified
             filter bounds.
           </div>
@@ -330,7 +330,7 @@ export default function LegacyCustomerListing() {
                 </p>
               </div>
               <div className="text-right">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
                   Hygge Bikes Ltd
                 </h2>
                 <p className="text-[10px] text-slate-400">
@@ -352,7 +352,7 @@ export default function LegacyCustomerListing() {
                 return (
                   <div key={customer.id} className="pt-5 first:pt-0 space-y-3">
                     {/* Header Label Row Block */}
-                    <div className="font-bold text-sm text-slate-900 font-mono">
+                    <div className="font-bold text-xs text-slate-900 font-mono">
                       ({customer.customerCode || "N/A"}) - {customer.name}
                     </div>
 
@@ -644,7 +644,7 @@ export default function CustomerListingReport() {
               <tfoot>
                 <tr className="bg-slate-50 border-t-2 border-slate-200 font-bold font-sans text-xs text-slate-900">
                   <td colSpan={6} className="px-4 py-3 text-right font-bold uppercase tracking-wider text-slate-500 text-[10px]">Total Credit Exposure Allowed</td>
-                  <td className="px-4 py-3 text-right font-mono text-sm text-slate-900 bg-slate-100/30 font-bold">{formatCurrency(totalCreditLimit)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-xs text-slate-900 bg-slate-100/30 font-bold">{formatCurrency(totalCreditLimit)}</td>
                   <td></td>
                 </tr>
               </tfoot>

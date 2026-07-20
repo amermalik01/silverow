@@ -77,7 +77,7 @@ export default function SalesTab({ itemId }: { itemId: string }) {
       </div>
 
       {/* TABLE */}
-      <table className="w-full text-sm border">
+      <table className="w-full text-xs border">
         <thead>
           <tr>
             <th>Price</th>
@@ -99,7 +99,7 @@ export default function SalesTab({ itemId }: { itemId: string }) {
         </tbody>
       </table>
 
-      <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
 
       {showModal && (
         <PriceModal
@@ -166,7 +166,7 @@ export default function SalesTab({ itemId }: Props) {
       <div>
         <h2 className="text-lg font-semibold">Sales Setup</h2>
 
-        <p className="text-sm text-gray-500">
+        <p className="text-xs text-gray-500">
           Manage item sales prices by UOM and validity
         </p>
       </div>
@@ -174,7 +174,7 @@ export default function SalesTab({ itemId }: Props) {
 
 
       <div className="border rounded">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">UOM</th>
@@ -223,7 +223,7 @@ export default function SalesTab({ itemId }: Props) {
 
 
 
-      <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
     </div>
   );
 } */

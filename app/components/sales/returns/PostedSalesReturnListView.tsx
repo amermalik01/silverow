@@ -95,7 +95,7 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
         <div className="flex gap-2">
           <Link
             href={`/${slug}/sales/returns`}
-            className="border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 px-4 py-2 rounded-md text-sm font-medium transition text-center shadow-sm"
+            className="border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 px-4 py-2 rounded-md text-xs font-medium transition text-center shadow-sm"
           >
             View Return Drafts
           </Link>
@@ -110,9 +110,9 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
             placeholder="Search by Credit Note #, Source Return # or Notes..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full text-sm border p-2 pl-9 rounded-md bg-white dark:bg-slate-800 dark:border-slate-700 font-medium"
+            className="w-full text-xs border p-2 pl-9 rounded-md bg-white dark:bg-slate-800 dark:border-slate-700 font-medium"
           />
-          <span className="absolute left-3 top-2.5 text-gray-400 text-sm pointer-events-none select-none">
+          <span className="absolute left-3 top-2.5 text-gray-400 text-xs pointer-events-none select-none">
             🔍
           </span>
         </div>
@@ -125,7 +125,7 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
               setLimit(parseInt(e.target.value));
               setPage(1);
             }}
-            className="border p-1 rounded bg-white dark:bg-slate-800 dark:border-slate-700 font-mono text-sm"
+            className="border p-1 rounded bg-white dark:bg-slate-800 dark:border-slate-700 font-mono text-xs"
           >
             {[10, 25, 50, 100].map((v) => (
               <option key={v} value={v}>
@@ -137,7 +137,7 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800 text-sm font-semibold">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800 text-xs font-semibold">
           ⚠️ {error}
         </div>
       )}
@@ -145,16 +145,16 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
       {/* Main Immutable Ledger Grid Panel Layout */}
       <div className="border dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-sm text-gray-400 animate-pulse font-medium">
+          <div className="p-12 text-center text-xs text-gray-400 animate-pulse font-medium">
             Parsing verified historic accounting streams...
           </div>
         ) : records.length === 0 ? (
-          <div className="p-16 text-center text-sm text-gray-400 italic">
+          <div className="p-16 text-center text-xs text-gray-400 italic">
             No matching posted ledger rows resolved inside this archive window.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left border-collapse">
+            <table className="w-full text-xs text-left border-collapse">
               <thead className="bg-gray-50 dark:bg-slate-800/60 border-b dark:border-slate-800 text-xs font-bold text-gray-500 tracking-wider uppercase select-none">
                 <tr>
                   <th className="p-4 w-40">Credit Note No</th>
@@ -232,7 +232,7 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
         )}
 
         {/* Dynamic Pagination Footer Control Bar */}
-        <div className="p-4 bg-gray-50 dark:bg-slate-800/30 border-t dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm select-none">
+        <div className="p-4 bg-gray-50 dark:bg-slate-800/30 border-t dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs select-none">
           <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">
             Showing tracking indexes{" "}
             <span className="font-mono text-gray-800 dark:text-gray-200">

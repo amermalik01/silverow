@@ -103,7 +103,7 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             {title}
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-xs text-slate-500">
             Manage directory records and system visibility configurations.
           </p>
         </div>
@@ -127,14 +127,14 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
           placeholder="Search by code, corporate name, email, or telephone string..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-slate-300 dark:border-slate-700 bg-transparent p-2 rounded-lg w-full md:w-1/2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+          className="border border-slate-300 dark:border-slate-700 bg-transparent p-2 rounded-lg w-full md:w-1/2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
         />
       </div>
 
       {/* Main UI Data Matrix Grid */}
       <div className="border rounded-xl bg-white dark:bg-slate-900 shadow-sm overflow-hidden border-slate-200 dark:border-slate-800">
         <div className="overflow-auto">
-          <table className="w-full text-sm text-left border-collapse">
+          <table className="w-full text-xs text-left border-collapse">
             <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold">
               <tr>
                 <th className="p-3">{partyCode}</th>

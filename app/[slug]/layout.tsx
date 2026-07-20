@@ -19,7 +19,7 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
 
   if (!session_slug) {
     return (
-      <div className="w-[240px] h-screen flex items-center justify-center text-sm text-gray-500">
+      <div className="w-[240px] h-screen flex items-center justify-center text-xs text-gray-500">
         Loading...
       </div>
     );
@@ -82,7 +82,7 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
 
   if (!session_slug) {
     return (
-      <div className="w-[270px] h-screen flex items-center justify-center text-sm text-gray-500">
+      <div className="w-[270px] h-screen flex items-center justify-center text-xs text-gray-500">
         Loading...
       </div>
     );

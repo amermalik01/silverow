@@ -826,7 +826,7 @@ export default function JournalForm({
           onClick={addLineRow}
           className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/50 border-emerald-200"
         >
-          <span className="text-sm font-bold">+</span>
+          <span className="text-xs font-bold">+</span>
           Add Row Line
         </Button>
 

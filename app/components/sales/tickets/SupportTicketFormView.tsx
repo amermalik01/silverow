@@ -199,7 +199,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
       assign_person_id: emp.id,
       assign_person: emp.employee_code + "-" + emp.display_name,
     }));
-    setSupplierModalOpen(false);
+    setSalespersonModalOpen(false);
   };
 
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
@@ -313,7 +313,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
   };
 
   const inputStyle =
-    "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-emerald-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200 shadow-sm";
+    "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-emerald-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200 shadow-sm";
   const labelStyle =
     "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5 min-w-[110px]";
 
@@ -538,7 +538,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
                   onChange={(e) => updateField("postcode", e.target.value)}
                 />
                 <select
-                  className="border border-slate-300 dark:border-slate-700 rounded p-1 text-sm max-w-[70px] dark:bg-slate-900"
+                  className="border border-slate-300 dark:border-slate-700 rounded p-1 text-xs max-w-[70px] dark:bg-slate-900"
                   value={ticket.country}
                   onChange={(e) => updateField("country", e.target.value)}
                 >
@@ -800,7 +800,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
 
             <div className="pt-2">
               <textarea
-                className="w-full border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-sm text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 focus:border-emerald-500 outline-none min-h-[140px]"
+                className="w-full border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 focus:border-emerald-500 outline-none min-h-[140px]"
                 placeholder="Narrative breakdown description text or details related to task context..."
                 value={ticket.general_description}
                 onChange={(e) =>

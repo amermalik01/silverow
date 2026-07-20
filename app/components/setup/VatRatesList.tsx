@@ -149,7 +149,7 @@ export default function VatRatesList() {
     <div className="p-6 bg-white dark:bg-slate-900 rounded-lg shadow space-y-4">
       {/* Dynamic Error Messaging Banner */}
       {errorMessage && (
-        <div className="p-3 bg-red-100 text-red-700 border border-red-300 rounded text-sm font-medium">
+        <div className="p-3 bg-red-100 text-red-700 border border-red-300 rounded text-xs font-medium">
           {errorMessage}
         </div>
       )}
@@ -174,7 +174,7 @@ export default function VatRatesList() {
             disabled={submitting}
             className="border p-2 pr-6 rounded w-28 dark:bg-slate-800 dark:border-slate-700 disabled:opacity-50"
           />
-          <span className="absolute right-2.5 text-gray-500 text-sm">%</span>
+          <span className="absolute right-2.5 text-gray-500 text-xs">%</span>
         </div>
 
         <button
@@ -208,7 +208,7 @@ export default function VatRatesList() {
         </div>
       ) : (
         <div className="overflow-x-auto border rounded-lg dark:border-slate-700">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-xs text-left">
             <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 uppercase text-xs tracking-wider">
               <tr>
                 <th className="p-3">VAT Setup Label</th>
@@ -388,7 +388,7 @@ export default function VatRatesList() {
 
       </div>
 
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead className="">
           <tr>
             <th className="p-2 text-left">Name</th>

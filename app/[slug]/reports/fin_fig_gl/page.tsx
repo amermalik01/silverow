@@ -232,7 +232,7 @@ export default function FigureByGLReport() {
 
         {!hasGenerated ? (
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-20 text-center text-slate-400 shadow-sm">
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-xs font-semibold text-slate-700">
               Account Statements Idle
             </p>
             <p className="text-xs text-slate-400 mt-1">
@@ -250,7 +250,7 @@ export default function FigureByGLReport() {
               {/* Header Box Panel block matching legacy layout metadata labels */}
               <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex flex-col space-y-1">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-xs font-bold text-slate-900">
                     Figure By G/L
                   </h3>
                   <span className="text-[11px] font-mono text-slate-500 font-bold bg-white border px-2 py-0.5 rounded shadow-sm">
@@ -340,7 +340,7 @@ export default function FigureByGLReport() {
                       >
                         Total
                       </td>
-                      <td className="px-4 py-2.5 text-right font-mono text-sm">
+                      <td className="px-4 py-2.5 text-right font-mono text-xs">
                         {formatCurrency(group.totalAmount)}
                       </td>
                       <td></td>

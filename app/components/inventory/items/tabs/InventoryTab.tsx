@@ -9,7 +9,7 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
       <div>
         <h2 className="text-xl font-semibold">Inventory Setup</h2>
 
-        <p className="text-sm text-gray-500">
+        <p className="text-xs text-gray-500">
           Configure inventory behavior for this item
         </p>
       </div>
@@ -150,7 +150,7 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
       <div className="border rounded-lg p-4">
         <h3 className="font-semibold mb-2">Inventory Summary</h3>
 
-        <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+        <p className="text-xs text-gray-500">Item ID: {itemId}</p>
       </div>
     </div>
   );
@@ -169,7 +169,7 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
         <div className="border rounded p-4">Costing Methods</div>
       </div>
 
-      <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
     </div>
   );
 } */

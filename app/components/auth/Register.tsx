@@ -17,7 +17,7 @@ export const Register = () => {
             <div className='flex justify-center mb-4'>
               <FullLogo />
             </div>
-            <p className='text-sm text-muted-foreground text-center mb-6'>
+            <p className='text-xs text-muted-foreground text-center mb-6'>
               Your Social Campaigns
             </p>
             <div>
@@ -68,7 +68,7 @@ export const Register = () => {
               </p>
               <Link
                 href='/auth/login'
-                className='text-sm font-medium text-primary hover:text-primaryemphasis'>
+                className='text-xs font-medium text-primary hover:text-primaryemphasis'>
                 Sign In
               </Link>
             </div>

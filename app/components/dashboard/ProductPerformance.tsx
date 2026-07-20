@@ -68,7 +68,7 @@ export const ProductPerformance = () => {
       <div id='product' className='mb-6'>
         <div>
           <h5 className='card-title'>Product Performance</h5>
-          <p className='text-sm text-muted-foreground font-normal'>
+          <p className='text-xs text-muted-foreground font-normal'>
             Overview of product performance
           </p>
         </div>
@@ -80,17 +80,17 @@ export const ProductPerformance = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className='text-sm font-semibold'>Id</TableHead>
-                    <TableHead className='text-sm font-semibold'>
+                    <TableHead className='text-xs font-semibold'>Id</TableHead>
+                    <TableHead className='text-xs font-semibold'>
                       Assigned
                     </TableHead>
-                    <TableHead className='text-sm font-semibold'>
+                    <TableHead className='text-xs font-semibold'>
                       Name
                     </TableHead>
-                    <TableHead className='text-sm font-semibold'>
+                    <TableHead className='text-xs font-semibold'>
                       Priority
                     </TableHead>
-                    <TableHead className='text-sm font-semibold'>
+                    <TableHead className='text-xs font-semibold'>
                       Budget
                     </TableHead>
                   </TableRow>
@@ -100,14 +100,14 @@ export const ProductPerformance = () => {
                   {PerformersData.map((item, index) => (
                     <TableRow key={item.key} className='border-b border-border'>
                       <TableCell>
-                        <p className='text-muted-foreground font-medium text-sm'>
+                        <p className='text-muted-foreground font-medium text-xs'>
                           {index + 1}
                         </p>
                       </TableCell>
 
                       <TableCell className='ps-0 min-w-[200px]'>
                         <div>
-                          <h6 className='text-sm font-semibold mb-1'>
+                          <h6 className='text-xs font-semibold mb-1'>
                             {item.username}
                           </h6>
                           <p className='text-xs font-medium text-muted-foreground'>
@@ -117,7 +117,7 @@ export const ProductPerformance = () => {
                       </TableCell>
 
                       <TableCell>
-                        <p className='font-medium text-muted-foreground text-sm'>
+                        <p className='font-medium text-muted-foreground text-xs'>
                           {item.project}
                         </p>
                       </TableCell>

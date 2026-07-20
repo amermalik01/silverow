@@ -175,7 +175,7 @@ export default function PartyForm({
       </div>
 
       {Object.keys(formErrors).length > 0 && (
-        <div className="p-4 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
+        <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
           <p className="font-semibold mb-1">
             Please fix the following validation errors:
           </p>
@@ -205,7 +205,7 @@ export default function PartyForm({
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`capitalize px-4 py-2.5 text-sm font-medium transition-all relative top-[1px] ${
+              className={`capitalize px-4 py-2.5 text-xs font-medium transition-all relative top-[1px] ${
                 activeTab === tab
                   ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 font-semibold"
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
@@ -251,7 +251,7 @@ export default function PartyForm({
         <button
           type="button"
           onClick={() => router.push(redirectPath)}
-          className="px-4 py-2 text-sm border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium"
+          className="px-4 py-2 text-xs border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium"
         >
           Cancel
         </button>
@@ -259,7 +259,7 @@ export default function PartyForm({
           type="button"
           onClick={handleSubmit}
           disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors shadow-sm"
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium px-5 py-2 rounded-lg text-xs transition-colors shadow-sm"
         >
           {loading ? "Processing Ledger..." : "Save Record"}
         </button>

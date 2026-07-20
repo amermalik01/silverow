@@ -46,7 +46,7 @@ const CommandInput = React.forwardRef<
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
-        'flex h-11 w-full rounded-md bg-transparent focus:outline-none py-3 text-sm outline-none placeholder:text-muted-foreground dark:placeholder:text-white/30 disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0',
+        'flex h-11 w-full rounded-md bg-transparent focus:outline-none py-3 text-xs outline-none placeholder:text-muted-foreground dark:placeholder:text-white/30 disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0',
         className
       )}
       {...props}
@@ -75,7 +75,7 @@ const CommandEmpty = React.forwardRef<
 >((props, ref) => (
   <CommandPrimitive.Empty
     ref={ref}
-    className='py-6 text-center text-sm'
+    className='py-6 text-center text-xs'
     {...props}
   />
 ))
@@ -117,7 +117,7 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-lightprimary data-[selected=true]:text-primary data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-lightprimary dark:hover:lightprimary hover:cursor-pointer",
+      "relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-lightprimary data-[selected=true]:text-primary data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-lightprimary dark:hover:lightprimary hover:cursor-pointer",
       className
     )}
     {...props}

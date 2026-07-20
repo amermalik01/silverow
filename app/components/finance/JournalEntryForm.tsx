@@ -246,7 +246,7 @@ export default function JournalEntryForm({
 
       {/* LINES */}
 
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead>
           <tr>
             <th className="p-2">Account</th>
@@ -337,7 +337,7 @@ export default function JournalEntryForm({
 
       {/* TOTALS */}
 
-      <div className="flex justify-end gap-6 text-sm font-semibold">
+      <div className="flex justify-end gap-6 text-xs font-semibold">
         <div>Debit: {totalDebit.toFixed(2)}</div>
         <div>Credit: {totalCredit.toFixed(2)}</div>
       </div>
@@ -345,7 +345,7 @@ export default function JournalEntryForm({
       {/* VALIDATION */}
 
       {!isBalanced && (
-        <p className="text-red-600 text-sm">Journal must be balanced</p>
+        <p className="text-red-600 text-xs">Journal must be balanced</p>
       )}
 
       {/* SUBMIT */}

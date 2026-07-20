@@ -134,7 +134,7 @@ export default function ReportsPage() {
     
       {/* Upper Navigation Tracking Bar */}
       <div className="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
-        <div className="flex items-center space-x-2 text-sm text-slate-500">
+        <div className="flex items-center space-x-2 text-xs text-slate-500">
           <span>Reports</span>
           <span>/</span>
           <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
@@ -148,7 +148,7 @@ export default function ReportsPage() {
           <input
             type="text"
             placeholder="Search reports..."
-            className="w-full rounded-md border border-slate-300 bg-white py-1.5 pl-9 pr-4 text-sm outline-none transition focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+            className="w-full rounded-md border border-slate-300 bg-white py-1.5 pl-9 pr-4 text-xs outline-none transition focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -172,7 +172,7 @@ export default function ReportsPage() {
               className="flex flex-col overflow-hidden rounded-lg border border-slate-200 shadow-sm"
             >
               {/* Category Header Bar (Emulating legacy dark forest green style) */}
-              <div className="bg-emerald-950 px-4 py-3 text-sm font-semibold tracking-wide text-white">
+              <div className="bg-emerald-950 px-4 py-3 text-xs font-semibold tracking-wide text-white">
                 {category}
               </div>
 
@@ -206,7 +206,7 @@ export default function ReportsPage() {
                         {/* Interactive Execution Link */}
                         <a
                           href={`./reports/${report.id.toLowerCase()}`}
-                          className="text-sm font-medium text-slate-700 hover:text-emerald-700 hover:underline"
+                          className="text-xs font-medium text-slate-700 hover:text-emerald-700 hover:underline"
                         >
                           {report.name}
                         </a>

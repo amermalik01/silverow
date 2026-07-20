@@ -35,7 +35,7 @@ export default function EmployeeAddressesTab({
   };
 
   const inputClass =
-    "border border-slate-300 rounded-lg p-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full";
+    "border border-slate-300 rounded-lg p-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full";
 
   return (
     <div className="space-y-4">
@@ -59,7 +59,7 @@ export default function EmployeeAddressesTab({
 
       {addresses.length === 0 ? (
         <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-          <p className="text-sm text-slate-500">
+          <p className="text-xs text-slate-500">
             No physical routing indices are registered for this profile.
           </p>
         </div>

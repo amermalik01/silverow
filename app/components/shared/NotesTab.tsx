@@ -76,7 +76,7 @@ export default function NotesTab({
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="border border-slate-200 dark:border-slate-800 p-3 rounded-lg w-full text-sm bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-slate-100"
+            className="border border-slate-200 dark:border-slate-800 p-3 rounded-lg w-full text-xs bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-slate-100"
             rows={4}
             placeholder="Log conversation minutes, compliance milestones or remarks..."
           />
@@ -92,11 +92,11 @@ export default function NotesTab({
 
       <div className="lg:col-span-2 space-y-3 max-h-[500px] overflow-y-auto pr-2">
         {loading ? (
-          <p className="text-sm text-slate-400 text-center py-6 animate-pulse">
+          <p className="text-xs text-slate-400 text-center py-6 animate-pulse">
             Reading audit feed histories...
           </p>
         ) : notes.length === 0 ? (
-          <div className="text-center py-12 border border-dashed rounded-xl border-slate-200 dark:border-slate-800 text-slate-400 text-sm">
+          <div className="text-center py-12 border border-dashed rounded-xl border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
             No historical documentation notations recorded.
           </div>
         ) : (
@@ -105,7 +105,7 @@ export default function NotesTab({
               key={item.id}
               className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-xl shadow-xs"
             >
-              <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+              <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
                 {item.note}
               </p>
               {item.created_at && (

@@ -105,11 +105,11 @@ export default function DropdownManager({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter configuration name..."
-          className="p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-blue-500"
+          className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-blue-500"
         />
         <button
           onClick={createItem}
-          className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition"
+          className="px-4 py-2 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
         >
           Add Item
         </button>
@@ -119,7 +119,7 @@ export default function DropdownManager({
         {data.map((item) => (
           <li
             key={item.id}
-            className="py-2.5 flex items-center justify-between text-sm"
+            className="py-2.5 flex items-center justify-between text-xs"
           >
             {editingId === item.id ? (
               <div className="flex items-center gap-2 w-full">

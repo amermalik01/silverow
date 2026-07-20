@@ -99,7 +99,7 @@ export default function PostingDateRangeSetup() {
 
   if (loading)
     return (
-      <div className="p-4 text-sm text-gray-500">
+      <div className="p-4 text-xs text-gray-500">
         Loading accounting windows...
       </div>
     );
@@ -116,7 +116,7 @@ export default function PostingDateRangeSetup() {
       </div>
 
       {error && (
-        <div className="p-3 text-sm bg-red-50 text-red-600 border border-red-200 rounded">
+        <div className="p-3 text-xs bg-red-50 text-red-600 border border-red-200 rounded">
           {error}
         </div>
       )}
@@ -133,7 +133,7 @@ export default function PostingDateRangeSetup() {
           <input
             type="date"
             required
-            className="border px-3 py-1.5 rounded text-sm text-black"
+            className="border px-3 py-1.5 rounded text-xs text-black"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
@@ -143,14 +143,14 @@ export default function PostingDateRangeSetup() {
           <input
             type="date"
             required
-            className="border px-3 py-1.5 rounded text-sm text-black"
+            className="border px-3 py-1.5 rounded text-xs text-black"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
         </div>
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded font-medium transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded font-medium transition-colors"
         >
           Open New Period
         </button>
@@ -158,7 +158,7 @@ export default function PostingDateRangeSetup() {
 
       {/* Periods Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm border-collapse">
+        <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b bg-gray-100 text-gray-600 font-medium">
               <th className="p-3">Start Date</th>

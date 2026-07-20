@@ -202,7 +202,7 @@ export default function SalesQuoteLines({
       </div>
 
       <div className="border rounded overflow-auto bg-white dark:bg-slate-900">
-        <table className="w-full text-sm min-w-[1100px]">
+        <table className="w-full text-xs min-w-[1100px]">
           <thead className="bg-gray-50 dark:bg-slate-800 text-black dark:text-white text-left text-xs uppercase font-semibold">
             <tr>
               <th className="p-2 w-28">Type</th>
@@ -452,16 +452,16 @@ export default function SalesQuoteLines({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-sm font-semibold ">
+                  <TableHead className="text-xs font-semibold ">
                     Assigned
                   </TableHead>
-                  <TableHead className="text-sm font-semibold">
+                  <TableHead className="text-xs font-semibold">
                     Project
                   </TableHead>
-                  <TableHead className="text-sm font-semibold">
+                  <TableHead className="text-xs font-semibold">
                     Priority
                   </TableHead>
-                  <TableHead className="text-sm font-semibold"></TableHead>
+                  <TableHead className="text-xs font-semibold"></TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -479,7 +479,7 @@ export default function SalesQuoteLines({
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={`text-sm rounded-full py-1 px-3 justify-center`}
+                        className={`text-xs rounded-full py-1 px-3 justify-center`}
                       >
                       </Badge>
                     </TableCell>

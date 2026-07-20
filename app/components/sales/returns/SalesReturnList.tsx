@@ -124,7 +124,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
         </div>
         <Link
           href={`/${slug}/sales/returns/new`}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition shadow-sm text-center"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-xs font-medium transition shadow-sm text-center"
         >
           + Log Sales Return
         </Link>
@@ -142,7 +142,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
             onKeyDown={(e) =>
               e.key === "Enter" && updateFilters(search, status, 1, limit)
             }
-            className="w-full text-sm border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="w-full text-xs border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
         </div>
 
@@ -154,7 +154,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
               setStatus(e.target.value);
               updateFilters(search, e.target.value, 1, limit);
             }}
-            className="text-sm border px-3 py-2 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="text-xs border px-3 py-2 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value="ALL">All Statuses</option>
             <option value="OPEN">Open (Draft)</option>
@@ -170,7 +170,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
               setLimit(newLimit);
               updateFilters(search, status, 1, newLimit);
             }}
-            className="text-sm border px-3 py-2 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="text-xs border px-3 py-2 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value={10}>10 records / page</option>
             <option value={25}>25 records / page</option>
@@ -181,7 +181,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
           <button
             onClick={() => updateFilters(search, status, 1, limit)}
             disabled={loading || isPending}
-            className="bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-400 px-4 py-2 rounded-md text-sm font-medium transition"
+            className="bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-400 px-4 py-2 rounded-md text-xs font-medium transition"
           >
             Search
           </button>
@@ -197,7 +197,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
           </div>
         )}
 
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
             <tr>
               <th className="p-3 text-left whitespace-nowrap">Return Document No</th>
@@ -265,7 +265,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
 
         {/* Sales-Order Matched Complete Dynamic Pagination Footer Control Hub */}
         {data && data.pagination.totalPages > 0 && (
-          <div className="bg-gray-50 border-t p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-600">
+          <div className="bg-gray-50 border-t p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
             <div>
               Displaying records{" "}
               <span className="font-semibold">

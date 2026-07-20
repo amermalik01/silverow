@@ -99,7 +99,7 @@ export default function VatProductPostingGroupsList() {
   return (
     <div className="p-6 bg-white dark:bg-slate-900 rounded-lg shadow space-y-4">
       {errorMsg && (
-        <div className="p-3 bg-red-100 text-red-700 border border-red-300 rounded text-sm font-medium">
+        <div className="p-3 bg-red-100 text-red-700 border border-red-300 rounded text-xs font-medium">
           {errorMsg}
         </div>
       )}
@@ -136,7 +136,7 @@ export default function VatProductPostingGroupsList() {
         <div className="text-center py-4 text-gray-500">Loading elements...</div>
       ) : (
         <div className="overflow-x-auto border rounded-lg dark:border-slate-700">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-xs text-left">
             <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 uppercase text-xs tracking-wider">
               <tr>
                 <th className="p-3">Product Posting Group Name</th>
@@ -266,7 +266,7 @@ export default function VatProductPostingGroupsList() {
         </button>
       </div>
 
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead>
           <tr>
             <th className="p-2 text-left">Name</th>

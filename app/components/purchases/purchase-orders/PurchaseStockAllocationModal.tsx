@@ -172,7 +172,7 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
         </div>
 
         {/* Metric Badges Panel */}
-        <div className="p-4 grid grid-cols-5 gap-4 border-b dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-sm">
+        <div className="p-4 grid grid-cols-5 gap-4 border-b dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-xs">
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Item</p>
             <p className="font-medium">
@@ -218,11 +218,11 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
             placeholder="Search Serial/Ref No..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="border dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 rounded text-sm w-64"
+            className="border dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 rounded text-xs w-64"
           />
           <button
             onClick={() => setSearchQuery("")}
-            className="border dark:border-slate-700 px-3 py-1.5 rounded text-sm bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700"
+            className="border dark:border-slate-700 px-3 py-1.5 rounded text-xs bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700"
           >
             Clear Filter
           </button>
@@ -295,13 +295,13 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
         <div className="bg-gray-50 dark:bg-slate-800 p-3 border-t dark:border-slate-700 flex justify-end space-x-2">
           <button
             onClick={handleConfirmSave}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4 py-1.5 rounded font-medium shadow"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-1.5 rounded font-medium shadow"
           >
             Save Allocations
           </button>
           <button
             onClick={onClose}
-            className="border dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-4 py-1.5 rounded font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
+            className="border dark:border-slate-700 bg-white dark:bg-slate-800 text-xs px-4 py-1.5 rounded font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
           >
             Close
           </button>

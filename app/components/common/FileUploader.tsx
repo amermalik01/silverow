@@ -87,10 +87,10 @@ export default function FileUploader({ module, recordId }: Props) {
           type="file"
           onChange={uploadFile}
           disabled={uploading}
-          className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-5 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer disabled:opacity-50"
+          className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-5 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer disabled:opacity-50"
         />
         {uploading && (
-          <span className="text-sm text-gray-500 animate-pulse">
+          <span className="text-xs text-gray-500 animate-pulse">
             Uploading...
           </span>
         )}
@@ -98,14 +98,14 @@ export default function FileUploader({ module, recordId }: Props) {
 
       <div className="space-y-2 max-h-60 overflow-y-auto">
         {files.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">
+          <p className="text-xs text-gray-400 italic">
             No attachments uploaded yet.
           </p>
         ) : (
           files.map((f) => (
             <div
               key={f.id}
-              className="border p-2 rounded flex justify-between items-center text-sm hover:bg-gray-50 transition"
+              className="border p-2 rounded flex justify-between items-center text-xs hover:bg-gray-50 transition"
             >
               <span className="truncate max-w-[70%] font-medium text-gray-700">
                 {f.file_name}

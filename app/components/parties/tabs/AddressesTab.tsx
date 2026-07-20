@@ -48,7 +48,7 @@ export default function AddressesTab({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
           Geographic Operational Addresses
         </h3>
         <button
@@ -61,7 +61,7 @@ export default function AddressesTab({
       </div>
 
       {addresses.length === 0 && (
-        <div className="p-8 text-center text-sm border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
+        <div className="p-8 text-center text-xs border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
           No location profiles registered.
         </div>
       )}
@@ -91,7 +91,7 @@ export default function AddressesTab({
                 value={a.label}
                 placeholder="e.g. Headquarters, Logistics Hub"
                 onChange={(e) => updateAddressRow(idx, "label", e.target.value)}
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.label`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.label`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`addresses.${idx}.label`] && (
                 <p className="text-red-500 text-[11px] mt-0.5">
@@ -110,7 +110,7 @@ export default function AddressesTab({
                 onChange={(e) =>
                   updateAddressRow(idx, "address_1", e.target.value)
                 }
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.address_1`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.address_1`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`addresses.${idx}.address_1`] && (
                 <p className="text-red-500 text-[11px] mt-0.5">
@@ -129,7 +129,7 @@ export default function AddressesTab({
                 onChange={(e) =>
                   updateAddressRow(idx, "address_2", e.target.value)
                 }
-                className="w-full border p-2 rounded-lg text-sm border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                className="w-full border p-2 rounded-lg text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
               />
             </div>
 
@@ -141,7 +141,7 @@ export default function AddressesTab({
                 type="text"
                 value={a.city || ""}
                 onChange={(e) => updateAddressRow(idx, "city", e.target.value)}
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.city`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.city`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`addresses.${idx}.city`] && (
                 <p className="text-red-500 text-[11px] mt-0.5">
@@ -158,7 +158,7 @@ export default function AddressesTab({
                 type="text"
                 value={a.state || ""}
                 onChange={(e) => updateAddressRow(idx, "state", e.target.value)}
-                className="w-full border p-2 rounded-lg text-sm border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                className="w-full border p-2 rounded-lg text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
               />
             </div>
 
@@ -172,7 +172,7 @@ export default function AddressesTab({
                 onChange={(e) =>
                   updateAddressRow(idx, "postcode", e.target.value)
                 }
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.postcode`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.postcode`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`addresses.${idx}.postcode`] && (
                 <p className="text-red-500 text-[11px] mt-0.5">
@@ -192,7 +192,7 @@ export default function AddressesTab({
                 onChange={(e) =>
                   updateAddressRow(idx, "country", e.target.value)
                 }
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.country`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.country`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`addresses.${idx}.country`] && (
                 <p className="text-red-500 text-[11px] mt-0.5">
@@ -209,7 +209,7 @@ export default function AddressesTab({
                 type="text"
                 value={a.phone || ""}
                 onChange={(e) => updateAddressRow(idx, "phone", e.target.value)}
-                className="w-full border p-2 rounded-lg text-sm border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                className="w-full border p-2 rounded-lg text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
               />
             </div>
 
@@ -221,7 +221,7 @@ export default function AddressesTab({
                 type="email"
                 value={a.email || ""}
                 onChange={(e) => updateAddressRow(idx, "email", e.target.value)}
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.email`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.email`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`addresses.${idx}.email`] && (
                 <p className="text-red-500 text-[11px] mt-0.5">
@@ -304,7 +304,7 @@ export default function AddressesTab({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
           Geographic Operational Addresses
         </h3>
         <button
@@ -317,7 +317,7 @@ export default function AddressesTab({
       </div>
 
       {addresses.length === 0 && (
-        <div className="p-8 text-center text-sm border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
+        <div className="p-8 text-center text-xs border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
           No location profiles registered.
         </div>
       )}
@@ -347,7 +347,7 @@ export default function AddressesTab({
                 value={a.label}
                 placeholder="e.g. Headquarters, Logistics Hub"
                 onChange={(e) => updateAddressRow(idx, "label", e.target.value)}
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
                   errors[`addresses.${idx}.label`]
                     ? "border-red-500"
                     : "border-slate-300 dark:border-slate-700"
@@ -365,7 +365,7 @@ export default function AddressesTab({
                 onChange={(e) =>
                   updateAddressRow(idx, "address_1", e.target.value)
                 }
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
                   errors[`addresses.${idx}.address_1`]
                     ? "border-red-500"
                     : "border-slate-300 dark:border-slate-700"
@@ -381,7 +381,7 @@ export default function AddressesTab({
                 type="text"
                 value={a.city || ""}
                 onChange={(e) => updateAddressRow(idx, "city", e.target.value)}
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
                   errors[`addresses.${idx}.city`]
                     ? "border-red-500"
                     : "border-slate-300 dark:border-slate-700"
@@ -399,7 +399,7 @@ export default function AddressesTab({
                 onChange={(e) =>
                   updateAddressRow(idx, "postcode", e.target.value)
                 }
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
                   errors[`addresses.${idx}.postcode`]
                     ? "border-red-500"
                     : "border-slate-300 dark:border-slate-700"
@@ -418,7 +418,7 @@ export default function AddressesTab({
                 onChange={(e) =>
                   updateAddressRow(idx, "country_id", e.target.value)
                 }
-                className={`w-full border p-2 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
+                className={`w-full border p-2 rounded-lg text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${
                   errors[`addresses.${idx}.country_id`]
                     ? "border-red-500"
                     : "border-slate-300 dark:border-slate-700"

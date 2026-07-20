@@ -279,7 +279,7 @@ export default function SalesReturnFormView({ slug, id }: Props) {
   };
 
   const inputStyle =
-    "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-emerald-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+    "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-emerald-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const labelStyle =
     "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5";
 
@@ -488,7 +488,7 @@ export default function SalesReturnFormView({ slug, id }: Props) {
               <input
                 type="text"
                 disabled
-                className="w-full border border-slate-200 dark:border-slate-800 p-1.5 rounded text-sm bg-slate-50 dark:bg-slate-950 font-bold text-emerald-600 uppercase tracking-wide"
+                className="w-full border border-slate-200 dark:border-slate-800 p-1.5 rounded text-xs bg-slate-50 dark:bg-slate-950 font-bold text-emerald-600 uppercase tracking-wide"
                 value={returnOrder.status || ""}
               />
             </div>
@@ -800,19 +800,19 @@ export default function SalesReturnFormView({ slug, id }: Props) {
                 Return Value Analysis (LCY)
               </h3>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-slate-500">Return Subtotal</span>
                   <span className="font-semibold">
                     {Number(returnOrder.subtotal || 0).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-slate-500">Total Refund Tax (VAT)</span>
                   <span className="font-semibold">
                     {Number(returnOrder.tax_amount || 0).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm border-t pt-1 font-bold text-emerald-600">
+                <div className="flex justify-between text-xs border-t pt-1 font-bold text-emerald-600">
                   <span className="">Grand Total Refund</span>
                   <span className="">
                     {Number(returnOrder.total_amount || 0).toFixed(2)}
@@ -833,7 +833,7 @@ export default function SalesReturnFormView({ slug, id }: Props) {
 
       {/* Summary Calculations Metrics Box Footer */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="border dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm md:col-start-3 space-y-2.5 text-sm">
+        <div className="border dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm md:col-start-3 space-y-2.5 text-xs">
           <div className="flex justify-between text-gray-500">
             <span>Subtotal (Net Return)</span>
             <span className="font-medium text-black dark:text-white">
@@ -861,7 +861,7 @@ export default function SalesReturnFormView({ slug, id }: Props) {
         <button
           type="button"
           onClick={() => router.push(`/${slug}/sales/returns`)}
-          className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:underline"
+          className="text-xs font-medium text-gray-600 dark:text-gray-400 hover:underline"
         >
           Cancel and Return
         </button>
@@ -904,7 +904,7 @@ export default function SalesReturnFormView({ slug, id }: Props) {
                     setSaving(false);
                   }
                 }}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition disabled:opacity-50"
               >
                 Issue Credit Note
               </button>
@@ -914,7 +914,7 @@ export default function SalesReturnFormView({ slug, id }: Props) {
             type="button"
             disabled={saving}
             onClick={save}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition shadow disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-xs font-medium transition shadow disabled:opacity-50"
           >
             {saving ? "Processing..." : "Save Return Order"}
           </button>
@@ -1278,7 +1278,7 @@ export default function SalesReturnFormView({
 
   if (loading)
     return (
-      <div className="p-6 text-sm text-gray-500 animate-pulse">
+      <div className="p-6 text-xs text-gray-500 animate-pulse">
         Initializing System Credit Note Interfaces...
       </div>
     );
@@ -1318,7 +1318,7 @@ export default function SalesReturnFormView({
                     type="button"
                     disabled={deleting || submitting || posting}
                     onClick={handleDelete}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition disabled:bg-gray-400"
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-xs font-medium transition disabled:bg-gray-400"
                   >
                     {deleting ? "Purging Document..." : "Delete Credit Note"}
                   </button>
@@ -1326,7 +1326,7 @@ export default function SalesReturnFormView({
                     type="button"
                     disabled={deleting || submitting || posting}
                     onClick={handlePost}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-medium transition disabled:bg-gray-400"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-xs font-medium transition disabled:bg-gray-400"
                   >
                     {posting ? "Posting..." : "Post Document"}
                   </button>
@@ -1337,7 +1337,7 @@ export default function SalesReturnFormView({
                 <button
                   type="submit"
                   disabled={submitting || deleting || posting}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition disabled:bg-gray-400"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-xs font-medium transition disabled:bg-gray-400"
                 >
                   {submitting
                     ? "Committing..."
@@ -1351,7 +1351,7 @@ export default function SalesReturnFormView({
         </div>
 
         {error && (
-          <div className="p-4 mt-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800 text-sm font-semibold">
+          <div className="p-4 mt-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800 text-xs font-semibold">
             ⚠️ {error}
           </div>
         )}
@@ -1368,7 +1368,7 @@ export default function SalesReturnFormView({
               disabled={isPosted}
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
-              className="mt-1 w-full text-sm border p-2 rounded-md bg-white dark:bg-slate-800 focus:ring-1 focus:ring-blue-500 dark:border-slate-700"
+              className="mt-1 w-full text-xs border p-2 rounded-md bg-white dark:bg-slate-800 focus:ring-1 focus:ring-blue-500 dark:border-slate-700"
             >
               <option value="">-- Choose Customer --</option>
               {customers.map((c) => (
@@ -1393,7 +1393,7 @@ export default function SalesReturnFormView({
                   const inv = allInvoices.find((i) => i.id === e.target.value);
                   if (inv) setCustomerId(inv.customer_id);
                 }}
-                className="flex-1 text-sm border p-2 rounded-md bg-white dark:bg-slate-800 truncate focus:ring-1 focus:ring-blue-500 dark:border-slate-700"
+                className="flex-1 text-xs border p-2 rounded-md bg-white dark:bg-slate-800 truncate focus:ring-1 focus:ring-blue-500 dark:border-slate-700"
               >
                 <option value="">-- Direct (Unlinked) --</option>
                 {allInvoices.map((i) => (
@@ -1424,7 +1424,7 @@ export default function SalesReturnFormView({
               disabled={isPosted}
               value={currencyId}
               onChange={(e) => handleCurrencyChange(e.target.value)}
-              className="mt-1 w-full text-sm border p-2 rounded-md bg-white dark:bg-slate-800 focus:ring-1 focus:ring-blue-500 dark:border-slate-700"
+              className="mt-1 w-full text-xs border p-2 rounded-md bg-white dark:bg-slate-800 focus:ring-1 focus:ring-blue-500 dark:border-slate-700"
             >
               {currencies.map((curr) => (
                 <option key={curr.id} value={curr.id}>
@@ -1447,7 +1447,7 @@ export default function SalesReturnFormView({
               min={0.000001}
               value={exchangeRate}
               onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 0)}
-              className="mt-1 w-full text-sm border p-2 rounded-md bg-white dark:bg-slate-800 focus:ring-1 focus:ring-blue-500 font-mono text-right dark:border-slate-700"
+              className="mt-1 w-full text-xs border p-2 rounded-md bg-white dark:bg-slate-800 focus:ring-1 focus:ring-blue-500 font-mono text-right dark:border-slate-700"
             />
           </div>
         </div>
@@ -1462,13 +1462,13 @@ export default function SalesReturnFormView({
             disabled={isPosted}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add administrative summary justifications here..."
-            className="w-full text-sm border p-2 rounded-md bg-white dark:bg-slate-800 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 h-16 resize-none"
+            className="w-full text-xs border p-2 rounded-md bg-white dark:bg-slate-800 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 h-16 resize-none"
           />
         </div>
 
 
         <div className="border dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 mt-4 shadow-sm overflow-x-auto">
-          <table className="w-full text-sm min-w-[1050px]">
+          <table className="w-full text-xs min-w-[1050px]">
             <thead className="bg-gray-50 dark:bg-slate-800 border-b dark:border-slate-800 text-left">
               <tr>
                 <th className="p-3 w-32">Type</th>
@@ -1640,7 +1640,7 @@ export default function SalesReturnFormView({
           )}
 
  
-          <div className="bg-gray-50/50 dark:bg-slate-800/20 p-4 border-t dark:border-slate-800 flex flex-col items-end space-y-1 text-sm select-none">
+          <div className="bg-gray-50/50 dark:bg-slate-800/20 p-4 border-t dark:border-slate-800 flex flex-col items-end space-y-1 text-xs select-none">
             <div className="w-[260px] flex justify-between text-gray-600 dark:text-gray-400">
               <span>Net Return Subtotal:</span>
               <span className="font-mono">${subtotal.toFixed(2)}</span>
@@ -1661,13 +1661,13 @@ export default function SalesReturnFormView({
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-2xl border dark:border-slate-800 flex flex-col max-h-[85vh]">
               <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50 rounded-t-xl">
-                <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm">
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 text-xs">
                   Select Original Document Record Source
                 </h3>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-bold text-sm"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-bold text-xs"
                 >
                   ✕
                 </button>

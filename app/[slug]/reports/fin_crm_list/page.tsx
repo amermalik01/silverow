@@ -271,12 +271,12 @@ export default function LegacyCRMListing() {
       {/* Structured Print Layout Canvas Panel View Window */}
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-8 min-h-[500px]">
         {!hasGenerated ? (
-          <div className="text-center py-20 text-slate-400 italic text-sm">
+          <div className="text-center py-20 text-slate-400 italic text-xs">
             Configure report parameters and click Generate Report to build the
             document preview matrix canvas.
           </div>
         ) : records.length === 0 ? (
-          <div className="text-center py-20 text-slate-400 italic text-sm">
+          <div className="text-center py-20 text-slate-400 italic text-xs">
             No matching CRM entries match the specified query definitions.
           </div>
         ) : (
@@ -292,7 +292,7 @@ export default function LegacyCRMListing() {
                 </p>
               </div>
               <div className="text-right">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
                   Hygge Bikes Ltd
                 </h2>
                 <p className="text-[10px] text-slate-400">
@@ -312,7 +312,7 @@ export default function LegacyCRMListing() {
                 return (
                   <div key={crm.id} className="pt-5 first:pt-0 space-y-3">
                     {/* Header Entity Tag Label Row Block */}
-                    <div className="font-bold text-sm text-slate-900 font-mono">
+                    <div className="font-bold text-xs text-slate-900 font-mono">
                       ({crm.crmCode || "N/A"}) - {crm.name}
                     </div>
 

@@ -108,13 +108,13 @@ export default function PurchaseInvoiceList({ slug }: Props) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-semibold">Purchase Invoices</h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-gray-500">
             View and manage bills received from suppliers against orders
           </p>
         </div>
         <Link
           href={`/${slug}/purchases/purchase-invoices/create`}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-sm font-medium transition-colors"
+          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-xs font-medium transition-colors"
         >
           Create Invoice
         </Link>
@@ -130,11 +130,11 @@ export default function PurchaseInvoiceList({ slug }: Props) {
             placeholder="Search Invoice / PO No..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border dark:border-slate-700 rounded p-2 text-sm w-full bg-transparent text-black dark:text-white"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
           />
           <button
             type="submit"
-            className="bg-gray-100 dark:bg-slate-800 text-black dark:text-white px-3 py-2 rounded text-sm hover:bg-gray-200 dark:hover:bg-slate-700 font-medium transition-colors"
+            className="bg-gray-100 dark:bg-slate-800 text-black dark:text-white px-3 py-2 rounded text-xs hover:bg-gray-200 dark:hover:bg-slate-700 font-medium transition-colors"
           >
             Go
           </button>
@@ -147,7 +147,7 @@ export default function PurchaseInvoiceList({ slug }: Props) {
               setStatus(e.target.value);
               setPage(1);
             }}
-            className="border dark:border-slate-700 rounded p-2 text-sm w-full bg-white dark:bg-slate-800 text-black dark:text-white"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-white dark:bg-slate-800 text-black dark:text-white"
           >
             <option value="">All Statuses</option>
             <option value="DRAFT">Draft</option>
@@ -165,7 +165,7 @@ export default function PurchaseInvoiceList({ slug }: Props) {
               setStartDate(e.target.value);
               setPage(1);
             }}
-            className="border dark:border-slate-700 rounded p-2 text-sm w-full bg-transparent text-black dark:text-white"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
           />
           <span className="text-xs text-gray-400">to</span>
           <input
@@ -175,14 +175,14 @@ export default function PurchaseInvoiceList({ slug }: Props) {
               setEndDate(e.target.value);
               setPage(1);
             }}
-            className="border dark:border-slate-700 rounded p-2 text-sm w-full bg-transparent text-black dark:text-white"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
           />
         </div>
       </div>
 
       <div className="border dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
         <div className="overflow-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-50 dark:bg-slate-800/60 border-b dark:border-slate-800 text-black dark:text-white">
               <tr>
                 <th className="p-3 text-left whitespace-nowrap">Invoice No</th>

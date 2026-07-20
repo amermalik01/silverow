@@ -93,7 +93,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
         </div>
         {/* <Link
           href={`/${slug}/sales/invoices/new`}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition shadow-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-xs font-medium transition shadow-sm"
         >
           + Create Invoice
         </Link> */}
@@ -110,7 +110,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
             onKeyDown={(e) =>
               e.key === "Enter" && updateFilters(search, status, 1)
             }
-            className="w-full text-sm border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            className="w-full text-xs border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
           />
         </div>
         <div className="w-full sm:w-[180px]">
@@ -120,7 +120,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
               setStatus(e.target.value);
               updateFilters(search, e.target.value, 1);
             }}
-            className="w-full text-sm border px-3 py-2 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            className="w-full text-xs border px-3 py-2 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
           >
             <option value="ALL">All Post Statuses</option>
             <option value="DRAFT">Draft / Open Only</option>
@@ -130,7 +130,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
         <button
           onClick={() => updateFilters(search, status, 1)}
           disabled={loading || isPending}
-          className="bg-gray-100 border text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-md text-sm font-medium transition"
+          className="bg-gray-100 border text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-md text-xs font-medium transition"
         >
           Filter
         </button>
@@ -146,7 +146,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
           )}
 
           
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
               <tr>
                 <th className="p-3 text-left whitespace-nowrap">Invoice Number</th>
@@ -213,7 +213,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
 
           {/* Dynamic Pagination Footer Control Hub */}
           {data && data.pagination.totalPages > 1 && (
-            <div className="bg-gray-50 border-t p-4 flex items-center justify-between text-sm text-gray-600">
+            <div className="bg-gray-50 border-t p-4 flex items-center justify-between text-xs text-gray-600">
               <div>
                 Showing items{" "}
                 <span className="font-semibold">

@@ -214,7 +214,7 @@ export default function VatReportComponent() {
                     colSpan={3}
                     className="text-center py-20 text-slate-400 font-normal"
                   >
-                    <p className="text-sm font-semibold text-slate-700">
+                    <p className="text-xs font-semibold text-slate-700">
                       Tax Breakdown Grid Standby
                     </p>
                     <p className="text-xs text-slate-400 mt-1">

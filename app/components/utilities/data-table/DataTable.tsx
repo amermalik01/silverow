@@ -259,7 +259,7 @@ const DataTable = <T extends Record<string, unknown>>({
                       className={
                         k === 'name'
                           ? 'text-gray-900 dark:text-white font-semibold max-w-50 truncate whitespace-nowrap pe-6'
-                          : 'text-sm text-gray-500 dark:text-gray-400 max-w-50 truncate whitespace-nowrap pe-6'
+                          : 'text-xs text-gray-500 dark:text-gray-400 max-w-50 truncate whitespace-nowrap pe-6'
                       }>
                       {renderValue(displayValue)}
                     </span>

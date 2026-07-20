@@ -45,7 +45,7 @@ const Profile = () => {
                       icon={item.icon}
                       className='text-lg text-muted-foreground group-hover/link:text-primary'
                     />
-                    <h5 className='mb-0 text-sm text-muted-foreground group-hover/link:text-primary'>
+                    <h5 className='mb-0 text-xs text-muted-foreground group-hover/link:text-primary'>
                       {item.title}
                     </h5>
                   </div>

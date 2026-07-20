@@ -136,7 +136,7 @@ export default function SetupCrud({ title, api, fields, columns }: Props) {
       </button>
 
 
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead>
           <tr>
             {columns.map((c) => (
@@ -294,7 +294,7 @@ export default function SetupCrud({ title, api, fields, columns }: Props) {
 
 
 
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead>
           <tr>
             {columns.map((c) => (

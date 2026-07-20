@@ -30,13 +30,13 @@ const BreadcrumbComp = ({ items = [], title }: BreadCrumbType) => {
                   {item.to && !isLast ? (
                     <Link
                       href={item.to}
-                      className="text-sm text-muted-foreground opacity-80 leading-none hover:underline"
+                      className="text-xs text-muted-foreground opacity-80 leading-none hover:underline"
                     >
                       {item.title}
                     </Link>
                   ) : (
                     <span
-                      className="text-sm text-muted-foreground leading-none"
+                      className="text-xs text-muted-foreground leading-none"
                       aria-current={isLast ? 'page' : undefined}
                     >
                       {item.title}

@@ -56,7 +56,7 @@ export const RecentTransaction = () => {
     <CardBox className="h-full w-full">
       <div className="flex flex-col">
         <h5 className="card-title">Recent Transactions</h5>
-        <p className="text-sm text-muted-foreground font-normal">
+        <p className="text-xs text-muted-foreground font-normal">
           How to secure recent transactions
         </p>
       </div>

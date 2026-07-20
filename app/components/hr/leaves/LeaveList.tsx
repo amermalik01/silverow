@@ -215,7 +215,7 @@ export default function LeaveList() {
 
       {/* TABLE */}
 
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead>
           <tr>
             <th className="p-2 text-left">Leave No</th>
@@ -295,7 +295,7 @@ export default function LeaveList() {
 
   return (
     <div className="border rounded p-4">
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead>
           <tr>
             <th className="p-2 text-left">Leave No</th>

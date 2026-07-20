@@ -103,7 +103,7 @@ const StockAllocationModal: React.FC<ModalProps> = ({
         </div>
 
         {/* Info Metric Badges Panel */}
-        <div className="p-4 grid grid-cols-5 gap-4 border-b bg-gray-50 text-sm">
+        <div className="p-4 grid grid-cols-5 gap-4 border-b bg-gray-50 text-xs">
           <div>
             <p className="text-xs text-gray-500">Item</p>
             <p className="font-medium text-gray-800">
@@ -145,9 +145,9 @@ const StockAllocationModal: React.FC<ModalProps> = ({
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="border p-1.5 rounded text-sm w-64"
+            className="border p-1.5 rounded text-xs w-64"
           />
-          <button className="border px-3 py-1.5 rounded text-sm bg-white hover:bg-gray-50 text-gray-600">
+          <button className="border px-3 py-1.5 rounded text-xs bg-white hover:bg-gray-50 text-gray-600">
             Clear Filter
           </button>
         </div>
@@ -212,13 +212,13 @@ const StockAllocationModal: React.FC<ModalProps> = ({
         <div className="bg-gray-50 p-3 border-t flex justify-end space-x-2">
           <button
             onClick={handleConfirmSave}
-            className="bg-emerald-600 text-white text-sm px-4 py-1.5 rounded font-medium shadow hover:bg-emerald-700"
+            className="bg-emerald-600 text-white text-xs px-4 py-1.5 rounded font-medium shadow hover:bg-emerald-700"
           >
             Save Allocations
           </button>
           <button
             onClick={onClose}
-            className="border bg-white text-sm px-4 py-1.5 rounded font-medium text-gray-700 hover:bg-gray-50"
+            className="border bg-white text-xs px-4 py-1.5 rounded font-medium text-gray-700 hover:bg-gray-50"
           >
             Close
           </button>

@@ -123,7 +123,7 @@ export default function StockAllocationModal({
           </button>
         </div>
 
-        <div className="p-5 grid grid-cols-1 lg:grid-cols-5 gap-4 bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-200 dark:border-slate-800 text-sm">
+        <div className="p-5 grid grid-cols-1 lg:grid-cols-5 gap-4 bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-200 dark:border-slate-800 text-xs">
           <div>
             <div className="text-slate-500 dark:text-slate-400 font-medium">
               Item
@@ -339,7 +339,7 @@ export default function StockAllocationModal({
           <button
             type="button"
             onClick={onClose}
-            className="border border-slate-200 dark:border-slate-700 px-4 py-2 rounded text-sm hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors"
+            className="border border-slate-200 dark:border-slate-700 px-4 py-2 rounded text-xs hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors"
           >
             Close
           </button>
@@ -347,7 +347,7 @@ export default function StockAllocationModal({
             type="button"
             onClick={handleCommitSave}
             disabled={qtyToAllocate !== 0}
-            className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2 rounded text-sm disabled:opacity-40 font-medium transition-opacity"
+            className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2 rounded text-xs disabled:opacity-40 font-medium transition-opacity"
           >
             Save Allocation
           </button>
@@ -472,7 +472,7 @@ export default function StockAllocationModal({
         </div>
 
     
-        <div className="p-5 grid grid-cols-1 lg:grid-cols-5 gap-4 bg-gray-50 border-b text-sm">
+        <div className="p-5 grid grid-cols-1 lg:grid-cols-5 gap-4 bg-gray-50 border-b text-xs">
           <div>
             <div className="text-gray-500 font-medium">Item</div>
             <div className="font-semibold text-gray-900">
@@ -645,14 +645,14 @@ export default function StockAllocationModal({
         <div className="bg-gray-50 p-4 border-t flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="border px-4 py-2 rounded text-sm hover:bg-gray-100 bg-white"
+            className="border px-4 py-2 rounded text-xs hover:bg-gray-100 bg-white"
           >
             Close
           </button>
           <button
             onClick={handleCommitSave}
             disabled={qtyToAllocate !== 0}
-            className="bg-green-700 hover:bg-green-800 text-white px-5 py-2 rounded text-sm disabled:opacity-40 font-medium transition-opacity"
+            className="bg-green-700 hover:bg-green-800 text-white px-5 py-2 rounded text-xs disabled:opacity-40 font-medium transition-opacity"
           >
             Save Allocation
           </button>

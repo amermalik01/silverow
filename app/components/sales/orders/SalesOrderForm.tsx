@@ -276,7 +276,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
   };
 
   const inputStyle =
-    "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-emerald-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+    "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-emerald-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const labelStyle =
     "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5";
 
@@ -687,19 +687,19 @@ export default function SalesOrderForm({ slug, id }: Props) {
                 Profit Margin (LCY)
               </h3>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-slate-500">Sales Value</span>
                   <span className="font-semibold">
                     {Number(order.subtotal || 0).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-slate-500">Total Tax Amount</span>
                   <span className="font-semibold">
                     {Number(order.tax_amount || 0).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm border-t pt-1 font-bold text-emerald-600">
+                <div className="flex justify-between text-xs border-t pt-1 font-bold text-emerald-600">
                   <span className="">Grand Total</span>
                   <span className="">
                     {Number(order.total_amount || 0).toFixed(2)}
@@ -720,7 +720,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
 
       {/* Order Summary Calculations Metrics Box Footer */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="border dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm md:col-start-3 space-y-2.5 text-sm">
+        <div className="border dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm md:col-start-3 space-y-2.5 text-xs">
           <div className="flex justify-between text-gray-500">
             <span>Subtotal (Net Amount)</span>
             <span className="font-medium text-black dark:text-white">
@@ -748,7 +748,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
         <button
           type="button"
           onClick={() => router.push(`/${slug}/sales/orders`)}
-          className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:underline"
+          className="text-xs font-medium text-gray-600 dark:text-gray-400 hover:underline"
         >
           Cancel and Return
         </button>
@@ -789,7 +789,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
                     setSaving(false);
                   }
                 }}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition disabled:opacity-50"
               >
                 Convert To Invoice
               </button>
@@ -799,7 +799,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
             type="button"
             disabled={saving}
             onClick={save}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition shadow disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-xs font-medium transition shadow disabled:opacity-50"
           >
             {saving ? "Processing..." : "Save Order"}
           </button>
@@ -988,7 +988,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
     <div className="space-y-6 container mx-auto p-2 text-black dark:text-white">
 
       {validationErrors.length > 0 && (
-        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl text-sm text-red-700 dark:text-red-400 space-y-1">
+        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl text-xs text-red-700 dark:text-red-400 space-y-1">
           <p className="font-semibold text-red-800 dark:text-red-300">
             Please fix the following validation criteria:
           </p>
@@ -1010,7 +1010,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
             type="date"
             value={order.order_date}
             onChange={(e) => setOrder({ ...order, order_date: e.target.value })}
-            className="border dark:border-slate-700 rounded p-2 w-full bg-transparent text-sm"
+            className="border dark:border-slate-700 rounded p-2 w-full bg-transparent text-xs"
           />
         </div>
 
@@ -1023,7 +1023,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
             placeholder="e.g. PO-9876"
             value={order.reference || ""}
             onChange={(e) => setOrder({ ...order, reference: e.target.value })}
-            className="border dark:border-slate-700 rounded p-2 w-full bg-transparent text-sm"
+            className="border dark:border-slate-700 rounded p-2 w-full bg-transparent text-xs"
           />
         </div>
 
@@ -1034,7 +1034,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
           <button
             type="button"
             onClick={() => setCustomerModalOpen(true)}
-            className="border dark:border-slate-700 rounded p-2 w-full text-left bg-gray-50 dark:bg-slate-800 text-sm flex justify-between items-center"
+            className="border dark:border-slate-700 rounded p-2 w-full text-left bg-gray-50 dark:bg-slate-800 text-xs flex justify-between items-center"
           >
             <span
               className={
@@ -1059,7 +1059,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
 
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="border dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm md:col-start-3 space-y-2.5 text-sm">
+        <div className="border dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm md:col-start-3 space-y-2.5 text-xs">
           <div className="flex justify-between text-gray-500">
             <span>Subtotal (Net Amount)</span>
             <span className="font-medium text-black dark:text-white">
@@ -1104,7 +1104,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
         <button
           type="button"
           onClick={() => router.push(`/${slug}/sales/orders`)}
-          className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:underline"
+          className="text-xs font-medium text-gray-600 dark:text-gray-400 hover:underline"
         >
           Cancel and Return
         </button>
@@ -1145,7 +1145,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
                     setSaving(false);
                   }
                 }}
-                className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition disabled:opacity-50"
               >
                 Convert To Invoice
               </button>
@@ -1155,7 +1155,7 @@ export default function SalesOrderForm({ slug, id }: Props) {
             type="button"
             disabled={saving}
             onClick={save}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition shadow disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-xs font-medium transition shadow disabled:opacity-50"
           >
             {saving ? "Processing..." : "Save Order"}
           </button>

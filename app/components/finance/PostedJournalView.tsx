@@ -51,7 +51,7 @@ export default function PostedJournalView({ id }: { id: string }) {
     <div className="p-6 rounded shadow dark:shadow-white space-y-6">
       {/* HEADER */}
 
-      <div className="grid grid-cols-4 gap-4 text-sm">
+      <div className="grid grid-cols-4 gap-4 text-xs">
         <div>
           <p className="text-gray-500">Entry No</p>
           <p className="font-semibold">{data.entry_no}</p>
@@ -80,7 +80,7 @@ export default function PostedJournalView({ id }: { id: string }) {
       {/* LINES */}
 
       <div className="overflow-x-auto">
-        <table className="w-full border text-sm">
+        <table className="w-full border text-xs">
           <thead>
             <tr className="">
               <th className="p-2 text-left">Account</th>
@@ -138,7 +138,7 @@ export default function PostedJournalView({ id }: { id: string }) {
 
       {/* STATUS */}
 
-      <div className="text-sm">
+      <div className="text-xs">
         <span className="px-3 py-1 bg-green-100 text-green-700 rounded">
           Posted
         </span>

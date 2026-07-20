@@ -63,7 +63,7 @@ export default function SequenceList() {
 
   return (
     <div className="p-6 rounded shadow dark:shadow-white">
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead>
           <tr>
             <th className="p-2 text-left">Name</th>

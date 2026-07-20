@@ -51,7 +51,7 @@ export default function PurchaseTab({ itemId }: Props) {
       <div>
         <h2 className="text-lg font-semibold">Purchase Setup</h2>
 
-        <p className="text-sm text-gray-500">
+        <p className="text-xs text-gray-500">
           Manage item purchase cost by UOM and vendor
         </p>
       </div>
@@ -59,7 +59,7 @@ export default function PurchaseTab({ itemId }: Props) {
       {/* TABLE */}
 
       <div className="border rounded">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">UOM</th>
@@ -106,7 +106,7 @@ export default function PurchaseTab({ itemId }: Props) {
 
       {/* FOOTER */}
 
-      <p className="text-sm text-gray-500">Item ID: {itemId}</p>
+      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
     </div>
   );
 }

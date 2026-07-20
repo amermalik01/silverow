@@ -161,7 +161,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-3 text-slate-500 text-sm py-12 justify-center">
+      <div className="flex items-center gap-3 text-slate-500 text-xs py-12 justify-center">
         <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
         Synchronizing profile indices...
       </div>
@@ -181,7 +181,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
       {Object.keys(formErrors).length > 0 && (
-        <div className="p-4 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
+        <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
           <p className="font-semibold mb-1">
             Please fix the following validation errors:
           </p>
@@ -211,7 +211,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`capitalize px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
+              className={`capitalize px-4 py-2.5 text-xs font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
                 activeTab === tab
                   ? "border-blue-600 text-blue-600 font-semibold"
                   : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -302,7 +302,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 transition-all text-white text-sm font-medium px-5 py-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-blue-500/10 flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 transition-all text-white text-xs font-medium px-5 py-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-blue-500/10 flex items-center gap-2"
           >
             {saving && (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

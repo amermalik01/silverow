@@ -172,7 +172,7 @@ export default function SalesReturnLines({
           <button
             type="button"
             onClick={addLine}
-            className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700 transition"
           >
             Add Line
           </button>
@@ -435,7 +435,7 @@ export default function SalesReturnLines({
                 >
                   Total
                 </td>
-                <td className="p-3 text-right font-bold text-sm">
+                <td className="p-3 text-right font-bold text-xs">
                   {totals.total.toFixed(2)}
                 </td>
                 <td />

@@ -24,7 +24,7 @@ export default function InventoryPostingGroupsPage() {
 
   if (loading)
     return (
-      <div className="p-4 text-sm text-gray-500">Loading configurations...</div>
+      <div className="p-4 text-xs text-gray-500">Loading configurations...</div>
     );
 
   return (

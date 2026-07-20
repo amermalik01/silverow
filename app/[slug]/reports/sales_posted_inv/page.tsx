@@ -390,7 +390,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
                           minimumFractionDigits: 2,
                         })}
                     </td>
-                    <td className="p-3 text-emerald-900 text-sm bg-emerald-50/50">
+                    <td className="p-3 text-emerald-900 text-xs bg-emerald-50/50">
                       {transactions
                         .reduce(
                           (sum, item) => sum + item.amount_including_vat,

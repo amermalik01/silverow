@@ -584,7 +584,7 @@ export default function ItemJournalForm({
             onChange={(e) =>
               setMetadata({ ...metadata, entry_date: e.target.value })
             }
-            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-sm bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
           />
         </div> */}
 
@@ -596,7 +596,7 @@ export default function ItemJournalForm({
             type="text"
             disabled
             value={journalId ? `#${journalId}` : "Auto-Generated on Save"}
-            className="w-full border border-slate-200 dark:border-slate-800 p-2 rounded text-sm bg-slate-50 dark:bg-slate-950 font-mono text-slate-400 dark:text-slate-500 outline-none"
+            className="w-full border border-slate-200 dark:border-slate-800 p-2 rounded text-xs bg-slate-50 dark:bg-slate-950 font-mono text-slate-400 dark:text-slate-500 outline-none"
           />
         </div>
 
@@ -612,7 +612,7 @@ export default function ItemJournalForm({
               setMetadata({ ...metadata, reference: e.target.value })
             }
             placeholder="e.g. ADJ-STK-002"
-            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-sm bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
           />
         </div>
         <div>
@@ -627,7 +627,7 @@ export default function ItemJournalForm({
               setMetadata({ ...metadata, description: e.target.value })
             }
             placeholder="Reconciliation adjustment note..."
-            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-sm bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
           />
         </div>
       </div>
@@ -1011,7 +1011,7 @@ return (
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || isPosting}
-                className="rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200 transition disabled:opacity-40"
+                className="rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition disabled:opacity-40"
               >
                 {loading ? "Saving..." : "Save Draft"}
               </button>
@@ -1019,7 +1019,7 @@ return (
                 type="button"
                 onClick={handlePostJournal}
                 disabled={loading || isPosting || !journalId}
-                className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isPosting ? "Posting..." : "Post Transaction"}
               </button>
@@ -1028,7 +1028,7 @@ return (
             <button
               type="button"
               onClick={() => router.push(redirectPath)}
-              className="rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200 shadow-sm hover:bg-zinc-50"
+              className="rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200 shadow-sm hover:bg-zinc-50"
             >
               Back to List Index
             </button>
@@ -1038,13 +1038,13 @@ return (
 
 
       {isPosted && (
-        <div className="p-4 text-sm bg-zinc-50 border border-zinc-200 text-zinc-600 dark:bg-zinc-800/40 dark:border-zinc-700 dark:text-zinc-300 rounded-lg font-medium flex items-center gap-2">
+        <div className="p-4 text-xs bg-zinc-50 border border-zinc-200 text-zinc-600 dark:bg-zinc-800/40 dark:border-zinc-700 dark:text-zinc-300 rounded-lg font-medium flex items-center gap-2">
           <span>🔒 View Only: Document batch has been posted.</span>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-4 text-sm bg-rose-50 border border-rose-200 text-rose-700 dark:bg-rose-900/20 dark:border-rose-800/40 dark:text-rose-400 rounded-lg">
+        <div className="p-4 text-xs bg-rose-50 border border-rose-200 text-rose-700 dark:bg-rose-900/20 dark:border-rose-800/40 dark:text-rose-400 rounded-lg">
           {errorMsg}
         </div>
       )}
@@ -1068,7 +1068,7 @@ return (
                 onChange={(e) =>
                   setMetadata({ ...metadata, entry_date: e.target.value })
                 }
-                className="border p-2 rounded-lg w-full bg-white dark:bg-zinc-800 text-sm focus:ring-1 focus:ring-emerald-500 border-zinc-200 dark:border-zinc-700"
+                className="border p-2 rounded-lg w-full bg-white dark:bg-zinc-800 text-xs focus:ring-1 focus:ring-emerald-500 border-zinc-200 dark:border-zinc-700"
               />
             </div>
             <div>
@@ -1082,7 +1082,7 @@ return (
                 onChange={(e) =>
                   setMetadata({ ...metadata, reference: e.target.value })
                 }
-                className="border p-2 rounded-lg w-full bg-white dark:bg-zinc-800 text-sm focus:ring-1 focus:ring-emerald-500 border-zinc-200 dark:border-zinc-700"
+                className="border p-2 rounded-lg w-full bg-white dark:bg-zinc-800 text-xs focus:ring-1 focus:ring-emerald-500 border-zinc-200 dark:border-zinc-700"
                 placeholder="e.g. ITEM-JV-0024"
               />
             </div>
@@ -1097,7 +1097,7 @@ return (
                 onChange={(e) =>
                   setMetadata({ ...metadata, description: e.target.value })
                 }
-                className="border p-2 rounded-lg w-full bg-white dark:bg-zinc-800 text-sm focus:ring-1 focus:ring-emerald-500 border-zinc-200 dark:border-zinc-700"
+                className="border p-2 rounded-lg w-full bg-white dark:bg-zinc-800 text-xs focus:ring-1 focus:ring-emerald-500 border-zinc-200 dark:border-zinc-700"
                 placeholder="Stock reconciliation updates"
               />
             </div>
@@ -1131,7 +1131,7 @@ return (
                   return (
                     <tr
                       key={line.local_key}
-                      className="text-sm align-middle hover:bg-zinc-50/40 dark:hover:bg-zinc-800/20"
+                      className="text-xs align-middle hover:bg-zinc-50/40 dark:hover:bg-zinc-800/20"
                     >
  
                       <td className="p-2">
@@ -1375,7 +1375,7 @@ return (
           <div className="text-xs text-zinc-400 italic">Layout immutable</div>
         )}
 
-        <div className="text-sm font-mono text-zinc-600 dark:text-zinc-400 text-right">
+        <div className="text-xs font-mono text-zinc-600 dark:text-zinc-400 text-right">
           Total Batch Valuation:{" "}
           <span className="font-bold text-base text-zinc-900 dark:text-zinc-100 pl-1">
             {baseCurrencyCode}{" "}

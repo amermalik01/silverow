@@ -45,7 +45,7 @@ export default async function SecureLedgerPage({ params }: { params: Promise<{ i
         </div>
 
         <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white overflow-hidden shadow-sm">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-50 border-b">
               <tr className="text-gray-600 font-medium">
                 <th className="p-3 text-left">Date</th>
@@ -128,7 +128,7 @@ export default async function LedgerPage(context: {
           {account.rows[0].name}
         </h1>
 
-        <table className="w-full border text-sm">
+        <table className="w-full border text-xs">
           <thead className="bg-gray-100">
             <tr>
               <th className="p-2">Date</th>

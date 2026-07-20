@@ -95,7 +95,7 @@ export default function ChartOfAccountsList() {
 
   if (loading) {
     return (
-      <div className="p-6 text-sm text-slate-400 dark:text-slate-500 animate-pulse font-sans">
+      <div className="p-6 text-xs text-slate-400 dark:text-slate-500 animate-pulse font-sans">
         Parsing global ledger topology maps...
       </div>
     );
@@ -367,7 +367,7 @@ export default function ChartOfAccountsList() {
 
   if (loading)
     return (
-      <div className="p-6 text-sm text-gray-500 animate-pulse">
+      <div className="p-6 text-xs text-gray-500 animate-pulse">
         Assembling account balance structures...
       </div>
     );
@@ -390,7 +390,7 @@ export default function ChartOfAccountsList() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
+        <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="bg-gray-50 text-gray-600 font-semibold border-b text-left">
               <th className="p-3 pl-6">Code</th>

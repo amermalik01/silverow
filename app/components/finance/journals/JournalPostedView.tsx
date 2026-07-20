@@ -77,7 +77,7 @@ export default function JournalPostedView({
       <div className="rounded shadow dark:shadow-white p-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium">
+            <label className="text-xs font-medium">
               Entry No
             </label>
 
@@ -87,7 +87,7 @@ export default function JournalPostedView({
           </div>
 
           <div>
-            <label className="text-sm font-medium">
+            <label className="text-xs font-medium">
               Entry Date
             </label>
 
@@ -97,7 +97,7 @@ export default function JournalPostedView({
           </div>
 
           <div>
-            <label className="text-sm font-medium">
+            <label className="text-xs font-medium">
               Reference
             </label>
 
@@ -107,7 +107,7 @@ export default function JournalPostedView({
           </div>
 
           <div>
-            <label className="text-sm font-medium">
+            <label className="text-xs font-medium">
               Status
             </label>
 
@@ -117,7 +117,7 @@ export default function JournalPostedView({
           </div>
 
           <div className="col-span-2">
-            <label className="text-sm font-medium">
+            <label className="text-xs font-medium">
               Description
             </label>
 
@@ -135,7 +135,7 @@ export default function JournalPostedView({
           Journal Lines
         </h2>
 
-        <table className="w-full border text-sm">
+        <table className="w-full border text-xs">
           <thead>
             <tr className="border-b">
               <th className="p-2 text-left">

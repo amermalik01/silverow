@@ -41,7 +41,7 @@ export default function LocationsTab({
 
             <button
               onClick={() => setActiveParent(loc.id)}
-              className="text-blue-600 text-sm"
+              className="text-blue-600 text-xs"
             >
               + Add
             </button>
@@ -60,7 +60,7 @@ export default function LocationsTab({
           <div className="flex justify-between items-center py-1">
             <span>{loc.title}</span>
 
-            <div className="flex gap-2 text-sm">
+            <div className="flex gap-2 text-xs">
               <button
                 onClick={() => {
                   setActiveParent(loc.id);

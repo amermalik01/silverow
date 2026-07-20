@@ -51,7 +51,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
     <div className="mb-6 rounded-xl border border-slate-200 bg-emerald-950 p-4 text-white shadow-sm">
       <div className="flex items-center space-x-2 border-b border-emerald-800/60 pb-2.5 mb-4">
         <SlidersHorizontal className="h-4 w-4 text-emerald-400" />
-        <h2 className="text-sm font-semibold tracking-wide">Report Parameters</h2>
+        <h2 className="text-xs font-semibold tracking-wide">Report Parameters</h2>
       </div>
 
       <div className="space-y-4">
@@ -205,7 +205,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
     <div className="mb-6 rounded-xl border border-slate-200 bg-emerald-950 p-4 text-white shadow-sm">
       <div className="flex items-center space-x-2 border-b border-emerald-800/60 pb-2.5 mb-4">
         <SlidersHorizontal className="h-4 w-4 text-emerald-400" />
-        <h2 className="text-sm font-semibold tracking-wide">Report Parameters</h2>
+        <h2 className="text-xs font-semibold tracking-wide">Report Parameters</h2>
       </div>
 
 

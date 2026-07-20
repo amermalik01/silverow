@@ -138,7 +138,7 @@ export default function ShipmentPostingForm({ slug, orderId }: Props) {
 
   if (loading) {
     return (
-      <div className="text-sm font-medium text-gray-500 animate-pulse">
+      <div className="text-xs font-medium text-gray-500 animate-pulse">
         Loading order parameters...
       </div>
     );
@@ -147,7 +147,7 @@ export default function ShipmentPostingForm({ slug, orderId }: Props) {
   return (
     <div className="space-y-6 container mx-auto p-4">
       <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
             <tr>
               <th className="p-3 text-left">Item Name</th>
@@ -180,7 +180,7 @@ export default function ShipmentPostingForm({ slug, orderId }: Props) {
                         onChange={(e) =>
                           handleWarehouseChange(index, e.target.value)
                         }
-                        className={`border rounded p-1.5 w-full text-sm bg-white ${
+                        className={`border rounded p-1.5 w-full text-xs bg-white ${
                           !line.warehouse_id
                             ? "border-amber-500 text-amber-700 font-medium"
                             : "border-gray-300"
@@ -347,7 +347,7 @@ export default function ShipmentPostingForm({ slug, orderId }: Props) {
   return (
     <div className="space-y-6 container mx-auto p-4">
       <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
             <tr>
               <th className="p-3 text-left">Item</th>

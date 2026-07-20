@@ -84,7 +84,7 @@ export default function CompanySetupForm() {
 
   if (loading)
     return (
-      <div className="p-6 text-sm text-gray-500">
+      <div className="p-6 text-xs text-gray-500">
         Retrieving operational configurations...
       </div>
     );
@@ -97,7 +97,7 @@ export default function CompanySetupForm() {
       {/* Dynamic Messaging Box */}
       {message.text && (
         <div
-          className={`p-4 border text-sm rounded ${
+          className={`p-4 border text-xs rounded ${
             message.type === "success"
               ? "bg-green-50 border-green-200 text-green-700"
               : "bg-red-50 border-red-200 text-red-700"
@@ -132,7 +132,7 @@ export default function CompanySetupForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Core Profile Parameters */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wider">
+          <h3 className="font-semibold text-xs text-gray-700 uppercase tracking-wider">
             Primary Operations Identifiers
           </h3>
 
@@ -144,7 +144,7 @@ export default function CompanySetupForm() {
               type="text"
               name="name"
               required
-              className="border px-3 py-2 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="border px-3 py-2 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
               value={profile?.name || ""}
               onChange={handleChange}
             />
@@ -157,7 +157,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               name="legal_name"
-              className="border px-3 py-2 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="border px-3 py-2 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
               value={profile?.legal_name || ""}
               onChange={handleChange}
             />
@@ -170,7 +170,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               name="tax_identifier"
-              className="border px-3 py-2 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="border px-3 py-2 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
               value={profile?.tax_identifier || ""}
               onChange={handleChange}
             />
@@ -183,7 +183,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               disabled
-              className="border px-3 py-2 rounded text-sm bg-gray-50 text-gray-400 font-mono cursor-not-allowed"
+              className="border px-3 py-2 rounded text-xs bg-gray-50 text-gray-400 font-mono cursor-not-allowed"
               value={profile?.slug || ""}
             />
           </div>
@@ -191,7 +191,7 @@ export default function CompanySetupForm() {
 
         {/* Corporate Communication Block */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wider">
+          <h3 className="font-semibold text-xs text-gray-700 uppercase tracking-wider">
             Corporate Contact Nodes
           </h3>
 
@@ -202,7 +202,7 @@ export default function CompanySetupForm() {
             <input
               type="email"
               name="email"
-              className="border px-3 py-2 rounded text-sm bg-white"
+              className="border px-3 py-2 rounded text-xs bg-white"
               value={profile?.email || ""}
               onChange={handleChange}
             />
@@ -215,7 +215,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               name="phone"
-              className="border px-3 py-2 rounded text-sm bg-white"
+              className="border px-3 py-2 rounded text-xs bg-white"
               value={profile?.phone || ""}
               onChange={handleChange}
             />
@@ -228,7 +228,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               name="website"
-              className="border px-3 py-2 rounded text-sm bg-white"
+              className="border px-3 py-2 rounded text-xs bg-white"
               value={profile?.website || ""}
               onChange={handleChange}
             />
@@ -240,7 +240,7 @@ export default function CompanySetupForm() {
             </label>
             <select
               name="inventory_system"
-              className="border px-3 py-2 rounded text-sm bg-white font-medium"
+              className="border px-3 py-2 rounded text-xs bg-white font-medium"
               value={profile?.inventory_system || "PERIODIC"}
               onChange={handleChange}
             >
@@ -259,7 +259,7 @@ export default function CompanySetupForm() {
 
       {/* Address Matrix Block Fields */}
       <div className="space-y-4">
-        <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wider">
+        <h3 className="font-semibold text-xs text-gray-700 uppercase tracking-wider">
           Headquarters & Invoicing Address Parameters
         </h3>
 
@@ -271,7 +271,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               name="address_line1"
-              className="border px-3 py-2 rounded text-sm bg-white"
+              className="border px-3 py-2 rounded text-xs bg-white"
               value={profile?.address_line1 || ""}
               onChange={handleChange}
             />
@@ -283,7 +283,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               name="address_line2"
-              className="border px-3 py-2 rounded text-sm bg-white"
+              className="border px-3 py-2 rounded text-xs bg-white"
               value={profile?.address_line2 || ""}
               onChange={handleChange}
             />
@@ -298,7 +298,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               name="city"
-              className="border px-3 py-2 rounded text-sm bg-white"
+              className="border px-3 py-2 rounded text-xs bg-white"
               value={profile?.city || ""}
               onChange={handleChange}
             />
@@ -310,7 +310,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               name="state_province"
-              className="border px-3 py-2 rounded text-sm bg-white"
+              className="border px-3 py-2 rounded text-xs bg-white"
               value={profile?.state_province || ""}
               onChange={handleChange}
             />
@@ -322,7 +322,7 @@ export default function CompanySetupForm() {
             <input
               type="text"
               name="postal_code"
-              className="border px-3 py-2 rounded text-sm bg-white"
+              className="border px-3 py-2 rounded text-xs bg-white"
               value={profile?.postal_code || ""}
               onChange={handleChange}
             />
@@ -335,7 +335,7 @@ export default function CompanySetupForm() {
               type="text"
               name="country_code"
               maxLength={3}
-              className="border px-3 py-2 rounded text-sm bg-white font-mono uppercase"
+              className="border px-3 py-2 rounded text-xs bg-white font-mono uppercase"
               value={profile?.country_code || "USA"}
               onChange={handleChange}
             />
@@ -348,7 +348,7 @@ export default function CompanySetupForm() {
         <button
           type="submit"
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium text-sm px-6 py-2.5 rounded transition-all shadow-sm"
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium text-xs px-6 py-2.5 rounded transition-all shadow-sm"
         >
           {saving
             ? "Persisting Settings Changes..."

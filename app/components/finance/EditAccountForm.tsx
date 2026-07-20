@@ -162,14 +162,14 @@ export default function EditAccountForm({ slug, id }: Props) {
 
   if (loading)
     return (
-      <p className="p-6 text-sm text-gray-500">
+      <p className="p-6 text-xs text-gray-500">
         Hydrating ledger component tree fields...
       </p>
     );
 
   return (
     <div className="bg-white border rounded-xl shadow-md max-w-4xl mx-auto overflow-hidden font-sans text-xs text-gray-700">
-      <div className="bg-gray-50 border-b p-3 font-semibold text-center text-sm text-gray-800 tracking-wide">
+      <div className="bg-gray-50 border-b p-3 font-semibold text-center text-xs text-gray-800 tracking-wide">
         G/L No. Structural Modification Terminal
       </div>
       <form

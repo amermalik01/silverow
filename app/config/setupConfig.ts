@@ -75,6 +75,32 @@ export const setupConfig = {
     },
   } satisfies SetupConfig,
 
+  purchasesClassification: {
+    title: "Purchase Classification",
+    api: "/api/setup/sales/classification?module=purchases",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+    defaultValues: {
+      module: "purchases",
+    },
+  } satisfies SetupConfig,
+
   salesTerritories: {
     title: "Sales Territories",
     api: "/api/setup/sales/territories",
@@ -165,6 +191,27 @@ export const setupConfig = {
     ],
   } satisfies SetupConfig,
 
+  
+
+  salesOwnershipType: {
+    title: "Ownership Type",
+    api: "/api/setup/sales/ownership_type",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+  } satisfies SetupConfig,
+
   salesOrderSource: {
     title: "Sales Order Source",
     api: "/api/setup/sales/order_sources",
@@ -187,6 +234,63 @@ export const setupConfig = {
   salesSource: {
     title: "Sales Source of CRM",
     api: "/api/setup/sales/sources",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+  } satisfies SetupConfig,
+
+  salesType: {
+    title: "Type",
+    api: "/api/setup/sales/type",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+  } satisfies SetupConfig,
+
+  salesStatus: {
+    title: "Status",
+    api: "/api/setup/sales/status",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+  } satisfies SetupConfig,
+
+  salesClassification: {
+    title: "Classification",
+    api: "/api/setup/sales/classification",
     fields: [
       {
         name: "name",

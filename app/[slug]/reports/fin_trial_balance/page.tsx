@@ -313,7 +313,7 @@ export default function TrialBalanceReport() {
                       <div className="p-3 rounded-full bg-slate-50 border border-slate-200 text-slate-400">
                         <Play className="h-5 w-5 fill-current text-slate-400 ml-0.5" />
                       </div>
-                      <p className="text-sm font-semibold text-slate-700">
+                      <p className="text-xs font-semibold text-slate-700">
                         Report Ready to Generate
                       </p>
                       <p className="text-xs text-slate-400">

@@ -85,7 +85,7 @@ export default function PostingGroupsList() {
       </div>
 
       {/* Table */}
-      <table className="w-full border text-sm">
+      <table className="w-full border text-xs">
         <thead className="">
           <tr>
             <th className="p-2 text-left">Name</th>
