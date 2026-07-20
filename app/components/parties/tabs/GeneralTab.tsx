@@ -4,7 +4,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
-import type { Party } from "@/types/erp";
+// import type { Party } from "@/types/erp";
+import type { Party, PartyContactDraft, PartyAddressDraft } from "@/types/erp";
 import MasterDropdown from "../../common/MasterDropdown";
 import SalespersonLookupModal, {
   Employee,
@@ -26,6 +27,11 @@ interface SetupDropdownItem {
 type Props = {
   account: Partial<Party>;
   setAccount: React.Dispatch<React.SetStateAction<Partial<Party>>>;
+  contacts?: PartyContactDraft[];
+  setContacts?: React.Dispatch<React.SetStateAction<PartyContactDraft[]>>;
+  addresses?: PartyAddressDraft[];
+  setAddresses?: React.Dispatch<React.SetStateAction<PartyAddressDraft[]>>;
+
   isReadonly?: boolean;
   errors: Record<string, string>;
   currencies?: CompanyCurrency[];
@@ -34,6 +40,10 @@ type Props = {
 export default function GeneralTab({
   account,
   setAccount,
+  contacts = [],
+  setContacts,
+  addresses = [],
+  setAddresses,
   isReadonly = false,
   errors,
   currencies = [],
@@ -52,6 +62,33 @@ export default function GeneralTab({
   const [salespersonModalOpen, setSalespersonModalOpen] =
     useState<boolean>(false);
 
+  // Extract primary address or default blank
+  const primaryAddress = addresses.find((a) => a.is_primary) ||
+    addresses[0] || {
+      label: "Main Address",
+      address_1: "",
+      address_2: "",
+      city: "",
+      state: "",
+      postcode: "",
+      country: "United Kingdom",
+      is_primary: true,
+      is_billing: true,
+      is_shipping: true,
+      is_collection: false,
+    };
+
+  // Extract primary contact or default blank
+  const primaryContact = contacts.find((c) => c.is_primary) ||
+    contacts[0] || {
+      name: "",
+      job_title: "",
+      phone: "",
+      mobile: "",
+      email: "",
+      is_primary: true,
+    };
+
   const handleAssignPersonSelect = (emp: Employee) => {
     setAccount((prev) => ({
       ...prev,
@@ -63,6 +100,56 @@ export default function GeneralTab({
 
   const updateField = <K extends keyof Party>(key: K, value: Party[K]) => {
     setAccount((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // Synchronize Primary Address Changes
+  const updatePrimaryAddress = (
+    field: keyof PartyAddressDraft,
+    value: unknown,
+  ) => {
+    if (!setAddresses) return;
+
+    setAddresses((prev) => {
+      const existingIdx = prev.findIndex((a) => a.is_primary);
+      const updatedAddress = {
+        ...(existingIdx >= 0 ? prev[existingIdx] : primaryAddress),
+        [field]: value,
+        is_primary: true,
+      };
+
+      if (existingIdx >= 0) {
+        const copy = [...prev];
+        copy[existingIdx] = updatedAddress;
+        return copy;
+      } else {
+        return [updatedAddress, ...prev];
+      }
+    });
+  };
+
+  // Synchronize Primary Contact Changes
+  const updatePrimaryContact = (
+    field: keyof PartyContactDraft,
+    value: unknown,
+  ) => {
+    if (!setContacts) return;
+
+    setContacts((prev) => {
+      const existingIdx = prev.findIndex((c) => c.is_primary);
+      const updatedContact = {
+        ...(existingIdx >= 0 ? prev[existingIdx] : primaryContact),
+        [field]: value,
+        is_primary: true,
+      };
+
+      if (existingIdx >= 0) {
+        const copy = [...prev];
+        copy[existingIdx] = updatedContact;
+        return copy;
+      } else {
+        return [updatedContact, ...prev];
+      }
+    });
   };
 
   const getInputClass = (errorKey: string) =>
@@ -158,6 +245,7 @@ export default function GeneralTab({
                 onChange={(e) => updateField("name", e.target.value)}
                 className={getInputClass("general.name")}
                 placeholder="Business Name"
+                disabled={isReadonly}
               />
               {errors["general.name"] && (
                 <p className="text-red-500 text-xs mt-0.5">
@@ -167,12 +255,83 @@ export default function GeneralTab({
             </div>
           </div>
 
+          {/* PRIMARY LOCATION / ADDRESS SECTION */}
           <div className="grid grid-cols-3 gap-2 items-start">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300 pt-1">
               Address Lines
+              {/* Primary Location */}
             </label>
             <div className="col-span-2 space-y-2">
               <input
+                type="text"
+                placeholder="Address Line 1"
+                value={primaryAddress.address_1 || ""}
+                onChange={(e) =>
+                  updatePrimaryAddress("address_1", e.target.value)
+                }
+                className={getInputClass("general.address_1")}
+                disabled={isReadonly}
+              />
+              <input
+                type="text"
+                placeholder="Address Line 2 (Optional)"
+                value={primaryAddress.address_2 || ""}
+                onChange={(e) =>
+                  updatePrimaryAddress("address_2", e.target.value)
+                }
+                className={getInputClass("general.address_2")}
+                disabled={isReadonly}
+              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="City"
+                  value={primaryAddress.city || ""}
+                  onChange={(e) => updatePrimaryAddress("city", e.target.value)}
+                  className={getInputClass("general.city")}
+                  disabled={isReadonly}
+                />
+                <input
+                  type="text"
+                  placeholder="County / State"
+                  value={primaryAddress.state || ""}
+                  onChange={(e) =>
+                    updatePrimaryAddress("state", e.target.value)
+                  }
+                  className={getInputClass("general.state")}
+                  disabled={isReadonly}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="Postcode"
+                  value={primaryAddress.postcode || ""}
+                  onChange={(e) =>
+                    updatePrimaryAddress("postcode", e.target.value)
+                  }
+                  className={getInputClass("general.postcode")}
+                  disabled={isReadonly}
+                />
+
+                <MasterDropdown
+                  type="country"
+                  value={
+                    primaryAddress.country ||
+                    account.country ||
+                    "United Kingdom"
+                  }
+                  onChange={(val) => {
+                    updatePrimaryAddress("country", val);
+                    updateField("country", val);
+                  }}
+                  className={getInputClass("general.country")}
+                  disabled={isReadonly}
+                  defaultFilter={(item) => item.country_id === 225}
+                />
+
+                {/* <input
                 type="text"
                 placeholder="Address Line 1"
                 className={getInputClass("general.address_1")}
@@ -208,7 +367,7 @@ export default function GeneralTab({
                   className={getInputClass("general.country")}
                   disabled={isReadonly}
                   defaultFilter={(item) => item.country_id === 225}
-                />
+                /> */}
               </div>
             </div>
           </div>
@@ -224,6 +383,7 @@ export default function GeneralTab({
                 onChange={(e) => updateField("phone", e.target.value)}
                 className={getInputClass("general.phone")}
                 placeholder="01326 564564"
+                disabled={isReadonly}
               />
             </div>
           </div>
@@ -239,6 +399,7 @@ export default function GeneralTab({
                 onChange={(e) => updateField("email", e.target.value)}
                 className={getInputClass("general.email")}
                 placeholder="info@company.com"
+                disabled={isReadonly}
               />
             </div>
           </div>
@@ -254,6 +415,7 @@ export default function GeneralTab({
                 onChange={(e) => updateField("website", e.target.value)}
                 className={getInputClass("general.website")}
                 placeholder="https://..."
+                disabled={isReadonly}
               />
             </div>
           </div>
@@ -271,6 +433,7 @@ export default function GeneralTab({
               />
               <button
                 type="button"
+                disabled={isReadonly}
                 onClick={() => setSalespersonModalOpen(true)}
                 className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
               >
@@ -285,6 +448,7 @@ export default function GeneralTab({
             </label>
             <div className="col-span-2">
               <select
+                disabled={isReadonly}
                 value={account.status || "active"}
                 onChange={(e) =>
                   updateField("status", e.target.value as Party["status"])
@@ -320,6 +484,7 @@ export default function GeneralTab({
                 onChange={(e) => updateField("vat_reg_no", e.target.value)}
                 placeholder="GB123456789"
                 className={getInputClass("general.vat_reg_no")}
+                disabled={isReadonly}
               />
             </div>
           </div>
@@ -329,7 +494,12 @@ export default function GeneralTab({
               Segment <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2">
-              <select className={getInputClass("general.segment_id")}>
+              <select
+                disabled={isReadonly}
+                value={account.segment_id || ""}
+                onChange={(e) => updateField("segment_id", e.target.value)}
+                className={getInputClass("general.segment_id")}
+              >
                 <option value="">Select Segment...</option>
                 {segments.map((seg) => (
                   <option key={seg.id} value={seg.id}>
@@ -337,6 +507,12 @@ export default function GeneralTab({
                   </option>
                 ))}
               </select>
+
+              {errors["general.segment_id"] && (
+                <p className="text-red-500 text-xs mt-0.5">
+                  {errors["general.segment_id"]}
+                </p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 items-center">
@@ -344,7 +520,12 @@ export default function GeneralTab({
               Territory
             </label>
             <div className="col-span-2">
-              <select className={getInputClass("general.territory_id")}>
+              <select
+                disabled={isReadonly}
+                value={account.territory_id || ""}
+                onChange={(e) => updateField("territory_id", e.target.value)}
+                className={getInputClass("general.territory_id")}
+              >
                 <option value="">Select Territory...</option>
                 {territories.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -365,7 +546,11 @@ export default function GeneralTab({
               <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
-                  defaultChecked
+                  checked={!!primaryAddress.is_billing}
+                  onChange={(e) =>
+                    updatePrimaryAddress("is_billing", e.target.checked)
+                  }
+                  disabled={isReadonly}
                   className="rounded text-blue-600 focus:ring-blue-500"
                 />{" "}
                 Billing
@@ -373,7 +558,11 @@ export default function GeneralTab({
               <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
-                  defaultChecked
+                  checked={!!primaryAddress.is_shipping}
+                  onChange={(e) =>
+                    updatePrimaryAddress("is_shipping", e.target.checked)
+                  }
+                  disabled={isReadonly}
                   className="rounded text-blue-600 focus:ring-blue-500"
                 />{" "}
                 Shipping
@@ -382,6 +571,11 @@ export default function GeneralTab({
                 <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                   <input
                     type="checkbox"
+                    checked={!!primaryAddress.is_collection}
+                    onChange={(e) =>
+                      updatePrimaryAddress("is_collection", e.target.checked)
+                    }
+                    disabled={isReadonly}
                     className="rounded text-blue-600 focus:ring-blue-500"
                   />{" "}
                   Collection
@@ -394,7 +588,14 @@ export default function GeneralTab({
               Credit Rating
             </label>
             <div className="col-span-2">
-              <select className={getInputClass("general.credit_rating_id")}>
+              <select
+                disabled={isReadonly}
+                value={account.credit_rating_id || ""}
+                onChange={(e) =>
+                  updateField("credit_rating_id", e.target.value)
+                }
+                className={getInputClass("general.credit_rating_id")}
+              >
                 <option value="">Select Credit Rating...</option>
                 {creditRatings.map((cr) => (
                   <option key={cr.id} value={cr.id}>
@@ -412,6 +613,7 @@ export default function GeneralTab({
               <div className="col-span-2">
                 <input
                   type="number"
+                  disabled={isReadonly}
                   value={account.credit_limit ?? 0}
                   onChange={(e) =>
                     updateField("credit_limit", Number(e.target.value))
@@ -427,6 +629,7 @@ export default function GeneralTab({
             </label>
             <div className="col-span-2">
               <select
+                disabled={isReadonly}
                 value={account.currency_id || ""}
                 onChange={(e) => updateField("currency_id", e.target.value)}
                 className={getInputClass("general.currency_id")}
@@ -449,6 +652,7 @@ export default function GeneralTab({
                 </label>
                 <div className="col-span-2">
                   <select
+                    disabled={isReadonly}
                     value={account.ownership_type_id || ""}
                     onChange={(e) =>
                       updateField("ownership_type_id", e.target.value)
@@ -472,6 +676,7 @@ export default function GeneralTab({
                 <div className="grid grid-cols-3 gap-2 col-span-2">
                   <input
                     type="text"
+                    disabled={isReadonly}
                     placeholder="No. Of Employee(s)"
                     value={account.no_of_emp ?? 0}
                     onChange={(e) =>
@@ -486,6 +691,7 @@ export default function GeneralTab({
                   <div>
                     <input
                       type="text"
+                      disabled={isReadonly}
                       placeholder="Turnover"
                       value={account.turnover ?? 0}
                       onChange={(e) =>
@@ -504,6 +710,7 @@ export default function GeneralTab({
                 <div className="grid grid-cols-3 gap-2 col-span-2">
                   <input
                     type="text"
+                    disabled={isReadonly}
                     placeholder="Company Reg. No."
                     value={account.comp_reg_no ?? 0}
                     onChange={(e) => updateField("comp_reg_no", e.target.value)}
@@ -516,16 +723,15 @@ export default function GeneralTab({
 
                   <input
                     type="date"
-                    value={account.date_of_inc ? String(account.date_of_inc).split("T")[0] : ""}
+                    disabled={isReadonly}
+                    value={
+                      account.date_of_inc
+                        ? String(account.date_of_inc).split("T")[0]
+                        : ""
+                    }
                     onChange={(e) => updateField("date_of_inc", e.target.value)}
                     className={getInputClass("general.date_of_inc")}
                   />
-                  {/* <input
-                    type="date"
-                    value={date_of_inc}
-                    onChange={(e) => setdate_of_inc(e.target.value)}
-                    className="text-slate-900 px-2 py-1 text-xs rounded focus:outline-none w-full border-1 max-w-[180px]"
-                  /> */}
                 </div>
               </div>
 
@@ -535,6 +741,7 @@ export default function GeneralTab({
                 </label>
                 <div className="col-span-2">
                   <select
+                    disabled={isReadonly}
                     value={account.status_id || ""}
                     onChange={(e) => updateField("status_id", e.target.value)}
                     className={getInputClass("general.status_id")}
@@ -557,8 +764,11 @@ export default function GeneralTab({
                 </label>
                 <div className="col-span-2">
                   <select
+                    disabled={isReadonly}
                     value={account.buying_group_id || ""}
-                    onChange={(e) => updateField("buying_group_id", e.target.value)}
+                    onChange={(e) =>
+                      updateField("buying_group_id", e.target.value)
+                    }
                     className={getInputClass("general.buying_group_id")}
                   >
                     <option value="">Select Group Allocation...</option>
@@ -577,8 +787,11 @@ export default function GeneralTab({
                 </label>
                 <div className="col-span-2">
                   <select
+                    disabled={isReadonly}
                     value={account.source_of_crm_id || ""}
-                    onChange={(e) => updateField("source_of_crm_id", e.target.value)}
+                    onChange={(e) =>
+                      updateField("source_of_crm_id", e.target.value)
+                    }
                     className={getInputClass("general.source_of_crm_id")}
                   >
                     <option value="">Select Source...</option>
@@ -597,8 +810,11 @@ export default function GeneralTab({
                 </label>
                 <div className="col-span-2">
                   <select
+                    disabled={isReadonly}
                     value={account.classification_id || ""}
-                    onChange={(e) => updateField("classification_id", e.target.value)}
+                    onChange={(e) =>
+                      updateField("classification_id", e.target.value)
+                    }
                     className={getInputClass("general.classification_id")}
                   >
                     <option value="">Select Classification...</option>
@@ -617,6 +833,7 @@ export default function GeneralTab({
                 </label>
                 <div className="col-span-2">
                   <select
+                    disabled={isReadonly}
                     value={account.type_id || ""}
                     onChange={(e) => updateField("type_id", e.target.value)}
                     className={getInputClass("general.type_id")}
@@ -639,6 +856,7 @@ export default function GeneralTab({
             </label>
             <div className="col-span-2">
               <select
+                disabled={isReadonly}
                 value={
                   (account.is_customer
                     ? account.sales_posting_group_id
@@ -666,9 +884,12 @@ export default function GeneralTab({
             <div className=" col-span-2">
               <input
                 type="text"
+                disabled={isReadonly}
                 placeholder="Additional Information"
                 value={account.additional_information || ""}
-                onChange={(e) => updateField("additional_information", e.target.value)}
+                onChange={(e) =>
+                  updateField("additional_information", e.target.value)
+                }
                 className={getInputClass("general.additional_information")}
               />
             </div>
@@ -694,6 +915,9 @@ export default function GeneralTab({
               </label>
               <input
                 type="text"
+                disabled={isReadonly}
+                value={primaryContact.name || ""}
+                onChange={(e) => updatePrimaryContact("name", e.target.value)}
                 className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
                 placeholder="John Doe"
               />
@@ -704,6 +928,11 @@ export default function GeneralTab({
               </label>
               <input
                 type="text"
+                disabled={isReadonly}
+                value={primaryContact.job_title || ""}
+                onChange={(e) =>
+                  updatePrimaryContact("job_title", e.target.value)
+                }
                 className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
                 placeholder="Procurement Manager"
               />
@@ -716,8 +945,11 @@ export default function GeneralTab({
               </label>
               <input
                 type="text"
+                disabled={isReadonly}
+                value={primaryContact.phone || ""}
+                onChange={(e) => updatePrimaryContact("phone", e.target.value)}
                 className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                placeholder="Ext 401"
+                placeholder="01326 564564"
               />
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
@@ -726,6 +958,9 @@ export default function GeneralTab({
               </label>
               <input
                 type="text"
+                disabled={isReadonly}
+                value={primaryContact.mobile || ""}
+                onChange={(e) => updatePrimaryContact("mobile", e.target.value)}
                 className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
                 placeholder="07xxx xxxxxx"
               />

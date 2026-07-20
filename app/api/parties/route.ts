@@ -138,22 +138,43 @@ export async function POST(req: Request) {
 
   try {
     const rawBody = await req.json();
-
-    // Validate main party profile using PartySchema
     const validatedAccount = PartySchema.parse(rawBody.account);
 
     // Validate relational items
-    const rawContacts = Array.isArray(rawBody.contacts) ? rawBody.contacts : [];
-    const validatedContacts = rawContacts.map((c: unknown) =>
-      PartyContactSchema.parse(c),
-    );
 
-    const rawAddresses = Array.isArray(rawBody.addresses)
+    type RawContact = Record<string, unknown>;
+    type RawAddress = Record<string, unknown>;
+
+    const rawContacts: RawContact[] = Array.isArray(rawBody.contacts)
+      ? rawBody.contacts
+      : [];
+    const validatedContacts = rawContacts
+      .filter(
+        (c) => c && typeof c === "object" && (c.name || c.email || c.phone),
+      )
+      .map((c: unknown) => PartyContactSchema.parse(c));
+
+    const rawAddresses: RawAddress[] = Array.isArray(rawBody.addresses)
       ? rawBody.addresses
       : [];
-    const validatedAddresses = rawAddresses.map((a: unknown) =>
-      PartyAddressSchema.parse(a),
-    );
+    const validatedAddresses = rawAddresses
+      .filter(
+        (a) =>
+          a && typeof a === "object" && (a.address_1 || a.city || a.postcode),
+      )
+      .map((a: unknown) => PartyAddressSchema.parse(a));
+
+    // const rawContacts = Array.isArray(rawBody.contacts) ? rawBody.contacts : [];
+    // const validatedContacts = rawContacts.map((c: unknown) =>
+    //   PartyContactSchema.parse(c),
+    // );
+
+    // const rawAddresses = Array.isArray(rawBody.addresses)
+    //   ? rawBody.addresses
+    //   : [];
+    // const validatedAddresses = rawAddresses.map((a: unknown) =>
+    //   PartyAddressSchema.parse(a),
+    // );
 
     // Modern Validation Check: At least one role flag must evaluate to true
     const { is_crm_lead, is_srm_vendor, is_customer, is_supplier } =
@@ -204,12 +225,34 @@ export async function POST(req: Request) {
         supplier_code = suppSeq.rows[0]?.code || null;
       }
 
+      // Helper to cleanly return valid UUID/String or NULL
+      const toCleanOrNull = (val: unknown) => {
+        if (
+          !val ||
+          typeof val !== "string" ||
+          val.trim() === "" ||
+          val === "undefined" ||
+          val === "null"
+        ) {
+          return null;
+        }
+        return val.trim();
+      };
+
+      // Helper to cleanly handle DATE values
+      const toDateOrNull = (val: unknown) => {
+        const str = toCleanOrNull(val);
+        if (!str) return null;
+        const parsedDate = new Date(str);
+        return isNaN(parsedDate.getTime()) ? null : str;
+      };
+
       const partyInsertQuery = `
         INSERT INTO parties (
           company_id, name, status,
           is_crm_lead, is_srm_vendor, is_customer, is_supplier,
           crm_code, srm_code, customer_code, supplier_code,
-          email, phone, mobile, website, country,
+          email, phone, mobile, website,
           credit_limit, currency_id, salesperson_id, bucket_id,
           vat_reg_no, segment_id, territory_id, buying_group_id,
           credit_rating_id, ownership_type_id, classification_id, type_id,
@@ -220,50 +263,49 @@ export async function POST(req: Request) {
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
           $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-          $31, $32, $33, $34, $35, $36, $37, $38, $39, now(), now()
+          $31, $32, $33, $34, $35, $36, $37, $38, now(), now()
         ) RETURNING *
       `;
 
       const partyValues = [
-        companyId,
-        validatedAccount.name,
-        validatedAccount.status || "active",
-        is_crm_lead,
-        is_srm_vendor,
-        is_customer,
-        is_supplier,
-        crm_code,
-        srm_code,
-        customer_code,
-        supplier_code,
-        validatedAccount.email || null,
-        validatedAccount.phone || null,
-        validatedAccount.mobile || null,
-        validatedAccount.website || null,
-        validatedAccount.country || null,
-        validatedAccount.credit_limit || 0,
-        validatedAccount.currency_id,
-        validatedAccount.salesperson_id || null,
-        validatedAccount.bucket_id || null,
-        validatedAccount.vat_reg_no || null,
-        validatedAccount.segment_id,
-        validatedAccount.territory_id || null,
-        validatedAccount.buying_group_id || null,
-        validatedAccount.credit_rating_id || null,
-        validatedAccount.ownership_type_id || null,
-        validatedAccount.classification_id || null,
-        validatedAccount.type_id || null,
-        validatedAccount.status_id || null,
-        validatedAccount.source_of_crm_id || null,
-        validatedAccount.no_of_emp || 0,
-        validatedAccount.turnover || 0,
-        validatedAccount.comp_reg_no || null,
-        validatedAccount.date_of_inc || null,
-        validatedAccount.additional_information || null,
-        validatedAccount.assign_person_id || null,
-        validatedAccount.assign_person || null,
-        validatedAccount.sales_posting_group_id || null,
-        validatedAccount.purchase_posting_group_id || null,
+        companyId, // $1
+        validatedAccount.name, // $2
+        validatedAccount.status || "active", // $3
+        is_crm_lead, // $4
+        is_srm_vendor, // $5
+        is_customer, // $6
+        is_supplier, // $7
+        crm_code, // $8
+        srm_code, // $9
+        customer_code, // $10
+        supplier_code, // $11
+        toCleanOrNull(validatedAccount.email), // $12
+        toCleanOrNull(validatedAccount.phone), // $13
+        toCleanOrNull(validatedAccount.mobile), // $14
+        toCleanOrNull(validatedAccount.website), // $15
+        validatedAccount.credit_limit || 0, // $16
+        toCleanOrNull(validatedAccount.currency_id), // $17
+        toCleanOrNull(validatedAccount.salesperson_id), // $18
+        toCleanOrNull(validatedAccount.bucket_id), // $19
+        toCleanOrNull(validatedAccount.vat_reg_no), // $20
+        toCleanOrNull(validatedAccount.segment_id), // $21
+        toCleanOrNull(validatedAccount.territory_id), // $22
+        toCleanOrNull(validatedAccount.buying_group_id), // $23
+        toCleanOrNull(validatedAccount.credit_rating_id), // $24
+        toCleanOrNull(validatedAccount.ownership_type_id), // $25
+        toCleanOrNull(validatedAccount.classification_id), // $26
+        toCleanOrNull(validatedAccount.type_id), // $27
+        toCleanOrNull(validatedAccount.status_id), // $28
+        toCleanOrNull(validatedAccount.source_of_crm_id), // $29
+        validatedAccount.no_of_emp || 0, // $30
+        validatedAccount.turnover || 0, // $31
+        toCleanOrNull(validatedAccount.comp_reg_no), // $32
+        toDateOrNull(validatedAccount.date_of_inc), // $33 (Fixed Date Sanitizer)
+        toCleanOrNull(validatedAccount.additional_information), // $34
+        toCleanOrNull(validatedAccount.assign_person_id), // $35
+        toCleanOrNull(validatedAccount.assign_person), // $36
+        toCleanOrNull(validatedAccount.sales_posting_group_id), // $37
+        toCleanOrNull(validatedAccount.purchase_posting_group_id), // $38
       ];
 
       const partyResult = await client.query(partyInsertQuery, partyValues);
@@ -276,16 +318,18 @@ export async function POST(req: Request) {
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `;
         for (const c of validatedContacts) {
-          await client.query(contactQuery, [
-            newParty.id,
-            c.name,
-            c.job_title || null,
-            c.email || null,
-            c.phone || null,
-            c.mobile || null,
-            !!c.is_primary,
-            c.notes || null,
-          ]);
+          if (c.name && c.name.trim() !== "") {
+            await client.query(contactQuery, [
+              newParty.id,
+              c.name,
+              c.job_title || null,
+              c.email || null,
+              c.phone || null,
+              c.mobile || null,
+              !!c.is_primary,
+              c.notes || null,
+            ]);
+          }
         }
       }
 
@@ -294,26 +338,30 @@ export async function POST(req: Request) {
         const addressQuery = `
           INSERT INTO party_addresses (
             party_id, label, address_1, address_2, city, state, country, postcode,
-            phone, email, is_primary, is_billing, is_shipping, is_collection
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            phone, email, is_primary, is_billing, is_shipping
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         `;
         for (const a of validatedAddresses) {
-          await client.query(addressQuery, [
-            newParty.id,
-            a.label,
-            a.address_1,
-            a.address_2 || null,
-            a.city,
-            a.state || null,
-            a.country,
-            a.postcode,
-            a.phone || null,
-            a.email || null,
-            !!a.is_primary,
-            !!a.is_billing,
-            !!a.is_shipping,
-            !!a.is_collection,
-          ]);
+          if (
+            (a.address_1 && a.address_1.trim() !== "") ||
+            (a.city && a.city.trim() !== "")
+          ) {
+            await client.query(addressQuery, [
+              newParty.id,
+              a.label || "Main Address",
+              a.address_1,
+              a.address_2 || null,
+              a.city,
+              a.state || null,
+              a.country,
+              a.postcode,
+              a.phone || null,
+              a.email || null,
+              !!a.is_primary,
+              !!a.is_billing,
+              !!a.is_shipping,
+            ]);
+          }
         }
       }
 

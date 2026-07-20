@@ -3,10 +3,10 @@
 import { z } from "zod";
 
 // Preprocessor to safely convert empty strings or null values to undefined
-const looseString = z.preprocess(
-  (val) => (val === "" || val === null ? undefined : String(val)),
-  z.string().optional(),
-);
+// const looseString = z.preprocess(
+//   (val) => (val === "" || val === null ? undefined : String(val)),
+//   z.string().optional(),
+// );
 
 // Preprocessor specifically tailored for email formatting rules
 const looseEmail = z.preprocess(
@@ -21,10 +21,50 @@ const looseNumber = z.preprocess((val) => {
   return isNaN(parsed) ? 0 : parsed;
 }, z.number().nonnegative("Credit ceiling bounds cannot be negative").default(0));
 
-const looseDate = z.preprocess(
-  (val) => (val === "" || val === null ? undefined : String(val)),
+// const looseDate = z.preprocess(
+//   (val) => (val === "" || val === null ? undefined : String(val)),
+//   z.string().optional()
+// );
+
+// Preprocessor to safely convert empty/null/undefined values to undefined
+const looseString = z.preprocess(
+  (val) => {
+    if (
+      val === "" ||
+      val === null ||
+      val === undefined ||
+      val === "undefined" ||
+      val === "null"
+    ) {
+      return undefined;
+    }
+    return String(val);
+  },
   z.string().optional()
 );
+
+// Preprocessor specifically for dates
+const looseDate = z.preprocess(
+  (val) => {
+    if (
+      val === "" ||
+      val === null ||
+      val === undefined ||
+      val === "undefined" ||
+      val === "null"
+    ) {
+      return undefined;
+    }
+    return String(val);
+  },
+  z.string().optional()
+);
+
+const requiredSelect = (message: string) =>
+  z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? "" : String(val)),
+    z.string().min(1, message)
+  );
 
 export const PartyContactSchema = z.object({
   id: looseString,
@@ -93,14 +133,16 @@ export const PartySchema = z.object({
 
   credit_limit: looseNumber,
   // currency_id: looseString,
-  currency_id: z.string().min(1, "Currency selection is required"),
+  // currency_id: z.string().min(1, "Currency selection is required"),
+  currency_id: requiredSelect("Currency selection is required"),
   salesperson_id: looseString,
   bucket_id: looseString,
 
   // Add these rules inside your export const PartySchema = z.object({ ... }) matrix:
   vat_reg_no: looseString,
   // segment_id: looseString,
-  segment_id: z.string().min(1, "Segment is required"),
+  // segment_id: z.string().min(1, "Segment is required"),
+  segment_id: requiredSelect("Segment is required"),
   territory_id: looseString,
   buying_group_id: looseString,
   credit_rating_id: looseString,

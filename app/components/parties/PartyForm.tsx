@@ -72,9 +72,9 @@ export default function PartyForm({
 
     const baseCheck = PartySchema.safeParse(account);
 
-    console.log("baseCheck ==== ", baseCheck);
-    console.log("contacts ==== ", contacts);
-    console.log("addresses ==== ", addresses);
+    // console.log("baseCheck ==== ", baseCheck);
+    // console.log("contacts ==== ", contacts);
+    // console.log("addresses ==== ", addresses);
 
     if (!baseCheck.success) {
       baseCheck.error.issues.forEach((issue) => {
@@ -86,6 +86,10 @@ export default function PartyForm({
     }
 
     contacts.forEach((contact, idx) => {
+      const isFilled =
+        contact.name || contact.email || contact.phone || contact.mobile;
+      if (!isFilled) return;
+
       const contactCheck = PartyContactSchema.safeParse(contact);
       if (!contactCheck.success) {
         contactCheck.error.issues.forEach((issue) => {
@@ -98,6 +102,9 @@ export default function PartyForm({
     });
 
     addresses.forEach((addr, idx) => {
+      const isFilled = addr.address_1 || addr.city || addr.postcode;
+      if (!isFilled) return;
+
       const addressCheck = PartyAddressSchema.safeParse(addr);
       if (!addressCheck.success) {
         addressCheck.error.issues.forEach((issue) => {
@@ -109,7 +116,7 @@ export default function PartyForm({
       }
     });
 
-    console.log("FormErrors ==== ", formErrors);
+    // console.log("FormErrors ==== ", formErrors);
 
     if (Object.keys(structuredErrors).length > 0) {
       setFormErrors(structuredErrors);
@@ -128,19 +135,32 @@ export default function PartyForm({
   };
 
   const handleSubmit = async () => {
-    console.log("handleSubmit ==== ", handleSubmit);
-    console.log(
-      "handleFormSubmissionValidation ==== ",
-      handleFormSubmissionValidation(),
-    );
+    // console.log("handleSubmit ==== ", handleSubmit);
+    // console.log(
+    //   "handleFormSubmissionValidation ==== ",
+    //   handleFormSubmissionValidation(),
+    // );
     if (!handleFormSubmissionValidation()) return;
     setLoading(true);
+
+    const activeContacts = contacts.filter(
+      (c) => c.name && c.name.trim() !== "",
+    );
+    const activeAddresses = addresses.filter(
+      (a) =>
+        (a.address_1 && a.address_1.trim() !== "") ||
+        (a.city && a.city.trim() !== ""),
+    );
 
     try {
       const res = await fetch("/api/parties", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ account, contacts, addresses }),
+        body: JSON.stringify({
+          account,
+          contacts: activeContacts,
+          addresses: activeAddresses,
+        }),
       });
 
       const payload = await res.json();
@@ -194,7 +214,7 @@ export default function PartyForm({
           </ul>
         </div>
       )}
-      
+
       <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800">
         {(["general", "contacts", "addresses"] as const).map((tab) => {
           const matchingTabErrors = Object.keys(formErrors).some((k) =>
@@ -227,6 +247,10 @@ export default function PartyForm({
           <GeneralTab
             account={account}
             setAccount={setAccount}
+            contacts={contacts}
+            setContacts={setContacts}
+            addresses={addresses}
+            setAddresses={setAddresses}
             errors={formErrors}
             currencies={currencies}
           />
