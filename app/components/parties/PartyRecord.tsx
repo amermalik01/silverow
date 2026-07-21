@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
 
@@ -14,6 +14,8 @@ import AddressesTab from "./tabs/AddressesTab";
 import ActivitiesTab from "../shared/ActivitiesTab";
 import NotesTab from "../shared/NotesTab";
 import AttachmentsTab from "../shared/AttachmentsTab";
+
+import PartyDetailHeader from "./PartyDetailHeader";
 
 import {
   PartySchema,
@@ -27,6 +29,7 @@ import type {
   PartyContactDraft,
   PartyAddressDraft,
 } from "@/types/erp";
+
 type Props = {
   id: string;
   module: PartyModule | "customer" | "supplier";
@@ -49,7 +52,6 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Fetch core ledger parameters & currencies list concurrently
         const [partyRes, currencyRes] = await Promise.all([
           fetch(`/api/parties/${id}`),
           fetch("/api/parties/currencies"),
@@ -116,7 +118,6 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
 
     if (Object.keys(structuredErrors).length > 0) {
       setFormErrors(structuredErrors);
-      // Auto-focus tab based on where the error occurred
       if (Object.keys(structuredErrors).some((k) => k.startsWith("general."))) {
         setActiveTab("general");
       } else if (
@@ -148,7 +149,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
           result.error || "Save operational error failure exception.",
         );
 
-      alert("Changes saved securely! ✅");
+      // alert("Changes saved securely! ✅");
     } catch (err) {
       if (err instanceof Error)
         setFormErrors({
@@ -180,6 +181,14 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
 
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
+      {/* 1. Header with Conversion Buttons */}
+      <PartyDetailHeader
+        party={account}
+        onPartyUpdated={(updatedAccount) =>
+          setAccount((prev) => ({ ...prev, ...updatedAccount }))
+        }
+      />
+      {/* Validation Errors display */}
       {Object.keys(formErrors).length > 0 && (
         <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
           <p className="font-semibold mb-1">
@@ -201,7 +210,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
         </div>
       )}
 
-      {/* Tab Navigation Menu */}
+      {/* 2. Tab Navigation Menu */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
         {tabs.map((tab) => {
           const hasErrorInTab = Object.keys(formErrors).some((k) =>
@@ -226,14 +235,17 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
         })}
       </div>
 
-      {/* Tab Viewport Panels */}
+      {/* 3. Tab Viewport Panels */}
       <div className="py-2">
         {activeTab === "general" && (
           <GeneralTab
             account={account}
             setAccount={setAccount}
+            contacts={contacts}
+            setContacts={setContacts}
+            addresses={addresses}
+            setAddresses={setAddresses}
             errors={formErrors}
-            isReadonly={isReadonly}
             currencies={currencies}
           />
         )}
