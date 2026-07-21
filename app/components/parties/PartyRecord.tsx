@@ -11,6 +11,7 @@ import GeneralTab, { type CompanyCurrency } from "./tabs/GeneralTab";
 
 import ContactsTab from "./tabs/ContactsTab";
 import AddressesTab from "./tabs/AddressesTab";
+import OpportunityCycleTab from "./tabs/OpportunityCycleTab";
 import ActivitiesTab from "../shared/ActivitiesTab";
 import NotesTab from "../shared/NotesTab";
 import AttachmentsTab from "../shared/AttachmentsTab";
@@ -177,7 +178,16 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
     "notes",
     "attachments",
   ];
-  if (module === "crm") tabs.splice(3, 0, "opportunities");
+
+  const isCrmOrCustomer =
+    module === "crm" ||
+    module === "customer" ||
+    account.is_crm_lead ||
+    account.is_customer;
+
+  if (isCrmOrCustomer) {
+    tabs.splice(3, 0, "opportunities");
+  }
 
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
@@ -263,6 +273,11 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
             errors={formErrors}
           />
         )}
+
+        {activeTab === "opportunities" && (
+          <OpportunityCycleTab partyId={id} readonly={isReadonly} />
+        )}
+
         {activeTab === "activities" && (
           <ActivitiesTab module={module} recordId={id} />
         )}
@@ -309,20 +324,6 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
           </Button>
         </div>
       )}
-      {/* {!isReadonly && (
-        <div className="flex justify-end pt-5 border-t border-slate-100 dark:border-slate-800">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 transition-all text-white text-xs font-medium px-5 py-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-blue-500/10 flex items-center gap-2"
-          >
-            {saving && (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            )}
-            {saving ? "Commiting changes..." : "Save Changes"}
-          </button>
-        </div>
-      )} */}
     </div>
   );
 }
