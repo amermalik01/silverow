@@ -22,6 +22,8 @@ import SupplierLookupModal, {
 } from "../../shared/modals/SupplierLookupModal";
 
 import { PurchaseOrderPayloadInput } from "@/lib/validations/purchase-order.schema";
+import { Checkbox } from "@radix-ui/react-checkbox";
+import { OrderFormTabs } from "./OrderFormTabs";
 
 interface Currency {
   id: string;
@@ -70,18 +72,26 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const [order, setOrder] = useState<Partial<PurchaseOrder>>({
     order_no: id ? "" : "[Auto-Generated]",
     supplier_id: "",
+    supplier_no: "",
     supplier_name: "",
     order_date: new Date().toISOString().split("T")[0],
     expected_date: "",
-    invoice_date: "",
+    invoice_date: new Date().toISOString().split("T")[0],
+    receipt_date: new Date().toISOString().split("T")[0],
+    due_date: new Date().toISOString().split("T")[0],
     status: "draft",
     reference: "",
     notes: "",
   });
 
+  const [primaryAddress, setPrimaryAddress] = useState<
+    Partial<PurchaseOrderAddress>
+  >({ address_type: "primary" });
+
   const [billingAddress, setBillingAddress] = useState<
     Partial<PurchaseOrderAddress>
   >({ address_type: "billing" });
+
   const [shippingAddress, setShippingAddress] = useState<
     Partial<PurchaseOrderAddress>
   >({ address_type: "shipping" });
@@ -106,6 +116,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
           setOrder(actualData.order || {});
           setLines(actualData.lines || []);
+
+          setPrimaryAddress(
+            actualData.primary_address || { address_type: "primary" },
+          );
+
           setBillingAddress(
             actualData.billing_address || { address_type: "billing" },
           );
@@ -122,17 +137,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         console.error("Error hydrating historical document matrix:", err),
       );
   }, [id]);
-
-  // useEffect(() => {
-  //   console.log("State updated! Current lines:", lines);
-  //   console.log("State updated! Current currencyConfig:", currencyConfig);
-
-  //   console.log("purchase-order data ==== ", order);
-
-  //   console.log("billingAddress ==== ", billingAddress);
-  //   console.log("shippingAddress ==== ", shippingAddress);
-  //   console.log("currencies ==== ", currencies);
-  // }, [lines, currencyConfig]);
 
   useEffect(() => {
     fetch("/api/parties/currencies")
@@ -172,7 +176,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
     const amountInclVat = amount + vat;
 
-    const rate = Number(currencyConfig.exchange_rate || 1);
+    // const rate = Number(currencyConfig.exchange_rate || 1);
+    const rate = Number(currencyConfig.exchange_rate) > 0 ? Number(currencyConfig.exchange_rate) : 1;
+
     const amountInclVatLCY = amountInclVat / rate;
 
     return { amount, vat, amountInclVat, amountInclVatLCY };
@@ -182,11 +188,17 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     setOrder((prev) => ({
       ...prev,
       supplier_id: supplier.id,
+      supplier_no: supplier.supplier_code,
       supplier_name: supplier.name,
     }));
+
+    if (supplier.primary_address) setPrimaryAddress(supplier.primary_address);
+
     if (supplier.billing_address) setBillingAddress(supplier.billing_address);
+
     if (supplier.shipping_address)
       setShippingAddress(supplier.shipping_address);
+
     setSupplierModalOpen(false);
   };
 
@@ -229,8 +241,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           tax_amount: financials.vat,
           total_amount: financials.amountInclVat,
         },
+
+        primary_address: primaryAddress,
         billing_address: billingAddress,
         shipping_address: shippingAddress,
+
         lines,
       };
 
@@ -366,11 +381,21 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             tax_amount: financials.vat,
             total_amount: financials.amountInclVat,
           },
+          primary_address: {
+            address_type: "primary",
+            address_1: primaryAddress.address_1 || "",
+            address_2: primaryAddress.address_2 || "",
+            city: primaryAddress.city || "",
+            county: primaryAddress.county || "",
+            postcode: primaryAddress.postcode || "",
+            country: primaryAddress.country || "",
+          },
           billing_address: {
             address_type: "billing",
             address_1: billingAddress.address_1 || "",
             address_2: billingAddress.address_2 || "",
             city: billingAddress.city || "",
+            county: billingAddress.county || "",
             postcode: billingAddress.postcode || "",
             country: billingAddress.country || "",
           },
@@ -380,6 +405,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             address_1: shippingAddress.address_1 || "",
             address_2: shippingAddress.address_2 || "",
             city: shippingAddress.city || "",
+            county: shippingAddress.county || "",
             country: shippingAddress.country || "",
           },
           lines: lines,
@@ -414,56 +440,51 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     }
   };
 
-  
-
   const inputStyle =
     "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
-  const labelStyle =
-    "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5";
+  const labelStyle = "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5";
 
   return (
-      <div className="space-y-4 w-full max-w-[100vw] px-4 py-2 mx-auto overflow-x-auto">
+    <div className="space-y-4 w-full max-w-[100vw] px-4 py-2 mx-auto overflow-x-auto">
       {isUpdateMode && !isLoadingStages && stages.length > 0 && (
-
-
         <div className="w-full overflow-x-auto pb-2 focus:outline-none">
-        <div
-          className={`flex items-center min-w-max gap-1 text-xs font-bold text-slate-400 select-none ${
-            isUpdatingStatus ? "opacity-60 pointer-events-none" : ""
-          }`}
-        >
-          {stages.map((stage, index) => {
-            const isFirst = index === 0;
-            const isLast = index === stages.length - 1;
-            const isActive =
-              order.status?.toLowerCase() === stage.name.toLowerCase();
+          <div
+            className={`flex items-center min-w-max gap-1 text-xs font-bold text-slate-400 select-none ${
+              isUpdatingStatus ? "opacity-60 pointer-events-none" : ""
+            }`}
+          >
+            {stages.map((stage, index) => {
+              const isFirst = index === 0;
+              const isLast = index === stages.length - 1;
+              const isActive =
+                order.status?.toLowerCase() === stage.name.toLowerCase();
 
-            let activeBg = "bg-blue-600 text-white";
-            if (index === 1) activeBg = "bg-amber-500 text-white";
-            if (index === 2) activeBg = "bg-indigo-600 text-white";
-            if (index >= 3) activeBg = "bg-emerald-600 text-white";
+              let activeBg = "bg-blue-600 text-white";
+              if (index === 1) activeBg = "bg-amber-500 text-white";
+              if (index === 2) activeBg = "bg-indigo-600 text-white";
+              if (index >= 3) activeBg = "bg-emerald-600 text-white";
 
-            return (
-              <button
-                type="button"
-                key={stage.id}
-                onClick={() => handleStageClick(stage.name)}
-                className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95
+              return (
+                <button
+                  type="button"
+                  key={stage.id}
+                  onClick={() => handleStageClick(stage.name)}
+                  className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95
                 ${isFirst ? "rounded-l-md" : ""} 
                 ${isLast ? "rounded-r-md" : ""} 
                 ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
-              >
-                {stage.name}
-                {!isLast && (
-                  <Icon
-                    icon="tabler:chevron-right"
-                    className="w-3 h-3 text-slate-400"
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
+                >
+                  {stage.name}
+                  {!isLast && (
+                    <Icon
+                      icon="tabler:chevron-right"
+                      className="w-3 h-3 text-slate-400"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -484,7 +505,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
       {/* <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2"> */}
       <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 overflow-x-auto w-full no-scrollbar">
-      {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
+        {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
           <button
             key={tab}
             type="button"
@@ -500,238 +521,23 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         ))}
       </div>
 
-      {/* <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm"> */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm w-full">
-        {activeTab === "general" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className={labelStyle}>Order No.</label>
-              <input
-                type="text"
-                disabled
-                className={inputStyle}
-                value={order.order_no || ""}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Supplier No. *</label>
-              <div className="flex gap-1">
-                <input
-                  type="text"
-                  readOnly
-                  className={`${inputStyle} font-mono`}
-                  value={order.supplier_id || "Click Select..."}
-                />
-                <button
-                  type="button"
-                  onClick={() => setSupplierModalOpen(true)}
-                  className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-                >
-                  <Icon icon="tabler:search" />
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className={labelStyle}>Supplier Name</label>
-              <input
-                type="text"
-                disabled
-                className={inputStyle}
-                value={order.supplier_name || ""}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Order Date</label>
-              <input
-                type="date"
-                className={inputStyle}
-                value={order.order_date?.split("T")[0] ?? ""}
-                onChange={(e) => updateField("order_date", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Address Line 1</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.address_1 || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Address Line 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.address_2 || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>City</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.city || ""}
-                onChange={(e) =>
-                  setBillingAddress({ ...billingAddress, city: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Postcode/Co.</label>
-              <div className="grid grid-cols-2 gap-1">
-                <input
-                  type="text"
-                  placeholder="Postcode"
-                  className={inputStyle}
-                  value={billingAddress.postcode || ""}
-                  onChange={(e) =>
-                    setBillingAddress({
-                      ...billingAddress,
-                      postcode: e.target.value,
-                    })
-                  }
-                />
-                <input
-                  type="text"
-                  placeholder="Country"
-                  className={inputStyle}
-                  value={billingAddress.country || ""}
-                  onChange={(e) =>
-                    setBillingAddress({
-                      ...billingAddress,
-                      country: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "invoicing" && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className={labelStyle}>Currency *</label>
-              <select
-                className={inputStyle}
-                value={currencyConfig.currency_id ?? ""}
-                onChange={(e) => {
-                  const targetId = e.target.value;
-                  const matched = currencies.find((c) => c.id === targetId);
-                  setCurrencyConfig({
-                    currency_id: targetId,
-                    exchange_rate: matched ? matched.exchange_rate : 1,
-                  });
-                }}
-              >
-                <option value="">Select Base Currency...</option>
-                {currencies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.code} - {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelStyle}>Payment Terms</label>
-              <input
-                type="text"
-                className={inputStyle}
-                placeholder="Immediate, 30 Days..."
-                value={order.notes || ""}
-                onChange={(e) => updateField("notes", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Invoice Date</label>
-              <input
-                type="date"
-                className={inputStyle}
-                value={order.invoice_date || ""}
-                onChange={(e) => updateField("invoice_date", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Supplier Invoice No.</label>
-              <input
-                type="text"
-                className={inputStyle}
-                placeholder="e.g. INV-9932"
-                value={order.reference || ""}
-                onChange={(e) => updateField("reference", e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-
-        {activeTab === "shipping" && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className={labelStyle}>Location Name / Consignee</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.name || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    name: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Shipping Destination St. 1</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.address_1 || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Shipping Destination St. 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.address_2 || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Target Receipt Date</label>
-              <input
-                type="date"
-                className={inputStyle}
-                value={order.expected_date || ""}
-                onChange={(e) => updateField("expected_date", e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      <OrderFormTabs
+        activeTab={activeTab}
+        order={order}
+        primaryAddress={primaryAddress}
+        setPrimaryAddress={setPrimaryAddress}
+        billingAddress={billingAddress}
+        setBillingAddress={setBillingAddress}
+        shippingAddress={shippingAddress}
+        setShippingAddress={setShippingAddress}
+        currencyConfig={currencyConfig}
+        setCurrencyConfig={setCurrencyConfig}
+        currencies={currencies}
+        updateField={updateField}
+        setSupplierModalOpen={setSupplierModalOpen}
+        labelStyle={labelStyle}
+        inputStyle={inputStyle}
+      />
 
       <PurchaseOrderLines
         lines={lines}
@@ -830,7 +636,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   );
 };
 
-
 /* const handleStageClick = async (stageName: string) => {
     // Convert stage name to lowercase so it passes Zod validation ("Draft" -> "draft")
     const standardizedStatus =
@@ -905,3 +710,794 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       setIsUpdatingStatus(false);
     }
   }; */
+
+/* 
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm w-full">
+        {activeTab === "general" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 space-x-2">
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Order No.</label>
+                <input
+                  type="text"
+                  disabled
+                  className={inputStyle}
+                  value={order.order_no || ""}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Supplier No. *</label>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    readOnly
+                    className={`${inputStyle} font-mono`}
+                    value={order.supplier_no || "Click Select..."}
+                    // value={order.supplier_id || "Click Select..."}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSupplierModalOpen(true)}
+                    className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                  >
+                    <Icon icon="tabler:search" />
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Supplier Name</label>
+                <input
+                  type="text"
+                  disabled
+                  className={inputStyle}
+                  value={order.supplier_name || ""}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Address Line 1</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={primaryAddress.address_1 || ""}
+                  onChange={(e) =>
+                    setPrimaryAddress({
+                      ...primaryAddress,
+                      address_1: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Address Line 2</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={primaryAddress.address_2 || ""}
+                  onChange={(e) =>
+                    setPrimaryAddress({
+                      ...primaryAddress,
+                      address_2: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>City</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={primaryAddress.city || ""}
+                  onChange={(e) =>
+                    setPrimaryAddress({
+                      ...primaryAddress,
+                      city: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>County</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={primaryAddress.county || ""}
+                  onChange={(e) =>
+                    setPrimaryAddress({
+                      ...primaryAddress,
+                      county: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Postcode/Co.</label>
+                <div className="grid grid-cols-2 gap-1">
+                  <input
+                    type="text"
+                    placeholder="Postcode"
+                    className={inputStyle}
+                    value={primaryAddress.postcode || ""}
+                    onChange={(e) =>
+                      setPrimaryAddress({
+                        ...primaryAddress,
+                        postcode: e.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    type="text"
+                    placeholder="Country"
+                    className={inputStyle}
+                    value={primaryAddress.country || ""}
+                    onChange={(e) =>
+                      setPrimaryAddress({
+                        ...primaryAddress,
+                        country: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Contact Person</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={primaryAddress.contact_person || ""}
+                  onChange={(e) =>
+                    setPrimaryAddress({
+                      ...primaryAddress,
+                      contact_person: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Telephone</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={primaryAddress.phone || ""}
+                  onChange={(e) =>
+                    setPrimaryAddress({
+                      ...primaryAddress,
+                      phone: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Email</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={primaryAddress.email || ""}
+                  onChange={(e) =>
+                    setPrimaryAddress({
+                      ...primaryAddress,
+                      email: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Purchaser</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.purchaser || ""}
+                  onChange={(e) => updateField("purchaser", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle} title="Consignment No.">
+                  Cons. No.
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.consignment_no || ""}
+                  onChange={(e) =>
+                    updateField("consignment_no", e.target.value)
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle} title="Supplier Order No.">
+                  Suppl. Order No.
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.supp_order_no || ""}
+                  onChange={(e) => updateField("supp_order_no", e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle} title="Link to SO No.">
+                  Link to SO No.
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.link_to_so_no || ""}
+                  onChange={(e) => updateField("link_to_so_no", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Invoice Date</label>
+                <input
+                  type="date"
+                  className={inputStyle}
+                  value={order.invoice_date || ""}
+                  onChange={(e) => updateField("invoice_date", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Supplier Invoice No.</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  placeholder="e.g. INV-9932"
+                  value={order.reference || ""}
+                  onChange={(e) => updateField("reference", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Order Date</label>
+                <input
+                  type="date"
+                  className={inputStyle}
+                  value={order.order_date?.split("T")[0] ?? ""}
+                  onChange={(e) => updateField("order_date", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Req. Rcpt. Date</label>
+                <input
+                  type="date"
+                  className={inputStyle}
+                  value={order.req_receipt_date?.split("T")[0] ?? ""}
+                  onChange={(e) =>
+                    updateField("req_receipt_date", e.target.value)
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Receipt Date</label>
+                <input
+                  type="date"
+                  className={inputStyle}
+                  value={order.receipt_date?.split("T")[0] ?? ""}
+                  onChange={(e) => updateField("receipt_date", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "invoicing" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 space-x-2">
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Pay to Suppl. No.</label>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    readOnly
+                    className={`${inputStyle} font-mono`}
+                    // value={order.supplier_id || "Click Select..."}
+                    value={order.supplier_no || "Click Select..."}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSupplierModalOpen(true)}
+                    className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                  >
+                    <Icon icon="tabler:search" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Name</label>
+                <input
+                  type="text"
+                  disabled
+                  className={inputStyle}
+                  value={order.supplier_name || ""}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Address Line 1</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={billingAddress.address_1 || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...billingAddress,
+                      address_1: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Address Line 2</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={billingAddress.address_2 || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...billingAddress,
+                      address_2: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>City</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={billingAddress.city || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...billingAddress,
+                      city: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>County</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={billingAddress.county || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...billingAddress,
+                      county: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Postcode/Co.</label>
+                <div className="grid grid-cols-2 gap-1">
+                  <input
+                    type="text"
+                    placeholder="Postcode"
+                    className={inputStyle}
+                    value={billingAddress.postcode || ""}
+                    onChange={(e) =>
+                      setBillingAddress({
+                        ...billingAddress,
+                        postcode: e.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    type="text"
+                    placeholder="Country"
+                    className={inputStyle}
+                    value={billingAddress.country || ""}
+                    onChange={(e) =>
+                      setBillingAddress({
+                        ...billingAddress,
+                        country: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Contact Person</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={billingAddress.contact_person || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...billingAddress,
+                      contact_person: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Telephone</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={billingAddress.phone || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...billingAddress,
+                      phone: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Email</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={billingAddress.email || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...billingAddress,
+                      email: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Payable Bank</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.payable_bank || ""}
+                  onChange={(e) => updateField("payable_bank", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Payment Terms</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.payment_terms || ""}
+                  onChange={(e) => updateField("payment_terms", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Due Date</label>
+
+                <input
+                  type="date"
+                  className={inputStyle}
+                  value={order.due_date?.split("T")[0] ?? ""}
+                  onChange={(e) => updateField("due_date", e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Payment Method</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.payment_method || ""}
+                  onChange={(e) =>
+                    updateField("payment_method", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Currency *</label>
+                <select
+                  className={inputStyle}
+                  value={currencyConfig.currency_id ?? ""}
+                  onChange={(e) => {
+                    const targetId = e.target.value;
+                    const matched = currencies.find((c) => c.id === targetId);
+                    setCurrencyConfig({
+                      currency_id: targetId,
+                      exchange_rate: matched ? matched.exchange_rate : 1,
+                    });
+                  }}
+                >
+                  <option value="">Select Base Currency...</option>
+                  {currencies.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.code} - {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Previous Code</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.previous_code || ""}
+                  onChange={(e) => updateField("previous_code", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Link to Customer</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.link_to_cust || ""}
+                  onChange={(e) => updateField("link_to_cust", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Deduct from Rebate</label>
+                <input
+                  type="checkbox"
+                  checked={order.deduct_from_rebate}
+                  onChange={(e) =>
+                    updateField("deduct_from_rebate", e.target.checked)
+                  }
+                  className="rounded bg-white/20 border-0 text-emerald-700 h-3.5 w-3.5"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "shipping" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 space-x-2">
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Location Name</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={shippingAddress.name || ""}
+                  onChange={(e) =>
+                    setShippingAddress({
+                      ...shippingAddress,
+                      name: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Address Line 1</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={shippingAddress.address_1 || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...shippingAddress,
+                      address_1: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Address Line 2</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={shippingAddress.address_2 || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...shippingAddress,
+                      address_2: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>City</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={shippingAddress.city || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...shippingAddress,
+                      city: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>County</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={shippingAddress.county || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...shippingAddress,
+                      county: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Postcode/Co.</label>
+                <div className="grid grid-cols-2 gap-1">
+                  <input
+                    type="text"
+                    placeholder="Postcode"
+                    className={inputStyle}
+                    value={shippingAddress.postcode || ""}
+                    onChange={(e) =>
+                      setBillingAddress({
+                        ...shippingAddress,
+                        postcode: e.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    type="text"
+                    placeholder="Country"
+                    className={inputStyle}
+                    value={shippingAddress.country || ""}
+                    onChange={(e) =>
+                      setBillingAddress({
+                        ...shippingAddress,
+                        country: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Contact</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.contact || ""}
+                  onChange={(e) => updateField("contact", e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Book In Tel No.</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.book_in_phone || ""}
+                  onChange={(e) => updateField("book_in_phone", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Book In Contact</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.book_in_contact || ""}
+                  onChange={(e) =>
+                    updateField("book_in_contact", e.target.value)
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Book In Email</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.book_in_email || ""}
+                  onChange={(e) => updateField("book_in_email", e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Payable Bank</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.payable_bank || ""}
+                  onChange={(e) => updateField("payable_bank", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Payment Terms</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.payment_terms || ""}
+                  onChange={(e) => updateField("payment_terms", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Due Date</label>
+
+                <input
+                  type="date"
+                  className={inputStyle}
+                  value={order.due_date?.split("T")[0] ?? ""}
+                  onChange={(e) => updateField("due_date", e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Payment Method</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.payment_method || ""}
+                  onChange={(e) =>
+                    updateField("payment_method", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Currency *</label>
+                <select
+                  className={inputStyle}
+                  value={currencyConfig.currency_id ?? ""}
+                  onChange={(e) => {
+                    const targetId = e.target.value;
+                    const matched = currencies.find((c) => c.id === targetId);
+                    setCurrencyConfig({
+                      currency_id: targetId,
+                      exchange_rate: matched ? matched.exchange_rate : 1,
+                    });
+                  }}
+                >
+                  <option value="">Select Base Currency...</option>
+                  {currencies.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.code} - {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Previous Code</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.previous_code || ""}
+                  onChange={(e) => updateField("previous_code", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Link to Customer</label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={order.link_to_cust || ""}
+                  onChange={(e) => updateField("link_to_cust", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 ">
+                <label className={labelStyle}>Deduct from Rebate</label>
+                <input
+                  type="checkbox"
+                  checked={order.deduct_from_rebate}
+                  onChange={(e) =>
+                    updateField("deduct_from_rebate", e.target.checked)
+                  }
+                  className="rounded bg-white/20 border-0 text-emerald-700 h-3.5 w-3.5"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+  */

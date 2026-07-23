@@ -43,6 +43,27 @@ export async function GET(req: NextRequest) {
         ORDER BY p.name ASC
         LIMIT 100
       ),
+      ranked_primary_addresses AS (
+        SELECT 
+          party_id,
+          'primary' AS address_type,
+          label AS name,
+          address_1,
+          address_2,
+          city,
+          state as county,
+          postcode,
+          country,
+          phone,
+          email,
+          ROW_NUMBER() OVER (
+            PARTITION BY party_id 
+            ORDER BY is_primary DESC
+          ) as rn
+        FROM party_addresses
+        WHERE party_id IN (SELECT id FROM filtered_suppliers)
+          AND is_primary = true
+      ),
       ranked_billing_addresses AS (
         SELECT 
           party_id,
@@ -51,7 +72,7 @@ export async function GET(req: NextRequest) {
           address_1,
           address_2,
           city,
-          state,
+          state as county,
           postcode,
           country,
           phone,
@@ -72,7 +93,7 @@ export async function GET(req: NextRequest) {
           address_1,
           address_2,
           city,
-          state,
+          state as county,
           postcode,
           country,
           phone,
@@ -88,13 +109,28 @@ export async function GET(req: NextRequest) {
       SELECT 
         fs.*,
         CASE 
+          WHEN pa.party_id IS NOT NULL THEN json_build_object(
+            'address_type', pa.address_type,
+            'name', pa.name,
+            'address_1', pa.address_1,
+            'address_2', pa.address_2,
+            'city', pa.city,
+            'county', pa.county,
+            'postcode', pa.postcode,
+            'country', pa.country,
+            'phone', pa.phone,
+            'email', pa.email
+          )
+          ELSE NULL 
+        END as primary_address,
+        CASE 
           WHEN ba.party_id IS NOT NULL THEN json_build_object(
             'address_type', ba.address_type,
             'name', ba.name,
             'address_1', ba.address_1,
             'address_2', ba.address_2,
             'city', ba.city,
-            'state', ba.state,
+            'county', ba.county,
             'postcode', ba.postcode,
             'country', ba.country,
             'phone', ba.phone,
@@ -109,7 +145,7 @@ export async function GET(req: NextRequest) {
             'address_1', sa.address_1,
             'address_2', sa.address_2,
             'city', sa.city,
-            'state', sa.state,
+            'county', sa.county,
             'postcode', sa.postcode,
             'country', sa.country,
             'phone', sa.phone,
@@ -118,6 +154,7 @@ export async function GET(req: NextRequest) {
           ELSE NULL 
         END as shipping_address
       FROM filtered_suppliers fs
+      LEFT JOIN ranked_primary_addresses pa ON pa.party_id = fs.id AND pa.rn = 1
       LEFT JOIN ranked_billing_addresses ba ON ba.party_id = fs.id AND ba.rn = 1
       LEFT JOIN ranked_shipping_addresses sa ON sa.party_id = fs.id AND sa.rn = 1
       ORDER BY fs.name ASC;

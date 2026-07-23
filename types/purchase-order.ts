@@ -8,13 +8,41 @@ export interface PurchaseOrder {
   supplier_id: string;
   supplier_no?: string;
   supplier_name?: string;
+
+  purchaser?: string;
+  consignment_no?: string;
+  supp_order_no?: string;
+  link_to_so_no?: string;
+
+
   // warehouse_id?: string;
   currency_id?: string;
   exchange_rate?: string | number;
+  
   order_date: string;
+  req_receipt_date: string;
+  receipt_date: string;
   expected_date?: string;
   invoice_date?: string;
   reference?: string;
+  
+  payable_bank?: string;
+  payable_bank_id?: string;
+  due_date?: string;
+  payment_terms?: string;
+  payment_terms_id?: string;
+  payment_method?: string;
+  payment_method_id?: string;
+
+  previous_code?: string;
+  link_to_cust?: string;
+  deduct_from_rebate?: boolean;
+
+  contact?: string;
+  book_in_phone?: string;
+  book_in_contact?: string;
+  book_in_email?: string;
+
   notes?: string;
   subtotal?: number;
   tax_amount?: number;
@@ -31,12 +59,8 @@ export interface PurchaseOrder {
   is_posted?: boolean;
 }
 
-export type PurchaseOrderAddressType = "billing" | "shipping";
+export type PurchaseOrderAddressType = "primary" | "billing" | "shipping";
 
-/**
- * STAMPED ADDRESS
- * Saved per order
- */
 export interface PurchaseOrderAddress {
   id?: string;
   company_id?: string;
@@ -50,8 +74,11 @@ export interface PurchaseOrderAddress {
   address_2?: string;
   city?: string;
   state?: string;
+  county?: string;
   postcode?: string;
   country?: string;
+  contact_person?: string;
+  contact_name?: string;
 }
 
 export interface PurchaseOrderPayload {

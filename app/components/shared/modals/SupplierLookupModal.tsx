@@ -17,12 +17,13 @@ export type SupplierLookupItem = {
   postcode?: string;
   country?: string;
 
+  primary_address?: SupplierAddress | null;
   billing_address?: SupplierAddress | null;
   shipping_address?: SupplierAddress | null;
 };
 
 export type SupplierAddress = {
-  address_type: "billing" | "shipping";
+  address_type: "primary" | "billing" | "shipping";
 
   name?: string;
   // attention?: string;
