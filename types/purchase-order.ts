@@ -43,7 +43,16 @@ export interface PurchaseOrder {
   book_in_contact?: string;
   book_in_email?: string;
 
+  shipment_method?: string;
+  shipping_agent?: string;
+  shipment_ref_no?: string;
+  warehouse_booking_ref_no?: string;
+  shipment_po_not_req?: boolean;
+  reason?: string;
+  linked_po?: string;
+
   notes?: string;
+  internal_notes?: string;
   subtotal?: number;
   tax_amount?: number;
   total_amount?: number;

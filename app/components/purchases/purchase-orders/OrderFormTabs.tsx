@@ -754,34 +754,82 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 
           {/* Column 3 */}
           <div className="space-y-2">
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-              <label className={labelStyle}>Payable Bank</label>
+              <label className={labelStyle} title="Shipment Method">Shipt. Method</label>
               <input
                 type="text"
                 className={inputStyle}
-                value={order.payable_bank || ""}
-                onChange={(e) => updateField("payable_bank", e.target.value)}
+                value={order.shipment_method || ""}
+                onChange={(e) => updateField("shipment_method", e.target.value)}
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-              <label className={labelStyle}>Payment Terms</label>
+              <label className={labelStyle}>Shipping Agent</label>
               <input
                 type="text"
                 className={inputStyle}
-                value={order.payment_terms || ""}
-                onChange={(e) => updateField("payment_terms", e.target.value)}
+                value={order.shipping_agent || ""}
+                onChange={(e) => updateField("shipping_agent", e.target.value)}
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-              <label className={labelStyle}>Due Date</label>
+              <label className={labelStyle} title="Shipment Reference No.">Shipt. Ref. No.</label>
               <input
-                type="date"
+                type="text"
                 className={inputStyle}
-                value={order.due_date?.split("T")[0] ?? ""}
-                onChange={(e) => updateField("due_date", e.target.value)}
+                value={order.shipment_ref_no || ""}
+                onChange={(e) => updateField("shipment_ref_no", e.target.value)}
               />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+              <label className={labelStyle} title="Warehouse Booking Reference No.">W/H Book. Ref.</label>
+              <input
+                type="text"
+                className={inputStyle}
+                value={order.warehouse_booking_ref_no || ""}
+                onChange={(e) => updateField("warehouse_booking_ref_no", e.target.value)}
+              />
+            </div>
+            
           </div>
+
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+              <label className={labelStyle} title="Shipment PO Not Required">Shipt. PO Not Req.</label>
+              <input
+                type="checkbox"
+                checked={!!order.shipment_po_not_req}
+                onChange={(e) =>
+                  updateField("shipment_po_not_req", e.target.checked)
+                }
+                className="rounded bg-white/20 border-0 text-emerald-700 h-3.5 w-3.5"
+              />
+            </div>
+
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+              <label className={labelStyle} title="Warehouse Booking Reference No.">Reason *</label>
+              <input
+                type="text"
+                className={inputStyle}
+                value={order.reason || ""}
+                onChange={(e) => updateField("reason", e.target.value)}
+              />
+            </div>
+
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+              <label className={labelStyle} title="Warehouse Booking Reference No.">Linked PO</label>
+              <input
+                type="text"
+                className={inputStyle}
+                value={order.linked_po || ""}
+                onChange={(e) => updateField("linked_po", e.target.value)}
+              />
+            </div>
+        </div>
         </div>
       )}
     </div>
