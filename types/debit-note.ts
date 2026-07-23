@@ -22,7 +22,7 @@ export interface DebitNote {
   is_posted?: boolean;
 }
 
-export type DebitNoteAddressType = "billing" | "shipping";
+export type DebitNoteAddressType = "primary" | "billing" | "shipping";
 
 export interface DebitNoteAddress {
   id?: string;
@@ -37,6 +37,7 @@ export interface DebitNoteAddress {
   state?: string;
   postcode?: string;
   country?: string;
+  county?: string;
 }
 
 export interface DebitNotePayload {
