@@ -1,5 +1,50 @@
 // app/api/setup/warehouses/route.ts
+
 import { NextResponse } from "next/server";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
+import { apiHandler } from "@/lib/utils/apiHandler";
+import { warehouseSchema } from "@/lib/validations/warehouse.schema";
+import {
+  createWarehouse,
+  getAllWarehouses,
+} from "@/lib/services/warehouse.service";
+
+export async function GET() {
+  return apiHandler(async () => {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const data = await getAllWarehouses(companyId);
+    return NextResponse.json(data);
+  });
+}
+
+export async function POST(req: Request) {
+  return apiHandler(async () => {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const body = await req.json();
+    const parsed = warehouseSchema.parse(body);
+
+    const result = await createWarehouse(companyId, parsed);
+    return NextResponse.json(result);
+  });
+}
+
+/* import { NextResponse } from "next/server";
 import { createWarehouse } from "@/lib/services/warehouse.service";
 import { warehouseSchema } from "@/lib/validations/warehouse.schema";
 import { getServerSession } from "next-auth";
@@ -60,4 +105,4 @@ export async function GET() {
       { status: 500 },
     );
   }
-}
+} */

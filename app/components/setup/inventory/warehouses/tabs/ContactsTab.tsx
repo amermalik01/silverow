@@ -9,6 +9,173 @@ import ContactForm from "./ContactForm";
 type Props = {
   warehouseId: string;
   contacts: WarehouseContact[];
+  setContacts: React.Dispatch<React.SetStateAction<WarehouseContact[]>>;
+  isReadOnly?: boolean;
+};
+
+export default function ContactsTab({
+  warehouseId,
+  contacts,
+  setContacts,
+  isReadOnly = false,
+}: Props) {
+  const [showForm, setShowForm] = useState(false);
+  const [selectedContact, setSelectedContact] =
+    useState<WarehouseContact | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredContacts = contacts.filter(
+    (c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.job_title?.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const handleDelete = async (id: string) => {
+    if (isReadOnly || !confirm("Are you sure you want to delete this contact?"))
+      return;
+
+    const res = await fetch(
+      `/api/setup/warehouses/${warehouseId}/contacts/${id}`,
+      {
+        method: "DELETE",
+      },
+    );
+
+    if (res.ok) {
+      setContacts((prev) => prev.filter((c) => c.id !== id));
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Top Filter Bar */}
+      <div className="flex justify-between items-center gap-4 bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+        <input
+          type="text"
+          placeholder="Search contact name or job title..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3.5 py-1.5 border border-slate-300 text-xs rounded-md w-72 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+
+        {!isReadOnly && (
+          <button
+            onClick={() => {
+              setShowForm(true);
+              setSelectedContact(null);
+            }}
+            className="bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs px-4 py-1.5 rounded-md transition-colors"
+          >
+            + Add
+          </button>
+        )}
+      </div>
+
+      {/* Form Dialog Panel */}
+      {(showForm || selectedContact) && (
+        <ContactForm
+          warehouseId={warehouseId}
+          existing={selectedContact || undefined}
+          isReadOnly={isReadOnly}
+          onClose={() => {
+            setShowForm(false);
+            setSelectedContact(null);
+          }}
+          onSuccess={(contact) => {
+            setContacts((prev) => {
+              const filtered = prev.filter((x) => x.id !== contact.id);
+              return [...filtered, contact];
+            });
+            setShowForm(false);
+            setSelectedContact(null);
+          }}
+        />
+      )}
+
+      {/* High-density Contacts Data Table */}
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+        <table className="w-full text-left text-xs">
+          <thead>
+            <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold text-xs uppercase tracking-wider">
+              <th className="px-4 py-3">Contact Name</th>
+              <th className="px-4 py-3">Job Title</th>
+              <th className="px-4 py-3">Location Name</th>
+              <th className="px-4 py-3">Direct Line</th>
+              <th className="px-4 py-3">Mobile</th>
+              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {filteredContacts.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-6 text-center text-slate-400 text-xs"
+                >
+                  No contact records found.
+                </td>
+              </tr>
+            ) : (
+              filteredContacts.map((c) => (
+                <tr
+                  key={c.id}
+                  className="hover:bg-slate-50/80 transition-colors"
+                >
+                  <td className="px-4 py-3 font-medium text-slate-900">
+                    {c.name}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {c.job_title || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {c.location_name || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {c.direct_line || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {c.mobile || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-blue-600">{c.email || "—"}</td>
+                  <td className="px-4 py-3 text-right space-x-2 font-medium text-xs">
+                    <button
+                      onClick={() => {
+                        setSelectedContact(c);
+                        setShowForm(false);
+                      }}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {isReadOnly ? "View" : "Edit"}
+                    </button>
+                    {!isReadOnly && (
+                      <button
+                        onClick={() => handleDelete(c.id)}
+                        className="text-rose-600 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
+
+import { WarehouseContact } from "@/types/warehouse";
+import { useState } from "react";
+import ContactForm from "./ContactForm";
+
+type Props = {
+  warehouseId: string;
+  contacts: WarehouseContact[];
   setContacts: React.Dispatch<
     React.SetStateAction<WarehouseContact[]>
   >;
@@ -38,7 +205,7 @@ export default function ContactsTab({
 
   return (
     <div className="space-y-4">
-      {/* ADD BUTTON */}
+
       <button
         onClick={() => {
           setShowForm(true);
@@ -49,7 +216,7 @@ export default function ContactsTab({
         + Add Contact
       </button>
 
-      {/* FORM */}
+
       {(showForm || editContact) && (
         <ContactForm
           warehouseId={warehouseId}
@@ -66,7 +233,7 @@ export default function ContactsTab({
         />
       )}
 
-      {/* LIST */}
+
       <div className="space-y-2">
         {contacts.map((c) => (
           <div
@@ -101,56 +268,6 @@ export default function ContactsTab({
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-/* "use client";
-import { WarehouseContact } from "@/types/warehouse";
-
-type Props = {
-  warehouseId: string;
-  contacts: WarehouseContact[];
-  setContacts: (data: WarehouseContact[]) => void;
-};
-
-export default function ContactsTab({
-  warehouseId,
-  contacts,
-  setContacts,
-}: Props) {
-  const addContact = async () => {
-    const name = prompt("Contact name");
-    if (!name) return;
-
-    const res = await fetch(
-      `/api/setup/warehouses/${warehouseId}/contacts`,
-      {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      }
-    );
-
-    const newContact = await res.json();
-    setContacts([...contacts, newContact]);
-  };
-
-  return (
-    <div>
-      <button
-        onClick={addContact}
-        className="bg-blue-600 text-white px-3 py-1 rounded"
-      >
-        + Add Contact
-      </button>
-
-      <ul className="mt-3">
-        {contacts.map((c) => (
-          <li key={c.id} className="border-b py-2">
-            {c.name}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 } */

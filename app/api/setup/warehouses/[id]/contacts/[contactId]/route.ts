@@ -1,6 +1,37 @@
 // app/api/setup/warehouses/[id]/contacts/[contactId]/route.ts
 
 import { NextResponse } from "next/server";
+import { apiHandler } from "@/lib/utils/apiHandler";
+import {
+  updateWarehouseContact,
+  deleteWarehouseContact,
+} from "@/lib/services/warehouse.service";
+
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string; contactId: string }> }
+) {
+  return apiHandler(async () => {
+    const { id: warehouseId, contactId } = await params;
+    const body = await req.json();
+
+    const updated = await updateWarehouseContact(contactId, warehouseId, body);
+    return NextResponse.json(updated);
+  });
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string; contactId: string }> }
+) {
+  return apiHandler(async () => {
+    const { id: warehouseId, contactId } = await params;
+    await deleteWarehouseContact(contactId, warehouseId);
+    return NextResponse.json({ success: true });
+  });
+}
+
+/* import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { z } from "zod";
 import { apiHandler } from "@/lib/utils/apiHandler";
@@ -103,4 +134,4 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   });
-}
+} */

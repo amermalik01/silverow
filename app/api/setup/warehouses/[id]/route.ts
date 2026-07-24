@@ -1,6 +1,85 @@
 // app/api/setup/warehouses/[id]/route.ts
 
-import { authOptions } from "@/lib/auth";
+import { NextResponse } from "next/server";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
+import { apiHandler } from "@/lib/utils/apiHandler";
+import {
+  getWarehouseById,
+  updateWarehouse,
+  deleteWarehouse,
+} from "@/lib/services/warehouse.service";
+
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return apiHandler(async () => {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const { id } = await params;
+    const warehouse = await getWarehouseById(id, companyId);
+
+    if (!warehouse) {
+      return NextResponse.json({ error: "Warehouse not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(warehouse);
+  });
+}
+
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return apiHandler(async () => {
+    
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const { id } = await params;
+    const body = await req.json();
+
+    const updated = await updateWarehouse(id, companyId, body);
+    return NextResponse.json(updated);
+  });
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return apiHandler(async () => {
+    
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const { id } = await params;
+    await deleteWarehouse(id, companyId);
+
+    return NextResponse.json({ success: true });
+  });
+}
+
+/* import { authOptions } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -96,4 +175,4 @@ export async function DELETE(
   await pool.query(`DELETE FROM warehouses WHERE id=$1`, [id]);
 
   return NextResponse.json({ success: true });
-}
+} */

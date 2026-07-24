@@ -3,6 +3,222 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import FormEngine from "@/app/components/common/FormEngine";
+
+import GeneralTab from "./tabs/GeneralTab";
+import LocationsTab from "./tabs/LocationsTab";
+import ContactsTab from "./tabs/ContactsTab";
+
+import {
+  Warehouse,
+  WarehouseLocation,
+  WarehouseContact,
+} from "@/types/warehouse";
+
+type Props = {
+  id?: string;
+  isReadOnly?: boolean;
+};
+
+const initialWarehouseState: Partial<Warehouse> = {
+  name: "",
+  type: "DISTRIBUTION",
+  status: 1,
+  is_default: false,
+  country: "United Kingdom",
+  unit_of_measure: "Pcs",
+  cost_frequency: "Weekly",
+  e_dispatch_email: false,
+};
+
+export default function WarehouseRecord({ id, isReadOnly = false }: Props) {
+  const router = useRouter();
+  const params = useParams();
+  const slug = params?.slug as string;
+
+  const [warehouse, setWarehouse] = useState<Warehouse | null>(
+    id ? null : (initialWarehouseState as Warehouse),
+  );
+
+  const [locations, setLocations] = useState<WarehouseLocation[]>([]);
+  const [contacts, setContacts] = useState<WarehouseContact[]>([]);
+  // const [loading, setLoading] = useState(true);
+
+  const [loading, setLoading] = useState(Boolean(id));
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "success" | "error"
+  >("idle");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const load = async () => {
+      try {
+        const [warehouse_res, location_res, contact_res] = await Promise.all([
+          fetch(`/api/setup/warehouses/${id}`).then((r) => r.json()),
+          fetch(`/api/setup/warehouses/${id}/locations`).then((r) => r.json()),
+          fetch(`/api/setup/warehouses/${id}/contacts`).then((r) => r.json()),
+        ]);
+
+        setWarehouse(warehouse_res);
+        setLocations(Array.isArray(location_res) ? location_res : []);
+        setContacts(Array.isArray(contact_res) ? contact_res : []);
+      } catch (err) {
+        console.error("Error loading warehouse record:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id]);
+
+  const handleSave = async () => {
+    if (isReadOnly || !warehouse) return;
+    setSaving(true);
+    setSaveStatus("saving");
+
+    try {
+      const url = id ? `/api/setup/warehouses/${id}` : `/api/setup/warehouses`;
+      const method = id ? "PUT" : "POST";
+
+      const payload = id
+        ? { warehouse, locations, contacts }
+        : { ...warehouse, locations, contacts };
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Save failed");
+
+      setSaveStatus("success");
+
+      // Redirect after creation or show feedback after update
+      if (!id) {
+        const createdId = result.id || result.warehouse?.id;
+        if (createdId) {
+          router.push(`/${slug}/setup/inventory/warehouses/${createdId}/edit`);
+        } else {
+          router.push(`/${slug}/setup/inventory/warehouses`);
+        }
+        router.refresh();
+      } else {
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
+
+      setSaveStatus("success");
+      alert("Warehouse details saved successfully.");
+    } catch (err) {
+      console.error("Failed to save warehouse:", err);
+      setSaveStatus("error");
+    } finally {
+      setSaving(false);
+    }
+
+    /* try {
+      const res = await fetch(`/api/setup/warehouses/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          warehouse,
+          locations,
+          contacts,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Save failed");
+
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      alert("Warehouse details saved successfully.");
+    } catch (err) {
+      setSaveStatus("error");
+    } finally {
+      setSaving(false);
+    } */
+  };
+
+  const tabs = [
+    {
+      key: "general",
+      label: "General",
+      render: ({
+        record,
+        setRecord,
+      }: {
+        record: Warehouse;
+        setRecord: (val: Warehouse | ((prev: Warehouse) => Warehouse)) => void;
+      }) => (
+        <GeneralTab
+          warehouse={record}
+          setWarehouse={setRecord}
+          locations={locations}
+          isReadOnly={isReadOnly}
+        />
+      ),
+    },
+    {
+      key: "contacts",
+      label: "Other Contacts",
+      render: () => (
+        <ContactsTab
+          warehouseId={id || ""}
+          contacts={contacts}
+          setContacts={setContacts}
+          isReadOnly={isReadOnly}
+        />
+      ),
+    },
+    {
+      key: "locations",
+      label: "Storage Locations",
+      render: () => (
+        <LocationsTab
+          warehouseId={id || ""}
+          locations={locations}
+          setLocations={setLocations}
+          isReadOnly={isReadOnly}
+        />
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {saveStatus === "success" && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-md font-medium">
+          ✓ Warehouse records saved successfully
+        </div>
+      )}
+      {saveStatus === "error" && (
+        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-md font-medium">
+          ✕ Failed to save warehouse records. Please check input data.
+        </div>
+      )}
+
+      <FormEngine
+        record={warehouse}
+        setRecord={setWarehouse}
+        tabs={tabs}
+        onSave={isReadOnly ? undefined : handleSave}
+        loading={loading || saving}
+      />
+    </div>
+  );
+}
+// onSave={handleSave}
+// loading={loading || saveStatus === "saving"}
+
+/* 
+"use client";
+
+import { useEffect, useState } from "react";
 import FormEngine from "@/app/components/common/FormEngine";
 
 import GeneralTab from "./tabs/GeneralTab";
@@ -109,98 +325,4 @@ export default function WarehouseRecord({ id }: Props) {
       loading={loading}
     />
   );
-}
-
-/* "use client";
-
-import { useEffect, useState } from "react";
-import {
-  Warehouse,
-  WarehouseLocation,
-  WarehouseContact,
-} from "@/types/warehouse";
-
-import GeneralTab from "./tabs/GeneralTab";
-import LocationsTab from "./tabs/LocationsTab";
-import ContactsTab from "./tabs/ContactsTab";
-
-type Props = {
-  id: string;
-};
-
-export default function WarehouseRecord({ id }: Props) {
-  const [activeTab, setActiveTab] = useState("general");
-
-  const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
-  const [locations, setLocations] = useState<WarehouseLocation[]>([]);
-  const [contacts, setContacts] = useState<WarehouseContact[]>([]);
-
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      const res = await fetch(`/api/setup/warehouses/${id}`);
-      const data = await res.json();
-
-      setWarehouse(data);
-      setLoading(false);
-    };
-
-    const loadLocations = async () => {
-      const res = await fetch(`/api/setup/warehouses/${id}/locations`);
-      setLocations(await res.json());
-    };
-
-    const loadContacts = async () => {
-      const res = await fetch(`/api/setup/warehouses/${id}/contacts`);
-      setContacts(await res.json());
-    };
-
-    load();
-    loadLocations();
-    loadContacts();
-  }, [id]);
-
-  if (loading) return <p>Loading warehouse...</p>;
-  if (!warehouse) return <p>Warehouse not found</p>;
-
-  return (
-    <div className="space-y-6">
-
-      <div className="flex gap-4 border-b pb-2">
-        {["general", "locations", "contacts"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`capitalize px-3 py-1 ${
-              activeTab === tab ? "border-b-2 border-blue-600 font-bold" : ""
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "general" && (
-        <GeneralTab warehouse={warehouse} setWarehouse={setWarehouse} />
-      )}
-
-      {activeTab === "locations" && (
-        <LocationsTab
-          warehouseId={id}
-          locations={locations}
-          setLocations={setLocations}
-        />
-      )}
-
-      {activeTab === "contacts" && (
-        <ContactsTab
-          warehouseId={id}
-          contacts={contacts}
-          setContacts={setContacts}
-        />
-      )}
-    </div>
-  );
-}
- */
+} */
