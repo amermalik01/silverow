@@ -17,6 +17,7 @@ import SupplierLookupModal, {
 } from "../../shared/modals/SupplierLookupModal";
 
 import { DebitNotePayloadInput } from "@/lib/validations/debit-note.schema";
+import { OrderFormTabs } from "./OrderFormTabs";
 
 interface Currency {
   id: string;
@@ -62,12 +63,17 @@ export const DebitNoteForm: React.FC<Props> = ({
   const [note, setNote] = useState<Partial<DebitNote>>({
     debit_note_no: id ? "" : "[Auto-Generated]",
     supplier_id: "",
+    supplier_no: "",
     supplier_name: "",
     document_date: new Date().toISOString().split("T")[0],
     status: "draft",
     reference: "",
     notes: "",
   });
+
+  const [primaryAddress, setPrimaryAddress] = useState<
+    Partial<DebitNoteAddress>
+  >({ address_type: "primary" });
 
   const [billingAddress, setBillingAddress] = useState<
     Partial<DebitNoteAddress>
@@ -93,14 +99,17 @@ export const DebitNoteForm: React.FC<Props> = ({
     fetch(`/api/debit-notes/${id}`)
       .then((r) => r.json())
       .then((payload) => {
-
         if (payload && payload.success && payload.data) {
           const actualData = payload.data;
 
           console.log("API payload parsed successfully:", actualData);
 
           setNote(actualData.debitNote || actualData.note || {});
-          setLines(actualData.lines || []);
+          setLines(actualData.lines || []);          
+
+          setPrimaryAddress(
+            actualData.primary_address || { address_type: "primary" },
+          );
           setBillingAddress(
             actualData.billing_address || { address_type: "billing" },
           );
@@ -109,9 +118,13 @@ export const DebitNoteForm: React.FC<Props> = ({
           );
           setCurrencyConfig({
             currency_id:
-              actualData.debitNote?.currency_id || actualData.note?.currency_id || "",
+              actualData.debitNote?.currency_id ||
+              actualData.note?.currency_id ||
+              "",
             exchange_rate:
-              actualData.debitNote?.exchange_rate || actualData.note?.exchange_rate || 1,
+              actualData.debitNote?.exchange_rate ||
+              actualData.note?.exchange_rate ||
+              1,
           });
         }
       })
@@ -176,8 +189,10 @@ export const DebitNoteForm: React.FC<Props> = ({
     setNote((prev) => ({
       ...prev,
       supplier_id: supplier.id,
+      supplier_no: supplier.supplier_code,
       supplier_name: supplier.name,
     }));
+    if (supplier.primary_address) setPrimaryAddress(supplier.primary_address);
     if (supplier.billing_address) setBillingAddress(supplier.billing_address);
     if (supplier.shipping_address)
       setShippingAddress(supplier.shipping_address);
@@ -225,6 +240,7 @@ export const DebitNoteForm: React.FC<Props> = ({
           tax_amount: financials.vat,
           total_amount: financials.amountInclVat,
         },
+        primary_address: primaryAddress,
         billing_address: billingAddress,
         shipping_address: shippingAddress,
         lines,
@@ -297,6 +313,15 @@ export const DebitNoteForm: React.FC<Props> = ({
             subtotal: financials.amount,
             tax_amount: financials.vat,
             total_amount: financials.amountInclVat,
+          },
+          primary_address: {
+            address_type: "primary",
+            address_1: primaryAddress.address_1 || "",
+            address_2: primaryAddress.address_2 || "",
+            city: primaryAddress.city || "",
+            county: primaryAddress.county || "",
+            postcode: primaryAddress.postcode || "",
+            country: primaryAddress.country || "",
           },
           billing_address: {
             address_type: "billing",
@@ -411,7 +436,126 @@ export const DebitNoteForm: React.FC<Props> = ({
         ))}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm">
+      <OrderFormTabs
+        activeTab={activeTab}
+        note={note}
+        primaryAddress={primaryAddress}
+        setPrimaryAddress={setPrimaryAddress}
+        billingAddress={billingAddress}
+        setBillingAddress={setBillingAddress}
+        shippingAddress={shippingAddress}
+        setShippingAddress={setShippingAddress}
+        currencyConfig={currencyConfig}
+        setCurrencyConfig={setCurrencyConfig}
+        currencies={currencies}
+        updateField={updateField}
+        setSupplierModalOpen={setSupplierModalOpen}
+        labelStyle={labelStyle}
+        inputStyle={inputStyle}
+      />
+
+      <DebitNoteLines
+        lines={lines}
+        setLines={setLines}
+        isReadonly={isReadOnly}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end bg-slate-50 dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <span className="text-xs font-bold text-slate-500">
+              Conversion RateFactor
+            </span>
+            <input
+              type="number"
+              step="any"
+              className={`${inputStyle} font-mono max-w-[180px]`}
+              value={currencyConfig.exchange_rate ?? ""}
+              onChange={(e) =>
+                setCurrencyConfig({
+                  ...currencyConfig,
+                  exchange_rate: parseFloat(e.target.value) || 1,
+                })
+              }
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <span className="text-xs font-bold text-slate-500">
+              Amount Incl. VAT ({baseCurrencyCode})
+            </span>
+            <div className="p-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[180px] rounded">
+              {financials.amountInclVatLCY.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-1 text-xs font-medium text-right font-mono ml-auto w-full max-w-sm">
+          <div className="flex justify-between border-b dark:border-slate-800 pb-1">
+            <span className="text-slate-400 font-sans">
+              Gross Adjusted Net:
+            </span>
+            <span>
+              {financials.amount.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}{" "}
+              {selectedCurrency?.code || ""}
+            </span>
+          </div>
+          <div className="flex justify-between border-b dark:border-slate-800 pb-1">
+            <span className="text-slate-400 font-sans">
+              VAT Reversed Re-Assessment:
+            </span>
+            <span>
+              {financials.vat.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}{" "}
+              {selectedCurrency?.code || ""}
+            </span>
+          </div>
+          <div className="flex justify-between text-base font-bold pt-1 text-slate-900 dark:text-white">
+            <span className="font-sans">Total Balanced Credit Claim:</span>
+            <span>
+              {financials.amountInclVat.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}{" "}
+              {selectedCurrency?.code || ""}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {!isReadOnly && (
+        <div className="flex justify-end gap-2 pt-4">
+          <button
+            type="button"
+            onClick={() => router.push(`/${slug}/purchases/debit-notes`)}
+            className="px-4 py-2 text-xs border border-slate-300 dark:border-slate-700 font-bold uppercase rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 text-xs bg-emerald-600 text-white font-bold uppercase rounded shadow hover:bg-emerald-700 disabled:opacity-40"
+          >
+            {saving ? "Writing records..." : "Save Debit Note"}
+          </button>
+        </div>
+      )}
+      <SupplierLookupModal
+        open={supplierModalOpen}
+        onClose={() => setSupplierModalOpen(false)}
+        onSelect={handleSupplierSelect}
+      />
+    </div>
+  );
+};
+/* 
+<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm">
         {activeTab === "general" && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -626,104 +770,4 @@ export const DebitNoteForm: React.FC<Props> = ({
           </div>
         )}
       </div>
-
-      <DebitNoteLines
-        lines={lines}
-        setLines={setLines}
-        isReadonly={isReadOnly}
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end bg-slate-50 dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-        <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <span className="text-xs font-bold text-slate-500">
-              Conversion RateFactor
-            </span>
-            <input
-              type="number"
-              step="any"
-              className={`${inputStyle} font-mono max-w-[180px]`}
-              value={currencyConfig.exchange_rate ?? ""}
-              onChange={(e) =>
-                setCurrencyConfig({
-                  ...currencyConfig,
-                  exchange_rate: parseFloat(e.target.value) || 1,
-                })
-              }
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <span className="text-xs font-bold text-slate-500">
-              Amount Incl. VAT ({baseCurrencyCode})
-            </span>
-            <div className="p-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[180px] rounded">
-              {financials.amountInclVatLCY.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-1 text-xs font-medium text-right font-mono ml-auto w-full max-w-sm">
-          <div className="flex justify-between border-b dark:border-slate-800 pb-1">
-            <span className="text-slate-400 font-sans">
-              Gross Adjusted Net:
-            </span>
-            <span>
-              {financials.amount.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}{" "}
-              {selectedCurrency?.code || ""}
-            </span>
-          </div>
-          <div className="flex justify-between border-b dark:border-slate-800 pb-1">
-            <span className="text-slate-400 font-sans">
-              VAT Reversed Re-Assessment:
-            </span>
-            <span>
-              {financials.vat.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}{" "}
-              {selectedCurrency?.code || ""}
-            </span>
-          </div>
-          <div className="flex justify-between text-base font-bold pt-1 text-slate-900 dark:text-white">
-            <span className="font-sans">Total Balanced Credit Claim:</span>
-            <span>
-              {financials.amountInclVat.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}{" "}
-              {selectedCurrency?.code || ""}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {!isReadOnly && (
-        <div className="flex justify-end gap-2 pt-4">
-          <button
-            type="button"
-            onClick={() => router.push(`/${slug}/purchases/debit-notes`)}
-            className="px-4 py-2 text-xs border border-slate-300 dark:border-slate-700 font-bold uppercase rounded hover:bg-slate-50 dark:hover:bg-slate-800"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 text-xs bg-emerald-600 text-white font-bold uppercase rounded shadow hover:bg-emerald-700 disabled:opacity-40"
-          >
-            {saving ? "Writing records..." : "Save Debit Note"}
-          </button>
-        </div>
-      )}
-      <SupplierLookupModal
-        open={supplierModalOpen}
-        onClose={() => setSupplierModalOpen(false)}
-        onSelect={handleSupplierSelect}
-      />
-    </div>
-  );
-};
+ */
