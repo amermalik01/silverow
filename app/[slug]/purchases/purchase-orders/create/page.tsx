@@ -11,7 +11,7 @@ export default async function CreatePurchaseOrderPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Create Purchase Order</h1>
+      <h1 className="text-2xl font-bold  px-4">Create Purchase Order</h1>
 
       <PurchaseOrderForm slug={slug} />
     </div>

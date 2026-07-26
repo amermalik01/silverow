@@ -1,44 +1,21 @@
 // app/api/lookups/items/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-
 import { pool } from "@/lib/db";
-
-import { getServerSession } from "next-auth";
-
-import { authOptions } from "@/lib/auth";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.company_id) {
-    return NextResponse.json(
-      {
-        error: "Unauthorized",
-      },
-      {
-        status: 401,
-      },
-    );
-  }
-
-  const companyId = session.user.company_id;
+  const companyId = await getCompanyId();
+  if (!companyId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-
-  /**
-   * PAGINATION
-   */
 
   const page = Number(searchParams.get("page") || 1);
 
   const limit = Number(searchParams.get("limit") || 20);
 
   const offset = (page - 1) * limit;
-
-  /**
-   * FILTERS
-   */
 
   const search = searchParams.get("search") || "";
 
@@ -58,10 +35,6 @@ export async function GET(req: NextRequest) {
     AND i.status = 1
   `;
 
-  /**
-   * SEARCH
-   */
-
   if (search) {
     values.push(`%${search}%`);
 
@@ -74,10 +47,6 @@ export async function GET(req: NextRequest) {
     `;
   }
 
-  /**
-   * ITEM CODE
-   */
-
   if (item_code) {
     values.push(`%${item_code}%`);
 
@@ -85,10 +54,6 @@ export async function GET(req: NextRequest) {
       AND i.item_code ILIKE $${values.length}
     `;
   }
-
-  /**
-   * BARCODE
-   */
 
   if (barcode) {
     values.push(`%${barcode}%`);
@@ -98,10 +63,6 @@ export async function GET(req: NextRequest) {
     `;
   }
 
-  /**
-   * NAME
-   */
-
   if (name) {
     values.push(`%${name}%`);
 
@@ -109,10 +70,6 @@ export async function GET(req: NextRequest) {
       AND i.name ILIKE $${values.length}
     `;
   }
-
-  /**
-   * ITEM TYPE
-   */
 
   if (item_type) {
     values.push(Number(item_type));
@@ -123,10 +80,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    /**
-     * COUNT
-     */
-
     const countQuery = `
       SELECT COUNT(*)::int AS total
       FROM items i
@@ -136,10 +89,6 @@ export async function GET(req: NextRequest) {
     const countResult = await pool.query(countQuery, values);
 
     const total = countResult.rows[0].total;
-
-    /**
-     * DATA
-     */
 
     values.push(limit);
 

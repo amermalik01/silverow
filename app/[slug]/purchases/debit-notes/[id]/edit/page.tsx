@@ -13,7 +13,7 @@ export default async function EditDebitNotePage({
   const { slug, id } = await params;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4">
       <h1 className="text-2xl font-bold">Edit Debit Note</h1>
       <DebitNoteForm slug={slug} id={id} />
     </div>

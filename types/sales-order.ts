@@ -9,6 +9,7 @@ export type SalesOrder = {
   company_id?: string;
   order_no?: string;
   customer_id: string;
+  customer_no: string;
   customer_name?: string;
   reference?: string;
   order_date: string;
@@ -38,7 +39,7 @@ export type SalesOrder = {
   sales_quote_id?: string;
 };
 
-export type SalesOrderAddressType = "billing" | "shipping";
+export type SalesOrderAddressType = "primary" | "billing" | "shipping";
 export interface SalesOrderAddress {
   id?: string;
   purchase_order_id?: string;
@@ -57,14 +58,29 @@ export interface SalesOrderAddress {
 
 export type SalesOrderPayload = {
   order: SalesOrder;
+  primary_address?: SalesOrderAddress;
   billing_address?: SalesOrderAddress;
   shipping_address?: SalesOrderAddress;
   lines: SalesOrderLine[];
 };
 
-export interface SalesOrderLineUI extends SalesOrderLine {
+// export interface SalesOrderLineUI extends SalesOrderLine {
+//   item_code?: string;
+//   account_code?: string;
+//   account_name?: string;
+//   available_stock?: number;
+// }
+
+
+export type SalesOrderLineUI = SalesOrderLine & {
   item_code?: string;
+  item_name?: string;
   account_code?: string;
   account_name?: string;
+  warehouse_code?: string;
+  warehouse_name?: string;
+  uom_name?: string;
+  line_total?: number;
+  gl_account_id?: string;
   available_stock?: number;
-}
+};

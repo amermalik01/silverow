@@ -14,7 +14,7 @@ export default async function ViewPurchaseOrderPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">View Purchase Order</h1>
+      <h1 className="text-2xl font-bold  px-4">View Purchase Order</h1>
 
       <PurchaseOrderForm slug={slug} id={id} isReadOnly />
     </div>

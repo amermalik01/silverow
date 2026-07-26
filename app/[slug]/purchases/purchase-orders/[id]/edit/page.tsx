@@ -14,7 +14,7 @@ export default async function EditPurchaseOrderPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Edit Purchase Order</h1>
+      <h1 className="text-2xl font-bold  px-4">Edit Purchase Order</h1>
 
       <PurchaseOrderForm slug={slug} id={id} />
     </div>

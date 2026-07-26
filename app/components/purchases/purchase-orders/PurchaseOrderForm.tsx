@@ -220,9 +220,50 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     if (lines.length === 0)
       errors.push("Purchase orders require at least one line item.");
 
+    
+  errors.push(...validateDates());
+
     setValidationErrors(errors);
     return errors.length === 0;
   };
+
+  const validateDates = (): string[] => {
+  const errors: string[] = [];
+
+  const orderDate = order.order_date
+    ? new Date(order.order_date).getTime()
+    : null;
+
+  const invoiceDate = order.invoice_date
+    ? new Date(order.invoice_date).getTime()
+    : null;
+
+  const reqReceiptDate = order.req_receipt_date
+    ? new Date(order.req_receipt_date).getTime()
+    : null;
+
+  const receiptDate = order.receipt_date
+    ? new Date(order.receipt_date).getTime()
+    : null;
+
+  if (orderDate && invoiceDate && orderDate > invoiceDate) {
+    errors.push("Order Date cannot be after Invoice Date.");
+  }
+
+  if (orderDate && reqReceiptDate && orderDate > reqReceiptDate) {
+    errors.push("Order Date cannot be after Required Receipt Date.");
+  }
+
+  if (orderDate && receiptDate && orderDate > receiptDate) {
+    errors.push("Order Date cannot be after Receipt Date.");
+  }
+
+  if (reqReceiptDate && receiptDate && reqReceiptDate > receiptDate) {
+    errors.push("Receipt Date cannot be before Required Receipt Date.");
+  }
+
+  return errors;
+};
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -444,54 +485,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   };
 
   const inputStyle =
-    "w-full border border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
-  const labelStyle = "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5";
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+  const labelStyle =
+    "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
 
   return (
     <div className="space-y-4 w-full max-w-[100vw] px-4 py-2 mx-auto overflow-x-auto">
-      {isUpdateMode && !isLoadingStages && stages.length > 0 && (
-        <div className="w-full overflow-x-auto pb-2 focus:outline-none">
-          <div
-            className={`flex items-center min-w-max gap-1 text-xs font-bold text-slate-400 select-none ${
-              isUpdatingStatus ? "opacity-60 pointer-events-none" : ""
-            }`}
-          >
-            {stages.map((stage, index) => {
-              const isFirst = index === 0;
-              const isLast = index === stages.length - 1;
-              const isActive =
-                order.status?.toLowerCase() === stage.name.toLowerCase();
-
-              let activeBg = "bg-blue-600 text-white";
-              if (index === 1) activeBg = "bg-amber-500 text-white";
-              if (index === 2) activeBg = "bg-indigo-600 text-white";
-              if (index >= 3) activeBg = "bg-emerald-600 text-white";
-
-              return (
-                <button
-                  type="button"
-                  key={stage.id}
-                  onClick={() => handleStageClick(stage.name)}
-                  className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95
-                ${isFirst ? "rounded-l-md" : ""} 
-                ${isLast ? "rounded-r-md" : ""} 
-                ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
-                >
-                  {stage.name}
-                  {!isLast && (
-                    <Icon
-                      icon="tabler:chevron-right"
-                      className="w-3 h-3 text-slate-400"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Validation Banner UI Display Component */}
       {validationErrors.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
           {validationErrors.map((err, idx) => (
@@ -506,22 +505,65 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         </div>
       )}
 
-      {/* <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2"> */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 overflow-x-auto w-full no-scrollbar">
-        {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${
-              activeTab === tab
-                ? "border-emerald-600 text-emerald-600"
-                : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar">
+          {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition whitespace-nowrap ${
+                activeTab === tab
+                  ? "border-emerald-600 text-emerald-600"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {isUpdateMode && !isLoadingStages && stages.length > 0 && (
+          <div className="flex justify-end ml-auto overflow-x-auto">
+            <div
+              className={`flex items-center min-w-max gap-1 text-xs font-bold text-slate-400 select-none ${
+                isUpdatingStatus ? "opacity-60 pointer-events-none" : ""
+              }`}
+            >
+              {stages.map((stage, index) => {
+                const isFirst = index === 0;
+                const isLast = index === stages.length - 1;
+                const isActive =
+                  order.status?.toLowerCase() === stage.name.toLowerCase();
+
+                let activeBg = "bg-blue-600 text-white";
+                if (index === 1) activeBg = "bg-amber-500 text-white";
+                if (index === 2) activeBg = "bg-indigo-600 text-white";
+                if (index >= 3) activeBg = "bg-emerald-600 text-white";
+
+                return (
+                  <button
+                    type="button"
+                    key={stage.id}
+                    onClick={() => handleStageClick(stage.name)}
+                    className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95
+                    ${isFirst ? "rounded-l-md" : ""} 
+                    ${isLast ? "rounded-r-md" : ""} 
+                    ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
+                  >
+                    {stage.name}
+                    {!isLast && (
+                      <Icon
+                        icon="tabler:chevron-right"
+                        className="w-3 h-3 text-slate-400"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <OrderFormTabs

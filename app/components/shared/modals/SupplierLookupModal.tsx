@@ -2,7 +2,16 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import {
+  Search,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  X,
+} from "lucide-react";
 
 export type SupplierLookupItem = {
   id: string;
@@ -42,20 +51,24 @@ export type SupplierAddress = {
 
 type Props = {
   open: boolean;
-
   onClose: () => void;
-
   onSelect: (supplier: SupplierLookupItem) => void;
+  onSelectMultiple?: (suppliers: SupplierLookupItem[]) => void;
+  multiple?: boolean;
 };
 
 export default function SupplierLookupModal({
   open,
   onClose,
   onSelect,
+  onSelectMultiple,
+  multiple = false,
 }: Props) {
   const [loading, setLoading] = useState(false);
-
   const [suppliers, setSuppliers] = useState<SupplierLookupItem[]>([]);
+  const [selectedSuppliers, setSelectedSuppliers] = useState<
+    SupplierLookupItem[]
+  >([]);
 
   const [filters, setFilters] = useState({
     supplier_code: "",
@@ -65,64 +78,406 @@ export default function SupplierLookupModal({
     email: "",
   });
 
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+
+  const fetchSuppliers = useCallback(
+    async (targetPage = 1, currentLimit = pagination.limit) => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+
+        if (filters.supplier_code)
+          params.append("supplier_code", filters.supplier_code);
+        if (filters.name) params.append("name", filters.name);
+        if (filters.city) params.append("city", filters.city);
+        if (filters.postcode) params.append("postcode", filters.postcode);
+        if (filters.email) params.append("email", filters.email);
+
+        params.append("page", targetPage.toString());
+        params.append("limit", currentLimit.toString());
+
+        const res = await fetch(
+          `/api/purchase-orders/suppliers?${params.toString()}`,
+        );
+        if (!res.ok) throw new Error("Failed to load suppliers");
+
+        const json = await res.json();
+        setSuppliers(json.data || []);
+        if (json.pagination) {
+          setPagination(json.pagination);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filters, pagination.limit],
+  );
+
   useEffect(() => {
     if (open) {
-      fetchSuppliers();
+      fetchSuppliers(1);
+      setSelectedSuppliers([]);
     }
   }, [open]);
 
-  const fetchSuppliers = async () => {
-    try {
-      setLoading(true);
+  const handleSearch = () => {
+    fetchSuppliers(1);
+  };
 
-      const params = new URLSearchParams();
+  const handleReset = () => {
+    setFilters({
+      supplier_code: "",
+      name: "",
+      city: "",
+      postcode: "",
+      email: "",
+    });
+    setSuppliers([]);
+    setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 });
+  };
 
-      if (filters.supplier_code) {
-        params.append("supplier_code", filters.supplier_code);
-      }
-
-      if (filters.name) {
-        params.append("name", filters.name);
-      }
-
-      if (filters.city) {
-        params.append("city", filters.city);
-      }
-
-      if (filters.postcode) {
-        params.append("postcode", filters.postcode);
-      }
-
-      if (filters.email) {
-        params.append("email", filters.email);
-      }
-
-      const res = await fetch(
-        `/api/purchase-orders/suppliers?${params.toString()}`,
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to load suppliers");
-      }
-
-      const json = await res.json();
-
-      setSuppliers(json.data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchSuppliers(newPage);
     }
   };
 
-  if (!open) {
-    return null;
-  }
+  const handleLimitChange = (newLimit: number) => {
+    setPagination((prev) => ({ ...prev, limit: newLimit }));
+    fetchSuppliers(1, newLimit);
+  };
 
+  const handleToggleRow = (supplier: SupplierLookupItem) => {
+    if (selectedSuppliers.some((item) => item.id === supplier.id)) {
+      setSelectedSuppliers((prev) =>
+        prev.filter((item) => item.id !== supplier.id),
+      );
+    } else {
+      setSelectedSuppliers((prev) => [...prev, supplier]);
+    }
+  };
+
+  const handleSelectAllOnPage = () => {
+    const allSelected = suppliers.every((s) =>
+      selectedSuppliers.some((r) => r.id === s.id),
+    );
+    if (allSelected) {
+      setSelectedSuppliers((prev) =>
+        prev.filter((r) => !suppliers.some((s) => s.id === r.id)),
+      );
+    } else {
+      setSelectedSuppliers((prev) => {
+        const uniqueNew = suppliers.filter(
+          (s) => !prev.some((r) => r.id === s.id),
+        );
+        return [...prev, ...uniqueNew];
+      });
+    }
+  };
+
+  const handleSubmitBatch = () => {
+    if (onSelectMultiple) {
+      onSelectMultiple(selectedSuppliers);
+    }
+    onClose();
+  };
+
+  if (!open) return null;
   return (
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="bg-white text-slate-800 rounded-xl shadow-2xl w-full max-w-6xl flex flex-col max-h-[85vh] border border-slate-200 overflow-hidden">
+        {/* Header */}
+        <div className="flex justify-between items-center px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <h2 className="text-base font-bold text-slate-900">
+            Select Supplier Target
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 transition p-1 rounded-md hover:bg-slate-200/50"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="p-4 bg-slate-50/50 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-5 gap-2">
+          <input
+            placeholder="Supplier Code"
+            value={filters.supplier_code}
+            onChange={(e) =>
+              setFilters({ ...filters, supplier_code: e.target.value })
+            }
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            className="border border-slate-200 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+          />
+          <input
+            placeholder="Supplier Name"
+            value={filters.name}
+            onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            className="border border-slate-200 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+          />
+          <input
+            placeholder="City"
+            value={filters.city}
+            onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            className="border border-slate-200 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+          />
+          <input
+            placeholder="Postcode"
+            value={filters.postcode}
+            onChange={(e) =>
+              setFilters({ ...filters, postcode: e.target.value })
+            }
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            className="border border-slate-200 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+          />
+          <input
+            placeholder="Email"
+            value={filters.email}
+            onChange={(e) => setFilters({ ...filters, email: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            className="border border-slate-200 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+          />
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex justify-end gap-2 px-4 py-2 bg-slate-100/60 border-b border-slate-200">
+          <button
+            onClick={handleSearch}
+            className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-4 py-1.5 rounded flex items-center gap-1 shadow-sm transition"
+          >
+            <Search className="h-3 w-3" /> Search
+          </button>
+          <button
+            onClick={handleReset}
+            className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1 transition"
+          >
+            <RotateCcw className="h-3 w-3" /> Reset
+          </button>
+        </div>
+
+        {/* Table View */}
+        <div className="flex-1 overflow-auto px-2">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead className="bg-slate-50 text-slate-600 font-bold sticky top-0 border-b border-slate-200 z-10">
+              <tr>
+                {multiple && (
+                  <th className="p-3 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      checked={
+                        suppliers.length > 0 &&
+                        suppliers.every((s) =>
+                          selectedSuppliers.some((r) => r.id === s.id),
+                        )
+                      }
+                      onChange={handleSelectAllOnPage}
+                      className="rounded border-slate-300 text-emerald-600 h-3.5 w-3.5 cursor-pointer"
+                    />
+                  </th>
+                )}
+                <th className="p-3 w-28">Code</th>
+                <th className="p-3">Supplier Name</th>
+                <th className="p-3 w-44">Email</th>
+                <th className="p-3 w-32">Phone</th>
+                <th className="p-3 w-28">City</th>
+                <th className="p-3 w-24">Postcode</th>
+                <th className="p-3 w-28">Country</th>
+                {!multiple && <th className="p-3 text-center w-24">Action</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-mono text-[11px] text-slate-700">
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={multiple ? 9 : 8}
+                    className="p-10 text-center font-sans font-normal text-slate-400 italic"
+                  >
+                    Retrieving supplier registries...
+                  </td>
+                </tr>
+              ) : suppliers.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={multiple ? 9 : 8}
+                    className="p-10 text-center font-sans font-normal text-slate-400 italic"
+                  >
+                    No active suppliers match defined filter constraints.
+                  </td>
+                </tr>
+              ) : (
+                suppliers.map((supplier) => {
+                  const isChecked = selectedSuppliers.some(
+                    (item) => item.id === supplier.id,
+                  );
+                  return (
+                    <tr
+                      key={supplier.id}
+                      onClick={() => multiple && handleToggleRow(supplier)}
+                      className={`hover:bg-slate-50 transition cursor-pointer ${
+                        isChecked ? "bg-emerald-50/50" : ""
+                      }`}
+                    >
+                      {multiple && (
+                        <td
+                          className="p-3 text-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleRow(supplier)}
+                            className="rounded border-slate-300 text-emerald-600 h-3.5 w-3.5 cursor-pointer"
+                          />
+                        </td>
+                      )}
+                      <td className="p-3 font-bold text-slate-900 tracking-tight">
+                        {supplier.supplier_code || "—"}
+                      </td>
+                      <td className="p-3 font-sans font-medium text-slate-800">
+                        {supplier.name}
+                      </td>
+                      <td className="p-3 truncate max-w-[170px] font-sans font-normal">
+                        {supplier.email || "—"}
+                      </td>
+                      <td className="p-3">{supplier.phone || "—"}</td>
+                      <td className="p-3 font-sans font-normal">
+                        {supplier.city || "—"}
+                      </td>
+                      <td className="p-3">{supplier.postcode || "—"}</td>
+                      <td className="p-3 font-sans font-normal">
+                        {supplier.country || "—"}
+                      </td>
+                      {!multiple && (
+                        <td
+                          className="p-3 text-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => {
+                              onSelect(supplier);
+                              onClose();
+                            }}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[10px] font-bold rounded shadow-sm transition"
+                          >
+                            Select
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer Bar & Pagination */}
+        <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          {multiple ? (
+            <div className="text-[11px] font-sans font-medium text-slate-500">
+              <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded mr-1.5">
+                {selectedSuppliers.length} selected
+              </span>
+              across target report payload array profiles
+            </div>
+          ) : (
+            <div className="text-slate-500 font-medium text-[11px]">
+              Showing{" "}
+              {suppliers.length > 0
+                ? (pagination.page - 1) * pagination.limit + 1
+                : 0}{" "}
+              to{" "}
+              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+              of{" "}
+              <span className="font-bold text-slate-800">
+                {pagination.total}
+              </span>{" "}
+              entries
+            </div>
+          )}
+
+          <div className="flex items-center gap-4">
+            {/* Limit Selector */}
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+              <span>Show</span>
+              <select
+                value={pagination.limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="border border-slate-200 rounded px-1.5 py-0.5 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-700"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => handlePageChange(1)}
+                disabled={pagination.page <= 1 || loading}
+                className="p-1 border border-slate-200 rounded bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              >
+                <ChevronsLeft className="h-3.5 w-3.5 text-slate-600" />
+              </button>
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page <= 1 || loading}
+                className="p-1 border border-slate-200 rounded bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 text-slate-600" />
+              </button>
+              <span className="px-2 text-[11px] font-bold text-slate-700">
+                {pagination.page} / {pagination.totalPages || 1}
+              </span>
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages || loading}
+                className="p-1 border border-slate-200 rounded bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight className="h-3.5 w-3.5 text-slate-600" />
+              </button>
+              <button
+                onClick={() => handlePageChange(pagination.totalPages)}
+                disabled={pagination.page >= pagination.totalPages || loading}
+                className="p-1 border border-slate-200 rounded bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              >
+                <ChevronsRight className="h-3.5 w-3.5 text-slate-600" />
+              </button>
+            </div>
+
+            {multiple && (
+              <div className="flex gap-2 ml-2">
+                <button
+                  onClick={handleSubmitBatch}
+                  disabled={selectedSuppliers.length === 0}
+                  className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-1.5 rounded shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  Add Selection
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center overflow-auto p-6">
       <div className="bg-white text-black rounded-xl shadow-xl w-full max-w-7xl px-4">
-        {/* HEADER */}
+   
 
         <div className="flex justify-between items-center border-b p-4">
           <h2 className="text-xl font-semibold text-black">Select Supplier</h2>
@@ -135,7 +490,7 @@ export default function SupplierLookupModal({
           </button>
         </div>
 
-        {/* FILTERS */}
+     
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 border-b">
           <input
@@ -199,7 +554,7 @@ export default function SupplierLookupModal({
           />
         </div>
 
-        {/* ACTIONS */}
+   
 
         <div className="flex justify-end gap-2 p-4 border-b">
           <button
@@ -225,7 +580,7 @@ export default function SupplierLookupModal({
           </button>
         </div>
 
-        {/* TABLE */}
+    
 
         <div className="overflow-auto max-h-[600px] px-2 pb-10">
           <table className="w-full text-xs border-collapse">
@@ -301,5 +656,5 @@ export default function SupplierLookupModal({
         </div>
       </div>
     </div>
-  );
-}
+  ); */
+// }
