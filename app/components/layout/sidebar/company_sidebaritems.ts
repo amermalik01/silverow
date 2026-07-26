@@ -506,6 +506,26 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 name: "Credit Note Stages",
                 url: `/${slug}/setup/sales/credit_note_stages`,
               },
+              {
+                id: "price_offer_method",
+                name: "Price Offer Method",
+                url: `/${slug}/setup/sales/price_offer_method`,
+              },
+              {
+                id: "payment_terms",
+                name: "Payment Terms",
+                url: `/${slug}/setup/sales/payment_terms`,
+              },
+              {
+                id: "payment_method",
+                name: "Payment Method",
+                url: `/${slug}/setup/sales/payment_method`,
+              },
+              {
+                id: "shipment_method",
+                name: "Shipment Method",
+                url: `/${slug}/setup/sales/shipment_method`,
+              },
             ],
           },
           {
@@ -541,6 +561,26 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 id: "debit_note_stages",
                 name: "Debit Note Stages",
                 url: `/${slug}/setup/purchases/debit_note_stages`,
+              },
+              {
+                id: "price_offer_method",
+                name: "Price Offer Method",
+                url: `/${slug}/setup/purchases/price_offer_method`,
+              },
+              {
+                id: "payment_terms",
+                name: "Payment Terms",
+                url: `/${slug}/setup/purchases/payment_terms`,
+              },
+              {
+                id: "payment_method",
+                name: "Payment Method",
+                url: `/${slug}/setup/purchases/payment_method`,
+              },
+              {
+                id: "shipment_method",
+                name: "Shipment Method",
+                url: `/${slug}/setup/purchases/shipment_method`,
               },
             ],
           },

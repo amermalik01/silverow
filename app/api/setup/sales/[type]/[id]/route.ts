@@ -33,10 +33,15 @@ export async function PUT(
       return NextResponse.json(result.rows[0]);
     }
 
-    // --- FALLBACK PRE-EXISTING LOGIC ---
-    const table_name = ["segments", "territories", "classification"].includes(
-      type,
-    )
+    const table_name = [
+      "segments",
+      "territories",
+      "classification",
+      "price_offer_method",
+      "payment_terms",
+      "payment_method",
+      "shipment_method",
+    ].includes(type)
       ? type
       : [
             "credit_ratings",
@@ -147,9 +152,15 @@ export async function DELETE(
       return NextResponse.json({ success: true });
     }
 
-    const table_name = ["segments", "territories", "classification"].includes(
-      type,
-    )
+    const table_name = [
+      "segments",
+      "territories",
+      "classification",
+      "price_offer_method",
+      "payment_terms",
+      "payment_method",
+      "shipment_method",
+    ].includes(type)
       ? type
       : [
             "credit_ratings",

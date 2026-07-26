@@ -23,32 +23,6 @@ export type SetupConfig = {
 };
 
 export const setupConfig = {
-  salesSegments: {
-    title: "Sales Segments",
-    api: "/api/setup/sales/segments?module=sales",
-    fields: [
-      {
-        name: "name",
-        label: "Name",
-        required: true,
-      },
-      {
-        name: "module",
-        type: "hidden",
-      },
-    ],
-    columns: [
-      {
-        name: "name",
-        label: "Name",
-        sortable: true,
-      },
-    ],
-    defaultValues: {
-      module: "sales",
-    },
-  } satisfies SetupConfig,
-
   purchasesSegments: {
     title: "Purchase Segments",
     api: "/api/setup/sales/segments?module=purchases",
@@ -98,6 +72,178 @@ export const setupConfig = {
     ],
     defaultValues: {
       module: "purchases",
+    },
+  } satisfies SetupConfig,
+
+  purchasesSellingGroups: {
+    title: "Purchase Selling Groups",
+    api: "/api/setup/sales/selling_groups",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+  } satisfies SetupConfig,
+
+  purchasesPriceOfferMethod: {
+    title: "Price Offer Method",
+    api: "/api/setup/sales/price_offer_method?module=purchases",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+    defaultValues: {
+      module: "purchases",
+    },
+  } satisfies SetupConfig,
+
+  purchasesPaymentTerms: {
+    title: "Payment Terms",
+    api: "/api/setup/sales/payment_terms?module=purchases",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+      {
+        name: "days",
+        label: "Days",
+        required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+    defaultValues: {
+      module: "purchases",
+    },
+  } satisfies SetupConfig,
+
+  purchasesPaymentMethod: {
+    title: "Payment Method",
+    api: "/api/setup/sales/payment_method?module=purchases",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+    defaultValues: {
+      module: "purchases",
+    },
+  } satisfies SetupConfig,
+
+  purchasesShipmentMethod: {
+    title: "Shipment Method",
+    api: "/api/setup/sales/shipment_method?module=purchases",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+    defaultValues: {
+      module: "purchases",
+    },
+  } satisfies SetupConfig,
+
+  purchaseOrderStages: {
+    title: "Purchase Order Stages",
+    api: "/api/setup/sales/purchase_order_stages",
+    fields: [
+      { name: "name", label: "Stage Name", required: true, type: "text" },
+    ],
+    columns: [{ name: "name", label: "Stage Name", sortable: false }],
+  } satisfies SetupConfig,
+
+  debitNoteStages: {
+    title: "Debit Note Stages",
+    api: "/api/setup/sales/debit_note_stages",
+    fields: [
+      { name: "name", label: "Stage Name", required: true, type: "text" },
+    ],
+    columns: [{ name: "name", label: "Stage Name", sortable: false }],
+  } satisfies SetupConfig,
+
+  salesSegments: {
+    title: "Sales Segments",
+    api: "/api/setup/sales/segments?module=sales",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+    defaultValues: {
+      module: "sales",
     },
   } satisfies SetupConfig,
 
@@ -190,8 +336,6 @@ export const setupConfig = {
       },
     ],
   } satisfies SetupConfig,
-
-  
 
   salesOwnershipType: {
     title: "Ownership Type",
@@ -306,46 +450,19 @@ export const setupConfig = {
       },
     ],
   } satisfies SetupConfig,
-  
 
-  salesOrderStages: {
-    title: "Sales Order Stages",
-    api: "/api/setup/sales/order_stages",
-    fields: [{ name: "name", label: "Stage Name", required: true, type: "text" }],
-    columns: [{ name: "name", label: "Stage Name", sortable: false }],
-  } satisfies SetupConfig,
-
-  creditNoteStages: {
-    title: "Credit Note Stages",
-    api: "/api/setup/sales/credit_note_stages",
-    fields: [{ name: "name", label: "Stage Name", required: true, type: "text" }],
-    columns: [{ name: "name", label: "Stage Name", sortable: false }],
-  } satisfies SetupConfig,
-
-  purchaseOrderStages: {
-    title: "Purchase Order Stages",
-    api: "/api/setup/sales/purchase_order_stages",
-    fields: [{ name: "name", label: "Stage Name", required: true, type: "text" }],
-    columns: [{ name: "name", label: "Stage Name", sortable: false }],
-  } satisfies SetupConfig,
-
-  debitNoteStages: {
-    title: "Debit Note Stages",
-    api: "/api/setup/sales/debit_note_stages",
-    fields: [{ name: "name", label: "Stage Name", required: true, type: "text" }],
-    columns: [{ name: "name", label: "Stage Name", sortable: false }],
-  } satisfies SetupConfig,
-
-  
-
-  purchasesSellingGroups: {
-    title: "Purchase Selling Groups",
-    api: "/api/setup/sales/selling_groups",
+  salesPriceOfferMethod: {
+    title: "Price Offer Method",
+    api: "/api/setup/sales/price_offer_method?module=sales",
     fields: [
       {
         name: "name",
         label: "Name",
         required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
       },
     ],
     columns: [
@@ -355,5 +472,109 @@ export const setupConfig = {
         sortable: true,
       },
     ],
+    defaultValues: {
+      module: "sales",
+    },
+  } satisfies SetupConfig,
+
+  salesPaymentTerms: {
+    title: "Payment Terms",
+    api: "/api/setup/sales/payment_terms?module=sales",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+      {
+        name: "days",
+        label: "Days",
+        required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+    defaultValues: {
+      module: "sales",
+    },
+  } satisfies SetupConfig,
+
+  salesPaymentMethod: {
+    title: "Payment Method",
+    api: "/api/setup/sales/payment_method?module=sales",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+    defaultValues: {
+      module: "sales",
+    },
+  } satisfies SetupConfig,
+
+  salesShipmentMethod: {
+    title: "Shipment Method",
+    api: "/api/setup/sales/shipment_method?module=sales",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        required: true,
+      },
+      {
+        name: "module",
+        type: "hidden",
+      },
+    ],
+    columns: [
+      {
+        name: "name",
+        label: "Name",
+        sortable: true,
+      },
+    ],
+    defaultValues: {
+      module: "sales",
+    },
+  } satisfies SetupConfig,
+
+  salesOrderStages: {
+    title: "Sales Order Stages",
+    api: "/api/setup/sales/order_stages",
+    fields: [
+      { name: "name", label: "Stage Name", required: true, type: "text" },
+    ],
+    columns: [{ name: "name", label: "Stage Name", sortable: false }],
+  } satisfies SetupConfig,
+
+  creditNoteStages: {
+    title: "Credit Note Stages",
+    api: "/api/setup/sales/credit_note_stages",
+    fields: [
+      { name: "name", label: "Stage Name", required: true, type: "text" },
+    ],
+    columns: [{ name: "name", label: "Stage Name", sortable: false }],
   } satisfies SetupConfig,
 };

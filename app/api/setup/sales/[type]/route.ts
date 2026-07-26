@@ -38,7 +38,15 @@ export async function GET(
       return NextResponse.json(result.rows);
     }
 
-    const commonTables = ["segments", "territories", "classification"];
+    const commonTables = [
+      "segments",
+      "territories",
+      "classification",
+      "price_offer_method",
+      "payment_terms",
+      "payment_method",
+      "shipment_method",
+    ];
     const crmTables = [
       "credit_ratings",
       "buying_groups",
@@ -100,7 +108,16 @@ export async function POST(
       return NextResponse.json(result.rows[0]);
     }
 
-    const commonTables = ["segments", "territories", "classification"];
+    const commonTables = [
+      "segments",
+      "territories",
+      "classification",
+      "price_offer_method",
+      "payment_terms",
+      "payment_method",
+      "shipment_method",
+    ];
+
     const table_name = commonTables.includes(type)
       ? type
       : [
@@ -172,7 +189,15 @@ export async function GET(
       return NextResponse.json(result.rows);
     }
 
-    const commonTables = ["segments", "territories", "classification"];
+    const commonTables = [
+      "segments",
+      "territories",
+      "classification",
+      "price_offer_method",
+      "payment_terms",
+      "payment_method",
+      "shipment_method",
+    ];
 
     const crmTables = [
       "credit_ratings",
@@ -237,8 +262,16 @@ export async function POST(
       return NextResponse.json(result.rows[0]);
     }
 
-    // --- FALLBACK FOR PRE-EXISTING TABLES ---
-    const commonTables = ["segments", "territories", "classification"];
+    const commonTables = [
+      "segments",
+      "territories",
+      "classification",
+      "price_offer_method",
+      "payment_terms",
+      "payment_method",
+      "shipment_method",
+    ];
+    
     const table_name = commonTables.includes(type)
       ? type
       : [
