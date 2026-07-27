@@ -1,10 +1,13 @@
-// app/components/shared/modals/StockAllocationModal.tsx
+// app/components/shared/modals/PO_StockAllocationModal.tsx
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export type StockAllocationRecord = {
+export type PO_StockAllocationRecord = {
+  location_id: string;
+  location_name: string;
+
   date_received: string;
   prod_date: string;
   expiry_date: string;
@@ -13,23 +16,29 @@ export type StockAllocationRecord = {
   quantity: number;
 };
 
+type WarehouseLocation = {
+  id: string;
+  title: string;
+  code: string | null;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave: (allocations: StockAllocationRecord[]) => void;
+  onSave: (allocations: PO_StockAllocationRecord[]) => void;
   targetQuantity: number;
   itemId?: string;
   itemCode: string;
   itemName: string;
   warehouseId?: string;
   warehouseName: string;
-  locationId?: string;
-  locationName: string;
+  // locationId?: string;
+  // locationName: string;
   uomName?: string;
-  initialAllocations?: StockAllocationRecord[];
+  initialAllocations?: PO_StockAllocationRecord[];
 };
 
-export default function StockAllocationModal({
+export default function PO_StockAllocationModal({
   open,
   onClose,
   onSave,
@@ -39,15 +48,20 @@ export default function StockAllocationModal({
   itemName,
   warehouseId,
   warehouseName,
-  locationId,
-  locationName,
+  // locationId,
+  // locationName,
   uomName,
   initialAllocations = [],
 }: Props) {
+  const [locations, setLocations] = useState<WarehouseLocation[]>([]);
+
   const [allocations, setAllocations] =
-    useState<StockAllocationRecord[]>(initialAllocations);
+    useState<PO_StockAllocationRecord[]>(initialAllocations);
 
   const [newRowInput, setNewRowInput] = useState({
+    location_id: "",
+    location_name: "",
+
     date_received: new Date().toISOString().split("T")[0],
     prod_date: "",
     expiry_date: "",
@@ -68,12 +82,45 @@ export default function StockAllocationModal({
       ? derivedDefaultQty
       : parseFloat(newRowInput.quantity) || 0;
 
+  useEffect(() => {
+    if (!warehouseId) return;
+
+    const loadLocations = async () => {
+      try {
+        const res = await fetch(
+          `/api/lookups/locations?warehouse_id=${warehouseId}`,
+        );
+
+        if (!res.ok) return;
+
+        const payload = await res.json();
+
+        const data = payload.data ?? [];
+
+        setLocations(data);
+
+        setNewRowInput((prev) => ({
+          ...prev,
+          location_id: data[0]?.id ?? "",
+          location_name: data[0]?.title ?? "",
+        }));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadLocations();
+  }, [warehouseId]);
+
   const handleAddRow = () => {
-    if (currentInputQty <= 0 || qtyToAllocate <= 0) return;
+    // if (currentInputQty <= 0 || qtyToAllocate <= 0) return;
+
+    if (!newRowInput.location_id || currentInputQty <= 0 || qtyToAllocate <= 0)
+      return;
 
     const allowedQty = Math.min(currentInputQty, qtyToAllocate);
 
-    const rowToAdd: StockAllocationRecord = {
+    const rowToAdd: PO_StockAllocationRecord = {
       ...newRowInput,
       quantity: allowedQty,
     };
@@ -88,6 +135,9 @@ export default function StockAllocationModal({
     const nextRemaining = Math.max(0, targetQuantity - nextTotalAllocated);
 
     setNewRowInput({
+      location_id: newRowInput.location_id,
+      location_name: newRowInput.location_name,
+
       date_received: new Date().toISOString().split("T")[0],
       prod_date: "",
       expiry_date: "",
@@ -145,7 +195,7 @@ export default function StockAllocationModal({
               Location
             </div>
             <div className="font-semibold text-slate-900 dark:text-slate-100">
-              {locationName || "-"}
+              {/* {locationName || "-"} */}
             </div>
           </div>
           <div className="grid grid-cols-3 col-span-2 gap-2 text-center">
@@ -201,6 +251,7 @@ export default function StockAllocationModal({
                 <th className="p-3 w-40">Date Received</th>
                 <th className="p-3 w-40">Prod. Date</th>
                 <th className="p-3 w-40">Use By Date</th>
+                <th className="p-3 w-52">Storage Location</th>
                 <th className="p-3">Batch / Lot No.</th>
                 <th className="p-3">Serial No.</th>
                 <th className="p-3 w-28 text-right">Qty. ({uomName})</th>
@@ -216,6 +267,7 @@ export default function StockAllocationModal({
                   <td className="p-3">{item.date_received}</td>
                   <td className="p-3">{item.prod_date || "-"}</td>
                   <td className="p-3">{item.expiry_date || "-"}</td>
+                  <td className="p-3">{item.location_name}</td>
                   <td className="p-3 font-mono">{item.batch_no || "-"}</td>
                   <td className="p-3 font-mono">{item.serial_no || "-"}</td>
                   <td className="p-3 text-right font-semibold text-slate-900 dark:text-slate-100">
@@ -274,6 +326,31 @@ export default function StockAllocationModal({
                   />
                 </td>
                 <td className="p-2">
+                  <select
+                    value={newRowInput.location_id}
+                    onChange={(e) => {
+                      const selected = locations.find(
+                        (x) => x.id === e.target.value,
+                      );
+
+                      setNewRowInput({
+                        ...newRowInput,
+                        location_id: selected?.id || "",
+                        location_name: selected?.title || "",
+                      });
+                    }}
+                    className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900"
+                  >
+                    <option value="">Select Location</option>
+
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.code ? `${loc.code} - ${loc.title}` : loc.title}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="p-2">
                   <input
                     type="text"
                     placeholder="Lot / Batch No"
@@ -324,7 +401,11 @@ export default function StockAllocationModal({
                   <button
                     type="button"
                     onClick={handleAddRow}
-                    disabled={currentInputQty <= 0 || qtyToAllocate <= 0}
+                    disabled={
+                      !newRowInput.location_id ||
+                      currentInputQty <= 0 ||
+                      qtyToAllocate <= 0
+                    }
                     className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-full w-7 h-7 inline-flex items-center justify-center shadow-xs font-bold text-lg disabled:opacity-30 transition-opacity"
                   >
                     +
@@ -356,4 +437,3 @@ export default function StockAllocationModal({
     </div>
   );
 }
-

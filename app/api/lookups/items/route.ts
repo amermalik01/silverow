@@ -12,19 +12,14 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
   const page = Number(searchParams.get("page") || 1);
-
   const limit = Number(searchParams.get("limit") || 20);
 
   const offset = (page - 1) * limit;
 
   const search = searchParams.get("search") || "";
-
   const item_code = searchParams.get("item_code") || "";
-
   const barcode = searchParams.get("barcode") || "";
-
   const name = searchParams.get("name") || "";
-
   const item_type = searchParams.get("item_type") || "";
 
   const values: (string | number | boolean)[] = [companyId];
@@ -87,11 +82,9 @@ export async function GET(req: NextRequest) {
     `;
 
     const countResult = await pool.query(countQuery, values);
-
     const total = countResult.rows[0].total;
 
     values.push(limit);
-
     values.push(offset);
 
     const query = `

@@ -74,7 +74,7 @@ export const PurchaseOrderLineSchema = z
     account_name: z.string().optional().nullable(),
     description: z.string().max(500).optional().nullable(),
     warehouse_id: z.string().uuid().optional().nullable(),
-    warehouse_location_id: z.string().uuid().optional().nullable(),
+    // warehouse_location_id: z.string().uuid().optional().nullable(),
     uom_id: z.string().uuid().optional().nullable(),
     quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
     received_quantity: z.coerce.number().min(0).optional().nullable(),

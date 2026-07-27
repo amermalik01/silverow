@@ -127,9 +127,9 @@ export interface PurchaseOrderLine {
   warehouse_id?: string;
   warehouse_code?: string;
   warehouse_name?: string;
-  location_id?: string;
-  location_code?: string;
-  location_name?: string;
+  // location_id?: string;
+  // location_code?: string;
+  // location_name?: string;
   is_allocated?: boolean;
 
   uom_id?: string;

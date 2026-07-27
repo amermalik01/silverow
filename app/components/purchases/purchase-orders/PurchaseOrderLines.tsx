@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { PurchaseOrderLine, PurchaseOrderLineUI } from "@/types/purchase-order";
 
 import ItemLookupModal, {
@@ -17,9 +17,9 @@ import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
 
-import StockAllocationModal, {
-  StockAllocationRecord,
-} from "../../shared/modals/StockAllocationModal";
+import PO_StockAllocationModal, {
+  PO_StockAllocationRecord,
+} from "@/app/components/shared/modals/PO_StockAllocationModal";
 
 type Props = {
   lines: PurchaseOrderLineUI[];
@@ -27,34 +27,32 @@ type Props = {
   isReadonly?: boolean;
 };
 
-interface LocationLookupRecord {
-  id: string;
-  warehouse_id: string;
-  parent_id: string | null;
-  type: string;
-  title: string;
-  code: string | null;
-  is_primary: boolean;
-  capacity: number | null;
-  parent_location_title: string | null;
-}
+// interface LocationLookupRecord {
+//   id: string;
+//   warehouse_id: string;
+//   parent_id: string | null;
+//   type: string;
+//   title: string;
+//   code: string | null;
+//   is_primary: boolean;
+//   capacity: number | null;
+//   parent_location_title: string | null;
+// }
 
 export default function PurchaseOrderLines({
   lines,
   setLines,
   isReadonly = false,
 }: Props) {
-
   const [itemIndex, setItemIndex] = useState<number | null>(null);
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
 
-
-  const [rowLocationsCache, setRowLocationsCache] = useState<
-    Record<number, LocationLookupRecord[]>
-  >({});
-  const [activeLocationSelectorIndex, setActiveLocationSelectorIndex] =
-    useState<number | null>(null);
+  // const [rowLocationsCache, setRowLocationsCache] = useState<
+  //   Record<number, LocationLookupRecord[]>
+  // >({});
+  // const [activeLocationSelectorIndex, setActiveLocationSelectorIndex] =
+  //   useState<number | null>(null);
 
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
   const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
@@ -67,41 +65,40 @@ export default function PurchaseOrderLines({
     return lines[idx] || null;
   }, [activeAllocationRowKey, lines]);
 
+  // const fetchLocationsForSpecificRow = async (
+  //   rowIndex: number,
+  //   warehouseId: string,
+  // ) => {
+  //   if (!warehouseId) {
+  //     setRowLocationsCache((prev) => ({ ...prev, [rowIndex]: [] }));
+  //     return;
+  //   }
+  //   try {
+  //     const res = await fetch(
+  //       `/api/lookups/locations?warehouse_id=${warehouseId}`,
+  //     );
+  //     if (res.ok) {
+  //       const payload = await res.json();
 
-  const fetchLocationsForSpecificRow = async (
-    rowIndex: number,
-    warehouseId: string,
-  ) => {
-    if (!warehouseId) {
-      setRowLocationsCache((prev) => ({ ...prev, [rowIndex]: [] }));
-      return;
-    }
-    try {
-      const res = await fetch(
-        `/api/lookups/locations?warehouse_id=${warehouseId}`,
-      );
-      if (res.ok) {
-        const payload = await res.json();
+  //       const data: LocationLookupRecord[] = payload.data || [];
 
-        const data: LocationLookupRecord[] = payload.data || [];
+  //       setRowLocationsCache((prev) => ({
+  //         ...prev,
+  //         [rowIndex]: data,
+  //       }));
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed pulling targeted location indices:", err);
+  //   }
+  // };
 
-        setRowLocationsCache((prev) => ({
-          ...prev,
-          [rowIndex]: data,
-        }));
-      }
-    } catch (err) {
-      console.error("Failed pulling targeted location indices:", err);
-    }
-  };
-
-  useEffect(() => {
-    lines.forEach((line, index) => {
-      if (line.line_type === "ITEM" && line.warehouse_id && !rowLocationsCache[index]) {
-        fetchLocationsForSpecificRow(index, line.warehouse_id);
-      }
-    });
-  }, [lines, rowLocationsCache]);
+  // useEffect(() => {
+  //   lines.forEach((line, index) => {
+  //     if (line.line_type === "ITEM" && line.warehouse_id && !rowLocationsCache[index]) {
+  //       fetchLocationsForSpecificRow(index, line.warehouse_id);
+  //     }
+  //   });
+  // }, [lines, rowLocationsCache]);
 
   // ADD LINE
   const addLine = () => {
@@ -127,11 +124,11 @@ export default function PurchaseOrderLines({
   // REMOVE LINE
   const removeLine = (index: number) => {
     setLines(lines.filter((_, i) => i !== index));
-    setRowLocationsCache((prev) => {
-      const copy = { ...prev };
-      delete copy[index];
-      return copy;
-    });
+    // setRowLocationsCache((prev) => {
+    //   const copy = { ...prev };
+    //   delete copy[index];
+    //   return copy;
+    // });
   };
 
   // CALCULATE LINE
@@ -206,9 +203,9 @@ export default function PurchaseOrderLines({
       warehouse_code: undefined,
       warehouse_name: undefined,
 
-      location_id: undefined,
-      location_code: undefined,
-      location_name: undefined,
+      // location_id: undefined,
+      // location_code: undefined,
+      // location_name: undefined,
 
       allocations: undefined,
       is_allocated: false,
@@ -219,7 +216,9 @@ export default function PurchaseOrderLines({
 
   // ALLOCATION SAVE HANDLER
 
-  const handleSaveAllocations = (allocationsData: StockAllocationRecord[]) => {
+  const handleSaveAllocations = (
+    allocationsData: PO_StockAllocationRecord[],
+  ) => {
     if (activeAllocationRowKey === null) return;
     const targetIdx = parseInt(activeAllocationRowKey, 10);
 
@@ -289,7 +288,7 @@ export default function PurchaseOrderLines({
       </div>
 
       <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
-        <table className="w-full text-left text-xs border-collapse min-w-[1600px]">
+        <table className="w-full text-left text-xs border-collapse min-w-[1300px]">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 uppercase font-semibold text-slate-600 dark:text-slate-400">
               <th className="p-2 w-[110px]">Type</th>
@@ -298,7 +297,7 @@ export default function PurchaseOrderLines({
               <th className="p-2 text-right w-[80px]">Qty</th>
               <th className="p-2 w-[70px]">UOM</th>
               <th className="p-2 w-[160px]">Warehouse</th>
-              <th className="p-2 w-[160px]">Location</th>
+              {/* <th className="p-2 w-[160px]">Location</th> */}
               <th className="p-2 text-right w-[95px]">Unit Cost</th>
               <th className="p-2 w-[85px]">Disc Type</th>
               <th className="p-2 text-right w-[85px]">Discount</th>
@@ -330,9 +329,11 @@ export default function PurchaseOrderLines({
                   ? Number(line.available_stock)
                   : undefined;
 
-              const currentLocations = rowLocationsCache[index] || [];
-              const isAllocationDisabled =
-                !line.item_id || !line.warehouse_id || !line.location_id;
+              // const currentLocations = rowLocationsCache[index] || [];
+              // const isAllocationDisabled =
+              //   !line.item_id || !line.warehouse_id || !line.location_id;
+
+              const isAllocationDisabled = !line.item_id || !line.warehouse_id;
 
               return (
                 <tr
@@ -464,7 +465,7 @@ export default function PurchaseOrderLines({
                       </div>
                     )}
                   </td>
-                  <td className="p-2">
+                  {/* <td className="p-2">
                     {line.line_type === "ITEM" ? (
                       <select
                         value={line.location_id || ""}
@@ -513,7 +514,7 @@ export default function PurchaseOrderLines({
                     ) : (
                       <div className="text-gray-400">-</div>
                     )}
-                  </td>
+                  </td> */}
                   <td className="p-2">
                     <input
                       type="number"
@@ -592,7 +593,7 @@ export default function PurchaseOrderLines({
                             className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
                             title={
                               isAllocationDisabled
-                                ? "Requires Whse & Location assignment first"
+                                ? "Requires item and warehouse assignment first"
                                 : "Open Allocation Matrix"
                             }
                           >
@@ -626,7 +627,7 @@ export default function PurchaseOrderLines({
           <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
             <tr>
               <td
-                colSpan={11}
+                colSpan={10}
                 className="p-2.5 text-right uppercase tracking-wider text-xs"
               >
                 Totals
@@ -648,24 +649,56 @@ export default function PurchaseOrderLines({
       <ItemLookupModal
         open={itemIndex !== null}
         onClose={() => setItemIndex(null)}
-        onSelect={(item: ItemLookupRecord) => {
+        onSelect={async (item: ItemLookupRecord) => {
           if (itemIndex === null) return;
           const updated = [...lines];
 
+          const warehouseResponse = await fetch(
+            `/api/lookups/default-warehouse?item_id=${item.id}`,
+          );
+
+          const warehouseData = await warehouseResponse.json();
+
+          const defaultWarehouse = warehouseData.data;
+
           updated[itemIndex] = calculateLine({
             ...updated[itemIndex],
+
             line_type: "ITEM",
+
             item_id: item.id,
             item_code: item.item_code,
             item_name: item.name,
+
             description: item.description || item.name,
+
             unit_cost: Number(item.standard_cost || 0),
+
             uom_id: item.base_uom_id,
-            // uom_name: item.base_uom_code,
-            purchase_gl_id: item.purchase_gl_id,
-            sales_gl_id: item.sales_gl_id,
-            inventory_gl_id: item.inventory_gl_id,
+
+            warehouse_id: defaultWarehouse?.id,
+            warehouse_code: defaultWarehouse?.code,
+            warehouse_name: defaultWarehouse?.name,
+
+            allocations: undefined,
+            initialAllocations: undefined,
+            is_allocated: false,
           });
+
+          // updated[itemIndex] = calculateLine({
+          //   ...updated[itemIndex],
+          //   line_type: "ITEM",
+          //   item_id: item.id,
+          //   item_code: item.item_code,
+          //   item_name: item.name,
+          //   description: item.description || item.name,
+          //   unit_cost: Number(item.standard_cost || 0),
+          //   uom_id: item.base_uom_id,
+          //   // uom_name: item.base_uom_code,
+          //   purchase_gl_id: item.purchase_gl_id,
+          //   sales_gl_id: item.sales_gl_id,
+          //   inventory_gl_id: item.inventory_gl_id,
+          // });
 
           setLines(updated);
           setItemIndex(null);
@@ -707,13 +740,17 @@ export default function PurchaseOrderLines({
 
           updated[warehouseIndex] = {
             ...updated[warehouseIndex],
+
             warehouse_id: warehouse.id,
             warehouse_code: warehouse.code,
             warehouse_name: warehouse.name,
-            location_id: undefined,
-            location_code: undefined,
-            location_name: undefined,
+
+            //   location_id: undefined,
+            //   location_code: undefined,
+            //   location_name: undefined,
+
             allocations: undefined,
+            initialAllocations: undefined,
             is_allocated: false,
           };
 
@@ -726,7 +763,7 @@ export default function PurchaseOrderLines({
       {isAllocationModalOpen &&
         activeAllocationRowKey !== null &&
         activeAllocationLine && (
-          <StockAllocationModal
+          <PO_StockAllocationModal
             key={`allocation-row-${activeAllocationRowKey}`}
             open={isAllocationModalOpen}
             onClose={() => {
@@ -739,20 +776,24 @@ export default function PurchaseOrderLines({
             itemName={activeAllocationLine.item_name || ""}
             warehouseId={activeAllocationLine.warehouse_id || ""}
             warehouseName={activeAllocationLine.warehouse_name || ""}
-            locationId={activeAllocationLine.location_id || ""}
-            locationName={activeAllocationLine.location_name || ""}
+            // locationId={activeAllocationLine.location_id || ""}
+            // locationName={activeAllocationLine.location_name || ""}
             uomName={activeAllocationLine.uom_name || ""}
-            initialAllocations={(activeAllocationLine.allocations || activeAllocationLine.initialAllocations || []).map(
-              (alloc) => ({
-                date_received: String(alloc.date_received || ""),
-                prod_date: String(alloc.prod_date || ""),
-                expiry_date: String(alloc.expiry_date || ""),
-                batch_no: String(alloc.batch_no || ""),
-                bin_code: String(alloc.bin_code || ""),
-                serial_no: String(alloc.serial_no || ""),
-                quantity: Number(alloc.quantity || 0),
-              }),
-            )}
+            initialAllocations={(
+              activeAllocationLine.allocations ||
+              activeAllocationLine.initialAllocations ||
+              []
+            ).map((alloc) => ({
+              location_id: String(alloc.location_id || ""),
+              location_name: String(alloc.location_name || ""),
+              date_received: String(alloc.date_received || ""),
+              prod_date: String(alloc.prod_date || ""),
+              expiry_date: String(alloc.expiry_date || ""),
+              batch_no: String(alloc.batch_no || ""),
+              bin_code: String(alloc.bin_code || ""),
+              serial_no: String(alloc.serial_no || ""),
+              quantity: Number(alloc.quantity || 0),
+            }))}
             onSave={(allocationsPayload) =>
               handleSaveAllocations(allocationsPayload)
             }

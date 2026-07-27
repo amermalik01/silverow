@@ -37,7 +37,7 @@ export class PurchaseOrderService {
         sm.name AS shipment_method
 
       FROM purchase_orders po
-      
+
       LEFT JOIN parties p ON p.id = po.supplier_id
 
       LEFT JOIN payment_terms pt ON pt.id=po.payment_terms_id
@@ -706,7 +706,6 @@ export class PurchaseOrderService {
       description,
 
       warehouse_id,
-      warehouse_location_id,
 
       uom_id,
 
@@ -748,7 +747,6 @@ export class PurchaseOrderService {
         line.gl_account_id || null,
         line.description || null,
         line.warehouse_id || null,
-        line.location_id || null,
         line.uom_id || null,
         line.quantity || 0,
         line.received_quantity || 0,

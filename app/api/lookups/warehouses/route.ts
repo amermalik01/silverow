@@ -2,24 +2,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.company_id) {
-    return NextResponse.json(
-      {
-        error: "Unauthorized",
-      },
-      {
-        status: 401,
-      },
-    );
-  }
-
-  const companyId = session.user.company_id;
+  const companyId = await getCompanyId();
   const { searchParams } = new URL(req.url);
   const page = Number(searchParams.get("page") || 1);
   const limit = Number(searchParams.get("limit") || 20);
@@ -29,7 +15,7 @@ export async function GET(req: NextRequest) {
   const name = searchParams.get("name") || "";
   const type = searchParams.get("type") || "";
 
-  const values: (string | number)[] = [companyId];
+  const values: (string | number | null)[] = [companyId];
 
   let where = `
     WHERE w.company_id = $1
