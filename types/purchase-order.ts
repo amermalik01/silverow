@@ -14,18 +14,17 @@ export interface PurchaseOrder {
   supp_order_no?: string;
   link_to_so_no?: string;
 
-
   // warehouse_id?: string;
   currency_id?: string;
   exchange_rate?: string | number;
-  
+
   order_date: string;
   req_receipt_date: string;
   receipt_date: string;
   expected_date?: string;
   invoice_date?: string;
   reference?: string;
-  
+
   payable_bank?: string;
   payable_bank_id?: string;
   due_date?: string;
@@ -44,9 +43,10 @@ export interface PurchaseOrder {
   book_in_email?: string;
 
   shipment_method?: string;
+  shipment_method_id?: string;
   shipping_agent?: string;
   shipment_ref_no?: string;
-  warehouse_booking_ref_no?: string;
+  warehouse_ref_no?: string;
   shipment_po_not_req?: boolean;
   reason?: string;
   linked_po?: string;
@@ -92,8 +92,11 @@ export interface PurchaseOrderAddress {
 
 export interface PurchaseOrderPayload {
   order: PurchaseOrder;
+
+  primary_address?: PurchaseOrderAddress;
   billing_address?: PurchaseOrderAddress;
   shipping_address?: PurchaseOrderAddress;
+
   lines: PurchaseOrderLine[];
 }
 
@@ -191,6 +194,36 @@ export interface StockAllocationRecord {
   ref_no?: string;
   serial_no: string;
   quantity: number;
+}
+
+export interface LookupItem {
+  id: string;
+  name: string;
+}
+
+export interface PaymentTermLookup extends LookupItem {
+  days: number;
+}
+
+export interface CurrencyLookup {
+  id: string;
+  code: string;
+  name: string;
+  exchange_rate: number;
+}
+
+export interface OrderStageLookup {
+  id: string;
+  name: string;
+  rank: number;
+}
+
+export interface PurchaseOrderMasterData {
+  currencies: CurrencyLookup[];
+  stages: OrderStageLookup[];
+  paymentTerms: PaymentTermLookup[];
+  paymentMethods: LookupItem[];
+  shipmentMethods: LookupItem[];
 }
 
 // export type PurchaseOrderStatus =

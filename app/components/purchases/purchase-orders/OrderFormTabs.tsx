@@ -2,15 +2,7 @@
 
 import React from "react";
 import { Icon } from "@iconify/react";
-import { PurchaseOrder } from "@/types/purchase-order";
-// import {
-//   PurchaseOrder,
-//   PurchaseOrderAddress,
-//   PurchaseOrderLine,
-//   PurchaseOrderStatus,
-// } from "@/types/purchase-order";
-
-// Define interfaces for your props (adjust or import your existing types)
+import { PurchaseOrder, PurchaseOrderMasterData } from "@/types/purchase-order";
 interface Address {
   name?: string;
   address_1?: string;
@@ -22,13 +14,6 @@ interface Address {
   contact_person?: string;
   phone?: string;
   email?: string;
-}
-
-interface Currency {
-  id: string;
-  code: string;
-  name: string;
-  exchange_rate: number;
 }
 
 interface CurrencyConfig {
@@ -47,7 +32,8 @@ interface OrderFormTabsProps {
   setShippingAddress: React.Dispatch<React.SetStateAction<Address>>;
   currencyConfig: CurrencyConfig;
   setCurrencyConfig: React.Dispatch<React.SetStateAction<CurrencyConfig>>;
-  currencies: Currency[];
+  // currencies: Currency[];
+  masterData: PurchaseOrderMasterData | null;
   updateField: <K extends keyof PurchaseOrder>(
     field: K,
     value: PurchaseOrder[K],
@@ -68,7 +54,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   setShippingAddress,
   currencyConfig,
   setCurrencyConfig,
-  currencies,
+  masterData,
   updateField,
   setSupplierModalOpen,
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
@@ -82,6 +68,15 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
       .filter(Boolean)
       .map((d) => d!.split("T")[0])
       .sort()[0] ?? "";
+
+  const calculateDueDate = (orderDate: string, days = 0) => {
+    if (!orderDate) return "";
+
+    const date = new Date(orderDate);
+    date.setDate(date.getDate() + Number(days));
+
+    return date.toISOString().split("T")[0];
+  };
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm w-full">
@@ -331,7 +326,22 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 className={inputStyle}
                 value={order.order_date?.split("T")[0] ?? ""}
                 max={maxOrderDate}
-                onChange={(e) => updateField("order_date", e.target.value)}
+                onChange={(e) => {
+                  const orderDate = e.target.value;
+
+                  updateField("order_date", orderDate);
+
+                  const selected = masterData?.paymentTerms.find(
+                    (x) => x.id === order.payment_terms_id,
+                  );
+
+                  if (selected) {
+                    updateField(
+                      "due_date",
+                      calculateDueDate(orderDate, selected.days),
+                    );
+                  }
+                }}
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
@@ -539,12 +549,33 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Payment Terms</label>
-              <input
-                type="text"
+              <select
                 className={inputStyle}
-                value={order.payment_terms || ""}
-                onChange={(e) => updateField("payment_terms", e.target.value)}
-              />
+                value={order.payment_terms_id || ""}
+                onChange={(e) => {
+                  const selected = masterData?.paymentTerms.find(
+                    (x) => x.id === e.target.value,
+                  );
+
+                  updateField("payment_terms_id", e.target.value);
+                  updateField("payment_terms", selected?.name || "");
+
+                  if (order.order_date && selected) {
+                    updateField(
+                      "due_date",
+                      calculateDueDate(order.order_date, selected.days),
+                    );
+                  }
+                }}
+              >
+                <option value="">Select...</option>
+
+                {masterData?.paymentTerms.map((term) => (
+                  <option key={term.id} value={term.id}>
+                    {term.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Due Date</label>
@@ -557,12 +588,26 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Payment Method</label>
-              <input
-                type="text"
+              <select
                 className={inputStyle}
-                value={order.payment_method || ""}
-                onChange={(e) => updateField("payment_method", e.target.value)}
-              />
+                value={order.payment_method_id || ""}
+                onChange={(e) => {
+                  const selected = masterData?.paymentMethods.find(
+                    (x) => x.id === e.target.value,
+                  );
+
+                  updateField("payment_method_id", e.target.value);
+                  updateField("payment_method", selected?.name || "");
+                }}
+              >
+                <option value="">Select...</option>
+
+                {masterData?.paymentMethods.map((method) => (
+                  <option key={method.id} value={method.id}>
+                    {method.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -575,7 +620,9 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 value={currencyConfig.currency_id ?? ""}
                 onChange={(e) => {
                   const targetId = e.target.value;
-                  const matched = currencies.find((c) => c.id === targetId);
+                  const matched = masterData?.currencies.find(
+                    (c) => c.id === targetId,
+                  );
                   setCurrencyConfig({
                     currency_id: targetId,
                     exchange_rate: matched ? matched.exchange_rate : 1,
@@ -583,22 +630,13 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 }}
               >
                 <option value="">Select Base Currency...</option>
-                {currencies.map((c) => (
+                {masterData?.currencies.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.code} - {c.name}
                   </option>
                 ))}
               </select>
             </div>
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Previous Code</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.previous_code || ""}
-                onChange={(e) => updateField("previous_code", e.target.value)}
-              />
-            </div> */}
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Link to Customer</label>
               <input
@@ -775,12 +813,26 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle} title="Shipment Method">
                 Shipt. Method
               </label>
-              <input
-                type="text"
+              <select
                 className={inputStyle}
-                value={order.shipment_method || ""}
-                onChange={(e) => updateField("shipment_method", e.target.value)}
-              />
+                value={order.shipment_method_id || ""}
+                onChange={(e) => {
+                  const selected = masterData?.shipmentMethods.find(
+                    (x) => x.id === e.target.value,
+                  );
+
+                  updateField("shipment_method_id", e.target.value);
+                  updateField("shipment_method", selected?.name || "");
+                }}
+              >
+                <option value="">Select...</option>
+
+                {masterData?.shipmentMethods.map((method) => (
+                  <option key={method.id} value={method.id}>
+                    {method.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Shipping Agent</label>
@@ -809,16 +861,44 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="text"
                 className={inputStyle}
-                value={order.warehouse_booking_ref_no || ""}
+                value={order.warehouse_ref_no || ""}
                 onChange={(e) =>
-                  updateField("warehouse_booking_ref_no", e.target.value)
+                  updateField("warehouse_ref_no", e.target.value)
                 }
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            {/* <div className="grid grid-cols-12 items-center gap-2">
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Linked PO</label>
+              <input
+                type="text"
+                className={inputStyle}
+                value={order.linked_po || ""}
+                onChange={(e) => updateField("linked_po", e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+{
+  /* <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Previous Code</label>
+              <input
+                type="text"
+                className={inputStyle}
+                value={order.previous_code || ""}
+                onChange={(e) => updateField("previous_code", e.target.value)}
+              />
+            </div> */
+}
+{
+  /* <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Shipment PO Not Required">Shipt. PO Not Req.</label>
               <input
                 type="checkbox"
@@ -839,20 +919,5 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 value={order.reason || ""}
                 onChange={(e) => updateField("reason", e.target.value)}
               />
-            </div> */}
-
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Linked PO</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.linked_po || ""}
-                onChange={(e) => updateField("linked_po", e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+            </div> */
+}

@@ -12,6 +12,7 @@ import {
   PurchaseOrder,
   PurchaseOrderAddress,
   PurchaseOrderLine,
+  PurchaseOrderMasterData,
   PurchaseOrderStatus,
 } from "@/types/purchase-order";
 
@@ -62,10 +63,17 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
 
-  const [stages, setStages] = useState<OrderStage[]>([]);
+  // const [stages, setStages] = useState<OrderStage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
+  // const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+
+  const [masterData, setMasterData] = useState<PurchaseOrderMasterData | null>(
+    null,
+  );
+
+  const isLoadingStages = !masterData;
+  const stages = masterData?.stages ?? [];
 
   const isUpdateMode = !!id;
 
@@ -97,7 +105,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   >({ address_type: "shipping" });
 
   const [lines, setLines] = useState<PurchaseOrderLine[]>([]);
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  // const [currencies, setCurrencies] = useState<Currency[]>([]);
 
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
@@ -138,38 +146,66 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       );
   }, [id]);
 
-  useEffect(() => {
-    fetch("/api/parties/currencies")
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setCurrencies(data))
-      .catch((err) => console.error("Error pulling lookups:", err));
-  }, []);
+  // useEffect(() => {
+  //   fetch("/api/parties/currencies")
+  //     .then((res) => (res.ok ? res.json() : []))
+  //     .then((data) => setCurrencies(data))
+  //     .catch((err) => console.error("Error pulling lookups:", err));
+  // }, []);
 
   useEffect(() => {
-    if (!isUpdateMode) {
-      setIsLoadingStages(false);
-      return;
-    }
-
-    async function fetchStages() {
+    async function loadMasterData() {
       try {
-        const response = await fetch("/api/setup/sales/purchase_order_stages");
-        if (response.ok) {
-          const data = await response.json();
-          setStages(data);
-        }
-      } catch (error) {
-        console.error("Failed to load purchase order stages setup:", error);
-      } finally {
-        setIsLoadingStages(false);
+        const res = await fetch("/api/purchase-orders/master-data");
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        setMasterData(data);
+
+      } catch (err) {
+        console.error(err);
       }
     }
-    fetchStages();
-  }, [isUpdateMode]);
+
+    loadMasterData();
+  }, []);
+
+  
+
+  // useEffect(() => {
+  //   if (!isUpdateMode) {
+  //     setIsLoadingStages(false);
+  //     return;
+  //   }
+
+  //   async function fetchStages() {
+  //     try {
+  //       const response = await fetch("/api/setup/sales/purchase_order_stages");
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         setStages(data);
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to load purchase order stages setup:", error);
+  //     } finally {
+  //       setIsLoadingStages(false);
+  //     }
+  //   }
+  //   fetchStages();
+  // }, [isUpdateMode]);
+
+  // const selectedCurrency = useMemo(() => {
+  //   return currencies.find((c) => c.id === currencyConfig.currency_id);
+  // }, [currencyConfig.currency_id, currencies]);
 
   const selectedCurrency = useMemo(() => {
-    return currencies.find((c) => c.id === currencyConfig.currency_id);
-  }, [currencyConfig.currency_id, currencies]);
+  return (
+    masterData?.currencies.find(
+      (c) => c.id === currencyConfig.currency_id,
+    ) ?? null
+  );
+}, [currencyConfig.currency_id, masterData]);
 
   const financials = useMemo(() => {
     const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
@@ -220,50 +256,49 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     if (lines.length === 0)
       errors.push("Purchase orders require at least one line item.");
 
-    
-  errors.push(...validateDates());
+    errors.push(...validateDates());
 
     setValidationErrors(errors);
     return errors.length === 0;
   };
 
   const validateDates = (): string[] => {
-  const errors: string[] = [];
+    const errors: string[] = [];
 
-  const orderDate = order.order_date
-    ? new Date(order.order_date).getTime()
-    : null;
+    const orderDate = order.order_date
+      ? new Date(order.order_date).getTime()
+      : null;
 
-  const invoiceDate = order.invoice_date
-    ? new Date(order.invoice_date).getTime()
-    : null;
+    const invoiceDate = order.invoice_date
+      ? new Date(order.invoice_date).getTime()
+      : null;
 
-  const reqReceiptDate = order.req_receipt_date
-    ? new Date(order.req_receipt_date).getTime()
-    : null;
+    const reqReceiptDate = order.req_receipt_date
+      ? new Date(order.req_receipt_date).getTime()
+      : null;
 
-  const receiptDate = order.receipt_date
-    ? new Date(order.receipt_date).getTime()
-    : null;
+    const receiptDate = order.receipt_date
+      ? new Date(order.receipt_date).getTime()
+      : null;
 
-  if (orderDate && invoiceDate && orderDate > invoiceDate) {
-    errors.push("Order Date cannot be after Invoice Date.");
-  }
+    if (orderDate && invoiceDate && orderDate > invoiceDate) {
+      errors.push("Order Date cannot be after Invoice Date.");
+    }
 
-  if (orderDate && reqReceiptDate && orderDate > reqReceiptDate) {
-    errors.push("Order Date cannot be after Required Receipt Date.");
-  }
+    if (orderDate && reqReceiptDate && orderDate > reqReceiptDate) {
+      errors.push("Order Date cannot be after Required Receipt Date.");
+    }
 
-  if (orderDate && receiptDate && orderDate > receiptDate) {
-    errors.push("Order Date cannot be after Receipt Date.");
-  }
+    if (orderDate && receiptDate && orderDate > receiptDate) {
+      errors.push("Order Date cannot be after Receipt Date.");
+    }
 
-  if (reqReceiptDate && receiptDate && reqReceiptDate > receiptDate) {
-    errors.push("Receipt Date cannot be before Required Receipt Date.");
-  }
+    if (reqReceiptDate && receiptDate && reqReceiptDate > receiptDate) {
+      errors.push("Receipt Date cannot be before Required Receipt Date.");
+    }
 
-  return errors;
-};
+    return errors;
+  };
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -577,7 +612,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         setShippingAddress={setShippingAddress}
         currencyConfig={currencyConfig}
         setCurrencyConfig={setCurrencyConfig}
-        currencies={currencies}
+        // currencies={currencies}
+        masterData={masterData}
         updateField={updateField}
         setSupplierModalOpen={setSupplierModalOpen}
         labelStyle={labelStyle}

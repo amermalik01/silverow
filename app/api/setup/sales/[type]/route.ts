@@ -88,7 +88,7 @@ export async function POST(
   const client = await pool.connect();
   const { type } = await params;
   const body = await req.json();
-  const { name, module, module_type } = body;
+  const { name, days, module, module_type } = body;
   const targetModule = module ?? module_type ?? "sales";
 
   try {
@@ -133,12 +133,34 @@ export async function POST(
         : `srm_${type}`;
 
     const query = commonTables.includes(type)
-      ? `INSERT INTO ${table_name} (company_id, module_type, name) VALUES ($1, $2, $3) RETURNING *`
-      : `INSERT INTO ${table_name} (company_id, name) VALUES ($1, $2) RETURNING *`;
+      ? type === "payment_terms"
+        ? `INSERT INTO ${table_name}
+         (company_id, module_type, name, days)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`
+        : `INSERT INTO ${table_name}
+         (company_id, module_type, name)
+         VALUES ($1, $2, $3)
+         RETURNING *`
+      : `INSERT INTO ${table_name}
+       (company_id, name)
+       VALUES ($1, $2)
+       RETURNING *`;
 
     const values = commonTables.includes(type)
-      ? [companyId, targetModule, name]
+      ? type === "payment_terms"
+        ? [companyId, targetModule, name, Number(days)]
+        : [companyId, targetModule, name]
       : [companyId, name];
+
+    // const query = commonTables.includes(type)
+    //   ? `INSERT INTO ${table_name} (company_id, module_type, name) VALUES ($1, $2, $3) RETURNING *`
+    //   : `INSERT INTO ${table_name} (company_id, name) VALUES ($1, $2) RETURNING *`;
+
+    // const values = commonTables.includes(type)
+    //   ? [companyId, targetModule, name]
+    //   : [companyId, name];
+    
     const result = await client.query(query, values);
     return NextResponse.json(result.rows[0]);
   } catch (error) {
@@ -271,7 +293,7 @@ export async function POST(
       "payment_method",
       "shipment_method",
     ];
-    
+
     const table_name = commonTables.includes(type)
       ? type
       : [

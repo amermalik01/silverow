@@ -21,7 +21,9 @@ export async function PUT(
 
   const client = await pool.connect();
   const { type, id } = await params;
-  const { name } = await req.json();
+
+  const body = await req.json();
+  const { name, days } = body;
 
   try {
     if (type in STAGE_TYPE_MAP) {
@@ -33,7 +35,7 @@ export async function PUT(
       return NextResponse.json(result.rows[0]);
     }
 
-    const table_name = [
+    const commonTables = [
       "segments",
       "territories",
       "classification",
@@ -41,25 +43,85 @@ export async function PUT(
       "payment_terms",
       "payment_method",
       "shipment_method",
-    ].includes(type)
+    ];
+
+    const crmTables = [
+      "credit_ratings",
+      "buying_groups",
+      "sources",
+      "order_sources",
+      "ownership_type",
+      "type",
+      "status",
+    ];
+
+    const table_name = commonTables.includes(type)
       ? type
-      : [
-            "credit_ratings",
-            "buying_groups",
-            "sources",
-            "order_sources",
-            "ownership_type",
-            "type",
-            "status",
-          ].includes(type)
+      : crmTables.includes(type)
         ? `crm_${type}`
         : `srm_${type}`;
 
-    const result = await client.query(
-      `UPDATE ${table_name} SET name = $1, updated_at = now() WHERE id = $2 AND company_id = $3 RETURNING *`,
-      [name, id, companyId],
-    );
+    let result;
+
+    if (type === "payment_terms") {
+      result = await client.query(
+        `UPDATE ${table_name}
+         SET
+           name = $1,
+           days = $2,
+           updated_at = NOW()
+         WHERE id = $3
+           AND company_id = $4
+         RETURNING *`,
+        [name, Number(days), id, companyId],
+      );
+    } else {
+      result = await client.query(
+        `UPDATE ${table_name}
+         SET
+           name = $1,
+           updated_at = NOW()
+         WHERE id = $2
+           AND company_id = $3
+         RETURNING *`,
+        [name, id, companyId],
+      );
+    }
+
+    // const table_name = [
+    //   "segments",
+    //   "territories",
+    //   "classification",
+    //   "price_offer_method",
+    //   "payment_terms",
+    //   "payment_method",
+    //   "shipment_method",
+    // ].includes(type)
+    //   ? type
+    //   : [
+    //         "credit_ratings",
+    //         "buying_groups",
+    //         "sources",
+    //         "order_sources",
+    //         "ownership_type",
+    //         "type",
+    //         "status",
+    //       ].includes(type)
+    //     ? `crm_${type}`
+    //     : `srm_${type}`;
+
+    // const result = await client.query(
+    //   `UPDATE ${table_name} SET name = $1, updated_at = now() WHERE id = $2 AND company_id = $3 RETURNING *`,
+    //   [name, id, companyId],
+    // );
     return NextResponse.json(result.rows[0]);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Internal Error",
+      },
+      { status: 500 },
+    );
   } finally {
     client.release();
   }

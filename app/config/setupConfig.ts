@@ -132,6 +132,7 @@ export const setupConfig = {
       {
         name: "days",
         label: "Days",
+        type: "number",
         required: true,
       },
       {
@@ -143,6 +144,11 @@ export const setupConfig = {
       {
         name: "name",
         label: "Name",
+        sortable: true,
+      },
+      {
+        name: "days",
+        label: "Days",
         sortable: true,
       },
     ],
@@ -489,6 +495,7 @@ export const setupConfig = {
       {
         name: "days",
         label: "Days",
+        type: "number",
         required: true,
       },
       {
@@ -500,6 +507,11 @@ export const setupConfig = {
       {
         name: "name",
         label: "Name",
+        sortable: true,
+      },
+      {
+        name: "days",
+        label: "Days",
         sortable: true,
       },
     ],

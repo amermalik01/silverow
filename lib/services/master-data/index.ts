@@ -270,18 +270,18 @@ export async function deleteRecord({
 
   let query = "";
 
-//   if (softDelete) {
-//     query = `
-//       UPDATE ${table}
-//       SET deleted_at = NOW()
-//       WHERE id = $1
-//     `;
-//   } else {
-    query = `
+  //   if (softDelete) {
+  //     query = `
+  //       UPDATE ${table}
+  //       SET deleted_at = NOW()
+  //       WHERE id = $1
+  //     `;
+  //   } else {
+  query = `
       DELETE FROM ${table}
       WHERE id = $1
     `;
-//   }
+  //   }
 
   if (companyId) {
     values.push(companyId);

@@ -30,9 +30,22 @@ export class PurchaseOrderService {
   static async get(companyId: string, id: string) {
     const orderResult = await pool.query(
       `
-      SELECT po.*, p.name AS supplier_name
+      SELECT po.*, 
+        p.name AS supplier_name,
+        pt.name AS payment_terms,
+        pm.name AS payment_method,
+        sm.name AS shipment_method
+
       FROM purchase_orders po
+      
       LEFT JOIN parties p ON p.id = po.supplier_id
+
+      LEFT JOIN payment_terms pt ON pt.id=po.payment_terms_id
+
+      LEFT JOIN payment_methods pm ON pm.id=po.payment_method_id
+
+      LEFT JOIN shipment_methods sm ON sm.id=po.shipment_method_id
+
       WHERE po.id = $1 AND po.company_id = $2
       `,
       [id, companyId],
@@ -120,15 +133,38 @@ export class PurchaseOrderService {
     });
 
     const addressResult = await pool.query(
-      `SELECT * FROM purchase_order_addresses WHERE purchase_order_id = $1`,
+      `SELECT
+          id,
+          address_type,
+          name,
+          attention,
+          contact_name,
+          contact_person,
+          phone,
+          email,
+          address_1,
+          address_2,
+          city,
+          state,
+          county,
+          postcode,
+          country
+        FROM purchase_order_addresses
+        WHERE purchase_order_id=$1`,
       [id],
     );
 
     return {
       order: orderResult.rows[0],
+
       lines: linesWithAllocations,
+
+      primary_address:
+        addressResult.rows.find((x) => x.address_type === "primary") || null,
+
       billing_address:
         addressResult.rows.find((x) => x.address_type === "billing") || null,
+
       shipping_address:
         addressResult.rows.find((x) => x.address_type === "shipping") || null,
     };
@@ -162,26 +198,123 @@ export class PurchaseOrderService {
       const orderResult = await client.query(
         `
           INSERT INTO purchase_orders (
-            company_id, order_no, supplier_id, order_date, expected_date,
-            currency_id, exchange_rate, reference, notes,
-            subtotal, tax_amount, total_amount, status, created_at
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())
-          RETURNING *
+            company_id,
+            order_no,
+
+            supplier_id,
+            supplier_no,
+
+            purchaser,
+            consignment_no,
+            supp_order_no,
+            link_to_so_no,
+
+            currency_id,
+            exchange_rate,
+
+            order_date,
+            req_receipt_date,
+            receipt_date,
+            expected_date,
+            invoice_date,
+            due_date,
+
+            reference,
+
+            payable_bank,
+            payable_bank_id,
+
+            payment_terms_id,
+            payment_method_id,
+
+            previous_code,
+            link_to_cust,
+            deduct_from_rebate,
+
+            contact,
+            book_in_phone,
+            book_in_contact,
+            book_in_email,
+
+            shipment_method_id,
+            shipping_agent,
+            shipment_ref_no,
+            warehouse_ref_no,
+            shipment_po_not_req,
+
+            reason,
+            linked_po,
+
+            notes,
+            internal_notes,
+
+            subtotal,
+            tax_amount,
+            total_amount,
+
+            status,
+
+            created_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
+        $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,$31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, NOW()
+        RETURNING *;
         `,
         [
           companyId,
           orderNo,
+
           order.supplier_id,
-          order.order_date || null,
-          order.expected_date || null,
+          order.supplier_no,
+
+          order.purchaser,
+          order.consignment_no,
+          order.supp_order_no,
+          order.link_to_so_no,
+
           order.currency_id,
           order.exchange_rate,
-          order.reference || null,
-          order.notes || null,
+
+          order.order_date || null,
+          order.req_receipt_date || null,
+          order.receipt_date || null,
+          order.expected_date || null,
+          order.invoice_date?.trim() ? order.invoice_date : null,
+          order.due_date || null,
+
+          order.reference,
+
+          order.payable_bank,
+          order.payable_bank_id,
+
+          order.payment_terms_id,
+          order.payment_method_id,
+
+          order.previous_code,
+          order.link_to_cust,
+          order.deduct_from_rebate,
+
+          order.contact,
+          order.book_in_phone,
+          order.book_in_contact,
+          order.book_in_email,
+
+          order.shipment_method_id,
+          order.shipping_agent,
+          order.shipment_ref_no,
+          order.warehouse_ref_no,
+          order.shipment_po_not_req,
+
+          order.reason,
+          order.linked_po,
+
+          order.notes,
+          order.internal_notes,
+
           order.subtotal,
           order.tax_amount,
           order.total_amount,
+
           order.status,
         ],
       );
@@ -209,6 +342,15 @@ export class PurchaseOrderService {
           lineNo,
         );
         lineNo += 10000;
+      }
+
+      if (payload.primary_address) {
+        await this.insertAddress(
+          client,
+          createdOrder.id,
+          payload.primary_address,
+          companyId,
+        );
       }
 
       if (payload.billing_address) {
@@ -246,7 +388,10 @@ export class PurchaseOrderService {
   ): Promise<
     { id: string; item_id: string; warehouse_id: string; line_no: number }[]
   > {
-    const payload = PurchaseOrderPayloadSchema.parse(rawPayload);
+    // const payload = PurchaseOrderPayloadSchema.parse(rawPayload);
+    const payload = PurchaseOrderPayloadSchema.parse(
+      rawPayload,
+    ) as PurchaseOrderPayload;
 
     // try {
     //   await client.query("BEGIN");
@@ -266,24 +411,121 @@ export class PurchaseOrderService {
     await client.query(
       `
         UPDATE purchase_orders
-        SET
-          supplier_id = $1, order_date = $2, expected_date = $3,
-          currency_id = $4, exchange_rate = $5, reference = $6, notes = $7,
-          subtotal = $8, tax_amount = $9, total_amount = $10, updated_at = now()
-        WHERE id = $11
+          SET
+
+          supplier_id=$1,
+          supplier_no=$2,
+
+          purchaser=$3,
+          consignment_no=$4,
+          supp_order_no=$5,
+          link_to_so_no=$6,
+
+          currency_id=$7,
+          exchange_rate=$8,
+
+          order_date=$9,
+          req_receipt_date=$10,
+          receipt_date=$11,
+          expected_date=$12,
+          invoice_date=$13,
+          due_date=$14,
+
+          reference=$15,
+
+          payable_bank=$16,
+          payable_bank_id=$17,
+
+          payment_terms_id=$18,
+          payment_method_id=$19,
+
+          previous_code=$20,
+          link_to_cust=$21,
+          deduct_from_rebate=$22,
+
+          contact=$23,
+          book_in_phone=$24,
+          book_in_contact=$25,
+          book_in_email=$26,
+
+          shipment_method_id=$27,
+          shipping_agent=$28,
+          shipment_ref_no=$29,
+          warehouse_ref_no=$30,
+          shipment_po_not_req=$31,
+
+          reason=$32,
+          linked_po=$33,
+
+          notes=$34,
+          internal_notes=$35,
+
+          subtotal=$36,
+          tax_amount=$37,
+          total_amount=$38,
+
+          status=$39,
+
+          updated_at=NOW()
+
+          WHERE id=$40 AND company_id=$41;
         `,
+
       [
         order.supplier_id,
-        order.order_date || null,
-        order.expected_date === "" ? null : order.expected_date || null,
+        order.supplier_no,
+
+        order.purchaser,
+        order.consignment_no,
+        order.supp_order_no,
+        order.link_to_so_no,
+
         order.currency_id,
         order.exchange_rate,
-        order.reference || null,
-        order.notes || null,
+
+        order.order_date || null,
+        order.req_receipt_date || null,
+        order.receipt_date || null,
+        order.expected_date || null,
+        order.invoice_date?.trim() ? order.invoice_date : null,
+        order.due_date || null,
+
+        order.reference,
+
+        order.payable_bank,
+        order.payable_bank_id,
+
+        order.payment_terms_id,
+        order.payment_method_id,
+
+        order.previous_code,
+        order.link_to_cust,
+        order.deduct_from_rebate,
+
+        order.contact,
+        order.book_in_phone,
+        order.book_in_contact,
+        order.book_in_email,
+
+        order.shipment_method_id,
+        order.shipping_agent,
+        order.shipment_ref_no,
+        order.warehouse_ref_no,
+        order.shipment_po_not_req,
+
+        order.reason,
+        order.linked_po,
+
+        order.notes,
+        order.internal_notes,
+
         order.subtotal,
         order.tax_amount,
         order.total_amount,
+
+        order.status,
         id,
+        companyId,
       ],
     );
 
@@ -298,7 +540,7 @@ export class PurchaseOrderService {
     for (const existingId of existingLineIds) {
       if (!incomingLineIds.includes(existingId)) {
         await client.query(
-          `UPDATE purchase_order_lines SET is_deleted = true, updated_at = now() WHERE id = $1`,
+          `UPDATE purchase_order_lines SET is_deleted = true, updated_at = NOW() WHERE id = $1`,
           [existingId],
         );
       }
@@ -312,11 +554,11 @@ export class PurchaseOrderService {
             UPDATE purchase_order_lines
             SET
               line_type = $1, item_id = $2, gl_account_id = $3, description = $4,
-              warehouse_id = $5, warehouse_location_id = $6, uom_id = $7, quantity = $8,
-              unit_cost = $9, discount_type = $10, discount_value = $11, discount_amount = $12,
-              vat_percent = $13, vat_amount = $14, net_amount = $15, gross_amount = $16,
-              line_no = $17, updated_at = now()
-            WHERE id = $18
+              warehouse_id = $5, uom_id = $6, quantity = $7,
+              unit_cost = $8, discount_type = $9, discount_value = $10, discount_amount = $11,
+              vat_percent = $12, vat_amount = $13, net_amount = $14, gross_amount = $15,
+              line_no = $16, updated_at = NOW()
+            WHERE id = $17
             `,
           [
             line.line_type,
@@ -324,7 +566,6 @@ export class PurchaseOrderService {
             line.gl_account_id,
             line.description,
             line.warehouse_id,
-            line.warehouse_location_id,
             line.uom_id,
             line.quantity,
             line.unit_cost,
@@ -359,6 +600,10 @@ export class PurchaseOrderService {
       `DELETE FROM purchase_order_addresses WHERE purchase_order_id = $1`,
       [id],
     );
+
+    if (payload.primary_address) {
+      await this.insertAddress(client, id, payload.primary_address, companyId);
+    }
 
     if (payload.billing_address) {
       await this.insertAddress(client, id, payload.billing_address, companyId);
@@ -427,7 +672,7 @@ export class PurchaseOrderService {
         throw new Error("Purchase order already posted");
 
       await client.query(
-        `UPDATE purchase_orders SET is_posted = true, posted_at = now(), updated_at = now() WHERE id = $1`,
+        `UPDATE purchase_orders SET is_posted = true, posted_at = NOW(), updated_at = NOW() WHERE id = $1`,
         [id],
       );
       await client.query("COMMIT");
@@ -491,7 +736,7 @@ export class PurchaseOrderService {
       $13,$14,$15,$16,
       $17,$18,$19,$20,
       false,
-      now()
+      NOW()
     )
     `,
       [
@@ -525,9 +770,66 @@ export class PurchaseOrderService {
     address: PurchaseOrderAddress,
     companyId: string,
   ): Promise<void> {
-    // const companyId = await getCompanyId();
-
     await client.query(
+      `
+      INSERT INTO purchase_order_addresses
+      (
+          purchase_order_id,
+          company_id,
+          address_type,
+
+          name,
+          attention,
+
+          phone,
+          email,
+
+          address_1,
+          address_2,
+
+          city,
+          state,
+          county,
+
+          postcode,
+          country,
+
+          contact_person,
+          contact_name
+      )
+      VALUES
+      (
+          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+          $11,$12,$13,$14,$15,$16
+      )
+      `,
+      [
+        purchaseOrderId,
+        companyId,
+        address.address_type,
+
+        address.name,
+        address.attention,
+
+        address.phone,
+        address.email,
+
+        address.address_1,
+        address.address_2,
+
+        address.city,
+        address.state,
+        address.county,
+
+        address.postcode,
+        address.country,
+
+        address.contact_person,
+        address.contact_name,
+      ],
+    );
+
+    /* await client.query(
       `
       INSERT INTO purchase_order_addresses (
         purchase_order_id,
@@ -562,7 +864,7 @@ export class PurchaseOrderService {
         address.country || null,
         companyId,
       ],
-    );
+    ); */
   }
 
   static async recalculateStatus(
@@ -600,7 +902,7 @@ export class PurchaseOrderService {
         : "open";
 
     await client.query(
-      `UPDATE purchase_orders SET status = $1, updated_at = now() WHERE id = $2`,
+      `UPDATE purchase_orders SET status = $1, updated_at = NOW() WHERE id = $2`,
       [status, purchaseOrderId],
     );
   }
@@ -624,7 +926,7 @@ export class PurchaseOrderService {
           + COALESCE(cancelled_quantity,0)
         ),
 
-      updated_at = now()
+      updated_at = NOW()
 
     WHERE id = $2
     `,
