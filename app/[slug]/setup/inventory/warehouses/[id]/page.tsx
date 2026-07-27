@@ -11,7 +11,7 @@ export default async function ViewWarehousePage({
   const { slug, id } = await params;
 
   return (
-    <div className="py-6 space-y-6 px-4 sm:px-6">
+    <div className="py-6 space-y-6">
 
       <div className="flex justify-between items-center border-b border-slate-200 pb-4">
         <div>

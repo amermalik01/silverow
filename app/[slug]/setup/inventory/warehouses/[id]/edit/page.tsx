@@ -11,7 +11,7 @@ export default async function EditWarehousePage({
   const { slug, id } = await params;
 
   return (
-    <div className="max-w-7xl mx-auto py-6 space-y-6 px-4 sm:px-6">
+    <div className="container mx-auto py-6 space-y-6 px-4 sm:px-6">
       <div className="flex justify-between items-center border-b border-slate-200 pb-4">
         <div>
           <nav className="text-xs text-slate-500 space-x-1.5 flex items-center mb-1">

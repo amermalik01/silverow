@@ -57,13 +57,20 @@ export default function GeneralTab({
     setWarehouse((prev) => ({ ...prev, [field]: value }));
   };
 
-  const inputClass = `w-full px-2 py-1 rounded border text-xs transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+  const inputClass = `w-full col-span-8 px-2 py-1 rounded border text-xs transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 ${
     isReadOnly
       ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed"
       : "bg-white border-slate-300 text-slate-900"
   }`;
 
-  const labelClass = "block text-xs font-medium text-slate-600 mb-1";
+  const labelClass =
+    "block text-xs font-medium text-slate-600 mb-1  col-span-4";
+
+  const inputcolumnDivStyle = `w-full col-span-4  px-2 py-1 rounded border text-xs transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+    isReadOnly
+      ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed"
+      : "bg-white border-slate-300 text-slate-900"
+  }`;
 
   return (
     <div className="space-y-6">
@@ -90,16 +97,16 @@ export default function GeneralTab({
             </label>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Warehouse No.</label>
             <input
               value={warehouse.code || ""}
               disabled
-              className="w-full px-2 py-1 rounded border border-slate-200 bg-slate-100 text-slate-600 text-xs font-mono"
+              className="w-full col-span-8 px-2 py-1 rounded border border-slate-200 bg-slate-100 text-slate-600 text-xs font-mono"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>
               Name <span className="text-rose-500">*</span>
             </label>
@@ -111,7 +118,7 @@ export default function GeneralTab({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Address Line 1</label>
             <input
               value={warehouse.address_line_1 || ""}
@@ -121,7 +128,7 @@ export default function GeneralTab({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Address Line 2</label>
             <input
               value={warehouse.address_line_2 || ""}
@@ -131,70 +138,86 @@ export default function GeneralTab({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-              <label className={labelClass}>City / Town</label>
-              <input
-                value={warehouse.city || ""}
-                onChange={(e) => updateField("city", e.target.value)}
-                disabled={isReadOnly}
-                className={inputClass}
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-              <label className={labelClass}>County / State</label>
-              <input
-                value={warehouse.county || ""}
-                onChange={(e) => updateField("county", e.target.value)}
-                disabled={isReadOnly}
-                className={inputClass}
-              />
+          <div>
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelClass}>City / Town </label>
+
+              <div className="col-span-8">
+                <div className="grid grid-cols-12 items-center gap-2">
+                  <input
+                    value={warehouse.city || ""}
+                    onChange={(e) => updateField("city", e.target.value)}
+                    disabled={isReadOnly}
+                    className={inputcolumnDivStyle}
+                  />
+
+                  <label className={`${labelClass} text-center`}>
+                    County / State
+                  </label>
+                  <input
+                    value={warehouse.county || ""}
+                    onChange={(e) => updateField("county", e.target.value)}
+                    disabled={isReadOnly}
+                    className={inputcolumnDivStyle}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div>
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>Postcode</label>
-              <input
-                value={warehouse.postcode || ""}
-                onChange={(e) => updateField("postcode", e.target.value)}
-                disabled={isReadOnly}
-                className={inputClass}
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-              <label className={labelClass}>Country</label>
-              <input
-                value={warehouse.country || "United Kingdom"}
-                onChange={(e) => updateField("country", e.target.value)}
-                disabled={isReadOnly}
-                className={inputClass}
-              />
+
+              <div className="col-span-8">
+                <div className="grid grid-cols-12 items-center gap-2">
+                  <input
+                    value={warehouse.postcode || ""}
+                    onChange={(e) => updateField("postcode", e.target.value)}
+                    disabled={isReadOnly}
+                    className={inputcolumnDivStyle}
+                  />
+
+                  <label className={`${labelClass} text-center`}>Country</label>
+
+                  <input
+                    value={warehouse.country || "United Kingdom"}
+                    onChange={(e) => updateField("country", e.target.value)}
+                    disabled={isReadOnly}
+                    className={inputcolumnDivStyle}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div>
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>Telephone</label>
-              <input
-                value={warehouse.telephone || ""}
-                onChange={(e) => updateField("telephone", e.target.value)}
-                disabled={isReadOnly}
-                className={inputClass}
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-              <label className={labelClass}>Fax</label>
-              <input
-                value={warehouse.fax || ""}
-                onChange={(e) => updateField("fax", e.target.value)}
-                disabled={isReadOnly}
-                className={inputClass}
-              />
+
+              <div className="col-span-8">
+                <div className="grid grid-cols-12 items-center gap-2">
+                  <input
+                    value={warehouse.telephone || ""}
+                    onChange={(e) => updateField("telephone", e.target.value)}
+                    disabled={isReadOnly}
+                    className={inputcolumnDivStyle}
+                  />
+
+                  <label className={`${labelClass} text-center`}>Fax</label>
+
+                  <input
+                    value={warehouse.fax || ""}
+                    onChange={(e) => updateField("fax", e.target.value)}
+                    disabled={isReadOnly}
+                    className={inputcolumnDivStyle}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>
               Warehouse Storage Type <span className="text-rose-500">*</span>
             </label>
@@ -219,7 +242,7 @@ export default function GeneralTab({
             </select>
           </div>
 
-          {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          {/* <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>
               Warehouse Storage Type <span className="text-rose-500">*</span>
             </label>
@@ -245,7 +268,7 @@ export default function GeneralTab({
             Primary Contact Details
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>
               Contact Person <span className="text-rose-500">*</span>
             </label>
@@ -257,7 +280,7 @@ export default function GeneralTab({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Job Title</label>
             <input
               value={warehouse.job_title || ""}
@@ -267,7 +290,7 @@ export default function GeneralTab({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Direct Line</label>
             <input
               value={warehouse.direct_line || ""}
@@ -277,7 +300,7 @@ export default function GeneralTab({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Mobile</label>
             <input
               value={warehouse.mobile || ""}
@@ -287,7 +310,7 @@ export default function GeneralTab({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Email</label>
             <input
               type="email"
@@ -325,7 +348,7 @@ export default function GeneralTab({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>
                 Primary Storage Location{" "}
                 <span className="text-rose-500">*</span>
@@ -347,7 +370,7 @@ export default function GeneralTab({
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>Parent Storage Location</label>
               <select
                 value={warehouse.parent_location_id || ""}
@@ -366,7 +389,7 @@ export default function GeneralTab({
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>
                 Start Date <span className="text-rose-500">*</span>
               </label>
@@ -381,7 +404,7 @@ export default function GeneralTab({
           </div>
 
           <div className="space-y-3.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>
                 Unit of Measure <span className="text-rose-500">*</span>
               </label>
@@ -393,7 +416,7 @@ export default function GeneralTab({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>
                 Cost Frequency <span className="text-rose-500">*</span>
               </label>
@@ -408,31 +431,33 @@ export default function GeneralTab({
                 <option value="Annually">Annually</option>
               </select>
             </div>
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelClass}>Currency</label>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-                <label className={labelClass}>Currency</label>
-                <MasterDropdown
-                  type="currency"
-                  value={warehouse.currency_id}
-                  onChange={(val) => updateField("currency_id", val)}
-                  disabled={isReadOnly}
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-                <label className={labelClass}>Cost</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={warehouse.cost || ""}
-                  onChange={(e) => updateField("cost", e.target.value)}
-                  disabled={isReadOnly}
-                  className={inputClass}
-                />
+              <div className="col-span-8">
+                <div className="grid grid-cols-12 items-center gap-2">
+                  <MasterDropdown
+                    type="currency"
+                    value={warehouse.currency_id}
+                    onChange={(val) => updateField("currency_id", val)}
+                    className="border p-2 w-full rounded col-span-4"
+                    disabled={isReadOnly}
+                  />
+
+                  <label className={`${labelClass} text-center`}>Cost</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={warehouse.cost || ""}
+                    onChange={(e) => updateField("cost", e.target.value)}
+                    disabled={isReadOnly}
+                    className={inputcolumnDivStyle}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>Comments</label>
               <textarea
                 rows={2}

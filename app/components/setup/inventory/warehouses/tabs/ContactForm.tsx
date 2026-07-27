@@ -60,13 +60,13 @@ export default function ContactForm({
     }
   };
 
-  const inputClass = `w-full px-2 py-1 rounded border text-xs transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+  const inputClass = `w-full col-span-8 px-2 py-1 rounded border text-xs transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 ${
     isReadOnly
       ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed"
       : "bg-white border-slate-300 text-slate-900"
   }`;
 
-  const labelClass = "block text-xs font-medium text-slate-600 mb-1";
+  const labelClass = "block text-xs font-medium text-slate-600 mb-1 col-span-4";
 
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-4">
@@ -81,7 +81,7 @@ export default function ContactForm({
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="space-y-3 col-span-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>
               Contact Name <span className="text-rose-500">*</span>
             </label>
@@ -93,7 +93,7 @@ export default function ContactForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Job Title</label>
             <input
               value={form.job_title}
@@ -103,7 +103,7 @@ export default function ContactForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Direct Line</label>
             <input
               value={form.direct_line}
@@ -113,7 +113,7 @@ export default function ContactForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Mobile</label>
             <input
               value={form.mobile}
@@ -123,7 +123,7 @@ export default function ContactForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Telephone</label>
             <input
               value={form.telephone}
@@ -133,7 +133,7 @@ export default function ContactForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Fax</label>
             <input
               value={form.fax}
@@ -143,7 +143,7 @@ export default function ContactForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Email</label>
             <input
               type="email"
@@ -158,7 +158,7 @@ export default function ContactForm({
         <div className="space-y-3"></div>
 
         <div className="space-y-3 col-span-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Location Name</label>
             <input
               value={form.location_name}
@@ -168,7 +168,7 @@ export default function ContactForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Address Line 1</label>
             <input
               value={form.address_line_1}
@@ -178,7 +178,7 @@ export default function ContactForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Address Line 2</label>
             <input
               value={form.address_line_2}
@@ -189,7 +189,7 @@ export default function ContactForm({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>City</label>
               <input
                 value={form.city}
@@ -198,7 +198,7 @@ export default function ContactForm({
                 className={inputClass}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>County</label>
               <input
                 value={form.county}
@@ -210,7 +210,7 @@ export default function ContactForm({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>Postcode</label>
               <input
                 value={form.postcode}
@@ -219,7 +219,7 @@ export default function ContactForm({
                 className={inputClass}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>Country</label>
               <input
                 value={form.country}

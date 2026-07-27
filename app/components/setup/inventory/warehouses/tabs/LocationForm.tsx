@@ -54,13 +54,13 @@ export default function LocationForm({
     }
   };
 
-  const inputClass = `w-full px-2 py-1 rounded border text-xs transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+  const inputClass = `w-full col-span-8 px-2 py-1 rounded border text-xs transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 ${
     isReadOnly
       ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed"
       : "bg-white border-slate-300 text-slate-900"
   }`;
 
-  const labelClass = "block text-xs font-medium text-slate-600 mb-1";
+  const labelClass = "block text-xs font-medium text-slate-600 mb-1 col-span-4";
 
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-4">
@@ -82,7 +82,7 @@ export default function LocationForm({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-3">
-          <div>
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>
               Storage Location <span className="text-rose-500">*</span>
             </label>
@@ -94,7 +94,7 @@ export default function LocationForm({
             />
           </div>
 
-          <div>
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Parent Storage Location</label>
             <input
               value={form.parent_id || ""}
@@ -105,7 +105,7 @@ export default function LocationForm({
             />
           </div>
 
-          <div>
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>
               Start Date <span className="text-rose-500">*</span>
             </label>
@@ -120,7 +120,7 @@ export default function LocationForm({
         </div>
 
         <div className="space-y-3">
-          <div>
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>
               Unit of Measure <span className="text-rose-500">*</span>
             </label>
@@ -134,7 +134,7 @@ export default function LocationForm({
             />
           </div>
 
-          <div>
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>
               Cost Frequency <span className="text-rose-500">*</span>
             </label>
@@ -153,7 +153,7 @@ export default function LocationForm({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>Currency</label>
               <input
                 value={form.currency}
@@ -162,7 +162,7 @@ export default function LocationForm({
                 className={inputClass}
               />
             </div>
-            <div>
+            <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>Cost</label>
               <input
                 type="number"
@@ -175,7 +175,7 @@ export default function LocationForm({
             </div>
           </div>
 
-          <div>
+          <div className="grid grid-cols-12 items-center gap-2">
             <label className={labelClass}>Comments</label>
             <textarea
               rows={2}
