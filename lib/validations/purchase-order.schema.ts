@@ -14,9 +14,18 @@ const looseNumber = z.preprocess((val) => {
   return isNaN(parsed) ? 0 : parsed;
 }, z.number().default(0));
 
+
+const looseUuid = z.preprocess((val) => {
+  if (val === "" || val === null || val === undefined) {
+    return undefined;
+  }
+
+  return val;
+}, z.string().uuid().optional());
+
 export const PurchaseOrderAddressSchema = z.object({
-  id: z.string().uuid().optional(),
-  purchase_order_id: z.string().uuid().optional(),
+  id: looseUuid,
+  purchase_order_id: looseUuid,
   address_type: z.enum(["primary", "billing", "shipping"]),
 
   contact_name: looseString.superRefine((val, ctx) => {
@@ -62,8 +71,8 @@ export const PurchaseOrderAddressSchema = z.object({
 
 export const PurchaseOrderLineSchema = z
   .object({
-    id: z.string().uuid().optional(),
-    purchase_order_id: z.string().uuid().optional(),
+    id: looseUuid,
+    purchase_order_id: looseUuid,
     line_no: z.coerce.number().optional(),
     line_type: z.enum(["ITEM", "GL_ACCOUNT", "COMMENT"]),
     item_id: z.string().uuid().optional().nullable(),
@@ -123,64 +132,64 @@ export const PurchaseOrderLineSchema = z
 export const PurchaseOrderSchema = z.object({
   supplier_id: z.string().uuid(),
 
-  supplier_no: z.string().optional(),
+  supplier_no: looseString,
 
-  purchaser: z.string().optional(),
-  consignment_no: z.string().optional(),
-  supp_order_no: z.string().optional(),
-  link_to_so_no: z.string().optional(),
+  purchaser: looseString,
+  consignment_no: looseString,
+  supp_order_no: looseString,
+  link_to_so_no: looseString,
 
-  currency_id: z.string().uuid().optional(),
+  currency_id: looseUuid,
   exchange_rate: z.coerce.number().optional(),
 
   order_date: z.string(),
-  req_receipt_date: z.string().optional(),
-  receipt_date: z.string().optional(),
-  expected_date: z.string().optional(),
-  invoice_date: z.string().optional(),
-  due_date: z.string().optional(),
+  req_receipt_date: looseString,
+  receipt_date: looseString,
+  expected_date: looseString,
+  invoice_date: looseString,
+  due_date: looseString,
 
-  reference: z.string().optional(),
+  reference: looseString,
 
-  payable_bank: z.string().optional(),
-  payable_bank_id: z.string().uuid().optional(),
+  payable_bank: looseString,
+  payable_bank_id: looseUuid,
 
-  payment_terms: z.string().optional(),
-  payment_terms_id: z.string().uuid().optional(),
+  payment_terms: looseString,
+  payment_terms_id: looseUuid,
 
-  payment_method: z.string().optional(),
-  payment_method_id: z.string().uuid().optional(),
+  payment_method: looseString,
+  payment_method_id: looseUuid,
 
-  previous_code: z.string().optional(),
-  link_to_cust: z.string().optional(),
+  previous_code: looseString,
+  link_to_cust: looseString,
 
   deduct_from_rebate: z.boolean().optional(),
 
-  contact: z.string().optional(),
-  book_in_phone: z.string().optional(),
-  book_in_contact: z.string().optional(),
-  book_in_email: z.string().optional(),
+  contact: looseString,
+  book_in_phone: looseString,
+  book_in_contact: looseString,
+  book_in_email: looseString,
 
-  shipment_method: z.string().optional(),
-  shipment_method_id: z.string().uuid().optional(),
+  shipment_method: looseString,
+  shipment_method_id: looseUuid,
 
-  shipping_agent: z.string().optional(),
-  shipment_ref_no: z.string().optional(),
-  warehouse_ref_no: z.string().optional(),
+  shipping_agent: looseString,
+  shipment_ref_no: looseString,
+  warehouse_ref_no: looseString,
 
   shipment_po_not_req: z.boolean().optional(),
 
-  reason: z.string().optional(),
-  linked_po: z.string().optional(),
+  reason: looseString,
+  linked_po: looseString,
 
-  notes: z.string().optional(),
-  internal_notes: z.string().optional(),
+  notes: looseString,
+  internal_notes: looseString,
 
   subtotal: z.coerce.number().optional(),
   tax_amount: z.coerce.number().optional(),
   total_amount: z.coerce.number().optional(),
 
-  status: z.string().optional(),
+  status: looseString,
 });
 
 export const PurchaseOrderPayloadSchema = z.object({
@@ -207,8 +216,8 @@ export type PurchaseOrderPayloadInput = z.infer<
 /* 
 
 export const PurchaseOrderSchema = z.object({
-  id: z.string().uuid().optional(),
-  company_id: z.string().uuid().optional(),
+  id: looseUuid,
+  company_id: looseUuid,
   order_no: z.string().optional().nullable(),
   supplier_id: z.string().uuid("Supplier selection is required"),
   supplier_no: z.string().optional().nullable(),

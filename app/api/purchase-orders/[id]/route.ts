@@ -82,9 +82,9 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       body,
     );
 
-    console.log('update Api  dbLines === ',dbLines);
-    console.log('update Api  lines === ',lines);
-    console.log('update Api  order?.status === ',order?.status);
+    // console.log('update Api  dbLines === ',dbLines);
+    // console.log('update Api  lines === ',lines);
+    // console.log('update Api  order?.status === ',order?.status);
 
     // 2. Iterate safely using order indexes to guarantee accurate mapping of newly generated IDs
     for (let i = 0; i < lines.length; i++) {

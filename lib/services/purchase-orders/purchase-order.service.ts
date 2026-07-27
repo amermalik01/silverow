@@ -10,7 +10,7 @@ import {
   PurchaseOrderLine,
   PurchaseOrderPayload,
 } from "@/types/purchase-order";
-import { StockAllocationRecord } from "@/app/components/shared/modals/StockAllocationModal";
+import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
 
 export class PurchaseOrderService {
   static async list(companyId: string): Promise<PurchaseOrder[]> {
@@ -42,9 +42,9 @@ export class PurchaseOrderService {
 
       LEFT JOIN payment_terms pt ON pt.id=po.payment_terms_id
 
-      LEFT JOIN payment_methods pm ON pm.id=po.payment_method_id
+      LEFT JOIN payment_method pm ON pm.id=po.payment_method_id
 
-      LEFT JOIN shipment_methods sm ON sm.id=po.shipment_method_id
+      LEFT JOIN shipment_method sm ON sm.id=po.shipment_method_id
 
       WHERE po.id = $1 AND po.company_id = $2
       `,
@@ -91,17 +91,20 @@ export class PurchaseOrderService {
     // 🌟 FIX: Join with purchase_order_lines to look up by PO ID and select correct columns
     const allocationsResult = await pool.query(
       `
-      SELECT 
-        ia.id,
-        ia.purchase_order_line_id,
-        ia.item_id,
-        ia.warehouse_id,
-        ia.allocated_quantity AS quantity,
-        ia.batch_no,
-        ia.bin_code,
-        TO_CHAR(ia.expiry_date, 'YYYY-MM-DD') AS expiry_date,
-        TO_CHAR(ia.created_at, 'YYYY-MM-DD') AS date_received
+      SELECT
+          ia.id,
+          ia.purchase_order_line_id,
+          ia.item_id,
+          ia.warehouse_id,
+          ia.warehouse_location_id AS location_id,
+          wl.title AS location_name,
+          ia.allocated_quantity AS quantity,
+          ia.batch_no,
+          ia.bin_code,
+          TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
+          TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_received
       FROM inventory_allocations ia
+      LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
       INNER JOIN purchase_order_lines pol ON ia.purchase_order_line_id = pol.id
       WHERE pol.purchase_order_id = $1 AND ia.company_id = $2
       `,
@@ -118,6 +121,9 @@ export class PurchaseOrderService {
           expiry_date: alloc.expiry_date || "",
           batch_no: alloc.batch_no || "",
           bin_code: alloc.bin_code || "",
+
+          location_id: alloc.location_id || "",
+          location_name: alloc.location_name || "",
           quantity: Number(alloc.quantity) || 0,
         }));
 
@@ -941,7 +947,7 @@ export class PurchaseOrderService {
     purchaseOrderLineId: string,
     itemId: string,
     warehouseId: string,
-    initialAllocations: StockAllocationRecord[],
+    initialAllocations: PO_StockAllocationRecord[],
   ): Promise<void> {
     // 1. Clear any existing manual entries for this specific line to prevent duplicates on update
     await client.query(
@@ -965,6 +971,7 @@ export class PurchaseOrderService {
           purchase_order_line_id,
           item_id,
           warehouse_id,
+          warehouse_location_id,
           batch_no,
           expiry_date,
           allocated_quantity,
@@ -973,7 +980,7 @@ export class PurchaseOrderService {
           allocation_method,
           status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'FIFO', 'ACTIVE')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'FIFO', 'ACTIVE')
         `,
         [
           companyId,
@@ -982,6 +989,7 @@ export class PurchaseOrderService {
           purchaseOrderLineId,
           itemId,
           warehouseId,
+          alloc.location_id || null,
           alloc.batch_no || null,
           alloc.expiry_date === "" ? null : alloc.expiry_date || null,
           Number(alloc.quantity) || 0,
