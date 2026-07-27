@@ -32,7 +32,7 @@ export default function PartyForm({
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "general" | "contacts" | "addresses"
+    "general" | "contacts" | "locations"
   >("general");
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -127,7 +127,7 @@ export default function PartyForm({
       ) {
         setActiveTab("contacts");
       } else {
-        setActiveTab("addresses");
+        setActiveTab("locations");
       }
       return false;
     }
@@ -216,7 +216,7 @@ export default function PartyForm({
       )}
 
       <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800">
-        {(["general", "contacts", "addresses"] as const).map((tab) => {
+        {(["general", "contacts", "locations"] as const).map((tab) => {
           const matchingTabErrors = Object.keys(formErrors).some((k) =>
             k.startsWith(`${tab}.`),
           );
@@ -262,7 +262,7 @@ export default function PartyForm({
             errors={formErrors}
           />
         )}
-        {activeTab === "addresses" && (
+        {activeTab === "locations" && (
           <AddressesTab
             addresses={addresses}
             setAddresses={setAddresses}

@@ -126,7 +126,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
       ) {
         setActiveTab("contacts");
       } else {
-        setActiveTab("addresses");
+        setActiveTab("locations");
       }
       return false;
     }
@@ -173,7 +173,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
   const tabs = [
     "general",
     "contacts",
-    "addresses",
+    "locations",
     "activities",
     "notes",
     "attachments",
@@ -266,7 +266,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
             errors={formErrors}
           />
         )}
-        {activeTab === "addresses" && (
+        {activeTab === "locations" && (
           <AddressesTab
             addresses={addresses}
             setAddresses={setAddresses}

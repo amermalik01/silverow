@@ -162,7 +162,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         const data = await res.json();
 
         setMasterData(data);
-
       } catch (err) {
         console.error(err);
       }
@@ -170,8 +169,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
     loadMasterData();
   }, []);
-
-  
 
   // useEffect(() => {
   //   if (!isUpdateMode) {
@@ -200,12 +197,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   // }, [currencyConfig.currency_id, currencies]);
 
   const selectedCurrency = useMemo(() => {
-  return (
-    masterData?.currencies.find(
-      (c) => c.id === currencyConfig.currency_id,
-    ) ?? null
-  );
-}, [currencyConfig.currency_id, masterData]);
+    return (
+      masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
+      null
+    );
+  }, [currencyConfig.currency_id, masterData]);
 
   const financials = useMemo(() => {
     const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
@@ -647,28 +643,32 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         </div>
 
         <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2 items-center">
-            <span className="text-xs font-semibold text-slate-500">
-              Conversion Rate
-            </span>
-            <input
-              type="number"
-              step="any"
-              className={`${inputStyle} font-mono max-w-[180px]`}
-              value={currencyConfig.exchange_rate ?? ""}
-              onChange={(e) =>
-                setCurrencyConfig({
-                  ...currencyConfig,
-                  exchange_rate: parseFloat(e.target.value) || 1,
-                })
-              }
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+            <div>
+              <span className="text-xs font-semibold text-slate-500 col">
+                Conversion Rate
+              </span>
+            </div>
+            <div>
+              <input
+                type="number"
+                step="any"
+                className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
+                onChange={(e) =>
+                  setCurrencyConfig({
+                    ...currencyConfig,
+                    exchange_rate: parseFloat(e.target.value) || 1,
+                  })
+                }
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-2 items-center">
             <span className="text-xs font-semibold text-slate-500">
               Amount Incl. VAT ({baseCurrencyCode})
             </span>
-            <div className="p-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[180px] rounded">
+            <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
               {financials.amountInclVatLCY.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,

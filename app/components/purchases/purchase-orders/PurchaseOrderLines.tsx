@@ -370,7 +370,7 @@ export default function PurchaseOrderLines({
                         </button>
 
                         {line.item_name && (
-                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate">
+                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
                             {line.item_name}
                           </div>
                         )}
@@ -389,7 +389,7 @@ export default function PurchaseOrderLines({
                         </button>
 
                         {line.account_name && (
-                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate">
+                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
                             {line.account_name}
                           </div>
                         )}
@@ -434,29 +434,30 @@ export default function PurchaseOrderLines({
                           type="button"
                           disabled={isReadonly}
                           onClick={() => setWarehouseIndex(index)}
-                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-full truncate"
+                          className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-xs bg-white dark:bg-slate-800 flex items-center justify-between gap-3"
                         >
-                          {line.warehouse_code || "Select Warehouse"}
-                        </button>
+                          <span className="truncate text-left">
+                            {line.warehouse_code || "Select Warehouse"}
+                            {line.warehouse_name && ` - ${line.warehouse_name}`}
+                          </span>
 
-                        {line.warehouse_name && (
-                          <div className="text-xs ">{line.warehouse_name}</div>
-                        )}
+                          <div className="flex items-center gap-3 shrink-0">
+                            {/* ✅ RESERVED STOCK INDICATOR */}
+                            {line.reserved_quantity && (
+                              <span className="text-blue-600 whitespace-nowrap">
+                                Reserved: {Number(line.reserved_quantity)}
+                              </span>
+                            )}
 
-                        {/* ✅ RESERVED STOCK INDICATOR */}
-                        {line.reserved_quantity && (
-                          <div className="text-xs text-blue-600">
-                            Reserved: {Number(line.reserved_quantity)}
+                            {/* ❗ STOCK WARNING */}
+                            {displayAvailableStock !== undefined &&
+                              displayQty > displayAvailableStock && (
+                                <span className="text-red-600 font-medium whitespace-nowrap">
+                                  Insufficient stock
+                                </span>
+                              )}
                           </div>
-                        )}
-
-                        {/* ❗ STOCK WARNING */}
-                        {displayAvailableStock !== undefined &&
-                          displayQty > displayAvailableStock && (
-                            <div className="text-red-600 text-xs font-medium">
-                              Insufficient stock
-                            </div>
-                          )}
+                        </button>
                       </div>
                     )}
                     {!line.warehouse_id && line.line_type === "ITEM" && (
