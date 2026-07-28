@@ -152,13 +152,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       );
   }, [id]);
 
-  // useEffect(() => {
-  //   fetch("/api/parties/currencies")
-  //     .then((res) => (res.ok ? res.json() : []))
-  //     .then((data) => setCurrencies(data))
-  //     .catch((err) => console.error("Error pulling lookups:", err));
-  // }, []);
-
   useEffect(() => {
     async function loadMasterData() {
       try {
@@ -176,31 +169,15 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     loadMasterData();
   }, []);
 
-  // useEffect(() => {
-  //   if (!isUpdateMode) {
-  //     setIsLoadingStages(false);
-  //     return;
-  //   }
+  const refreshLines = async () => {
+    if (!order.id) return;
 
-  //   async function fetchStages() {
-  //     try {
-  //       const response = await fetch("/api/setup/sales/purchase_order_stages");
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         setStages(data);
-  //       }
-  //     } catch (error) {
-  //       console.error("Failed to load purchase order stages setup:", error);
-  //     } finally {
-  //       setIsLoadingStages(false);
-  //     }
-  //   }
-  //   fetchStages();
-  // }, [isUpdateMode]);
+    const response = await fetch(`/api/purchase-orders/${order.id}/lines`);
 
-  // const selectedCurrency = useMemo(() => {
-  //   return currencies.find((c) => c.id === currencyConfig.currency_id);
-  // }, [currencyConfig.currency_id, currencies]);
+    const data = await response.json();
+
+    setLines(data.lines ?? []);
+  };
 
   const selectedCurrency = useMemo(() => {
     return (
@@ -629,6 +606,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         lines={lines}
         setLines={setLines}
         isReadonly={isReadOnly}
+        purchaseOrder={order}
+        refreshLines={refreshLines}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end bg-slate-50 dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
@@ -744,3 +723,35 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     </div>
   );
 };
+// useEffect(() => {
+//   fetch("/api/parties/currencies")
+//     .then((res) => (res.ok ? res.json() : []))
+//     .then((data) => setCurrencies(data))
+//     .catch((err) => console.error("Error pulling lookups:", err));
+// }, []);
+
+// useEffect(() => {
+//   if (!isUpdateMode) {
+//     setIsLoadingStages(false);
+//     return;
+//   }
+
+//   async function fetchStages() {
+//     try {
+//       const response = await fetch("/api/setup/sales/purchase_order_stages");
+//       if (response.ok) {
+//         const data = await response.json();
+//         setStages(data);
+//       }
+//     } catch (error) {
+//       console.error("Failed to load purchase order stages setup:", error);
+//     } finally {
+//       setIsLoadingStages(false);
+//     }
+//   }
+//   fetchStages();
+// }, [isUpdateMode]);
+
+// const selectedCurrency = useMemo(() => {
+//   return currencies.find((c) => c.id === currencyConfig.currency_id);
+// }, [currencyConfig.currency_id, currencies]);

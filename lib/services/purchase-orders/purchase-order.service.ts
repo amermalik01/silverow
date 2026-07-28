@@ -690,7 +690,7 @@ export class PurchaseOrderService {
     }
   }
 
-  private static async insertLine(
+  static async insertLine(
     client: PoolClient,
     companyId: string,
     purchaseOrderId: string,
@@ -1072,6 +1072,33 @@ export class PurchaseOrderService {
     if (!payload.shipping_address) {
       throw new Error("Shipping address is required");
     }
+  }
+
+  public static async recalculateTotals(
+    client: PoolClient,
+    purchaseOrderId: string,
+  ): Promise<void> {
+    await client.query(
+      `
+    UPDATE purchase_orders
+    SET
+      subtotal = totals.subtotal,
+      tax_amount = totals.tax_amount,
+      total_amount = totals.total_amount,
+      updated_at = NOW()
+    FROM (
+      SELECT
+        COALESCE(SUM(net_amount), 0) AS subtotal,
+        COALESCE(SUM(vat_amount), 0) AS tax_amount,
+        COALESCE(SUM(gross_amount), 0) AS total_amount
+      FROM purchase_order_lines
+      WHERE purchase_order_id = $1
+        AND is_deleted = false
+    ) totals
+    WHERE purchase_orders.id = $1
+    `,
+      [purchaseOrderId],
+    );
   }
 }
 

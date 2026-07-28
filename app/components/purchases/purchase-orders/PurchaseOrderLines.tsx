@@ -3,7 +3,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PurchaseOrderLine, PurchaseOrderLineUI } from "@/types/purchase-order";
+import {
+  PurchaseOrder,
+  PurchaseOrderLine,
+  PurchaseOrderLineUI,
+} from "@/types/purchase-order";
+// import MigrationUploader from "@/app/components/migration/MigrationUploader";
+import MigrationUploadModal from "@/app/components/migration/MigrationUploadModal";
 
 import ItemLookupModal, {
   ItemLookupRecord,
@@ -25,17 +31,23 @@ type Props = {
   lines: PurchaseOrderLineUI[];
   setLines: React.Dispatch<React.SetStateAction<PurchaseOrderLineUI[]>>;
   isReadonly?: boolean;
+
+  purchaseOrder: Partial<PurchaseOrder>;
+  refreshLines?: () => Promise<void>;
 };
 
 export default function PurchaseOrderLines({
   lines,
   setLines,
   isReadonly = false,
+  purchaseOrder,
+  refreshLines,
 }: Props) {
   const [itemIndex, setItemIndex] = useState<number | null>(null);
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
 
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
   const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
     string | null
@@ -206,15 +218,32 @@ export default function PurchaseOrderLines({
           Purchase Order Lines
         </h3>
 
-        {!isReadonly && (
-          <button
-            type="button"
-            onClick={addLine}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            Add Line
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {!isReadonly && purchaseOrder.id && (
+            <button
+              type="button"
+              onClick={() => setIsMigrationModalOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              <span>⇧</span>
+              Import Items
+            </button>
+          )}
+
+          {!isReadonly && (
+            <button
+              type="button"
+              onClick={addLine}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            >
+              Add Line
+            </button>
+          )}
+
+          {/* {!isReadonly && purchaseOrder.id && (
+            <MigrationUploader purchaseOrder={purchaseOrder} />
+          )} */}
+        </div>
       </div>
 
       <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
@@ -645,6 +674,19 @@ export default function PurchaseOrderLines({
             }
           />
         )}
+
+      <MigrationUploadModal
+        open={isMigrationModalOpen}
+        onClose={() => setIsMigrationModalOpen(false)}
+        purchaseOrder={purchaseOrder}
+        onCompleted={async () => {
+          if (refreshLines) {
+            await refreshLines();
+          }
+
+          setIsMigrationModalOpen(false);
+        }}
+      />
     </div>
   );
 }
