@@ -18,6 +18,8 @@ import AttachmentsTab from "../shared/AttachmentsTab";
 
 import PartyDetailHeader from "./PartyDetailHeader";
 
+import { useLoader } from "@/app/context/LoaderContext";
+
 import {
   PartySchema,
   PartyContactSchema,
@@ -48,10 +50,14 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+
+  const { show, hide } = useLoader();
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
+
+      show("Fetching Record...");
       try {
         const [partyRes, currencyRes] = await Promise.all([
           fetch(`/api/parties/${id}`),
@@ -74,6 +80,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
         console.error(err);
       } finally {
         setLoading(false);
+        hide();
       }
     };
     loadData();
@@ -161,14 +168,14 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
     }
   };
 
-  if (loading) {
+  /* if (loading) {
     return (
       <div className="flex items-center gap-3 text-slate-500 text-xs py-12 justify-center">
         <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
         Synchronizing profile indices...
       </div>
     );
-  }
+  } */
 
   const tabs = [
     "general",

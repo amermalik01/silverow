@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
+import { useLoader } from "@/app/context/LoaderContext";
 
 import {
   PurchaseOrder,
@@ -68,6 +69,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   // const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
+  const { show, hide } = useLoader();
+
   const [masterData, setMasterData] = useState<PurchaseOrderMasterData | null>(
     null,
   );
@@ -114,9 +117,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   useEffect(() => {
     if (!id) return;
+
+    show("Fetching Record...");
     fetch(`/api/purchase-orders/${id}`)
       .then((r) => r.json())
       .then((payload) => {
+        hide();
         if (payload && payload.success && payload.data) {
           const actualData = payload.data;
 
@@ -304,6 +310,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       return;
     }
 
+    show("Saving Record...");
+
     try {
       setSaving(true);
       setValidationErrors([]);
@@ -345,6 +353,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       if (err instanceof Error) setValidationErrors([err.message]);
     } finally {
       setSaving(false);
+      hide();
     }
   };
 

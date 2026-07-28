@@ -155,7 +155,7 @@ const CompanySidebarLayout = () => {
   return (
     <div className="fixed left-0 top-0 h-screen w-[240px] border-r border-slate-800 bg-slate-950 z-30 flex flex-col overflow-hidden select-none">
       {/* Logo Container */}
-      <div className="px-5 py-4 border-b border-slate-800 flex items-center h-[65px] bg-slate-950 dark:bg-[#11161D] shrink-0">
+      <div className="px-5 mt-2 py-4 border-b border-slate-800 flex items-center h-[65px] bg-slate-950 dark:bg-[#11161D] shrink-0">
         <div className="scale-90 origin-left">
           <FullLogo />
         </div>

@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import LedgerDrilldownModal from "@/app/components/finance/LedgerDrilldownModal";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface GLAccountNode {
   id: string;
@@ -28,13 +29,15 @@ interface GLAccountNode {
 export default function ChartOfAccountsList() {
   const [accounts, setAccounts] = useState<GLAccountNode[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
+  const { show, hide } = useLoader();
 
   const [selectedAccount, setSelectedAccount] = useState<{ id: string; name: string; code: string } | null>(null);
 
   useEffect(() => {
     async function loadAccounts() {
       try {
+        show("Fetching Accounts...");
         const res = await fetch("/api/finance/accounts");
         if (res.ok) {
           const data = await res.json();
@@ -46,7 +49,8 @@ export default function ChartOfAccountsList() {
           err,
         );
       } finally {
-        setLoading(false);
+        // setLoading(false);
+        hide();
       }
     }
     loadAccounts();
@@ -93,13 +97,13 @@ export default function ChartOfAccountsList() {
     }
   };
 
-  if (loading) {
+  /* if (loading) {
     return (
       <div className="p-6 text-xs text-slate-400 dark:text-slate-500 animate-pulse font-sans">
         Parsing global ledger topology maps...
       </div>
     );
-  }
+  } */
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden transition-colors duration-200">
