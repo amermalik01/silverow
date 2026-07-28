@@ -58,10 +58,31 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
       {contacts.map((c, idx) => (
         <div
           key={idx}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start border border-slate-200 dark:border-slate-800 p-4 relative "
+          className="relative rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden"
         >
-          <div className="space-y-2">
-            <div className="grid grid-cols-3 gap-2 items-center">
+          {/* Header */}
+          <div className="flex items-center justify-between font-medium px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold">Contact {idx + 1}</span>
+
+              {c.is_primary && (
+                <span className="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                  Primary
+                </span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setContacts(contacts.filter((_, i) => i !== idx))}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+            >
+              ✕
+            </button>
+          </div>
+          {/* Body */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-3 p-4">
+            <div className="grid grid-cols-3 gap-3 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Contact Name *
               </label>
@@ -69,7 +90,12 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
                 type="text"
                 value={c.name}
                 onChange={(e) => updateContactRow(idx, "name", e.target.value)}
-                className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`contacts.${idx}.name`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
+                className={`col-span-2 p-2 rounded text-xs border ${
+                  errors[`contacts.${idx}.name`]
+                    ? "border-red-500"
+                    : "border-slate-300 dark:border-slate-700"
+                } dark:bg-slate-900`}
+                // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`contacts.${idx}.name`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`contacts.${idx}.name`] && (
                 <p className="text-red-500 text-[11px] mt-0.5">
@@ -78,7 +104,7 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
+            <div className="grid grid-cols-3 gap-3 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Job Title
               </label>
@@ -88,20 +114,20 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
                 onChange={(e) =>
                   updateContactRow(idx, "job_title", e.target.value)
                 }
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+                className="col-span-2 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                 // className="w-full border p-2 rounded text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
+            <div className="grid grid-cols-3 gap-3 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Direct Line
+                Email
               </label>
               <input
                 type="email"
                 value={c.email || ""}
                 onChange={(e) => updateContactRow(idx, "email", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+                className="col-span-2 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                 // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`contacts.${idx}.email`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`contacts.${idx}.email`] && (
@@ -111,7 +137,7 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
+            <div className="grid grid-cols-3 gap-3 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Phone
               </label>
@@ -119,12 +145,12 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
                 type="text"
                 value={c.phone || ""}
                 onChange={(e) => updateContactRow(idx, "phone", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+                className="col-span-2 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                 // className="w-full border p-2 rounded text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
+            <div className="grid grid-cols-3 gap-3 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Mobile
               </label>
@@ -134,32 +160,13 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
                 onChange={(e) =>
                   updateContactRow(idx, "mobile", e.target.value)
                 }
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+                className="col-span-2 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                 // className="w-full border p-2 rounded text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => setContacts(contacts.filter((_, i) => i !== idx))}
-              className="absolute top-1 right-3 text-slate-400 hover:text-red-500 transition-colors text-base"
-            >
-              ✕
-            </button>
-            <div className="grid grid-cols-3 gap-2 items-center mt-6">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Primary Contact Notes
-              </label>
-              <textarea
-                value={c.notes || ""}
-                onChange={(e) => updateContactRow(idx, "notes", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-              />
-            </div>
 
-            <div className="md:col-span-3 flex items-center gap-2 pt-1">
-              <label className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+            <div className="flex items-center">
+              <label className="flex items-center gap-2 text-xs cursor-pointer">
                 <input
                   type="checkbox"
                   checked={!!c.is_primary}
@@ -171,10 +178,22 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
                       })),
                     )
                   }
-                  className="w-4 h-4 text-blue-600 border-slate-300 dark:border-slate-700 rounded"
+                  className="w-4 h-4"
                 />
                 Mark as Primary
               </label>
+            </div>
+            <div className="xl:col-span-2 grid grid-cols-6 gap-3 items-start">
+              <label className="text-xs font-medium col-span-1 pt-2">
+                Notes
+              </label>
+
+              <textarea
+                rows={4}
+                value={c.notes || ""}
+                onChange={(e) => updateContactRow(idx, "notes", e.target.value)}
+                className="col-span-5 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+              />
             </div>
           </div>
         </div>

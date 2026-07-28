@@ -941,6 +941,19 @@ export default function GeneralTab({
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Email
+              </label>
+              <input
+                type="text"
+                disabled={isReadonly}
+                value={primaryContact.email || ""}
+                onChange={(e) => updatePrimaryContact("email", e.target.value)}
+                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Direct Line
               </label>
               <input
@@ -954,7 +967,7 @@ export default function GeneralTab({
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Mobile Connection
+                Mobile
               </label>
               <input
                 type="text"
