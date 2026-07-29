@@ -91,7 +91,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Supplier No. *</label>
+              <label className={labelStyle}>Supplier No. <span className="text-red-500">*</span></label>
               <div className="col-span-8 flex gap-1">
                 <input
                   type="text"
@@ -530,7 +530,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
           {/* Column 4 */}
           <div className="space-y-2">
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Currency *</label>
+              <label className={labelStyle}>Currency <span className="text-red-500">*</span></label>
               <select
                 className={inputStyle}
                 value={currencyConfig.currency_id ?? ""}
@@ -791,7 +791,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               />
             </div>
             <div>
-              <label className={labelStyle}>Customer No. *</label>
+              <label className={labelStyle}>Customer No. <span className="text-red-500">*</span></label>
               <div className="col-span-8 flex gap-1">
                 <input
                   type="text"

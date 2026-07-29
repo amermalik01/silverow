@@ -61,7 +61,7 @@ export default function GeneralTab({
 
           {/* NAME */}
           <div className="col-span-2">
-            <label className="text-xs font-medium">Name *</label>
+            <label className="text-xs font-medium">Name <span className="text-red-500">*</span></label>
             <input
               type="text"
               value={account.name || ""}

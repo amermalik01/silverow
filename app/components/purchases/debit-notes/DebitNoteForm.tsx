@@ -573,7 +573,7 @@ export const DebitNoteForm: React.FC<Props> = ({
               />
             </div>
             <div>
-              <label className={labelStyle}>Supplier Allocation *</label>
+              <label className={labelStyle}>Supplier Allocation <span className="text-red-500">*</span></label>
               <div className="flex gap-1">
                 <input
                   type="text"
@@ -682,7 +682,7 @@ export const DebitNoteForm: React.FC<Props> = ({
         {activeTab === "invoicing" && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className={labelStyle}>Operational Currency *</label>
+              <label className={labelStyle}>Operational Currency <span className="text-red-500">*</span></label>
               <select
                 className={inputStyle} 
                 value={currencyConfig.currency_id ?? ""}

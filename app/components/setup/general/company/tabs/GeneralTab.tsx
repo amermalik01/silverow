@@ -2,40 +2,39 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import MasterDropdown from "@/app/components/common/MasterDropdown";
 import CurrencyDropdown from "@/app/components/common/CurrencyDropdown";
 
-interface CompanyProfile {
-  name: string;
-  address_line1: string;
-  address_line2: string;
-  city: string;
-  county: string;
-  postal_code: string;
-  country_code: string;
-  telephone: string;
-  fax: string;
-  additional_printable_info: string;
-  web_address: string;
-  base_currency: string;
-  number_of_users: number;
-  logo_url?: string;
+import { CompanyProfile } from "../CompanySetupForm";
+
+interface GeneralTabProps {
+  initialProfile: CompanyProfile | null;
+  onUpdated?: () => void;
 }
 
-export default function GeneralTab() {
-  const [profile, setProfile] = useState<CompanyProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function GeneralTab({
+  initialProfile,
+  onUpdated,
+}: GeneralTabProps) {
+  const [profile, setProfile] = useState<CompanyProfile | null>(initialProfile);
+  const [loading, setLoading] = useState(!initialProfile);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    fetch("/api/setup/general/company")
-      .then((res) => res.json())
-      .then((data) => setProfile(data.profile || data))
-      .catch((err) => setMessage({ type: "error", text: err.message }))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!initialProfile) {
+      fetch("/api/setup/general/company")
+        .then((res) => res.json())
+        .then((data) => setProfile(data.profile || data))
+        .catch((err) => setMessage({ type: "error", text: err.message }))
+        .finally(() => setLoading(false));
+    } else {
+      setProfile(initialProfile);
+      setLoading(false);
+    }
+  }, [initialProfile]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -44,6 +43,19 @@ export default function GeneralTab() {
   ) => {
     if (!profile) return;
     setProfile({ ...profile, [e.target.name]: e.target.value });
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage({ type: "error", text: "File size must be under 2MB" });
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setProfile((prev) => (prev ? { ...prev, logo_url: previewUrl } : null));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -63,6 +75,7 @@ export default function GeneralTab() {
         type: "success",
         text: "Company settings updated successfully.",
       });
+      if (onUpdated) onUpdated();
     } catch (err) {
       setMessage({
         type: "error",
@@ -73,10 +86,11 @@ export default function GeneralTab() {
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div className="text-gray-500 py-4">Loading general configuration...</div>
     );
+  }
 
   return (
     <form onSubmit={handleSave} className="space-y-6">

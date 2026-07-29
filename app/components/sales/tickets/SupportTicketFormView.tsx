@@ -393,7 +393,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className={labelStyle}>Customer No. *</label>
+              <label className={labelStyle}>Customer No. <span className="text-red-500">*</span></label>
               <div className="flex gap-1 w-full">
                 <input
                   type="text"

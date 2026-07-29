@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MasterDropdown from "@/app/components/common/MasterDropdown";
 
 interface AdditionalAddress {
@@ -24,8 +24,82 @@ interface AdditionalAddress {
 
 export default function AdditionalAddressTab() {
   const [addresses, setAddresses] = useState<AdditionalAddress[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [mode, setMode] = useState<"list" | "form">("list");
   const [current, setCurrent] = useState<Partial<AdditionalAddress>>({});
+
+  // Fetch addresses on mount
+  useEffect(() => {
+    fetch("/api/setup/general/company/addresses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.addresses) setAddresses(data.addresses);
+      })
+      .catch((err) => console.error("Error loading addresses:", err));
+  }, []);
+
+  // Submit Handler
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!current.name) return;
+
+    const method = current.id ? "PUT" : "POST";
+
+    try {
+      const res = await fetch("/api/setup/general/company/addresses", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(current),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      if (current.id) {
+        setAddresses((prev) =>
+          prev.map((addr) => (addr.id === current.id ? data.address : addr)),
+        );
+      } else {
+        setAddresses((prev) => [data.address, ...prev]);
+      }
+
+      setCurrent({});
+      setMode("list");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to save address");
+    }
+  };
+
+  // Edit Handler
+  const handleEdit = (addr: AdditionalAddress) => {
+    setCurrent(addr);
+    setMode("form");
+  };
+
+  // Delete Handler
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this address?")) return;
+
+    try {
+      const res = await fetch(`/api/setup/general/company/addresses?id=${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setAddresses((prev) => prev.filter((addr) => addr.id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete address");
+    }
+  };
+
+  const filteredAddresses = addresses.filter(
+    (addr) =>
+      addr.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      addr.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      addr.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   return (
     <div className="space-y-4">
@@ -34,8 +108,10 @@ export default function AdditionalAddressTab() {
           <div className="flex justify-between items-center mb-4">
             <input
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search addresses..."
-              className="border px-3 py-1.5 rounded w-64 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+              className="border px-3 py-1.5 rounded w-64 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
             <button
               type="button"
@@ -43,34 +119,60 @@ export default function AdditionalAddressTab() {
                 setCurrent({});
                 setMode("form");
               }}
-              className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded font-medium"
+              className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded text-xs font-medium"
             >
               Add
             </button>
           </div>
-          {addresses.length === 0 ? (
-            <div className="py-12 text-center text-gray-500 border rounded bg-gray-50">
-              No additional addresses recorded. Click &quot;Add&quot; above to
-              add one.
+          {filteredAddresses.length === 0 ? (
+            <div className="py-12 text-center text-gray-500 border rounded bg-gray-50 text-xs">
+              {addresses.length === 0
+                ? 'No additional addresses recorded. Click "Add" above to add one.'
+                : "No addresses found matching your search."}
             </div>
           ) : (
             <div className="border rounded overflow-hidden">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-100 border-b">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-gray-100 border-b text-gray-700">
                   <tr>
-                    <th className="p-2 font-semibold">Name</th>
-                    <th className="p-2 font-semibold">Contact Person</th>
-                    <th className="p-2 font-semibold">City</th>
-                    <th className="p-2 font-semibold">Telephone</th>
+                    <th className="p-2.5 font-semibold">Name</th>
+                    <th className="p-2.5 font-semibold">Contact Person</th>
+                    <th className="p-2.5 font-semibold">City</th>
+                    <th className="p-2.5 font-semibold">Telephone</th>
+                    <th className="p-2.5 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {addresses.map((addr, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="p-2">{addr.name}</td>
-                      <td className="p-2">{addr.contact_person}</td>
-                      <td className="p-2">{addr.city}</td>
-                      <td className="p-2">{addr.telephone}</td>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredAddresses.map((addr) => (
+                    <tr key={addr.id || addr.name} className="hover:bg-gray-50">
+                      <td className="p-2.5 font-medium text-gray-900">
+                        {addr.name}
+                      </td>
+                      <td className="p-2.5 text-gray-600">
+                        {addr.contact_person || "-"}
+                      </td>
+                      <td className="p-2.5 text-gray-600">
+                        {addr.city || "-"}
+                      </td>
+                      <td className="p-2.5 text-gray-600">
+                        {addr.telephone || "-"}
+                      </td>
+                      <td className="p-2.5 text-right space-x-3">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(addr)}
+                          className="text-emerald-700 hover:text-emerald-900 font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => addr.id && handleDelete(addr.id)}
+                          className="text-red-600 hover:text-red-800 font-medium"
+                        >
+                          Delete
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -79,13 +181,15 @@ export default function AdditionalAddressTab() {
           )}
         </div>
       ) : (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setMode("list");
-          }}
-          className="space-y-6"
-        >
+        <form onSubmit={handleSave} className="space-y-6">
+          <div className="border-b pb-3">
+            <h3 className="text-base font-semibold text-gray-800">
+              {current.id
+                ? "Edit Additional Address"
+                : "Add Additional Address"}
+            </h3>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <div className="grid grid-cols-3 items-center gap-2">

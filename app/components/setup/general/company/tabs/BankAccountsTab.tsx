@@ -2,8 +2,9 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import MasterDropdown from "@/app/components/common/MasterDropdown";
+import CurrencyDropdown from "@/app/components/common/CurrencyDropdown";
 
 interface BankAccount {
   id?: string;
@@ -33,6 +34,78 @@ export default function BankAccountsTab() {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [mode, setMode] = useState<"list" | "form">("list");
   const [current, setCurrent] = useState<Partial<BankAccount>>({});
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Fetch accounts from API for this specific company
+  const fetchAccounts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/setup/general/company/bank-accounts?search=${encodeURIComponent(
+          search,
+        )}`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setBankAccounts(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch bank accounts:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  // Save/Update record handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = { ...current };
+      const method = current.id ? "PUT" : "POST";
+
+      const res = await fetch("/api/setup/general/company/bank-accounts", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setMode("list");
+        setCurrent({});
+        fetchAccounts();
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.error}`);
+      }
+    } catch (err) {
+      console.error("Failed to save bank account:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Delete handler
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this bank account?")) return;
+    try {
+      const res = await fetch(
+        `/api/setup/general/company/bank-accounts?id=${id}`,
+        { method: "DELETE" },
+      );
+      if (res.ok) {
+        fetchAccounts();
+      }
+    } catch (err) {
+      console.error("Failed to delete bank account:", err);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -42,48 +115,80 @@ export default function BankAccountsTab() {
             <input
               type="text"
               placeholder="Search bank accounts..."
-              className="border px-3 py-1.5 rounded w-64 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border px-3 py-1.5 rounded w-64 focus:outline-none focus:ring-1 focus:ring-emerald-600 text-xs"
             />
             <button
               type="button"
               onClick={() => {
-                setCurrent({});
+                setCurrent({
+                  currency: "British Pound",
+                });
                 setMode("form");
               }}
-              className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded font-medium"
+              className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded font-medium text-xs"
             >
               Add
             </button>
           </div>
 
           <div className="border rounded overflow-hidden">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-xs">
               <thead className="bg-gray-100 border-b">
                 <tr>
-                  <th className="p-2 font-semibold">Preferred Name</th>
-                  <th className="p-2 font-semibold">Bank Name</th>
-                  <th className="p-2 font-semibold">Currency</th>
-                  <th className="p-2 font-semibold">Account Name</th>
-                  <th className="p-2 font-semibold">Sort Code</th>
-                  <th className="p-2 font-semibold">Account No.</th>
+                  <th className="p-2.5 font-semibold">Preferred Name</th>
+                  <th className="p-2.5 font-semibold">Bank Name</th>
+                  <th className="p-2.5 font-semibold">Currency</th>
+                  <th className="p-2.5 font-semibold">Account Name</th>
+                  <th className="p-2.5 font-semibold">Sort Code</th>
+                  <th className="p-2.5 font-semibold">Account No.</th>
+                  <th className="p-2.5 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {bankAccounts.length === 0 ? (
+                {loading ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-6 text-gray-500">
+                    <td colSpan={7} className="text-center py-6 text-gray-500">
+                      Loading bank accounts...
+                    </td>
+                  </tr>
+                ) : bankAccounts.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-6 text-gray-500">
                       No bank account configuration registered.
                     </td>
                   </tr>
                 ) : (
-                  bankAccounts.map((bank, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="p-2 font-medium">{bank.preferred_name}</td>
-                      <td className="p-2">{bank.bank_name}</td>
-                      <td className="p-2">{bank.currency}</td>
-                      <td className="p-2">{bank.account_name}</td>
-                      <td className="p-2">{bank.sort_code}</td>
-                      <td className="p-2">{bank.account_no}</td>
+                  bankAccounts.map((bank) => (
+                    <tr key={bank.id} className="border-b hover:bg-gray-50">
+                      <td className="p-2.5 font-medium">
+                        {bank.preferred_name || "-"}
+                      </td>
+                      <td className="p-2.5">{bank.bank_name}</td>
+                      <td className="p-2.5">{bank.currency}</td>
+                      <td className="p-2.5">{bank.account_name}</td>
+                      <td className="p-2.5">{bank.sort_code || "-"}</td>
+                      <td className="p-2.5">{bank.account_no}</td>
+                      <td className="p-2.5 text-right space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCurrent(bank);
+                            setMode("form");
+                          }}
+                          className="text-emerald-700 hover:underline text-xs font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => bank.id && handleDelete(bank.id)}
+                          className="text-red-600 hover:underline text-xs font-medium"
+                        >
+                          Delete
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -92,13 +197,7 @@ export default function BankAccountsTab() {
           </div>
         </div>
       ) : (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setMode("list");
-          }}
-          className="space-y-6"
-        >
+        <form onSubmit={handleSubmit} className="space-y-6 text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <div className="grid grid-cols-3 items-center gap-2">
@@ -179,17 +278,14 @@ export default function BankAccountsTab() {
               </div>
               <div className="grid grid-cols-3 items-center gap-2">
                 <label className="font-medium text-gray-700">Currency</label>
-                <select
-                  className="col-span-2 border px-2.5 py-1.5 rounded bg-white"
-                  value={current.currency || "British Pound"}
-                  onChange={(e) =>
-                    setCurrent({ ...current, currency: e.target.value })
+                <CurrencyDropdown
+                  value={current?.currency} // e.g. "GBP"
+                  valueKey="code"
+                  onChange={(val) =>
+                    setCurrent({ ...current, currency: val || "" })
                   }
-                >
-                  <option value="British Pound">British Pound</option>
-                  <option value="US Dollar">US Dollar</option>
-                  <option value="Euro">Euro</option>
-                </select>
+                  className="border px-2.5 py-1.5 rounded focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white"
+                />
               </div>
               <div className="grid grid-cols-3 items-center gap-2">
                 <label className="font-medium text-gray-700">G/L No.</label>

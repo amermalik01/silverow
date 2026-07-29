@@ -10,7 +10,7 @@ import CurrencyTab from "./tabs/CurrencyTab";
 import FinancialSettingsTab from "./tabs/FinancialSettingsTab";
 import PasswordSettingsTab from "./tabs/PasswordSettingsTab";
 
-interface CompanyProfile {
+export interface CompanyProfile {
   name: string;
   address_line1: string;
   address_line2: string;
@@ -33,17 +33,24 @@ export default function CompanySetupForm() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ type: "", text: "" });
 
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("/api/setup/general/company");
+      if (!res.ok) throw new Error("Could not pull company setup profiles.");
+      const data = await res.json();
+      setProfile(data.profile || data);
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Error fetching profile",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetch("/api/setup/general/company")
-      .then((res) => {
-        if (!res.ok) throw new Error("Could not pull company setup profiles.");
-        return res.json();
-      })
-      .then((data) => {
-        setProfile(data.profile || data);
-      })
-      .catch((err) => setMessage({ type: "error", text: err.message }))
-      .finally(() => setLoading(false));
+    fetchProfile();
   }, []);
 
   const tabs = [
@@ -63,23 +70,30 @@ export default function CompanySetupForm() {
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                {profile?.name || "Company Profile"}
+                {loading ? "Loading..." : profile?.name || "Company Profile"}
               </h2>
             </div>
           </div>
         </div>
-
-        {/* {errorMessage && (
-                <div className="mt-3 p-2.5 text-xs bg-red-50 text-red-700 border border-red-200 rounded-lg dark:bg-red-950/40 dark:text-red-400 dark:border-red-900">
-                  <strong>Conversion Error:</strong> {errorMessage}
-                </div>
-              )} */}
       </div>
+
+      {message.text && (
+        <div
+          className={`p-3 mb-4 border text-xs rounded ${
+            message.type === "success"
+              ? "bg-green-50 border-green-200 text-green-700"
+              : "bg-red-50 border-red-200 text-red-700"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
         {tabs.map((tab) => {
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`capitalize px-4 py-2.5 text-xs font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
                 activeTab === tab.id
@@ -93,16 +107,18 @@ export default function CompanySetupForm() {
         })}
       </div>
       <div className="p-6">
-        {activeTab === "general" && <GeneralTab />}
+        {activeTab === "general" && (
+          <GeneralTab initialProfile={profile} onUpdated={fetchProfile} />
+        )}
         {activeTab === "additional-address" && <AdditionalAddressTab />}
         {activeTab === "bank-accounts" && <BankAccountsTab />}
         {activeTab === "currency" && <CurrencyTab />}
         {activeTab === "financial-settings" && <FinancialSettingsTab />}
         {activeTab === "password-settings" && <PasswordSettingsTab />}
 
-        {["virtual-emails"].includes(activeTab) && (
+        {activeTab === "virtual-emails" && (
           <div className="py-12 text-center text-gray-500 border rounded bg-gray-50">
-            {tabs.find((t) => t.id === activeTab)?.label} configuration panel.
+            Virtual Emails configuration panel.
           </div>
         )}
       </div>

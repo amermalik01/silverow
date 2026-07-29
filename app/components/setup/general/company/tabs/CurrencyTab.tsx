@@ -182,27 +182,6 @@ export default function CurrencyTab() {
                         1.00000
                       </td>
                     </tr>
-                    <tr
-                      onClick={() =>
-                        handleRowClick({
-                          id: "2",
-                          code: "EUR",
-                          name: "Euro",
-                          symbol: "€",
-                          exchange_rate: 1.2,
-                          is_base: false,
-                        })
-                      }
-                      className="border-b hover:bg-gray-50 cursor-pointer"
-                    >
-                      <td className="p-2.5 font-medium">EUR</td>
-                      <td className="p-2.5">Euro</td>
-                      <td className="p-2.5">23/06/2020</td>
-                      <td className="p-2.5 font-mono">1.20000</td>
-                      <td className="p-2.5 font-mono text-emerald-700 font-medium">
-                        0.83333
-                      </td>
-                    </tr>
                   </>
                 ) : (
                   filteredData.map((c) => (

@@ -112,7 +112,7 @@ export default function AddressesTab({
             {/* Left */}
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">Name *</label>
+                <label className="text-xs font-medium">Name <span className="text-red-500">*</span></label>
 
                 <input
                   type="text"

@@ -375,7 +375,7 @@ export default function SalesReturnFormView({ slug, id }: Props) {
               />
             </div>
             <div>
-              <label className={labelStyle}>Customer No. *</label>
+              <label className={labelStyle}>Customer No. <span className="text-red-500">*</span></label>
               <div className="flex gap-1">
                 <input
                   type="text"
