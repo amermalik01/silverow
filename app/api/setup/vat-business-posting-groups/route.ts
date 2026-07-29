@@ -1,11 +1,17 @@
 // app/api/setup/vat-business-posting-groups/route.ts
+
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const companyId = await getCompanyId();
+  if (!companyId) {
+    return NextResponse.json(
+      { error: "Access Denied. Unauthorized Session Check." },
+      { status: 401 },
+    );
+  }
   const client = await pool.connect();
 
   try {
@@ -14,7 +20,7 @@ export async function GET() {
        FROM vat_business_posting_groups
        WHERE company_id=$1
        ORDER BY name ASC`,
-      [session?.user.company_id]
+      [companyId],
     );
 
     return NextResponse.json(result.rows);
@@ -24,7 +30,13 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const companyId = await getCompanyId();
+  if (!companyId) {
+    return NextResponse.json(
+      { error: "Access Denied. Unauthorized Session Check." },
+      { status: 401 },
+    );
+  }
   const { name } = await req.json();
 
   const client = await pool.connect();
@@ -34,7 +46,7 @@ export async function POST(req: Request) {
       `INSERT INTO vat_business_posting_groups (company_id,name)
        VALUES ($1,$2)
        RETURNING id,name`,
-      [session?.user.company_id, name]
+      [companyId, name],
     );
 
     return NextResponse.json(result.rows[0]);

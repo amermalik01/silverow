@@ -2,8 +2,25 @@
 
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import type { Party } from "@/types/erp";
+
+type Option = {
+  id: string | number;
+  name: string;
+};
+
+type OptionBank = {
+  id: string | number;
+  bank_name: string;
+};
+
+type MasterData = {
+  postingGroups: Option[];
+  payableBanks: OptionBank[];
+  paymentTerms: Option[];
+  paymentMethods: Option[];
+};
 
 type Props = {
   account: Partial<Party>;
@@ -18,6 +35,45 @@ export default function FinanceTab({
   isReadonly = false,
   errors = {},
 }: Props) {
+  const [masterData, setMasterData] = useState<MasterData>({
+    postingGroups: [],
+    payableBanks: [],
+    paymentTerms: [],
+    paymentMethods: [],
+  });
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const targetModule = account.is_customer ? "sales" : "purchases";
+
+    async function fetchMasterData() {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `/api/parties/finance-master-data?moduleType=${targetModule}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setMasterData(data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load finance master data", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    fetchMasterData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [account.is_customer]);
+
   const updateField = <K extends keyof Party>(key: K, value: Party[K]) => {
     setAccount((prev) => ({ ...prev, [key]: value }));
   };
@@ -33,9 +89,7 @@ export default function FinanceTab({
 
   return (
     <div className="space-y-8">
-      {/* Upper 2-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-        {/* Left Column: Contact & Notification Info */}
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -146,13 +200,15 @@ export default function FinanceTab({
                     onChange={(e) =>
                       updateField("payment_terms", e.target.value)
                     }
-                    disabled={isReadonly}
+                    disabled={isReadonly || loading}
                     className={getInputClass("finance.payment_terms")}
                   >
                     <option value="">Select Payment Terms</option>
-                    <option value="immediate">Immediate</option>
-                    <option value="net30">Net 30 Days</option>
-                    <option value="net60">Net 60 Days</option>
+                    {masterData.paymentTerms.map((term) => (
+                      <option key={term.id} value={term.id}>
+                        {term.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -167,13 +223,15 @@ export default function FinanceTab({
                     onChange={(e) =>
                       updateField("payment_method", e.target.value)
                     }
-                    disabled={isReadonly}
+                    disabled={isReadonly || loading}
                     className={getInputClass("finance.payment_method")}
                   >
                     <option value="">Select Payment Method</option>
-                    <option value="bacs">Bacs (Bank Transfer)</option>
-                    <option value="cheque">Cheque</option>
-                    <option value="credit_card">Credit Card</option>
+                    {masterData.paymentMethods.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -314,13 +372,19 @@ export default function FinanceTab({
               Payable Bank
             </label>
             <div className="col-span-2">
-              <input
-                type="text"
+              <select
                 value={account.payable_bank || ""}
                 onChange={(e) => updateField("payable_bank", e.target.value)}
-                disabled={isReadonly}
+                disabled={isReadonly || loading}
                 className={getInputClass("finance.payable_bank")}
-              />
+              >
+                <option value="">Select Payable Bank</option>
+                {masterData.payableBanks.map((bank) => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.bank_name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -362,27 +426,34 @@ export default function FinanceTab({
                 </label>
                 <div className="col-span-2 flex gap-2">
                   <select
-                    value={account.payment_terms || "immediate"}
+                    value={account.payment_terms || ""}
                     onChange={(e) =>
                       updateField("payment_terms", e.target.value)
                     }
-                    disabled={isReadonly}
+                    disabled={isReadonly || loading}
                     className={getInputClass("finance.payment_terms")}
                   >
-                    <option value="immediate">Immediate</option>
-                    <option value="net30">Net 30 Days</option>
-                    <option value="net60">Net 60 Days</option>
+                    <option value="">Select Payment Terms</option>
+                    {masterData.paymentTerms.map((term) => (
+                      <option key={term.id} value={term.id}>
+                        {term.name}
+                      </option>
+                    ))}
                   </select>
                   <select
-                    value={account.payment_method || "bacs"}
+                    value={account.payment_method || ""}
                     onChange={(e) =>
                       updateField("payment_method", e.target.value)
                     }
-                    disabled={isReadonly}
+                    disabled={isReadonly || loading}
                     className={getInputClass("finance.payment_method")}
                   >
-                    <option value="bacs">Bacs (Bank Transfer)</option>
-                    <option value="cheque">Cheque</option>
+                    <option value="">Select Payment Method</option>
+                    {masterData.paymentMethods.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -461,13 +532,19 @@ export default function FinanceTab({
               Posting Group <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2">
-              <input
-                type="text"
-                value={account.posting_group || "UK"}
+              <select
+                value={account.posting_group || ""}
                 onChange={(e) => updateField("posting_group", e.target.value)}
-                disabled={isReadonly}
+                disabled={isReadonly || loading}
                 className={getInputClass("finance.posting_group")}
-              />
+              >
+                <option value="">Select Posting Group</option>
+                {masterData.postingGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -495,121 +572,125 @@ export default function FinanceTab({
       {/* Lower Section: Bank Account Details */}
       <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <div>
-        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-          {isCustomer
-            ? "Customer Bank Account Details"
-            : "Supplier Bank Account Details"}
-        </h3>
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            {isCustomer
+              ? "Customer Bank Account Details"
+              : "Supplier Bank Account Details"}
+          </h3>
 
-        <div className="pt-4 space-y-3">
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Account Name
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={account.bank_account_name || ""}
-                onChange={(e) =>
-                  updateField("bank_account_name", e.target.value)
-                }
-                disabled={isReadonly}
-                className={getInputClass("finance.bank_account_name")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Sort Code / Account No.
-            </label>
-            <div className="col-span-2 grid grid-cols-2 gap-2 items-center">
-              <input
-                type="text"
-                placeholder="Sort Code"
-                value={account.bank_sort_code || ""}
-                onChange={(e) => updateField("bank_sort_code", e.target.value)}
-                disabled={isReadonly}
-                className={getInputClass("finance.bank_sort_code")}
-              />
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-slate-500 whitespace-nowrap">
-                  Account No.
-                </span>
+          <div className="pt-4 space-y-3">
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Account Name
+              </label>
+              <div className="col-span-2">
                 <input
                   type="text"
-                  placeholder="Account No."
-                  value={account.bank_account_no || ""}
+                  value={account.bank_account_name || ""}
                   onChange={(e) =>
-                    updateField("bank_account_no", e.target.value)
+                    updateField("bank_account_name", e.target.value)
                   }
                   disabled={isReadonly}
-                  className={getInputClass("finance.bank_account_no")}
+                  className={getInputClass("finance.bank_account_name")}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Sort Code / Account No.
+              </label>
+              <div className="col-span-2 grid grid-cols-2 gap-2 items-center">
+                <input
+                  type="text"
+                  placeholder="Sort Code"
+                  value={account.bank_sort_code || ""}
+                  onChange={(e) =>
+                    updateField("bank_sort_code", e.target.value)
+                  }
+                  disabled={isReadonly}
+                  className={getInputClass("finance.bank_sort_code")}
+                />
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-slate-500 whitespace-nowrap">
+                    Account No.
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Account No."
+                    value={account.bank_account_no || ""}
+                    onChange={(e) =>
+                      updateField("bank_account_no", e.target.value)
+                    }
+                    disabled={isReadonly}
+                    className={getInputClass("finance.bank_account_no")}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Swift/BIC
+              </label>
+              <div className="col-span-2">
+                <input
+                  type="text"
+                  value={account.bank_swift_bic || ""}
+                  onChange={(e) =>
+                    updateField("bank_swift_bic", e.target.value)
+                  }
+                  disabled={isReadonly}
+                  className={getInputClass("finance.bank_swift_bic")}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                IBAN
+              </label>
+              <div className="col-span-2">
+                <input
+                  type="text"
+                  value={account.bank_iban || ""}
+                  onChange={(e) => updateField("bank_iban", e.target.value)}
+                  disabled={isReadonly}
+                  className={getInputClass("finance.bank_iban")}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Bank Name
+              </label>
+              <div className="col-span-2">
+                <input
+                  type="text"
+                  value={account.bank_name || ""}
+                  onChange={(e) => updateField("bank_name", e.target.value)}
+                  disabled={isReadonly}
+                  className={getInputClass("finance.bank_name")}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Bank Address
+              </label>
+              <div className="col-span-2">
+                <input
+                  type="text"
+                  value={account.bank_address || ""}
+                  onChange={(e) => updateField("bank_address", e.target.value)}
+                  disabled={isReadonly}
+                  className={getInputClass("finance.bank_address")}
                 />
               </div>
             </div>
           </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Swift/BIC
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={account.bank_swift_bic || ""}
-                onChange={(e) => updateField("bank_swift_bic", e.target.value)}
-                disabled={isReadonly}
-                className={getInputClass("finance.bank_swift_bic")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              IBAN
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={account.bank_iban || ""}
-                onChange={(e) => updateField("bank_iban", e.target.value)}
-                disabled={isReadonly}
-                className={getInputClass("finance.bank_iban")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Bank Name
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={account.bank_name || ""}
-                onChange={(e) => updateField("bank_name", e.target.value)}
-                disabled={isReadonly}
-                className={getInputClass("finance.bank_name")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Bank Address
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={account.bank_address || ""}
-                onChange={(e) => updateField("bank_address", e.target.value)}
-                disabled={isReadonly}
-                className={getInputClass("finance.bank_address")}
-              />
-            </div>
-          </div>
-        </div>
         </div>
       </div>
     </div>

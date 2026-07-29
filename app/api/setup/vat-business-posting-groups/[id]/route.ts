@@ -2,15 +2,20 @@
 
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function PUT(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  const session = await getServerSession(authOptions);
+  const companyId = await getCompanyId();
+  if (!companyId) {
+    return NextResponse.json(
+      { error: "Access Denied. Unauthorized Session Check." },
+      { status: 401 },
+    );
+  }
   const { name } = await req.json();
 
   const client = await pool.connect();
@@ -21,7 +26,7 @@ export async function PUT(
        SET name=$1
        WHERE id=$2 AND company_id=$3
        RETURNING id,name`,
-      [name, id, session?.user.company_id]
+      [name, id, companyId],
     );
 
     if (result.rowCount === 0)
@@ -35,10 +40,16 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  const session = await getServerSession(authOptions);
+  const companyId = await getCompanyId();
+  if (!companyId) {
+    return NextResponse.json(
+      { error: "Access Denied. Unauthorized Session Check." },
+      { status: 401 },
+    );
+  }
 
   const client = await pool.connect();
 
@@ -46,7 +57,7 @@ export async function DELETE(
     const result = await client.query(
       `DELETE FROM vat_business_posting_groups
        WHERE id=$1 AND company_id=$2`,
-      [id, session?.user.company_id]
+      [id, companyId],
     );
 
     if (result.rowCount === 0)
