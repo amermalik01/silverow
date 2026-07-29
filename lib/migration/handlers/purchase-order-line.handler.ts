@@ -117,40 +117,24 @@ export const purchaseOrderLineHandler: MigrationHandler = {
             : discountValue;
 
         const netAmount = originalAmount - discountAmount;
-
         const vatAmount = netAmount * (vatPercent / 100);
-
         const grossAmount = netAmount + vatAmount;
 
         const line: PurchaseOrderLine = {
           line_type: "ITEM",
-
           item_id: item.id,
-
           warehouse_id: warehouse?.id,
-
           uom_id: item.base_uom_id,
-
           quantity: qty,
-
           unit_cost: unitCost,
-
           description: row.description || item.name,
-
           discount_type: discountType,
-
           discount_value: discountValue,
-
           discount_amount: discountAmount,
-
           vat_percent: vatPercent,
-
           vat_amount: vatAmount,
-
           net_amount: netAmount,
-
           gross_amount: grossAmount,
-
           received_quantity: 0,
         };
 

@@ -540,7 +540,7 @@ export default function GeneralTab({
         <div className="space-y-2">
           <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-lg">
             <span className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Location Type Rules
+              Location Type
             </span>
             <div className="flex flex-wrap gap-4 text-xs font-medium">
               <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
@@ -583,28 +583,31 @@ export default function GeneralTab({
               )}
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Credit Rating
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={isReadonly}
-                value={account.credit_rating_id || ""}
-                onChange={(e) =>
-                  updateField("credit_rating_id", e.target.value)
-                }
-                className={getInputClass("general.credit_rating_id")}
-              >
-                <option value="">Select Credit Rating...</option>
-                {creditRatings.map((cr) => (
-                  <option key={cr.id} value={cr.id}>
-                    {cr.name}
-                  </option>
-                ))}
-              </select>
+
+          {(account.is_customer || account.is_crm_lead) && (
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Credit Rating
+              </label>
+              <div className="col-span-2">
+                <select
+                  disabled={isReadonly}
+                  value={account.credit_rating_id || ""}
+                  onChange={(e) =>
+                    updateField("credit_rating_id", e.target.value)
+                  }
+                  className={getInputClass("general.credit_rating_id")}
+                >
+                  <option value="">Select Credit Rating...</option>
+                  {creditRatings.map((cr) => (
+                    <option key={cr.id} value={cr.id}>
+                      {cr.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
           {account.is_customer && ( // || account.is_crm_lead
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -758,31 +761,6 @@ export default function GeneralTab({
 
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  {account.is_crm_lead || account.is_customer
-                    ? "Buying Group"
-                    : "Selling Group"}
-                </label>
-                <div className="col-span-2">
-                  <select
-                    disabled={isReadonly}
-                    value={account.buying_group_id || ""}
-                    onChange={(e) =>
-                      updateField("buying_group_id", e.target.value)
-                    }
-                    className={getInputClass("general.buying_group_id")}
-                  >
-                    <option value="">Select Group Allocation...</option>
-                    {buyingGroups.map((bg) => (
-                      <option key={bg.id} value={bg.id}>
-                        {bg.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Source Of CRM
                 </label>
                 <div className="col-span-2">
@@ -798,29 +776,6 @@ export default function GeneralTab({
                     {sourceOfCRM.map((src) => (
                       <option key={src.id} value={src.id}>
                         {src.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Classification
-                </label>
-                <div className="col-span-2">
-                  <select
-                    disabled={isReadonly}
-                    value={account.classification_id || ""}
-                    onChange={(e) =>
-                      updateField("classification_id", e.target.value)
-                    }
-                    className={getInputClass("general.classification_id")}
-                  >
-                    <option value="">Select Classification...</option>
-                    {classification.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
                       </option>
                     ))}
                   </select>
@@ -849,6 +804,52 @@ export default function GeneralTab({
               </div>
             </>
           )}
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              {account.is_crm_lead || account.is_customer
+                ? "Buying Group"
+                : "Selling Group"}
+            </label>
+            <div className="col-span-2">
+              <select
+                disabled={isReadonly}
+                value={account.buying_group_id || ""}
+                onChange={(e) => updateField("buying_group_id", e.target.value)}
+                className={getInputClass("general.buying_group_id")}
+              >
+                <option value="">Select Group Allocation...</option>
+                {buyingGroups.map((bg) => (
+                  <option key={bg.id} value={bg.id}>
+                    {bg.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Classification
+            </label>
+            <div className="col-span-2">
+              <select
+                disabled={isReadonly}
+                value={account.classification_id || ""}
+                onChange={(e) =>
+                  updateField("classification_id", e.target.value)
+                }
+                className={getInputClass("general.classification_id")}
+              >
+                <option value="">Select Classification...</option>
+                {classification.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -894,6 +895,40 @@ export default function GeneralTab({
               />
             </div>
           </div>
+
+          {account.is_supplier && (
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Anonymous Supplier
+              </label>
+              <input
+                type="checkbox"
+                disabled={isReadonly}
+                checked={!!account.anonymous_supplier}
+                onChange={(e) =>
+                  updateField("anonymous_supplier", e.target.checked)
+                }
+                className={getInputClass("general.anonymous_supplier")}
+              />
+            </div>
+          )}
+
+          {account.is_customer && (
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Anonymous Customer
+              </label>
+              <input
+                type="checkbox"
+                disabled={isReadonly}
+                checked={!!account.anonymous_customer}
+                onChange={(e) =>
+                  updateField("anonymous_customer", e.target.checked)
+                }
+                className={getInputClass("general.anonymous_customer")}
+              />
+            </div>
+          )}
         </div>
       </div>
 

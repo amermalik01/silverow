@@ -127,46 +127,48 @@ export async function PUT(req: Request, { params }: Props) {
           credit_rating_id = $15, ownership_type_id = $16, classification_id = $17, type_id = $18,
           status_id = $19, source_of_crm_id = $20, no_of_emp = $21, turnover = $22, comp_reg_no = $23,
           date_of_inc = $24, additional_information = $25, assign_person_id = $26, assign_person = $27,
-          sales_posting_group_id = $28, purchase_posting_group_id = $29, updated_at = now()
-        WHERE id = $30 AND company_id = $31
+          sales_posting_group_id = $28, purchase_posting_group_id = $29, purchase_posting_group_id = $30, purchase_posting_group_id = $31, updated_at = now()
+        WHERE id = $32 AND company_id = $33
         RETURNING id
       `;
 
       const partyValues = [
-        validatedAccount.name,
-        validatedAccount.status || "active",
-        toCleanOrNull(validatedAccount.email),
-        toCleanOrNull(validatedAccount.phone),
-        toCleanOrNull(validatedAccount.mobile),
-        toCleanOrNull(validatedAccount.website),
-        validatedAccount.credit_limit || 0,
+        validatedAccount.name, // $1
+        validatedAccount.status || "active", // $2
+        toCleanOrNull(validatedAccount.email), // $3
+        toCleanOrNull(validatedAccount.phone), // $4
+        toCleanOrNull(validatedAccount.mobile), // $5
+        toCleanOrNull(validatedAccount.website), // $6
+        validatedAccount.credit_limit || 0, // $7
 
-        toCleanOrNull(validatedAccount.currency_id),
-        toCleanOrNull(validatedAccount.salesperson_id),
-        toCleanOrNull(validatedAccount.bucket_id),
-        toCleanOrNull(validatedAccount.vat_reg_no),
-        toCleanOrNull(validatedAccount.segment_id),
-        toCleanOrNull(validatedAccount.territory_id),
-        toCleanOrNull(validatedAccount.buying_group_id),
-        toCleanOrNull(validatedAccount.credit_rating_id),
-        toCleanOrNull(validatedAccount.ownership_type_id),
-        toCleanOrNull(validatedAccount.classification_id),
-        toCleanOrNull(validatedAccount.type_id),
-        toCleanOrNull(validatedAccount.status_id),
-        toCleanOrNull(validatedAccount.source_of_crm_id),
+        toCleanOrNull(validatedAccount.currency_id), // $8
+        toCleanOrNull(validatedAccount.salesperson_id), // $9
+        toCleanOrNull(validatedAccount.bucket_id), // $10
+        toCleanOrNull(validatedAccount.vat_reg_no), // $11
+        toCleanOrNull(validatedAccount.segment_id), // $12
+        toCleanOrNull(validatedAccount.territory_id), // $13
+        toCleanOrNull(validatedAccount.buying_group_id), // $14
+        toCleanOrNull(validatedAccount.credit_rating_id), // $15
+        toCleanOrNull(validatedAccount.ownership_type_id), // $16
+        toCleanOrNull(validatedAccount.classification_id), // $17
+        toCleanOrNull(validatedAccount.type_id), // $18
+        toCleanOrNull(validatedAccount.status_id), // $19
+        toCleanOrNull(validatedAccount.source_of_crm_id), // $20
 
-        validatedAccount.no_of_emp || 0,
-        validatedAccount.turnover || 0,
+        validatedAccount.no_of_emp || 0, // $21
+        validatedAccount.turnover || 0, // $22
 
-        toCleanOrNull(validatedAccount.comp_reg_no),
-        toDateOrNull(validatedAccount.date_of_inc),
-        toCleanOrNull(validatedAccount.additional_information),
-        toCleanOrNull(validatedAccount.assign_person_id),
-        toCleanOrNull(validatedAccount.assign_person),
-        toCleanOrNull(validatedAccount.sales_posting_group_id),
-        toCleanOrNull(validatedAccount.purchase_posting_group_id),
-        id,
-        companyId,
+        toCleanOrNull(validatedAccount.comp_reg_no), // $23
+        toDateOrNull(validatedAccount.date_of_inc), // $24
+        toCleanOrNull(validatedAccount.additional_information), // $25
+        toCleanOrNull(validatedAccount.assign_person_id), // $26
+        toCleanOrNull(validatedAccount.assign_person), // $27
+        toCleanOrNull(validatedAccount.sales_posting_group_id), // $28
+        toCleanOrNull(validatedAccount.purchase_posting_group_id), // $29
+        validatedAccount.anonymous_supplier, // $30
+        validatedAccount.anonymous_customer, // $31
+        id, // $32
+        companyId, // $33
       ];
 
       const partyResult = await client.query(partyUpdateQuery, partyValues);

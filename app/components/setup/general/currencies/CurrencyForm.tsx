@@ -23,7 +23,7 @@ export default function CurrencyForm({ onSuccess }: Props) {
       body: JSON.stringify({
         currency_id: currencyId,
         exchange_rate: rate,
-        is_base: isBase
+        is_base: isBase,
       }),
     });
 
@@ -44,7 +44,11 @@ export default function CurrencyForm({ onSuccess }: Props) {
     <div className="border p-4 rounded mb-4">
       <h3 className="font-semibold mb-2">Add / Update Currency</h3>
 
-      <CurrencyDropdown value={currencyId} onChange={setCurrencyId} />
+      {/* <CurrencyDropdown value={currencyId} onChange={setCurrencyId} /> */}
+      <CurrencyDropdown
+        value={currencyId}
+        onChange={(val) => setCurrencyId(val || "")}
+      />
 
       <input
         type="number"

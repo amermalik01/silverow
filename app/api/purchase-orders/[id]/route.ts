@@ -56,6 +56,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     );
   }
 }
+
 export async function PUT(req: NextRequest, { params }: RouteContext) {
   const client = await pool.connect();
   try {

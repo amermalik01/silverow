@@ -5,7 +5,7 @@ import { PartySchema } from "@/lib/validations/party.schema";
 
 export type Party = z.infer<typeof PartySchema>;
 export type PartyType = "customer" | "supplier" | "lead" | "vendor" | "both";
-export type PartyModule = "crm" | "srm" | "hr" | "procurement";
+export type PartyModule = "crm" | "srm" | "hr" | "procurement" | "customer" | "supplier" | "finance";
 
 export interface PartyContact {
   id: string;
@@ -99,4 +99,46 @@ export type PartyDraft = {
   
   sales_posting_group_id?: string | null;   // 🟢 Critical for Customer G/L Control Group routing
   purchase_posting_group_id?: string | null; // 🟢 Critical for Supplier G/L Control Group routing
+
+  // 🟢 Finance Section Details
+  finance_contact_person?: string | null;
+  finance_email?: string | null;
+  finance_phone?: string | null;
+  finance_fax?: string | null;
+  finance_alt_contact?: string | null;
+  finance_alt_email?: string | null;
+
+  payment_terms?: string | null;
+  payment_method?: string | null;
+  company_reg_no?: string | null;
+  supplier_vat_no?: string | null;
+  payable_bank?: string | null;
+
+  gl_account_receivable?: string | null;
+  gl_account_payable?: string | null;
+  posting_group?: string;
+
+  finance_charge?: string | null;
+  has_finance_charge?: boolean;
+  insurance_charge?: string | null;
+  has_insurance_charge?: boolean;
+
+  exclude_from_aging_report?: boolean;
+
+  // 🟢 E-Document Generation Flags
+  e_reminder?: boolean;
+  e_statement?: boolean;
+  e_invoice?: boolean;
+  e_purchase_order?: boolean;
+  e_debit_note?: boolean;
+  e_remittance_advice?: boolean;
+
+  // 🟢 Bank Account Details
+  bank_account_name?: string | null;
+  bank_sort_code?: string | null;
+  bank_account_no?: string | null;
+  bank_swift_bic?: string | null;
+  bank_iban?: string | null;
+  bank_name?: string | null;
+  bank_address?: string | null;
 };

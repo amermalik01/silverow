@@ -258,12 +258,12 @@ export async function POST(req: Request) {
           credit_rating_id, ownership_type_id, classification_id, type_id,
           status_id, source_of_crm_id, no_of_emp, turnover, comp_reg_no,
           date_of_inc, additional_information, assign_person_id, assign_person,
-          sales_posting_group_id, purchase_posting_group_id,
+          sales_posting_group_id, purchase_posting_group_id,anonymous_supplier,anonymous_customer,
           created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
           $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-          $31, $32, $33, $34, $35, $36, $37, $38, now(), now()
+          $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, now(), now()
         ) RETURNING *
       `;
 
@@ -306,6 +306,8 @@ export async function POST(req: Request) {
         toCleanOrNull(validatedAccount.assign_person), // $36
         toCleanOrNull(validatedAccount.sales_posting_group_id), // $37
         toCleanOrNull(validatedAccount.purchase_posting_group_id), // $38
+        validatedAccount.anonymous_supplier, // $39
+        validatedAccount.anonymous_customer, // $40
       ];
 
       const partyResult = await client.query(partyInsertQuery, partyValues);

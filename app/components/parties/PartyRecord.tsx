@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
 
 import GeneralTab, { type CompanyCurrency } from "./tabs/GeneralTab";
+import FinanceTab from "./tabs/FinanceTab";
 
 import ContactsTab from "./tabs/ContactsTab";
 import AddressesTab from "./tabs/AddressesTab";
@@ -35,7 +36,7 @@ import type {
 
 type Props = {
   id: string;
-  module: PartyModule | "customer" | "supplier";
+  module: PartyModule | "customer" | "supplier" | "finance";
   isReadonly?: boolean;
 };
 
@@ -168,23 +169,33 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
     }
   };
 
-  /* if (loading) {
-    return (
-      <div className="flex items-center gap-3 text-slate-500 text-xs py-12 justify-center">
-        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        Synchronizing profile indices...
-      </div>
-    );
-  } */
+  // Base tabs
+  const tabs = ["general"];
 
-  const tabs = [
-    "general",
-    "contacts",
-    "locations",
-    "activities",
-    "notes",
-    "attachments",
-  ];
+  // Show Finance tab right after General for Customer, Supplier, or Finance modules
+  const isFinanceEligible =
+    module === "customer" ||
+    module === "supplier" ||
+    module === "finance" ||
+    account.is_customer ||
+    account.is_supplier;
+
+  if (isFinanceEligible) {
+    tabs.push("finance");
+  }
+
+  // Standard shared tabs
+  tabs.push("contacts", "locations");
+
+  // const tabs = [
+  //   "general",
+  //   "finance",
+  //   "contacts",
+  //   "locations",
+  //   "activities",
+  //   "notes",
+  //   "attachments",
+  // ];
 
   const isCrmOrCustomer =
     module === "crm" ||
@@ -195,6 +206,8 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
   if (isCrmOrCustomer) {
     tabs.splice(3, 0, "opportunities");
   }
+
+  tabs.push("activities", "notes", "attachments");
 
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
@@ -266,6 +279,16 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
             currencies={currencies}
           />
         )}
+
+        {activeTab === "finance" && (
+          <FinanceTab
+            account={account}
+            setAccount={setAccount}
+            isReadonly={isReadonly}
+            errors={formErrors}
+          />
+        )}
+        
         {activeTab === "contacts" && (
           <ContactsTab
             contacts={contacts}

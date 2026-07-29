@@ -53,10 +53,3 @@ export default function MasterDropdown({
   );
 }
 
-/* <MasterDropdown
-  type="country"
-  value={form.country_id}
-  onChange={(val) =>
-    setForm({ ...form, country_id: val })
-  }
-/> */

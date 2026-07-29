@@ -159,9 +159,54 @@ export const PartySchema = z.object({
   date_of_inc: looseDate,
   additional_information: looseString,
 
+  anonymous_supplier: z.boolean().default(false),
+  anonymous_customer: z.boolean().default(false),
+
   assign_person_id: looseString,
   assign_person: looseString,
 
   sales_posting_group_id: looseString,
   purchase_posting_group_id: looseString,
+
+  // 🟢 Finance Section Details
+  finance_contact_person: looseString,
+  finance_email: looseEmail,
+  finance_phone: looseString,
+  finance_fax: looseString,
+  finance_alt_contact: looseString,
+  finance_alt_email: looseEmail,
+
+  payment_terms: looseString,
+  payment_method: looseString,
+  company_reg_no: looseString,
+  supplier_vat_no: looseString,
+  payable_bank: looseString,
+
+  gl_account_receivable: looseString,
+  gl_account_payable: looseString,
+  posting_group: looseString.default("UK"),
+
+  finance_charge: looseString,
+  has_finance_charge: z.boolean().default(false),
+  insurance_charge: looseString,
+  has_insurance_charge: z.boolean().default(false),
+
+  exclude_from_aging_report: z.boolean().default(false),
+
+  // 🟢 E-Document Generation Flags
+  e_reminder: z.boolean().default(false),
+  e_statement: z.boolean().default(false),
+  e_invoice: z.boolean().default(false),
+  e_purchase_order: z.boolean().default(false),
+  e_debit_note: z.boolean().default(false),
+  e_remittance_advice: z.boolean().default(false),
+
+  // 🟢 Bank Account Details
+  bank_account_name: looseString,
+  bank_sort_code: looseString,
+  bank_account_no: looseString,
+  bank_swift_bic: looseString,
+  bank_iban: looseString,
+  bank_name: looseString,
+  bank_address: looseString,
 });
