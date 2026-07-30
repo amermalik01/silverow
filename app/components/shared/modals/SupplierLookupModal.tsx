@@ -25,6 +25,13 @@ export type SupplierLookupItem = {
   city?: string;
   postcode?: string;
   country?: string;
+  currency_id?: string;
+
+  anonymous_supplier?: boolean;
+  purchaser_code?: string;
+  payable_bank?: string;
+  payment_terms?: string;
+  payment_method?: string;
 
   primary_address?: SupplierAddress | null;
   billing_address?: SupplierAddress | null;

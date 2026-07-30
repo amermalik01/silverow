@@ -208,6 +208,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       supplier_id: supplier.id,
       supplier_no: supplier.supplier_code,
       supplier_name: supplier.name,
+      // Supplier Settings & Financial defaults
+      anonymous_supplier: supplier.anonymous_supplier ?? false,
+      purchaser_code: supplier.purchaser_code || "",
+      payable_bank: supplier.payable_bank || "",
+      payment_terms_id: supplier.payment_terms || "",
+      payment_method_id: supplier.payment_method || "",
     }));
 
     if (supplier.primary_address) setPrimaryAddress(supplier.primary_address);
@@ -216,6 +222,17 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
     if (supplier.shipping_address)
       setShippingAddress(supplier.shipping_address);
+
+    // Sync currency from supplier profile if provided
+    if (supplier.currency_id) {
+      const matchedCurr = masterData?.currencies.find(
+        (c) => c.id === supplier.currency_id,
+      );
+      setCurrencyConfig({
+        currency_id: supplier.currency_id,
+        exchange_rate: matchedCurr?.exchange_rate || 1,
+      });
+    }
 
     setSupplierModalOpen(false);
   };
@@ -723,35 +740,3 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     </div>
   );
 };
-// useEffect(() => {
-//   fetch("/api/parties/currencies")
-//     .then((res) => (res.ok ? res.json() : []))
-//     .then((data) => setCurrencies(data))
-//     .catch((err) => console.error("Error pulling lookups:", err));
-// }, []);
-
-// useEffect(() => {
-//   if (!isUpdateMode) {
-//     setIsLoadingStages(false);
-//     return;
-//   }
-
-//   async function fetchStages() {
-//     try {
-//       const response = await fetch("/api/setup/sales/purchase_order_stages");
-//       if (response.ok) {
-//         const data = await response.json();
-//         setStages(data);
-//       }
-//     } catch (error) {
-//       console.error("Failed to load purchase order stages setup:", error);
-//     } finally {
-//       setIsLoadingStages(false);
-//     }
-//   }
-//   fetchStages();
-// }, [isUpdateMode]);
-
-// const selectedCurrency = useMemo(() => {
-//   return currencies.find((c) => c.id === currencyConfig.currency_id);
-// }, [currencyConfig.currency_id, currencies]);

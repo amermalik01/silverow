@@ -46,7 +46,8 @@ export default function MasterDropdown({
 
       {options.map((opt) => (
         <option key={opt.id} value={opt.id}>
-          {opt.code ? `${opt.code} - ${opt.name}` : opt.name}
+          {/* {opt.code ? `${opt.code} - ${opt.name}` : opt.name} */}
+          {opt.code}
         </option>
       ))}
     </select>

@@ -17,6 +17,7 @@ export async function GET() {
     const [
       currenciesRes,
       stagesRes,
+      bankAccountsRes,
       paymentTermsRes,
       paymentMethodsRes,
       shipmentMethodsRes,
@@ -49,6 +50,18 @@ export async function GET() {
         WHERE company_id = $1
           AND stage_type = 'purchase_order'
         ORDER BY rank ASC, name ASC
+        `,
+        [companyId],
+      ),
+
+      client.query(
+        `
+        SELECT
+          id,
+          bank_name AS name
+        FROM bank_accounts
+        WHERE company_id = $1
+        ORDER BY bank_name
         `,
         [companyId],
       ),
@@ -100,6 +113,7 @@ export async function GET() {
     return NextResponse.json({
       currencies: currenciesRes.rows,
       stages: stagesRes.rows,
+      bankAccounts: bankAccountsRes.rows,
       paymentTerms: paymentTermsRes.rows,
       paymentMethods: paymentMethodsRes.rows,
       shipmentMethods: shipmentMethodsRes.rows,

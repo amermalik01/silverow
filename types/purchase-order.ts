@@ -36,6 +36,7 @@ export interface PurchaseOrder {
   previous_code?: string;
   link_to_cust?: string;
   deduct_from_rebate?: boolean;
+  anonymous_supplier?: boolean;
 
   contact?: string;
   book_in_phone?: string;

@@ -264,22 +264,23 @@ export class PurchaseOrderService {
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
         $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,$31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, NOW()
+        )
         RETURNING *;
         `,
         [
-          companyId,
-          orderNo,
+          companyId, // $1
+          orderNo, // $2
 
-          order.supplier_id,
-          order.supplier_no,
+          order.supplier_id, // $3
+          order.supplier_no, // $4
 
-          order.purchaser,
-          order.consignment_no,
-          order.supp_order_no,
-          order.link_to_so_no,
+          order.purchaser, // $5
+          order.consignment_no, // $6
+          order.supp_order_no, // $7
+          order.link_to_so_no, // $8
 
-          order.currency_id,
-          order.exchange_rate,
+          order.currency_id, // $9
+          order.exchange_rate, // $10
 
           order.order_date || null,
           order.req_receipt_date || null,
@@ -288,40 +289,40 @@ export class PurchaseOrderService {
           order.invoice_date?.trim() ? order.invoice_date : null,
           order.due_date || null,
 
-          order.reference,
+          order.reference, // $17
 
-          order.payable_bank,
-          order.payable_bank_id,
+          order.payable_bank, // $18
+          order.payable_bank_id, // $19
 
-          order.payment_terms_id,
-          order.payment_method_id,
+          order.payment_terms_id, // $20
+          order.payment_method_id, // $21
 
-          order.previous_code,
-          order.link_to_cust,
-          order.deduct_from_rebate,
+          order.previous_code, // $22
+          order.link_to_cust, // $23
+          order.deduct_from_rebate, // $24
 
-          order.contact,
-          order.book_in_phone,
-          order.book_in_contact,
-          order.book_in_email,
+          order.contact, // $25
+          order.book_in_phone, // $26
+          order.book_in_contact, // $27
+          order.book_in_email, // $28
 
-          order.shipment_method_id,
-          order.shipping_agent,
-          order.shipment_ref_no,
-          order.warehouse_ref_no,
-          order.shipment_po_not_req,
+          order.shipment_method_id, // $29
+          order.shipping_agent, // $30
+          order.shipment_ref_no, // $31
+          order.warehouse_ref_no, // $32
+          order.shipment_po_not_req, // $33
 
-          order.reason,
-          order.linked_po,
+          order.reason, // $34
+          order.linked_po, // $35
 
-          order.notes,
-          order.internal_notes,
+          order.notes, // $36
+          order.internal_notes, // $37
 
-          order.subtotal,
-          order.tax_amount,
-          order.total_amount,
+          order.subtotal, // $38
+          order.tax_amount, // $39
+          order.total_amount, // $40
 
-          order.status,
+          order.status, // $41
         ],
       );
 
@@ -739,7 +740,7 @@ export class PurchaseOrderService {
       $5,$6,$7,$8,
       $9,$10,$11,$12,
       $13,$14,$15,$16,
-      $17,$18,$19,$20,
+      $17,$18,$19,
       false,
       NOW()
     )
