@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";

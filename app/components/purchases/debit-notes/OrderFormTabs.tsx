@@ -2,8 +2,13 @@
 
 import React from "react";
 import { Icon } from "@iconify/react";
-import { DebitNote, DebitNoteAddress, DebitNoteLine } from "@/types/debit-note";
-
+import {
+  DebitNote,
+  DebitNoteMasterData,
+  DebitNoteAddress,
+  DebitNoteLine,
+} from "@/types/debit-note";
+import MasterDropdown from "../../common/MasterDropdown";
 interface Address {
   name?: string;
   address_1?: string;
@@ -17,18 +22,31 @@ interface Address {
   email?: string;
 }
 
-interface Currency {
-  id: string;
-  code: string;
-  name: string;
-  exchange_rate: number;
-}
-
 interface CurrencyConfig {
   currency_id: string;
   exchange_rate: number;
 }
 
+interface BankAccountItem {
+  id: string | number;
+  bank_name?: string;
+  account_name?: string;
+  name?: string;
+}
+
+interface NamedOptionItem {
+  id: string | number;
+  name: string;
+  days?: number;
+}
+
+type ExtendedMasterData = DebitNoteMasterData & {
+  bank_accounts?: BankAccountItem[];
+  bankAccounts?: BankAccountItem[];
+  payment_terms?: NamedOptionItem[];
+  payment_methods?: NamedOptionItem[];
+  paymentMethods?: NamedOptionItem[];
+};
 interface OrderFormTabsProps {
   activeTab: "general" | "invoicing" | "shipping";
   note: Partial<DebitNote>;
@@ -40,7 +58,8 @@ interface OrderFormTabsProps {
   setShippingAddress: React.Dispatch<React.SetStateAction<Address>>;
   currencyConfig: CurrencyConfig;
   setCurrencyConfig: React.Dispatch<React.SetStateAction<CurrencyConfig>>;
-  currencies: Currency[];
+  // currencies: Currency[];
+  masterData: DebitNoteMasterData | null;
   updateField: <K extends keyof DebitNote>(
     field: K,
     value: DebitNote[K],
@@ -61,7 +80,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   setShippingAddress,
   currencyConfig,
   setCurrencyConfig,
-  currencies,
+  masterData,
   updateField,
   setSupplierModalOpen,
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
@@ -69,6 +88,32 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 }) => {
   const inputcolumnDivStyle =
     "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200";
+
+  const maxOrderDate =
+    [note.invoice_date, note.req_receipt_date, note.receipt_date]
+      .filter(Boolean)
+      .map((d) => d!.split("T")[0])
+      .sort()[0] ?? "";
+
+  const calculateDueDate = (orderDate: string, days = 0) => {
+    if (!orderDate) return "";
+
+    const date = new Date(orderDate);
+    date.setDate(date.getDate() + Number(days));
+
+    return date.toISOString().split("T")[0];
+  };
+
+  const isSettingsDisabled = !note.anonymous_supplier;
+
+  const typedMasterData = masterData as ExtendedMasterData | null;
+
+  const bankAccounts =
+    typedMasterData?.bankAccounts || typedMasterData?.bank_accounts || [];
+  const paymentTerms =
+    typedMasterData?.paymentTerms || typedMasterData?.payment_terms || [];
+  const paymentMethods =
+    typedMasterData?.paymentMethods || typedMasterData?.payment_methods || [];
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm w-full">
@@ -87,7 +132,9 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Supplier No. <span className="text-red-500">*</span></label>
+              <label className={labelStyle}>
+                Supplier No. <span className="text-red-500">*</span>
+              </label>
               <div className="col-span-8 flex gap-1">
                 <input
                   type="text"
@@ -108,7 +155,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Supplier Name</label>
               <input
                 type="text"
-                disabled
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={note.supplier_name || ""}
               />
@@ -132,6 +179,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="text"
                 className={inputStyle}
+                disabled={isSettingsDisabled}
                 value={primaryAddress.address_1 || ""}
                 onChange={(e) =>
                   setPrimaryAddress({
@@ -146,6 +194,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="text"
                 className={inputStyle}
+                disabled={isSettingsDisabled}
                 value={primaryAddress.address_2 || ""}
                 onChange={(e) =>
                   setPrimaryAddress({
@@ -160,6 +209,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="text"
                 className={inputStyle}
+                disabled={isSettingsDisabled}
                 value={primaryAddress.city || ""}
                 onChange={(e) =>
                   setPrimaryAddress({ ...primaryAddress, city: e.target.value })
@@ -171,6 +221,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="text"
                 className={inputStyle}
+                disabled={isSettingsDisabled}
                 value={primaryAddress.county || ""}
                 onChange={(e) =>
                   setPrimaryAddress({
@@ -182,10 +233,11 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Postcode/Co.</label>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="col-span-8 grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="Postcode"
+                  disabled={isSettingsDisabled}
                   className={inputcolumnDivStyle}
                   value={primaryAddress.postcode || ""}
                   onChange={(e) =>
@@ -195,15 +247,16 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     })
                   }
                 />
-                <input
-                  type="text"
-                  placeholder="Country"
+
+                <MasterDropdown
+                  type="country"
+                  value={primaryAddress.country || "United Kingdom"}
+                  disabled={isSettingsDisabled}
                   className={inputcolumnDivStyle}
-                  value={primaryAddress.country || ""}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setPrimaryAddress({
                       ...primaryAddress,
-                      country: e.target.value,
+                      country: val ?? undefined,
                     })
                   }
                 />
@@ -232,6 +285,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="text"
                 className={inputStyle}
+                disabled={isSettingsDisabled}
                 value={primaryAddress.phone || ""}
                 onChange={(e) =>
                   setPrimaryAddress({
@@ -246,6 +300,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="text"
                 className={inputStyle}
+                disabled={isSettingsDisabled}
                 value={primaryAddress.email || ""}
                 onChange={(e) =>
                   setPrimaryAddress({
@@ -260,6 +315,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="text"
                 className={inputStyle}
+                disabled={isSettingsDisabled}
                 value={note.purchaser || ""}
                 onChange={(e) => updateField("purchaser", e.target.value)}
               />
@@ -276,6 +332,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 type="date"
                 className={inputStyle}
                 value={note.invoice_date || ""}
+                min={note.order_date?.split("T")[0] ?? ""}
                 onChange={(e) => updateField("invoice_date", e.target.value)}
               />
             </div>
@@ -297,7 +354,23 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 type="date"
                 className={inputStyle}
                 value={note.order_date?.split("T")[0] ?? ""}
-                onChange={(e) => updateField("order_date", e.target.value)}
+                onChange={(e) => {
+                  const orderDate = e.target.value;
+
+                  updateField("order_date", orderDate);
+
+                  const selected = masterData?.paymentTerms.find(
+                    (x) => x.id === note.payment_terms_id,
+                  );
+
+                  if (selected) {
+                    updateField(
+                      "due_date",
+                      calculateDueDate(orderDate, selected.days),
+                    );
+                  }
+                }}
+                // onChange={(e) => updateField("order_date", e.target.value)}
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
@@ -308,19 +381,10 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 type="date"
                 className={inputStyle}
                 value={note.receipt_date?.split("T")[0] ?? ""}
+                min={note.order_date?.split("T")[0] ?? ""}
                 onChange={(e) => updateField("receipt_date", e.target.value)}
               />
             </div>
-
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Previous Code</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={note.previous_code || ""}
-                onChange={(e) => updateField("previous_code", e.target.value)}
-              />
-            </div> */}
           </div>
         </div>
       )}
@@ -352,7 +416,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Name</label>
               <input
                 type="text"
-                disabled
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={note.supplier_name || ""}
               />
@@ -361,6 +425,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Address Line 1</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={billingAddress.address_1 || ""}
                 onChange={(e) =>
@@ -375,6 +440,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Address Line 2</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={billingAddress.address_2 || ""}
                 onChange={(e) =>
@@ -389,6 +455,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>City</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={billingAddress.city || ""}
                 onChange={(e) =>
@@ -405,6 +472,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="text"
                 className={inputStyle}
+                disabled={isSettingsDisabled}
                 value={billingAddress.county || ""}
                 onChange={(e) =>
                   setBillingAddress({
@@ -416,10 +484,11 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Postcode/Co.</label>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="col-span-8 grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="Postcode"
+                  disabled={isSettingsDisabled}
                   className={inputcolumnDivStyle}
                   value={billingAddress.postcode || ""}
                   onChange={(e) =>
@@ -429,15 +498,16 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     })
                   }
                 />
-                <input
-                  type="text"
-                  placeholder="Country"
+
+                <MasterDropdown
+                  type="country"
+                  value={billingAddress.country || "United Kingdom"}
+                  disabled={isSettingsDisabled}
                   className={inputcolumnDivStyle}
-                  value={billingAddress.country || ""}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setBillingAddress({
                       ...billingAddress,
-                      country: e.target.value,
+                      country: val ?? undefined,
                     })
                   }
                 />
@@ -461,6 +531,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Telephone</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={billingAddress.phone || ""}
                 onChange={(e) =>
@@ -475,6 +546,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Email</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={billingAddress.email || ""}
                 onChange={(e) =>
@@ -491,51 +563,100 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
           <div className="space-y-2">
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Payable Bank</label>
-              <input
-                type="text"
+              <select
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={note.payable_bank || ""}
                 onChange={(e) => updateField("payable_bank", e.target.value)}
-              />
+              >
+                <option value="">Select Bank...</option>
+                {bankAccounts.map((b) => (
+                  <option key={b.id} value={b.id || b.account_name}>
+                    {b.bank_name || b.account_name || b.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Payment Terms</label>
-              <input
-                type="text"
+              <select
                 className={inputStyle}
-                value={note.payment_terms || ""}
-                onChange={(e) => updateField("payment_terms", e.target.value)}
-              />
+                disabled={isSettingsDisabled}
+                value={note.payment_terms_id ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const selected = paymentTerms.find(
+                    (x) => String(x.id) === String(val),
+                  );
+
+                  updateField("payment_terms_id", val);
+                  updateField("payment_terms", selected?.name || "");
+
+                  if (note.order_date && selected) {
+                    updateField(
+                      "due_date",
+                      calculateDueDate(note.order_date, selected.days),
+                    );
+                  }
+                }}
+              >
+                <option value="">Select...</option>
+                {paymentTerms.map((term) => (
+                  <option key={term.id} value={term.id}>
+                    {term.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Payment Method</label>
-              <input
-                type="text"
+              <select
                 className={inputStyle}
-                value={note.payment_method || ""}
-                onChange={(e) => updateField("payment_method", e.target.value)}
-              />
+                disabled={isSettingsDisabled}
+                value={note.payment_method_id ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const selected = paymentMethods.find(
+                    (x) => String(x.id) === String(val),
+                  );
+
+                  updateField("payment_method_id", val);
+                  updateField("payment_method", selected?.name || "");
+                }}
+              >
+                <option value="">Select...</option>
+                {paymentMethods.map((method) => (
+                  <option key={method.id} value={method.id}>
+                    {method.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           {/* Column 4 */}
           <div className="space-y-2">
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Currency <span className="text-red-500">*</span></label>
+              <label className={labelStyle}>
+                Currency <span className="text-red-500">*</span>
+              </label>
               <select
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={currencyConfig.currency_id ?? ""}
                 onChange={(e) => {
                   const targetId = e.target.value;
-                  const matched = currencies.find((c) => c.id === targetId);
+                  const matched = masterData?.currencies.find(
+                    (c) => c.id === targetId,
+                  );
                   setCurrencyConfig({
                     currency_id: targetId,
                     exchange_rate: matched ? matched.exchange_rate : 1,
                   });
                 }}
               >
-                <option value="">Select Base Currency...</option>
-                {currencies.map((c) => (
+                <option value="">Select Currency...</option>
+                {masterData?.currencies.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.code} - {c.name}
                   </option>
@@ -555,6 +676,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Location Name</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={shippingAddress.name || ""}
                 onChange={(e) =>
@@ -569,6 +691,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Address Line 1</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={shippingAddress.address_1 || ""}
                 onChange={(e) =>
@@ -583,6 +706,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Address Line 2</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={shippingAddress.address_2 || ""}
                 onChange={(e) =>
@@ -597,6 +721,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>City</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={shippingAddress.city || ""}
                 onChange={(e) =>
@@ -611,6 +736,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>County</label>
               <input
                 type="text"
+                disabled={isSettingsDisabled}
                 className={inputStyle}
                 value={shippingAddress.county || ""}
                 onChange={(e) =>
@@ -627,10 +753,11 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
           <div className="space-y-2">
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Postcode/Co.</label>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="col-span-8 grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="Postcode"
+                  disabled={isSettingsDisabled}
                   className={inputcolumnDivStyle}
                   value={shippingAddress.postcode || ""}
                   onChange={(e) =>
@@ -640,15 +767,15 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     })
                   }
                 />
-                <input
-                  type="text"
-                  placeholder="Country"
+                <MasterDropdown
+                  type="country"
+                  value={shippingAddress.country || "United Kingdom"}
+                  disabled={isSettingsDisabled}
                   className={inputcolumnDivStyle}
-                  value={shippingAddress.country || ""}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setShippingAddress({
                       ...shippingAddress,
-                      country: e.target.value,
+                      country: val ?? undefined,
                     })
                   }
                 />
@@ -698,12 +825,26 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle} title="Shipment Method">
                 Shipt. Method
               </label>
-              <input
-                type="text"
+              <select
                 className={inputStyle}
-                value={note.shipment_method || ""}
-                onChange={(e) => updateField("shipment_method", e.target.value)}
-              />
+                value={note.shipment_method_id || ""}
+                onChange={(e) => {
+                  const selected = masterData?.shipmentMethods.find(
+                    (x) => x.id === e.target.value,
+                  );
+
+                  updateField("shipment_method_id", e.target.value);
+                  updateField("shipment_method", selected?.name || "");
+                }}
+              >
+                <option value="">Select...</option>
+
+                {masterData?.shipmentMethods.map((method) => (
+                  <option key={method.id} value={method.id}>
+                    {method.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Shipping Agent</label>

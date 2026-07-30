@@ -8,7 +8,12 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 
-import { DebitNote, DebitNoteAddress, DebitNoteLine } from "@/types/debit-note";
+import {
+  DebitNote,
+  DebitNoteAddress,
+  DebitNoteLine,
+  DebitNoteMasterData,
+} from "@/types/debit-note";
 
 import DebitNoteLines from "./DebitNoteLines";
 
@@ -18,6 +23,7 @@ import SupplierLookupModal, {
 
 import { DebitNotePayloadInput } from "@/lib/validations/debit-note.schema";
 import { OrderFormTabs } from "./OrderFormTabs";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface Currency {
   id: string;
@@ -54,9 +60,18 @@ export const DebitNoteForm: React.FC<Props> = ({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
 
-  const [stages, setStages] = useState<NoteStage[]>([]);
-  const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
+  // const [stages, setStages] = useState<NoteStage[]>([]);
+  // const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+
+  const { show, hide } = useLoader();
+
+  const [masterData, setMasterData] = useState<DebitNoteMasterData | null>(
+    null,
+  );
+
+  const isLoadingStages = !masterData;
+  const stages = masterData?.stages ?? [];
 
   const isUpdateMode = !!id;
 
@@ -65,7 +80,11 @@ export const DebitNoteForm: React.FC<Props> = ({
     supplier_id: "",
     supplier_no: "",
     supplier_name: "",
-    document_date: new Date().toISOString().split("T")[0],
+    order_date: new Date().toISOString().split("T")[0],
+    expected_date: "",
+    invoice_date: new Date().toISOString().split("T")[0],
+    receipt_date: new Date().toISOString().split("T")[0],
+    due_date: new Date().toISOString().split("T")[0],
     status: "draft",
     reference: "",
     notes: "",
@@ -87,7 +106,7 @@ export const DebitNoteForm: React.FC<Props> = ({
   });
 
   const [lines, setLines] = useState<DebitNoteLine[]>([]);
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  // const [currencies, setCurrencies] = useState<Currency[]>([]);
 
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
@@ -116,6 +135,7 @@ export const DebitNoteForm: React.FC<Props> = ({
           setShippingAddress(
             actualData.shipping_address || { address_type: "shipping" },
           );
+
           setCurrencyConfig({
             currency_id:
               actualData.debitNote?.currency_id ||
@@ -136,16 +156,43 @@ export const DebitNoteForm: React.FC<Props> = ({
       );
   }, [id]);
 
-  useEffect(() => {
-    fetch("/api/parties/currencies")
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setCurrencies(data))
-      .catch((err) =>
-        console.error("Error pulling financial lookup matrices:", err),
-      );
-  }, []);
+  const refreshLines = async () => {
+    if (!note.id) return;
+
+    const response = await fetch(`/api/debit-notes/${note.id}/lines`);
+
+    const data = await response.json();
+
+    setLines(data.lines ?? []);
+  };
+
+  // useEffect(() => {
+  //   fetch("/api/parties/currencies")
+  //     .then((res) => (res.ok ? res.json() : []))
+  //     .then((data) => setCurrencies(data))
+  //     .catch((err) =>
+  //       console.error("Error pulling financial lookup matrices:", err),
+  //     );
+  // }, []);
 
   useEffect(() => {
+    async function loadMasterData() {
+      try {
+        const res = await fetch("/api/purchase-orders/master-data");
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        setMasterData(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadMasterData();
+  }, []);
+
+  /* useEffect(() => {
     if (!isUpdateMode) {
       setIsLoadingStages(false);
       return;
@@ -172,7 +219,14 @@ export const DebitNoteForm: React.FC<Props> = ({
 
   const selectedCurrency = useMemo(() => {
     return currencies.find((c) => c.id === currencyConfig.currency_id);
-  }, [currencyConfig.currency_id, currencies]);
+  }, [currencyConfig.currency_id, currencies]); */
+
+  const selectedCurrency = useMemo(() => {
+    return (
+      masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
+      null
+    );
+  }, [currencyConfig.currency_id, masterData]);
 
   const financials = useMemo(() => {
     const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
@@ -191,11 +245,32 @@ export const DebitNoteForm: React.FC<Props> = ({
       supplier_id: supplier.id,
       supplier_no: supplier.supplier_code,
       supplier_name: supplier.name,
+      // Supplier Settings & Financial defaults
+      anonymous_supplier: supplier.anonymous_supplier ?? false,
+      purchaser_code: supplier.purchaser_code || "",
+      payable_bank: supplier.payable_bank || "",
+      payment_terms_id: supplier.payment_terms || "",
+      payment_method_id: supplier.payment_method || "",
     }));
+
     if (supplier.primary_address) setPrimaryAddress(supplier.primary_address);
+
     if (supplier.billing_address) setBillingAddress(supplier.billing_address);
+
     if (supplier.shipping_address)
       setShippingAddress(supplier.shipping_address);
+
+    // Sync currency from supplier profile if provided
+    if (supplier.currency_id) {
+      const matchedCurr = masterData?.currencies.find(
+        (c) => c.id === supplier.currency_id,
+      );
+      setCurrencyConfig({
+        currency_id: supplier.currency_id,
+        exchange_rate: matchedCurr?.exchange_rate || 1,
+      });
+    }
+
     setSupplierModalOpen(false);
   };
 
@@ -204,6 +279,44 @@ export const DebitNoteForm: React.FC<Props> = ({
     value: DebitNote[K],
   ) => {
     setNote((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const validateDates = (): string[] => {
+    const errors: string[] = [];
+
+    const orderDate = note.order_date
+      ? new Date(note.order_date).getTime()
+      : null;
+
+    const invoiceDate = note.invoice_date
+      ? new Date(note.invoice_date).getTime()
+      : null;
+
+    const reqReceiptDate = note.req_receipt_date
+      ? new Date(note.req_receipt_date).getTime()
+      : null;
+
+    const receiptDate = note.receipt_date
+      ? new Date(note.receipt_date).getTime()
+      : null;
+
+    if (orderDate && invoiceDate && orderDate > invoiceDate) {
+      errors.push("Order Date cannot be after Invoice Date.");
+    }
+
+    if (orderDate && reqReceiptDate && orderDate > reqReceiptDate) {
+      errors.push("Order Date cannot be after Required Receipt Date.");
+    }
+
+    if (orderDate && receiptDate && orderDate > receiptDate) {
+      errors.push("Order Date cannot be after Receipt Date.");
+    }
+
+    if (reqReceiptDate && receiptDate && reqReceiptDate > receiptDate) {
+      errors.push("Receipt Date cannot be before Required Receipt Date.");
+    }
+
+    return errors;
   };
 
   const validateForm = (): boolean => {
@@ -215,6 +328,8 @@ export const DebitNoteForm: React.FC<Props> = ({
       errors.push(
         "Debit notes require at least one ledger/item breakdown entry line.",
       );
+
+    errors.push(...validateDates());
 
     setValidationErrors(errors);
     return errors.length === 0;
@@ -452,7 +567,7 @@ export const DebitNoteForm: React.FC<Props> = ({
         setShippingAddress={setShippingAddress}
         currencyConfig={currencyConfig}
         setCurrencyConfig={setCurrencyConfig}
-        currencies={currencies}
+        masterData={masterData}
         updateField={updateField}
         setSupplierModalOpen={setSupplierModalOpen}
         labelStyle={labelStyle}
@@ -463,32 +578,57 @@ export const DebitNoteForm: React.FC<Props> = ({
         lines={lines}
         setLines={setLines}
         isReadonly={isReadOnly}
+        debitNote={note}
+        refreshLines={refreshLines}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end bg-slate-50 dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-        <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <span className="text-xs font-bold text-slate-500">
-              Conversion RateFactor
-            </span>
-            <input
-              type="number"
-              step="any"
-              className={`${inputStyle} font-mono max-w-[180px]`}
-              value={currencyConfig.exchange_rate ?? ""}
-              onChange={(e) =>
-                setCurrencyConfig({
-                  ...currencyConfig,
-                  exchange_rate: parseFloat(e.target.value) || 1,
-                })
-              }
+      <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end bg-slate-50 dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+        <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
+          <div>
+            <textarea
+              placeholder="Add Internal Notes"
+              className={`${inputStyle} font-mono`}
+              value={note.internal_notes || ""}
+              onChange={(e) => updateField("internal_notes", e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <span className="text-xs font-bold text-slate-500">
+          <div className="col-span-2">
+            <textarea
+              placeholder="Add External Notes"
+              className={`${inputStyle} font-mono`}
+              value={note.notes || ""}
+              onChange={(e) => updateField("notes", e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+            <div>
+              <span className="text-xs font-semibold text-slate-500 col">
+                Conversion Rate
+              </span>
+            </div>
+            <div>
+              <input
+                type="number"
+                step="any"
+                className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
+                onChange={(e) =>
+                  setCurrencyConfig({
+                    ...currencyConfig,
+                    exchange_rate: parseFloat(e.target.value) || 1,
+                  })
+                }
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <span className="text-xs font-semibold text-slate-500">
               Amount Incl. VAT ({baseCurrencyCode})
             </span>
-            <div className="p-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[180px] rounded">
+            <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
               {financials.amountInclVatLCY.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -497,11 +637,9 @@ export const DebitNoteForm: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="space-y-1 text-xs font-medium text-right font-mono ml-auto w-full max-w-sm">
-          <div className="flex justify-between border-b dark:border-slate-800 pb-1">
-            <span className="text-slate-400 font-sans">
-              Gross Adjusted Net:
-            </span>
+        <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
+          <div className="flex justify-between pb-1">
+            <span className="font-semibold">Amount</span>
             <span>
               {financials.amount.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
@@ -509,10 +647,8 @@ export const DebitNoteForm: React.FC<Props> = ({
               {selectedCurrency?.code || ""}
             </span>
           </div>
-          <div className="flex justify-between border-b dark:border-slate-800 pb-1">
-            <span className="text-slate-400 font-sans">
-              VAT Reversed Re-Assessment:
-            </span>
+          <div className="flex justify-between pb-1">
+            <span className="font-semibold">VAT</span>
             <span>
               {financials.vat.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
@@ -520,8 +656,8 @@ export const DebitNoteForm: React.FC<Props> = ({
               {selectedCurrency?.code || ""}
             </span>
           </div>
-          <div className="flex justify-between text-base font-bold pt-1 text-slate-900 dark:text-white">
-            <span className="font-sans">Total Balanced Credit Claim:</span>
+          <div className="flex justify-between  pt-1 text-slate-900 dark:text-white">
+            <span className="font-semibold">Amount Incl. VAT</span>
             <span>
               {financials.amountInclVat.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
@@ -532,7 +668,76 @@ export const DebitNoteForm: React.FC<Props> = ({
         </div>
       </div>
 
-      {!isReadOnly && (
+      <div className="flex items-center justify-between pt-4">
+        {/* Legend Indicators */}
+        <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
+            Partially Allocated
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
+            Allocated Stock
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
+            Stock Received
+          </span>
+        </div>
+
+        {/* Dedicated Action Buttons */}
+        <div className="flex items-center gap-2">
+          {/* <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || isReadOnly}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+          >
+            Purchase Order
+          </button> */}
+
+          {/* {isUpdateMode && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowInvoiceModal(true)}
+                disabled={isPosting}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Post Invoice
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowReceiveModal(true)}
+                disabled={isPosting}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Receive Stock
+              </button>
+            </>
+          )} */}
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
+          >
+            Edit / Save
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push(`/${slug}/purchases/debit-notes`)}
+            className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      {/* {!isReadOnly && (
         <div className="flex justify-end gap-2 pt-4">
           <button
             type="button"
@@ -550,7 +755,7 @@ export const DebitNoteForm: React.FC<Props> = ({
             {saving ? "Writing records..." : "Save Debit Note"}
           </button>
         </div>
-      )}
+      )} */}
       <SupplierLookupModal
         open={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}
@@ -559,220 +764,3 @@ export const DebitNoteForm: React.FC<Props> = ({
     </div>
   );
 };
-/* 
-<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm">
-        {activeTab === "general" && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className={labelStyle}>Debit Note No.</label>
-              <input
-                type="text"
-                disabled
-                className={inputStyle}
-                value={note.debit_note_no || ""}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Supplier Allocation <span className="text-red-500">*</span></label>
-              <div className="flex gap-1">
-                <input
-                  type="text"
-                  readOnly
-                  className={`${inputStyle} font-mono`}
-                  value={note.supplier_id || "Click Select..."}
-                />
-                <button
-                  type="button"
-                  onClick={() => setSupplierModalOpen(true)}
-                  className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-                >
-                  <Icon icon="tabler:search" />
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className={labelStyle}>Supplier Vendor Name</label>
-              <input
-                type="text"
-                disabled
-                className={inputStyle}
-                value={note.supplier_name || ""}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Document Date</label>
-              <input
-                type="date"
-                className={inputStyle}
-                value={note.document_date?.split("T")[0] ?? ""}
-                onChange={(e) => updateField("document_date", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Address Line 1</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.address_1 || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Address Line 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.address_2 || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>City</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.city || ""}
-                onChange={(e) =>
-                  setBillingAddress({ ...billingAddress, city: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Postcode/Co.</label>
-              <div className="grid grid-cols-2 gap-1">
-                <input
-                  type="text"
-                  placeholder="Postcode"
-                  className={inputStyle}
-                  value={billingAddress.postcode || ""}
-                  onChange={(e) =>
-                    setBillingAddress({
-                      ...billingAddress,
-                      postcode: e.target.value,
-                    })
-                  }
-                />
-                <input
-                  type="text"
-                  placeholder="Country"
-                  className={inputStyle}
-                  value={billingAddress.country || ""}
-                  onChange={(e) =>
-                    setBillingAddress({
-                      ...billingAddress,
-                      country: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "invoicing" && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className={labelStyle}>Operational Currency <span className="text-red-500">*</span></label>
-              <select
-                className={inputStyle} 
-                value={currencyConfig.currency_id ?? ""}
-                onChange={(e) => {
-                  const targetId = e.target.value;
-                  const matched = currencies.find((c) => c.id === targetId);
-                  setCurrencyConfig({
-                    currency_id: targetId,
-                    exchange_rate: matched ? matched.exchange_rate : 1,
-                  });
-                }}
-              >
-                <option value="">Select Valuation Token...</option>
-                {currencies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.code} - {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelStyle}>Adjustment Reason Notes</label>
-              <input
-                type="text"
-                className={inputStyle}
-                placeholder="Context breakdown lines..."
-                value={note.notes || ""}
-                onChange={(e) => updateField("notes", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>
-                Supplier Invoice Link Reference
-              </label>
-              <input
-                type="text"
-                className={inputStyle}
-                placeholder="e.g. BAL-REF-992"
-                value={note.reference || ""}
-                onChange={(e) => updateField("reference", e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-
-        {activeTab === "shipping" && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className={labelStyle}>Return Consignee Name</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.name || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    name: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Shipping Dispatch St. 1</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.address_1 || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={labelStyle}>Shipping Dispatch St. 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.address_2 || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-        )}
-      </div>
- */

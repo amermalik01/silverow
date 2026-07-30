@@ -15,6 +15,7 @@ export interface DebitNote {
   consignment_no?: string;
   supp_order_no?: string;
   link_to_so_no?: string;
+  anonymous_supplier?: boolean;
 
   order_date: string;
   req_receipt_date: string;
@@ -36,6 +37,7 @@ export interface DebitNote {
   book_in_contact?: string;
   book_in_email?: string;
 
+  shipment_method_id?: string;
   shipment_method?: string;
   shipping_agent?: string;
   shipment_ref_no?: string;
@@ -50,7 +52,9 @@ export interface DebitNote {
   exchange_rate?: number;
   document_date: string;
   reference?: string;
+
   notes?: string;
+  internal_notes?: string;
   subtotal?: number;
   tax_amount?: number;
   total_amount?: number;
@@ -128,4 +132,34 @@ export interface DebitNoteLine {
   purchase_gl_id?: string;
   sales_gl_id?: string;
   inventory_gl_id?: string;
+}
+
+export interface LookupItem {
+  id: string;
+  name: string;
+}
+
+export interface PaymentTermLookup extends LookupItem {
+  days: number;
+}
+
+export interface CurrencyLookup {
+  id: string;
+  code: string;
+  name: string;
+  exchange_rate: number;
+}
+
+export interface OrderStageLookup {
+  id: string;
+  name: string;
+  rank: number;
+}
+
+export interface DebitNoteMasterData {
+  currencies: CurrencyLookup[];
+  stages: OrderStageLookup[];
+  paymentTerms: PaymentTermLookup[];
+  paymentMethods: LookupItem[];
+  shipmentMethods: LookupItem[];
 }

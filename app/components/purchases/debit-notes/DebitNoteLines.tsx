@@ -3,7 +3,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DebitNoteLine } from "@/types/debit-note";
+import { DebitNote, DebitNoteLine } from "@/types/debit-note";
 
 import ItemLookupModal, {
   ItemLookupRecord,
@@ -39,12 +39,17 @@ type Props = {
   lines: DebitNoteLineUI[];
   setLines: React.Dispatch<React.SetStateAction<DebitNoteLineUI[]>>;
   isReadonly?: boolean;
+
+  debitNote: Partial<DebitNote>;
+  refreshLines?: () => Promise<void>;
 };
 
 export default function DebitNoteLines({
   lines,
   setLines,
   isReadonly = false,
+  debitNote,
+  refreshLines,
 }: Props) {
   /**
    * =====================================================
@@ -258,30 +263,29 @@ export default function DebitNoteLines({
         )}
       </div>
 
-      <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900">
-        <table className="w-full text-left text-xs border-collapse">
+      <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
+        <table className="w-full text-left text-xs border-collapse min-w-[1300px]">
           <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 uppercase font-semibold text-slate-600 dark:text-slate-400">
-              <th className="p-2 text-left">Type</th>
-              <th className="p-2 text-left">No.</th>
-              <th className="p-2 text-left">Description</th>
-              <th className="p-2 text-right">Qty</th>
-              <th className="p-2 text-left">UOM</th>
-              <th className="p-2 text-left">Warehouse</th>
-              <th className="p-2 text-right">Unit Cost</th>
-              <th className="p-2 text-left">Disc Type</th>
-              <th className="p-2 text-right">Discount</th>
-              <th className="p-2 text-right">VAT %</th>
-              <th className="p-2 text-right">Original</th>
-              <th className="p-2 text-right">Discount</th>
-              <th className="p-2 text-right">Net</th>
-              <th className="p-2 text-right">VAT</th>
-              <th className="p-2 text-right">Gross</th>
-              {!isReadonly && <th className="p-2 text-center">Action</th>}
+            <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 uppercase font-semibold text-slate-600 dark:text-slate-400">
+              <th className="p-2 w-[110px]">Type</th>
+              <th className="p-2 w-[130px]">No.</th>
+              <th className="p-2 w-[200px]">Description</th>
+              <th className="p-2 text-right w-[80px]">Qty</th>
+              <th className="p-2 w-[70px]">UOM</th>
+              <th className="p-2 w-[160px]">Warehouse</th>
+              <th className="p-2 text-right w-[95px]">Unit Cost</th>
+              <th className="p-2 w-[85px]">Disc Type</th>
+              <th className="p-2 text-right w-[85px]">Discount</th>
+              <th className="p-2 text-right w-[75px]">VAT %</th>
+              <th className="p-2 text-right w-[95px]">Net</th>
+              <th className="p-2 text-right w-[100px]">Gross</th>
+              {!isReadonly && (
+                <th className="p-2 text-center w-[110px]">Action</th>
+              )}
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
             {lines.length === 0 && (
               <tr>
                 <td colSpan={16} className="text-center p-8 text-gray-500 ">
@@ -290,269 +294,270 @@ export default function DebitNoteLines({
               </tr>
             )}
 
-            {lines.map((line, index) => (
-              <tr
-                key={index}
-                className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
-              >
-                {/* TYPE */}
-                <td className="p-2">
-                  <select
-                    value={line.line_type || "ITEM"}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      changeLineType(
-                        index,
-                        e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
-                      )
-                    }
-                    className="border rounded p-2 w-[120px] bg-gray-50 text-black"
-                  >
-                    <option value="ITEM">Item</option>
-                    <option value="GL_ACCOUNT">G/L</option>
-                    {/* <option value="COMMENT">Comment</option> */}
-                  </select>
-                </td>
+            {lines.map((line, index) => {
+              const displayQty = Number(line.quantity || 0);
+              const displayUnitCost = Number(line.unit_cost || 0);
+              const displayDiscountValue = Number(line.discount_value || 0);
+              const displayVatPercent = Number(line.vat_percent || 0);
+              const displayAvailableStock =
+                line.available_stock !== undefined
+                  ? Number(line.available_stock)
+                  : undefined;
 
-                {/* ITEM / GL LOOKUP */}
-                <td className="p-2">
-                  {line.line_type === "ITEM" && (
-                    <div className="space-y-1">
-                      <button
-                        type="button"
-                        disabled={isReadonly}
-                        onClick={() => setItemIndex(index)}
-                        className="border rounded px-3 py-2 bg-white text-black hover:bg-gray-50 w-[140px] text-left"
-                      >
-                        {line.item_code || "Select Item"}
-                      </button>
-                      {line.item_name && (
-                        <div className="text-xs text-gray-500">
-                          {line.item_name}
-                        </div>
-                      )}
-                    </div>
-                  )}
+              const isAllocationDisabled = !line.item_id || !line.warehouse_id;
 
-                  {line.line_type === "GL_ACCOUNT" && (
-                    <div className="space-y-1">
-                      <button
-                        type="button"
-                        disabled={isReadonly}
-                        onClick={() => setGlIndex(index)}
-                        className="border rounded px-3 py-2 bg-white text-black hover:bg-gray-50 w-[140px] text-left"
-                      >
-                        {line.account_code || "Select GL"}
-                      </button>
-                      {line.account_name && (
-                        <div className="text-xs text-gray-500">
-                          {line.account_name}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </td>
+              return (
+                <tr
+                  key={index}
+                  className="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
+                >
+                  <td className="p-2">
+                    <select
+                      value={line.line_type || "ITEM"}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        changeLineType(
+                          index,
+                          e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
+                        )
+                      }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-[100px]"
+                    >
+                      <option value="ITEM">Item</option>
+                      <option value="GL_ACCOUNT">G/L</option>
+                    </select>
+                  </td>
 
-                {/* DESCRIPTION */}
-                <td className="p-2">
-                  <textarea
-                    value={line.description || ""}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      updateLine(index, "description", e.target.value)
-                    }
-                    className="border rounded p-2 text-black"
-                    rows={2}
-                  />
-                </td>
-
-                {/* QUANTITY */}
-                <td className="p-2">
-                  <input
-                    type="number"
-                    value={line.quantity || 0}
-                    disabled={isReadonly || line.line_type === "COMMENT"}
-                    onChange={(e) =>
-                      updateLine(index, "quantity", Number(e.target.value))
-                    }
-                    className="border rounded p-2 w-[90px] text-right text-black"
-                  />
-                </td>
-
-                {/* UOM */}
-                <td className="p-2">
-                  <div className="border rounded p-2 min-w-[80px] text-black bg-gray-50">
-                    {line.uom_name || "-"}
-                  </div>
-                </td>
-
-                {/* WAREHOUSE */}
-                <td className="p-2">
-                  {line.line_type === "ITEM" && (
-                    <div className="space-y-1">
-                      <button
-                        type="button"
-                        disabled={isReadonly}
-                        onClick={() => setWarehouseIndex(index)}
-                        className="border rounded px-3 py-2 bg-white text-black hover:bg-gray-50 w-[160px] text-left"
-                      >
-                        {line.warehouse_code || "Select Warehouse"}
-                      </button>
-
-                      {line.warehouse_name && (
-                        <div className="text-xs text-gray-500">
-                          {line.warehouse_name}
-                        </div>
-                      )}
-
-                      {line.reserved_quantity && (
-                        <div className="text-xs text-blue-600">
-                          Reserved: {line.reserved_quantity}
-                        </div>
-                      )}
-
-                      {line.available_stock !== undefined &&
-                        line.quantity > line.available_stock && (
-                          <div className="text-red-600 text-xs">
-                            Insufficient stock
-                          </div>
-                        )}
-                    </div>
-                  )}
-                  {!line.warehouse_id && line.line_type === "ITEM" && (
-                    <div className="text-red-500 text-xs mt-1">
-                      Warehouse required
-                    </div>
-                  )}
-                </td>
-
-                {/* UNIT COST */}
-                <td className="p-2">
-                  <input
-                    type="number"
-                    value={line.unit_cost || 0}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      updateLine(index, "unit_cost", Number(e.target.value))
-                    }
-                    className="border rounded p-2 w-[110px] text-right text-black"
-                  />
-                </td>
-
-                {/* DISCOUNT TYPE */}
-                <td className="p-2">
-                  <select
-                    value={line.discount_type || "PERCENT"}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      handleDiscountTypeChange(index, e.target.value)
-                    }
-                    className="border rounded p-2 w-[100px] text-black bg-gray-50"
-                  >
-                    <option value="PERCENT">%</option>
-                    <option value="FIXED">Fixed</option>
-                  </select>
-                </td>
-
-                {/* DISCOUNT VALUE */}
-                <td className="p-2">
-                  <input
-                    type="number"
-                    value={line.discount_value || 0}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      updateLine(
-                        index,
-                        "discount_value",
-                        Number(e.target.value),
-                      )
-                    }
-                    className="border rounded p-2 w-[100px] text-right text-black"
-                  />
-                </td>
-
-                {/* VAT % */}
-                <td className="p-2">
-                  <input
-                    type="number"
-                    value={line.vat_percent || 0}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      updateLine(index, "vat_percent", Number(e.target.value))
-                    }
-                    className="border rounded p-2 w-[90px] text-right text-black"
-                  />
-                </td>
-
-                {/* CALCULATED FIELDS */}
-                <td className="p-2 text-right text-slate-700 dark:text-slate-300">
-                  {Number(line.original_amount || 0).toFixed(2)}
-                </td>
-                <td className="p-2 text-right text-slate-700 dark:text-slate-300">
-                  {Number(line.discount_amount || 0).toFixed(2)}
-                </td>
-                <td className="p-2 text-right font-medium text-slate-900 dark:text-slate-100">
-                  {Number(line.net_amount || 0).toFixed(2)}
-                </td>
-                <td className="p-2 text-right text-slate-700 dark:text-slate-300">
-                  {Number(line.vat_amount || 0).toFixed(2)}
-                </td>
-                <td className="p-2 text-right font-semibold text-slate-900 dark:text-slate-100">
-                  {Number(line.gross_amount || 0).toFixed(2)}
-                </td>
-
-                {/* ACTIONS */}
-                {!isReadonly && (
-                  <td className="p-2 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {line.line_type === "ITEM" ? (
+                  <td className="p-2">
+                    {line.line_type === "ITEM" && (
+                      <div className="space-y-1">
                         <button
                           type="button"
-                          disabled={!line.item_id || !line.warehouse_id}
-                          onClick={() => {
-                            setActiveAllocationRowKey(index.toString());
-                            setIsAllocationModalOpen(true);
-                          }}
-                          className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-20"
-                          title="Lot/Serial Allocation Matrix"
+                          disabled={isReadonly}
+                          onClick={() => setItemIndex(index)}
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
                         >
-                          <span
-                            className={`inline-block w-2.5 h-2.5 rounded-full ${
-                              line.is_allocated
-                                ? "bg-emerald-500"
-                                : "bg-rose-500"
-                            }`}
-                          />
+                          {line.item_code || "Select Item"}
                         </button>
-                      ) : (
-                        <div className="w-4 h-4" />
-                      )}
 
-                      <button
-                        type="button"
-                        onClick={() => removeLine(index)}
-                        className="text-red-600 hover:text-red-800 font-medium"
-                      >
-                        Remove
-                      </button>
+                        {line.item_name && (
+                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
+                            {line.item_name}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {line.line_type === "GL_ACCOUNT" && (
+                      <div className="space-y-1">
+                        <button
+                          type="button"
+                          disabled={isReadonly}
+                          onClick={() => setGlIndex(index)}
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
+                        >
+                          {line.account_code || "Select GL"}
+                        </button>
+
+                        {line.account_name && (
+                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
+                            {line.account_name}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </td>
+
+                  <td className="p-2">
+                    <textarea
+                      value={line.description || ""}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        updateLine(index, "description", e.target.value)
+                      }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-xs"
+                      rows={2}
+                    />
+                  </td>
+
+                  <td className="p-2">
+                    <input
+                      type="number"
+                      value={displayQty}
+                      disabled={isReadonly || line.line_type === "COMMENT"}
+                      onChange={(e) =>
+                        updateLine(index, "quantity", Number(e.target.value))
+                      }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                    />
+                  </td>
+
+                  <td className="p-2">
+                    <div className="p-1 text-gray-500">
+                      {line.uom_name || "-"}
                     </div>
                   </td>
-                )}
-              </tr>
-            ))}
+
+                  <td className="p-2">
+                    {line.line_type === "ITEM" && (
+                      <div className="space-y-1">
+                        <button
+                          type="button"
+                          disabled={isReadonly}
+                          onClick={() => setWarehouseIndex(index)}
+                          className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-xs bg-white dark:bg-slate-800 flex items-center justify-between gap-3"
+                        >
+                          <span className="truncate text-left">
+                            {line.warehouse_code || "Select Warehouse"}
+                            {line.warehouse_name && ` - ${line.warehouse_name}`}
+                          </span>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            {/* ✅ RESERVED STOCK INDICATOR */}
+                            {line.reserved_quantity && (
+                              <span className="text-blue-600 whitespace-nowrap">
+                                Reserved: {Number(line.reserved_quantity)}
+                              </span>
+                            )}
+
+                            {/* ❗ STOCK WARNING */}
+                            {displayAvailableStock !== undefined &&
+                              displayQty > displayAvailableStock && (
+                                <span className="text-red-600 font-medium whitespace-nowrap">
+                                  Insufficient stock
+                                </span>
+                              )}
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                    {!line.warehouse_id && line.line_type === "ITEM" && (
+                      <div className="text-red-500 text-xs">
+                        Warehouse required
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-2">
+                    <input
+                      type="number"
+                      value={displayUnitCost}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        updateLine(index, "unit_cost", Number(e.target.value))
+                      }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                    />
+                  </td>
+
+                  <td className="p-2">
+                    <select
+                      value={line.discount_type || "PERCENT"}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        handleDiscountTypeChange(index, e.target.value)
+                      }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full"
+                    >
+                      <option value="PERCENT">%</option>
+                      <option value="FIXED">Fixed</option>
+                    </select>
+                  </td>
+
+                  <td className="p-2">
+                    <input
+                      type="number"
+                      value={displayDiscountValue}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        updateLine(
+                          index,
+                          "discount_value",
+                          Number(e.target.value),
+                        )
+                      }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                    />
+                  </td>
+
+                  <td className="p-2">
+                    <input
+                      type="number"
+                      value={displayVatPercent}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        updateLine(index, "vat_percent", Number(e.target.value))
+                      }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                    />
+                  </td>
+
+                  <td className="p-2 text-right font-medium">
+                    {Number(line.net_amount || 0).toFixed(2)}
+                  </td>
+
+                  <td className="p-2 text-right font-semibold">
+                    {Number(line.gross_amount || 0).toFixed(2)}
+                  </td>
+
+                  {!isReadonly && (
+                    <td className="p-2 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {line.line_type === "ITEM" ? (
+                          <button
+                            type="button"
+                            disabled={isAllocationDisabled}
+                            onClick={() => {
+                              setActiveAllocationRowKey(index.toString());
+                              setIsAllocationModalOpen(true);
+                            }}
+                            className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={
+                              isAllocationDisabled
+                                ? "Requires item and warehouse assignment first"
+                                : "Open Allocation Matrix"
+                            }
+                          >
+                            <span
+                              className={`inline-block w-2.5 h-2.5 rounded-full ${
+                                line.is_allocated
+                                  ? "bg-emerald-500"
+                                  : "bg-rose-500"
+                              }`}
+                            />
+                          </button>
+                        ) : (
+                          <div className="w-4 h-4" />
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => removeLine(index)}
+                          className="text-red-600 hover:text-red-800 font-medium"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
 
-          {/* FOOTER TOTALS */}
-          <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t font-semibold text-slate-900 dark:text-slate-100">
+          <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
             <tr>
-              <td colSpan={10} className="p-3 text-right">
+              <td
+                colSpan={10}
+                className="p-2.5 text-right uppercase tracking-wider text-xs"
+              >
                 Totals
               </td>
-              <td className="p-3 text-right">{totals.original.toFixed(2)}</td>
-              <td className="p-3 text-right">{totals.discount.toFixed(2)}</td>
-              <td className="p-3 text-right">{totals.net.toFixed(2)}</td>
-              <td className="p-3 text-right">{totals.vat.toFixed(2)}</td>
-              <td className="p-3 text-right">{totals.gross.toFixed(2)}</td>
+              <td className="p-2.5 text-right font-mono">
+                {totals.net.toFixed(2)}
+              </td>
+              <td className="p-2.5 text-right font-mono">
+                {totals.gross.toFixed(2)}
+              </td>
               {!isReadonly && <td />}
             </tr>
           </tfoot>
