@@ -18,14 +18,15 @@ import {
 
 import PurchaseOrderLines from "./PurchaseOrderLines";
 
-import SupplierLookupModal, {
-  SupplierLookupItem,
-} from "@/app/components/shared/modals/SupplierLookupModal";
+// import SupplierLookupModal, {
+//   SupplierLookupItem,
+// } from "@/app/components/shared/modals/SupplierLookupModal";
 
 import { PurchaseOrderPayloadInput } from "@/lib/validations/purchase-order.schema";
 import { Checkbox } from "@radix-ui/react-checkbox";
 import { OrderFormTabs } from "./OrderFormTabs";
 import { StockReceiveConfirmModal } from "@/app/components/shared/modals/StockReceiveConfirmModal";
+import SupplierLookupModal, { SupplierLookupItem } from "./SupplierLookupModal";
 
 interface Currency {
   id: string;

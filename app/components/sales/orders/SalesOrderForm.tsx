@@ -1,4 +1,4 @@
-// /app/components/sales/orders/SalesOrderForm.tsx
+// app/components/sales/orders/SalesOrderForm.tsx
 
 "use client";
 
@@ -8,17 +8,16 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 
-import CustomerLookupModal, {
-  CustomerLookupItem,
-} from "../../shared/modals/CustomerLookupModal";
-
 import {
   SalesOrder,
   SalesOrderAddress,
   SalesOrderLineUI,
+  SalesOrderMasterData,
 } from "@/types/sales-order";
 import SalesOrderLines from "./SalesOrderLines";
 import { OrderFormTabs } from "./OrderFormTabs";
+import CustomerLookupModal, { CustomerLookupItem } from "./CustomerLookupModal";
+import { useLoader } from "@/app/context/LoaderContext";
 
 type Props = {
   slug: string;
@@ -55,9 +54,18 @@ export default function SalesOrderForm({
   const [customerModalOpen, setCustomerModalOpen] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  const [stages, setStages] = useState<OrderStage[]>([]);
-  const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
+  // const [stages, setStages] = useState<OrderStage[]>([]);
+  // const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+
+  const { show, hide } = useLoader();
+
+  const [masterData, setMasterData] = useState<SalesOrderMasterData | null>(
+    null,
+  );
+
+  const isLoadingStages = !masterData;
+  const stages = masterData?.stages ?? [];
 
   const isUpdateMode = !!id;
 
@@ -100,7 +108,7 @@ export default function SalesOrderForm({
   >({ address_type: "shipping" });
 
   const [lines, setLines] = useState<SalesOrderLineUI[]>([]);
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  // const [currencies, setCurrencies] = useState<Currency[]>([]);
 
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
@@ -141,16 +149,66 @@ export default function SalesOrderForm({
       );
   }, [id]);
 
-  // Load Currencies Lookup
   useEffect(() => {
+    async function loadMasterData() {
+      try {
+        const res = await fetch("/api/sales/sales-orders/master-data");
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        setMasterData(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadMasterData();
+  }, []);
+
+  const refreshLines = async () => {
+    if (!order.id) return;
+
+    const response = await fetch(`/api/purchase-orders/${order.id}/lines`);
+
+    const data = await response.json();
+
+    setLines(data.lines ?? []);
+  };
+
+  const selectedCurrency = useMemo(() => {
+    return (
+      masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
+      null
+    );
+  }, [currencyConfig.currency_id, masterData]);
+
+  const financials = useMemo(() => {
+    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
+    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
+    const amountInclVat = amount + vat;
+
+    // const rate = Number(currencyConfig.exchange_rate || 1);
+    const rate =
+      Number(currencyConfig.exchange_rate) > 0
+        ? Number(currencyConfig.exchange_rate)
+        : 1;
+
+    const amountInclVatLCY = amountInclVat / rate;
+
+    return { amount, vat, amountInclVat, amountInclVatLCY };
+  }, [lines, currencyConfig.exchange_rate]);
+
+  // Load Currencies Lookup
+  /* useEffect(() => {
     fetch("/api/parties/currencies")
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setCurrencies(data))
       .catch((err) => console.error("Error pulling currencies lookups:", err));
-  }, []);
+  }, []); */
 
   // Load Workflow Pipeline Stages
-  useEffect(() => {
+  /* useEffect(() => {
     if (!isUpdateMode) {
       setIsLoadingStages(false);
       return;
@@ -170,37 +228,11 @@ export default function SalesOrderForm({
       }
     }
     fetchStages();
-  }, [isUpdateMode]);
+  }, [isUpdateMode]); */
 
-  const selectedCurrency = useMemo(() => {
-    return currencies.find((c) => c.id === currencyConfig.currency_id);
-  }, [currencyConfig.currency_id, currencies]);
-
-  // Reactive Calculation Matrix (Matching PurchaseOrderForm Pattern)
-  const financials = useMemo(() => {
-    // const amount = lines.reduce(
-    //   (sum, l) => sum + Number(l.line_amount || l.net_amount || 0),
-    //   0,
-    // );
-    // const vat = lines.reduce(
-    //   (sum, l) => sum + Number(l.tax_amount || l.vat_amount || 0),
-    //   0,
-    // );
-
-    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
-    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
-
-    const amountInclVat = amount + vat;
-
-    const rate =
-      Number(currencyConfig.exchange_rate) > 0
-        ? Number(currencyConfig.exchange_rate)
-        : 1;
-
-    const amountInclVatLCY = amountInclVat / rate;
-
-    return { amount, vat, amountInclVat, amountInclVatLCY };
-  }, [lines, currencyConfig.exchange_rate]);
+  // const selectedCurrency = useMemo(() => {
+  //   return currencies.find((c) => c.id === currencyConfig.currency_id);
+  // }, [currencyConfig.currency_id, currencies]);
 
   const handleCustomerSelect = (customer: CustomerLookupItem) => {
     setOrder((prev) => ({
@@ -209,6 +241,12 @@ export default function SalesOrderForm({
       customer_no: customer.customer_code,
       customer_name: customer.name,
       email: customer.email || prev.email,
+      // Supplier Settings & Financial defaults
+      anonymous_customer: customer.anonymous_customer ?? false,
+      salesperson_code: customer.salesperson_code || "",
+      payable_bank: customer.payable_bank || "",
+      payment_terms_id: customer.payment_terms || "",
+      payment_method_id: customer.payment_method || "",
     }));
 
     if (customer.primary_address) setPrimaryAddress(customer.primary_address);
@@ -222,6 +260,17 @@ export default function SalesOrderForm({
         ...customer.shipping_address,
       }));
     }
+
+    if (customer.currency_id) {
+      const matchedCurr = masterData?.currencies.find(
+        (c) => c.id === customer.currency_id,
+      );
+      setCurrencyConfig({
+        currency_id: customer.currency_id,
+        exchange_rate: matchedCurr?.exchange_rate || 1,
+      });
+    }
+
     setCustomerModalOpen(false);
   };
 
@@ -448,7 +497,6 @@ export default function SalesOrderForm({
         ))}
       </div>
 
-      {/* Tab Panels Layout Matrix Forms */}
       <OrderFormTabs
         activeTab={activeTab}
         order={order}
@@ -460,18 +508,105 @@ export default function SalesOrderForm({
         setShippingAddress={setShippingAddress}
         currencyConfig={currencyConfig}
         setCurrencyConfig={setCurrencyConfig}
-        currencies={currencies}
-        updateOrderField={updateOrderField}
+        // currencies={currencies}
+        masterData={masterData}
+        updateField={updateOrderField}
         setCustomerModalOpen={setCustomerModalOpen}
         labelStyle={labelStyle}
         inputStyle={inputStyle}
       />
 
-      {/* Product Line Detail Component Grid */}
       <SalesOrderLines lines={lines} setLines={setLines} />
 
-      {/* Order Summary Calculations Metrics Box Footer */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end bg-slate-50 dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+        <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
+          <div>
+            <textarea
+              placeholder="Add Internal Notes"
+              className={`${inputStyle} font-mono`}
+              value={order.internal_notes || ""}
+              onChange={(e) =>
+                updateOrderField("internal_notes", e.target.value)
+              }
+            />
+          </div>
+          <div className="col-span-2">
+            <textarea
+              placeholder="Add External Notes"
+              className={`${inputStyle} font-mono`}
+              value={order.notes || ""}
+              onChange={(e) => updateOrderField("notes", e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+            <div>
+              <span className="text-xs font-semibold text-slate-500 col">
+                Conversion Rate
+              </span>
+            </div>
+            <div>
+              <input
+                type="number"
+                step="any"
+                className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
+                onChange={(e) =>
+                  setCurrencyConfig({
+                    ...currencyConfig,
+                    exchange_rate: parseFloat(e.target.value) || 1,
+                  })
+                }
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <span className="text-xs font-semibold text-slate-500">
+              Amount Incl. VAT ({baseCurrencyCode})
+            </span>
+            <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
+              {financials.amountInclVatLCY.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
+          <div className="flex justify-between pb-1">
+            <span className="font-semibold">Amount</span>
+            <span>
+              {financials.amount.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}{" "}
+              {selectedCurrency?.code || ""}
+            </span>
+          </div>
+          <div className="flex justify-between pb-1">
+            <span className="font-semibold">VAT</span>
+            <span>
+              {financials.vat.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}{" "}
+              {selectedCurrency?.code || ""}
+            </span>
+          </div>
+          <div className="flex justify-between  pt-1 text-slate-900 dark:text-white">
+            <span className="font-semibold">Amount Incl. VAT</span>
+            <span>
+              {financials.amountInclVat.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}{" "}
+              {selectedCurrency?.code || ""}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="border dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm md:col-start-3 space-y-2.5 text-xs">
           <div className="flex justify-between text-gray-500">
             <span>Subtotal (Net Amount)</span>
@@ -499,10 +634,77 @@ export default function SalesOrderForm({
             </div>
           )}
         </div>
-      </div>
+      </div> */}
 
-      {/* Bottom Action Command Drawer Buttons */}
-      <div className="flex justify-between items-center border-t dark:border-slate-800 pt-4">
+      <div className="flex items-center justify-between pt-4">
+        {/* Legend Indicators */}
+        <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
+            Partially Allocated Stock
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
+            Allocated Stock
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
+            Dispatched Stock
+          </span>
+        </div>
+
+        {/* Dedicated Action Buttons */}
+        <div className="flex items-center gap-2">
+          {/* <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || isReadOnly}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+          >
+            Purchase Order
+          </button> */}
+
+          {/* {isUpdateMode && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowInvoiceModal(true)}
+                disabled={isPosting}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Post Invoice
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowReceiveModal(true)}
+                disabled={isPosting}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Receive Stock
+              </button>
+            </>
+          )} */}
+
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
+          >
+            Edit / Save
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push(`/${slug}/sales/orders`)}
+            className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+      {/* <div className="flex justify-between items-center border-t dark:border-slate-800 pt-4">
         <button
           type="button"
           onClick={() => router.push(`/${slug}/sales/orders`)}
@@ -562,7 +764,7 @@ export default function SalesOrderForm({
             {saving ? "Processing..." : "Save Order"}
           </button>
         </div>
-      </div>
+      </div> */}
 
       <CustomerLookupModal
         open={customerModalOpen}

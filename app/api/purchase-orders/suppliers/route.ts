@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
           p.finance_alt_contact,
           p.finance_alt_email,
           p.payment_terms,
+          pt.name as paymentterms,
           p.payment_method,
           p.company_reg_no,
           p.supplier_vat_no,
@@ -87,6 +88,7 @@ export async function GET(req: NextRequest) {
           ON pa.party_id = p.id AND pa.is_primary = true
         LEFT JOIN country c 
           ON pa.country = c.id::text OR pa.country = c.iso
+        LEFT JOIN payment_terms pt ON p.payment_terms = pt.id::text AND pt.module_type='purchases'
         WHERE p.company_id = $1
           AND (p.is_supplier = true)
           AND ($2 = '' OR p.supplier_code ILIKE '%' || $2 || '%')

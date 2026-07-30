@@ -20,6 +20,9 @@ export type SupplierLookupItem = {
   currency_id?: string;
   vat_reg_no?: string;
 
+  anonymous_supplier?: boolean;
+  purchaser_code?: string;
+
   // Finance Contacts
   finance_contact_person?: string;
   finance_email?: string;
@@ -30,6 +33,7 @@ export type SupplierLookupItem = {
 
   // Payment Rules & GL Accounts
   payment_terms?: string;
+  paymentterms?: string;
   payment_method?: string;
   company_reg_no?: string;
   supplier_vat_no?: string;
@@ -63,6 +67,7 @@ export type SupplierLookupItem = {
   bank_name?: string;
   bank_address?: string;
 
+  primary_address?: SupplierAddress | null;
   billing_address?: SupplierAddress | null;
   shipping_address?: SupplierAddress | null;
 };
@@ -252,7 +257,7 @@ export default function SupplierLookupModal({
                   </td>
                   <td className="border p-2 font-medium">{supplier.name}</td>
                   <td className="border p-2 text-gray-600">
-                    {supplier.payment_terms || "—"}
+                    {supplier.paymentterms || "—"}
                   </td>
                   <td className="border p-2">{supplier.email || "—"}</td>
                   <td className="border p-2">{supplier.phone || "—"}</td>

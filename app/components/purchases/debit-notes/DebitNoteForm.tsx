@@ -17,13 +17,15 @@ import {
 
 import DebitNoteLines from "./DebitNoteLines";
 
-import SupplierLookupModal, {
-  SupplierLookupItem,
-} from "../../shared/modals/SupplierLookupModal";
+// import SupplierLookupModal, {
+//   SupplierLookupItem,
+// } from "../../shared/modals/SupplierLookupModal";
+// import SupplierLookupModal, { SupplierLookupItem } from "./SupplierLookupModal";
 
 import { DebitNotePayloadInput } from "@/lib/validations/debit-note.schema";
 import { OrderFormTabs } from "./OrderFormTabs";
 import { useLoader } from "@/app/context/LoaderContext";
+import SupplierLookupModal, { SupplierLookupItem } from "../purchase-orders/SupplierLookupModal";
 
 interface Currency {
   id: string;
