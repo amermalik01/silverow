@@ -32,6 +32,7 @@ export default function AddressesTab({
         is_primary: addresses.length === 0,
         is_billing: true,
         is_shipping: true,
+        is_collection: true,
       },
     ]);
   };
@@ -94,6 +95,13 @@ export default function AddressesTab({
                   Shipping
                 </span>
               )}
+
+              {a.is_collection && (
+                <span className="text-[10px] px-2 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                  Collection
+                </span>
+              )}
+              
             </div>
 
             <button
@@ -287,6 +295,18 @@ export default function AddressesTab({
                     />
                     Shipping Address
                   </label>
+
+                  <label className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={!!a.is_collection}
+                      onChange={(e) =>
+                        updateAddressRow(idx, "is_collection", e.target.checked)
+                      }
+                    />
+                    Collection Address
+                  </label>
+
                 </div>
               </div>
             </div>
