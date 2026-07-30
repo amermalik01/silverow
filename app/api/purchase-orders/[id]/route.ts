@@ -83,10 +83,6 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       body,
     );
 
-    // console.log('update Api  dbLines === ',dbLines);
-    // console.log('update Api  lines === ',lines);
-    // console.log('update Api  order?.status === ',order?.status);
-
     // 2. Iterate safely using order indexes to guarantee accurate mapping of newly generated IDs
     for (let i = 0; i < lines.length; i++) {
       const payloadLine = lines[i];
@@ -104,35 +100,6 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         );
       }
     }
-
-    // 2. Fetch all current sub-lines to sync IDs reliably
-    /* const currentLinesResult = await client.query(
-      `SELECT id, item_id, warehouse_id FROM purchase_order_lines 
-       WHERE purchase_order_id = $1 AND is_deleted = false`,
-      [id],
-    );
-
-    // 3. Handle allocations regardless of state (Always save current UI layout state)
-    for (const payloadLine of lines) {
-      // If line is newly created it might not have line.id on the payload, match via item matching rules
-      const matchedLine = currentLinesResult.rows.find(
-        (dbLine) =>
-          dbLine.id === payloadLine.id ||
-          dbLine.item_id === payloadLine.item_id,
-      );
-
-      if (matchedLine) {
-        await PurchaseOrderService.saveLineAllocations(
-          client,
-          companyId,
-          id,
-          matchedLine.id,
-          matchedLine.item_id,
-          matchedLine.warehouse_id,
-          payloadLine.initialAllocations || [],
-        );
-      }
-    } */
 
     // 4. Downstream Automated Ledger integration if explicitly marked as processed
     if (order?.status === "received") {
@@ -179,32 +146,6 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
           );
         }
       }
-
-      /* for (const line of lines) {
-        if (Number(line.quantity) > 0) {
-          const targetLineId =
-            line.id ||
-            currentLinesResult.rows.find((l) => l.item_id === line.item_id)?.id;
-
-          await PurchaseOrderService.updateReceivedQuantity(
-            client,
-            targetLineId,
-            Number(line.quantity),
-          );
-
-          // Run your automated inventory valuation layers allocation
-          await InventoryAllocationEngineService.allocate(
-            client,
-            companyId,
-            line.item_id,
-            line.warehouse_id,
-            Number(line.quantity),
-            id,
-            targetLineId,
-            "FIFO",
-          );
-        }
-      } */
 
       await PurchaseOrderService.recalculateStatus(client, id);
     }

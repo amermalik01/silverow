@@ -21,11 +21,12 @@ import PurchaseOrderLines from "./PurchaseOrderLines";
 
 import SupplierLookupModal, {
   SupplierLookupItem,
-} from "../../shared/modals/SupplierLookupModal";
+} from "@/app/components/shared/modals/SupplierLookupModal";
 
 import { PurchaseOrderPayloadInput } from "@/lib/validations/purchase-order.schema";
 import { Checkbox } from "@radix-ui/react-checkbox";
 import { OrderFormTabs } from "./OrderFormTabs";
+import { StockReceiveConfirmModal } from "@/app/components/shared/modals/StockReceiveConfirmModal";
 
 interface Currency {
   id: string;
@@ -68,6 +69,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   // const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+
+  // Add states for modal control
+  const [showReceiveModal, setShowReceiveModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   const { show, hide } = useLoader();
 
@@ -518,6 +524,86 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     }
   };
 
+  // 1. Separate Handler for Receiving Stock (Physical Intake)
+  const handleReceiveStock = async () => {
+    if (!id) return;
+    setIsPosting(true);
+
+    show("Saving and Receiving Record...");
+
+    try {
+      toast.loading("Processing physical stock receipt...", {
+        id: "action-toast",
+      });
+
+      const res = await fetch(`/api/purchase-orders/${id}/receive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order, lines }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to receive stock");
+
+      toast.success("Stock received & ledger entries committed!", {
+        id: "action-toast",
+      });
+      setShowReceiveModal(false);
+      refreshLines();
+      router.refresh();
+    } catch (err) {
+      if (err instanceof Error)
+        //setValidationErrors([err.message]);
+        toast.error(err.message || "Error receiving stock", {
+          id: "action-toast",
+        });
+    } finally {
+      setIsPosting(false);
+      hide();
+    }
+  };
+
+  // 2. Separate Handler for Posting Invoice (Financial Posting to Accounts Payable)
+  const handlePostInvoice = async () => {
+    if (!id) return;
+    setIsPosting(true);
+
+    show("Posting Invoice...");
+    try {
+      toast.loading("Posting purchase invoice to G/L ledger...", {
+        id: "action-toast",
+      });
+
+      const res = await fetch(`/api/purchase-orders/${id}/post-invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplier_invoice_no: order.reference,
+          invoice_date: order.invoice_date,
+          posting_date: order.order_date,
+          financials: financials, // { amount, vat, amountInclVat }
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.error || "Failed to post purchase invoice");
+
+      toast.success("Purchase invoice posted cleanly!", { id: "action-toast" });
+      setShowInvoiceModal(false);
+      router.refresh();
+    } catch (err) {
+      if (err instanceof Error)
+        // setValidationErrors([err.message]);
+        toast.error(err.message || "Error posting invoice", {
+          id: "action-toast",
+        });
+    } finally {
+      setIsPosting(false);
+      hide();
+    }
+  };
+
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const labelStyle =
@@ -713,7 +799,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         </div>
       </div>
 
-      {!isReadOnly && (
+      {/* {!isReadOnly && (
         <div className="flex justify-end gap-2 pt-4">
           <button
             type="button"
@@ -731,7 +817,96 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             {saving ? "Writing..." : "Save Purchase Order"}
           </button>
         </div>
-      )}
+      )} */}
+
+      {/* Form Bottom Action Toolbar matching Legacy UI */}
+      <div className="flex items-center justify-between pt-4">
+        {/* Legend Indicators */}
+        <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
+            Partially Allocated
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
+            Allocated Stock
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
+            Stock Received
+          </span>
+        </div>
+
+        {/* Dedicated Action Buttons */}
+        <div className="flex items-center gap-2">
+          {/* <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || isReadOnly}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+          >
+            Purchase Order
+          </button> */}
+
+          {isUpdateMode && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowInvoiceModal(true)}
+                disabled={isPosting}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Post Invoice
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowReceiveModal(true)}
+                disabled={isPosting}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Receive Stock
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
+          >
+            Edit / Save
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push(`/${slug}/purchases/purchase-orders`)}
+            className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      {/* Modals */}
+      <StockReceiveConfirmModal
+        isOpen={showReceiveModal}
+        title="Confirmation"
+        message="Are you sure you want to receive the stock?"
+        onConfirm={handleReceiveStock}
+        onCancel={() => setShowReceiveModal(false)}
+        loading={isPosting}
+      />
+
+      <StockReceiveConfirmModal
+        isOpen={showInvoiceModal}
+        title="Confirmation"
+        message="Are you sure you want to post the invoice for this purchase order?"
+        onConfirm={handlePostInvoice}
+        onCancel={() => setShowInvoiceModal(false)}
+        loading={isPosting}
+      />
       <SupplierLookupModal
         open={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}

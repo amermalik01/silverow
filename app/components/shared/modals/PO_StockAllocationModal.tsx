@@ -190,15 +190,15 @@ export default function PO_StockAllocationModal({
               {warehouseName}
             </div>
           </div>
-          <div>
+          {/* <div>
             <div className="text-slate-500 dark:text-slate-400 font-medium">
               Location
             </div>
             <div className="font-semibold text-slate-900 dark:text-slate-100">
-              {/* {locationName || "-"} */}
+              {locationName || "-"}
             </div>
-          </div>
-          <div className="grid grid-cols-3 col-span-2 gap-2 text-center">
+          </div> */}
+          <div className="grid grid-cols-3 col-span-3 gap-2 text-center">
             <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded p-2">
               <div className="text-xs text-slate-500 dark:text-slate-400 uppercase">
                 Target Qty.
