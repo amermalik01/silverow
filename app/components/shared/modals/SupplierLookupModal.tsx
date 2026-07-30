@@ -196,7 +196,7 @@ export default function SupplierLookupModal({
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 bg-slate-50 border-b border-slate-200">
           <h2 className="text-base font-bold text-slate-900">
-            Select Supplier Target
+            Select Supplier
           </h2>
           <button
             onClick={onClose}

@@ -34,13 +34,59 @@ export async function GET(req: NextRequest) {
           p.name,
           p.email,
           p.phone,
+          p.credit_limit,
+          p.currency_id,
+          p.vat_reg_no,
+          p.anonymous_supplier,
+          
+          -- Finance & Ledger Columns
+          p.finance_contact_person,
+          p.finance_email,
+          p.finance_phone,
+          p.finance_fax,
+          p.finance_alt_contact,
+          p.finance_alt_email,
+          p.payment_terms,
+          p.payment_method,
+          p.company_reg_no,
+          p.supplier_vat_no,
+          p.payable_bank,
+          p.gl_account_receivable,
+          p.gl_account_payable,
+          p.posting_group,
+          p.purchase_posting_group_id,
+          p.finance_charge,
+          p.has_finance_charge,
+          p.insurance_charge,
+          p.has_insurance_charge,
+          p.exclude_from_aging_report,
+          
+          -- E-Document Flags
+          p.e_reminder,
+          p.e_statement,
+          p.e_invoice,
+          p.e_purchase_order,
+          p.e_debit_note,
+          p.e_remittance_advice,
+
+          -- Bank Account Details
+          p.bank_account_name,
+          p.bank_sort_code,
+          p.bank_account_no,
+          p.bank_swift_bic,
+          p.bank_iban,
+          p.bank_name,
+          p.bank_address,
+
           pa.city,
           pa.postcode,
-          pa.country,
+          COALESCE(c.name, pa.country) AS country,
           COUNT(*) OVER() AS total_count
         FROM parties p
         LEFT JOIN party_addresses pa 
           ON pa.party_id = p.id AND pa.is_primary = true
+        LEFT JOIN country c 
+          ON pa.country = c.id::text OR pa.country = c.iso
         WHERE p.company_id = $1
           AND (p.is_supplier = true)
           AND ($2 = '' OR p.supplier_code ILIKE '%' || $2 || '%')
@@ -87,7 +133,7 @@ export async function GET(req: NextRequest) {
           email,
           ROW_NUMBER() OVER (
             PARTITION BY party_id 
-            ORDER BY is_primary DESC
+            ORDER BY is_billing DESC
           ) as rn
         FROM party_addresses
         WHERE party_id IN (SELECT id FROM filtered_suppliers)
@@ -108,7 +154,7 @@ export async function GET(req: NextRequest) {
           email,
           ROW_NUMBER() OVER (
             PARTITION BY party_id 
-            ORDER BY is_primary DESC
+            ORDER BY is_shipping DESC
           ) as rn
         FROM party_addresses
         WHERE party_id IN (SELECT id FROM filtered_suppliers)
@@ -165,7 +211,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN ranked_primary_addresses pa ON pa.party_id = fs.id AND pa.rn = 1
       LEFT JOIN ranked_billing_addresses ba ON ba.party_id = fs.id AND ba.rn = 1
       LEFT JOIN ranked_shipping_addresses sa ON sa.party_id = fs.id AND sa.rn = 1
-      ORDER BY fs.name ASC;
+      ORDER BY fs.supplier_code DESC;
     `;
 
     const result = await pool.query(queryText, [

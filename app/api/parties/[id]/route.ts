@@ -342,7 +342,7 @@ export async function PUT(req: Request, { params }: Props) {
               a.address_2 || null,
               a.city,
               a.state || null,
-              a.country || "United Kingdom",
+              toCleanOrNull(a.country),
               a.postcode,
               a.phone || null,
               a.email || null,
