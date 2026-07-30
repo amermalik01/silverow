@@ -486,9 +486,9 @@ export const DebitNoteForm: React.FC<Props> = ({
   };
 
   const inputStyle =
-    "w-full col-span-8 border border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-emerald-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const labelStyle =
-    "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5 col-span-4";
+    "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
 
   return (
     <div className="space-y-4 container mx-auto p-1">

@@ -11,7 +11,9 @@ export type SalesReturn = {
   company_id?: string;
   return_no?: string;
   customer_id: string;
+  customer_no: string;
   customer_name?: string;
+
   reference?: string;
   return_date: string;
   posting_date: string;
@@ -27,15 +29,51 @@ export type SalesReturn = {
   salesperson?: string;
   cust_return_no?: string;
   link_to_cm?: string; // Reference connection to credit memo document
+
+  internal_notes?: string;
   notes?: string;
   status?: string;
   source_of_return?: string;
   credit_status?: string; // e.g., 'PENDING', 'CREDITED', 'PARTIAL'
   created_at?: string;
   updated_at?: string;
+
+  payable_bank?: string;
+  payable_bank_id?: string;
+  due_date?: string;
+  payment_terms?: string;
+  payment_terms_id?: string;
+  payment_method?: string;
+  payment_method_id?: string;
+
+  order_date: string;
+  dispatch_date: string;
+  requested_delivery_date?: string;
+  delivery_date?: string;
+  invoiced_amount?: number;
+  cust_order_no?: string;
+  link_to_po?: string;
+  sq_no?: string;
+
+  shipment_status?: string;
+  source_of_order?: string;
+  invoice_status?: string;
+  anonymous_customer?: boolean;
+
+  contact?: string;
+  book_in_phone?: string;
+  book_in_contact?: string;
+  book_in_email?: string;
+
+  shipment_method?: string;
+  shipment_method_id?: string;
+  shipping_agent?: string;
+  shipment_ref_no?: string;
+  warehouse_ref_no?: string;
+  reason?: string;
 };
 
-export type SalesReturnAddressType = "billing" | "shipping";
+export type SalesReturnAddressType = "primary" | "billing" | "shipping";
 
 export interface SalesReturnAddress {
   id?: string;
@@ -57,6 +95,8 @@ export interface SalesReturnAddress {
 
 export type SalesReturnPayload = {
   returnOrder: SalesReturn;
+
+  primary_address?: Partial<SalesReturnAddress>;
   billing_address?: Partial<SalesReturnAddress>;
   shipping_address?: Partial<SalesReturnAddress>;
   lines: SalesReturnLine[];
@@ -72,4 +112,33 @@ export interface SalesReturnLineUI extends SalesReturnLine {
   uom_name?: string;
   line_total?: number;
   gl_account_id?: string;
+}
+
+export interface LookupItem {
+  id: string;
+  name: string;
+}
+export interface PaymentTermLookup extends LookupItem {
+  days: number;
+}
+
+export interface CurrencyLookup {
+  id: string;
+  code: string;
+  name: string;
+  exchange_rate: number;
+}
+
+export interface OrderStageLookup {
+  id: string;
+  name: string;
+  rank: number;
+}
+
+export interface SalesReturnMasterData {
+  currencies: CurrencyLookup[];
+  stages: OrderStageLookup[];
+  paymentTerms: PaymentTermLookup[];
+  paymentMethods: LookupItem[];
+  shipmentMethods: LookupItem[];
 }
