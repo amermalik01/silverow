@@ -164,21 +164,9 @@ export async function POST(req: Request) {
       )
       .map((a: unknown) => PartyAddressSchema.parse(a));
 
-    // const rawContacts = Array.isArray(rawBody.contacts) ? rawBody.contacts : [];
-    // const validatedContacts = rawContacts.map((c: unknown) =>
-    //   PartyContactSchema.parse(c),
-    // );
-
-    // const rawAddresses = Array.isArray(rawBody.addresses)
-    //   ? rawBody.addresses
-    //   : [];
-    // const validatedAddresses = rawAddresses.map((a: unknown) =>
-    //   PartyAddressSchema.parse(a),
-    // );
-
-    // Modern Validation Check: At least one role flag must evaluate to true
     const { is_crm_lead, is_srm_vendor, is_customer, is_supplier } =
       validatedAccount;
+
     if (!is_crm_lead && !is_srm_vendor && !is_customer && !is_supplier) {
       return NextResponse.json(
         { error: "Initial target deployment role definition state required." },
@@ -190,7 +178,6 @@ export async function POST(req: Request) {
     try {
       await client.query("BEGIN");
 
-      // System sequence code handling
       let crm_code = validatedAccount.crm_code || null;
       let srm_code = validatedAccount.srm_code || null;
       let customer_code = validatedAccount.customer_code || null;
@@ -203,6 +190,7 @@ export async function POST(req: Request) {
         );
         crm_code = leadSeq.rows[0]?.code || null;
       }
+
       if (is_srm_vendor && !srm_code) {
         const vendorSeq = await client.query(
           "SELECT get_next_sequence($1, 'srm_vendor') AS code",
@@ -210,6 +198,7 @@ export async function POST(req: Request) {
         );
         srm_code = vendorSeq.rows[0]?.code || null;
       }
+
       if (is_customer && !customer_code) {
         const custSeq = await client.query(
           "SELECT get_next_sequence($1, 'customer') AS code",
@@ -217,6 +206,7 @@ export async function POST(req: Request) {
         );
         customer_code = custSeq.rows[0]?.code || null;
       }
+
       if (is_supplier && !supplier_code) {
         const suppSeq = await client.query(
           "SELECT get_next_sequence($1, 'supplier') AS code",
@@ -225,7 +215,6 @@ export async function POST(req: Request) {
         supplier_code = suppSeq.rows[0]?.code || null;
       }
 
-      // Helper to cleanly return valid UUID/String or NULL
       const toCleanOrNull = (val: unknown) => {
         if (
           !val ||
@@ -259,11 +248,33 @@ export async function POST(req: Request) {
           status_id, source_of_crm_id, no_of_emp, turnover, comp_reg_no,
           date_of_inc, additional_information, assign_person_id, assign_person,
           sales_posting_group_id, purchase_posting_group_id,anonymous_supplier,anonymous_customer,
+
+          -- Finance & Ledger Columns
+          finance_contact_person, finance_email, finance_phone, finance_fax,
+          finance_alt_contact, finance_alt_email,
+          payment_terms, payment_method, company_reg_no, supplier_vat_no, payable_bank,
+          gl_account_receivable, gl_account_payable, posting_group,
+          finance_charge, has_finance_charge, insurance_charge, has_insurance_charge,
+          exclude_from_aging_report,
+          
+          -- E-Document Flags
+          e_reminder, e_statement, e_invoice, e_purchase_order, e_debit_note, e_remittance_advice,
+
+
+          
+          -- Bank Account Details
+          bank_account_name, bank_sort_code, bank_account_no, bank_swift_bic, bank_iban, bank_name, bank_address,
+
           created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-          $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-          $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, now(), now()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+          $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+          $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
+          $41, $42, $43, $44, $45, $46, $47, $48, $49, $50,
+          $51, $52, $53, $54, $55, $56, $57, $58, $59, $60,
+          $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, 
+          $71, $72, now(), now()
         ) RETURNING *
       `;
 
@@ -300,18 +311,57 @@ export async function POST(req: Request) {
         validatedAccount.no_of_emp || 0, // $30
         validatedAccount.turnover || 0, // $31
         toCleanOrNull(validatedAccount.comp_reg_no), // $32
-        toDateOrNull(validatedAccount.date_of_inc), // $33 (Fixed Date Sanitizer)
+        toDateOrNull(validatedAccount.date_of_inc) || null, // $33 (Fixed Date Sanitizer)
         toCleanOrNull(validatedAccount.additional_information), // $34
         toCleanOrNull(validatedAccount.assign_person_id), // $35
         toCleanOrNull(validatedAccount.assign_person), // $36
         toCleanOrNull(validatedAccount.sales_posting_group_id), // $37
         toCleanOrNull(validatedAccount.purchase_posting_group_id), // $38
-        validatedAccount.anonymous_supplier, // $39
-        validatedAccount.anonymous_customer, // $40
+        validatedAccount.anonymous_supplier ?? false, // $39
+        validatedAccount.anonymous_customer ?? false, // $40
+
+        // Finance Fields ($41 - $59)
+        toCleanOrNull(validatedAccount.finance_contact_person),
+        toCleanOrNull(validatedAccount.finance_email),
+        toCleanOrNull(validatedAccount.finance_phone),
+        toCleanOrNull(validatedAccount.finance_fax),
+        toCleanOrNull(validatedAccount.finance_alt_contact),
+        toCleanOrNull(validatedAccount.finance_alt_email),
+        toCleanOrNull(validatedAccount.payment_terms),
+        toCleanOrNull(validatedAccount.payment_method),
+        toCleanOrNull(validatedAccount.company_reg_no),
+        toCleanOrNull(validatedAccount.supplier_vat_no),
+        toCleanOrNull(validatedAccount.payable_bank),
+        toCleanOrNull(validatedAccount.gl_account_receivable),
+        toCleanOrNull(validatedAccount.gl_account_payable),
+        toCleanOrNull(validatedAccount.posting_group) || "UK",
+        toCleanOrNull(validatedAccount.finance_charge),
+        validatedAccount.has_finance_charge ?? false,
+        toCleanOrNull(validatedAccount.insurance_charge),
+        validatedAccount.has_insurance_charge ?? false,
+        validatedAccount.exclude_from_aging_report ?? false,
+
+        // E-Document Flags ($60 - $65)
+        validatedAccount.e_reminder ?? false,
+        validatedAccount.e_statement ?? false,
+        validatedAccount.e_invoice ?? false,
+        validatedAccount.e_purchase_order ?? false,
+        validatedAccount.e_debit_note ?? false,
+        validatedAccount.e_remittance_advice ?? false,
+
+        // Bank Account Details ($66 - $72)
+        toCleanOrNull(validatedAccount.bank_account_name),
+        toCleanOrNull(validatedAccount.bank_sort_code),
+        toCleanOrNull(validatedAccount.bank_account_no),
+        toCleanOrNull(validatedAccount.bank_swift_bic),
+        toCleanOrNull(validatedAccount.bank_iban),
+        toCleanOrNull(validatedAccount.bank_name),
+        toCleanOrNull(validatedAccount.bank_address),
       ];
 
       const partyResult = await client.query(partyInsertQuery, partyValues);
       const newParty = partyResult.rows[0];
+      const partyId = newParty.id;
 
       // Save Primary Contacts
       if (validatedContacts.length > 0) {
@@ -322,7 +372,7 @@ export async function POST(req: Request) {
         for (const c of validatedContacts) {
           if (c.name && c.name.trim() !== "") {
             await client.query(contactQuery, [
-              newParty.id,
+              partyId,
               c.name,
               c.job_title || null,
               c.email || null,
@@ -349,7 +399,7 @@ export async function POST(req: Request) {
             (a.city && a.city.trim() !== "")
           ) {
             await client.query(addressQuery, [
-              newParty.id,
+              partyId,
               a.label || "Main Address",
               a.address_1,
               a.address_2 || null,
@@ -368,7 +418,8 @@ export async function POST(req: Request) {
       }
 
       await client.query("COMMIT");
-      return NextResponse.json(newParty, { status: 201 });
+      return NextResponse.json({ success: true, id: partyId });
+      // return NextResponse.json(newParty, { status: 201 });
     } catch (txErr) {
       await client.query("ROLLBACK");
       console.error("Transaction failure trace: ", txErr);
@@ -396,737 +447,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
-/* ==========================================================
-   PERSIST TRANSACTIONAL DIRECTORY OBJECT RECORD (POST METHOD)
-============================================================ */
-/* export async function POST(req: Request) {
-  const companyId = await getCompanyId();
-  if (!companyId) {
-    return NextResponse.json(
-      { error: "Unauthorized operation sequence blocked." },
-      { status: 401 },
-    );
-  }
-
-  try {
-    const { account, contacts = [], addresses = [] } = await req.json();
-    const {
-      name,
-      status = "active",
-      email,
-      phone,
-      mobile,
-      website,
-      credit_limit,
-      currency_id,
-      salesperson_id,
-      bucket_id,
-      // Destructure the boolean parameters out of the payload:
-      is_crm_lead = false,
-      is_srm_vendor = false,
-      is_customer = false,
-      is_supplier = false,
-    } = account || {};
-
-    // Immediate sanity checks
-    if (!name?.trim()) {
-      return NextResponse.json(
-        { error: "Corporate name is required." },
-        { status: 400 },
-      );
-    }
-
-    // Modern Validation Check: At least one role flag must evaluate to true
-    if (!is_crm_lead && !is_srm_vendor && !is_customer && !is_supplier) {
-      return NextResponse.json(
-        { error: "Initial target deployment role definition state required." },
-        { status: 400 },
-      );
-    }
-
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-
-      // Initialize empty placeholders for system sequence codes
-      let crm_code = null,
-        srm_code = null,
-        customer_code = null,
-        supplier_code = null;
-
-      // Programmatically pull sequential numbering blocks based on your matching flags
-      if (is_crm_lead) {
-        const leadSeq = await client.query(
-          "SELECT get_next_sequence($1, 'crm_lead') AS code",
-          [companyId],
-        );
-        crm_code = leadSeq.rows[0].code;
-      }
-      if (is_srm_vendor) {
-        const vendorSeq = await client.query(
-          "SELECT get_next_sequence($1, 'srm_vendor') AS code",
-          [companyId],
-        );
-        srm_code = vendorSeq.rows[0].code;
-      }
-      if (is_customer) {
-        const custSeq = await client.query(
-          "SELECT get_next_sequence($1, 'customer') AS code",
-          [companyId],
-        );
-        customer_code = custSeq.rows[0].code;
-      }
-      if (is_supplier) {
-        const suppSeq = await client.query(
-          "SELECT get_next_sequence($1, 'supplier') AS code",
-          [companyId],
-        );
-        supplier_code = suppSeq.rows[0].code;
-      }
-
-      const partyInsertQuery = `
-        INSERT INTO parties (
-          company_id, name, status,
-          is_crm_lead, is_srm_vendor, is_customer, is_supplier,
-          crm_code, srm_code, customer_code, supplier_code,
-          email, phone, mobile, website,
-          credit_limit, currency_id, salesperson_id, bucket_id,
-          created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, now(), now()
-        ) RETURNING *
-      `;
-
-      const partyResult = await client.query(partyInsertQuery, [
-        companyId,
-        name.trim(),
-        status,
-        is_crm_lead,
-        is_srm_vendor,
-        is_customer,
-        is_supplier,
-        crm_code,
-        srm_code,
-        customer_code,
-        supplier_code,
-        email || null,
-        phone || null,
-        mobile || null,
-        website || null,
-        credit_limit || 0.0,
-        currency_id || null,
-        salesperson_id || null,
-        bucket_id || null,
-      ]);
-
-      const newParty = partyResult.rows[0];
-
-      // Insert associated directory payload structures (contacts & addresses)
-      if (contacts.length > 0) {
-        const contactQuery = `
-          INSERT INTO party_contacts (party_id, name, job_title, email, phone, mobile, is_primary, notes)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        `;
-        for (const c of contacts) {
-          if (!c.name) continue;
-          await client.query(contactQuery, [
-            newParty.id,
-            c.name,
-            c.job_title,
-            c.email,
-            c.phone,
-            c.mobile,
-            !!c.is_primary,
-            c.notes,
-          ]);
-        }
-      }
-
-      if (addresses.length > 0) {
-        const addressQuery = `
-          INSERT INTO party_addresses (party_id, label, address_1, address_2, city, state, country, postcode, phone, email, is_primary, is_billing, is_shipping)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        `;
-        for (const a of addresses) {
-          if (!a.label || !a.address_1 || !a.city || !a.country) continue;
-          await client.query(addressQuery, [
-            newParty.id,
-            a.label,
-            a.address_1,
-            a.address_2,
-            a.city,
-            a.state,
-            a.country,
-            a.postcode,
-            a.phone,
-            a.email,
-            !!a.is_primary,
-            !!a.is_billing,
-            !!a.is_shipping,
-          ]);
-        }
-      }
-
-      await client.query("COMMIT");
-      return NextResponse.json(newParty, { status: 201 });
-    } catch (txErr) {
-      await client.query("ROLLBACK");
-
-      const dbError = txErr as { code?: string; message?: string };
-      console.error("Transaction operational crash trace: ", txErr);
-      return NextResponse.json(
-        {
-          error:
-            dbError.message ||
-            "Database engine failure executing persistence profiles.",
-        },
-        { status: 400 },
-      );
-    } finally {
-      client.release();
-    }
-  } catch (parseErr) {
-    console.log("parseErr ==== ", parseErr);
-    return NextResponse.json(
-      { error: "Malformed payload parsing parameters." },
-      { status: 400 },
-    );
-  }
-} */
-
-// Map incoming legacy UI type requests to our new multi-role layout parameters
-/* switch (account.roleType) {
-        case "lead":
-          is_crm_lead = true;
-          const leadSeq = await client.query(
-            "SELECT get_next_sequence($1, 'crm_lead') AS code",
-            [companyId],
-          );
-          crm_code = leadSeq.rows[0].code;
-          break;
-        case "vendor":
-          is_srm_vendor = true;
-          const vendorSeq = await client.query(
-            "SELECT get_next_sequence($1, 'srm_vendor') AS code",
-            [companyId],
-          );
-          srm_code = vendorSeq.rows[0].code;
-          break;
-        case "customer":
-          is_customer = true;
-          const custSeq = await client.query(
-            "SELECT get_next_sequence($1, 'customer') AS code",
-            [companyId],
-          );
-          customer_code = custSeq.rows[0].code;
-          break;
-        case "supplier":
-          is_supplier = true;
-          const suppSeq = await client.query(
-            "SELECT get_next_sequence($1, 'supplier') AS code",
-            [companyId],
-          );
-          supplier_code = suppSeq.rows[0].code;
-          break;
-        case "both":
-          is_customer = true;
-          is_supplier = true;
-          const cSeq = await client.query(
-            "SELECT get_next_sequence($1, 'customer') AS code",
-            [companyId],
-          );
-          const sSeq = await client.query(
-            "SELECT get_next_sequence($1, 'supplier') AS code",
-            [companyId],
-          );
-          customer_code = cSeq.rows[0].code;
-          supplier_code = sSeq.rows[0].code;
-          break;
-        default:
-          throw new Error(
-            "Invalid initialization category profile rule specified.",
-          );
-      } */
-/* import { NextResponse } from "next/server";
-import { pool } from "@/lib/db";
-import { getCompanyId } from "@/lib/auth/getCompanyId";
-
-
-export async function GET(req: Request) {
-  const companyId = await getCompanyId();
-
-  if (!companyId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { searchParams } = new URL(req.url);
-
-  const page = Number(searchParams.get("page") || 1);
-  const limit = Number(searchParams.get("limit") || 10);
-
-  const search = searchParams.get("search") || "";
-  const type = searchParams.get("type") || "";
-  const status = searchParams.get("status") || "";
-
-  const offset = (page - 1) * limit;
-
-  let where = `WHERE company_id = $1`;
-  const values: (string | number)[] = [companyId];
-
-  let i = 2;
-
-  if (search) {
-    where += `
-      AND (
-        name ILIKE $${i}
-        OR crm_code ILIKE $${i}
-        OR srm_code ILIKE $${i}
-        OR customer_code ILIKE $${i}
-        OR email ILIKE $${i}
-        OR phone ILIKE $${i}
-      )
-    `;
-    values.push(`%${search}%`);
-    i++;
-  }
-
-  if (type) {
-    where += ` AND type = $${i}`;
-    values.push(type);
-    i++;
-  }
-
-  if (status) {
-    where += ` AND status = $${i}`;
-    values.push(status);
-    i++;
-  }
-
-  const dataQuery = `
-    SELECT *
-    FROM parties
-    ${where}
-    ORDER BY created_at DESC
-    LIMIT $${i}
-    OFFSET $${i + 1}
-  `;
-
-  values.push(limit, offset);
-
-  const totalQuery = `
-    SELECT COUNT(*)::int AS count
-    FROM parties
-    ${where}
-  `;
-
-  const client = await pool.connect();
-
-  try {
-    const data = await client.query(dataQuery, values);
-    const total = await client.query(totalQuery, values.slice(0, i - 1));
-
-    return NextResponse.json({
-      data: data.rows,
-      total: total.rows[0].count,
-      page,
-      limit,
-    });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: "Failed to fetch parties" },
-      { status: 500 },
-    );
-  } finally {
-    client.release();
-  }
-}
-
-
-export async function POST(req: Request) {
-  const companyId = await getCompanyId();
-
-  if (!companyId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { account, contacts = [], addresses = [] } = await req.json();
-
-  const {
-    name,
-    type,
-    status = "active",
-
-    email,
-    phone,
-    mobile,
-    website,
-
-    credit_limit,
-    currency_id,
-
-    salesperson_id,
-    bucket_id,
-  } = account || {};
-
-  if (!name) {
-    return NextResponse.json({ error: "Name is required" }, { status: 400 });
-  }
-
-  if (!type) {
-    return NextResponse.json({ error: "Type is required" }, { status: 400 });
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    // =========================
-    //    AUTO GENERATED CODES
-    // =========================
-
-    let crm_code: string | null = null;
-    let customer_code: string | null = null;
-    let srm_code: string | null = null;
-    let supplier_code: string | null = null;
-
-    // =========================
-    //    LEAD
-    // =========================
-    if (type === "lead") {
-      const seqResult = await client.query(
-        `
-    SELECT get_next_sequence($1,$2) AS code
-    `,
-        [companyId, "crm_lead"],
-      );
-
-      crm_code = seqResult.rows[0].code;
-    }
-
-    if (type === "vendor") {
-      const seqResult = await client.query(
-        `
-    SELECT get_next_sequence($1,$2) AS code
-    `,
-        [companyId, "srm_vendor"],
-      );
-
-      srm_code = seqResult.rows[0].code;
-    }
-
-    // =========================
-    //    CUSTOMER
-    // =========================
-    if (type === "customer") {
-      const seqResult = await client.query(
-        `
-    SELECT get_next_sequence($1,$2) AS code
-    `,
-        [companyId, "customer"],
-      );
-
-      customer_code = seqResult.rows[0].code;
-    }
-
-    // =========================
-    //    SUPPLIER
-    // =========================
-    if (type === "supplier") {
-      const seqResult = await client.query(
-        `
-    SELECT get_next_sequence($1,$2) AS code
-    `,
-        [companyId, "supplier"],
-      );
-
-      supplier_code = seqResult.rows[0].code;
-    }
-
-    // =========================
-    //    BOTH
-    // =========================
-    if (type === "both") {
-      const customerSeq = await client.query(
-        `
-    SELECT get_next_sequence($1,$2) AS code
-    `,
-        [companyId, "customer"],
-      );
-
-      customer_code = customerSeq.rows[0].code;
-
-      const supplierSeq = await client.query(
-        `
-    SELECT get_next_sequence($1,$2) AS code
-    `,
-        [companyId, "supplier"],
-      );
-
-      supplier_code = supplierSeq.rows[0].code;
-    }
-
-    // =========================
-    //    INSERT PARTY
-    // =========================
-
-    const partyResult = await client.query(
-      `
-      INSERT INTO parties (
-        company_id,
-
-        crm_code,
-        customer_code,
-        srm_code,
-        supplier_code,
-
-        name,
-        type,
-        status,
-
-        email,
-        phone,
-        mobile,
-
-        website,
-
-        credit_limit,
-        currency_id,
-
-        salesperson_id,
-        bucket_id,
-
-        created_at
-      )
-      VALUES (
-        $1,$2,$3,$4,$5,
-        $6,$7,$8,
-        $9,$10,$11,
-        $12,
-        $13,$14,
-        $15,$16,
-        now()
-      )
-      RETURNING *
-      `,
-      [
-        companyId,
-
-        crm_code || null,
-        customer_code || null,
-        srm_code || null,
-        supplier_code || null,
-
-        name,
-        type,
-        status,
-
-        email || null,
-        phone || null,
-        mobile || null,
-
-        website || null,
-
-        credit_limit || null,
-        currency_id || null,
-
-        salesperson_id || null,
-        bucket_id || null,
-      ],
-    );
-
-    const party = partyResult.rows[0];
-
-    // =========================
-    //    INSERT CONTACTS
-    // =========================
-
-    for (const contact of contacts) {
-      await client.query(
-        `
-        INSERT INTO party_contacts (
-          party_id,
-
-          name,
-          job_title,
-
-          email,
-          phone,
-          mobile,
-
-          is_primary,
-          notes,
-
-          created_at
-        )
-        VALUES (
-          $1,$2,$3,
-          $4,$5,$6,
-          $7,$8,
-          now()
-        )
-        `,
-        [
-          party.id,
-
-          contact.name || null,
-          contact.job_title || null,
-
-          contact.email || null,
-          contact.phone || null,
-          contact.mobile || null,
-
-          contact.is_primary || false,
-          contact.notes || null,
-        ],
-      );
-    }
-
-    // =========================
-    //    INSERT ADDRESSES
-    // =========================
-
-    for (const address of addresses) {
-      await client.query(
-        `
-        INSERT INTO party_addresses (
-          party_id,
-
-          label,
-
-          address_1,
-          address_2,
-
-          city,
-          state,
-          country,
-          postcode,
-
-          phone,
-          email,
-
-          is_primary,
-          is_billing,
-          is_shipping,
-
-          created_at
-        )
-        VALUES (
-          $1,$2,
-          $3,$4,
-          $5,$6,$7,$8,
-          $9,$10,
-          $11,$12,$13,
-          now()
-        )
-        `,
-        [
-          party.id,
-
-          address.label || null,
-
-          address.address_1 || null,
-          address.address_2 || null,
-
-          address.city || null,
-          address.state || null,
-          address.country || null,
-          address.postcode || null,
-
-          address.phone || null,
-          address.email || null,
-
-          address.is_primary || false,
-          address.is_billing || false,
-          address.is_shipping || false,
-        ],
-      );
-    }
-
-    await client.query("COMMIT");
-
-    return NextResponse.json(party);
-  } catch (err) {
-    await client.query("ROLLBACK");
-
-    console.error(err);
-
-    return NextResponse.json(
-      { error: "Failed to create party" },
-      { status: 500 },
-    );
-  } finally {
-    client.release();
-  }
-} */
-
-/* 
-
-
-
-  const sequenceConfig = {
-    lead: [
-      {
-        module: "crm_lead",
-        field: "crm_code",
-      },
-    ],
-
-    vendor: [
-      {
-        module: "srm_vendor",
-        field: "srm_code",
-      },
-    ],
-
-    customer: [
-      {
-        module: "customer",
-        field: "customer_code",
-      },
-    ],
-
-    supplier: [
-      {
-        module: "supplier",
-        field: "supplier_code",
-      },
-    ],
-
-    both: [
-      {
-        module: "customer",
-        field: "customer_code",
-      },
-      {
-        module: "supplier",
-        field: "supplier_code",
-      },
-    ],
-  } as const;
-
-  
-
-    const generatedCodes = {
-      crm_code: null,
-      customer_code: null,
-      srm_code: null,
-      supplier_code: null,
-    };
-
-    const configs = sequenceConfig[type] || [];
-
-    for (const config of configs) {
-      const seqResult = await client.query(
-        `
-    SELECT get_next_sequence($1,$2) AS code
-    `,
-        [companyId, config.module],
-      );
-
-      generatedCodes[config.field as keyof typeof generatedCodes] =
-        seqResult.rows[0].code;
-    }
-*/
