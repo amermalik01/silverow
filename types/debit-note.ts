@@ -43,7 +43,7 @@ export interface DebitNote {
   shipment_ref_no?: string;
   warehouse_booking_ref_no?: string;
   supplier_booking_ref_no?: string;
-  shipment_po_not_req?: boolean;
+  // shipment_po_not_req?: boolean;
   reason?: string;
   linked_po?: string;
 

@@ -178,7 +178,7 @@ export const DebitNoteSchema = z.object({
   warehouse_booking_ref_no: looseString,
   supplier_booking_ref_no: looseString,
 
-  shipment_po_not_req: z.boolean().optional(),
+  // shipment_po_not_req: z.boolean().optional(),
 
   reason: looseString,
   linked_po: looseString,

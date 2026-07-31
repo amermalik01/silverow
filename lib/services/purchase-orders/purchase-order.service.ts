@@ -246,7 +246,6 @@ export class PurchaseOrderService {
             shipping_agent,
             shipment_ref_no,
             warehouse_ref_no,
-            shipment_po_not_req,
 
             reason,
             linked_po,
@@ -264,7 +263,7 @@ export class PurchaseOrderService {
             created_at
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
-        $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,$31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, NOW()
+        $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,$31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, NOW()
         )
         RETURNING *;
         `,
@@ -300,7 +299,7 @@ export class PurchaseOrderService {
 
           order.previous_code, // $22
           order.link_to_cust, // $23
-          order.deduct_from_rebate, // $24
+          order.deduct_from_rebate || false, // $24
 
           order.contact, // $25
           order.book_in_phone, // $26
@@ -311,20 +310,19 @@ export class PurchaseOrderService {
           order.shipping_agent, // $30
           order.shipment_ref_no, // $31
           order.warehouse_ref_no, // $32
-          order.shipment_po_not_req, // $33
 
-          order.reason, // $34
-          order.linked_po, // $35
+          order.reason, // $33
+          order.linked_po, // $34
 
-          order.notes, // $36
-          order.internal_notes, // $37
+          order.notes, // $35
+          order.internal_notes, // $36
 
-          order.subtotal, // $38
-          order.tax_amount, // $39
-          order.total_amount, // $40
+          order.subtotal, // $37
+          order.tax_amount, // $38
+          order.total_amount, // $39
 
-          order.status, // $41
-          order.anonymous_supplier, // $42
+          order.status, // $40
+          order.anonymous_supplier, // $41
         ],
       );
 
@@ -461,25 +459,24 @@ export class PurchaseOrderService {
           shipping_agent=$28,
           shipment_ref_no=$29,
           warehouse_ref_no=$30,
-          shipment_po_not_req=$31,
 
-          reason=$32,
-          linked_po=$33,
+          reason=$31,
+          linked_po=$32,
 
-          notes=$34,
-          internal_notes=$35,
+          notes=$33,
+          internal_notes=$34,
 
-          subtotal=$36,
-          tax_amount=$37,
-          total_amount=$38,
+          subtotal=$35,
+          tax_amount=$36,
+          total_amount=$37,
 
-          status=$39,
+          status=$38,
 
-          anonymous_supplier=$40,
+          anonymous_supplier=$39,
 
           updated_at=NOW()
 
-          WHERE id=$41 AND company_id=$42;
+          WHERE id=$40 AND company_id=$41;
         `,
 
       [
@@ -511,7 +508,7 @@ export class PurchaseOrderService {
 
         order.previous_code,
         order.link_to_cust,
-        order.deduct_from_rebate,
+        order.deduct_from_rebate || false,
 
         order.contact,
         order.book_in_phone,
@@ -522,7 +519,6 @@ export class PurchaseOrderService {
         order.shipping_agent,
         order.shipment_ref_no,
         order.warehouse_ref_no,
-        order.shipment_po_not_req,
 
         order.reason,
         order.linked_po,

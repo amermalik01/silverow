@@ -94,14 +94,14 @@ export class DebitNoteService {
           payable_bank, payable_bank_id, payment_terms, payment_terms_id, payment_method, payment_method_id,
           previous_code, contact, book_in_phone, book_in_contact, book_in_email, shipment_method_id,
           shipment_method, shipping_agent, shipment_ref_no, warehouse_booking_ref_no, supplier_booking_ref_no,
-          shipment_po_not_req, reason, linked_po, exchange_rate, document_date, reference,
+          reason, linked_po, exchange_rate, document_date, reference,
           freight_charges, shipment_date, delivery_date, delivery_time, notes, internal_notes,
           subtotal, tax_amount, total_amount, status, created_at
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
           $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36,
-          $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, now()
+          $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, now()
         )
         RETURNING *
         `,
@@ -140,7 +140,7 @@ export class DebitNoteService {
           note.shipment_ref_no || null,
           note.warehouse_booking_ref_no || null,
           note.supplier_booking_ref_no || null,
-          note.shipment_po_not_req || false,
+          // note.shipment_po_not_req || false,
           note.reason || null,
           note.linked_po || null,
           note.exchange_rate || 1.0,
@@ -234,12 +234,12 @@ export class DebitNoteService {
         payment_method_id = $21, previous_code = $22, contact = $23, book_in_phone = $24,
         book_in_contact = $25, book_in_email = $26, shipment_method_id = $27, shipment_method = $28,
         shipping_agent = $29, shipment_ref_no = $30, warehouse_booking_ref_no = $31,
-        supplier_booking_ref_no = $32, shipment_po_not_req = $33, reason = $34, linked_po = $35,
-        exchange_rate = $36, document_date = $37, reference = $38, freight_charges = $39,
-        shipment_date = $40, delivery_date = $41, delivery_time = $42, notes = $43,
-        internal_notes = $44, subtotal = $45, tax_amount = $46, total_amount = $47, status = $48,
+        supplier_booking_ref_no = $32,  reason = $33, linked_po = $34,
+        exchange_rate = $35, document_date = $36, reference = $37, freight_charges = $38,
+        shipment_date = $39, delivery_date = $40, delivery_time = $41, notes = $42,
+        internal_notes = $43, subtotal = $44, tax_amount = $45, total_amount = $46, status = $47,
         updated_at = now()
-      WHERE id = $49 AND company_id = $50
+      WHERE id = $48 AND company_id = $49
       `,
       [
         note.supplier_id,
@@ -274,7 +274,7 @@ export class DebitNoteService {
         note.shipment_ref_no || null,
         note.warehouse_booking_ref_no || null,
         note.supplier_booking_ref_no || null,
-        note.shipment_po_not_req || false,
+        // note.shipment_po_not_req || false,
         note.reason || null,
         note.linked_po || null,
         note.exchange_rate || 1.0,

@@ -48,7 +48,7 @@ export interface PurchaseOrder {
   shipping_agent?: string;
   shipment_ref_no?: string;
   warehouse_ref_no?: string;
-  shipment_po_not_req?: boolean;
+  // shipment_po_not_req?: boolean;
   reason?: string;
   linked_po?: string;
 

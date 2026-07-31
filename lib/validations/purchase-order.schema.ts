@@ -177,7 +177,7 @@ export const PurchaseOrderSchema = z.object({
   shipment_ref_no: looseString,
   warehouse_ref_no: looseString,
 
-  shipment_po_not_req: z.boolean().optional(),
+  // shipment_po_not_req: z.boolean().optional(),
 
   reason: looseString,
   linked_po: looseString,
