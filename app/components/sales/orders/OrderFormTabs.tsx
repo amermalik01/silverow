@@ -61,7 +61,6 @@ interface OrderFormTabsProps {
   setShippingAddress: React.Dispatch<React.SetStateAction<Address>>;
   currencyConfig: CurrencyConfig;
   setCurrencyConfig: React.Dispatch<React.SetStateAction<CurrencyConfig>>;
-  // currencies: Currency[];
   masterData: SalesOrderMasterData | null;
   updateField: <K extends keyof SalesOrder>(
     field: K,
@@ -313,17 +312,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) => updateField("salesperson", e.target.value)}
               />
             </div>
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle} title="Consignment No.">
-                Cons. No.
-              </label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.consignment_no || ""}
-                onChange={(e) => updateField("consignment_no", e.target.value)}
-              />
-            </div> */}
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Customer Order No.">
                 Cust. Order No.
@@ -346,6 +334,18 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) => updateField("link_to_po", e.target.value)}
               />
             </div>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle} title="Sales Quote/Order No.">
+                SQ No.
+              </label>
+              <input
+                type="text"
+                className={inputStyle}
+                value={order.sales_quote_no || ""}
+                onChange={(e) => updateField("sales_quote_no", e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Column 4 */}
@@ -360,16 +360,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) => updateField("posting_date", e.target.value)}
               />
             </div>
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Customer Invoice No.</label>
-              <input
-                type="text"
-                className={inputStyle}
-                placeholder="e.g. INV-9932"
-                value={order.reference || ""}
-                onChange={(e) => updateField("reference", e.target.value)}
-              />
-            </div> */}
+
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Order Date</label>
               <input
@@ -379,13 +370,10 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 max={maxOrderDate}
                 onChange={(e) => {
                   const orderDate = e.target.value;
-
                   updateField("order_date", orderDate);
-
                   const selected = masterData?.paymentTerms.find(
                     (x) => x.id === order.payment_terms_id,
                   );
-
                   if (selected) {
                     updateField(
                       "due_date",
@@ -624,6 +612,33 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 ))}
               </select>
             </div>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Payment Method</label>
+
+              <select
+                className={inputStyle}
+                disabled={isSettingsDisabled}
+                value={order.payment_method_id ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const selected = paymentMethods.find(
+                    (x) => String(x.id) === String(val),
+                  );
+
+                  updateField("payment_method_id", val);
+                  updateField("payment_method", selected?.name || "");
+                }}
+              >
+                <option value="">Select...</option>
+                {paymentMethods.map((method) => (
+                  <option key={method.id} value={method.id}>
+                    {method.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Payment Terms</label>
 
@@ -661,61 +676,41 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <input
                 type="date"
                 className={inputStyle}
+                disabled
                 value={order.due_date?.split("T")[0] ?? ""}
                 onChange={(e) => updateField("due_date", e.target.value)}
               />
             </div>
+
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Payment Method</label>
-
-              <select
+              <label className={labelStyle}>Finance Charge</label>
+              <input
+                type="number"
                 className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={order.payment_method_id ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const selected = paymentMethods.find(
-                    (x) => String(x.id) === String(val),
-                  );
-
-                  updateField("payment_method_id", val);
-                  updateField("payment_method", selected?.name || "");
-                }}
-              >
-                <option value="">Select...</option>
-                {paymentMethods.map((method) => (
-                  <option key={method.id} value={method.id}>
-                    {method.name}
-                  </option>
-                ))}
-              </select>
-
-              {/* <select
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={order.payment_method_id || ""}
-                onChange={(e) => {
-                  const selected = masterData?.paymentMethods.find(
-                    (x) => x.id === e.target.value,
-                  );
-
-                  updateField("payment_method_id", e.target.value);
-                  updateField("payment_method", selected?.name || "");
-                }}
-              >
-                <option value="">Select...</option>
-
-                {masterData?.paymentMethods.map((method) => (
-                  <option key={method.id} value={method.id}>
-                    {method.name}
-                  </option>
-                ))}
-              </select> */}
+                value={order.finance_charges ?? 0}
+                onChange={(e) =>
+                  updateField("finance_charges", Number(e.target.value))
+                }
+              />
             </div>
           </div>
 
           {/* Column 4 */}
           <div className="space-y-2">
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle} title="Insurance Charge">
+                Ins. Charge
+              </label>
+              <input
+                type="number"
+                className={inputStyle}
+                value={order.insurance_charges ?? 0}
+                onChange={(e) =>
+                  updateField("insurance_charges", Number(e.target.value))
+                }
+              />
+            </div>
+
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>
                 Currency <span className="text-red-500">*</span>
@@ -743,26 +738,16 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 ))}
               </select>
             </div>
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Link to Customer</label>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Converted By</label>
               <input
                 type="text"
                 className={inputStyle}
-                value={order.link_to_cust || ""}
-                onChange={(e) => updateField("link_to_cust", e.target.value)}
+                value={order.converted_by || ""}
+                onChange={(e) => updateField("converted_by", e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Deduct from Rebate</label>
-              <input
-                type="checkbox"
-                checked={!!order.deduct_from_rebate}
-                onChange={(e) =>
-                  updateField("deduct_from_rebate", e.target.checked)
-                }
-                className="rounded bg-white/20 border-0 text-emerald-700 h-3.5 w-3.5"
-              />
-            </div> */}
           </div>
         </div>
       )}
@@ -966,6 +951,43 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) => updateField("shipment_ref_no", e.target.value)}
               />
             </div>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Freight Charges</label>
+              <input
+                type="number"
+                className={inputStyle}
+                value={order.freight_charges ?? 0}
+                onChange={(e) =>
+                  updateField("freight_charges", Number(e.target.value))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Delivery Date</label>
+              <input
+                type="date"
+                className={inputStyle}
+                value={order.delivery_date?.split("T")[0] ?? ""}
+                min={order.order_date?.split("T")[0] ?? ""}
+                onChange={(e) => updateField("delivery_date", e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Delivery Time</label>
+              <input
+                type="time"
+                className={inputStyle}
+                value={order.delivery_time?.split("T")[0] ?? ""}
+                min={order.order_date?.split("T")[0] ?? ""}
+                onChange={(e) => updateField("delivery_time", e.target.value)}
+              />
+            </div>
+
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Warehouse Reference No.">
                 Warehouse Ref.
@@ -979,601 +1001,26 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 }
               />
             </div>
-          </div>
 
-          {/* <div className="space-y-2">
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Linked PO</label>
+              <label
+                className={labelStyle}
+                title="Customer Warehouse Reference No."
+              >
+                Cust. W/H Ref.
+              </label>
               <input
                 type="text"
                 className={inputStyle}
-                value={order.linked_po || ""}
-                onChange={(e) => updateField("linked_po", e.target.value)}
+                value={order.cust_warehouse_ref_no || ""}
+                onChange={(e) =>
+                  updateField("cust_warehouse_ref_no", e.target.value)
+                }
               />
             </div>
-          </div> */}
+          </div>
         </div>
       )}
     </div>
   );
 };
-
-/* import React from "react";
-import { Icon } from "@iconify/react";
-
-import {
-  SalesOrder,
-  SalesOrderAddress,
-  SalesOrderLine,
-} from "@/types/sales-order";
-
-interface Address {
-  name?: string;
-  address_1?: string;
-  address_2?: string;
-  city?: string;
-  county?: string;
-  postcode?: string;
-  country?: string;
-  contact_person?: string;
-  phone?: string;
-  email?: string;
-}
-
-interface Currency {
-  id: string;
-  code: string;
-  name: string;
-  exchange_rate: number;
-}
-
-interface CurrencyConfig {
-  currency_id: string;
-  exchange_rate: number;
-}
-
-interface OrderFormTabsProps {
-  activeTab: "general" | "invoicing" | "shipping" | "margin";
-  order: Partial<SalesOrder>;
-  primaryAddress: Address;
-  setPrimaryAddress: React.Dispatch<React.SetStateAction<Address>>;
-  billingAddress: Address;
-  setBillingAddress: React.Dispatch<React.SetStateAction<Address>>;
-  shippingAddress: Address;
-  setShippingAddress: React.Dispatch<React.SetStateAction<Address>>;
-  currencyConfig: CurrencyConfig;
-  setCurrencyConfig: React.Dispatch<React.SetStateAction<CurrencyConfig>>;
-  currencies: Currency[];
-  updateOrderField: <K extends keyof SalesOrder>(
-    field: K,
-    value: SalesOrder[K],
-  ) => void;
-  setCustomerModalOpen: (open: boolean) => void;
-  labelStyle?: string;
-  inputStyle?: string;
-}
-
-export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
-  activeTab,
-  order,
-  primaryAddress,
-  setPrimaryAddress,
-  billingAddress,
-  setBillingAddress,
-  shippingAddress,
-  setShippingAddress,
-  currencyConfig,
-  setCurrencyConfig,
-  currencies,
-  updateOrderField,
-  setCustomerModalOpen,
-  labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
-  inputStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
-}) => {
-  const inputcolumnDivStyle =
-    "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200";
-  return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm w-full">
- 
-      {activeTab === "general" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 space-x-2">
-
-          <div className="space-y-2">
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Debit Note No.</label>
-              <input
-                type="text"
-                disabled
-                className={inputStyle}
-                value={order.order_no || ""}
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Supplier No. <span className="text-red-500">*</span></label>
-              <div className="col-span-8 flex gap-1">
-                <input
-                  type="text"
-                  readOnly
-                  className={`${inputStyle} font-mono`}
-                  value={order.customer_no || "Click Select..."}
-                />
-                <button
-                  type="button"
-                  onClick={() => setCustomerModalOpen(true)}
-                  className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-                >
-                  <Icon icon="tabler:search" />
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Customer Name</label>
-              <input
-                type="text"
-                disabled
-                className={inputStyle}
-                value={order.customer_name || ""}
-              />
-            </div>
-
-
-          </div>
-
-
-          <div className="space-y-2">
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 1</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={primaryAddress.address_1 || ""}
-                onChange={(e) =>
-                  setPrimaryAddress({
-                    ...primaryAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={primaryAddress.address_2 || ""}
-                onChange={(e) =>
-                  setPrimaryAddress({
-                    ...primaryAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>City</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={primaryAddress.city || ""}
-                onChange={(e) =>
-                  setPrimaryAddress({ ...primaryAddress, city: e.target.value })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>County</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={primaryAddress.county || ""}
-                onChange={(e) =>
-                  setPrimaryAddress({
-                    ...primaryAddress,
-                    county: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Postcode/Co.</label>
-              <div className="grid grid-cols-2 gap-1">
-                <input
-                  type="text"
-                  placeholder="Postcode"
-                  className={inputcolumnDivStyle}
-                  value={primaryAddress.postcode || ""}
-                  onChange={(e) =>
-                    setPrimaryAddress({
-                      ...primaryAddress,
-                      postcode: e.target.value,
-                    })
-                  }
-                />
-                <input
-                  type="text"
-                  placeholder="Country"
-                  className={inputcolumnDivStyle}
-                  value={primaryAddress.country || ""}
-                  onChange={(e) =>
-                    setPrimaryAddress({
-                      ...primaryAddress,
-                      country: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-
-          <div className="space-y-2">
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Contact Person</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={primaryAddress.contact_person || ""}
-                onChange={(e) =>
-                  setPrimaryAddress({
-                    ...primaryAddress,
-                    contact_person: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Telephone</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={primaryAddress.phone || ""}
-                onChange={(e) =>
-                  setPrimaryAddress({
-                    ...primaryAddress,
-                    phone: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Email</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={primaryAddress.email || ""}
-                onChange={(e) =>
-                  setPrimaryAddress({
-                    ...primaryAddress,
-                    email: e.target.value,
-                  })
-                }
-              />
-            </div>
-
-          </div>
-
-
-          <div className="space-y-2">
-
-
-
-          </div>
-        </div>
-      )}
-
-
-      {activeTab === "invoicing" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 space-x-2">
-
-          <div className="space-y-2">
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Pay to Cust. No.</label>
-              <div className="col-span-8 flex gap-1">
-                <input
-                  type="text"
-                  readOnly
-                  className={`${inputStyle} font-mono`}
-                  value={order.customer_no || "Click Select..."}
-                />
-                <button
-                  type="button"
-                  onClick={() => setCustomerModalOpen(true)}
-                  className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-                >
-                  <Icon icon="tabler:search" />
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Name</label>
-              <input
-                type="text"
-                disabled
-                className={inputStyle}
-                value={order.customer_name || ""}
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 1</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.address_1 || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.address_2 || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>City</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.city || ""}
-                onChange={(e) =>
-                  setBillingAddress({ ...billingAddress, city: e.target.value })
-                }
-              />
-            </div>
-          </div>
-
- 
-          <div className="space-y-2">
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>County</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.county || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    county: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Postcode/Co.</label>
-              <div className="grid grid-cols-2 gap-1">
-                <input
-                  type="text"
-                  placeholder="Postcode"
-                  className={inputcolumnDivStyle}
-                  value={billingAddress.postcode || ""}
-                  onChange={(e) =>
-                    setBillingAddress({
-                      ...billingAddress,
-                      postcode: e.target.value,
-                    })
-                  }
-                />
-                <input
-                  type="text"
-                  placeholder="Country"
-                  className={inputcolumnDivStyle}
-                  value={billingAddress.country || ""}
-                  onChange={(e) =>
-                    setBillingAddress({
-                      ...billingAddress,
-                      country: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Contact Person</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.contact_person || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    contact_person: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Telephone</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.phone || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    phone: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Email</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={billingAddress.email || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    email: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          
-
-
-          <div className="space-y-2">
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Currency <span className="text-red-500">*</span></label>
-              <select
-                className={inputStyle}
-                value={currencyConfig.currency_id ?? ""}
-                onChange={(e) => {
-                  const targetId = e.target.value;
-                  const matched = currencies.find((c) => c.id === targetId);
-                  setCurrencyConfig({
-                    currency_id: targetId,
-                    exchange_rate: matched ? matched.exchange_rate : 1,
-                  });
-                }}
-              >
-                <option value="">Select Base Currency...</option>
-                {currencies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.code} - {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {activeTab === "shipping" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 space-x-2">
-
-          <div className="space-y-2">
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Location Name</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.name || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    name: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 1</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.address_1 || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.address_2 || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>City</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.city || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    city: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>County</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={shippingAddress.county || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    county: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-
-
-          <div className="space-y-2">
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Postcode/Co.</label>
-              <div className="grid grid-cols-2 gap-1">
-                <input
-                  type="text"
-                  placeholder="Postcode"
-                  className={inputcolumnDivStyle}
-                  value={shippingAddress.postcode || ""}
-                  onChange={(e) =>
-                    setShippingAddress({
-                      ...shippingAddress,
-                      postcode: e.target.value,
-                    })
-                  }
-                />
-                <input
-                  type="text"
-                  placeholder="Country"
-                  className={inputcolumnDivStyle}
-                  value={shippingAddress.country || ""}
-                  onChange={(e) =>
-                    setShippingAddress({
-                      ...shippingAddress,
-                      country: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-          </div>
-
-
-          <div className="space-y-2">
-
-          </div>
-
-          <div className="space-y-2">
-
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}; */

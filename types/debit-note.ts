@@ -22,7 +22,7 @@ export interface DebitNote {
   receipt_date: string;
   expected_date?: string;
   invoice_date?: string;
-  
+
   payable_bank?: string;
   payable_bank_id?: string;
   due_date?: string;
@@ -47,11 +47,15 @@ export interface DebitNote {
   reason?: string;
   linked_po?: string;
 
-
   currency_id?: string;
   exchange_rate?: number;
   document_date: string;
   reference?: string;
+
+  freight_charges?: number;
+  shipment_date?: string;
+  delivery_date?: string;
+  delivery_time?: string;
 
   notes?: string;
   internal_notes?: string;
@@ -95,7 +99,7 @@ export interface DebitNoteLine {
   debit_note_id?: string;
   line_no?: number;
   line_type: DebitNoteLineType;
-  
+
   /* ITEM */
   item_id?: string;
   item_code?: string;
@@ -128,7 +132,7 @@ export interface DebitNoteLine {
   vat_amount?: number;
   net_amount?: number;
   gross_amount?: number;
-  
+
   purchase_gl_id?: string;
   sales_gl_id?: string;
   inventory_gl_id?: string;

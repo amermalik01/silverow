@@ -16,34 +16,16 @@ import {
 } from "@/types/debit-note";
 
 import DebitNoteLines from "./DebitNoteLines";
-
-// import SupplierLookupModal, {
-//   SupplierLookupItem,
-// } from "../../shared/modals/SupplierLookupModal";
-// import SupplierLookupModal, { SupplierLookupItem } from "./SupplierLookupModal";
-
-import { DebitNotePayloadInput } from "@/lib/validations/debit-note.schema";
 import { OrderFormTabs } from "./OrderFormTabs";
 import { useLoader } from "@/app/context/LoaderContext";
-import SupplierLookupModal, { SupplierLookupItem } from "../purchase-orders/SupplierLookupModal";
-
-interface Currency {
-  id: string;
-  code: string;
-  name: string;
-  exchange_rate: number;
-}
+import SupplierLookupModal, {
+  SupplierLookupItem,
+} from "../purchase-orders/SupplierLookupModal";
 
 interface Props {
   slug: string;
   id?: string;
   isReadOnly?: boolean;
-}
-
-interface NoteStage {
-  id: string;
-  name: string;
-  rank: number;
 }
 
 type TabType = "general" | "invoicing" | "shipping";
@@ -61,9 +43,6 @@ export const DebitNoteForm: React.FC<Props> = ({
   const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
-
-  // const [stages, setStages] = useState<NoteStage[]>([]);
-  // const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
   const { show, hide } = useLoader();
@@ -108,7 +87,6 @@ export const DebitNoteForm: React.FC<Props> = ({
   });
 
   const [lines, setLines] = useState<DebitNoteLine[]>([]);
-  // const [currencies, setCurrencies] = useState<Currency[]>([]);
 
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
@@ -168,15 +146,6 @@ export const DebitNoteForm: React.FC<Props> = ({
     setLines(data.lines ?? []);
   };
 
-  // useEffect(() => {
-  //   fetch("/api/parties/currencies")
-  //     .then((res) => (res.ok ? res.json() : []))
-  //     .then((data) => setCurrencies(data))
-  //     .catch((err) =>
-  //       console.error("Error pulling financial lookup matrices:", err),
-  //     );
-  // }, []);
-
   useEffect(() => {
     async function loadMasterData() {
       try {
@@ -193,35 +162,6 @@ export const DebitNoteForm: React.FC<Props> = ({
 
     loadMasterData();
   }, []);
-
-  /* useEffect(() => {
-    if (!isUpdateMode) {
-      setIsLoadingStages(false);
-      return;
-    }
-
-    async function fetchStages() {
-      try {
-        const response = await fetch("/api/setup/purchases/debit_note_stages");
-        if (response.ok) {
-          const data = await response.json();
-          setStages(data);
-        }
-      } catch (error) {
-        console.error(
-          "Failed to load debit note stages configuration setup setup:",
-          error,
-        );
-      } finally {
-        setIsLoadingStages(false);
-      }
-    }
-    fetchStages();
-  }, [isUpdateMode]);
-
-  const selectedCurrency = useMemo(() => {
-    return currencies.find((c) => c.id === currencyConfig.currency_id);
-  }, [currencyConfig.currency_id, currencies]); */
 
   const selectedCurrency = useMemo(() => {
     return (
@@ -247,7 +187,7 @@ export const DebitNoteForm: React.FC<Props> = ({
       supplier_id: supplier.id,
       supplier_no: supplier.supplier_code,
       supplier_name: supplier.name,
-      // Supplier Settings & Financial defaults
+
       anonymous_supplier: supplier.anonymous_supplier ?? false,
       purchaser_code: supplier.purchaser_code || "",
       payable_bank: supplier.payable_bank || "",
@@ -262,7 +202,6 @@ export const DebitNoteForm: React.FC<Props> = ({
     if (supplier.shipping_address)
       setShippingAddress(supplier.shipping_address);
 
-    // Sync currency from supplier profile if provided
     if (supplier.currency_id) {
       const matchedCurr = masterData?.currencies.find(
         (c) => c.id === supplier.currency_id,
@@ -671,7 +610,6 @@ export const DebitNoteForm: React.FC<Props> = ({
       </div>
 
       <div className="flex items-center justify-between pt-4">
-        {/* Legend Indicators */}
         <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
@@ -687,39 +625,7 @@ export const DebitNoteForm: React.FC<Props> = ({
           </span>
         </div>
 
-        {/* Dedicated Action Buttons */}
         <div className="flex items-center gap-2">
-          {/* <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || isReadOnly}
-            className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
-          >
-            Purchase Order
-          </button> */}
-
-          {/* {isUpdateMode && (
-            <>
-              <button
-                type="button"
-                onClick={() => setShowInvoiceModal(true)}
-                disabled={isPosting}
-                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
-              >
-                Post Invoice
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowReceiveModal(true)}
-                disabled={isPosting}
-                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
-              >
-                Receive Stock
-              </button>
-            </>
-          )} */}
-
           <button
             type="button"
             onClick={handleSave}
@@ -739,25 +645,6 @@ export const DebitNoteForm: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* {!isReadOnly && (
-        <div className="flex justify-end gap-2 pt-4">
-          <button
-            type="button"
-            onClick={() => router.push(`/${slug}/purchases/debit-notes`)}
-            className="px-4 py-2 text-xs border border-slate-300 dark:border-slate-700 font-bold uppercase rounded hover:bg-slate-50 dark:hover:bg-slate-800"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 text-xs bg-emerald-600 text-white font-bold uppercase rounded shadow hover:bg-emerald-700 disabled:opacity-40"
-          >
-            {saving ? "Writing records..." : "Save Debit Note"}
-          </button>
-        </div>
-      )} */}
       <SupplierLookupModal
         open={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}

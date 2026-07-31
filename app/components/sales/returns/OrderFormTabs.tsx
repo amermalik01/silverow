@@ -313,17 +313,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) => updateField("salesperson", e.target.value)}
               />
             </div>
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle} title="Consignment No.">
-                Cons. No.
-              </label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.consignment_no || ""}
-                onChange={(e) => updateField("consignment_no", e.target.value)}
-              />
-            </div> */}
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Customer Order No.">
                 Claim No.
@@ -349,16 +338,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) => updateField("posting_date", e.target.value)}
               />
             </div>
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Customer Invoice No.</label>
-              <input
-                type="text"
-                className={inputStyle}
-                placeholder="e.g. INV-9932"
-                value={order.reference || ""}
-                onChange={(e) => updateField("reference", e.target.value)}
-              />
-            </div> */}
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Claim Date</label>
               <input
@@ -553,7 +532,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 }
               />
             </div>
-            
           </div>
 
           {/* Column 3 */}
@@ -588,88 +566,31 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 }
               />
             </div>
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Payable Bank</label>
-              <select
-                disabled={isSettingsDisabled}
-                className={inputStyle}
-                value={order.payable_bank || ""}
-                onChange={(e) => updateField("payable_bank", e.target.value)}
-              >
-                <option value="">Select Bank...</option>
-                {bankAccounts.map((b) => (
-                  <option key={b.id} value={b.id || b.account_name}>
-                    {b.bank_name || b.account_name || b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Payment Terms</label>
-
-              <select
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={order.payment_terms_id ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const selected = paymentTerms.find(
-                    (x) => String(x.id) === String(val),
-                  );
-
-                  updateField("payment_terms_id", val);
-                  updateField("payment_terms", selected?.name || "");
-
-                  if (order.order_date && selected) {
-                    updateField(
-                      "due_date",
-                      calculateDueDate(order.order_date, selected.days),
-                    );
-                  }
-                }}
-              >
-                <option value="">Select...</option>
-                {paymentTerms.map((term) => (
-                  <option key={term.id} value={term.id}>
-                    {term.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Due Date</label>
+              <label className={labelStyle}>Finance Charge</label>
               <input
-                type="date"
+                type="number"
                 className={inputStyle}
-                value={order.due_date?.split("T")[0] ?? ""}
-                onChange={(e) => updateField("due_date", e.target.value)}
+                value={order.finance_charges ?? 0}
+                onChange={(e) =>
+                  updateField("finance_charges", Number(e.target.value))
+                }
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Payment Method</label>
-
-              <select
+              <label className={labelStyle} title="Insurance Charge">
+                Ins. Charge
+              </label>
+              <input
+                type="number"
                 className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={order.payment_method_id ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const selected = paymentMethods.find(
-                    (x) => String(x.id) === String(val),
-                  );
-
-                  updateField("payment_method_id", val);
-                  updateField("payment_method", selected?.name || "");
-                }}
-              >
-                <option value="">Select...</option>
-                {paymentMethods.map((method) => (
-                  <option key={method.id} value={method.id}>
-                    {method.name}
-                  </option>
-                ))}
-              </select>
-            </div> */}
+                value={order.insurance_charges ?? 0}
+                onChange={(e) =>
+                  updateField("insurance_charges", Number(e.target.value))
+                }
+              />
+            </div>
           </div>
 
           {/* Column 4 */}
@@ -701,26 +622,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 ))}
               </select>
             </div>
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Link to Customer</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.link_to_cust || ""}
-                onChange={(e) => updateField("link_to_cust", e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Deduct from Rebate</label>
-              <input
-                type="checkbox"
-                checked={!!order.deduct_from_rebate}
-                onChange={(e) =>
-                  updateField("deduct_from_rebate", e.target.checked)
-                }
-                className="rounded bg-white/20 border-0 text-emerald-700 h-3.5 w-3.5"
-              />
-            </div> */}
           </div>
         </div>
       )}
@@ -924,6 +825,43 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) => updateField("shipment_ref_no", e.target.value)}
               />
             </div>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Freight Charges</label>
+              <input
+                type="number"
+                className={inputStyle}
+                value={order.freight_charges ?? 0}
+                onChange={(e) =>
+                  updateField("freight_charges", Number(e.target.value))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Delivery Date</label>
+              <input
+                type="date"
+                className={inputStyle}
+                value={order.delivery_date?.split("T")[0] ?? ""}
+                min={order.order_date?.split("T")[0] ?? ""}
+                onChange={(e) => updateField("delivery_date", e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Delivery Time</label>
+              <input
+                type="time"
+                className={inputStyle}
+                value={order.delivery_time?.split("T")[0] ?? ""}
+                min={order.order_date?.split("T")[0] ?? ""}
+                onChange={(e) => updateField("delivery_time", e.target.value)}
+              />
+            </div>
+
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Warehouse Reference No.">
                 Warehouse Ref.
@@ -934,6 +872,23 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 value={order.warehouse_ref_no || ""}
                 onChange={(e) =>
                   updateField("warehouse_ref_no", e.target.value)
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label
+                className={labelStyle}
+                title="Customer Warehouse Reference No."
+              >
+                Cust. W/H Ref.
+              </label>
+              <input
+                type="text"
+                className={inputStyle}
+                value={order.cust_warehouse_ref_no || ""}
+                onChange={(e) =>
+                  updateField("cust_warehouse_ref_no", e.target.value)
                 }
               />
             </div>

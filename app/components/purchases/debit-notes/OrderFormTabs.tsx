@@ -58,7 +58,6 @@ interface OrderFormTabsProps {
   setShippingAddress: React.Dispatch<React.SetStateAction<Address>>;
   currencyConfig: CurrencyConfig;
   setCurrencyConfig: React.Dispatch<React.SetStateAction<CurrencyConfig>>;
-  // currencies: Currency[];
   masterData: DebitNoteMasterData | null;
   updateField: <K extends keyof DebitNote>(
     field: K,
@@ -370,7 +369,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     );
                   }
                 }}
-                // onChange={(e) => updateField("order_date", e.target.value)}
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
@@ -866,9 +864,53 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) => updateField("shipment_ref_no", e.target.value)}
               />
             </div>
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Freight Charges</label>
+              <input
+                type="number"
+                className={inputStyle}
+                value={note.freight_charges ?? 0}
+                onChange={(e) =>
+                  updateField("freight_charges", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Shipment Date</label>
+              <input
+                type="date"
+                className={inputStyle}
+                value={note.shipment_date?.split("T")[0] ?? ""}
+                min={note.order_date?.split("T")[0] ?? ""}
+                onChange={(e) => updateField("shipment_date", e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Delivery Date</label>
+              <input
+                type="date"
+                className={inputStyle}
+                value={note.delivery_date?.split("T")[0] ?? ""}
+                min={note.order_date?.split("T")[0] ?? ""}
+                onChange={(e) => updateField("delivery_date", e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Delivery Time</label>
+              <input
+                type="time"
+                className={inputStyle}
+                value={note.delivery_time?.split("T")[0] ?? ""}
+                min={note.order_date?.split("T")[0] ?? ""}
+                onChange={(e) => updateField("delivery_time", e.target.value)}
+              />
+            </div>
+
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Warehouse Reference No.">
                 Warehouse Ref.

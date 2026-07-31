@@ -70,7 +70,15 @@ export type SalesReturn = {
   shipping_agent?: string;
   shipment_ref_no?: string;
   warehouse_ref_no?: string;
+  cust_warehouse_ref_no?: string;
   reason?: string;
+
+  finance_charges?: number;
+  insurance_charges?: number;
+  converted_by?: string;
+  freight_charges?: number;
+  shipment_date?: string;
+  delivery_time?: string;
 };
 
 export type SalesReturnAddressType = "primary" | "billing" | "shipping";
@@ -79,7 +87,7 @@ export interface SalesReturnAddress {
   id?: string;
   sales_return_id?: string;
   address_type: SalesReturnAddressType;
-  name?: string; // Maps to form handling name fields
+  name?: string;
   contact_name?: string;
   company_name?: string;
   phone?: string;
@@ -88,7 +96,7 @@ export interface SalesReturnAddress {
   address_2?: string;
   city?: string;
   state?: string;
-  county?: string; // Integrated with regional billing/shipping form tab
+  county?: string;
   postcode?: string;
   country?: string;
 }

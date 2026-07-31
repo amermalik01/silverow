@@ -48,6 +48,7 @@ export type SalesOrder = {
   created_at?: string;
   updated_at?: string;
   sales_quote_id?: string;
+  sales_quote_no?: string;
   anonymous_customer?: boolean;
 
   contact?: string;
@@ -60,7 +61,16 @@ export type SalesOrder = {
   shipping_agent?: string;
   shipment_ref_no?: string;
   warehouse_ref_no?: string;
+  cust_warehouse_ref_no?: string;
   reason?: string;
+
+  finance_charges?: number;
+  insurance_charges?: number;
+  converted_by?: string;
+  freight_charges?: number;
+  shipment_date?: string;
+  // delivery_date?: string;
+  delivery_time?: string;
 };
 
 export type SalesOrderAddressType = "primary" | "billing" | "shipping";
@@ -87,13 +97,6 @@ export type SalesOrderPayload = {
   shipping_address?: SalesOrderAddress;
   lines: SalesOrderLine[];
 };
-
-// export interface SalesOrderLineUI extends SalesOrderLine {
-//   item_code?: string;
-//   account_code?: string;
-//   account_name?: string;
-//   available_stock?: number;
-// }
 
 export type SalesOrderLineUI = SalesOrderLine & {
   item_code?: string;
