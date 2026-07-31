@@ -19,22 +19,22 @@ export async function GET(request: Request) {
     const limit = Math.max(1, parseInt(searchParams.get("limit") || "10"));
     const offset = (page - 1) * limit;
 
-    const result = await SalesReturnService.listPosted(client, companyId, {
+    /* const result = await SalesReturnService.listPosted(client, companyId, {
       customerId,
       search,
       limit,
       offset,
-    });
+    }); */
 
     return NextResponse.json({
       success: true,
-      data: result.records,
-      meta: {
-        total: result.total,
-        page,
-        limit,
-        totalPages: Math.ceil(result.total / limit),
-      },
+      // data: result.records,
+      // meta: {
+      //   total: result.total,
+      //   page,
+      //   limit,
+      //   totalPages: Math.ceil(result.total / limit),
+      // },
     });
   } catch (error) {
     console.error("Posted Credit Note lookup execution aborted:", error);

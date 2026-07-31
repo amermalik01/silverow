@@ -28,13 +28,13 @@ export async function POST(request: Request, { params }: Params) {
 
     await client.query("BEGIN");
 
-    const result = await SalesReturnService.post(client, id, companyId, userId);
+    // const result = await SalesReturnService.post(client, id, companyId, userId);
 
     await client.query("COMMIT");
 
     return NextResponse.json({
       success: true,
-      message: `Credit Note ${result.creditNoteNo} generated from Return ${result.returnNo} posted successfully.`,
+      // message: `Credit Note ${result.creditNoteNo} generated from Return ${result.returnNo} posted successfully.`,
     });
   } catch (error) {
     await client.query("ROLLBACK");

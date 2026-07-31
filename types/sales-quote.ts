@@ -167,11 +167,3 @@ export interface SalesQuotePayload {
 
   lines: SalesQuoteLine2[];
 }
-
-
-
-// import { SalesLine } from "./sales-line";
-
-// export type SalesQuoteLine = SalesLine;
-
-// export type SalesQuoteLineUI = SalesLine;
