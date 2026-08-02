@@ -151,13 +151,13 @@ export default function ItemTabs({ id }: Props) {
 
         {activeTab === "inventory" && <InventoryTab itemId={id} />}
 
-        {activeTab === "sales" && <SalesTab itemId={id} />}
+        {/* {activeTab === "sales" && <SalesTab itemId={id} />}
 
-        {activeTab === "purchase" && <PurchaseTab itemId={id} />}
+        {activeTab === "purchase" && <PurchaseTab itemId={id} />} */}
 
         {activeTab === "uoms" && <UOMTab itemId={id} />}
 
-        {activeTab === "warehouses" && <WarehouseTab itemId={id} />}
+        {/* {activeTab === "warehouses" && <WarehouseTab itemId={id} />} */}
 
         {activeTab === "accounting" && <AccountingTab itemId={id} />}
 

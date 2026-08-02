@@ -29,7 +29,7 @@ export default function InventoryPostingGroupsPage() {
 
   return (
     <SetupDataGrid
-      title="Inventory Posting Groups Matrix"
+      title="Inventory Posting Groups"
       api="/api/setup/posting/inventory-groups"
       fields={[
         { name: "name", label: "Group Name", required: true },

@@ -13,16 +13,3 @@ export default function SupplierPage() {
     </div>
   );
 }
-
-// export default function SupplierPage() {
-//   return (
-//     <div>
-//       <PartyList
-//         title="Suppliers"
-//         module="srm"
-//         basePath="./supplier"
-//         typeFilter={["supplier"]}
-//       />
-//     </div>
-//   );
-// }

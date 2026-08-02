@@ -2,6 +2,86 @@
 
 "use client";
 
+import { ItemFormData, ItemLookupOption } from "@/types/inventory";
+
+type Props = {
+  item: ItemFormData;
+  setItem: React.Dispatch<React.SetStateAction<ItemFormData>>;
+  uoms: ItemLookupOption[];
+  isReadonly?: boolean;
+};
+
+export default function SalesTab({
+  item,
+  setItem,
+  uoms,
+  isReadonly = false,
+}: Props) {
+  return (
+    <div className="space-y-4 text-xs">
+      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-b border-slate-200 dark:border-slate-800">
+            <tr>
+              <th className="p-3">Sales U.O.M</th>
+              <th className="p-3">Standard Price</th>
+              <th className="p-3">Min. Sales Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="p-3">
+                <select
+                  disabled={isReadonly}
+                  value={item.sales_uom_id}
+                  onChange={(e) =>
+                    setItem((prev) => ({
+                      ...prev,
+                      sales_uom_id: e.target.value,
+                    }))
+                  }
+                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                >
+                  <option value="">Default Base UOM</option>
+                  {uoms.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </td>
+              <td className="p-3">
+                <input
+                  type="number"
+                  disabled={isReadonly}
+                  value={item.standard_sales_price}
+                  onChange={(e) =>
+                    setItem((prev) => ({
+                      ...prev,
+                      standard_sales_price: e.target.value,
+                    }))
+                  }
+                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                />
+              </td>
+              <td className="p-3">
+                <input
+                  type="number"
+                  disabled={isReadonly}
+                  defaultValue={item.standard_sales_price}
+                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
+
 import { useEffect, useState } from "react";
 import PriceModal from "@/app/components/inventory/prices/PriceModal";
 
@@ -71,12 +151,12 @@ export default function SalesTab({ itemId }: { itemId: string }) {
         </button>
       </div>
 
-      {/* 🔥 EFFECTIVE PRICE PREVIEW */}
+ 
       <div className="p-3 bg-green-50 border text-black">
         Effective Price: <b>{effectivePrice ?? 0}</b>
       </div>
 
-      {/* TABLE */}
+ 
       <table className="w-full text-xs border">
         <thead>
           <tr>
@@ -112,118 +192,6 @@ export default function SalesTab({ itemId }: { itemId: string }) {
           }}
         />
       )}
-    </div>
-  );
-}
-
-/* "use client";
-
-import { useEffect, useState } from "react";
-
-type SalesPrice = {
-  id: string;
-  uom_id: string;
-  uom_name?: string;
-
-  price: number;
-  minimum_price?: number | null;
-
-  start_date?: string | null;
-  end_date?: string | null;
-};
-
-type Props = {
-  itemId: string;
-};
-
-export default function SalesTab({ itemId }: Props) {
-  const [data, setData] = useState<SalesPrice[]>([]);
-
-  const [loading, setLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    loadData();
-  }, [itemId]);
-
-  const loadData = async () => {
-    setLoading(true);
-
-    try {
-      const res = await fetch(`/api/inventory/items/${itemId}/sales-prices`);
-
-      const result = await res.json();
-
-      setData(result || []);
-    } catch (err) {
-      console.error("SalesTab error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold">Sales Setup</h2>
-
-        <p className="text-xs text-gray-500">
-          Manage item sales prices by UOM and validity
-        </p>
-      </div>
-
-
-
-      <div className="border rounded">
-        <table className="w-full text-xs">
-          <thead className="bg-gray-100 text-black">
-            <tr>
-              <th className="p-3 text-left">UOM</th>
-
-              <th className="p-3 text-left">Price</th>
-
-              <th className="p-3 text-left">Min Price</th>
-
-              <th className="p-3 text-left">Start Date</th>
-
-              <th className="p-3 text-left">End Date</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="p-4 text-center">
-                  Loading...
-                </td>
-              </tr>
-            ) : data.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-500">
-                  No sales prices found
-                </td>
-              </tr>
-            ) : (
-              data.map((row) => (
-                <tr key={row.id} className="border-t">
-                  <td className="p-3">{row.uom_name || row.uom_id}</td>
-
-                  <td className="p-3">{row.price}</td>
-
-                  <td className="p-3">{row.minimum_price ?? "-"}</td>
-
-                  <td className="p-3">{row.start_date ?? "-"}</td>
-
-                  <td className="p-3">{row.end_date ?? "-"}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-
-
-      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
     </div>
   );
 } */

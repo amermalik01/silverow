@@ -1,9 +1,5 @@
 // types/inventory.ts
 
-/* ---------------------------
-          Item
----------------------------- */
-
 export type ItemListRow = {
   id: string;
   item_code: string;
@@ -39,11 +35,15 @@ export type ItemFormData = {
   standard_sales_price: string;
   standard_cost: string;
   costing_method: number;
-};
 
-/* ---------------------------
-   CATEGORY
----------------------------- */
+  // GL Accounting Fields
+  inventory_posting_group_id?: string;
+  inventory_gl_id?: string;
+  cogs_gl_id?: string;
+  sales_gl_id?: string;
+  purchase_gl_id?: string;
+
+};
 
 export type Category = {
   id: string;
@@ -61,10 +61,6 @@ export type CategoryOption = {
   id: string;
   name: string;
 };
-
-/* ---------------------------
-   BRAND
----------------------------- */
 
 export type Brand = {
   id: string;
@@ -87,10 +83,6 @@ export type BrandOption = {
   id: string;
   name: string;
 };
-
-/* ---------------------------
-   UOM (UNIT OF MEASURE)
----------------------------- */
 
 export type UOMType = 1 | 2 | 3 | 4;
 // 1 = Quantity
@@ -144,9 +136,35 @@ export type UOMForm = {
   is_base: boolean;
 };
 
-/* ---------------------------
-   Item Warehouse
----------------------------- */
+export type ItemWarehouseDraft = {
+  id?: string;
+  warehouse_id: string;
+  storage_location_id?: string;
+  unit_of_measure?: string;
+  cost_frequency?: string;
+  currency?: string;
+  cost?: number | string;
+  is_default?: boolean;
+  status?: number; // 1 = Active, 0 = Inactive
+  start_date?: string;
+  comments?: string;
+};
+
+export type WarehouseOption = {
+  id: string;
+  code: string;
+  name: string;
+};
+
+export type StorageLocationOption = {
+  id: string;
+  warehouse_id: string;
+  title: string;
+  cost_frequency?: string;
+  unit_of_measure?: string;
+  currency?: string;
+  cost?: number;
+};
 
 export type WarehouseStock = {
   id: string;
@@ -158,39 +176,16 @@ export type WarehouseStock = {
   location_name: string | null;
 
   quantity: string;
-
   reserved_quantity: string;
-
   available_quantity: string;
 
   average_cost: string | null;
 
   batch_no: string | null;
-
   serial_no: string | null;
   consignment_no: string | null;
 
   last_movement_at: string | null;
-};
-
-// export type WarehouseStock = {
-//   id: string;
-//   warehouse_id: string;
-//   warehouse_name: string;
-//   location_id: string;
-//   location_name: string;
-//   quantity: string;
-//   reserved_quantity: string;
-//   available_quantity: string;
-//   unit_cost: string | null;
-//   batch_no: string | null;
-//   serial_no: string | null;
-//   expiry_date: string | null;
-// };
-
-export type WarehouseOption = {
-  id: string;
-  name: string;
 };
 
 export type LocationOption = {

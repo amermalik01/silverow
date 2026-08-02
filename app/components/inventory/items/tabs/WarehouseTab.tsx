@@ -1,5 +1,407 @@
 // app/components/inventory/items/tabs/WarehouseTab.tsx
+
 "use client";
+
+import { useEffect, useState } from "react";
+import type {
+  ItemWarehouseDraft,
+  WarehouseOption,
+  StorageLocationOption,
+} from "@/types/inventory";
+
+type Props = {
+  warehouses?: ItemWarehouseDraft[]; // Made optional to prevent runtime crashes
+  setWarehouses: React.Dispatch<React.SetStateAction<ItemWarehouseDraft[]>>;
+  errors?: Record<string, string>;
+  isReadonly?: boolean;
+};
+
+export default function WarehouseTab({
+  warehouses = [], // Default to empty array if undefined
+  setWarehouses,
+  errors = {},
+  isReadonly = false,
+}: Props) {
+  const [warehouseList, setWarehouseList] = useState<WarehouseOption[]>([]);
+  const [locationList, setLocationList] = useState<StorageLocationOption[]>([]);
+  const [loadingLookups, setLoadingLookups] = useState(false);
+
+  useEffect(() => {
+    async function fetchLookups() {
+      try {
+        setLoadingLookups(true);
+        const [resWrh, resLoc] = await Promise.all([
+          fetch("/api/inventory/warehouses"),
+          fetch("/api/inventory/warehouse-locations"),
+        ]);
+
+        if (resWrh.ok) {
+          const wrhData = await resWrh.json();
+          // Support both data: [] and warehouses: [] payload structures
+          setWarehouseList(wrhData.data || wrhData.warehouses || []);
+        }
+        if (resLoc.ok) {
+          const locData = await resLoc.json();
+          setLocationList(locData.data || locData.locations || []);
+        }
+      } catch (err) {
+        console.error("Failed to load warehouse lookups:", err);
+      } finally {
+        setLoadingLookups(false);
+      }
+    }
+
+    fetchLookups();
+  }, []);
+
+  const addWarehouseRow = () => {
+    const currentList = warehouses || [];
+    setWarehouses([
+      ...currentList,
+      {
+        warehouse_id: "",
+        storage_location_id: "",
+        unit_of_measure: "Pcs",
+        cost_frequency: "Weekly",
+        currency: "GBP",
+        cost: "0.00",
+        is_default: currentList.length === 0,
+        status: 1,
+        start_date: new Date().toISOString().split("T")[0],
+        comments: "",
+      },
+    ]);
+  };
+
+  const updateWarehouseRow = <K extends keyof ItemWarehouseDraft>(
+    idx: number,
+    key: K,
+    val: ItemWarehouseDraft[K],
+  ) => {
+    setWarehouses((prev = []) =>
+      prev.map((item, i) => {
+        if (i !== idx) return item;
+
+        const updated = { ...item, [key]: val };
+
+        if (key === "warehouse_id") {
+          updated.storage_location_id = "";
+        }
+
+        if (key === "storage_location_id") {
+          const matchedLoc = locationList.find((loc) => loc.id === val);
+          if (matchedLoc) {
+            updated.cost_frequency =
+              matchedLoc.cost_frequency || updated.cost_frequency;
+            updated.unit_of_measure =
+              matchedLoc.unit_of_measure || updated.unit_of_measure;
+            updated.currency = matchedLoc.currency || updated.currency;
+            updated.cost =
+              matchedLoc.cost !== undefined ? matchedLoc.cost : updated.cost;
+          }
+        }
+
+        return updated;
+      }),
+    );
+  };
+
+  const handleSetDefault = (targetIdx: number) => {
+    setWarehouses((prev = []) =>
+      prev.map((item, i) => ({
+        ...item,
+        is_default: i === targetIdx,
+      })),
+    );
+  };
+
+  const removeRow = (idx: number) => {
+    const currentList = warehouses || [];
+    const isRemovingDefault = currentList[idx]?.is_default;
+    const filtered = currentList.filter((_, i) => i !== idx);
+
+    if (isRemovingDefault && filtered.length > 0) {
+      filtered[0].is_default = true;
+    }
+
+    setWarehouses(filtered);
+  };
+
+  // Safe reference for rendering
+  const activeWarehouses = warehouses || [];
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header Summary Bar */}
+      <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between text-xs gap-4">
+        {/* <div className="flex items-center gap-6 text-slate-600 dark:text-slate-300 font-medium">
+          <span>
+            On Route Stock:{" "}
+            <strong className="text-slate-900 dark:text-white">0</strong>
+          </span>
+          <span>
+            Total Stock:{" "}
+            <strong className="text-slate-900 dark:text-white">0</strong>
+          </span>
+          <span>
+            Available Stock:{" "}
+            <strong className="text-slate-900 dark:text-white">0</strong>
+          </span>
+          <span>
+            Allocated Stock:{" "}
+            <strong className="text-slate-900 dark:text-white">0</strong>
+          </span>
+        </div> */}
+
+        {!isReadonly && (
+          <button
+            type="button"
+            onClick={addWarehouseRow}
+            disabled={loadingLookups}
+            className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm disabled:opacity-50"
+          >
+            + Add Warehouse
+          </button>
+        )}
+      </div>
+
+      {activeWarehouses.length === 0 && (
+        <div className="p-8 text-center text-xs border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
+          No warehouse assignments established for this item.
+        </div>
+      )}
+
+      {/* Warehouse Cards List */}
+      {activeWarehouses.map((w, idx) => {
+        const filteredLocations = locationList.filter(
+          (loc) => loc.warehouse_id === w.warehouse_id,
+        );
+
+        return (
+          <div
+            key={idx}
+            className="relative rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden text-xs shadow-sm"
+          >
+            {/* Row Header */}
+            <div className="flex items-center justify-between font-medium px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-700 dark:text-slate-200">
+                  Location Assignment #{idx + 1}
+                </span>
+
+                {w.is_default && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                    Default Warehouse
+                  </span>
+                )}
+              </div>
+
+              {!isReadonly && (
+                <button
+                  type="button"
+                  onClick={() => removeRow(idx)}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 transition"
+                  title="Remove location assignment"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Field Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-4">
+              {/* Left Column */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="font-medium text-slate-700 dark:text-slate-300">
+                    Warehouse <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    disabled={isReadonly}
+                    value={w.warehouse_id || ""}
+                    onChange={(e) =>
+                      updateWarehouseRow(idx, "warehouse_id", e.target.value)
+                    }
+                    className={`col-span-2 p-2 rounded border ${
+                      errors[`warehouses.${idx}.warehouse_id`]
+                        ? "border-red-500"
+                        : "border-slate-300 dark:border-slate-700"
+                    } dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                  >
+                    <option value="">Select Warehouse...</option>
+                    {warehouseList.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.code} - {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="font-medium text-slate-700 dark:text-slate-300">
+                    Storage Location <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    disabled={isReadonly || !w.warehouse_id}
+                    value={w.storage_location_id || ""}
+                    onChange={(e) =>
+                      updateWarehouseRow(
+                        idx,
+                        "storage_location_id",
+                        e.target.value,
+                      )
+                    }
+                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900 disabled:opacity-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="">Select Location...</option>
+                    {filteredLocations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="font-medium text-slate-700 dark:text-slate-300">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    disabled={isReadonly}
+                    value={w.start_date || ""}
+                    onChange={(e) =>
+                      updateWarehouseRow(idx, "start_date", e.target.value)
+                    }
+                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 items-start">
+                  <label className="font-medium text-slate-700 dark:text-slate-300 pt-2">
+                    Comments
+                  </label>
+                  <textarea
+                    rows={2}
+                    disabled={isReadonly}
+                    value={w.comments || ""}
+                    onChange={(e) =>
+                      updateWarehouseRow(idx, "comments", e.target.value)
+                    }
+                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="font-medium text-slate-700 dark:text-slate-300">
+                    Unit of Measure
+                  </label>
+                  <input
+                    type="text"
+                    disabled={isReadonly}
+                    value={w.unit_of_measure || ""}
+                    onChange={(e) =>
+                      updateWarehouseRow(idx, "unit_of_measure", e.target.value)
+                    }
+                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="font-medium text-slate-700 dark:text-slate-300">
+                    Cost Frequency
+                  </label>
+                  <select
+                    disabled={isReadonly}
+                    value={w.cost_frequency || "Weekly"}
+                    onChange={(e) =>
+                      updateWarehouseRow(idx, "cost_frequency", e.target.value)
+                    }
+                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <option value="Daily">Daily</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Yearly">Yearly</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="font-medium text-slate-700 dark:text-slate-300">
+                    Currency / Cost
+                  </label>
+                  <div className="col-span-2 grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      disabled={isReadonly}
+                      placeholder="GBP"
+                      value={w.currency || ""}
+                      onChange={(e) =>
+                        updateWarehouseRow(idx, "currency", e.target.value)
+                      }
+                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900 uppercase"
+                    />
+                    <input
+                      type="number"
+                      step="0.0001"
+                      disabled={isReadonly}
+                      placeholder="0.00"
+                      value={w.cost ?? ""}
+                      onChange={(e) =>
+                        updateWarehouseRow(idx, "cost", e.target.value)
+                      }
+                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="font-medium text-slate-700 dark:text-slate-300">
+                    Default / Status
+                  </label>
+                  <div className="col-span-2 flex items-center justify-between gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer font-medium">
+                      <input
+                        type="radio"
+                        name="default_warehouse_radio"
+                        disabled={isReadonly}
+                        checked={!!w.is_default}
+                        onChange={() => handleSetDefault(idx)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      Default
+                    </label>
+
+                    <select
+                      disabled={isReadonly}
+                      value={w.status ?? 1}
+                      onChange={(e) =>
+                        updateWarehouseRow(
+                          idx,
+                          "status",
+                          Number(e.target.value),
+                        )
+                      }
+                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                    >
+                      <option value={1}>Active</option>
+                      <option value={0}>Inactive</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* "use client";
 
 import { useEffect, useState } from "react";
 
@@ -164,493 +566,6 @@ export default function WarehouseTab({
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-gray-500">Item ID: {itemId}</p>
-    </div>
-  );
-}
-
-/* "use client";
-import { useEffect, useState } from "react";
-
-import {
-  LocationOption,
-  StockForm,
-  WarehouseOption,
-  WarehouseStock,
-} from "@/types/inventory";
-
-type Props = {
-  itemId: string;
-};
-
-const defaultForm: StockForm = {
-  warehouse_id: "",
-  location_id: "",
-  quantity: "0",
-  reserved_quantity: "0",
-  unit_cost: "",
-  batch_no: "",
-  serial_no: "",
-  expiry_date: "",
-};
-
-export default function WarehouseTab({ itemId }: Props) {
-  const [rows, setRows] = useState<WarehouseStock[]>([]);
-
-  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
-
-  const [locations, setLocations] = useState<LocationOption[]>([]);
-
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const [showModal, setShowModal] = useState<boolean>(false);
-
-  const [saving, setSaving] = useState<boolean>(false);
-
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  const [form, setForm] = useState<StockForm>(defaultForm);
-
-
-
-  const loadData = async () => {
-    setLoading(true);
-
-    try {
-      const [stockRes, warehouseRes, locationRes] = await Promise.all([
-        fetch(`/api/inventory/items/${itemId}/warehouse-stock`),
-
-        fetch("/api/setup/inventory/warehouses"),
-
-        fetch("/api/setup/inventory/warehouse-locations"),
-      ]);
-
-      const stockData = await stockRes.json();
-
-      const warehouseData = await warehouseRes.json();
-
-      const locationData = await locationRes.json();
-
-      setRows(stockData);
-
-      setWarehouses(warehouseData);
-
-      setLocations(locationData);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [itemId]);
-
-
-
-  const filteredLocations = locations.filter(
-    (loc) => loc.warehouse_id === form.warehouse_id,
-  );
-
-
-  const handleSubmit = async () => {
-    setSaving(true);
-
-    try {
-      const method = editingId ? "PUT" : "POST";
-
-      const url = editingId
-        ? `/api/inventory/items/${itemId}/warehouse-stock/${editingId}`
-        : `/api/inventory/items/${itemId}/warehouse-stock`;
-
-      await fetch(url, {
-        method,
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(form),
-      });
-
-      handleCloseModal();
-
-      loadData();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-
-
-  const handleEdit = (row: WarehouseStock) => {
-    setEditingId(row.id);
-
-    setForm({
-      warehouse_id: row.warehouse_id,
-
-      location_id: row.location_id,
-
-      quantity: row.quantity,
-
-      reserved_quantity: row.reserved_quantity,
-
-      unit_cost: row.unit_cost || "",
-
-      batch_no: row.batch_no || "",
-
-      serial_no: row.serial_no || "",
-
-      expiry_date: row.expiry_date ? row.expiry_date.split("T")[0] : "",
-    });
-
-    setShowModal(true);
-  };
-
-
-
-  const handleDelete = async (id: string) => {
-    const ok = confirm("Delete stock record?");
-
-    if (!ok) {
-      return;
-    }
-
-    try {
-      await fetch(`/api/inventory/items/${itemId}/warehouse-stock/${id}`, {
-        method: "DELETE",
-      });
-
-      loadData();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-
-    setEditingId(null);
-
-    setForm(defaultForm);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Warehouse Stock</h2>
-
-        <button
-          type="button"
-          onClick={() => {
-            setEditingId(null);
-
-            setForm(defaultForm);
-
-            setShowModal(true);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          + Add Stock
-        </button>
-      </div>
-
-
-
-      <div className="border rounded overflow-auto">
-        <table className="w-full text-xs">
-          <thead className="bg-gray-100 text-black">
-            <tr>
-              <th className="p-3 text-left">Warehouse</th>
-
-              <th className="p-3 text-left">Location</th>
-
-              <th className="p-3 text-left">Quantity</th>
-
-              <th className="p-3 text-left">Reserved</th>
-
-              <th className="p-3 text-left">Available</th>
-
-              <th className="p-3 text-left">Batch</th>
-
-              <th className="p-3 text-left">Serial</th>
-
-              <th className="p-3 text-left">Expiry</th>
-
-              <th className="p-3 text-left">Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {!loading && rows.length === 0 && (
-              <tr>
-                <td colSpan={9} className="p-4 text-center text-gray-500">
-                  No stock records found
-                </td>
-              </tr>
-            )}
-
-            {rows.map((row) => (
-              <tr key={row.id} className="border-t">
-                <td className="p-3">{row.warehouse_name}</td>
-
-                <td className="p-3">{row.location_name}</td>
-
-                <td className="p-3">{row.quantity}</td>
-
-                <td className="p-3">{row.reserved_quantity}</td>
-
-                <td className="p-3">{row.available_quantity}</td>
-
-                <td className="p-3">{row.batch_no}</td>
-
-                <td className="p-3">{row.serial_no}</td>
-
-                <td className="p-3">
-                  {row.expiry_date
-                    ? new Date(row.expiry_date).toLocaleDateString()
-                    : ""}
-                </td>
-
-                <td className="p-3">
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(row)}
-                      className="text-blue-600"
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(row.id)}
-                      className="text-red-600"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white text-black w-[900px] rounded p-6 space-y-4">
-            <h3 className="text-lg font-semibold">
-              {editingId ? "Edit Stock" : "Add Stock"}
-            </h3>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block mb-1">Warehouse</label>
-
-                <select
-                  value={form.warehouse_id}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-
-                      warehouse_id: e.target.value,
-
-                      location_id: "",
-                    })
-                  }
-                  className="border p-2 w-full"
-                >
-                  <option value="">Select Warehouse</option>
-
-                  {warehouses.map((warehouse) => (
-                    <option key={warehouse.id} value={warehouse.id}>
-                      {warehouse.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block mb-1">Location</label>
-
-                <select
-                  value={form.location_id}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      location_id: e.target.value,
-                    })
-                  }
-                  className="border p-2 w-full"
-                >
-                  <option value="">Select Location</option>
-
-                  {filteredLocations.map((location) => (
-                    <option key={location.id} value={location.id}>
-                      {location.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block mb-1">Quantity</label>
-
-                <input
-                  value={form.quantity}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      quantity: e.target.value,
-                    })
-                  }
-                  className="border p-2 w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-1">Reserved Qty</label>
-
-                <input
-                  value={form.reserved_quantity}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      reserved_quantity: e.target.value,
-                    })
-                  }
-                  className="border p-2 w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-1">Unit Cost</label>
-
-                <input
-                  value={form.unit_cost}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      unit_cost: e.target.value,
-                    })
-                  }
-                  className="border p-2 w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-1">Batch No</label>
-
-                <input
-                  value={form.batch_no}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      batch_no: e.target.value,
-                    })
-                  }
-                  className="border p-2 w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-1">Serial No</label>
-
-                <input
-                  value={form.serial_no}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      serial_no: e.target.value,
-                    })
-                  }
-                  className="border p-2 w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-1">Expiry Date</label>
-
-                <input
-                  type="date"
-                  value={form.expiry_date}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      expiry_date: e.target.value,
-                    })
-                  }
-                  className="border p-2 w-full"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                className="border px-4 py-2 rounded"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                disabled={saving}
-                onClick={handleSubmit}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                {saving ? "Saving..." : editingId ? "Update" : "Save"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-} */
-
-/* "use client";
-
-export default function WarehouseTab({ itemId }: { itemId: string }) {
-  return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Warehouse Stock</h2>
-
-      <div className="border rounded overflow-auto">
-        <table className="w-full text-xs">
-          <thead className="bg-gray-100 text-black">
-            <tr>
-              <th className="p-3 text-left">Warehouse</th>
-
-              <th className="p-3 text-left">Location</th>
-
-              <th className="p-3 text-left">Quantity</th>
-
-              <th className="p-3 text-left">Reserved</th>
-
-              <th className="p-3 text-left">Available</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr>
-              <td colSpan={5} className="p-4 text-center text-gray-500">
-                No stock records found
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
       <p className="text-xs text-gray-500">Item ID: {itemId}</p>
     </div>
   );
