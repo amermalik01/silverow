@@ -1,22 +1,20 @@
 // app/[slug]/purchases/purchase-invoices/[id]/page.tsx
 
-import { PurchaseOrderForm } from "@/app/components/purchases/purchase-orders/PurchaseOrderForm";
+import { PurchaseInvoiceForm } from "@/app/components/purchases/purchase-invoices/PurchaseInvoiceForm";
 
-export default async function ViewPurchaseOrderPage({
-  params,
-}: {
+type Props = {
   params: Promise<{
     slug: string;
     id: string;
   }>;
-}) {
+};
+
+export default async function ViewPurchaseInvoicePage({ params }: Props) {
   const { slug, id } = await params;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold  px-4">View Purchase Invoice</h1>
-
-      <PurchaseOrderForm slug={slug} id={id} isReadOnly />
+    <div>
+      <PurchaseInvoiceForm slug={slug} id={id} />
     </div>
   );
 }
