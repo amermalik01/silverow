@@ -951,7 +951,25 @@ export class PurchaseOrderService {
     warehouseId: string,
     initialAllocations: PO_StockAllocationRecord[],
   ): Promise<void> {
-    // 1. Clear any existing manual entries for this specific line to prevent duplicates on update
+
+    // 1. Lock check: If stock has already been received on this line, protect allocations from deletion/modification
+    const lineCheck = await client.query(
+      `
+      SELECT COALESCE(received_quantity, 0) AS received_quantity
+      FROM purchase_order_lines
+      WHERE id = $1 AND company_id = $2
+      `,
+      [purchaseOrderLineId, companyId]
+    );
+
+    const receivedQty = Number(lineCheck.rows[0]?.received_quantity || 0);
+
+    if (receivedQty > 0) {
+      // Stock is already received against this line; skip allocation modifications to keep existing records intact
+      return;
+    }
+
+    // 2. Clear existing pre-receipt allocations for unreceived lines
     await client.query(
       `
       DELETE FROM inventory_allocations
@@ -962,7 +980,7 @@ export class PurchaseOrderService {
 
     if (!initialAllocations || !initialAllocations.length) return;
 
-    // 2. Insert the fresh mock/planned allocation array from the UI modal
+    // 3. Insert fresh allocation records
     for (const alloc of initialAllocations) {
       await client.query(
         `

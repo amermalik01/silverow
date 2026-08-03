@@ -17,13 +17,6 @@ import {
 } from "@/types/purchase-order";
 
 import PurchaseOrderLines from "./PurchaseOrderLines";
-
-// import SupplierLookupModal, {
-//   SupplierLookupItem,
-// } from "@/app/components/shared/modals/SupplierLookupModal";
-
-import { PurchaseOrderPayloadInput } from "@/lib/validations/purchase-order.schema";
-import { Checkbox } from "@radix-ui/react-checkbox";
 import { OrderFormTabs } from "./OrderFormTabs";
 import { StockReceiveConfirmModal } from "@/app/components/shared/modals/StockReceiveConfirmModal";
 import SupplierLookupModal, { SupplierLookupItem } from "./SupplierLookupModal";
@@ -120,6 +113,19 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     currency_id: "",
     exchange_rate: 1,
   });
+
+  // Check if all line items with quantity > 0 have been received
+  const isFullyReceived = useMemo(() => {
+    if (lines.length === 0) return false;
+    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
+    if (itemLines.length === 0) return false;
+
+    return itemLines.every((l) => {
+      const qty = Number(l.quantity || 0);
+      const rcvd = Number(l.received_quantity || 0);
+      return qty > 0 && rcvd >= qty;
+    });
+  }, [lines]);
 
   useEffect(() => {
     if (!id) return;
@@ -862,8 +868,13 @@ export const PurchaseOrderForm: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setShowReceiveModal(true)}
-                disabled={isPosting}
-                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+                disabled={isPosting || isFullyReceived}
+                className={`px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded transition-colors ${
+                  isFullyReceived
+                    ? "text-amber-500 dark:text-amber-400 opacity-60 cursor-not-allowed"
+                    : "text-amber-600 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700"
+                }`}
+                // className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
               >
                 Receive Stock
               </button>

@@ -35,6 +35,13 @@ export default function PurchasePostingGroupsPage() {
           required: true,
         },
         {
+          name: "grni_account_id",
+          label: "GRNI Account (Goods Received Not Invoiced)",
+          type: "select",
+          options: accountOptions,
+          required: true,
+        },
+        {
           name: "purchase_account_id",
           label: "Purchase Account",
           type: "select",
@@ -63,6 +70,7 @@ export default function PurchasePostingGroupsPage() {
       columns={[
         { name: "name", label: "Name", sortable: true },
         { name: "payable_account", label: "Payable Account" },
+        { name: "grni_account", label: "GRNI Account" },
         { name: "purchase_account", label: "Purchase Account" },
         { name: "discount_account", label: "Discount Account" },
         { name: "vat_account", label: "VAT Account" },

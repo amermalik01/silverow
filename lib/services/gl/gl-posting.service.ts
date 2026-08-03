@@ -77,11 +77,22 @@ export class GLPostingService {
       );
     }
 
+    // Dynamically map GL source to your existing ref_modules keys
+    const moduleSequenceMap: Record<string, string> = {
+      PURCHASE: "supplier_journal",
+      SALES: "customer_journal",
+      INVENTORY: "item_journal",
+      GENERAL: "gl_journal",
+    };
+
+    const sequenceModule = moduleSequenceMap[data.source] || "gl_journal";
+
     const seqResult = await client.query(
       `
       SELECT get_next_sequence($1,$2) AS code
       `,
-      [data.company_id, "journal_entry"],
+      // [data.company_id, "journal_entry"],
+      [data.company_id, sequenceModule],
     );
 
     const entryNo = seqResult.rows[0].code;
@@ -210,26 +221,35 @@ export class GLPostingService {
       );
 
       // 2. 🌟 NEW: Directly populate the gl_ledger_entries table for real-time reporting!
+
+      let partyType: "customer" | "supplier" | "employee" | null = null;
+
+      if (data.source === "PURCHASE") {
+        partyType = "supplier";
+      } else if (data.source === "SALES") {
+        partyType = "customer";
+      }
+
       await client.query(
         `
-    INSERT INTO gl_ledger_entries (
-      company_id,
-      account_id,
-      source_journal_id,
-      entry_no,
-      posting_date,
-      source_type,
-      reference,
-      description,
-      debit,
-      credit,
-      party_type,
-      party_id,
-      document_no,
-      posted_by
-    )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-    `,
+        INSERT INTO gl_ledger_entries (
+          company_id,
+          account_id,
+          source_journal_id,
+          entry_no,
+          posting_date,
+          source_type,
+          reference,
+          description,
+          debit,
+          credit,
+          party_type,
+          party_id,
+          document_no,
+          posted_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        `,
         [
           data.company_id,
           line.account_id,
@@ -241,8 +261,8 @@ export class GLPostingService {
           line.description || data.description,
           line.debit || 0,
           line.credit || 0,
-          data.source === "PURCHASE" ? "VENDOR" : null, // Sets your sub-ledger dimension type
-          line.party_id || null, // Vendor ID
+          partyType,
+          line.party_id || null,
           data.reference || null,
           data.created_by || null,
         ],

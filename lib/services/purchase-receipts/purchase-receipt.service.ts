@@ -1,4 +1,4 @@
-//  lib/services/purchase-receipts/purchase-receipt.service.ts 
+//  lib/services/purchase-receipts/purchase-receipt.service.ts
 
 import { pool } from "@/lib/db";
 import { PoolClient } from "pg";
@@ -7,6 +7,7 @@ import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
 import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 import { JournalLineInput } from "@/types/journal";
+import { UnifiedInventoryEngineService } from "@/lib/services/inventory/unified-inventory-engine.service";
 
 export class PurchaseReceiptService {
   /**
@@ -16,7 +17,11 @@ export class PurchaseReceiptService {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      const receipt = await this.createTransactional(client, companyId, payload);
+      const receipt = await this.createTransactional(
+        client,
+        companyId,
+        payload,
+      );
       await client.query("COMMIT");
       return receipt;
     } catch (err) {
@@ -30,7 +35,11 @@ export class PurchaseReceiptService {
   /**
    * Transactional creation engine designed to be safely combined with other services (e.g. Allocation Engine)
    */
-  static async createTransactional(client: PoolClient, companyId: string, payload: PurchaseReceiptPayload) {
+  static async createTransactional(
+    client: PoolClient,
+    companyId: string,
+    payload: PurchaseReceiptPayload,
+  ) {
     const receiptResult = await client.query(
       `
       INSERT INTO purchase_receipts (
@@ -63,7 +72,9 @@ export class PurchaseReceiptService {
 
     for (const line of payload.lines) {
       if (!line.warehouse_id) {
-        throw new Error(`Warehouse identification is required for item ${line.item_id}`);
+        throw new Error(
+          `Warehouse identification is required for item ${line.item_id}`,
+        );
       }
 
       const qtyReceived = Number(line.quantity);
@@ -71,7 +82,7 @@ export class PurchaseReceiptService {
         throw new Error("Receipt quantity must be greater than zero");
       }
 
-      // Validate remaining purchase orders capacity to prevent over-receiving
+      // 1. Prevent over-receiving on Purchase Order lines
       if (line.purchase_order_line_id) {
         const poLineResult = await client.query(
           `
@@ -83,11 +94,14 @@ export class PurchaseReceiptService {
         );
 
         if (!poLineResult.rows.length) {
-          throw new Error(`Purchase Order line ${line.purchase_order_line_id} not found`);
+          throw new Error(
+            `Purchase Order line ${line.purchase_order_line_id} not found`,
+          );
         }
 
         const poLine = poLineResult.rows[0];
-        const remainingAllowed = Number(poLine.quantity) - Number(poLine.received_quantity || 0);
+        const remainingAllowed =
+          Number(poLine.quantity) - Number(poLine.received_quantity || 0);
 
         if (qtyReceived > Number(remainingAllowed.toFixed(6))) {
           throw new Error(
@@ -96,7 +110,7 @@ export class PurchaseReceiptService {
         }
       }
 
-      // 3. Insert Purchase Receipt Line
+      // 2. Save Purchase Receipt Line Row
       const unitCost = Number(line.unit_cost);
       const totalCost = Number((qtyReceived * unitCost).toFixed(2));
 
@@ -132,38 +146,32 @@ export class PurchaseReceiptService {
 
       const receiptLine = lineResult.rows[0];
 
-      // 4. Insert into core Inventory Ledger Engine (Inbound Layer Setup)
-      await client.query(
-        `
-        INSERT INTO inventory_ledger_entries (
-          company_id, posting_date, transaction_type,
-          reference_type, reference_id, reference_line_id,
-          item_id, warehouse_id, location_id, bin_code,
-          batch_no, serial_no, expiry_date,
-          quantity, remaining_quantity, unit_cost, total_cost,
-          direction, status
-        )
-        VALUES ($1, $2, 'PURCHASE_RECEIPT', 'PURCHASE_RECEIPT', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, $13, $14, 'IN', 'OPEN')
-        `,
-        [
+      // 3. Delegate to Unified Inventory Engine (Inbound Ledger Entry & Reservation Consumption)
+      const { ledgerEntry, ppvAmount } =
+        await UnifiedInventoryEngineService.processInboundStock(
+          client,
           companyId,
           receipt.posting_date,
-          receipt.id,
-          receiptLine.id,
-          line.item_id,
-          line.warehouse_id,
-          line.location_id || null,
-          line.bin_code || null,
-          line.batch_no || null,
-          line.serial_no || null,
-          line.expiry_date || null,
-          qtyReceived,
-          unitCost,
-          totalCost,
-        ],
-      );
+          "PURCHASE_RECEIPT",
+          {
+            item_id: line.item_id,
+            warehouse_id: line.warehouse_id,
+            location_id: line.location_id,
+            bin_code: line.bin_code,
+            batch_no: line.batch_no,
+            serial_no: line.serial_no,
+            expiry_date: line.expiry_date,
+            quantity: qtyReceived,
+            unit_cost: unitCost,
+            reference_type: "PURCHASE_RECEIPT",
+            reference_id: receipt.id,
+            reference_line_id: receiptLine.id,
+          },
+        );
 
-      // 5. Insert into GRNI Tracking Engine for later three-way invoice matching
+      const inventoryValueToCapitalize = Number(ledgerEntry.total_cost);
+
+      // 4. Create GRNI entry for invoice matching
       await client.query(
         `
         INSERT INTO grni_entries (
@@ -183,48 +191,7 @@ export class PurchaseReceiptService {
         ],
       );
 
-      // 6. Handle Reservations Management (Consume Active Allocations)
-      if (line.purchase_order_line_id) {
-        const reservationResult = await client.query(
-          `
-          SELECT id, reserved_quantity, consumed_quantity 
-          FROM inventory_reservations 
-          WHERE reference_id = $1 AND status IN ('OPEN', 'PARTIAL') 
-          ORDER BY created_at ASC 
-          FOR UPDATE
-          `,
-          [line.purchase_order_line_id],
-        );
-
-        let remainingToConsume = qtyReceived;
-
-        for (const reservation of reservationResult.rows) {
-          if (remainingToConsume <= 0) break;
-
-          const currentConsumed = Number(reservation.consumed_quantity || 0);
-          const availableToConsume = Number(reservation.reserved_quantity) - currentConsumed;
-
-          if (availableToConsume <= 0) continue;
-
-          const consumeQty = Math.min(availableToConsume, remainingToConsume);
-          const nextConsumedTotal = Number((currentConsumed + consumeQty).toFixed(6));
-          const isFullyConsumed = nextConsumedTotal >= Number(Number(reservation.reserved_quantity).toFixed(6));
-          const nextStatus = isFullyConsumed ? "CONSUMED" : "PARTIAL";
-
-          await client.query(
-            `
-            UPDATE inventory_reservations
-            SET consumed_quantity = $1, status = $2, updated_at = NOW()
-            WHERE id = $3
-            `,
-            [nextConsumedTotal, nextStatus, reservation.id],
-          );
-
-          remainingToConsume = Number((remainingToConsume - consumeQty).toFixed(6));
-        }
-      }
-
-      // 7. Update Parent Purchase Order Document Line Metrics
+      // 5. Update Purchase Order Line Received Quantities
       if (line.purchase_order_line_id) {
         await client.query(
           `
@@ -236,22 +203,42 @@ export class PurchaseReceiptService {
         );
       }
 
-      // 8. Build Financial Accounting Ledger Vectors
-      const accounts = await AccountResolutionService.resolvePurchaseAccounts(client, companyId, line.item_id);
+      // 6. Build General Ledger Posting Entries
+      const accounts = await AccountResolutionService.resolvePurchaseAccounts(
+        client,
+        companyId,
+        line.item_id,
+      );
 
       // DR - Inventory Asset (Interim)
       glLines.push({
         account_id: accounts.inventory_account_id,
-        debit: totalCost,
+        debit: inventoryValueToCapitalize,
         credit: 0,
         item_id: line.item_id,
         warehouse_id: line.warehouse_id,
         quantity: qtyReceived,
-        unit_cost: unitCost,
+        unit_cost: Number(ledgerEntry.unit_cost),
         reference_type: "PURCHASE_RECEIPT",
         reference_id: receipt.id,
         description: `Asset receipt for item ${line.item_id}`,
       });
+
+      // Handle Purchase Price Variance (Standard Costing)
+      if (ppvAmount !== 0) {
+        glLines.push({
+          account_id: accounts.purchase_price_variance_account_id,
+          debit: ppvAmount > 0 ? ppvAmount : 0,
+          credit: ppvAmount < 0 ? Math.abs(ppvAmount) : 0,
+          item_id: line.item_id,
+          warehouse_id: line.warehouse_id,
+          quantity: qtyReceived,
+          unit_cost: Math.abs(ppvAmount / qtyReceived),
+          reference_type: "PURCHASE_RECEIPT",
+          reference_id: receipt.id,
+          description: `Purchase Price Variance for item ${line.item_id}`,
+        });
+      }
 
       // CR - GRNI Liability (Interim Clearing Acc)
       glLines.push({
@@ -268,7 +255,7 @@ export class PurchaseReceiptService {
       });
     }
 
-    // 9. Balance Validation & G/L Entry Generation
+    // 7. Validate GL Balance & Post Journal
     GLValidationService.validateBalanced(glLines);
 
     await GLPostingService.postJournal(client, {
@@ -282,7 +269,7 @@ export class PurchaseReceiptService {
       lines: glLines,
     });
 
-    // 10. Seal Document Posting Status Flags
+    // 8. Seal Receipt Posting Status
     await client.query(
       `
       UPDATE purchase_receipts 
@@ -292,7 +279,7 @@ export class PurchaseReceiptService {
       [receipt.id],
     );
 
-    // 11. Update Global Purchase Order Parent Workflow Pipeline Status
+    // 9. Update Purchase Order Workflow Status
     await client.query(
       `
       UPDATE purchase_orders po
@@ -302,8 +289,8 @@ export class PurchaseReceiptService {
           WHERE pol.purchase_order_id = po.id
             AND COALESCE(pol.received_quantity, 0) < COALESCE(pol.quantity, 0)
             AND COALESCE(pol.is_deleted, false) = false
-        ) THEN 'received'::text
-        ELSE 'partial_received'::text
+        ) THEN 'received'::purchase_order_status_enum
+        ELSE 'partial_received'::purchase_order_status_enum
       END,
       updated_at = NOW()
       WHERE po.id = $1
@@ -317,7 +304,10 @@ export class PurchaseReceiptService {
   /**
    * Safely reverses allocations, ledger layers, general ledger distributions, and drops a line element
    */
-  static async safeDeleteReceiptLine(companyId: string, purchaseReceiptLineId: string) {
+  static async safeDeleteReceiptLine(
+    companyId: string,
+    purchaseReceiptLineId: string,
+  ) {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
@@ -327,7 +317,8 @@ export class PurchaseReceiptService {
         `SELECT * FROM purchase_receipt_lines WHERE id = $1 AND company_id = $2 FOR UPDATE`,
         [purchaseReceiptLineId, companyId],
       );
-      if (!lineRes.rows.length) throw new Error("Receipt line target item record not found.");
+      if (!lineRes.rows.length)
+        throw new Error("Receipt line target item record not found.");
       const receiptLine = lineRes.rows[0];
 
       // 2. Validate if the associated inventory has already been issued outward
@@ -337,8 +328,11 @@ export class PurchaseReceiptService {
         [purchaseReceiptLineId],
       );
 
+      let effectiveLedgerUnitCost = Number(receiptLine.unit_cost);
+
       if (layerRes.rows.length) {
         const layer = layerRes.rows[0];
+        effectiveLedgerUnitCost = Number(layer.unit_cost);
         if (Number(layer.remaining_quantity) !== Number(layer.quantity)) {
           throw new Error(
             "Cannot modify line. Part of this inventory batch has already been consumed by downstream transactions.",
@@ -355,7 +349,10 @@ export class PurchaseReceiptService {
       );
 
       // 4. Clean out GRNI entries
-      await client.query(`DELETE FROM grni_entries WHERE purchase_receipt_line_id = $1`, [purchaseReceiptLineId]);
+      await client.query(
+        `DELETE FROM grni_entries WHERE purchase_receipt_line_id = $1`,
+        [purchaseReceiptLineId],
+      );
 
       // 5. Deduct received quantity figures from the original parent purchase contract sheet
       if (receiptLine.purchase_order_line_id) {
@@ -368,27 +365,41 @@ export class PurchaseReceiptService {
       }
 
       // 6. Generate financial reversal vectors (Swap Credit/Debit locations to zero out interim states)
-      const accounts = await AccountResolutionService.resolvePurchaseAccounts(client, companyId, receiptLine.item_id);
+      const accounts = await AccountResolutionService.resolvePurchaseAccounts(
+        client,
+        companyId,
+        receiptLine.item_id,
+      );
+
+      const qty = Number(receiptLine.quantity);
+      const totalPOValue = Number(receiptLine.total_cost);
+      const inventoryReversalVal = Number(
+        (qty * effectiveLedgerUnitCost).toFixed(2),
+      );
+      const ppvReversalVal = Number(
+        (totalPOValue - inventoryReversalVal).toFixed(2),
+      );
+
       const reversalGlLines: JournalLineInput[] = [
         {
           account_id: accounts.inventory_account_id,
           debit: 0,
-          credit: Number(receiptLine.total_cost),
+          credit: inventoryReversalVal,
           item_id: receiptLine.item_id,
           warehouse_id: receiptLine.warehouse_id,
-          quantity: Number(receiptLine.quantity),
-          unit_cost: Number(receiptLine.unit_cost),
+          quantity: qty,
+          unit_cost: effectiveLedgerUnitCost,
           reference_type: "PURCHASE_RECEIPT",
           reference_id: receiptLine.purchase_receipt_id,
           description: `Reversal of asset receipt line ${purchaseReceiptLineId}`,
         },
         {
           account_id: accounts.grni_account_id,
-          debit: Number(receiptLine.total_cost),
+          debit: totalPOValue,
           credit: 0,
           item_id: receiptLine.item_id,
           warehouse_id: receiptLine.warehouse_id,
-          quantity: Number(receiptLine.quantity),
+          quantity: qty,
           unit_cost: Number(receiptLine.unit_cost),
           reference_type: "PURCHASE_RECEIPT",
           reference_id: receiptLine.purchase_receipt_id,
@@ -396,8 +407,23 @@ export class PurchaseReceiptService {
         },
       ];
 
+      if (ppvReversalVal !== 0) {
+        reversalGlLines.push({
+          account_id: accounts.purchase_price_variance_account_id,
+          debit: ppvReversalVal < 0 ? Math.abs(ppvReversalVal) : 0,
+          credit: ppvReversalVal > 0 ? ppvReversalVal : 0,
+          item_id: receiptLine.item_id,
+          warehouse_id: receiptLine.warehouse_id,
+          quantity: qty,
+          unit_cost: Math.abs(ppvReversalVal / qty),
+          reference_type: "PURCHASE_RECEIPT",
+          reference_id: receiptLine.purchase_receipt_id,
+          description: `Reversal of Purchase Price Variance line ${purchaseReceiptLineId}`,
+        });
+      }
+
       GLValidationService.validateBalanced(reversalGlLines);
-      
+
       await GLPostingService.postJournal(client, {
         company_id: companyId,
         entry_date: new Date().toISOString().split("T")[0],
@@ -424,9 +450,9 @@ export class PurchaseReceiptService {
       // 9. Synchronize Global Purchase Order Status Pipeline State
       const poFetch = await client.query(
         `SELECT purchase_order_id FROM purchase_receipts WHERE id = $1`,
-        [receiptLine.purchase_receipt_id]
+        [receiptLine.purchase_receipt_id],
       );
-      
+
       if (poFetch.rows.length) {
         await client.query(
           `
@@ -437,18 +463,39 @@ export class PurchaseReceiptService {
               WHERE pol.purchase_order_id = po.id
                 AND COALESCE(pol.received_quantity, 0) < COALESCE(pol.quantity, 0)
                 AND COALESCE(pol.is_deleted, false) = false
-            ) THEN 'received'::text
+            ) THEN 'received'::purchase_order_status_enum
             WHEN EXISTS (
               SELECT 1 FROM purchase_order_lines pol
               WHERE pol.purchase_order_id = po.id AND COALESCE(pol.received_quantity, 0) > 0
-            ) THEN 'partial_received'::text
-            ELSE 'open'::text
+            ) THEN 'partial_received'::purchase_order_status_enum
+            ELSE 'open'::purchase_order_status_enum
           END,
           updated_at = NOW()
           WHERE po.id = $1
           `,
           [poFetch.rows[0].purchase_order_id],
         );
+        // await client.query(
+        //   `
+        //   UPDATE purchase_orders po
+        //   SET status = CASE
+        //     WHEN NOT EXISTS (
+        //       SELECT 1 FROM purchase_order_lines pol
+        //       WHERE pol.purchase_order_id = po.id
+        //         AND COALESCE(pol.received_quantity, 0) < COALESCE(pol.quantity, 0)
+        //         AND COALESCE(pol.is_deleted, false) = false
+        //     ) THEN 'received'::text
+        //     WHEN EXISTS (
+        //       SELECT 1 FROM purchase_order_lines pol
+        //       WHERE pol.purchase_order_id = po.id AND COALESCE(pol.received_quantity, 0) > 0
+        //     ) THEN 'partial_received'::text
+        //     ELSE 'open'::text
+        //   END,
+        //   updated_at = NOW()
+        //   WHERE po.id = $1
+        //   `,
+        //   [poFetch.rows[0].purchase_order_id],
+        // );
       }
 
       await client.query("COMMIT");
@@ -461,3 +508,101 @@ export class PurchaseReceiptService {
     }
   }
 }
+
+// 4. Insert into core Inventory Ledger Engine (Inbound Layer Setup)
+// await client.query(
+//   `
+//   INSERT INTO inventory_ledger_entries (
+//     company_id, posting_date, transaction_type,
+//     reference_type, reference_id, reference_line_id,
+//     item_id, warehouse_id, location_id, bin_code,
+//     batch_no, serial_no, expiry_date,
+//     quantity, remaining_quantity, unit_cost, total_cost,
+//     direction, status
+//   )
+//   VALUES ($1, $2, 'PURCHASE_RECEIPT', 'PURCHASE_RECEIPT', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, $13, $14, 'IN', 'OPEN')
+//   `,
+//   [
+//     companyId,
+//     receipt.posting_date,
+//     receipt.id,
+//     receiptLine.id,
+//     line.item_id,
+//     line.warehouse_id,
+//     line.location_id || null,
+//     line.bin_code || null,
+//     line.batch_no || null,
+//     line.serial_no || null,
+//     line.expiry_date || null,
+//     qtyReceived,
+//     unitCost,
+//     totalCost,
+//   ],
+// );
+
+// 6. Handle Reservations Management (Consume Active Allocations)
+/* if (line.purchase_order_line_id) {
+        const reservationResult = await client.query(
+          `
+          SELECT id, reserved_quantity, consumed_quantity 
+          FROM inventory_reservations 
+          WHERE reference_id = $1 AND status IN ('OPEN', 'PARTIAL') 
+          ORDER BY created_at ASC 
+          FOR UPDATE
+          `,
+          [line.purchase_order_line_id],
+        );
+
+        let remainingToConsume = qtyReceived;
+
+        for (const reservation of reservationResult.rows) {
+          if (remainingToConsume <= 0) break;
+
+          const currentConsumed = Number(reservation.consumed_quantity || 0);
+          const availableToConsume =
+            Number(reservation.reserved_quantity) - currentConsumed;
+
+          if (availableToConsume <= 0) continue;
+
+          const consumeQty = Math.min(availableToConsume, remainingToConsume);
+          const nextConsumedTotal = Number(
+            (currentConsumed + consumeQty).toFixed(6),
+          );
+          const isFullyConsumed =
+            nextConsumedTotal >=
+            Number(Number(reservation.reserved_quantity).toFixed(6));
+          const nextStatus = isFullyConsumed ? "CONSUMED" : "PARTIAL";
+
+          await client.query(
+            `
+            UPDATE inventory_reservations
+            SET consumed_quantity = $1, status = $2, updated_at = NOW()
+            WHERE id = $3
+            `,
+            [nextConsumedTotal, nextStatus, reservation.id],
+          );
+
+          remainingToConsume = Number(
+            (remainingToConsume - consumeQty).toFixed(6),
+          );
+        }
+      }
+
+      // 7. Update Parent Purchase Order Document Line Metrics
+      if (line.purchase_order_line_id) {
+        await client.query(
+          `
+          UPDATE purchase_order_lines 
+          SET received_quantity = COALESCE(received_quantity, 0) + $1, updated_at = NOW()
+          WHERE id = $2
+          `,
+          [qtyReceived, line.purchase_order_line_id],
+        );
+      } */
+
+/* // 8. Build Financial Accounting Ledger Vectors
+      const accounts = await AccountResolutionService.resolvePurchaseAccounts(
+        client,
+        companyId,
+        line.item_id,
+      ); */

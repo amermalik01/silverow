@@ -8,6 +8,17 @@ export type AccountContext =
   | "SALES_INVOICE"
   | "INVENTORY_ADJUSTMENT";
 
+
+export interface ResolvedPurchaseAccounts {
+  inventory_account_id: string;
+  cogs_account_id: string;
+  purchase_account_id: string;
+  grni_account_id: string;
+  payable_account_id: string;
+  vat_account_id: string;
+  purchase_price_variance_account_id: string; // <-- Add to interface
+}
+
 export class AccountResolutionService {
   /**
    * =========================================================
@@ -18,7 +29,7 @@ export class AccountResolutionService {
     client: PoolClient,
     companyId: string,
     itemId: string,
-  ) {
+  ): Promise<ResolvedPurchaseAccounts> {
     // 1. Fetch Item along with its assigned posting group ID and direct GL overrides
     const itemResult = await client.query(
       `
@@ -73,7 +84,7 @@ export class AccountResolutionService {
     if (item.inventory_posting_group_id) {
       const specificIpgResult = await client.query(
         `
-        SELECT inventory_account_id, cogs_account_id
+        SELECT inventory_account_id, cogs_account_id, adjustment_account_id
         FROM inventory_posting_groups
         WHERE id = $1 AND company_id = $2
         `,
@@ -86,7 +97,7 @@ export class AccountResolutionService {
     if (!ipg) {
       const defaultIpgResult = await client.query(
         `
-        SELECT inventory_account_id, cogs_account_id
+        SELECT inventory_account_id, cogs_account_id, adjustment_account_id
         FROM inventory_posting_groups
         WHERE company_id = $1
         ORDER BY id ASC
@@ -106,6 +117,8 @@ export class AccountResolutionService {
     const cogsAccountId = item.cogs_gl_id || ipg.cogs_account_id;
     const purchaseAccountId = item.purchase_gl_id || ppg.purchase_account_id;
 
+    const ppvAccountId = purchaseAccountId;
+
     if (!inventoryAccountId) {
       throw new Error(
         "Inventory account could not be resolved. Check inventory posting group setup.",
@@ -123,6 +136,7 @@ export class AccountResolutionService {
       grni_account_id: ppg.grni_account_id,
       payable_account_id: ppg.payable_account_id,
       vat_account_id: ppg.vat_account_id || null,
+      purchase_price_variance_account_id: ppvAccountId,
     };
   }
 

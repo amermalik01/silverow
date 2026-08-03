@@ -8,7 +8,7 @@ import {
   PurchaseOrderLine,
   PurchaseOrderLineUI,
 } from "@/types/purchase-order";
-// import MigrationUploader from "@/app/components/migration/MigrationUploader";
+
 import MigrationUploadModal from "@/app/components/migration/MigrationUploadModal";
 
 import ItemLookupModal, {
@@ -75,6 +75,7 @@ export default function PurchaseOrderLines({
         vat_amount: 0,
         gross_amount: 0,
         is_allocated: false,
+        received_quantity: 0,
       },
     ]);
   };
@@ -279,6 +280,14 @@ export default function PurchaseOrderLines({
 
             {lines.map((line, index) => {
               const displayQty = Number(line.quantity || 0);
+              const receivedQty = Number(line.received_quantity || 0);
+              const isStockReceived = receivedQty > 0;
+              const isFullyReceived =
+                receivedQty >= displayQty && displayQty > 0;
+
+              // Line locking rule: if global isReadonly OR line has received stock
+              const isLineDisabled = isReadonly || isStockReceived;
+
               const displayUnitCost = Number(line.unit_cost || 0);
               const displayDiscountValue = Number(line.discount_value || 0);
               const displayVatPercent = Number(line.vat_percent || 0);
@@ -292,19 +301,24 @@ export default function PurchaseOrderLines({
               return (
                 <tr
                   key={index}
-                  className="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
+                  className={`border-b transition-colors ${
+                    isStockReceived
+                      ? "bg-slate-50/70 dark:bg-slate-800/30"
+                      : "bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+                  }`}
+                  // className="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
                 >
                   <td className="p-2">
                     <select
                       value={line.line_type || "ITEM"}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(e) =>
                         changeLineType(
                           index,
                           e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
                         )
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-[100px]"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-[100px] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <option value="ITEM">Item</option>
                       <option value="GL_ACCOUNT">G/L</option>
@@ -316,9 +330,9 @@ export default function PurchaseOrderLines({
                       <div className="space-y-1">
                         <button
                           type="button"
-                          disabled={isReadonly}
+                          disabled={isLineDisabled}
                           onClick={() => setItemIndex(index)}
-                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {line.item_code || "Select Item"}
                         </button>
@@ -335,9 +349,9 @@ export default function PurchaseOrderLines({
                       <div className="space-y-1">
                         <button
                           type="button"
-                          disabled={isReadonly}
+                          disabled={isLineDisabled}
                           onClick={() => setGlIndex(index)}
-                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {line.account_code || "Select GL"}
                         </button>
@@ -354,11 +368,11 @@ export default function PurchaseOrderLines({
                   <td className="p-2">
                     <textarea
                       value={line.description || ""}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(e) =>
                         updateLine(index, "description", e.target.value)
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-xs"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-xs disabled:opacity-60 disabled:cursor-not-allowed"
                       rows={2}
                     />
                   </td>
@@ -367,12 +381,25 @@ export default function PurchaseOrderLines({
                     <input
                       type="number"
                       value={displayQty}
-                      disabled={isReadonly || line.line_type === "COMMENT"}
+                      disabled={isLineDisabled || line.line_type === "COMMENT"}
                       onChange={(e) =>
                         updateLine(index, "quantity", Number(e.target.value))
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
                     />
+
+                    {/* RECEIVED STOCK INDICATOR BADGE */}
+                    {isStockReceived && (
+                      <div
+                        className={`text-[10px] font-medium px-1.5 py-0.5 rounded text-center whitespace-nowrap ${
+                          isFullyReceived
+                            ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800"
+                            : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800"
+                        }`}
+                      >
+                        Rcvd: {receivedQty} / {displayQty}
+                      </div>
+                    )}
                   </td>
 
                   <td className="p-2">
@@ -386,9 +413,9 @@ export default function PurchaseOrderLines({
                       <div className="space-y-1">
                         <button
                           type="button"
-                          disabled={isReadonly}
+                          disabled={isLineDisabled}
                           onClick={() => setWarehouseIndex(index)}
-                          className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-xs bg-white dark:bg-slate-800 flex items-center justify-between gap-3"
+                          className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-xs bg-white dark:bg-slate-800 flex items-center justify-between gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           <span className="truncate text-left">
                             {line.warehouse_code || "Select Warehouse"}
@@ -424,22 +451,22 @@ export default function PurchaseOrderLines({
                     <input
                       type="number"
                       value={displayUnitCost}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(e) =>
                         updateLine(index, "unit_cost", Number(e.target.value))
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                   </td>
 
                   <td className="p-2">
                     <select
                       value={line.discount_type || "PERCENT"}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(e) =>
                         handleDiscountTypeChange(index, e.target.value)
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <option value="PERCENT">%</option>
                       <option value="FIXED">Fixed</option>
@@ -450,7 +477,7 @@ export default function PurchaseOrderLines({
                     <input
                       type="number"
                       value={displayDiscountValue}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(e) =>
                         updateLine(
                           index,
@@ -458,7 +485,7 @@ export default function PurchaseOrderLines({
                           Number(e.target.value),
                         )
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                   </td>
 
@@ -466,11 +493,11 @@ export default function PurchaseOrderLines({
                     <input
                       type="number"
                       value={displayVatPercent}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(e) =>
                         updateLine(index, "vat_percent", Number(e.target.value))
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                   </td>
 
@@ -493,6 +520,46 @@ export default function PurchaseOrderLines({
                               setActiveAllocationRowKey(index.toString());
                               setIsAllocationModalOpen(true);
                             }}
+                            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                            title={
+                              isStockReceived
+                                ? `Stock Received (${receivedQty}/${displayQty}).`
+                                : line.is_allocated
+                                  ? "Allocated Stock"
+                                  : "Partially Allocated"
+                            }
+                            // title={
+                            //   isStockReceived
+                            //     ? `Stock Received (${receivedQty}/${displayQty}). Allocation locked.`
+                            //     : isAllocationDisabled
+                            //       ? "Requires item and warehouse assignment first"
+                            //       : "Open Allocation Matrix"
+                            // }
+                          >
+                            <span
+                              className={`inline-block w-3 h-3 rounded-full transition-all ${
+                                // 🟡 YELLOW / AMBER = Stock Received
+                                isStockReceived
+                                  ? "bg-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
+                                  : // 🟢 GREEN = Allocated Stock (Fully allocated)
+                                    line.is_allocated
+                                    ? "bg-emerald-500"
+                                    : // 🔴 RED = Partially Allocated (Not fully allocated yet)
+                                      "bg-rose-500"
+                              }`}
+                            />
+                          </button>
+                        ) : (
+                          <div className="w-4 h-4" />
+                        )}
+
+                        {/* <button
+                            type="button"
+                            disabled={isAllocationDisabled}
+                            onClick={() => {
+                              setActiveAllocationRowKey(index.toString());
+                              setIsAllocationModalOpen(true);
+                            }}
                             className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
                             title={
                               isAllocationDisabled
@@ -507,18 +574,24 @@ export default function PurchaseOrderLines({
                                   : "bg-rose-500"
                               }`}
                             />
+                          </button> */}
+                        {/* REMOVE BUTTON: Hidden or Disabled once stock is received */}
+                        {!isStockReceived ? (
+                          <button
+                            type="button"
+                            onClick={() => removeLine(index)}
+                            className="text-red-600 hover:text-red-800 font-medium text-xs"
+                          >
+                            Remove
                           </button>
                         ) : (
-                          <div className="w-4 h-4" />
+                          <span
+                            className="text-[10px] text-slate-400 italic cursor-help"
+                            title="Line locked because stock has been received against it."
+                          >
+                            Locked
+                          </span>
                         )}
-
-                        <button
-                          type="button"
-                          onClick={() => removeLine(index)}
-                          className="text-red-600 hover:text-red-800 font-medium"
-                        >
-                          Remove
-                        </button>
                       </div>
                     </td>
                   )}
