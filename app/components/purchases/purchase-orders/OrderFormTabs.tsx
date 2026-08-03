@@ -124,7 +124,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 type="text"
                 disabled
                 className={inputStyle}
-                value={order.order_no || ""}
+                value={order.order_no || order.invoice_no || ""}
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">

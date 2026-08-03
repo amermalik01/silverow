@@ -2,7 +2,10 @@
 
 import { pool } from "@/lib/db";
 import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
-import { GLPostingService, GLLineInput } from "@/lib/services/gl/gl-posting.service";
+import {
+  GLPostingService,
+  GLLineInput,
+} from "@/lib/services/gl/gl-posting.service";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 
 export interface PostInvoiceInput {
@@ -25,7 +28,8 @@ export interface PostInvoiceInput {
 export class PurchaseInvoicePostingService {
   static async postInvoice(input: PostInvoiceInput) {
     const client = await pool.connect();
-    const { companyId, purchaseOrderId, userId, invoiceData, financials } = input;
+    const { companyId, purchaseOrderId, userId, invoiceData, financials } =
+      input;
 
     try {
       await client.query("BEGIN");
@@ -36,7 +40,7 @@ export class PurchaseInvoicePostingService {
          FROM purchase_orders 
          WHERE id = $1 AND company_id = $2 
          FOR UPDATE`,
-        [purchaseOrderId, companyId]
+        [purchaseOrderId, companyId],
       );
 
       if (!poResult.rows.length) {
@@ -50,7 +54,7 @@ export class PurchaseInvoicePostingService {
         `SELECT id, item_id, warehouse_id, quantity, unit_cost, description, tax_percent, tax_amount, net_amount, gross_amount
          FROM purchase_order_lines 
          WHERE purchase_order_id = $1 AND company_id = $2 AND is_deleted = false`,
-        [purchaseOrderId, companyId]
+        [purchaseOrderId, companyId],
       );
 
       const lines = linesResult.rows;
@@ -58,10 +62,21 @@ export class PurchaseInvoicePostingService {
         throw new Error("Cannot post invoice for an order without lines.");
       }
 
+      // 2. 🌟 ENFORCE 3-WAY MATCHING (Scenario A: Goods-First Workflow)
+      const unreceivedLines = lines.filter(
+        (line) => Number(line.received_quantity) < Number(line.quantity),
+      );
+
+      if (unreceivedLines.length > 0) {
+        throw new Error(
+          "3-Way Match Failed: Cannot post invoice. Stock must be physically received before posting a purchase invoice.",
+        );
+      }
+
       // 3. Auto-generate sequence for invoice_no
       const seqResult = await client.query(
         `SELECT get_next_sequence($1, $2) AS code`,
-        [companyId, "purchase_invoice"]
+        [companyId, "purchase_invoice"],
       );
       const invoiceNo = seqResult.rows[0]?.code || `PINV-${Date.now()}`;
 
@@ -70,11 +85,12 @@ export class PurchaseInvoicePostingService {
 
       // Calculate total GRNI subtotal directly from order lines
       const grniSubtotal = lines.reduce(
-        (sum, line) => sum + Number(line.quantity) * Number(line.unit_cost || 0),
-        0
+        (sum, line) =>
+          sum + Number(line.quantity) * Number(line.unit_cost || 0),
+        0,
       );
       const vatAmount = Number(financials.vat || 0);
-      
+
       // Ensure Total Amount = GRNI Subtotal + VAT Amount
       const grossTotal = grniSubtotal + vatAmount;
 
@@ -109,7 +125,7 @@ export class PurchaseInvoicePostingService {
           grossTotal,
           invoiceData.notes || null,
           userId || null,
-        ]
+        ],
       );
 
       const createdInvoice = invResult.rows[0];
@@ -118,6 +134,13 @@ export class PurchaseInvoicePostingService {
       let fallbackApAccountId: string | null = null;
       let fallbackVatAccountId: string | null = null;
       let lineNo = 10000;
+
+      const companyRes = await client.query(
+        `SELECT inventory_system FROM companies WHERE id = $1`,
+        [companyId],
+      );
+      const inventorySystem =
+        companyRes.rows[0]?.inventory_system || "PERIODIC";
 
       // 5. Create Purchase Invoice Lines, resolve Accounts & build GRNI clearing lines
       for (const line of lines) {
@@ -155,14 +178,14 @@ export class PurchaseInvoicePostingService {
             line.tax_amount || 0,
             line.net_amount || lineTotal,
             line.gross_amount || lineTotal,
-          ]
+          ],
         );
         lineNo += 10000;
 
         const accounts = await AccountResolutionService.resolvePurchaseAccounts(
           client,
           companyId,
-          line.item_id
+          line.item_id,
         );
 
         if (!fallbackApAccountId && accounts.payable_account_id) {
@@ -172,25 +195,41 @@ export class PurchaseInvoicePostingService {
           fallbackVatAccountId = accounts.vat_account_id;
         }
 
-        // DEBIT: Clear GRNI Liability
-        glLines.push({
-          account_id: accounts.grni_account_id,
-          debit: lineTotal,
-          credit: 0,
-          party_id: po.supplier_id,
-          item_id: line.item_id,
-          warehouse_id: line.warehouse_id,
-          quantity: Number(line.quantity),
-          reference_type: "PURCHASE_INVOICE",
-          reference_id: createdInvoice.id,
-          description: `GRNI clearing for invoice ${createdInvoice.invoice_no}`,
-        });
+        if (inventorySystem === "PERPETUAL") {
+          // DEBIT: Clear GRNI Liability
+          glLines.push({
+            account_id: accounts.grni_account_id,
+            debit: lineTotal,
+            credit: 0,
+            party_id: po.supplier_id,
+            item_id: line.item_id,
+            warehouse_id: line.warehouse_id,
+            quantity: Number(line.quantity),
+            reference_type: "PURCHASE_INVOICE",
+            reference_id: createdInvoice.id,
+            description: `GRNI clearing for invoice ${createdInvoice.invoice_no}`,
+          });
+        } else {
+          // --- PERIODIC: Post directly to Purchase Expense / Direct Costs Account ---
+          glLines.push({
+            account_id: accounts.purchase_account_id, // e.g. 4000 Purchases / Direct Cost
+            debit: lineTotal,
+            credit: 0,
+            party_id: po.supplier_id,
+            item_id: line.item_id,
+            warehouse_id: line.warehouse_id,
+            quantity: Number(line.quantity),
+            reference_type: "PURCHASE_INVOICE",
+            reference_id: createdInvoice.id,
+            description: `Purchase expense for invoice ${createdInvoice.invoice_no}`,
+          });
+        }
 
         await client.query(
           `UPDATE purchase_order_lines 
            SET invoiced_quantity = quantity, updated_at = NOW() 
            WHERE id = $1`,
-          [line.id]
+          [line.id],
         );
       }
 
@@ -213,14 +252,22 @@ export class PurchaseInvoicePostingService {
 
       // 7. CREDIT: Accounts Payable (Vendor Total)
       if (!fallbackApAccountId) {
-        throw new Error("Accounts Payable account not configured in purchase posting groups.");
+        throw new Error(
+          "Accounts Payable account not configured in purchase posting groups.",
+        );
       }
+
+      // Make sure AP liability matches the computed total of (Line Debits + VAT Debit)
+      const totalDebitLinesAmount = glLines.reduce(
+        (sum, l) => sum + (l.debit || 0),
+        0,
+      );
 
       // Credit total must equal GRNI Subtotal + VAT
       glLines.push({
         account_id: fallbackApAccountId,
         debit: 0,
-        credit: grossTotal,
+        credit: Number(totalDebitLinesAmount.toFixed(2)),
         party_id: po.supplier_id,
         reference_type: "PURCHASE_INVOICE",
         reference_id: createdInvoice.id,
@@ -248,7 +295,7 @@ export class PurchaseInvoicePostingService {
         `UPDATE purchase_orders 
          SET status = 'completed', is_invoiced = true, updated_at = NOW() 
          WHERE id = $1`,
-        [purchaseOrderId]
+        [purchaseOrderId],
       );
 
       await client.query("COMMIT");

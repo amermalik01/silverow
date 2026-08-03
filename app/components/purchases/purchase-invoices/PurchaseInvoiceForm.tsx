@@ -32,7 +32,7 @@ type TabType = "general" | "invoicing" | "shipping";
 export const PurchaseInvoiceForm: React.FC<Props> = ({
   slug,
   id,
-  isReadOnly = false,
+  isReadOnly = true,
 }) => {
   const router = useRouter();
   const { data: session } = useSession();
@@ -141,7 +141,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
     return { amount, vat, amountInclVat, amountInclVatLCY };
   }, [lines, currencyConfig.exchange_rate]);
 
-  const handleSupplierSelect = (supplier: SupplierLookupItem) => {
+  /* const handleSupplierSelect = (supplier: SupplierLookupItem) => {
     setInvoice((prev) => ({
       ...prev,
       supplier_id: supplier.id,
@@ -166,7 +166,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
     }
 
     setSupplierModalOpen(false);
-  };
+  }; */
 
   const updateField = <K extends keyof PurchaseInvoice>(
     field: K,
@@ -445,227 +445,3 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
     </div>
   );
 };
-
-/* "use client";
-
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import PurchaseInvoiceStatusBadge from "./PurchaseInvoiceStatusBadge";
-
-// --- Types ---
-export interface InvoiceHeader {
-  id: string;
-  invoice_no: string;
-  supplier_invoice_no: string | null;
-  purchase_order_id: string | null;
-  purchase_order_no?: string | null;
-  supplier_id: string;
-  supplier_name?: string | null;
-  supplier_no?: string | null;
-  invoice_date: string;
-  due_date: string | null;
-  subtotal: number | string;
-  tax_amount: number | string;
-  total_amount: number | string;
-  status: string;
-}
-
-export interface InvoiceLine {
-  id: string;
-  line_no: number;
-  item_id: string | null;
-  item_code?: string | null;
-  item_name?: string | null;
-  description: string | null;
-  quantity: number | string;
-  unit_cost: number | string;
-  line_amount: number | string;
-}
-
-export interface InvoiceDetailData {
-  invoice: InvoiceHeader;
-  lines: InvoiceLine[];
-}
-
-interface Props {
-  slug: string;
-  id: string;
-}
-
-export default function PurchaseInvoiceViewForm({ slug, id }: Props) {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
-  const [data, setData] = useState<InvoiceDetailData | null>(null);
-
-  useEffect(() => {
-    async function fetchInvoice() {
-      try {
-        setLoading(true);
-        const res = await fetch(`/api/purchase-invoices/${id}`);
-        const json = await res.json();
-
-        if (!res.ok || !json.success) {
-          throw new Error(json.error || "Failed to load purchase invoice");
-        }
-
-        setData(json.data);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Something went wrong loading invoice details.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchInvoice();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="p-6 text-slate-500 rounded border dark:border-slate-800">
-        Loading invoice details...
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="p-6 text-red-600 bg-red-50 rounded border border-red-200 dark:bg-red-950/20">
-        {error || "Invoice record not found"}
-      </div>
-    );
-  }
-
-  const { invoice, lines } = data;
-
-  return (
-    <div className="space-y-6 container mx-auto p-4 text-xs">
-
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b dark:border-slate-800 pb-4 gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold">
-              Invoice #{invoice.invoice_no || "Draft"}
-            </h1>
-            <PurchaseInvoiceStatusBadge status={invoice.status} />
-          </div>
-          <p className="text-slate-500 text-xs">
-            Vendor Ref: <b>{invoice.supplier_invoice_no || "-"}</b>
-          </p>
-        </div>
-
-        <Link
-          href={`/${slug}/purchases/purchase-invoices`}
-          className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          Back to List
-        </Link>
-      </div>
-
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 p-4 rounded-xl shadow-sm">
-        <div>
-          <span className="text-slate-400 block mb-1">Supplier</span>
-          <p className="font-semibold text-sm">
-            {invoice.supplier_name || "-"}
-          </p>
-          <p className="text-slate-500">{invoice.supplier_no || ""}</p>
-        </div>
-
-        <div>
-          <span className="text-slate-400 block mb-1">Order Reference</span>
-          {invoice.purchase_order_id ? (
-            <Link
-              href={`/${slug}/purchases/purchase-orders/${invoice.purchase_order_id}`}
-              className="text-blue-600 hover:underline font-semibold text-sm"
-            >
-              {invoice.purchase_order_no || "View Order"}
-            </Link>
-          ) : (
-            <p className="font-semibold text-sm">-</p>
-          )}
-        </div>
-
-        <div>
-          <span className="text-slate-400 block mb-1">Dates</span>
-          <p>
-            Invoice Date:{" "}
-            <b>{new Date(invoice.invoice_date).toLocaleDateString()}</b>
-          </p>
-          {invoice.due_date && (
-            <p>
-              Due Date:{" "}
-              <b>{new Date(invoice.due_date).toLocaleDateString()}</b>
-            </p>
-          )}
-        </div>
-      </div>
-
-
-      <div className="border dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50 dark:bg-slate-800/60 border-b dark:border-slate-800">
-            <tr>
-              <th className="p-3">#</th>
-              <th className="p-3">Item / Description</th>
-              <th className="p-3 text-right">Qty</th>
-              <th className="p-3 text-right">Unit Cost</th>
-              <th className="p-3 text-right">Total Amount</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y dark:divide-slate-800">
-            {lines.map((line: InvoiceLine, idx: number) => (
-              <tr key={line.id || idx}>
-                <td className="p-3">{idx + 1}</td>
-                <td className="p-3">
-                  <div className="font-medium">
-                    {line.item_name || line.item_code || "-"}
-                  </div>
-                  <div className="text-slate-400 text-[11px]">
-                    {line.description}
-                  </div>
-                </td>
-                <td className="p-3 text-right font-mono">
-                  {Number(line.quantity || 0).toFixed(2)}
-                </td>
-                <td className="p-3 text-right font-mono">
-                  {Number(line.unit_cost || 0).toFixed(2)}
-                </td>
-                <td className="p-3 text-right font-mono">
-                  {Number(line.line_amount || 0).toFixed(2)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-
-        <div className="bg-slate-50 dark:bg-slate-800/40 p-4 border-t dark:border-slate-800 flex justify-end">
-          <div className="w-full max-w-xs space-y-2">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Subtotal:</span>
-              <span className="font-mono">
-                {Number(invoice.subtotal || 0).toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">VAT / Tax:</span>
-              <span className="font-mono">
-                {Number(invoice.tax_amount || 0).toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between font-bold text-sm border-t dark:border-slate-700 pt-2">
-              <span>Total Amount:</span>
-              <span className="font-mono">
-                {Number(invoice.total_amount || 0).toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-} */

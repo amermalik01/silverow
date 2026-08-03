@@ -25,13 +25,13 @@ export async function GET(req: NextRequest) {
     const client = await pool.connect();
 
     try {
-      let whereConditions = ["pi.company_id = $1"];
-      let queryParams: any[] = [companyId];
+      const whereConditions: string[] = ["pi.company_id = $1"];
+      const queryParams: unknown[] = [companyId];
       let paramCounter = 2;
 
       if (search) {
         whereConditions.push(
-          `(pi.invoice_no ILIKE $${paramCounter} OR pi.supplier_invoice_no ILIKE $${paramCounter} OR po.order_no ILIKE $${paramCounter} OR p.name ILIKE $${paramCounter})`
+          `(pi.invoice_no ILIKE $${paramCounter} OR pi.supplier_invoice_no ILIKE $${paramCounter} OR po.order_no ILIKE $${paramCounter} OR p.name ILIKE $${paramCounter})`,
         );
         queryParams.push(`%${search}%`);
         paramCounter++;
@@ -51,10 +51,10 @@ export async function GET(req: NextRequest) {
          LEFT JOIN parties p ON p.id = pi.supplier_id 
          LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id 
          WHERE ${whereClause}`,
-        queryParams
+        queryParams,
       );
 
-      const totalRecords = parseInt(countRes.rows[0].count);
+      const totalRecords = parseInt(countRes.rows[0].count, 10);
 
       const listRes = await client.query(
         `SELECT 
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
          WHERE ${whereClause}
          ORDER BY pi.created_at DESC
          LIMIT $${paramCounter} OFFSET $${paramCounter + 1}`,
-        [...queryParams, limit, offset]
+        [...queryParams, limit, offset],
       );
 
       return NextResponse.json({
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
     console.error("[LIST_PURCHASE_INVOICES_ERROR]:", err);
     return NextResponse.json(
       { success: false, error: "Failed to load purchase invoices." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

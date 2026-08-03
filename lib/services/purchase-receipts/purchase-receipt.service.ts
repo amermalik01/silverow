@@ -210,64 +210,76 @@ export class PurchaseReceiptService {
         line.item_id,
       );
 
-      // DR - Inventory Asset (Interim)
-      glLines.push({
-        account_id: accounts.inventory_account_id,
-        debit: inventoryValueToCapitalize,
-        credit: 0,
-        item_id: line.item_id,
-        warehouse_id: line.warehouse_id,
-        quantity: qtyReceived,
-        unit_cost: Number(ledgerEntry.unit_cost),
-        reference_type: "PURCHASE_RECEIPT",
-        reference_id: receipt.id,
-        description: `Asset receipt for item ${line.item_id}`,
-      });
+      // Fetch Inventory System setting
+      const companyRes = await client.query(
+        `SELECT inventory_system FROM companies WHERE id = $1`,
+        [companyId],
+      );
+      const inventorySystem =
+        companyRes.rows[0]?.inventory_system || "PERIODIC";
 
-      // Handle Purchase Price Variance (Standard Costing)
-      if (ppvAmount !== 0) {
+      // Build General Ledger Posting Entries (ONLY for PERPETUAL mode)
+      if (inventorySystem === "PERPETUAL") {
+
+        // DR - Inventory Asset (Interim)
         glLines.push({
-          account_id: accounts.purchase_price_variance_account_id,
-          debit: ppvAmount > 0 ? ppvAmount : 0,
-          credit: ppvAmount < 0 ? Math.abs(ppvAmount) : 0,
+          account_id: accounts.inventory_account_id,
+          debit: inventoryValueToCapitalize,
+          credit: 0,
           item_id: line.item_id,
           warehouse_id: line.warehouse_id,
           quantity: qtyReceived,
-          unit_cost: Math.abs(ppvAmount / qtyReceived),
+          unit_cost: Number(ledgerEntry.unit_cost),
           reference_type: "PURCHASE_RECEIPT",
           reference_id: receipt.id,
-          description: `Purchase Price Variance for item ${line.item_id}`,
+          description: `Asset receipt for item ${line.item_id}`,
+        });
+
+        // Handle Purchase Price Variance (Standard Costing)
+        if (ppvAmount !== 0) {
+          glLines.push({
+            account_id: accounts.purchase_price_variance_account_id,
+            debit: ppvAmount > 0 ? ppvAmount : 0,
+            credit: ppvAmount < 0 ? Math.abs(ppvAmount) : 0,
+            item_id: line.item_id,
+            warehouse_id: line.warehouse_id,
+            quantity: qtyReceived,
+            unit_cost: Math.abs(ppvAmount / qtyReceived),
+            reference_type: "PURCHASE_RECEIPT",
+            reference_id: receipt.id,
+            description: `Purchase Price Variance for item ${line.item_id}`,
+          });
+        }
+
+        // CR - GRNI Liability (Interim Clearing Acc)
+        glLines.push({
+          account_id: accounts.grni_account_id,
+          debit: 0,
+          credit: totalCost,
+          item_id: line.item_id,
+          warehouse_id: line.warehouse_id,
+          quantity: qtyReceived,
+          unit_cost: unitCost,
+          reference_type: "PURCHASE_RECEIPT",
+          reference_id: receipt.id,
+          description: `GRNI liability for item ${line.item_id}`,
         });
       }
 
-      // CR - GRNI Liability (Interim Clearing Acc)
-      glLines.push({
-        account_id: accounts.grni_account_id,
-        debit: 0,
-        credit: totalCost,
-        item_id: line.item_id,
-        warehouse_id: line.warehouse_id,
-        quantity: qtyReceived,
-        unit_cost: unitCost,
-        reference_type: "PURCHASE_RECEIPT",
-        reference_id: receipt.id,
-        description: `GRNI liability for item ${line.item_id}`,
+      // 7. Validate GL Balance & Post Journal
+      GLValidationService.validateBalanced(glLines);
+
+      await GLPostingService.postJournal(client, {
+        company_id: companyId,
+        entry_date: receipt.posting_date,
+        source: "PURCHASE",
+        journal_type: "PURCHASE_RECEIPT",
+        reference: receipt.receipt_no,
+        source_id: receipt.id,
+        description: `Posted receipt tracking document: ${receipt.receipt_no}`,
+        lines: glLines,
       });
     }
-
-    // 7. Validate GL Balance & Post Journal
-    GLValidationService.validateBalanced(glLines);
-
-    await GLPostingService.postJournal(client, {
-      company_id: companyId,
-      entry_date: receipt.posting_date,
-      source: "PURCHASE",
-      journal_type: "PURCHASE_RECEIPT",
-      reference: receipt.receipt_no,
-      source_id: receipt.id,
-      description: `Posted receipt tracking document: ${receipt.receipt_no}`,
-      lines: glLines,
-    });
 
     // 8. Seal Receipt Posting Status
     await client.query(
@@ -475,27 +487,6 @@ export class PurchaseReceiptService {
           `,
           [poFetch.rows[0].purchase_order_id],
         );
-        // await client.query(
-        //   `
-        //   UPDATE purchase_orders po
-        //   SET status = CASE
-        //     WHEN NOT EXISTS (
-        //       SELECT 1 FROM purchase_order_lines pol
-        //       WHERE pol.purchase_order_id = po.id
-        //         AND COALESCE(pol.received_quantity, 0) < COALESCE(pol.quantity, 0)
-        //         AND COALESCE(pol.is_deleted, false) = false
-        //     ) THEN 'received'::text
-        //     WHEN EXISTS (
-        //       SELECT 1 FROM purchase_order_lines pol
-        //       WHERE pol.purchase_order_id = po.id AND COALESCE(pol.received_quantity, 0) > 0
-        //     ) THEN 'partial_received'::text
-        //     ELSE 'open'::text
-        //   END,
-        //   updated_at = NOW()
-        //   WHERE po.id = $1
-        //   `,
-        //   [poFetch.rows[0].purchase_order_id],
-        // );
       }
 
       await client.query("COMMIT");

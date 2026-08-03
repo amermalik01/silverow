@@ -1,7 +1,7 @@
 // lib/services/purchase-invoices/purchase-invoice.service.ts
 
 import { PoolClient } from "pg";
-import { pool } from "@/lib/db";
+/* import { pool } from "@/lib/db";
 
 import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
@@ -19,7 +19,7 @@ interface ListFilters {
   status?: string;
   startDate?: string;
   endDate?: string;
-}
+} */
 
 export class PurchaseInvoiceService {
   private static async getPayableAccount(
@@ -43,7 +43,7 @@ export class PurchaseInvoiceService {
     return result.rows[0].payable_account_id;
   }
 
-  static async list(companyId: string, filters: ListFilters = {}) {
+  /* static async list(companyId: string, filters: ListFilters = {}) {
     const page = Number(filters.page) || 1;
     const limit = Number(filters.limit) || 10;
     const offset = (page - 1) * limit;
@@ -114,13 +114,13 @@ export class PurchaseInvoiceService {
         totalPages,
       },
     };
-  }
+  } */
 
   //  * =========================================================
   //  * POST PURCHASE INVOICE
   //  * =========================================================
 
-  static async postInvoice(
+  /* static async postInvoice(
     client: PoolClient,
     companyId: string,
     invoiceId: string,
@@ -336,5 +336,5 @@ export class PurchaseInvoiceService {
       `,
       [invoiceId, journal.id],
     );
-  }
+  } */
 }
