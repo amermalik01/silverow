@@ -14,13 +14,20 @@ import {
   DebitNoteLine,
   DebitNoteMasterData,
 } from "@/types/debit-note";
+import { PurchaseOrderLine } from "@/types/purchase-order";
 
 import DebitNoteLines from "./DebitNoteLines";
 import { OrderFormTabs } from "./OrderFormTabs";
 import { useLoader } from "@/app/context/LoaderContext";
+
 import SupplierLookupModal, {
   SupplierLookupItem,
 } from "../purchase-orders/SupplierLookupModal";
+
+import {
+  PurchaseInvoiceLookupModal,
+  PurchaseInvoiceLookupItem,
+} from "./PurchaseInvoiceLookupModal";
 
 interface Props {
   slug: string;
@@ -44,6 +51,8 @@ export const DebitNoteForm: React.FC<Props> = ({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+
+  const [piModalOpen, setPiModalOpen] = useState(false);
 
   const { show, hide } = useLoader();
 
@@ -215,6 +224,55 @@ export const DebitNoteForm: React.FC<Props> = ({
     setSupplierModalOpen(false);
   };
 
+  const handleSelectPurchaseInvoice = async (
+    invoice: PurchaseInvoiceLookupItem,
+  ) => {
+    setNote((prev) => ({
+      ...prev,
+      apply_to_pi: invoice.invoice_no,
+      apply_to_pi_id: invoice.id,
+      linked_po: invoice.invoice_no,
+    }));
+    setPiModalOpen(false);
+
+    // Fetch Lines from selected Purchase Invoice to allocate stock quantities
+    try {
+      show("Fetching invoice lines...");
+      const res = await fetch(`/api/purchase-invoices/${invoice.id}`);
+      const payload = await res.json();
+      hide();
+
+      if (payload?.success && Array.isArray(payload.data?.lines)) {
+        const fetchedLines: DebitNoteLine[] = payload.data.lines.map(
+          (l: PurchaseOrderLine, idx: number) => ({
+            line_no: idx + 1,
+            line_type: l.line_type || "ITEM",
+            item_id: l.item_id,
+            item_code: l.item_code,
+            item_name: l.item_name || l.description,
+            description: l.description,
+            warehouse_id: l.warehouse_id,
+            quantity: Number(l.quantity || 0),
+            unit_cost: Number(l.unit_cost || 0),
+            vat_percent: Number(l.vat_percent || 0),
+            vat_amount: Number(l.vat_amount || 0),
+            net_amount: Number(l.net_amount || 0),
+            gross_amount: Number(l.gross_amount || 0),
+          }),
+        );
+
+        setLines(fetchedLines);
+        toast.success(
+          `Imported ${fetchedLines.length} line items from Purchase Invoice ${invoice.invoice_no}`,
+        );
+      }
+    } catch (err) {
+      hide();
+      console.error("Failed to load purchase invoice lines:", err);
+      toast.error("Error populating lines from purchase invoice.");
+    }
+  };
+
   const updateField = <K extends keyof DebitNote>(
     field: K,
     value: DebitNote[K],
@@ -263,15 +321,14 @@ export const DebitNoteForm: React.FC<Props> = ({
   const validateForm = (): boolean => {
     const errors: string[] = [];
     if (!note.supplier_id) errors.push("Supplier selection is required.");
+    if (!note.linked_po && !note.linked_po)
+      errors.push("Apply to Purchase Invoice (PI) selection is required.");
     if (!currencyConfig.currency_id)
       errors.push("Transactional currency token designation required.");
     if (lines.length === 0)
-      errors.push(
-        "Debit notes require at least one ledger/item breakdown entry line.",
-      );
+      errors.push("Debit notes require at least one line entry.");
 
     errors.push(...validateDates());
-
     setValidationErrors(errors);
     return errors.length === 0;
   };
@@ -511,6 +568,7 @@ export const DebitNoteForm: React.FC<Props> = ({
         masterData={masterData}
         updateField={updateField}
         setSupplierModalOpen={setSupplierModalOpen}
+        setPiModalOpen={setPiModalOpen}
         labelStyle={labelStyle}
         inputStyle={inputStyle}
       />
@@ -649,6 +707,15 @@ export const DebitNoteForm: React.FC<Props> = ({
         open={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}
         onSelect={handleSupplierSelect}
+      />
+
+      <PurchaseInvoiceLookupModal
+        isOpen={piModalOpen}
+        onClose={() => setPiModalOpen(false)}
+        supplierId={note.supplier_id}
+        supplierCode={note.supplier_no}
+        supplierName={note.supplier_name}
+        onSelectInvoice={handleSelectPurchaseInvoice}
       />
     </div>
   );

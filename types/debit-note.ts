@@ -45,6 +45,9 @@ export interface DebitNote {
   supplier_booking_ref_no?: string;
   // shipment_po_not_req?: boolean;
   reason?: string;
+
+  apply_to_pi?: string;
+  apply_to_pi_id?: string;
   linked_po?: string;
 
   currency_id?: string;

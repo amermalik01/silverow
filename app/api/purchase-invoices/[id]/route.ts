@@ -23,10 +23,12 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     const client = await pool.connect();
 
     try {
-      // 1. Join with parties (p) for Supplier info
+      // Join with parties (p) for Supplier info & fallback posting groups
       const invoiceRes = await client.query(
         `SELECT 
           pi.*,
+          COALESCE(po.supplier_posting_group_id, p.purchase_posting_group_id) AS purchase_posting_group_id,
+          po.vat_business_posting_group_id,
           p.name AS supplier_name,
           p.supplier_code AS supplier_no,
           po.order_no AS purchase_order_no
@@ -44,7 +46,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
         );
       }
 
-      // 2. Load Lines joined with items (item_code)
+      // Load Lines joined with items (item_code)
       const linesRes = await client.query(
         `SELECT 
           pil.*,

@@ -64,6 +64,7 @@ interface OrderFormTabsProps {
     value: DebitNote[K],
   ) => void;
   setSupplierModalOpen: (open: boolean) => void;
+  setPiModalOpen?: (open: boolean) => void;
   labelStyle?: string;
   inputStyle?: string;
 }
@@ -82,6 +83,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   masterData,
   updateField,
   setSupplierModalOpen,
+  setPiModalOpen,
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
   inputStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
 }) => {
@@ -161,6 +163,36 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
 
             <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>
+                Apply to PI <span className="text-red-500">*</span>
+              </label>
+              <div className="col-span-8 flex gap-1">
+                <input
+                  type="text"
+                  readOnly
+                  className={`${inputStyle} font-mono`}
+                  placeholder="Select PI..."
+                  value={note.apply_to_pi || note.linked_po || ""}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    // if (!note.supplier_id) {
+                    //   toast.error(
+                    //     "Please select a Supplier before applying to PI.",
+                    //   );
+                    //   return;
+                    // }
+                    if (setPiModalOpen) setPiModalOpen(true);
+                  }}
+                  className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700"
+                >
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Linked PO</label>
               <input
                 type="text"
@@ -168,7 +200,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 value={note.linked_po || ""}
                 onChange={(e) => updateField("linked_po", e.target.value)}
               />
-            </div>
+            </div> */}
           </div>
 
           {/* Column 2 */}

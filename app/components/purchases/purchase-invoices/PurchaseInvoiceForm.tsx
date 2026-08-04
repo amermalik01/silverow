@@ -19,9 +19,6 @@ import {
 import PurchaseOrderLines from "../purchase-orders/PurchaseOrderLines";
 import { OrderFormTabs } from "../purchase-orders/OrderFormTabs";
 import { PostedTransactionsModal } from "./PostedTransactionsModal";
-import SupplierLookupModal, {
-  SupplierLookupItem,
-} from "../purchase-orders/SupplierLookupModal";
 
 interface Props {
   slug: string;
@@ -41,9 +38,6 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
 
   const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
   const [activeTab, setActiveTab] = useState<TabType>("general");
-  const [saving, setSaving] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [showNavigateModal, setShowNavigateModal] = useState(false);
 
   const { show, hide } = useLoader();
@@ -55,18 +49,20 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
   const isUpdateMode = !!id;
 
   const [invoice, setInvoice] = useState<Partial<PurchaseInvoice>>({
-    order_no: id ? "" : "[Auto-Generated]",
+    order_no: "",
     supplier_id: "",
     supplier_no: "",
     supplier_name: "",
-    order_date: new Date().toISOString().split("T")[0],
+    order_date: "",
     expected_date: "",
-    invoice_date: new Date().toISOString().split("T")[0],
-    receipt_date: new Date().toISOString().split("T")[0],
-    due_date: new Date().toISOString().split("T")[0],
-    status: "draft",
+    invoice_date: "",
+    receipt_date: "",
+    due_date: "",
+    status: "posted",
     reference: "",
     notes: "",
+    purchase_posting_group_id: "",
+    vat_business_posting_group_id: "",
   });
 
   const [primaryAddress, setPrimaryAddress] = useState<
@@ -133,13 +129,6 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
     loadMasterData();
   }, []);
 
-  const refreshLines = async () => {
-    if (!invoice.id) return;
-    const response = await fetch(`/api/purchase-invoices/${invoice.id}/lines`);
-    const data = await response.json();
-    setLines(data.lines ?? []);
-  };
-
   const selectedCurrency = useMemo(() => {
     return (
       masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
@@ -160,98 +149,8 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
     return { amount, vat, amountInclVat, amountInclVatLCY };
   }, [lines, currencyConfig.exchange_rate]);
 
-  /* const handleSupplierSelect = (supplier: SupplierLookupItem) => {
-    setInvoice((prev) => ({
-      ...prev,
-      supplier_id: supplier.id,
-      supplier_no: supplier.supplier_code,
-      supplier_name: supplier.name,
-      purchaser_code: supplier.purchaser_code || "",
-      payable_bank: supplier.payable_bank || "",
-      payment_terms_id: supplier.payment_terms || "",
-      payment_method_id: supplier.payment_method || "",
-    }));
-
-    if (supplier.primary_address) setPrimaryAddress(supplier.primary_address);
-    if (supplier.billing_address) setBillingAddress(supplier.billing_address);
-    if (supplier.shipping_address) setShippingAddress(supplier.shipping_address);
-
-    if (supplier.currency_id) {
-      const matchedCurr = masterData?.currencies.find((c) => c.id === supplier.currency_id);
-      setCurrencyConfig({
-        currency_id: supplier.currency_id,
-        exchange_rate: matchedCurr?.exchange_rate || 1,
-      });
-    }
-
-    setSupplierModalOpen(false);
-  }; */
-
-  const updateField = <K extends keyof PurchaseInvoice>(
-    field: K,
-    value: PurchaseInvoice[K],
-  ) => {
-    setInvoice((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const validateForm = (): boolean => {
-    const errors: string[] = [];
-    if (!invoice.supplier_id) errors.push("Supplier selection is required.");
-    if (lines.length === 0)
-      errors.push("Purchase invoice requires at least one line item.");
-
-    setValidationErrors(errors);
-    return errors.length === 0;
-  };
-
-  const handleSave = async () => {
-    if (!validateForm()) {
-      toast.error("Please fix layout validation errors before saving.");
-      return;
-    }
-
-    show("Saving Invoice...");
-
-    try {
-      setSaving(true);
-      setValidationErrors([]);
-
-      const payload = {
-        invoice: {
-          ...invoice,
-          ...currencyConfig,
-          subtotal: financials.amount,
-          tax_amount: financials.vat,
-          total_amount: financials.amountInclVat,
-        },
-        primary_address: primaryAddress,
-        billing_address: billingAddress,
-        shipping_address: shippingAddress,
-        lines,
-      };
-
-      const res = await fetch(
-        id ? `/api/purchase-invoices/${id}` : "/api/purchase-invoices",
-        {
-          method: id ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      const result = await res.json();
-      if (!res.ok)
-        throw new Error(result.error || "Execution error saving invoice.");
-
-      toast.success("Purchase Invoice Updated cleanly");
-      router.push(`/${slug}/purchases/purchase-invoices`);
-    } catch (err) {
-      if (err instanceof Error) setValidationErrors([err.message]);
-    } finally {
-      setSaving(false);
-      hide();
-    }
-  };
+  const noop = () => {};
+  const asyncNoop = async () => {};
 
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
@@ -264,21 +163,17 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
 
   return (
     <div className="space-y-4 w-full max-w-[100vw] px-4 py-2 mx-auto overflow-x-auto">
-      {validationErrors.length > 0 && (
-        <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
-          {validationErrors.map((err, idx) => (
-            <p
-              key={idx}
-              className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1"
-            >
-              <Icon icon="tabler:alert-circle" className="inline w-3.5 h-3.5" />{" "}
-              {err}
-            </p>
-          ))}
-        </div>
-      )}
+      <div className="p-3 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+        <span className="flex items-center gap-2">
+          <Icon icon="tabler:eye" className="w-4 h-4 text-blue-600" />
+          Purchase Invoice Document Viewer — <strong>Read-Only Mode</strong>
+        </span>
+        <span className="px-2.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px] uppercase font-bold tracking-wider">
+          {invoice.status || "POSTED"}
+        </span>
+      </div>
 
-      {isCompleted && (
+      {/* {isCompleted && (
         <div className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Icon icon="tabler:lock" className="w-4 h-4 text-emerald-600" />
@@ -289,7 +184,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
             Read Only
           </span>
         </div>
-      )}
+      )} */}
 
       {/* Header Tabs */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
@@ -311,33 +206,33 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Tabs Form Layout */}
+      {/* Read-Only Form Tabs */}
       <OrderFormTabs
         activeTab={activeTab}
         order={invoice}
         primaryAddress={primaryAddress}
-        setPrimaryAddress={setPrimaryAddress}
+        setPrimaryAddress={noop}
         billingAddress={billingAddress}
-        setBillingAddress={setBillingAddress}
+        setBillingAddress={noop}
         shippingAddress={shippingAddress}
-        setShippingAddress={setShippingAddress}
+        setShippingAddress={noop}
         currencyConfig={currencyConfig}
-        setCurrencyConfig={setCurrencyConfig}
+        setCurrencyConfig={noop}
         masterData={masterData}
-        updateField={updateField}
-        setSupplierModalOpen={setSupplierModalOpen}
+        updateField={noop}
+        setSupplierModalOpen={noop}
         labelStyle={labelStyle}
         inputStyle={inputStyle}
-        isReadOnly={isFormDisabled}
+        isReadOnly={true}
       />
 
-      {/* Shared Purchase Lines */}
+      {/* Read-Only Purchase Lines */}
       <PurchaseOrderLines
         lines={lines}
-        setLines={setLines}
-        isReadonly={isFormDisabled}
+        setLines={noop}
+        isReadonly={true}
         purchaseOrder={invoice}
-        refreshLines={refreshLines}
+        refreshLines={asyncNoop}
       />
 
       {/* Financial Summary */}
@@ -345,18 +240,20 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
         <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
           <div>
             <textarea
-              placeholder="Add Internal Notes"
-              className={`${inputStyle} font-mono`}
+              placeholder="Internal Notes"
+              disabled
+              readOnly
+              className={`${inputStyle} font-mono resize-none`}
               value={invoice.internal_notes || ""}
-              onChange={(e) => updateField("internal_notes", e.target.value)}
             />
           </div>
           <div className="col-span-2">
             <textarea
-              placeholder="Add External Notes"
-              className={`${inputStyle} font-mono`}
+              placeholder="External Notes"
+              disabled
+              readOnly
+              className={`${inputStyle} font-mono resize-none`}
               value={invoice.notes || ""}
-              onChange={(e) => updateField("notes", e.target.value)}
             />
           </div>
         </div>
@@ -371,14 +268,11 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
             <div>
               <input
                 type="number"
-                step="any"
+                disabled
+                readOnly
                 className={`${inputStyle} font-mono max-w-[100px] text-end`}
-                value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
-                onChange={(e) =>
-                  setCurrencyConfig({
-                    ...currencyConfig,
-                    exchange_rate: parseFloat(e.target.value) || 1,
-                  })
+                value={
+                  Number(currencyConfig.exchange_rate).toFixed(2) ?? "1.00"
                 }
               />
             </div>
@@ -442,33 +336,6 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
 
         <button
           type="button"
-          onClick={handleSave}
-          disabled={saving || isFormDisabled}
-          className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Save Changes
-        </button>
-
-        {/* <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || isReadOnly}
-          className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
-        >
-          Edit
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || isReadOnly}
-          className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
-        >
-          Purchase Invoice
-        </button> */}
-
-        <button
-          type="button"
           onClick={() => router.push(`/${slug}/purchases/purchase-invoices`)}
           className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
         >
@@ -476,20 +343,15 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
         </button>
       </div>
 
-      {/* Supplier Lookup Modal */}
-      {/* <SupplierLookupModal
-        isOpen={supplierModalOpen}
-        onClose={() => setSupplierModalOpen(false)}
-        onSelect={handleSupplierSelect}
-      /> */}
-
-      {/* Posted Transactions Navigation Modal */}
-      <PostedTransactionsModal
-        isOpen={showNavigateModal}
-        onClose={() => setShowNavigateModal(false)}
-        invoiceId={id}
-        invoiceNo={invoice.order_no}
-      />
+      {/* General Ledger Posted Transactions Modal */}
+      {id && (
+        <PostedTransactionsModal
+          isOpen={showNavigateModal}
+          onClose={() => setShowNavigateModal(false)}
+          invoiceId={id}
+          invoiceNo={invoice.order_no}
+        />
+      )}
     </div>
   );
 };

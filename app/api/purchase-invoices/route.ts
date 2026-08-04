@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
+    const supplierId = searchParams.get("supplier_id");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
@@ -28,6 +29,13 @@ export async function GET(req: NextRequest) {
       const whereConditions: string[] = ["pi.company_id = $1"];
       const queryParams: unknown[] = [companyId];
       let paramCounter = 2;
+
+      // 1. Filter by Supplier ID
+      if (supplierId) {
+        whereConditions.push(`pi.supplier_id = $${paramCounter}`);
+        queryParams.push(supplierId);
+        paramCounter++;
+      }
 
       if (search) {
         whereConditions.push(
@@ -56,20 +64,46 @@ export async function GET(req: NextRequest) {
 
       const totalRecords = parseInt(countRes.rows[0].count, 10);
 
+      // List Query with Property Mapping for Frontend Components
       const listRes = await client.query(
         `SELECT 
-          pi.*,
-          p.name AS supplier_name,
-          p.supplier_code AS supplier_no,
-          po.order_no AS purchase_order_no
+           pi.id,
+           pi.invoice_date AS posting_date,
+           pi.invoice_no,
+           pi.supplier_invoice_no,
+           COALESCE(c.code, 'GBP') AS currency_code,
+           pi.subtotal AS amount,
+           pi.tax_amount AS vat_amount,
+           pi.total_amount,
+           pi.status,
+           pi.purchase_order_id,
+           p.name AS supplier_name,
+           p.supplier_code AS supplier_no,
+           po.order_no AS purchase_order_no
          FROM purchase_invoices pi
          LEFT JOIN parties p ON p.id = pi.supplier_id
          LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id
+         LEFT JOIN currencies c ON c.id = pi.currency_id
          WHERE ${whereClause}
-         ORDER BY pi.created_at DESC
+         ORDER BY pi.invoice_date DESC, pi.created_at DESC
          LIMIT $${paramCounter} OFFSET $${paramCounter + 1}`,
-        [...queryParams, limit, offset],
+        [...queryParams, limit, offset]
       );
+
+      // const listRes = await client.query(
+      //   `SELECT 
+      //     pi.*,
+      //     p.name AS supplier_name,
+      //     p.supplier_code AS supplier_no,
+      //     po.order_no AS purchase_order_no
+      //    FROM purchase_invoices pi
+      //    LEFT JOIN parties p ON p.id = pi.supplier_id
+      //    LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id
+      //    WHERE ${whereClause}
+      //    ORDER BY pi.created_at DESC
+      //    LIMIT $${paramCounter} OFFSET $${paramCounter + 1}`,
+      //   [...queryParams, limit, offset],
+      // );
 
       return NextResponse.json({
         success: true,
