@@ -19,7 +19,9 @@ import {
 import PurchaseOrderLines from "../purchase-orders/PurchaseOrderLines";
 import { OrderFormTabs } from "../purchase-orders/OrderFormTabs";
 import { PostedTransactionsModal } from "./PostedTransactionsModal";
-import SupplierLookupModal, { SupplierLookupItem } from "../purchase-orders/SupplierLookupModal";
+import SupplierLookupModal, {
+  SupplierLookupItem,
+} from "../purchase-orders/SupplierLookupModal";
 
 interface Props {
   slug: string;
@@ -46,7 +48,9 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
 
   const { show, hide } = useLoader();
 
-  const [masterData, setMasterData] = useState<PurchaseOrderMasterData | null>(null);
+  const [masterData, setMasterData] = useState<PurchaseOrderMasterData | null>(
+    null,
+  );
 
   const isUpdateMode = !!id;
 
@@ -65,9 +69,15 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
     notes: "",
   });
 
-  const [primaryAddress, setPrimaryAddress] = useState<Partial<PurchaseOrderAddress>>({ address_type: "primary" });
-  const [billingAddress, setBillingAddress] = useState<Partial<PurchaseOrderAddress>>({ address_type: "billing" });
-  const [shippingAddress, setShippingAddress] = useState<Partial<PurchaseOrderAddress>>({ address_type: "shipping" });
+  const [primaryAddress, setPrimaryAddress] = useState<
+    Partial<PurchaseOrderAddress>
+  >({ address_type: "primary" });
+  const [billingAddress, setBillingAddress] = useState<
+    Partial<PurchaseOrderAddress>
+  >({ address_type: "billing" });
+  const [shippingAddress, setShippingAddress] = useState<
+    Partial<PurchaseOrderAddress>
+  >({ address_type: "shipping" });
 
   const [lines, setLines] = useState<PurchaseOrderLine[]>([]);
   const [currencyConfig, setCurrencyConfig] = useState({
@@ -89,9 +99,12 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           setInvoice(actualData.invoice || {});
           setLines(actualData.lines || []);
 
-          if (actualData.primary_address) setPrimaryAddress(actualData.primary_address);
-          if (actualData.billing_address) setBillingAddress(actualData.billing_address);
-          if (actualData.shipping_address) setShippingAddress(actualData.shipping_address);
+          if (actualData.primary_address)
+            setPrimaryAddress(actualData.primary_address);
+          if (actualData.billing_address)
+            setBillingAddress(actualData.billing_address);
+          if (actualData.shipping_address)
+            setShippingAddress(actualData.shipping_address);
 
           setCurrencyConfig({
             currency_id: actualData.invoice?.currency_id || "",
@@ -128,14 +141,20 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
   };
 
   const selectedCurrency = useMemo(() => {
-    return masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ?? null;
+    return (
+      masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
+      null
+    );
   }, [currencyConfig.currency_id, masterData]);
 
   const financials = useMemo(() => {
     const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
     const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
     const amountInclVat = amount + vat;
-    const rate = Number(currencyConfig.exchange_rate) > 0 ? Number(currencyConfig.exchange_rate) : 1;
+    const rate =
+      Number(currencyConfig.exchange_rate) > 0
+        ? Number(currencyConfig.exchange_rate)
+        : 1;
     const amountInclVatLCY = amountInclVat / rate;
 
     return { amount, vat, amountInclVat, amountInclVatLCY };
@@ -170,7 +189,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
 
   const updateField = <K extends keyof PurchaseInvoice>(
     field: K,
-    value: PurchaseInvoice[K]
+    value: PurchaseInvoice[K],
   ) => {
     setInvoice((prev) => ({ ...prev, [field]: value }));
   };
@@ -178,7 +197,8 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
   const validateForm = (): boolean => {
     const errors: string[] = [];
     if (!invoice.supplier_id) errors.push("Supplier selection is required.");
-    if (lines.length === 0) errors.push("Purchase invoice requires at least one line item.");
+    if (lines.length === 0)
+      errors.push("Purchase invoice requires at least one line item.");
 
     setValidationErrors(errors);
     return errors.length === 0;
@@ -216,11 +236,12 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           method: id ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Execution error saving invoice.");
+      if (!res.ok)
+        throw new Error(result.error || "Execution error saving invoice.");
 
       toast.success("Purchase Invoice Updated cleanly");
       router.push(`/${slug}/purchases/purchase-invoices`);
@@ -237,6 +258,10 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
   const labelStyle =
     "block text-xs text-slate-500 dark:text-slate-400 mb-0.5 col-span-4";
 
+  const isCompleted =
+    invoice.status === "completed" || invoice.status === "POSTED";
+  const isFormDisabled = isReadOnly || isCompleted;
+
   return (
     <div className="space-y-4 w-full max-w-[100vw] px-4 py-2 mx-auto overflow-x-auto">
       {validationErrors.length > 0 && (
@@ -250,6 +275,19 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
               {err}
             </p>
           ))}
+        </div>
+      )}
+
+      {isCompleted && (
+        <div className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Icon icon="tabler:lock" className="w-4 h-4 text-emerald-600" />
+            This Purchase Order is <strong>Completed / Fully Posted</strong> and
+            cannot be edited.
+          </span>
+          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] uppercase font-bold tracking-wider">
+            Read Only
+          </span>
         </div>
       )}
 
@@ -290,13 +328,14 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
         setSupplierModalOpen={setSupplierModalOpen}
         labelStyle={labelStyle}
         inputStyle={inputStyle}
+        isReadOnly={isFormDisabled}
       />
 
       {/* Shared Purchase Lines */}
       <PurchaseOrderLines
         lines={lines}
         setLines={setLines}
-        isReadonly={isReadOnly}
+        isReadonly={isFormDisabled}
         purchaseOrder={invoice}
         refreshLines={refreshLines}
       />
@@ -400,6 +439,15 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
             Navigate
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || isFormDisabled}
+          className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Save Changes
+        </button>
 
         {/* <button
           type="button"

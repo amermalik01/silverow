@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, DragEvent } from "react";
+import { useState, useRef, DragEvent } from "react";
 
 import MigrationPreview from "./MigrationPreview";
 import MigrationResult from "./MigrationResult";
@@ -27,6 +27,8 @@ export default function MigrationUploader({
   onCompleted,
 }: Props) {
   const purchaseOrderId = purchaseOrder.id ?? "";
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [rows, setRows] = useState<MigrationRow[]>([]);
   const [fileName, setFileName] = useState("");
@@ -134,14 +136,14 @@ export default function MigrationUploader({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm text-slate-500">Target Purchase Order</div>
+          <div className="text-sm text-slate-500">Purchase Order</div>
           <div className="font-semibold">{purchaseOrder.order_no}</div>
           <div className="text-sm text-slate-500">
             {purchaseOrder.supplier_name}
           </div>
         </div>
 
-        <button
+        {/* <button
           type="button"
           onClick={() => {
             window.location.href = "/api/migration/templates";
@@ -150,7 +152,7 @@ export default function MigrationUploader({
           className="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-800"
         >
           Download Template
-        </button>
+        </button> */}
 
         <a
           href="/api/migration/templates"
@@ -163,16 +165,28 @@ export default function MigrationUploader({
       </div>
 
       <div
+        onClick={() => {
+          if (!loading) {
+            fileInputRef.current?.click();
+          }
+        }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
-        className="rounded-xl border-2 border-dashed border-slate-300 p-10 text-center transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+        className="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-10 text-center transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
       >
-        <div className="text-lg font-medium">Drag Excel File Here</div>
-        <div className="mt-2 text-sm text-slate-500">or choose a file</div>
+        <div className="text-lg font-medium">
+          {loading ? "Uploading..." : "Drag Excel File Here"}
+        </div>
+        <div className="mt-2 text-sm text-slate-500">
+          {loading
+            ? "Please wait..."
+            : "or click anywhere in this box to choose a file"}
+        </div>
         <input
+          ref={fileInputRef}
           type="file"
           accept=".xlsx,.xls"
-          className="mt-5"
+          className="mt-5 hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) {

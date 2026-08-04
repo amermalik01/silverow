@@ -211,9 +211,9 @@ export default function VatRatesList() {
           <table className="w-full text-xs text-left">
             <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 uppercase text-xs tracking-wider">
               <tr>
-                <th className="p-3">VAT Setup Label</th>
-                <th className="p-3">Tax Computation Multiple</th>
-                <th className="p-3 text-center">Management Actions</th>
+                <th className="p-3">VAT</th>
+                <th className="p-3">Tax Rate</th>
+                <th className="p-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-slate-700">
