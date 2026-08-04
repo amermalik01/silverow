@@ -145,8 +145,9 @@ export async function PUT(req: Request, { params }: Props) {
           cogs_gl_id = $19,
           sales_gl_id = $20,
           purchase_gl_id = $21,
+          vat_product_group_id = $22,
           updated_at = NOW()
-        WHERE id = $22 AND company_id = $23
+        WHERE id = $23 AND company_id = $24
         RETURNING *;
       `;
 
@@ -172,6 +173,7 @@ export async function PUT(req: Request, { params }: Props) {
         toCleanOrNull(validatedItem.cogs_gl_id),
         toCleanOrNull(validatedItem.sales_gl_id),
         toCleanOrNull(validatedItem.purchase_gl_id),
+        toCleanOrNull(validatedItem.vat_product_group_id),
         id,
         companyId,
       ];

@@ -164,6 +164,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       );
   }, [id]);
 
+  const isCompleted = order.status === "completed" || order.status === "POSTED";
+  const isFormDisabled = isReadOnly || isCompleted;
+
   useEffect(() => {
     async function loadMasterData() {
       try {
@@ -220,6 +223,13 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       supplier_id: supplier.id,
       supplier_no: supplier.supplier_code,
       supplier_name: supplier.name,
+
+      // 💥 FIX: Capture the VAT Business / Purchase Posting Group from supplier
+      purchase_posting_group_id:
+        supplier.purchase_posting_group_id || supplier.posting_group || "",
+      vat_business_posting_group_id:
+        supplier.purchase_posting_group_id || supplier.posting_group || "",
+
       // Supplier Settings & Financial defaults
       anonymous_supplier: supplier.anonymous_supplier ?? false,
       purchaser_code: supplier.purchaser_code || "",
@@ -259,6 +269,17 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const validateForm = (): boolean => {
     const errors: string[] = [];
     if (!order.supplier_id) errors.push("Supplier selection is required.");
+
+    // 💥 FIX: Validate Posting Group presence for Tax Matrix calculation
+    if (
+      !order.purchase_posting_group_id &&
+      !order.vat_business_posting_group_id
+    ) {
+      errors.push(
+        "Selected supplier does not have a valid Purchase/VAT Posting Group assigned.",
+      );
+    }
+
     if (!currencyConfig.currency_id)
       errors.push("Transactional currency is required.");
     if (lines.length === 0)
@@ -631,6 +652,19 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         </div>
       )}
 
+      {isCompleted && (
+        <div className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Icon icon="tabler:lock" className="w-4 h-4 text-emerald-600" />
+            This Purchase Order is <strong>Completed / Fully Posted</strong> and
+            cannot be edited.
+          </span>
+          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] uppercase font-bold tracking-wider">
+            Read Only
+          </span>
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
         <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar">
           {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
@@ -709,12 +743,13 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         setSupplierModalOpen={setSupplierModalOpen}
         labelStyle={labelStyle}
         inputStyle={inputStyle}
+        isReadOnly={isFormDisabled}
       />
 
       <PurchaseOrderLines
         lines={lines}
         setLines={setLines}
-        isReadonly={isReadOnly}
+        isReadonly={isFormDisabled}
         purchaseOrder={order}
         refreshLines={refreshLines}
       />

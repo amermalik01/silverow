@@ -67,6 +67,10 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
   const [brands, setBrands] = useState<ItemLookupOption[]>([]);
   const [uoms, setUoms] = useState<ItemLookupOption[]>([]);
 
+  const [vatProductGroups, setVatProductGroups] = useState<ItemLookupOption[]>(
+    [],
+  );
+
   // Stock summary metrics (Matching Legacy UI Header)
   const [stockMetrics, setStockMetrics] = useState({
     onRouteStock: 0,
@@ -85,16 +89,28 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
     const loadInitialData = async () => {
       show("Loading item details...");
       try {
-        const [itemRes, catRes, brandRes, uomRes] = await Promise.all([
+        const [itemRes, catRes, brandRes, uomRes, vatRes] = await Promise.all([
           fetch(`/api/inventory/items/${id}`),
           fetch("/api/setup/inventory/categories"),
           fetch("/api/setup/inventory/brands"),
           fetch("/api/setup/inventory/uoms"),
+          fetch("/api/setup/vat-product-posting-groups"),
         ]);
 
         if (catRes.ok) setCategories(await catRes.json());
         if (brandRes.ok) setBrands(await brandRes.json());
         if (uomRes.ok) setUoms(await uomRes.json());
+
+        let fetchedVatGroups: ItemLookupOption[] = [];
+        if (vatRes && vatRes.ok) {
+          fetchedVatGroups = await vatRes.json();
+          setVatProductGroups(fetchedVatGroups);
+        }
+
+        // Auto-find default "Standard" group ID
+        const standardVatGroup = fetchedVatGroups.find(
+          (g) => g.name.toLowerCase() === "standard",
+        );
 
         if (itemRes.ok) {
           const result = await itemRes.json();
@@ -120,17 +136,31 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
               itemData.standard_sales_price?.toString() || "",
             standard_cost: itemData.standard_cost?.toString() || "",
             costing_method: itemData.costing_method || 1,
+
+            // If no VAT group exists on item, default to "Standard"
+            vat_product_group_id:
+              itemData.vat_product_group_id || standardVatGroup?.id || "",
+            inventory_posting_group_id:
+              itemData.inventory_posting_group_id || "",
+            inventory_gl_id: itemData.inventory_gl_id || "",
+            cogs_gl_id: itemData.cogs_gl_id || "",
+            sales_gl_id: itemData.sales_gl_id || "",
+            purchase_gl_id: itemData.purchase_gl_id || "",
           });
 
           if (itemData.item_code) setAutoCode(false);
 
-          if (itemData.stock_metrics) {
-            setStockMetrics(itemData.stock_metrics);
-          }
+          if (itemData.stock_metrics) setStockMetrics(itemData.stock_metrics);
 
           // Populate warehouses state safely without re-reading stream
-          if (Array.isArray(warehouseData)) {
-            setWarehouses(warehouseData);
+          if (Array.isArray(warehouseData)) setWarehouses(warehouseData);
+        } else {
+          // Handle new item setup with default "Standard" VAT Group
+          if (standardVatGroup) {
+            setItem((prev) => ({
+              ...prev,
+              vat_product_group_id: standardVatGroup.id,
+            }));
           }
         }
       } catch (err) {
@@ -187,6 +217,7 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
           standard_cost: item.standard_cost || null,
 
           // GL Accounting & Posting Group mappings
+          vat_product_group_id: item.vat_product_group_id || null,
           inventory_posting_group_id: item.inventory_posting_group_id || null,
           inventory_gl_id: item.inventory_gl_id || null,
           cogs_gl_id: item.cogs_gl_id || null,
@@ -286,6 +317,7 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
             categories={categories}
             brands={brands}
             uoms={uoms}
+            vatProductGroups={vatProductGroups}
             autoCode={autoCode}
             setAutoCode={setAutoCode}
             errors={formErrors}

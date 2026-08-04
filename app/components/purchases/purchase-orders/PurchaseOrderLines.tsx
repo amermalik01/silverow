@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   PurchaseOrder,
   PurchaseOrderLine,
@@ -27,6 +27,14 @@ import PO_StockAllocationModal, {
   PO_StockAllocationRecord,
 } from "@/app/components/shared/modals/PO_StockAllocationModal";
 
+type VatPostingOption = {
+  id: string;
+  code: string;
+  description?: string;
+  vat_percent: number;
+  vat_product_group_id?: string;
+};
+
 type Props = {
   lines: PurchaseOrderLineUI[];
   setLines: React.Dispatch<React.SetStateAction<PurchaseOrderLineUI[]>>;
@@ -46,6 +54,9 @@ export default function PurchaseOrderLines({
   const [itemIndex, setItemIndex] = useState<number | null>(null);
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
+
+  // ... inside PurchaseOrderLines component:
+  const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
 
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
@@ -78,6 +89,50 @@ export default function PurchaseOrderLines({
         received_quantity: 0,
       },
     ]);
+  };
+
+  // Fetch available VAT options
+
+  useEffect(() => {
+    async function loadVatOptions() {
+      try {
+        // Pass header.vat_business_posting_group_id (or vendor's group ID) if available
+        const busGroupParam = purchaseOrder?.vat_business_posting_group_id
+          ? `?vat_business_group_id=${purchaseOrder.vat_business_posting_group_id}`
+          : "";
+
+        const res = await fetch(`/api/lookups/vat-rates${busGroupParam}`);
+        if (res.ok) {
+          const json = await res.json();
+          setVatOptions(json.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to load VAT options:", err);
+      }
+    }
+
+    loadVatOptions();
+  }, [purchaseOrder?.vat_business_posting_group_id]);
+
+  const handleVatChange = (index: number, selectedVatOptionId: string) => {
+    const selectedOption = vatOptions.find(
+      (opt) => opt.id === selectedVatOptionId,
+    );
+    const updated = [...lines];
+
+    const vatPercent = selectedOption
+      ? Number(selectedOption.vat_percent || 0)
+      : 0;
+    const vatProductGroupId =
+      selectedOption?.vat_product_group_id || selectedOption?.id || "";
+
+    updated[index] = calculateLine({
+      ...updated[index],
+      vat_percent: vatPercent,
+      vat_product_posting_group_id: vatProductGroupId,
+    });
+
+    setLines(updated);
   };
 
   const removeLine = (index: number) => {
@@ -489,7 +544,7 @@ export default function PurchaseOrderLines({
                     />
                   </td>
 
-                  <td className="p-2">
+                  {/* <td className="p-2">
                     <input
                       type="number"
                       value={displayVatPercent}
@@ -499,6 +554,30 @@ export default function PurchaseOrderLines({
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
                     />
+                  </td> */}
+
+                  <td className="p-2">
+                    <select
+                      value={
+                        vatOptions.find(
+                          (opt) =>
+                            opt.vat_product_group_id ===
+                              line.vat_product_posting_group_id ||
+                            opt.id === line.vat_product_posting_group_id ||
+                            opt.vat_percent === displayVatPercent,
+                        )?.id || ""
+                      }
+                      disabled={isLineDisabled || line.line_type === "COMMENT"}
+                      onChange={(e) => handleVatChange(index, e.target.value)}
+                      className="border dark:border-slate-700 dark:bg-slate-800 text-xs rounded p-1.5 w-full bg-white dark:text-slate-100 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="">0% (Exempt/Zero)</option>
+                      {vatOptions.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.code} ({opt.vat_percent}%)
+                        </option>
+                      ))}
+                    </select>
                   </td>
 
                   <td className="p-2 text-right font-medium">
@@ -627,13 +706,58 @@ export default function PurchaseOrderLines({
           if (itemIndex === null) return;
           const updated = [...lines];
 
-          const warehouseResponse = await fetch(
-            `/api/lookups/default-warehouse?item_id=${item.id}`,
-          );
+          // 1. Fetch Default Warehouse for the Item
+          let defaultWarehouse: {
+            id?: string;
+            code?: string;
+            name?: string;
+          } | null = null;
+          try {
+            const warehouseResponse = await fetch(
+              `/api/lookups/default-warehouse?item_id=${item.id}`,
+            );
+            if (warehouseResponse.ok) {
+              const warehouseData = await warehouseResponse.json();
+              defaultWarehouse = warehouseData.data;
+            }
+          } catch (err) {
+            console.error("Failed to fetch default warehouse:", err);
+          }
 
-          const warehouseData = await warehouseResponse.json();
+          // 2. Resolve VAT Business Posting Group from Supplier / Purchase Order
+          const vatBusinessGroupId =
+            purchaseOrder.purchase_posting_group_id ||
+            purchaseOrder.vat_business_posting_group_id ||
+            "";
 
-          const defaultWarehouse = warehouseData.data;
+          // 3. Resolve Product Posting Group from Item lookup (using vat_product_group_id from ItemLookupRecord)
+          const vatProductGroupId = item.vat_product_group_id || "";
+
+          // 4. Query VAT Posting Setup matrix to get the exact VAT percentage
+          let calculatedVatPercent = 0;
+
+          if (vatBusinessGroupId && vatProductGroupId) {
+            try {
+              const vatParams = new URLSearchParams({
+                vat_business_group_id: vatBusinessGroupId,
+                vat_product_group_id: vatProductGroupId,
+              });
+
+              const vatResponse = await fetch(
+                `/api/lookups/vat-posting-setup?${vatParams.toString()}`,
+              );
+
+              if (vatResponse.ok) {
+                const vatData = await vatResponse.json();
+                // Expecting vat_rate or vat_percent from the lookup API result
+                calculatedVatPercent = Number(
+                  vatData.data?.vat_rate ?? vatData.data?.vat_percent ?? 0,
+                );
+              }
+            } catch (err) {
+              console.error("Error resolving VAT posting setup rate:", err);
+            }
+          }
 
           updated[itemIndex] = calculateLine({
             ...updated[itemIndex],
@@ -649,6 +773,11 @@ export default function PurchaseOrderLines({
             unit_cost: Number(item.standard_cost || 0),
 
             uom_id: item.base_uom_id,
+            uom_name: item.base_uom_name || updated[itemIndex].uom_name,
+
+            vat_percent: calculatedVatPercent,
+            vat_business_posting_group_id: vatBusinessGroupId,
+            vat_product_posting_group_id: vatProductGroupId,
 
             warehouse_id: defaultWarehouse?.id,
             warehouse_code: defaultWarehouse?.code,
@@ -763,3 +892,12 @@ export default function PurchaseOrderLines({
     </div>
   );
 }
+/* 
+
+          // const warehouseResponse = await fetch(
+          //   `/api/lookups/default-warehouse?item_id=${item.id}`,
+          // );
+
+          // const warehouseData = await warehouseResponse.json();
+
+          // const defaultWarehouse = warehouseData.data; */

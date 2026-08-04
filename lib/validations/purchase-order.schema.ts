@@ -160,6 +160,10 @@ export const PurchaseOrderSchema = z.object({
   payment_method: looseString,
   payment_method_id: looseUuid,
 
+  supplier_posting_group_id: looseUuid,
+  purchase_posting_group_id: looseUuid,
+  vat_business_posting_group_id: looseUuid,
+
   previous_code: looseString,
   link_to_cust: looseString,
 
@@ -213,43 +217,3 @@ export type PurchaseOrderLineInput = z.infer<typeof PurchaseOrderLineSchema>;
 export type PurchaseOrderPayloadInput = z.infer<
   typeof PurchaseOrderPayloadSchema
 >;
-/* 
-
-export const PurchaseOrderSchema = z.object({
-  id: looseUuid,
-  company_id: looseUuid,
-  order_no: z.string().optional().nullable(),
-  supplier_id: z.string().uuid("Supplier selection is required"),
-  supplier_no: z.string().optional().nullable(),
-  supplier_name: z.string().optional().nullable(),
-  warehouse_id: z.string().uuid().optional().nullable(),
-  currency_id: z
-    .string()
-    .uuid("An operational currency selection token is required"),
-  exchange_rate: looseNumber.refine((val) => val > 0, {
-    message: "Exchange rate factor must be greater than 0",
-  }),
-  order_date: z.string().min(1, "Order execution transaction date required"),
-  expected_date: z.string().optional().nullable(),
-  invoice_date: z.string().optional().nullable(),
-  req_receipt_date: z.string().optional().nullable(),
-  receipt_date: z.string().optional().nullable(),
-  due_date: z.string().optional().nullable(),
-  purchaser: looseString,
-  consignment_no: looseString,
-  supp_order_no: looseString,
-  link_to_so_no: looseString,
-  payable_bank: looseString,
-  payable_bank_id: z.string().uuid().optional().nullable(),
-  payment_terms: looseString,
-  payment_terms_id: z.string().uuid().optional().nullable(),
-  payment_method: looseString,
-  payment_method_id: z.string().uuid().optional().nullable(),
-  reference: z.string().max(100).optional().nullable(),
-  notes: z.string().max(5000).optional().nullable(),
-  subtotal: looseNumber,
-  tax_amount: looseNumber,
-  total_amount: looseNumber,
-  status: z.string().min(1, "Status stage is required"),
-});
-*/

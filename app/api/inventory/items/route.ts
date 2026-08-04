@@ -187,12 +187,12 @@ export async function POST(req: Request) {
             category_id, brand_id, base_uom_id, purchase_uom_id, sales_uom_id,
             item_type, status, stock_tracking, reorder_qty, standard_sales_price,
             standard_cost, costing_method, inventory_posting_group_id,
-            inventory_gl_id, cogs_gl_id, sales_gl_id, purchase_gl_id,
+            inventory_gl_id, cogs_gl_id, sales_gl_id, purchase_gl_id,vat_product_group_id,
             created_at, updated_at
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
             $11, $12, $13, $14, $15, $16, $17, $18,
-            $19, $20, $21, $22, NOW(), NOW()
+            $19, $20, $21, $22, $23, NOW(), NOW()
           ) RETURNING *;
         `;
 
@@ -219,6 +219,7 @@ export async function POST(req: Request) {
           toCleanOrNull(validatedItem.cogs_gl_id),
           toCleanOrNull(validatedItem.sales_gl_id),
           toCleanOrNull(validatedItem.purchase_gl_id),
+          toCleanOrNull(validatedItem.vat_product_group_id),
         ];
 
         const itemResult = await client.query(itemInsertQuery, itemValues);

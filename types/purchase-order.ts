@@ -34,6 +34,10 @@ export interface PurchaseOrder {
   payment_method?: string;
   payment_method_id?: string;
 
+  purchase_posting_group_id?: string;
+  supplier_posting_group_id?: string;
+  vat_business_posting_group_id?: string;
+
   previous_code?: string;
   link_to_cust?: string;
   deduct_from_rebate?: boolean;

@@ -21,28 +21,6 @@ export async function GET(req: NextRequest) {
     */
 
     if (itemId) {
-      //   const itemWarehouseResult = await pool.query(
-      //     `
-      //     SELECT
-      //       w.id,
-      //       w.code,
-      //       w.name
-      //     FROM item_warehouses iw
-      //     INNER JOIN warehouses w
-      //       ON w.id = iw.warehouse_id
-
-      //     WHERE
-      //       iw.item_id = $1
-      //       AND w.company_id = $2
-      //       AND w.status = 1
-
-      //     ORDER BY
-      //       iw.is_default DESC,
-      //       w.is_default DESC
-      //     LIMIT 1
-      //     `,
-      //     [itemId, companyId],
-      //   );
 
       const itemWarehouseResult = await pool.query(
         `
@@ -216,3 +194,26 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+      //   const itemWarehouseResult = await pool.query(
+      //     `
+      //     SELECT
+      //       w.id,
+      //       w.code,
+      //       w.name
+      //     FROM item_warehouses iw
+      //     INNER JOIN warehouses w
+      //       ON w.id = iw.warehouse_id
+
+      //     WHERE
+      //       iw.item_id = $1
+      //       AND w.company_id = $2
+      //       AND w.status = 1
+
+      //     ORDER BY
+      //       iw.is_default DESC,
+      //       w.is_default DESC
+      //     LIMIT 1
+      //     `,
+      //     [itemId, companyId],
+      //   );

@@ -10,6 +10,7 @@ type Props = {
   categories: ItemLookupOption[];
   brands: ItemLookupOption[];
   uoms: ItemLookupOption[];
+  vatProductGroups?: ItemLookupOption[];
   autoCode: boolean;
   setAutoCode: (val: boolean) => void;
   errors: Record<string, string>;
@@ -22,6 +23,7 @@ export default function GeneralTab({
   categories,
   brands,
   uoms,
+  vatProductGroups = [],
   autoCode,
   setAutoCode,
   errors,
@@ -121,6 +123,30 @@ export default function GeneralTab({
             {brands.map((brand) => (
               <option key={brand.id} value={brand.id}>
                 {brand.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-1 font-medium text-slate-700 dark:text-slate-300">
+            VAT Product Posting Group
+          </label>
+          <select
+            disabled={isReadonly}
+            value={item.vat_product_group_id || ""}
+            onChange={(e) =>
+              setItem((prev) => ({
+                ...prev,
+                vat_product_group_id: e.target.value,
+              }))
+            }
+            className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 bg-white dark:bg-slate-900"
+          >
+            <option value="">Select VAT Group</option>
+            {vatProductGroups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
               </option>
             ))}
           </select>

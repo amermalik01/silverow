@@ -102,6 +102,7 @@ export async function GET(req: NextRequest) {
 
         i.inventory_gl_id,
         i.purchase_gl_id,
+        i.vat_product_group_id,
         i.sales_gl_id,
         i.cogs_gl_id,
 

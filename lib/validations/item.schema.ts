@@ -20,6 +20,9 @@ export const ItemSchema = z.object({
   standard_cost: z.union([z.string(), z.number()]).optional().nullable(),
   costing_method: z.number().default(1),
 
+  // VAT Product Posting Group
+  vat_product_group_id: z.string().optional().nullable(),
+
   // GL Accounting & Posting Group Fields
   inventory_posting_group_id: z.string().optional().nullable(),
   inventory_gl_id: z.string().optional().nullable(),

@@ -201,6 +201,14 @@ export class PurchaseOrderService {
       );
       if (!supplierResult.rows.length) throw new Error("Supplier not found");
 
+      const supplierPostingGroupId =
+        order.supplier_posting_group_id ||
+        order.purchase_posting_group_id ||
+        null;
+
+      const vatBusinessPostingGroupId =
+        order.vat_business_posting_group_id || null;
+
       const orderResult = await client.query(
         `
           INSERT INTO purchase_orders (
@@ -260,10 +268,13 @@ export class PurchaseOrderService {
             status,
             anonymous_supplier,
 
+            supplier_posting_group_id,
+            vat_business_posting_group_id,
+
             created_at
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
-        $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,$31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, NOW()
+        $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,$31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, NOW()
         )
         RETURNING *;
         `,
@@ -323,6 +334,9 @@ export class PurchaseOrderService {
 
           order.status, // $40
           order.anonymous_supplier, // $41
+
+          supplierPostingGroupId, // $42
+          vatBusinessPostingGroupId, // $43
         ],
       );
 
@@ -415,6 +429,14 @@ export class PurchaseOrderService {
       throw new Error("Posted purchase order cannot be modified");
     }
 
+    const supplierPostingGroupId =
+      order.supplier_posting_group_id ||
+      order.purchase_posting_group_id ||
+      null;
+
+    const vatBusinessPostingGroupId =
+      order.vat_business_posting_group_id || null;
+
     await client.query(
       `
         UPDATE purchase_orders
@@ -474,9 +496,12 @@ export class PurchaseOrderService {
 
           anonymous_supplier=$39,
 
+          supplier_posting_group_id=$40,
+          vat_business_posting_group_id=$41,
+
           updated_at=NOW()
 
-          WHERE id=$40 AND company_id=$41;
+          WHERE id=$42 AND company_id=$43;
         `,
 
       [
@@ -532,6 +557,10 @@ export class PurchaseOrderService {
 
         order.status,
         order.anonymous_supplier,
+
+        supplierPostingGroupId,
+        vatBusinessPostingGroupId,
+
         id,
         companyId,
       ],
@@ -951,7 +980,6 @@ export class PurchaseOrderService {
     warehouseId: string,
     initialAllocations: PO_StockAllocationRecord[],
   ): Promise<void> {
-
     // 1. Lock check: If stock has already been received on this line, protect allocations from deletion/modification
     const lineCheck = await client.query(
       `
@@ -959,7 +987,7 @@ export class PurchaseOrderService {
       FROM purchase_order_lines
       WHERE id = $1 AND company_id = $2
       `,
-      [purchaseOrderLineId, companyId]
+      [purchaseOrderLineId, companyId],
     );
 
     const receivedQty = Number(lineCheck.rows[0]?.received_quantity || 0);

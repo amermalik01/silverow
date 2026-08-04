@@ -36,6 +36,9 @@ export type ItemFormData = {
   standard_cost: string;
   costing_method: number;
 
+  // VAT Product Posting Group
+  vat_product_group_id?: string;
+
   // GL Accounting Fields
   inventory_posting_group_id?: string;
   inventory_gl_id?: string;
