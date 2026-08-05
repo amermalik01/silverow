@@ -4,6 +4,8 @@ import React from "react";
 import { Icon } from "@iconify/react";
 import { PurchaseOrder, PurchaseOrderMasterData } from "@/types/purchase-order";
 import MasterDropdown from "../../common/MasterDropdown";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 interface Address {
   name?: string;
   address_1?: string;
@@ -63,6 +65,7 @@ interface OrderFormTabsProps {
   setSupplierModalOpen: (open: boolean) => void;
   labelStyle?: string;
   inputStyle?: string;
+  inputDateStyle?: string;
   isReadOnly?: boolean;
 }
 
@@ -82,6 +85,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   setSupplierModalOpen,
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
   inputStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
+  inputDateStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
   isReadOnly = false,
 }) => {
   const inputcolumnDivStyle =
@@ -349,12 +353,28 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
           <div className="space-y-2">
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Invoice Date</label>
-              <input
+              {/* <input
                 type="date"
                 className={inputStyle}
                 value={order.invoice_date || ""}
                 min={order.order_date?.split("T")[0] ?? ""}
                 onChange={(e) => updateField("invoice_date", e.target.value)}
+              /> */}
+
+              <DatePicker
+                value={
+                  order.invoice_date ? new Date(order.invoice_date) : undefined
+                }
+                containerClassName="col-span-8"
+                minDate={
+                  order.order_date ? new Date(order.order_date) : undefined
+                }
+                onChange={(date) =>
+                  updateField(
+                    "invoice_date",
+                    date ? format(date, "yyyy-MM-dd") : "",
+                  )
+                }
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
@@ -369,7 +389,32 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Order Date</label>
-              <input
+
+              <DatePicker
+                value={
+                  order.order_date ? new Date(order.order_date) : undefined
+                }
+                containerClassName="col-span-8"
+                maxDate={maxOrderDate ? new Date(maxOrderDate) : undefined}
+                onChange={(date) => {
+                  const formattedDate = date ? format(date, "yyyy-MM-dd") : "";
+
+                  // Fix: updated order_date instead of invoice_date
+                  updateField("order_date", formattedDate);
+
+                  const selected = typedMasterData?.paymentTerms?.find(
+                    (x) => x.id === order.payment_terms_id,
+                  );
+
+                  if (selected && formattedDate) {
+                    updateField(
+                      "due_date",
+                      calculateDueDate(formattedDate, selected.days),
+                    );
+                  }
+                }}
+              />
+              {/* <input
                 type="date"
                 className={inputStyle}
                 value={order.order_date?.split("T")[0] ?? ""}
@@ -390,11 +435,30 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     );
                   }
                 }}
-              />
+              /> */}
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Req. Rcpt. Date</label>
-              <input
+
+              <DatePicker
+                value={
+                  order.req_receipt_date
+                    ? new Date(order.req_receipt_date)
+                    : undefined
+                }
+                containerClassName="col-span-8"
+                minDate={
+                  order.order_date ? new Date(order.order_date) : undefined
+                }
+                onChange={(date) =>
+                  updateField(
+                    "req_receipt_date",
+                    date ? format(date, "yyyy-MM-dd") : "",
+                  )
+                }
+              />
+
+              {/* <input
                 type="date"
                 className={inputStyle}
                 value={order.req_receipt_date?.split("T")[0] ?? ""}
@@ -402,11 +466,26 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) =>
                   updateField("req_receipt_date", e.target.value)
                 }
-              />
+              /> */}
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Receipt Date</label>
-              <input
+              <DatePicker
+                value={
+                  order.receipt_date ? new Date(order.receipt_date) : undefined
+                }
+                containerClassName="col-span-8"
+                minDate={
+                  order.order_date ? new Date(order.order_date) : undefined
+                }
+                onChange={(date) =>
+                  updateField(
+                    "receipt_date",
+                    date ? format(date, "yyyy-MM-dd") : "",
+                  )
+                }
+              />
+              {/* <input
                 type="date"
                 className={inputStyle}
                 value={order.receipt_date?.split("T")[0] ?? ""}
@@ -416,7 +495,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   ""
                 }
                 onChange={(e) => updateField("receipt_date", e.target.value)}
-              />
+              /> */}
             </div>
           </div>
         </div>
@@ -645,12 +724,25 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Due Date</label>
-              <input
+
+              <DatePicker
+                value={
+                  order.due_date ? new Date(order.due_date) : undefined
+                }
+                containerClassName="col-span-8"
+                onChange={(date) =>
+                  updateField(
+                    "due_date",
+                    date ? format(date, "yyyy-MM-dd") : "",
+                  )
+                }
+              />
+              {/* <input
                 type="date"
                 className={inputStyle}
                 value={order.due_date?.split("T")[0] ?? ""}
                 onChange={(e) => updateField("due_date", e.target.value)}
-              />
+              /> */}
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Payment Method</label>
