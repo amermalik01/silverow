@@ -55,7 +55,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
       {/* Header Corporate Identity Block */}
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h2 className="text-xl font-bold tracking-widest text-gray-900 uppercase">
+          <h2 className="text-xl font-bold tracking-widest text-gray-900 capitalize">
             Hygge
           </h2>
           <div className="text-gray-500 mt-2 space-y-0.5 leading-relaxed">
@@ -67,7 +67,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
           </div>
         </div>
         <div className="text-right">
-          <h1 className="text-emerald-700 text-lg font-bold uppercase tracking-wider mb-2">
+          <h1 className="text-emerald-700 text-lg font-bold capitalize tracking-wider mb-2">
             Transfer Stock
           </h1>
           <p className="font-semibold text-gray-900">
@@ -85,7 +85,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
       {/* Routing Locations Manifest Box */}
       <div className="grid grid-cols-2 gap-8 border-t border-b py-4 bg-gray-50/50 px-2 mb-6">
         <div>
-          <h4 className="text-blue-600 font-bold uppercase mb-1.5 text-[11px]">
+          <h4 className="text-blue-600 font-bold capitalize mb-1.5 text-[11px]">
             Collection From
           </h4>
           <div className="font-medium text-gray-900 mb-1">
@@ -99,7 +99,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
           </div>
         </div>
         <div>
-          <h4 className="text-blue-600 font-bold uppercase mb-1.5 text-[11px]">
+          <h4 className="text-blue-600 font-bold capitalize mb-1.5 text-[11px]">
             Deliver To
           </h4>
           <div className="font-medium text-gray-900 mb-1">
@@ -118,7 +118,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
       {/* Structured Serial Ledger Details Grid */}
       <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="bg-emerald-900 text-white font-semibold uppercase tracking-wider text-[10px]">
+          <tr className="bg-emerald-900 text-white font-semibold capitalize tracking-wider text-[10px]">
             <th className="p-2 w-16">No.</th>
             <th className="p-2">Description</th>
             <th className="p-2 w-24">Ref. No.</th>

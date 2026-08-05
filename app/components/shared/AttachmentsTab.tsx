@@ -112,7 +112,7 @@ export default function AttachmentsTab({
               className="border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 rounded-xl flex justify-between items-center transition-all hover:bg-slate-50/50 dark:hover:bg-slate-900/40"
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg text-xs font-mono font-bold text-slate-500 uppercase tracking-tight shrink-0">
+                <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg text-xs font-mono font-bold text-slate-500 capitalize tracking-tight shrink-0">
                   {item.mime_type?.split("/")[1] || "DOC"}
                 </div>
                 <div className="overflow-hidden">

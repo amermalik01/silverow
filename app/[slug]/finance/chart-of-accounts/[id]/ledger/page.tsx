@@ -41,7 +41,7 @@ export default async function SecureLedgerPage({ params }: { params: Promise<{ i
       <div className="space-y-6 container mx-auto p-2">
         <div className="border-b pb-4">
           <h1 className="text-2xl font-bold tracking-tight">Ledger {account.code} — {account.name}</h1>
-          <p className="text-xs text-gray-500 uppercase mt-1">Classification: {account.account_type}</p>
+          <p className="text-xs text-gray-500 capitalize mt-1">Classification: {account.account_type}</p>
         </div>
 
         <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white overflow-hidden shadow-sm">

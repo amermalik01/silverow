@@ -96,7 +96,7 @@ export default function ContactsTab({
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold text-xs uppercase tracking-wider">
+            <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold text-xs capitalize tracking-wider">
               <th className="px-4 py-3">Contact Name</th>
               <th className="px-4 py-3">Job Title</th>
               <th className="px-4 py-3">Location Name</th>

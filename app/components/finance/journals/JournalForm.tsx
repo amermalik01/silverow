@@ -609,7 +609,7 @@ export default function JournalForm({
                       onChange={(e) =>
                         setMetadata({ ...metadata, reference: e.target.value })
                       }
-                      className="w-full border p-1 rounded text-center uppercase font-mono"
+                      className="w-full border p-1 rounded text-center capitalize font-mono"
                     />
                   </td>
                   <td className="p-1.5">

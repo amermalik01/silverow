@@ -48,7 +48,7 @@ export default function EmployeeGeneralTab({ employee, setEmployee }: Props) {
   const inputClass =
     "w-full border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all";
   const labelClass =
-    "block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5";
+    "block text-xs font-semibold text-slate-600 capitalize tracking-wider mb-1.5";
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

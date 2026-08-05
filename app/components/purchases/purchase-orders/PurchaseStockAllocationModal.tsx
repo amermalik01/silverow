@@ -237,7 +237,7 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
           ) : (
             <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
               <thead>
-                <tr className="bg-emerald-800 text-white font-medium uppercase tracking-wider">
+                <tr className="bg-emerald-800 text-white font-medium capitalize tracking-wider">
                   <th className="p-2">Production Date</th>
                   <th className="p-2">Use By Date</th>
                   <th className="p-2">Date Received</th>

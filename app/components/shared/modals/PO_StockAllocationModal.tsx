@@ -200,7 +200,7 @@ export default function PO_StockAllocationModal({
           </div> */}
           <div className="grid grid-cols-3 col-span-3 gap-2 text-center">
             <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded p-2">
-              <div className="text-xs text-slate-500 dark:text-slate-400 uppercase">
+              <div className="text-xs text-slate-500 dark:text-slate-400 capitalize">
                 Target Qty.
               </div>
               <div className="text-lg font-bold">
@@ -218,7 +218,7 @@ export default function PO_StockAllocationModal({
                   : "border-green-300 dark:border-green-900"
               }`}
             >
-              <div className="text-xs text-red-500 dark:text-red-400 uppercase font-medium">
+              <div className="text-xs text-red-500 dark:text-red-400 capitalize font-medium">
                 Qty. To Allocate
               </div>
               <div className="text-lg font-bold text-red-600 dark:text-red-400">
@@ -230,7 +230,7 @@ export default function PO_StockAllocationModal({
             </div>
 
             <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded p-2">
-              <div className="text-xs text-green-600 dark:text-green-400 uppercase font-medium">
+              <div className="text-xs text-green-600 dark:text-green-400 capitalize font-medium">
                 Allocated Total
               </div>
               <div className="text-lg font-bold text-green-600 dark:text-green-400">
@@ -247,7 +247,7 @@ export default function PO_StockAllocationModal({
         <div className="p-5 overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
+              <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 capitalize font-semibold border-b border-slate-200 dark:border-slate-800">
                 <th className="p-3 w-40">Date Received</th>
                 <th className="p-3 w-40">Prod. Date</th>
                 <th className="p-3 w-40">Use By Date</th>

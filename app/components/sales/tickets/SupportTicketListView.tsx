@@ -156,11 +156,11 @@ export default function SupportTicketListView({ slug }: Props) {
       {/* Top Main Command Header Strip */}
       <div className="flex justify-between items-center bg-transparent border-b pb-2">
         <div className="flex items-center gap-1">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sales</span>
+          <span className="text-xs font-semibold text-slate-500 capitalize tracking-wider">Sales</span>
           <span className="text-xs text-slate-400">/</span>
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Customers</span>
+          <span className="text-xs font-semibold text-slate-500 capitalize tracking-wider">Customers</span>
           <span className="text-xs text-slate-400">/</span>
-          <span className="text-xs font-bold bg-emerald-600 text-white px-2 py-0.5 rounded uppercase">Support Tickets</span>
+          <span className="text-xs font-bold bg-emerald-600 text-white px-2 py-0.5 rounded capitalize">Support Tickets</span>
         </div>
         
         <button
@@ -321,7 +321,7 @@ export default function SupportTicketListView({ slug }: Props) {
                       <td className="p-1 px-2 border-r dark:border-slate-800 font-bold text-blue-600 dark:text-blue-400 hover:underline">{t.ticket_no}</td>
                       <td className="p-1 px-2 border-r dark:border-slate-800 font-mono text-slate-500">{t.customer_no || "-"}</td>
                       <td className="p-1 px-2 border-r dark:border-slate-800 font-semibold truncate max-w-[180px]">{t.customer_name || "-"}</td>
-                      <td className="p-1 px-2 border-r dark:border-slate-800 text-center uppercase tracking-wider text-[10px] font-bold">
+                      <td className="p-1 px-2 border-r dark:border-slate-800 text-center capitalize tracking-wider text-[10px] font-bold">
                         <span className={`px-1.5 py-0.5 rounded ${
                           t.status === "Open" ? "bg-sky-100 text-sky-800" :
                           t.status === "In Progress" ? "bg-amber-100 text-amber-800" :

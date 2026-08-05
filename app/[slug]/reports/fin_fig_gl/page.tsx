@@ -197,7 +197,7 @@ export default function FigureByGLReport() {
       {/* Selected Account Chips Panel */}
       {selectedGLs.length > 0 && (
         <div className="mb-6 p-3 bg-white border border-slate-200 rounded-xl flex flex-wrap gap-1.5 items-center">
-          <span className="text-[11px] font-bold text-slate-400 uppercase mr-1 tracking-wider">
+          <span className="text-[11px] font-bold text-slate-400 capitalize mr-1 tracking-wider">
             Targets:
           </span>
           {selectedGLs.map((gl) => (
@@ -336,7 +336,7 @@ export default function FigureByGLReport() {
                     <tr className="bg-slate-50/50 font-bold font-sans text-xs text-slate-900 border-t border-slate-200">
                       <td
                         colSpan={6}
-                        className="px-4 py-2.5 text-right font-bold uppercase tracking-wide text-slate-500 text-[10px]"
+                        className="px-4 py-2.5 text-right font-bold capitalize tracking-wide text-slate-500 text-[10px]"
                       >
                         Total
                       </td>

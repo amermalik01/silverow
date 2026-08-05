@@ -37,7 +37,7 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 capitalize tracking-wider">
           Contacts
         </h3>
         <button

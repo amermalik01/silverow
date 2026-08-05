@@ -167,7 +167,7 @@ export default function HaulierAccrualsReport() {
       {/* Array selection contextual tracking drawer panels */}
       {selectedGLs.length > 0 && (
         <div className="mb-6 p-3 bg-white border border-slate-200 rounded-xl flex flex-wrap gap-1.5 items-center">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+          <span className="text-[11px] font-bold text-slate-400 capitalize tracking-wider mr-1">
             Bound G/L Targets:
           </span>
           {selectedGLs.map((gl) => (
@@ -277,7 +277,7 @@ export default function HaulierAccrualsReport() {
                 <tr className="bg-slate-50 border-t-2 border-slate-200 font-bold font-sans text-xs text-slate-900">
                   <td
                     colSpan={4}
-                    className="px-4 py-3 text-right font-bold uppercase tracking-wider text-slate-500 text-[10px]"
+                    className="px-4 py-3 text-right font-bold capitalize tracking-wider text-slate-500 text-[10px]"
                   >
                     Grand Summary Totals
                   </td>

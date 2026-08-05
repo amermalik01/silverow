@@ -574,7 +574,7 @@ export default function ItemJournalForm({
       {/* COMPACT HEAD METADATA ROW PANEL */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg shadow-sm">
         {/* <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+          <label className="block text-[11px] font-bold capitalize tracking-wider text-slate-400 dark:text-slate-500 mb-1">
             Posting Date *
           </label>
           <input
@@ -589,7 +589,7 @@ export default function ItemJournalForm({
         </div> */}
 
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+          <label className="block text-[11px] font-bold capitalize tracking-wider text-slate-400 dark:text-slate-500 mb-1">
             Journal No.
           </label>
           <input
@@ -601,7 +601,7 @@ export default function ItemJournalForm({
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+          <label className="block text-[11px] font-bold capitalize tracking-wider text-slate-400 dark:text-slate-500 mb-1">
             Document Reference No.
           </label>
           <input
@@ -616,7 +616,7 @@ export default function ItemJournalForm({
           />
         </div>
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+          <label className="block text-[11px] font-bold capitalize tracking-wider text-slate-400 dark:text-slate-500 mb-1">
             Narration / Memo Description
           </label>
           <input
@@ -637,7 +637,7 @@ export default function ItemJournalForm({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse table-fixed min-w-[1450px]">
             <thead>
-              <tr className="border-b bg-slate-50/70 dark:bg-slate-800/40 text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
+              <tr className="border-b bg-slate-50/70 dark:bg-slate-800/40 text-[11px] capitalize tracking-wider font-bold text-slate-500 dark:text-slate-400">
                 <th className="p-2 w-36">Posting Date *</th>
                 <th className="p-2 w-36">Type</th>
                 <th className="p-2 w-44">Item Code *</th>
@@ -1057,7 +1057,7 @@ return (
        
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-zinc-50/50 dark:bg-zinc-800/20 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
+              <label className="block text-xs font-semibold capitalize tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
                 Posting Date *
               </label>
               <input
@@ -1072,7 +1072,7 @@ return (
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
+              <label className="block text-xs font-semibold capitalize tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
                 Document No. / Reference
               </label>
               <input
@@ -1087,7 +1087,7 @@ return (
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
+              <label className="block text-xs font-semibold capitalize tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
                 Memo Narration Description
               </label>
               <input
@@ -1107,7 +1107,7 @@ return (
           <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
             <table className="w-full text-left border-collapse min-w-[1250px]">
               <thead>
-                <tr className="border-b bg-zinc-50 dark:bg-zinc-800/60 text-xs uppercase tracking-wider font-semibold text-zinc-600 dark:text-zinc-300">
+                <tr className="border-b bg-zinc-50 dark:bg-zinc-800/60 text-xs capitalize tracking-wider font-semibold text-zinc-600 dark:text-zinc-300">
                   <th className="p-3 w-44">Transaction Type</th>
                   <th className="p-3 w-40">Item No *</th>
                   <th className="p-3 min-w-[180px]">Item Description</th>

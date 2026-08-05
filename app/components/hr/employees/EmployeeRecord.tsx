@@ -151,7 +151,7 @@ export default function EmployeeRecord({ id }: Props) {
 
       <div className="border-b border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex items-center justify-between">
         <div>
-          <span className="text-xs uppercase tracking-wider font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
+          <span className="text-xs capitalize tracking-wider font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
             HR Module
           </span>
           <h1 className="text-2xl font-bold mt-2">

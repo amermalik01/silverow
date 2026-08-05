@@ -150,7 +150,7 @@ export default function LegacyCRMListing() {
 
           {/* Center Column: Status Checkbox Rules */}
           <div className="space-y-2 border-l border-white/10 pl-6 h-full flex flex-col justify-center">
-            <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">
+            <span className="text-[10px] capitalize font-bold text-emerald-400 tracking-wider block mb-1">
               Filter by
             </span>
             <div className="flex items-center space-x-4">
@@ -170,7 +170,7 @@ export default function LegacyCRMListing() {
 
           {/* Right Column: Address Sub-Matrix Display Controls */}
           <div className="space-y-2 border-l border-white/10 pl-6 h-full flex flex-col justify-center">
-            <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">
+            <span className="text-[10px] capitalize font-bold text-emerald-400 tracking-wider block mb-1">
               Display Options
             </span>
             <div className="flex items-center space-x-4">
@@ -244,7 +244,7 @@ export default function LegacyCRMListing() {
       {/* Selected Scoped Item Badge Container */}
       {selectedCRMs.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-1.5 items-center bg-white p-2.5 rounded border border-slate-200">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+          <span className="text-[10px] font-bold text-slate-400 capitalize tracking-wider mr-1">
             Targets:
           </span>
           {selectedCRMs.map((c) => (
@@ -292,7 +292,7 @@ export default function LegacyCRMListing() {
                 </p>
               </div>
               <div className="text-right">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                <h2 className="text-xs font-bold capitalize tracking-wider text-slate-900">
                   Hygge Bikes Ltd
                 </h2>
                 <p className="text-[10px] text-slate-400">

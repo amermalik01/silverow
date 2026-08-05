@@ -118,7 +118,7 @@ export const PostedTransactionsModal: React.FC<
           ) : (
             <div className="border border-slate-200 dark:border-slate-800 rounded overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse">
-                <thead className="bg-[#1b431c] text-white text-[11px] uppercase tracking-wider">
+                <thead className="bg-[#1b431c] text-white text-[11px] capitalize tracking-wider">
                   <tr>
                     <th className="p-2.5 font-semibold">Posting Date</th>
                     <th className="p-2.5 font-semibold">Document Type</th>

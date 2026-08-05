@@ -91,7 +91,7 @@ export default function PermissionMatrix({
 
       {Object.entries(grouped).map(([module, perms]) => (
         <div key={module} className="border rounded">
-          <div className="bg-gray-100 text-black px-4 py-2 font-semibold uppercase">
+          <div className="bg-gray-100 text-black px-4 py-2 font-semibold capitalize">
             {module}
           </div>
 

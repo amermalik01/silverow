@@ -55,7 +55,7 @@ const renderSidebarItems = (
         <div className='mb-1' key={item.heading}>
           <AMMenu
             subHeading={item.heading}
-            ClassName='hide-menu leading-21 text-sidebar-foreground dark:text-sidebar-foreground font-bold uppercase text-xs'
+            ClassName='hide-menu leading-21 text-sidebar-foreground dark:text-sidebar-foreground font-bold capitalize text-xs'
           />
         </div>
       )

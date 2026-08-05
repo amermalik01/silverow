@@ -154,7 +154,7 @@ export default function LegacyCustomerListing() {
 
           {/* Center Column: Status Checkbox Rules */}
           <div className="space-y-2 border-l border-white/10 pl-6 h-full flex flex-col justify-center">
-            <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">
+            <span className="text-[10px] capitalize font-bold text-emerald-400 tracking-wider block mb-1">
               Filter by
             </span>
             <div className="flex flex-wrap gap-4 items-center">
@@ -205,7 +205,7 @@ export default function LegacyCustomerListing() {
 
           {/* Right Column: Address Display Visibility Toggles */}
           <div className="space-y-2 border-l border-white/10 pl-6 h-full flex flex-col justify-center">
-            <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">
+            <span className="text-[10px] capitalize font-bold text-emerald-400 tracking-wider block mb-1">
               Display Configuration
             </span>
             <div className="flex flex-col space-y-1.5">
@@ -279,7 +279,7 @@ export default function LegacyCustomerListing() {
       {/* Target Selected Filter Badges Panel */}
       {selectedCustomers.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-1.5 items-center bg-white p-2.5 rounded border border-slate-200">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+          <span className="text-[10px] font-bold text-slate-400 capitalize tracking-wider mr-1">
             Targets:
           </span>
           {selectedCustomers.map((c) => (
@@ -330,7 +330,7 @@ export default function LegacyCustomerListing() {
                 </p>
               </div>
               <div className="text-right">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                <h2 className="text-xs font-bold capitalize tracking-wider text-slate-900">
                   Hygge Bikes Ltd
                 </h2>
                 <p className="text-[10px] text-slate-400">
@@ -566,7 +566,7 @@ export default function CustomerListingReport() {
  
       {selectedCustomers.length > 0 && (
         <div className="mb-6 p-3 bg-white border border-slate-200 rounded-xl flex flex-wrap gap-1.5 items-center">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Target Filters:</span>
+          <span className="text-[11px] font-bold text-slate-400 capitalize tracking-wider mr-1">Target Filters:</span>
           {selectedCustomers.map((cust) => (
             <div key={cust.id} className="inline-flex items-center space-x-1 bg-slate-50 text-slate-700 text-[11px] px-2 py-0.5 rounded-md border border-slate-200 font-medium font-mono">
               <span>{cust.customer_code || 'Unnamed'} - {cust.name}</span>
@@ -630,7 +630,7 @@ export default function CustomerListingReport() {
                     <td className="px-4 py-2.5 font-sans truncate max-w-[150px]">{line.email || '—'}</td>
                     <td className="px-4 py-2.5 text-right font-bold text-slate-900">{formatCurrency(line.creditLimit)}</td>
                     <td className="px-4 py-2.5 text-center font-sans">
-                      <span className={`inline-block px-2 py-0.5 rounded-full font-bold text-[9px] uppercase border ${
+                      <span className={`inline-block px-2 py-0.5 rounded-full font-bold text-[9px] capitalize border ${
                         line.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'
                       }`}>
                         {line.status}
@@ -643,7 +643,7 @@ export default function CustomerListingReport() {
             {lines.length > 0 && (
               <tfoot>
                 <tr className="bg-slate-50 border-t-2 border-slate-200 font-bold font-sans text-xs text-slate-900">
-                  <td colSpan={6} className="px-4 py-3 text-right font-bold uppercase tracking-wider text-slate-500 text-[10px]">Total Credit Exposure Allowed</td>
+                  <td colSpan={6} className="px-4 py-3 text-right font-bold capitalize tracking-wider text-slate-500 text-[10px]">Total Credit Exposure Allowed</td>
                   <td className="px-4 py-3 text-right font-mono text-xs text-slate-900 bg-slate-100/30 font-bold">{formatCurrency(totalCreditLimit)}</td>
                   <td></td>
                 </tr>

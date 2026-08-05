@@ -117,7 +117,7 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase whitespace-nowrap self-end sm:self-center">
+        <div className="flex items-center gap-2 text-xs font-bold text-gray-500 capitalize whitespace-nowrap self-end sm:self-center">
           <span>Records per grid layout:</span>
           <select
             value={limit}
@@ -155,7 +155,7 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse">
-              <thead className="bg-gray-50 dark:bg-slate-800/60 border-b dark:border-slate-800 text-xs font-bold text-gray-500 tracking-wider uppercase select-none">
+              <thead className="bg-gray-50 dark:bg-slate-800/60 border-b dark:border-slate-800 text-xs font-bold text-gray-500 tracking-wider capitalize select-none">
                 <tr>
                   <th className="p-4 w-40">Credit Note No</th>
                   <th className="p-4 w-40">Source Ref</th>
@@ -207,7 +207,7 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
                       {row.journal_entry_id ? (
                         <Link
                           href={`/${slug}/financials/journals/${row.journal_entry_id}`}
-                          className="bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 text-[10px] font-extrabold px-2 py-1 rounded border border-blue-200/50 dark:border-blue-900/40 tracking-wider uppercase transition"
+                          className="bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 text-[10px] font-extrabold px-2 py-1 rounded border border-blue-200/50 dark:border-blue-900/40 tracking-wider capitalize transition"
                         >
                           GL Journal ↗
                         </Link>

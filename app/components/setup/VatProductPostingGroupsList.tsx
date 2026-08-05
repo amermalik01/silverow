@@ -137,7 +137,7 @@ export default function VatProductPostingGroupsList() {
       ) : (
         <div className="overflow-x-auto border rounded-lg dark:border-slate-700">
           <table className="w-full text-xs text-left">
-            <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 uppercase text-xs tracking-wider">
+            <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 capitalize text-xs tracking-wider">
               <tr>
                 <th className="p-3">Product Posting Group Name</th>
                 <th className="p-3 text-center">Actions</th>

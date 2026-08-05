@@ -226,7 +226,7 @@ export default function BalanceSheetReport() {
                     row.rowType === "grand_total"
                   ) {
                     rowStyle =
-                      "bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300 border-b-4 border-double border-slate-400 uppercase tracking-wide text-[11px]";
+                      "bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300 border-b-4 border-double border-slate-400 capitalize tracking-wide text-[11px]";
                   }
 
                   return (

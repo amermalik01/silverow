@@ -78,15 +78,15 @@ export default function SalesInvoiceDetail({ slug, invoiceId }: { slug: string; 
       {/* Meta Header Information Information Panel Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-5 border rounded-lg shadow-sm">
         <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Customer / Bill To</label>
+          <label className="block text-xs font-bold text-gray-400 capitalize tracking-wider">Customer / Bill To</label>
           <p className="text-xs font-semibold text-gray-800 mt-1">{invoice.customer_name || "Unassigned Customer Walk-In"}</p>
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Posting Date</label>
+          <label className="block text-xs font-bold text-gray-400 capitalize tracking-wider">Posting Date</label>
           <p className="text-xs font-medium text-gray-800 mt-1">{new Date(invoice.invoice_date).toLocaleDateString()}</p>
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Financial Audit Stamp</label>
+          <label className="block text-xs font-bold text-gray-400 capitalize tracking-wider">Financial Audit Stamp</label>
           <p className="text-xs font-mono text-gray-600 mt-1">
             {invoice.is_posted && invoice.posted_at ? new Date(invoice.posted_at).toLocaleString() : "Awaiting Ledger Execution"}
           </p>
@@ -113,7 +113,7 @@ export default function SalesInvoiceDetail({ slug, invoiceId }: { slug: string; 
               <tr key={line.id} className="hover:bg-gray-50/70 transition-colors">
                 <td className="p-3 text-center text-gray-400 font-mono">{idx + 1}</td>
                 <td className="p-3">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-tight ${
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono capitalize tracking-tight ${
                     line.line_type === "ITEM" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"
                   }`}>
                     {line.line_type}
@@ -162,7 +162,7 @@ export default function SalesInvoiceDetail({ slug, invoiceId }: { slug: string; 
       {/* Optional Remarks Handling Block Section */}
       {invoice.notes && (
         <div className="p-4 border rounded-lg bg-gray-50 text-xs text-gray-600">
-          <span className="font-bold block text-gray-500 uppercase tracking-wider mb-1">Remarks & Internal Statements</span>
+          <span className="font-bold block text-gray-500 capitalize tracking-wider mb-1">Remarks & Internal Statements</span>
           {invoice.notes}
         </div>
       )}

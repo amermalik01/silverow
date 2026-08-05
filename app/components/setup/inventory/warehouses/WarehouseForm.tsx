@@ -90,7 +90,7 @@ export default function WarehouseForm({ id }: { id?: string }) {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-xs font-semibold uppercase text-slate-600 mb-1.5">
+          <label className="block text-xs font-semibold capitalize text-slate-600 mb-1.5">
             Warehouse Name <span className="text-rose-500">*</span>
           </label>
           <input
@@ -105,7 +105,7 @@ export default function WarehouseForm({ id }: { id?: string }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold capitalize text-slate-600 mb-1.5">
               Type
             </label>
             <select
@@ -121,7 +121,7 @@ export default function WarehouseForm({ id }: { id?: string }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-600 mb-1.5">
+            <label className="block text-xs font-semibold capitalize text-slate-600 mb-1.5">
               Status
             </label>
             <select

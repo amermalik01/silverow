@@ -182,7 +182,7 @@ export default function SalesReturnLines({
       <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse min-w-[1400px]">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 uppercase font-semibold text-slate-600 dark:text-slate-400">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 capitalize font-semibold text-slate-600 dark:text-slate-400">
               <tr>
                 <th className="p-2 w-28">Type</th>
                 <th className="p-2 w-44">Item / GL Account</th>
@@ -431,7 +431,7 @@ export default function SalesReturnLines({
               <tr>
                 <td
                   colSpan={9}
-                  className="text-right p-3 uppercase tracking-wider text-slate-500"
+                  className="text-right p-3 capitalize tracking-wider text-slate-500"
                 >
                   Total
                 </td>

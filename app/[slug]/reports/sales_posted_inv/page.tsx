@@ -260,7 +260,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
       {hasGenerated && (
         <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden transition-all duration-300">
           <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-            <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+            <h2 className="text-xs font-bold text-slate-700 capitalize tracking-wider flex items-center gap-2">
               <FileText className="h-4 w-4 text-emerald-800" /> Transaction
               Results Document View
             </h2>
@@ -308,7 +308,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
                       </td>
                       <td className="p-3 font-sans">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide capitalize ${
                             item.document_type === "Invoice"
                               ? "bg-blue-50 text-blue-700 border border-blue-200"
                               : "bg-red-50 text-red-700 border border-red-200"
@@ -369,7 +369,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
                   <tr>
                     <td
                       colSpan={8}
-                      className="p-3 font-sans text-left uppercase tracking-wider text-xs text-slate-500"
+                      className="p-3 font-sans text-left capitalize tracking-wider text-xs text-slate-500"
                     >
                       Totals Summary Balance
                     </td>

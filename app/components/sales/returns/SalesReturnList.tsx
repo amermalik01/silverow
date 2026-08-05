@@ -240,7 +240,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
                   </td>
                   <td className="p-3">
                     <span
-                      className={`text-[10px] tracking-wider px-2 py-0.5 rounded-full font-bold border uppercase ${getStatusBadgeClass(item.status)}`}
+                      className={`text-[10px] tracking-wider px-2 py-0.5 rounded-full font-bold border capitalize ${getStatusBadgeClass(item.status)}`}
                     >
                       {item.status}
                     </span>

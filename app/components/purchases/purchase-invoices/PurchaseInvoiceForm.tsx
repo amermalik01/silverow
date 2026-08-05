@@ -168,7 +168,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           <Icon icon="tabler:eye" className="w-4 h-4 text-blue-600" />
           Purchase Invoice Document Viewer — <strong>Read-Only Mode</strong>
         </span>
-        <span className="px-2.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px] uppercase font-bold tracking-wider">
+        <span className="px-2.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px] capitalize font-bold tracking-wider">
           {invoice.status || "POSTED"}
         </span>
       </div>
@@ -180,7 +180,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
             This Purchase Order is <strong>Completed / Fully Posted</strong> and
             cannot be edited.
           </span>
-          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] uppercase font-bold tracking-wider">
+          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] capitalize font-bold tracking-wider">
             Read Only
           </span>
         </div>
@@ -194,7 +194,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition whitespace-nowrap ${
+              className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap ${
                 activeTab === tab
                   ? "border-emerald-600 text-emerald-600"
                   : "border-transparent text-slate-400 hover:text-slate-600"

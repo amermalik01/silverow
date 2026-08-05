@@ -273,7 +273,7 @@ export default function TrialBalanceReport() {
                   </th>
                 )}
               </tr>
-              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold text-right">
+              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 capitalize tracking-wider font-semibold text-right">
                 {showBalances && (
                   <>
                     <th className="px-4 py-2 border-r border-slate-200 w-28">
@@ -398,7 +398,7 @@ export default function TrialBalanceReport() {
                 <tr className="bg-slate-100 font-bold border-t border-slate-300 border-b-4 border-double border-slate-400">
                   <td
                     colSpan={2}
-                    className="px-4 py-2.5 text-left font-sans text-slate-900 uppercase tracking-wider text-[10px]"
+                    className="px-4 py-2.5 text-left font-sans text-slate-900 capitalize tracking-wider text-[10px]"
                   >
                     Balanced Ledger Total
                   </td>

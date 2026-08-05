@@ -124,7 +124,7 @@ export default function ActivitiesTab({
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-gray-600 uppercase tracking-wider block mb-1">
+              <label className="text-xs font-medium text-gray-600 capitalize tracking-wider block mb-1">
                 Type
               </label>
               <select
@@ -140,7 +140,7 @@ export default function ActivitiesTab({
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 uppercase tracking-wider block mb-1">
+              <label className="text-xs font-medium text-gray-600 capitalize tracking-wider block mb-1">
                 Initial Status
               </label>
               <select
@@ -155,7 +155,7 @@ export default function ActivitiesTab({
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="text-xs font-medium text-gray-600 uppercase tracking-wider block mb-1">
+              <label className="text-xs font-medium text-gray-600 capitalize tracking-wider block mb-1">
                 Title
               </label>
               <input
@@ -169,7 +169,7 @@ export default function ActivitiesTab({
               />
             </div>
             <div className="md:col-span-2">
-              <label className="text-xs font-medium text-gray-600 uppercase tracking-wider block mb-1">
+              <label className="text-xs font-medium text-gray-600 capitalize tracking-wider block mb-1">
                 Description
               </label>
               <textarea
@@ -183,7 +183,7 @@ export default function ActivitiesTab({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 uppercase tracking-wider block mb-1">
+              <label className="text-xs font-medium text-gray-600 capitalize tracking-wider block mb-1">
                 Due Date
               </label>
               <input
@@ -230,7 +230,7 @@ export default function ActivitiesTab({
                 <div className="space-y-1 max-w-[80%]">
                   <div className="flex items-center gap-3">
                     <span
-                      className={`text-xs uppercase px-2 py-0.5 rounded-full font-bold ${
+                      className={`text-xs capitalize px-2 py-0.5 rounded-full font-bold ${
                         item.type === "meeting"
                           ? "bg-purple-100 text-purple-700"
                           : item.type === "call"

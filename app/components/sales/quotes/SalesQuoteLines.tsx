@@ -203,7 +203,7 @@ export default function SalesQuoteLines({
 
       <div className="border rounded overflow-auto bg-white dark:bg-slate-900">
         <table className="w-full text-xs min-w-[1100px]">
-          <thead className="bg-gray-50 dark:bg-slate-800 text-black dark:text-white text-left text-xs uppercase font-semibold">
+          <thead className="bg-gray-50 dark:bg-slate-800 text-black dark:text-white text-left text-xs capitalize font-semibold">
             <tr>
               <th className="p-2 w-28">Type</th>
               <th className="p-2 w-48">Item / GL Link</th>
@@ -368,7 +368,7 @@ export default function SalesQuoteLines({
             <tr>
               <td
                 colSpan={7}
-                className="text-right p-3 text-xs uppercase opacity-70"
+                className="text-right p-3 text-xs capitalize opacity-70"
               >
                 Document Summary Total
               </td>

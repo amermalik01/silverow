@@ -539,7 +539,7 @@ export default function GeneralTab({
 
         <div className="space-y-2">
           <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-lg">
-            <span className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            <span className="block text-xs font-bold capitalize tracking-wider text-slate-500 mb-2">
               Location Type
             </span>
             <div className="flex flex-wrap gap-4 text-xs font-medium">

@@ -342,7 +342,7 @@ export default function WarehouseTab({
                       onChange={(e) =>
                         updateWarehouseRow(idx, "currency", e.target.value)
                       }
-                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900 uppercase"
+                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900 capitalize"
                     />
                     <input
                       type="number"

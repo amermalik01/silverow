@@ -454,7 +454,7 @@ export default function TransferStockForm({
           <span>Inventory</span> <span>/</span> <span>Transfer Stock</span>
         </div>
         {isPosted && (
-          <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+          <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full capitalize tracking-wider">
             Status: Posted & Executed
           </span>
         )}

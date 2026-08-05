@@ -224,7 +224,7 @@ export default function CurrencyTab() {
                       value={currencyName}
                       className="border px-2.5 py-1.5 rounded bg-gray-50 w-full"
                     />
-                    <span className="border px-3 py-1.5 rounded bg-gray-50 text-gray-600 font-medium uppercase">
+                    <span className="border px-3 py-1.5 rounded bg-gray-50 text-gray-600 font-medium capitalize">
                       {currencyCode}
                     </span>
                   </>

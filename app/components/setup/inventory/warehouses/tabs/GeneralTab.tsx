@@ -79,7 +79,7 @@ export default function GeneralTab({
         {/* Left Column: Warehouse & Address */}
         <div className="space-y-3.5 col-span-2">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <h3 className="text-xs font-bold capitalize tracking-wider text-slate-400">
               Warehouse Identification
             </h3>
 
@@ -264,7 +264,7 @@ export default function GeneralTab({
 
         {/* Right Column: Primary Contact */}
         <div className="space-y-3.5 col-span-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">
+          <h3 className="text-xs font-bold capitalize tracking-wider text-slate-400 border-b border-slate-100 pb-2">
             Primary Contact Details
           </h3>
 
@@ -342,7 +342,7 @@ export default function GeneralTab({
 
       {/* Bottom Grid: Storage Configuration & Costs */}
       <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-3.5">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">
+        <h3 className="text-xs font-bold capitalize tracking-wider text-slate-400 border-b border-slate-100 pb-2">
           Storage Setup & Costing
         </h3>
 

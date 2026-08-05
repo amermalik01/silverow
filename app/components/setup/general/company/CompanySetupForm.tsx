@@ -1389,10 +1389,10 @@ export default function CompanySetupForm() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded font-semibold uppercase">
+          <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded font-semibold capitalize">
             Plan: {profile?.plan}
           </span>
-          <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1 rounded font-semibold uppercase">
+          <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1 rounded font-semibold capitalize">
             Status: {profile?.subscription_status}
           </span>
         </div>
@@ -1510,7 +1510,7 @@ export default function CompanySetupForm() {
 
 
       <div className="space-y-4">
-        <h3 className="font-semibold text-xs text-gray-700 uppercase tracking-wider">
+        <h3 className="font-semibold text-xs text-gray-700 capitalize tracking-wider">
           Address
         </h3>
 

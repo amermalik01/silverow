@@ -70,7 +70,7 @@ export default function NotesTab({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {!readonly && (
         <div className="lg:col-span-1 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-3 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="font-semibold text-xs text-slate-400 uppercase tracking-wider">
+          <h3 className="font-semibold text-xs text-slate-400 capitalize tracking-wider">
             Internal Activity Journal
           </h3>
           <textarea

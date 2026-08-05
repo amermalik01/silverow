@@ -324,7 +324,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
         <div className="flex gap-2">
           <button
             type="button"
-            className="px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 border-emerald-600 text-emerald-600 bg-white dark:bg-slate-900"
+            className="px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 border-emerald-600 text-emerald-600 bg-white dark:bg-slate-900"
           >
             General
           </button>
@@ -814,7 +814,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
           <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/30 overflow-hidden flex flex-col justify-between">
             <div className="p-3 border-b bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                <span className="text-xs font-bold text-slate-700 capitalize tracking-wide">
                   Notes Ledger Log
                 </span>
                 <span className="text-[11px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-mono">

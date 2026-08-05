@@ -659,7 +659,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             This Purchase Order is <strong>Completed / Fully Posted</strong> and
             cannot be edited.
           </span>
-          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] uppercase font-bold tracking-wider">
+          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] capitalize font-bold tracking-wider">
             Read Only
           </span>
         </div>
@@ -672,7 +672,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 transition whitespace-nowrap ${
+              className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap ${
                 activeTab === tab
                   ? "border-emerald-600 text-emerald-600"
                   : "border-transparent text-slate-400 hover:text-slate-600"
@@ -845,7 +845,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => router.push(`/${slug}/purchases/purchase-orders`)}
-            className="px-4 py-2 text-xs border border-slate-300 dark:border-slate-700 font-bold uppercase rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+            className="px-4 py-2 text-xs border border-slate-300 dark:border-slate-700 font-bold capitalize rounded hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Cancel
           </button>
@@ -853,7 +853,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 text-xs bg-emerald-600 text-white font-bold uppercase rounded shadow hover:bg-emerald-700 disabled:opacity-40"
+            className="px-4 py-2 text-xs bg-emerald-600 text-white font-bold capitalize rounded shadow hover:bg-emerald-700 disabled:opacity-40"
           >
             {saving ? "Writing..." : "Save Purchase Order"}
           </button>

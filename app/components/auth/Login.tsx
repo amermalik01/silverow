@@ -71,9 +71,9 @@ export const Login = () => {
   };
   return (
     <>
-      <div className="h-screen w-full flex justify-center items-center bg-lightprimary">
+      <div className="h-screen w-full flex justify-center items-center bg-[url('/images/logos/nevico-login-bg.png')] bg-cover"> {/* bg-lightprimary */}
         <div className="md:min-w-[450px] min-w-max">
-          <CardBox>
+          <CardBox className="bg-[#010d0c] text-white">
             <div className="flex justify-center mb-4">
               <FullLogo />
             </div>
@@ -81,12 +81,12 @@ export const Login = () => {
             <div className="flex items-center justify-center gap-2">
               <hr className="grow border-ld" />
               <p className="text-base text-ld font-medium">
-                GO BEYOND WITH SILVEROW
+                GO BEYOND WITH NEVICO{/* SILVEROW */}
               </p>
               <hr className="grow border-ld" />
             </div>
 
-            <h2 className=" text-center text-xl font-semibold">
+            <h2 className=" text-center text-xl font-semibold text-white">
               Take full control of your business
             </h2>
 
@@ -140,7 +140,7 @@ export const Login = () => {
           </CardBox>
 
           <div className=" w-[480px] min-h-[180px] mx-auto text-center ">
-            <div className=" w-full float-right px-5 mt-5">
+            <div className=" w-full float-right px-5 mt-5 text-white">
               <p className="mt-5 font-medium">Business in Motion</p>
 
               <div className="flex flex-wrap justify-between mt-4">

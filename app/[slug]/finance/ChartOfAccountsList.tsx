@@ -93,7 +93,7 @@ export default function ChartOfAccountsList() {
       case "End Total":
         return "pl-8 text-emerald-700 dark:text-emerald-400";
       default:
-        return "pl-0 uppercase text-xs font-black tracking-wider text-indigo-600 dark:text-indigo-400";
+        return "pl-0 capitalize text-xs font-black tracking-wider text-indigo-600 dark:text-indigo-400";
     }
   };
 
@@ -159,7 +159,7 @@ export default function ChartOfAccountsList() {
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse table-fixed min-w-[900px]">
           <thead>
-            <tr className="bg-slate-50/70 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider">
+            <tr className="bg-slate-50/70 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 text-[11px] capitalize tracking-wider">
               <th className="p-3 pl-4 w-[10%]">G/L No.</th>
               <th className="p-3 w-[25%]">Account Title Name</th>
               <th className="p-3 w-[12%]">Parent Class</th>
