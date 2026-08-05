@@ -212,7 +212,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         ? Number(currencyConfig.exchange_rate)
         : 1;
 
-    const amountInclVatLCY = amountInclVat / rate;
+    // const amountInclVatLCY = amountInclVat / rate;
+    const amountInclVatLCY = Number(amountInclVat) * rate;
 
     return { amount, vat, amountInclVat, amountInclVatLCY };
   }, [lines, currencyConfig.exchange_rate]);

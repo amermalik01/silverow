@@ -21,18 +21,6 @@ import SupplierLookupModal, {
   SupplierLookupItem,
 } from "../../shared/modals/SupplierLookupModal";
 
-type Account = {
-  id: string;
-  code: string;
-  name: string;
-};
-
-type SubEntity = {
-  id: string;
-  name: string;
-  code?: string;
-};
-
 type Currency = {
   id: string;
   code: string;
@@ -131,8 +119,40 @@ export default function JournalForm({
     entry_no: "",
   });
 
-  // Base factory template helper to generate standardized lines respecting journal layout restrictions
-  const createInitialRow = (): JournalLineRow => ({
+  const createInitialRow = (): JournalLineRow => {
+    let initialDebit = 0;
+    let initialCredit = 0;
+
+    // Default direction based on document type & journal type
+    if (journalType === "supplier") {
+      // Payment default -> Debit allowed
+      initialDebit = 0;
+    } else if (journalType === "customer") {
+      // Payment default -> Credit allowed
+      initialCredit = 0;
+    }
+
+    return {
+      posting_date:
+        metadata.entry_date || new Date().toISOString().split("T")[0],
+      document_type: isGeneral ? "General Journal" : "Payment",
+      transaction_type: isGeneral
+        ? "gl_no"
+        : (journalType as "customer" | "supplier"),
+      account_id: "",
+      party_id: "",
+      currency_id: "",
+      exchange_rate: 1.0,
+      debit: initialDebit,
+      credit: initialCredit,
+      description: "",
+      balancing_account_id: "",
+      display_code: "",
+      display_name: "",
+      balancing_display_name: "",
+    };
+  };
+  /* const createInitialRow = (): JournalLineRow => ({
     posting_date: metadata.entry_date || new Date().toISOString().split("T")[0],
     document_type: isGeneral ? "General Journal" : "Payment",
     transaction_type: isGeneral
@@ -149,12 +169,67 @@ export default function JournalForm({
     display_code: "",
     display_name: "",
     balancing_display_name: "",
-  });
+  }); */
 
   const [lines, setLines] = useState<JournalLineRow[]>([createInitialRow()]);
 
-  // Converted tracking totals (bypassing lines with explicit balancing targets)
+  const isDebitDisabled = (line: JournalLineRow) => {
+    if (isPosted) return true;
+    if (journalType === "supplier") {
+      return line.document_type === "Refund";
+    }
+    if (journalType === "customer") {
+      return line.document_type === "Payment";
+    }
+    return false;
+  };
+
+  const isCreditDisabled = (line: JournalLineRow) => {
+    if (isPosted) return true;
+    if (journalType === "supplier") {
+      return line.document_type === "Payment";
+    }
+    if (journalType === "customer") {
+      return line.document_type === "Refund";
+    }
+    return false;
+  };
+
+  // Corrected converted total calculations
   const totalDebitConverted = lines.reduce((sum, line) => {
+    const rate = Number(line.exchange_rate || 1.0);
+    const lineDebit = Number(line.debit || 0);
+
+    // Explicit balancing account generates balancing credit on backend
+    if (line.balancing_account_id && line.balancing_account_id.trim() !== "") {
+      return sum + Number((lineDebit * rate).toFixed(2));
+    }
+
+    return sum + Number((lineDebit * rate).toFixed(2));
+  }, 0);
+
+  const totalCreditConverted = lines.reduce((sum, line) => {
+    const rate = Number(line.exchange_rate || 1.0);
+    const lineCredit = Number(line.credit || 0);
+
+    // If balancing account is set, line debit acts as balancing credit, and vice-versa
+    if (line.balancing_account_id && line.balancing_account_id.trim() !== "") {
+      const balancingCredit = Number(line.debit || 0);
+      const balancingDebit = Number(line.credit || 0);
+      const activeCredit = lineCredit > 0 ? lineCredit : balancingCredit;
+      return sum + Number((activeCredit * rate).toFixed(2));
+    }
+
+    return sum + Number((lineCredit * rate).toFixed(2));
+  }, 0);
+
+  const difference = Number(
+    (totalDebitConverted - totalCreditConverted).toFixed(2),
+  );
+  const isBalanced = Math.abs(difference) < 0.01;
+
+  // Converted tracking totals (bypassing lines with explicit balancing targets)
+  /* const totalDebitConverted = lines.reduce((sum, line) => {
     if (line.balancing_account_id && line.balancing_account_id.trim() !== "")
       return sum;
     if (Number(line.debit || 0) <= 0) return sum;
@@ -175,7 +250,7 @@ export default function JournalForm({
   const difference = Number(
     (totalDebitConverted - totalCreditConverted).toFixed(2),
   );
-  const isBalanced = Math.abs(difference) < 0.01;
+  const isBalanced = Math.abs(difference) < 0.01; */
 
   useEffect(() => {
     const loadLookupsAndData = async () => {
@@ -276,6 +351,32 @@ export default function JournalForm({
       updated[index].party_id = "";
       updated[index].display_code = "";
       updated[index].display_name = "";
+    }
+
+    if (field === "document_type") {
+      const docType = String(value);
+
+      if (journalType === "supplier") {
+        if (docType === "Payment") {
+          // Move credit value to debit, zero out credit
+          updated[index].debit = updated[index].debit || updated[index].credit;
+          updated[index].credit = 0;
+        } else if (docType === "Refund") {
+          // Move debit value to credit, zero out debit
+          updated[index].credit = updated[index].credit || updated[index].debit;
+          updated[index].debit = 0;
+        }
+      } else if (journalType === "customer") {
+        if (docType === "Payment") {
+          // Move debit value to credit, zero out debit
+          updated[index].credit = updated[index].credit || updated[index].debit;
+          updated[index].debit = 0;
+        } else if (docType === "Refund") {
+          // Move credit value to debit, zero out credit
+          updated[index].debit = updated[index].debit || updated[index].credit;
+          updated[index].credit = 0;
+        }
+      }
     }
 
     if (field === "debit" && Number(value) > 0) {
@@ -478,16 +579,6 @@ export default function JournalForm({
           />
         </div>
 
-        {/* <div className="flex items-center gap-2">
-          <span className="font-medium text-zinc-600 shrink-0">Entry Date</span>
-          <input
-            type="date"
-            disabled={isPosted}
-            className="border p-1 px-2 rounded w-full text-zinc-700 outline-none bg-white"
-            value={metadata.entry_date}
-            onChange={(e) => setMetadata({ ...metadata, entry_date: e.target.value })}
-          />
-        </div> */}
         <div className="flex items-center gap-2">
           <span className="font-medium text-zinc-600 shrink-0">
             Header Desc.
@@ -515,7 +606,6 @@ export default function JournalForm({
               <th className="p-2 w-24">Doc. No.</th>
               <th className="p-2 w-32">Tx Type</th>
               <th className="p-2 w-72">Account Search Selection</th>
-              {/* <th className="p-2">Account Name</th> */}
               <th className="p-2 w-20">Currency</th>
               <th className="p-2 w-24">Debit</th>
               <th className="p-2 w-24">Credit</th>
@@ -530,27 +620,18 @@ export default function JournalForm({
               const localAmount = line.debit > 0 ? line.debit : line.credit;
               const convertedValue = localAmount * line.exchange_rate;
 
+              const debitDisabled = isDebitDisabled(line);
+              const creditDisabled = isCreditDisabled(line);
+
               return (
                 <tr
                   key={index}
                   className="hover:bg-zinc-200/50 transition-colors"
                 >
-                  {/* <td className="p-1.5">
-                    <input
-                      type="date"
-                      disabled={isPosted}
-                      value={line.posting_date}
-                      onChange={(e) =>
-                        handleLineChange(index, "posting_date", e.target.value)
-                      }
-                      className="form-control-date"
-                    />
-                  </td> */}
                   <td className="p-1.5 min-w-[130px]">
                     <DatePicker
                       id={`posting-date-${index}`}
                       disabled={isPosted}
-                      // Convert string "YYYY-MM-DD" securely to a standard JS Date object instance
                       value={
                         line.posting_date
                           ? new Date(line.posting_date)
@@ -558,8 +639,6 @@ export default function JournalForm({
                       }
                       onChange={(selectedDate) => {
                         if (!selectedDate) return;
-
-                        // Extract local date parameters to prevent UTC midnight shifts
                         const year = selectedDate.getFullYear();
                         const month = String(
                           selectedDate.getMonth() + 1,
@@ -631,7 +710,6 @@ export default function JournalForm({
                     </select>
                   </td>
 
-                  {/* MODAL TRIGGER LOOKUP COMPONENT */}
                   <td className="p-1.5">
                     <div className="flex gap-1">
                       <input
@@ -665,14 +743,6 @@ export default function JournalForm({
                     </div>
                   </td>
 
-                  {/* <td className="p-1.5 text-zinc-500 max-w-[150px] truncate select-none">
-                    {line.display_name || (
-                      <span className="text-zinc-300 font-normal">
-                        No account bound
-                      </span>
-                    )}
-                  </td> */}
-
                   <td className="p-1.5">
                     <select
                       disabled={isPosted}
@@ -697,7 +767,8 @@ export default function JournalForm({
                     <input
                       type="number"
                       step="0.01"
-                      disabled={isPosted}
+                      // disabled={isPosted}
+                      disabled={debitDisabled}
                       value={line.debit || ""}
                       onChange={(e) =>
                         handleLineChange(
@@ -706,14 +777,19 @@ export default function JournalForm({
                           parseFloat(e.target.value) || 0,
                         )
                       }
-                      className="w-full border p-1 rounded text-right font-mono"
+                      className={`w-full border p-1 rounded text-right font-mono ${
+                        debitDisabled
+                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                          : "bg-white"
+                      }`}
                     />
                   </td>
                   <td className="p-1.5">
                     <input
                       type="number"
                       step="0.01"
-                      disabled={isPosted}
+                      // disabled={isPosted}
+                      disabled={creditDisabled}
                       value={line.credit || ""}
                       onChange={(e) =>
                         handleLineChange(
@@ -722,7 +798,11 @@ export default function JournalForm({
                           parseFloat(e.target.value) || 0,
                         )
                       }
-                      className="w-full border p-1 rounded text-right font-mono"
+                      className={`w-full border p-1 rounded text-right font-mono ${
+                        creditDisabled
+                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                          : "bg-white"
+                      }`}
                     />
                   </td>
 
@@ -805,19 +885,7 @@ export default function JournalForm({
           </tbody>
         </table>
       </div>
-
-      {/* FOOTER BAR */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 bg-white rounded border border-zinc-200">
-        {/* <button
-          type="button"
-          onClick={addLineRow}
-          className="secondary"
-          // className="flex items-center gap-1.5 px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-semibold transition shadow-sm"
-        >
-          <span className="text-base font-bold leading-none">+</span> Add Row
-          Line
-        </button> */}
-
         <Button
           type="button"
           variant="outline"
@@ -850,54 +918,11 @@ export default function JournalForm({
             </span>
           </div>
         </div>
-
-        {/* <div className="flex items-center gap-6 font-mono text-zinc-600 bg-zinc-50 border p-2 px-4 rounded font-bold">
-          <div>
-            Difference:{" "}
-            <span className={isBalanced ? "text-emerald-600" : "text-red-500"}>
-              {difference.toFixed(2)}
-            </span>
-          </div>
-        </div> */}
       </div>
-
-      {/* <div className="flex justify-end gap-2 pt-2">
-        {!isPosted && (
-          <>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handlePersistAction(false)}
-              className="px-5 py-1.5 bg-zinc-600 hover:bg-zinc-700 text-white font-semibold rounded shadow-sm transition"
-            >
-              Save Draft
-            </button>
-            <button
-              type="button"
-              disabled={
-                loading ||
-                (!isBalanced && lines.every((l) => !l.balancing_account_id))
-              }
-              onClick={() => handlePersistAction(true)}
-              className="px-5 py-1.5 bg-green-700 hover:bg-green-800 text-white font-semibold rounded shadow-sm disabled:opacity-40 transition"
-            >
-              {loading ? "Posting..." : "Post Journal"}
-            </button>
-          </>
-        )}
-        <button
-          type="button"
-          onClick={() => router.push(redirectPath)}
-          className="px-5 py-1.5 bg-white hover:bg-zinc-50 border rounded font-semibold text-zinc-700 transition"
-        >
-          {isPosted ? "Back" : "Cancel"}
-        </button>
-      </div> */}
 
       <div className="flex justify-end gap-2 pt-2">
         {!isPosted && (
           <>
-            {/* Save Draft Button */}
             <Button
               type="button"
               variant="secondary"
@@ -907,8 +932,6 @@ export default function JournalForm({
             >
               Save Draft
             </Button>
-
-            {/* Post Journal Button */}
             <Button
               type="button"
               disabled={
@@ -923,7 +946,6 @@ export default function JournalForm({
           </>
         )}
 
-        {/* Cancel / Back Button */}
         <Button
           type="button"
           variant="outline"
@@ -934,8 +956,21 @@ export default function JournalForm({
         </Button>
       </div>
 
-      {/* LOOKUP MODALS RENDER OVERLAYS */}
-      <GLAccountLookupModal
+      {activeModal?.target === "gl" && (
+        <GLAccountLookupModal
+          open={true}
+          onClose={() => setActiveModal(null)}
+          onSelect={(rec: GLAccountLookupRecord) =>
+            handleModalSelection({
+              id: rec.id,
+              code: rec.code,
+              name: rec.name,
+            })
+          }
+        />
+      )}
+
+      {/* <GLAccountLookupModal
         open={activeModal?.target === "gl"}
         onClose={() => setActiveModal(null)}
         onSelect={(account: GLAccountLookupRecord) =>
@@ -945,9 +980,23 @@ export default function JournalForm({
             name: account.name,
           })
         }
-      />
+      /> */}
 
-      <CustomerLookupModal
+      {activeModal?.target === "customer" && (
+        <CustomerLookupModal
+          open={true}
+          onClose={() => setActiveModal(null)}
+          onSelect={(rec: CustomerLookupItem) =>
+            handleModalSelection({
+              id: rec.id,
+              code: rec.customer_code || "CUST",
+              name: rec.name,
+            })
+          }
+        />
+      )}
+
+      {/* <CustomerLookupModal
         open={activeModal?.target === "customer"}
         onClose={() => setActiveModal(null)}
         onSelect={(customer: CustomerLookupItem) =>
@@ -957,9 +1006,23 @@ export default function JournalForm({
             name: customer.name,
           })
         }
-      />
+      /> */}
 
-      <SupplierLookupModal
+      {activeModal?.target === "supplier" && (
+        <SupplierLookupModal
+          open={true}
+          onClose={() => setActiveModal(null)}
+          onSelect={(rec: SupplierLookupItem) =>
+            handleModalSelection({
+              id: rec.id,
+              code: rec.supplier_code || "SUPP",
+              name: rec.name,
+            })
+          }
+        />
+      )}
+
+      {/* <SupplierLookupModal
         open={activeModal?.target === "supplier"}
         onClose={() => setActiveModal(null)}
         onSelect={(supplier: SupplierLookupItem) =>
@@ -969,7 +1032,7 @@ export default function JournalForm({
             name: supplier.name,
           })
         }
-      />
+      /> */}
     </div>
   );
 }

@@ -151,7 +151,7 @@ export class JournalService {
     try {
       await client.query("BEGIN");
 
-      this.validateLines(payload.lines);
+      this.validateLines(payload.lines, payload.source);
 
       // 1. Get sequence module key
       const moduleKey =
@@ -232,7 +232,7 @@ export class JournalService {
     try {
       await client.query("BEGIN");
 
-      this.validateLines(payload.lines);
+      this.validateLines(payload.lines, payload.source);
 
       const existing = await client.query(
         `
@@ -359,8 +359,6 @@ export class JournalService {
       if (linesResult.rows.length === 0) {
         throw new Error("Cannot post a journal entry with zero lines.");
       }
-
-      // Optional: Re-run this.validateLines(linesResult.rows) here if you want final safety
 
       // 3. Obtain next global GL transaction key from the PostgreSQL sequence
       const txKeyResult = await client.query(
@@ -632,6 +630,41 @@ export class JournalService {
         throw new Error("Line cannot have both debit and credit");
       }
 
+      const balAcc = line.balancing_account_id?.trim() || line.reference_id?.trim();
+
+      if (balAcc) {
+        // Line has a balancing account selected (e.g. Bank/Cash).
+        // It balances itself internally: line debit = bal credit, line credit = bal debit.
+        const lineDebitLCY = Number((debit * rate).toFixed(2));
+        const lineCreditLCY = Number((credit * rate).toFixed(2));
+
+        if (lineDebitLCY > 0) {
+          totalDebitConverted += lineDebitLCY;
+          totalCreditConverted += lineDebitLCY; // Opposing leg automatically generated
+        } else if (lineCreditLCY > 0) {
+          totalCreditConverted += lineCreditLCY;
+          totalDebitConverted += lineCreditLCY; // Opposing leg automatically generated
+        }
+      } else {
+        // Standard double-entry line without inline balancing account
+        if (debit > 0) {
+          totalDebitConverted += Number((debit * rate).toFixed(2));
+        }
+        if (credit > 0) {
+          totalCreditConverted += Number((credit * rate).toFixed(2));
+        }
+      }
+    }
+
+    /* for (const line of lines) {
+      const debit = Number(line.debit || 0);
+      const credit = Number(line.credit || 0);
+      const rate = Number(line.exchange_rate || 1.0);
+
+      if (debit > 0 && credit > 0) {
+        throw new Error("Line cannot have both debit and credit");
+      }
+
       // Legacy rule: If a line handles its own offset via a balancing account,
       // it bypasses the global document cross-line validation total sums.
       if (
@@ -648,7 +681,7 @@ export class JournalService {
       if (credit > 0) {
         totalCreditConverted += Number((credit * rate).toFixed(2));
       }
-    }
+    } */
 
     // Match variance constraint validation threshold to two decimal precision (0.01)
     const variance = Math.abs(totalDebitConverted - totalCreditConverted);
@@ -671,7 +704,7 @@ export class JournalService {
 
     try {
       await client.query("BEGIN");
-      this.validateLines(payload.lines);
+      this.validateLines(payload.lines, payload.source);
 
       const moduleKey = this.getModuleKey(payload.source);
 
@@ -728,89 +761,3 @@ export class JournalService {
     }
   }
 }
-/* private static async insertLine(
-    client: PoolClient,
-    companyId: string,
-    journalId: string,
-    // line: JournalLine,
-    line: JournalLineInput,
-  ) {
-    await client.query(
-      `
-      INSERT INTO journal_entry_lines (
-        company_id,
-        journal_id,
-        account_id,
-        debit,
-        credit,
-        description,
-        party_id,
-        item_id,
-        currency_id,
-        exchange_rate
-      )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, $9, $10)
-      `,
-      [
-        companyId,
-        journalId,
-        line.account_id,
-        line.debit ?? 0,
-        line.credit ?? 0,
-        line.description || null,
-        line.party_id || null,
-        line.item_id || null,
-        line.currency_id || null,
-        line.currency_id ? (line.exchange_rate ?? 1.0) : 1.0,
-      ],
-    );
-  } */
-
-/* private static validateLines(lines: JournalLineInput[]) {
-    if (!lines || lines.length === 0) {
-      throw new Error("Journal requires at least one line");
-    }
-
-    let totalDebitConverted = 0;
-    let totalCreditConverted = 0;
-
-    for (const line of lines) {
-      const debit = Number(line.debit || 0);
-      const credit = Number(line.credit || 0);
-
-      // Fall back to a multiplier of 1.0 if exchange_rate is missing or null
-      const rate = Number(line.exchange_rate || 1.0);
-
-      if (debit > 0 && credit > 0) {
-        throw new Error("Line cannot have both debit and credit");
-      }
-
-      // Accumulate the normalized amounts converted to your base currency
-      totalDebitConverted += debit * rate;
-      totalCreditConverted += credit * rate;
-    }
-
-    // Use a variance threshold buffer to prevent strict floating point fraction blocks
-    const variance = Math.abs(totalDebitConverted - totalCreditConverted);
-
-    if (variance >= 0.001) {
-      throw new Error(
-        `Journal is not balanced in base currency. Difference: ${variance.toFixed(2)}`,
-      );
-    }
-  } */
-
-/* static async post(companyId: string, id: string): Promise<void> {
-    await pool.query(
-      `
-      UPDATE journal_entries
-      SET
-        is_posted = true,
-        posted_at = now()
-      WHERE id = $1
-      AND company_id = $2
-      AND is_posted = false
-      `,
-      [id, companyId],
-    );
-  } */
