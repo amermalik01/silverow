@@ -7,6 +7,9 @@ import Link from "next/link";
 import LedgerDrilldownModal from "@/app/components/finance/LedgerDrilldownModal";
 import { useLoader } from "@/app/context/LoaderContext";
 
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
+
 interface GLAccountNode {
   id: string;
   code: string;
@@ -118,12 +121,25 @@ export default function ChartOfAccountsList() {
             aggregation matrices.
           </p>
         </div>
-        <Link
+        {/* <Link
           href="./chart-of-accounts/create"
           className="bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow hover:bg-indigo-700 dark:hover:bg-indigo-600 transition tracking-wide shrink-0"
         >
           Add Account
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link 
+		  href="./chart-of-accounts/create"
+		  >
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       {/* Control Terminal & Search Filter Input */}

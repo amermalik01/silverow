@@ -1,11 +1,13 @@
 // app/components/setup/inventory/warehouses/WarehouseList.tsx
 
-// app/components/setup/inventory/warehouses/WarehouseList.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
 
 type Warehouse = {
   id: string;
@@ -51,7 +53,10 @@ export default function WarehouseList() {
   };
 
   const formatType = (type: string) => {
-    return type.replace("_", " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+    return type
+      .replace("_", " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   return (
@@ -65,12 +70,23 @@ export default function WarehouseList() {
           </p>
         </div>
 
-        <Link
+        {/* <Link
           href={`/${slug}/setup/inventory/warehouses/new`}
           className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2 rounded-md shadow-sm transition-colors"
         >
           <span>+</span> New Warehouse
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={`/${slug}/setup/inventory/warehouses/new`}>
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       {/* Table Content */}
@@ -80,7 +96,9 @@ export default function WarehouseList() {
         </div>
       ) : data.length === 0 ? (
         <div className="p-8 text-center text-xs text-slate-500">
-          No warehouses found. Click <strong className="text-slate-700">+ New Warehouse</strong> to get started.
+          No warehouses found. Click{" "}
+          <strong className="text-slate-700">+ New Warehouse</strong> to get
+          started.
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -97,7 +115,10 @@ export default function WarehouseList() {
 
             <tbody className="divide-y divide-slate-100">
               {data.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50/80 transition-colors">
+                <tr
+                  key={row.id}
+                  className="hover:bg-slate-50/80 transition-colors"
+                >
                   <td className="px-6 py-3.5 font-mono text-xs text-slate-600 font-semibold">
                     {row.code || "—"}
                   </td>
@@ -115,9 +136,7 @@ export default function WarehouseList() {
                     {formatType(row.type)}
                   </td>
 
-                  <td className="px-6 py-3.5">
-                    {getStatusBadge(row.status)}
-                  </td>
+                  <td className="px-6 py-3.5">{getStatusBadge(row.status)}</td>
 
                   <td className="px-6 py-3.5 text-right font-medium">
                     <Link

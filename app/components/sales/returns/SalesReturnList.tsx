@@ -6,6 +6,9 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
+
 interface ReturnListItem {
   id: string;
   return_no: string;
@@ -122,12 +125,23 @@ export default function SalesReturnList({ slug }: { slug: string }) {
             Manage customer return vouchers and financial credit memos
           </p>
         </div>
-        <Link
+        {/* <Link
           href={`/${slug}/sales/returns/new`}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-xs font-medium transition shadow-sm text-center"
         >
           + Log Sales Return
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={`/${slug}/sales/returns/new`}>
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       {/* Advanced Filter Toolbar Control Strip */}
@@ -191,183 +205,197 @@ export default function SalesReturnList({ slug }: { slug: string }) {
       {/* Grid Table Display Box */}
       <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
         <div className="overflow-auto">
-        {(loading || isPending) && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center text-xs font-semibold text-gray-500 z-10">
-            Refreshing Returns Directory...
-          </div>
-        )}
+          {(loading || isPending) && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center text-xs font-semibold text-gray-500 z-10">
+              Refreshing Returns Directory...
+            </div>
+          )}
 
-        <table className="w-full text-xs">
-          <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
-            <tr>
-              <th className="p-3 text-left whitespace-nowrap">Return Document No</th>
-              <th className="p-3 text-left whitespace-nowrap">Client Name</th>
-              <th className="p-3 text-left whitespace-nowrap">Original Invoice Ref</th>
-              <th className="p-3 text-left whitespace-nowrap">Date Authenticated</th>
-              <th className="p-3 w-32">Status</th>
-              <th className="p-3 text-right w-40">Credit Value</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y text-gray-700">
-            {data?.returns.length ? (
-              data.returns.map((item) => (
-                <tr
-                  key={item.id}
-                  className="hover:bg-gray-50/70 transition-colors"
-                >
-                  <td className="p-3 font-mono font-bold text-blue-600">
-                    <Link
-                      href={`/${slug}/sales/returns/${item.id}`}
-                      className="hover:underline"
-                    >
-                      {item.return_no}
-                    </Link>
-                  </td>
-                  <td className="p-3 font-medium text-gray-900">
-                    {item.customer_name || (
-                      <span className="text-gray-400 italic">
-                        Casual Walk-In
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
+              <tr>
+                <th className="p-3 text-left whitespace-nowrap">
+                  Return Document No
+                </th>
+                <th className="p-3 text-left whitespace-nowrap">Client Name</th>
+                <th className="p-3 text-left whitespace-nowrap">
+                  Original Invoice Ref
+                </th>
+                <th className="p-3 text-left whitespace-nowrap">
+                  Date Authenticated
+                </th>
+                <th className="p-3 w-32">Status</th>
+                <th className="p-3 text-right w-40">Credit Value</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y text-gray-700">
+              {data?.returns.length ? (
+                data.returns.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="hover:bg-gray-50/70 transition-colors"
+                  >
+                    <td className="p-3 font-mono font-bold text-blue-600">
+                      <Link
+                        href={`/${slug}/sales/returns/${item.id}`}
+                        className="hover:underline"
+                      >
+                        {item.return_no}
+                      </Link>
+                    </td>
+                    <td className="p-3 font-medium text-gray-900">
+                      {item.customer_name || (
+                        <span className="text-gray-400 italic">
+                          Casual Walk-In
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 font-mono text-xs text-gray-500">
+                      {item.original_invoice_no || (
+                        <span className="text-gray-300 font-serif">—</span>
+                      )}
+                    </td>
+                    <td className="p-3 text-gray-500">
+                      {new Date(item.return_date).toLocaleDateString()}
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={`text-[10px] tracking-wider px-2 py-0.5 rounded-full font-bold border capitalize ${getStatusBadgeClass(item.status)}`}
+                      >
+                        {item.status}
                       </span>
-                    )}
-                  </td>
-                  <td className="p-3 font-mono text-xs text-gray-500">
-                    {item.original_invoice_no || (
-                      <span className="text-gray-300 font-serif">—</span>
-                    )}
-                  </td>
-                  <td className="p-3 text-gray-500">
-                    {new Date(item.return_date).toLocaleDateString()}
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`text-[10px] tracking-wider px-2 py-0.5 rounded-full font-bold border capitalize ${getStatusBadgeClass(item.status)}`}
-                    >
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="p-3 text-right font-mono font-semibold text-gray-900">
-                    ${Number(item.total_amount).toFixed(2)}
+                    </td>
+                    <td className="p-3 text-right font-mono font-semibold text-gray-900">
+                      ${Number(item.total_amount).toFixed(2)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="p-8 text-center text-gray-400 italic"
+                  >
+                    No credit notes or returns matching search conditions found.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="p-8 text-center text-gray-400 italic"
+              )}
+            </tbody>
+          </table>
+
+          {/* Sales-Order Matched Complete Dynamic Pagination Footer Control Hub */}
+          {data && data.pagination.totalPages > 0 && (
+            <div className="bg-gray-50 border-t p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
+              <div>
+                Displaying records{" "}
+                <span className="font-semibold">
+                  {(currentPage - 1) * data.pagination.limit + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold">
+                  {Math.min(
+                    currentPage * data.pagination.limit,
+                    data.pagination.totalRecords,
+                  )}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold">
+                  {data.pagination.totalRecords}
+                </span>{" "}
+                matching logs
+              </div>
+
+              <div className="flex items-center space-x-1.5">
+                {/* First Page Button */}
+                <button
+                  disabled={currentPage <= 1 || loading}
+                  onClick={() => updateFilters(search, status, 1, limit)}
+                  className="px-2.5 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50 transition"
                 >
-                  No credit notes or returns matching search conditions found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  &laquo;
+                </button>
 
-        {/* Sales-Order Matched Complete Dynamic Pagination Footer Control Hub */}
-        {data && data.pagination.totalPages > 0 && (
-          <div className="bg-gray-50 border-t p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
-            <div>
-              Displaying records{" "}
-              <span className="font-semibold">
-                {(currentPage - 1) * data.pagination.limit + 1}
-              </span>{" "}
-              to{" "}
-              <span className="font-semibold">
-                {Math.min(
-                  currentPage * data.pagination.limit,
-                  data.pagination.totalRecords,
-                )}
-              </span>{" "}
-              of{" "}
-              <span className="font-semibold">
-                {data.pagination.totalRecords}
-              </span>{" "}
-              matching logs
-            </div>
+                {/* Prev Page Button */}
+                <button
+                  disabled={currentPage <= 1 || loading}
+                  onClick={() =>
+                    updateFilters(search, status, currentPage - 1, limit)
+                  }
+                  className="px-2.5 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50 transition"
+                >
+                  Prev
+                </button>
 
-            <div className="flex items-center space-x-1.5">
-              {/* First Page Button */}
-              <button
-                disabled={currentPage <= 1 || loading}
-                onClick={() => updateFilters(search, status, 1, limit)}
-                className="px-2.5 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50 transition"
-              >
-                &laquo;
-              </button>
-
-              {/* Prev Page Button */}
-              <button
-                disabled={currentPage <= 1 || loading}
-                onClick={() =>
-                  updateFilters(search, status, currentPage - 1, limit)
-                }
-                className="px-2.5 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50 transition"
-              >
-                Prev
-              </button>
-
-              {/* Dynamic Page Index Spans */}
-              {Array.from(
-                { length: data.pagination.totalPages },
-                (_, i) => i + 1,
-              )
-                .filter(
-                  (p) =>
-                    p === 1 ||
-                    p === data.pagination.totalPages ||
-                    Math.abs(p - currentPage) <= 1,
+                {/* Dynamic Page Index Spans */}
+                {Array.from(
+                  { length: data.pagination.totalPages },
+                  (_, i) => i + 1,
                 )
-                .map((p, idx, arr) => {
-                  const showEllipsis = idx > 0 && p - arr[idx - 1] > 1;
-                  return (
-                    <div key={p} className="flex items-center">
-                      {showEllipsis && (
-                        <span className="px-2 text-gray-400 text-xs">...</span>
-                      )}
-                      <button
-                        onClick={() => updateFilters(search, status, p, limit)}
-                        className={`px-3 py-1 border text-xs font-medium rounded transition ${
-                          p === currentPage
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    </div>
-                  );
-                })}
-
-              {/* Next Page Button */}
-              <button
-                disabled={currentPage >= data.pagination.totalPages || loading}
-                onClick={() =>
-                  updateFilters(search, status, currentPage + 1, limit)
-                }
-                className="px-2.5 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50 transition"
-              >
-                Next
-              </button>
-
-              {/* Last Page Button */}
-              <button
-                disabled={currentPage >= data.pagination.totalPages || loading}
-                onClick={() =>
-                  updateFilters(
-                    search,
-                    status,
-                    data.pagination.totalPages,
-                    limit,
+                  .filter(
+                    (p) =>
+                      p === 1 ||
+                      p === data.pagination.totalPages ||
+                      Math.abs(p - currentPage) <= 1,
                   )
-                }
-                className="px-2.5 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50 transition"
-              >
-                &raquo;
-              </button>
+                  .map((p, idx, arr) => {
+                    const showEllipsis = idx > 0 && p - arr[idx - 1] > 1;
+                    return (
+                      <div key={p} className="flex items-center">
+                        {showEllipsis && (
+                          <span className="px-2 text-gray-400 text-xs">
+                            ...
+                          </span>
+                        )}
+                        <button
+                          onClick={() =>
+                            updateFilters(search, status, p, limit)
+                          }
+                          className={`px-3 py-1 border text-xs font-medium rounded transition ${
+                            p === currentPage
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                {/* Next Page Button */}
+                <button
+                  disabled={
+                    currentPage >= data.pagination.totalPages || loading
+                  }
+                  onClick={() =>
+                    updateFilters(search, status, currentPage + 1, limit)
+                  }
+                  className="px-2.5 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50 transition"
+                >
+                  Next
+                </button>
+
+                {/* Last Page Button */}
+                <button
+                  disabled={
+                    currentPage >= data.pagination.totalPages || loading
+                  }
+                  onClick={() =>
+                    updateFilters(
+                      search,
+                      status,
+                      data.pagination.totalPages,
+                      limit,
+                    )
+                  }
+                  className="px-2.5 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50 transition"
+                >
+                  &raquo;
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       </div>
     </div>
   );

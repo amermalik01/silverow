@@ -5,6 +5,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
+
 type Category = {
   id: string;
   code: string;
@@ -61,12 +64,23 @@ export default function CategoryList() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Categories</h2>
 
-        <Link
+        {/* <Link
           href="./categories/new"
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           + New Category
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href="./categories/new">
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       {loading ? (

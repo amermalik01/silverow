@@ -115,7 +115,7 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
         <div className="flex justify-between items-center">
           <h3 className="font-semibold">Warehouse Rules</h3>
 
-          <button className="bg-blue-600 text-white px-3 py-2 rounded">
+          <button className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 px-3 py-2 rounded">
             + Add Warehouse Rule
           </button>
         </div>

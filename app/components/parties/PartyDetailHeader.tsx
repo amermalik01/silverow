@@ -183,7 +183,7 @@ export default function PartyDetailHeader({ party, onPartyUpdated }: Props) {
         )}
       </div>
 
-      {/* Silverow Themed Confirmation Modal */}
+      {/* Nevico Themed Confirmation Modal */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 transition-all scale-100">

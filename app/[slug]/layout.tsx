@@ -19,7 +19,7 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
 
   if (!session_slug) {
     return (
-      <div className="w-[240px] h-screen flex items-center justify-center text-xs text-gray-500">
+      <div className="w-auto h-screen flex items-center justify-center text-xs text-gray-500">
         Loading...
       </div>
     );
@@ -44,12 +44,12 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
       {/* Body */}
       <div className="flex flex-1">
         {/* Desktop Sidebar */}
-        <aside className="hidden xl:block w-[240px] border-r bg-slate-950">
+        <aside className="hidden xl:block w-[190px] border-r bg-slate-950">
           <CompanySidebar />
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-x-auto">
+        <main className="flex-1 overflow-x-auto px-4">
           <div className="container mx-auto py-6">{children}</div>
         </main>
       </div>

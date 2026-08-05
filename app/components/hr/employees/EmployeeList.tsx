@@ -100,7 +100,7 @@ export default function EmployeeList() {
         >
           <Link href="./employees/new">
             <Icon icon="solar:add-circle-linear" width={16} height={16} />
-            Add New Employee
+            Create
           </Link>
         </Button>
         {/* <Link

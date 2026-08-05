@@ -5,6 +5,9 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
+
 export interface StockTransferListItem {
   id: string;
   transfer_no: string;
@@ -41,7 +44,9 @@ export default function StockTransferList({
     try {
       setLoading(true);
       // Query filters append matching status and server-side page indices
-      const res = await fetch(`${apiBase}?status=${status}&page=${page}&limit=20`);
+      const res = await fetch(
+        `${apiBase}?status=${status}&page=${page}&limit=20`,
+      );
       const result = await res.json();
 
       setData(result.rows || []);
@@ -95,12 +100,23 @@ export default function StockTransferList({
             movements and drafts.
           </p>
         </div>
-        <Link
+        {/* <Link
           href={createPath}
           className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-medium rounded transition"
         >
           + New Transfer
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={createPath}>
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       {/* FILTER TABS */}

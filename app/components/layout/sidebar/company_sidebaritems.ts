@@ -161,12 +161,11 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Support Tickets",
             url: `/${slug}/sales/support-ticket`,
           },
-          {
-            // id: uniqueId(),
-            id: "Sales Forecast",
-            name: "Sales Forecast",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
+          // {
+          //   id: "Sales Forecast",
+          //   name: "Sales Forecast",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
           // {
           //   // id: uniqueId(),
           //   id: "Sales Matrix",
@@ -322,11 +321,11 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Attendance",
             url: `/${slug}/hr/attendance`,
           },
-          {
-            id: "View Bucket",
-            name: "View Bucket",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
+          // {
+          //   id: "View Bucket",
+          //   name: "View Bucket",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
           // {
           //   id: "HR Matrix",
           //   name: "HR Matrix",
@@ -635,21 +634,21 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
               },
             ],
           },
-          {
-            id: "Data Migration",
-            name: "Data Migration",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
-          {
-            id: "Auto-email Templates",
-            name: "Auto-email Templates",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
-          {
-            id: "Shopify Setup",
-            name: "Shopify Setup",
-            url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          },
+          // {
+          //   id: "Data Migration",
+          //   name: "Data Migration",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
+          // {
+          //   id: "Auto-email Templates",
+          //   name: "Auto-email Templates",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
+          // {
+          //   id: "Shopify Setup",
+          //   name: "Shopify Setup",
+          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
+          // },
         ],
       },
     ],

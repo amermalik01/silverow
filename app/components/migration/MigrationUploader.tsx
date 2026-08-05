@@ -209,7 +209,7 @@ export default function MigrationUploader({
             type="button"
             disabled={loading || Object.keys(validationErrors).length > 0}
             onClick={executeMigration}
-            className="rounded-lg bg-blue-600 px-6 py-2 font-medium text-white disabled:opacity-50"
+            className="rounded-lg bg-emerald-700 hover:bg-emerald-800 shadow-sm gap-1.5 px-6 py-2 font-medium text-white disabled:opacity-50"
           >
             {loading ? "Processing..." : "Execute Migration"}
           </button>

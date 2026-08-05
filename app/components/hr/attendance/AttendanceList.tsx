@@ -2,10 +2,10 @@
 "use client";
 
 import Link from "next/link";
-
 import { useEffect, useState } from "react";
-
 import { Attendance } from "@/types/hr/attendance";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
 
 export default function AttendanceList() {
   const [data, setData] = useState<Attendance[]>([]);
@@ -24,12 +24,23 @@ export default function AttendanceList() {
   return (
     <div className="border rounded p-4 space-y-4">
       <div className="flex justify-end">
-        <Link
+        {/* <Link
           href="./attendance/new"
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           + New Attendance
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href="./attendance/new">
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       <table className="w-full border text-xs">

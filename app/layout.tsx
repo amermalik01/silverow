@@ -16,7 +16,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Silverow - ERP",
+  title: "Nevico - ERP",
   description: "",
 };
 

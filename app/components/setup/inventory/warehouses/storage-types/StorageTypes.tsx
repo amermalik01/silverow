@@ -117,7 +117,7 @@ export default function StorageTypes() {
         <div className="flex gap-2 mt-3">
           <button
             onClick={save}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-2 rounded"
           >
             {editingId ? "Update" : "Create"}
           </button>

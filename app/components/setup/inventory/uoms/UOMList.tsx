@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { UOM } from "@/types/inventory";
 
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
+
 export default function UOMList() {
   const [data, setData] = useState<UOM[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,12 +77,23 @@ export default function UOMList() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">UOMs</h2>
 
-        <Link
+        {/* <Link
           href="./uoms/new"
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           + New UOM
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href="./uoms/new">
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       {loading ? (

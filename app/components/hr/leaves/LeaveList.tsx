@@ -207,7 +207,7 @@ export default function LeaveList() {
 
         <button
           onClick={save}
-          className="bg-blue-600 text-white rounded px-4 py-2"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 rounded px-4 py-2"
         >
           {editingId ? "Update" : "Create"}
         </button>

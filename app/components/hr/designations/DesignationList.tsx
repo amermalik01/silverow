@@ -129,7 +129,7 @@ export default function DesignationList() {
           <option value="inactive">Inactive</option>
         </select>
 
-        <button onClick={save} className="bg-blue-600 text-white rounded px-4">
+        <button onClick={save} className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 rounded px-4">
           {editingId ? "Update" : "Create"}
         </button>
       </div>

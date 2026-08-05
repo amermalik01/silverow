@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Brand } from "@/types/inventory";
 
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
+
 export default function BrandList() {
   const [data, setData] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,12 +57,23 @@ export default function BrandList() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Brands</h2>
 
-        <Link
+        {/* <Link
           href="./brands/new"
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           + New Brand
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href="./brands/new">
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       {loading ? (

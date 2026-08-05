@@ -115,7 +115,7 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
         >
           <Link href={`${basePath}/new`}>
             <Icon icon="solar:add-circle-linear" width={16} height={16} />
-            Create New Account
+            Create
           </Link>
         </Button>
       </div>

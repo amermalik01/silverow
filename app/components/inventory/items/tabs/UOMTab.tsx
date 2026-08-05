@@ -173,9 +173,9 @@ export default function UOMTab({ itemId }: Props) {
 
             setShowModal(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 px-4 py-2 rounded"
         >
-          + Add UOM
+          + Create
         </button>
       </div>
 

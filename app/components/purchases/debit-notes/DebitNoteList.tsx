@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DebitNote } from "@/types/debit-note";
 import DebitNoteStatusBadge from "./DebitNoteStatusBadge";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
 
 type Props = {
   slug: string;
@@ -109,12 +111,23 @@ export default function DebitNoteList({ slug }: Props) {
             adjustments
           </p>
         </div>
-        <Link
+        {/* <Link
           href={`/${slug}/purchases/debit-notes/create`}
           className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-xs font-medium transition-colors"
         >
           New Debit Note
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={`/${slug}/purchases/debit-notes/create`}>
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">

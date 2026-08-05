@@ -4,6 +4,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
 
 type Props = {
   slug: string;
@@ -121,12 +123,23 @@ export default function SalesOrderList({ slug }: Props) {
             Manage customer orders, shipments and invoices
           </p>
         </div>
-        <Link
+        {/* <Link
           href={`/${slug}/sales/orders/new`}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors text-xs font-medium"
         >
           New Sales Order
-        </Link>
+        </Link> */}
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={`/${slug}/sales/orders/new`}>
+            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            Create
+          </Link>
+        </Button>
       </div>
 
       {/* Filter Toolbar matrix */}

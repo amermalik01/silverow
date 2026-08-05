@@ -125,7 +125,7 @@ export default function CustomerJournalForm({
         <option value="PAYMENT">Payment</option>
       </select>
 
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2">
+      <button type="submit" className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 px-4 py-2">
         Save
       </button>
     </form>
