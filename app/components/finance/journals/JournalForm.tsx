@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Icon } from "@iconify/react";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
@@ -21,12 +22,20 @@ import SupplierLookupModal, {
   SupplierLookupItem,
 } from "../../shared/modals/SupplierLookupModal";
 
+import AllocateJournalPaymentModal from "./modals/AllocateJournalPaymentModal";
+import { useLoader } from "@/app/context/LoaderContext";
+
 type Currency = {
   id: string;
   code: string;
   name: string;
   exchange_rate: string | number;
   is_base: boolean;
+};
+
+export type LineAllocationItem = {
+  invoice_ledger_id: string;
+  amount: number;
 };
 
 type JournalLineRow = {
@@ -44,6 +53,7 @@ type JournalLineRow = {
   display_code?: string;
   display_name?: string;
   balancing_display_name?: string;
+  allocations?: LineAllocationItem[];
 };
 
 interface ApiJournalLine {
@@ -71,6 +81,7 @@ interface ApiJournalLine {
   supplier_name?: string;
   balancing_account_code?: string;
   balancing_account_name?: string;
+  allocations?: LineAllocationItem[];
 }
 
 interface ApiResponsePayload {
@@ -101,10 +112,13 @@ export default function JournalForm({
   redirectPath,
 }: Props) {
   const router = useRouter();
+
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [loading, setLoading] = useState(false);
   const [isPosted, setIsPosted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const { show, hide } = useLoader();
 
   const isGeneral = journalType === "general";
   const formDisabled = readOnly || isPosted;
@@ -115,6 +129,11 @@ export default function JournalForm({
     target: "gl" | "customer" | "supplier";
   } | null>(null);
 
+  // Modal state for allocation drawer
+  const [allocationModalIndex, setAllocationModalIndex] = useState<
+    number | null
+  >(null);
+
   const [metadata, setMetadata] = useState({
     entry_date: new Date().toISOString().split("T")[0],
     reference: "",
@@ -122,37 +141,9 @@ export default function JournalForm({
     entry_no: "",
   });
 
-  /* const createInitialRow = (): JournalLineRow => {
-    return {
-      posting_date: metadata.entry_date || new Date().toISOString().split("T")[0],
-      document_type: isGeneral ? "General Journal" : "Payment",
-      transaction_type: isGeneral ? "gl_no" : (journalType as "customer" | "supplier"),
-      account_id: "",
-      party_id: "",
-      currency_id: "",
-      exchange_rate: 1.0,
-      debit: 0,
-      credit: 0,
-      description: "",
-      balancing_account_id: "",
-      display_code: "",
-      display_name: "",
-      balancing_display_name: "",
-    };
-  }; */
-
   const createInitialRow = (): JournalLineRow => {
-    let initialDebit = 0;
-    let initialCredit = 0;
-
-    // Default direction based on document type & journal type
-    if (journalType === "supplier") {
-      // Payment default -> Debit allowed
-      initialDebit = 0;
-    } else if (journalType === "customer") {
-      // Payment default -> Credit allowed
-      initialCredit = 0;
-    }
+    const initialDebit = 0;
+    const initialCredit = 0;
 
     return {
       posting_date:
@@ -172,6 +163,7 @@ export default function JournalForm({
       display_code: "",
       display_name: "",
       balancing_display_name: "",
+      allocations: [],
     };
   };
 
@@ -204,11 +196,6 @@ export default function JournalForm({
     const rate = Number(line.exchange_rate || 1.0);
     const lineDebit = Number(line.debit || 0);
 
-    // Explicit balancing account generates balancing credit on backend
-    if (line.balancing_account_id && line.balancing_account_id.trim() !== "") {
-      return sum + Number((lineDebit * rate).toFixed(2));
-    }
-
     return sum + Number((lineDebit * rate).toFixed(2));
   }, 0);
 
@@ -235,6 +222,7 @@ export default function JournalForm({
   useEffect(() => {
     const loadLookupsAndData = async () => {
       try {
+        show("Fetching Record...");
         const curRes = await fetch(`/api/parties/currencies`);
         if (curRes.ok) setCurrencies((await curRes.json()) || []);
 
@@ -262,14 +250,6 @@ export default function JournalForm({
                     ? "supplier"
                     : null) ||
                   "gl_no";
-
-                // let txType: "gl_no" | "customer" | "supplier" = "gl_no";
-                // const rawPartyType = l.party_type || "";
-
-                // if (rawPartyType === "customer" || l.customer_id)
-                //   txType = "customer";
-                // else if (rawPartyType === "supplier" || l.supplier_id)
-                //   txType = "supplier";
 
                 // 2. Resolve display values accurately based on transaction_type
                 let dispCode = "";
@@ -316,6 +296,7 @@ export default function JournalForm({
                   balancing_display_name: l.balancing_account_name
                     ? `${l.balancing_account_code || ""} - ${l.balancing_account_name}`
                     : "",
+                  allocations: l.allocations || [],
                 };
               }),
             );
@@ -323,93 +304,12 @@ export default function JournalForm({
         }
       } catch (err) {
         console.error("Error loading journal configuration data:", err);
+      } finally {
+        hide();
       }
     };
     loadLookupsAndData();
   }, [journalId, apiBase, isGeneral]);
-
-  /* useEffect(() => {
-    const loadLookupsAndData = async () => {
-      try {
-        const curRes = await fetch(`/api/parties/currencies`);
-        if (curRes.ok) setCurrencies((await curRes.json()) || []);
-
-        if (journalId) {
-          const res = await fetch(`${apiBase}/${journalId}`);
-          const data: ApiResponsePayload = await res.json();
-
-          setIsPosted(!!data.journal.is_posted);
-          setMetadata({
-            entry_date: data.journal.entry_date?.split("T")[0] || "",
-            reference: data.journal.reference || "",
-            description: data.journal.description || "",
-            entry_no: data.journal.entry_no || "",
-          });
-
-          if (data.lines && data.lines.length > 0) {
-            setLines(
-              data.lines.map((l) => {
-                let txType: "gl_no" | "customer" | "supplier" = "gl_no";
-                const rawPartyType = l.party_type || "gl_no";
-
-                if (rawPartyType === "customer") txType = "customer";
-                if (rawPartyType === "supplier") txType = "supplier";
-
-                let dispCode = l.account_code || "";
-                let dispName = l.account_name || "";
-
-                if (rawPartyType === "customer" || l.customer_id) {
-                  txType = "customer";
-                  dispCode = l.customer_code || "";
-                  dispName = l.party_name || "";
-                } else if (rawPartyType === "supplier" || l.supplier_id) {
-                  txType = "supplier";
-                  dispCode = l.supplier_code || "";
-                  dispName = l.party_name || "";
-                }
-
-                let finalLineDate = "";
-                const rawDateValue = l.posting_date || data.journal.entry_date;
-
-                if (rawDateValue) {
-                  finalLineDate =
-                    typeof rawDateValue === "string"
-                      ? rawDateValue.split("T")[0]
-                      : new Date(rawDateValue).toISOString().split("T")[0];
-                } else {
-                  finalLineDate = new Date().toISOString().split("T")[0];
-                }
-
-                return {
-                  posting_date: finalLineDate,
-                  document_type:
-                    l.document_type ||
-                    (isGeneral ? "General Journal" : "Payment"),
-                  transaction_type: txType,
-                  account_id: l.account_id || "",
-                  party_id: l.party_id || "",
-                  currency_id: l.currency_id || "",
-                  exchange_rate: Number(l.exchange_rate || 1.0),
-                  debit: Number(l.debit || 0),
-                  credit: Number(l.credit || 0),
-                  description: l.description || "",
-                  balancing_account_id: l.reference_id || "",
-                  display_code: dispCode,
-                  display_name: dispName,
-                  balancing_display_name: l.balancing_account_name
-                    ? `${l.balancing_account_code || ""} - ${l.balancing_account_name}`
-                    : "",
-                };
-              }),
-            );
-          }
-        }
-      } catch (err) {
-        console.error("Error loading journal configuration data:", err);
-      }
-    };
-    loadLookupsAndData();
-  }, [journalId, apiBase, isGeneral]); */
 
   const baseCurrencyObj = currencies.find((c) => c.is_base) || { code: "GBP" };
   const baseCurrencyCode = baseCurrencyObj.code;
@@ -417,7 +317,7 @@ export default function JournalForm({
   const handleLineChange = (
     index: number,
     field: keyof JournalLineRow,
-    value: string | number,
+    value: string | number | LineAllocationItem[],
   ) => {
     // if (isPosted) return;
     if (formDisabled) return;
@@ -428,33 +328,8 @@ export default function JournalForm({
       updated[index].party_id = "";
       updated[index].display_code = "";
       updated[index].display_name = "";
+      updated[index].allocations = [];
     }
-
-    // if (field === "document_type") {
-    //   const docType = String(value);
-
-    //   if (journalType === "supplier") {
-    //     if (docType === "Payment") {
-    //       // Move credit value to debit, zero out credit
-    //       updated[index].debit = updated[index].debit || updated[index].credit;
-    //       updated[index].credit = 0;
-    //     } else if (docType === "Refund") {
-    //       // Move debit value to credit, zero out debit
-    //       updated[index].credit = updated[index].credit || updated[index].debit;
-    //       updated[index].debit = 0;
-    //     }
-    //   } else if (journalType === "customer") {
-    //     if (docType === "Payment") {
-    //       // Move debit value to credit, zero out debit
-    //       updated[index].credit = updated[index].credit || updated[index].debit;
-    //       updated[index].debit = 0;
-    //     } else if (docType === "Refund") {
-    //       // Move credit value to debit, zero out credit
-    //       updated[index].debit = updated[index].debit || updated[index].credit;
-    //       updated[index].credit = 0;
-    //     }
-    //   }
-    // }
 
     if (field === "debit" && Number(value) > 0) {
       updated[index].credit = 0;
@@ -570,6 +445,7 @@ export default function JournalForm({
 
     try {
       setLoading(true);
+      show("Saving Record...");
 
       const sanitizedLines = lines.map((line) => {
         const rate = Number(line.exchange_rate || 1.0);
@@ -591,6 +467,7 @@ export default function JournalForm({
           description: line.description || metadata.description || "",
           reference_id: line.balancing_account_id || null,
           reference_type: line.balancing_account_id ? "G/L Account" : null,
+          allocations: line.allocations || [],
         };
       });
 
@@ -625,9 +502,13 @@ export default function JournalForm({
     } catch (err) {
       if (err instanceof Error) setErrorMsg(err.message);
     } finally {
+      hide();
       setLoading(false);
     }
   };
+
+  const activeAllocationLine =
+    allocationModalIndex !== null ? lines[allocationModalIndex] : null;
 
   return (
     <div className="w-full space-y-4 bg-zinc-100 p-4 rounded text-xs text-zinc-800">
@@ -647,7 +528,10 @@ export default function JournalForm({
             className="border bg-zinc-50 p-1 px-2 rounded w-32 font-bold tracking-wide outline-none text-zinc-700"
             value={metadata.entry_no || "DRAFT"}
           />
-          {journalType}
+          {/* {journalType} */}
+          <span className="uppercase font-semibold text-zinc-500">
+            [{journalType}]
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -683,6 +567,7 @@ export default function JournalForm({
               <th className="p-2 w-20 text-center">Cnv. Rate</th>
               <th className="p-2 w-28">Converted</th>
               <th className="p-2 w-64">Balancing G/L Selector</th>
+              <th className="p-2 w-28 text-center">Allocate Amount</th>
               <th className="p-2 w-8 text-center"></th>
             </tr>
           </thead>
@@ -693,6 +578,14 @@ export default function JournalForm({
 
               const debitDisabled = isDebitDisabled(line);
               const creditDisabled = isCreditDisabled(line);
+
+              const isPartyLine =
+                line.transaction_type === "supplier" ||
+                line.transaction_type === "customer";
+              const totalLineAllocated = (line.allocations || []).reduce(
+                (s, a) => s + (a.amount || 0),
+                0,
+              );
 
               return (
                 <tr
@@ -794,6 +687,7 @@ export default function JournalForm({
                         }
                         className="w-full border p-1 rounded bg-zinc-50 text-zinc-700 font-mono text-[11px] outline-none truncate"
                       />
+
                       <button
                         type="button"
                         disabled={formDisabled}
@@ -809,7 +703,7 @@ export default function JournalForm({
                         }
                         className="px-2 bg-zinc-200 hover:bg-zinc-300 border text-zinc-700 rounded font-semibold transition"
                       >
-                        Select
+                        <Icon icon="tabler:search" />
                       </button>
                     </div>
                   </td>
@@ -907,6 +801,7 @@ export default function JournalForm({
                         value={line.balancing_display_name || ""}
                         className="w-full border p-1 rounded bg-zinc-50 text-zinc-700 font-mono text-[11px] outline-none truncate"
                       />
+
                       <button
                         type="button"
                         disabled={formDisabled}
@@ -919,9 +814,10 @@ export default function JournalForm({
                         }
                         className="px-2 bg-zinc-200 hover:bg-zinc-300 border text-zinc-700 rounded font-semibold transition"
                       >
-                        Select
+                        <Icon icon="tabler:search" />
                       </button>
-                      {line.balancing_account_id && (
+
+                      {/* {line.balancing_account_id && (
                         <button
                           type="button"
                           disabled={formDisabled}
@@ -936,8 +832,36 @@ export default function JournalForm({
                         >
                           ✕
                         </button>
-                      )}
+                      )} */}
                     </div>
+                  </td>
+
+                  {/* 🌟 ALLOCATE AMOUNT BUTTON COLUMN */}
+                  <td className="p-1.5 text-center">
+                    {isPartyLine ? (
+                      <button
+                        type="button"
+                        disabled={
+                          formDisabled || !line.party_id || localAmount <= 0
+                        }
+                        onClick={() => setAllocationModalIndex(index)}
+                        className={`flex items-center justify-center gap-1 w-full py-1 px-2 border rounded font-semibold transition ${
+                          totalLineAllocated > 0
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                            : "bg-zinc-100 text-zinc-700 border-zinc-300 hover:bg-zinc-200"
+                        } disabled:opacity-40 disabled:cursor-not-allowed`}
+                        title="Allocate payment to open invoices"
+                      >
+                        <span className="font-bold">📋</span>
+                        <span>
+                          {totalLineAllocated > 0
+                            ? `$${totalLineAllocated.toFixed(2)}`
+                            : "Allocate"}
+                        </span>
+                      </button>
+                    ) : (
+                      <span className="text-zinc-300">-</span>
+                    )}
                   </td>
 
                   <td className="p-1.5 text-center">
@@ -1068,9 +992,135 @@ export default function JournalForm({
           }
         />
       )}
+
+      {/* 🌟 INLINE JOURNAL PAYMENT ALLOCATION MODAL */}
+      {allocationModalIndex !== null && activeAllocationLine && (
+        <AllocateJournalPaymentModal
+          isOpen={true}
+          onClose={() => setAllocationModalIndex(null)}
+          vendorId={activeAllocationLine.party_id}
+          paymentAmount={
+            activeAllocationLine.debit > 0
+              ? activeAllocationLine.debit
+              : activeAllocationLine.credit
+          }
+          initialAllocations={activeAllocationLine.allocations || []}
+          onApplyAllocations={(allocations) => {
+            handleLineChange(allocationModalIndex, "allocations", allocations);
+          }}
+        />
+      )}
     </div>
   );
 }
+
+// if (field === "document_type") {
+//   const docType = String(value);
+
+//   if (journalType === "supplier") {
+//     if (docType === "Payment") {
+//       // Move credit value to debit, zero out credit
+//       updated[index].debit = updated[index].debit || updated[index].credit;
+//       updated[index].credit = 0;
+//     } else if (docType === "Refund") {
+//       // Move debit value to credit, zero out debit
+//       updated[index].credit = updated[index].credit || updated[index].debit;
+//       updated[index].debit = 0;
+//     }
+//   } else if (journalType === "customer") {
+//     if (docType === "Payment") {
+//       // Move debit value to credit, zero out debit
+//       updated[index].credit = updated[index].credit || updated[index].debit;
+//       updated[index].debit = 0;
+//     } else if (docType === "Refund") {
+//       // Move credit value to debit, zero out credit
+//       updated[index].debit = updated[index].debit || updated[index].credit;
+//       updated[index].credit = 0;
+//     }
+//   }
+// }
+/* useEffect(() => {
+    const loadLookupsAndData = async () => {
+      try {
+        const curRes = await fetch(`/api/parties/currencies`);
+        if (curRes.ok) setCurrencies((await curRes.json()) || []);
+
+        if (journalId) {
+          const res = await fetch(`${apiBase}/${journalId}`);
+          const data: ApiResponsePayload = await res.json();
+
+          setIsPosted(!!data.journal.is_posted);
+          setMetadata({
+            entry_date: data.journal.entry_date?.split("T")[0] || "",
+            reference: data.journal.reference || "",
+            description: data.journal.description || "",
+            entry_no: data.journal.entry_no || "",
+          });
+
+          if (data.lines && data.lines.length > 0) {
+            setLines(
+              data.lines.map((l) => {
+                let txType: "gl_no" | "customer" | "supplier" = "gl_no";
+                const rawPartyType = l.party_type || "gl_no";
+
+                if (rawPartyType === "customer") txType = "customer";
+                if (rawPartyType === "supplier") txType = "supplier";
+
+                let dispCode = l.account_code || "";
+                let dispName = l.account_name || "";
+
+                if (rawPartyType === "customer" || l.customer_id) {
+                  txType = "customer";
+                  dispCode = l.customer_code || "";
+                  dispName = l.party_name || "";
+                } else if (rawPartyType === "supplier" || l.supplier_id) {
+                  txType = "supplier";
+                  dispCode = l.supplier_code || "";
+                  dispName = l.party_name || "";
+                }
+
+                let finalLineDate = "";
+                const rawDateValue = l.posting_date || data.journal.entry_date;
+
+                if (rawDateValue) {
+                  finalLineDate =
+                    typeof rawDateValue === "string"
+                      ? rawDateValue.split("T")[0]
+                      : new Date(rawDateValue).toISOString().split("T")[0];
+                } else {
+                  finalLineDate = new Date().toISOString().split("T")[0];
+                }
+
+                return {
+                  posting_date: finalLineDate,
+                  document_type:
+                    l.document_type ||
+                    (isGeneral ? "General Journal" : "Payment"),
+                  transaction_type: txType,
+                  account_id: l.account_id || "",
+                  party_id: l.party_id || "",
+                  currency_id: l.currency_id || "",
+                  exchange_rate: Number(l.exchange_rate || 1.0),
+                  debit: Number(l.debit || 0),
+                  credit: Number(l.credit || 0),
+                  description: l.description || "",
+                  balancing_account_id: l.reference_id || "",
+                  display_code: dispCode,
+                  display_name: dispName,
+                  balancing_display_name: l.balancing_account_name
+                    ? `${l.balancing_account_code || ""} - ${l.balancing_account_name}`
+                    : "",
+                };
+              }),
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Error loading journal configuration data:", err);
+      }
+    };
+    loadLookupsAndData();
+  }, [journalId, apiBase, isGeneral]); */
 
 {
   /* <GLAccountLookupModal

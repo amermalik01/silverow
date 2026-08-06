@@ -120,12 +120,6 @@ export default function PurchaseOrderList({ slug }: Props) {
             Manage supplier orders, shipments and invoices
           </p>
         </div>
-        {/* <Link
-          href={`/${slug}/purchases/purchase-orders/create`}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-xs font-medium transition-colors"
-        >
-          New Order
-        </Link> */}
 
         <Button
           asChild
@@ -210,7 +204,9 @@ export default function PurchaseOrderList({ slug }: Props) {
                 <th className="p-3 text-left whitespace-nowrap">Date</th>
                 <th className="p-3 text-left whitespace-nowrap">Status</th>
                 <th className="p-3 text-right whitespace-nowrap">Total</th>
-                <th className="p-3 text-center whitespace-nowrap">Actions</th>
+                <th className="w-40 p-3 text-left whitespace-nowrap">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-slate-800">
@@ -244,8 +240,8 @@ export default function PurchaseOrderList({ slug }: Props) {
                     <td className="p-3 text-right font-mono">
                       {Number(row.total_amount || 0).toFixed(2)}
                     </td>
-                    <td className="p-3">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="p-3 w-44">
+                      <div className="flex items-center gap-2">
                         <Link
                           href={`/${slug}/purchases/purchase-orders/${row.id}/edit`}
                           className="rounded border dark:border-slate-700 px-2 py-1 text-xs hover:bg-gray-100 dark:hover:bg-slate-800"

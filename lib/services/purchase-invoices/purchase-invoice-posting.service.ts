@@ -188,6 +188,42 @@ export class PurchaseInvoicePostingService {
           line.item_id,
         );
 
+        // Insert into vendor_ledger_entries for AP Sub-Ledger Tracking
+        // await client.query(
+        //   `
+        //   INSERT INTO vendor_ledger_entries (
+        //     company_id,
+        //     vendor_id,
+        //     document_type,
+        //     document_id,
+        //     document_no,
+        //     posting_date,
+        //     due_date,
+        //     description,
+        //     original_amount,
+        //     remaining_amount,
+        //     currency_id,
+        //     is_open,
+        //     journal_entry_id,
+        //     created_at
+        //   )
+        //   VALUES ($1, $2, 'PURCHASE_INVOICE', $3, $4, $5, $6, $7, $8, $9, $10, true, $11, NOW())
+        //   `,
+        //   [
+        //     companyId,
+        //     po.supplier_id,
+        //     createdInvoice.id,
+        //     createdInvoice.invoice_no,
+        //     invoiceDate,
+        //     invoiceData.due_date || invoiceDate, // Fallback if due date isn't set
+        //     `Purchase Invoice ${createdInvoice.invoice_no}`,
+        //     grossTotal,       // Positive balance representing liability
+        //     grossTotal,       // Initially remaining_amount = original_amount
+        //     po.currency_id || null,
+        //     postedJournal.id, // Foreign key linking back to journal_entries.id
+        //   ]
+        // );
+
         if (!fallbackApAccountId && accounts.payable_account_id) {
           fallbackApAccountId = accounts.payable_account_id;
         }

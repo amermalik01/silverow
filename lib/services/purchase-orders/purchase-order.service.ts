@@ -19,7 +19,7 @@ export class PurchaseOrderService {
       SELECT po.*, p.name AS supplier_name
       FROM purchase_orders po
       LEFT JOIN parties p ON p.id = po.supplier_id
-      WHERE po.company_id = $1
+      WHERE po.company_id = $1 AND po.status !='completed'
       ORDER BY po.created_at DESC
       `,
       [companyId],

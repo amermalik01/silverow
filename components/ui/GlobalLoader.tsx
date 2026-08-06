@@ -15,7 +15,8 @@ export default function GlobalLoader() {
       <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/45 backdrop-blur-[1px]">
         <div className="flex flex-col items-center gap-4">
           <Image
-            src="/images/logos/silverow-logo.png"
+            // src="/images/logos/silverow-logo.png"
+            src="/images/logos/nevico-logo.png"
             alt="Loading"
             width={204}
             height={36}
