@@ -5,7 +5,7 @@ import { pool } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { vendorId: string } },
+  { params }: { params: Promise<{ vendorId: string }> },
 ) {
   try {
     const companyId = await getCompanyId();
@@ -13,7 +13,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { vendorId } = params;
+    const { vendorId } = await params;
 
     const result = await pool.query(
       `
