@@ -243,29 +243,78 @@ export const DebitNoteForm: React.FC<Props> = ({
       const payload = await res.json();
       hide();
 
-      if (payload?.success && Array.isArray(payload.data?.lines)) {
-        const fetchedLines: DebitNoteLine[] = payload.data.lines.map(
-          (l: PurchaseOrderLine, idx: number) => ({
-            line_no: idx + 1,
-            line_type: l.line_type || "ITEM",
-            item_id: l.item_id,
-            item_code: l.item_code,
-            item_name: l.item_name || l.description,
-            description: l.description,
-            warehouse_id: l.warehouse_id,
-            quantity: Number(l.quantity || 0),
-            unit_cost: Number(l.unit_cost || 0),
-            vat_percent: Number(l.vat_percent || 0),
-            vat_amount: Number(l.vat_amount || 0),
-            net_amount: Number(l.net_amount || 0),
-            gross_amount: Number(l.gross_amount || 0),
-          }),
-        );
+      // if (payload?.success && Array.isArray(payload.data?.lines)) {
 
-        setLines(fetchedLines);
-        toast.success(
-          `Imported ${fetchedLines.length} line items from Purchase Invoice ${invoice.invoice_no}`,
-        );
+      if (payload?.success && payload.data) {
+        const {
+          lines: fetchedRawLines,
+          primary_address,
+          billing_address,
+          shipping_address,
+        } = payload.data;
+
+        // Hydrate header addresses if available from PO
+        if (primary_address) setPrimaryAddress(primary_address);
+        if (billing_address) setBillingAddress(billing_address);
+        if (shipping_address) setShippingAddress(shipping_address);
+
+        if (Array.isArray(fetchedRawLines)) {
+          const mappedLines: DebitNoteLine[] = fetchedRawLines.map(
+            (l: DebitNoteLine, idx: number) => ({
+              line_no: idx + 1,
+              purchase_invoice_line_id: l.purchase_invoice_line_id, // Critical for de-allocation
+              line_type: l.line_type || "ITEM",
+              item_id: l.item_id,
+              item_code: l.item_code || "",
+              item_name: l.item_name || l.description || "",
+              description: l.description || "",
+              warehouse_id: l.warehouse_id || "",
+              warehouse_name: l.warehouse_name || "",
+              warehouse_location_id: l.warehouse_location_id,
+              uom_id: l.uom_id || "",
+              uom_name: l.uom_name || "",
+              gl_account_id: l.gl_account_id,
+              account_code: l.account_code,
+              quantity: Number(l.quantity || 0),
+              unit_cost: Number(l.unit_cost || 0),
+              discount_type: l.discount_type || "PERCENT",
+              discount_value: Number(l.discount_value || 0),
+              discount_amount: Number(l.discount_amount || 0),
+              original_amount: Number(
+                l.original_amount ||
+                  Number(l.quantity || 0) * Number(l.unit_cost || 0),
+              ),
+              vat_percent: Number(l.vat_percent || 0),
+              vat_amount: Number(l.vat_amount || 0),
+              net_amount: Number(l.net_amount || 0),
+              gross_amount: Number(l.gross_amount || 0),
+            }),
+          );
+
+          // const fetchedLines: DebitNoteLine[] = payload.data.lines.map(
+          //   (l: PurchaseOrderLine, idx: number) => ({
+          //     line_no: idx + 1,
+          //     line_type: l.line_type || "ITEM",
+          //     purchase_invoice_line_id: l.id,
+          //     item_id: l.item_id,
+          //     item_code: l.item_code,
+          //     item_name: l.item_name || l.description,
+          //     description: l.description,
+          //     warehouse_id: l.warehouse_id,
+          //     quantity: Number(l.quantity || 0),
+          //     unit_cost: Number(l.unit_cost || 0),
+          //     vat_percent: Number(l.vat_percent || 0),
+          //     vat_amount: Number(l.vat_amount || 0),
+          //     net_amount: Number(l.net_amount || 0),
+          //     gross_amount: Number(l.gross_amount || 0),
+          //   }),
+          // );
+
+          setLines(mappedLines);
+          toast.success(
+            `Imported ${mappedLines.length} line items from Purchase Invoice ${invoice.invoice_no}`,
+          );
+        }
       }
     } catch (err) {
       hide();

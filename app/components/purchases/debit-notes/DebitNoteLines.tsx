@@ -4,6 +4,7 @@
 
 import { useMemo, useState } from "react";
 import { DebitNote, DebitNoteLine } from "@/types/debit-note";
+import { Icon } from "@iconify/react";
 
 import ItemLookupModal, {
   ItemLookupRecord,
@@ -16,10 +17,9 @@ import GLAccountLookupModal, {
 import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
-
-import StockAllocationModal, {
-  StockAllocationRecord,
-} from "../../shared/modals/StockAllocationModal";
+import StockDeAllocationModal, {
+  StockDeAllocationRecord,
+} from "../../shared/modals/StockDeAllocationModal";
 
 export type DebitNoteLineUI = DebitNoteLine & {
   item_code?: string;
@@ -32,7 +32,8 @@ export type DebitNoteLineUI = DebitNoteLine & {
   reserved_quantity?: number;
   available_stock?: number;
   is_allocated?: boolean;
-  allocations?: StockAllocationRecord[];
+  purchase_invoice_line_id?: string;
+  allocations?: StockDeAllocationRecord[];
 };
 
 type Props = {
@@ -60,18 +61,29 @@ export default function DebitNoteLines({
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
 
+  const [isDeAllocModalOpen, setIsDeAllocModalOpen] = useState(false);
+  const [activeDeAllocRowKey, setActiveDeAllocRowKey] = useState<string | null>(
+    null,
+  );
+
+  const activeDeAllocLine = useMemo(() => {
+    if (activeDeAllocRowKey === null) return null;
+    const idx = parseInt(activeDeAllocRowKey, 10);
+    return lines[idx] || null;
+  }, [activeDeAllocRowKey, lines]);
+
   // Allocation Modal state wrappers using index keys
-  const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
-  const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
-    string | null
-  >(null);
+  // const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
+  // const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
+  //   string | null
+  // >(null);
 
   // Derive the active line component via parsed row-index safely
-  const activeAllocationLine = useMemo(() => {
-    if (activeAllocationRowKey === null) return null;
-    const idx = parseInt(activeAllocationRowKey, 10);
-    return lines[idx] || null;
-  }, [activeAllocationRowKey, lines]);
+  // const activeAllocationLine = useMemo(() => {
+  //   if (activeAllocationRowKey === null) return null;
+  //   const idx = parseInt(activeAllocationRowKey, 10);
+  //   return lines[idx] || null;
+  // }, [activeAllocationRowKey, lines]);
 
   /**
    * =====================================================
@@ -190,10 +202,10 @@ export default function DebitNoteLines({
 
   /**
    * =====================================================
-   * ALLOCATION SAVE HANDLER
+   * De ALLOCATION SAVE HANDLER
    * =====================================================
    */
-  const handleSaveAllocations = (allocationsData: StockAllocationRecord[]) => {
+  /* const handleSaveAllocations = (allocationsData: StockAllocationRecord[]) => {
     if (activeAllocationRowKey === null) return;
     const targetIdx = parseInt(activeAllocationRowKey, 10);
 
@@ -216,6 +228,33 @@ export default function DebitNoteLines({
 
     setIsAllocationModalOpen(false);
     setActiveAllocationRowKey(null);
+  }; */
+
+  const handleSaveDeAllocations = (
+    deAllocationsData: StockDeAllocationRecord[],
+  ) => {
+    if (activeDeAllocRowKey === null) return;
+    const targetIdx = parseInt(activeDeAllocRowKey, 10);
+
+    setLines((prev) =>
+      prev.map((line, index) => {
+        if (index !== targetIdx) return line;
+
+        const totalReturned = deAllocationsData.reduce(
+          (sum, d) => sum + d.return_quantity,
+          0,
+        );
+
+        return {
+          ...line,
+          allocations: deAllocationsData,
+          is_allocated: totalReturned === (line.quantity || 0),
+        };
+      }),
+    );
+
+    setIsDeAllocModalOpen(false);
+    setActiveDeAllocRowKey(null);
   };
 
   /**
@@ -505,25 +544,27 @@ export default function DebitNoteLines({
                         {line.line_type === "ITEM" ? (
                           <button
                             type="button"
-                            disabled={isAllocationDisabled}
+                            title="Manage Batch De-Allocation"
+                            disabled={!line.item_id || !line.warehouse_id}
                             onClick={() => {
-                              setActiveAllocationRowKey(index.toString());
-                              setIsAllocationModalOpen(true);
+                              setActiveDeAllocRowKey(String(index));
+                              setIsDeAllocModalOpen(true);
                             }}
-                            className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={
-                              isAllocationDisabled
-                                ? "Requires item and warehouse assignment first"
-                                : "Open Allocation Matrix"
-                            }
+                            className={`p-1 rounded text-xs flex items-center gap-1 ${
+                              line.is_allocated
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                            }`}
                           >
-                            <span
-                              className={`inline-block w-2.5 h-2.5 rounded-full ${
-                                line.is_allocated
-                                  ? "bg-emerald-500"
-                                  : "bg-rose-500"
-                              }`}
+                            <Icon
+                              icon="tabler:box-seam"
+                              className="w-3.5 h-3.5"
                             />
+                            <span>
+                              {line.is_allocated
+                                ? "De-Allocated"
+                                : "Alloc Batches"}
+                            </span>
                           </button>
                         ) : (
                           <div className="w-4 h-4" />
@@ -631,7 +672,24 @@ export default function DebitNoteLines({
         }}
       />
 
-      {isAllocationModalOpen &&
+      {isDeAllocModalOpen &&
+        activeDeAllocRowKey !== null &&
+        activeDeAllocLine && (
+          <StockDeAllocationModal
+            open={isDeAllocModalOpen}
+            onClose={() => {
+              setIsDeAllocModalOpen(false);
+              setActiveDeAllocRowKey(null);
+            }}
+            purchaseInvoiceLineId={activeDeAllocLine.purchase_invoice_line_id} // mapped from API
+            itemCode={activeDeAllocLine.item_code}
+            itemName={activeDeAllocLine.item_name}
+            warehouseName={activeDeAllocLine.warehouse_name}
+            onSave={handleSaveDeAllocations}
+          />
+        )}
+
+      {/* {isAllocationModalOpen &&
         activeAllocationRowKey !== null &&
         activeAllocationLine && (
           <StockAllocationModal
@@ -663,7 +721,7 @@ export default function DebitNoteLines({
               handleSaveAllocations(allocationsPayload)
             }
           />
-        )}
+        )} */}
     </div>
   );
 }

@@ -101,6 +101,7 @@ export interface DebitNoteLine {
   id?: string;
   debit_note_id?: string;
   line_no?: number;
+  purchase_invoice_line_id?: string;
   line_type: DebitNoteLineType;
 
   /* ITEM */
