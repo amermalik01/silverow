@@ -3,6 +3,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 export type PO_StockAllocationRecord = {
   location_id: string;
@@ -287,7 +289,25 @@ export default function PO_StockAllocationModal({
 
               <tr className="bg-slate-50/60 dark:bg-slate-800/20">
                 <td className="p-2">
-                  <input
+                  <DatePicker
+                    value={
+                      newRowInput.date_received
+                        ? new Date(newRowInput.date_received)
+                        : undefined
+                    }
+                    minDate={
+                      newRowInput.prod_date
+                        ? new Date(newRowInput.prod_date)
+                        : undefined
+                    }
+                    onChange={(date) =>
+                      setNewRowInput({
+                        ...newRowInput,
+                        date_received: date ? format(date, "yyyy-MM-dd") : "",
+                      })
+                    }
+                  />
+                  {/* <input
                     type="date"
                     value={newRowInput.date_received}
                     onChange={(e) =>
@@ -297,10 +317,28 @@ export default function PO_StockAllocationModal({
                       })
                     }
                     className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 scheme-light dark:scheme-dark focus:outline-hidden focus:ring-1 focus:ring-green-600"
-                  />
+                  /> */}
                 </td>
                 <td className="p-2">
-                  <input
+                  <DatePicker
+                    value={
+                      newRowInput.prod_date
+                        ? new Date(newRowInput.prod_date)
+                        : undefined
+                    }
+                    maxDate={
+                      newRowInput.date_received
+                        ? new Date(newRowInput.date_received)
+                        : undefined
+                    }
+                    onChange={(date) =>
+                      setNewRowInput({
+                        ...newRowInput,
+                        prod_date: date ? format(date, "yyyy-MM-dd") : "",
+                      })
+                    }
+                  />
+                  {/* <input
                     type="date"
                     value={newRowInput.prod_date}
                     onChange={(e) =>
@@ -310,10 +348,28 @@ export default function PO_StockAllocationModal({
                       })
                     }
                     className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 scheme-light dark:scheme-dark focus:outline-hidden focus:ring-1 focus:ring-green-600"
-                  />
+                  /> */}
                 </td>
                 <td className="p-2">
-                  <input
+                  <DatePicker
+                    value={
+                      newRowInput.expiry_date
+                        ? new Date(newRowInput.expiry_date)
+                        : undefined
+                    }
+                    minDate={
+                      newRowInput.prod_date
+                        ? new Date(newRowInput.prod_date)
+                        : undefined
+                    }
+                    onChange={(date) =>
+                      setNewRowInput({
+                        ...newRowInput,
+                        expiry_date: date ? format(date, "yyyy-MM-dd") : "",
+                      })
+                    }
+                  />
+                  {/* <input
                     type="date"
                     value={newRowInput.expiry_date}
                     onChange={(e) =>
@@ -323,7 +379,7 @@ export default function PO_StockAllocationModal({
                       })
                     }
                     className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 scheme-light dark:scheme-dark focus:outline-hidden focus:ring-1 focus:ring-green-600"
-                  />
+                  /> */}
                 </td>
                 <td className="p-2">
                   <select

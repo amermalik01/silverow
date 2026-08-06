@@ -619,7 +619,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
       toast.success("Purchase invoice posted cleanly!", { id: "action-toast" });
       setShowInvoiceModal(false);
-      router.refresh();
+
+      router.push(`/${slug}/purchases/purchase-orders`);
+      // router.refresh();
     } catch (err) {
       if (err instanceof Error)
         // setValidationErrors([err.message]);
