@@ -11,6 +11,11 @@ import SalespersonLookupModal, {
   Employee,
 } from "@/app/components/shared/modals/SalespersonLookupModal";
 
+interface PostingGroupItem {
+  id: string;
+  name: string;
+}
+
 export type CompanyCurrency = {
   id: string;
   code: string;
@@ -59,6 +64,18 @@ export default function GeneralTab({
   const [status, setStatus] = useState<SetupDropdownItem[]>([]);
   const [classification, setClassification] = useState<SetupDropdownItem[]>([]);
   const [sourceOfCRM, setSourceOfCRM] = useState<SetupDropdownItem[]>([]);
+
+  // Existing state variables...
+  const [salesPostingGroups, setSalesPostingGroups] = useState<
+    PostingGroupItem[]
+  >([]);
+  const [purchasePostingGroups, setPurchasePostingGroups] = useState<
+    PostingGroupItem[]
+  >([]);
+  // const [vatBusinessGroups, setVatBusinessGroups] = useState<
+  //   { id: string; name: string }[]
+  // >([]);
+
   const [salespersonModalOpen, setSalespersonModalOpen] =
     useState<boolean>(false);
 
@@ -175,6 +192,10 @@ export default function GeneralTab({
           tpRes,
           statusRes,
           sourcesRes,
+          // NEW API FETCH CALLS
+          salesGroupRes,
+          purchaseGroupRes,
+          // vatGroupRes,
         ] = await Promise.all([
           fetch(`/api/setup/sales/segments?module=${activeModule}`),
           fetch(`/api/setup/sales/territories?module=${activeModule}`),
@@ -185,6 +206,10 @@ export default function GeneralTab({
           fetch("/api/setup/sales/type"),
           fetch("/api/setup/sales/status"),
           fetch("/api/setup/sales/sources"),
+          // Fetch Posting Groups
+          fetch("/api/setup/finance/sales-posting-groups"),
+          fetch("/api/setup/finance/purchase-posting-groups"),
+          // fetch("/api/setup/finance/vat-business-posting-groups"),
         ]);
 
         if (segRes.ok) setSegments(await segRes.json());
@@ -197,6 +222,12 @@ export default function GeneralTab({
         if (tpRes.ok) setType(await tpRes.json());
         if (statusRes.ok) setStatus(await statusRes.json());
         if (sourcesRes.ok) setSourceOfCRM(await sourcesRes.json());
+
+        // Set state for Posting Groups
+        if (salesGroupRes.ok) setSalesPostingGroups(await salesGroupRes.json());
+        if (purchaseGroupRes.ok)
+          setPurchasePostingGroups(await purchaseGroupRes.json());
+        // if (vatGroupRes.ok) setVatBusinessGroups(await vatGroupRes.json());
       } catch (err) {
         console.error("Error populating ledger configuration setups:", err);
       }
@@ -847,6 +878,44 @@ export default function GeneralTab({
                     {c.name}
                   </option>
                 ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Business Posting Group <span className="text-red-500">*</span>
+            </label>
+            <div className="col-span-2">
+              <select
+                disabled={isReadonly}
+                value={
+                  (account.is_customer
+                    ? account.sales_posting_group_id
+                    : account.purchase_posting_group_id) || ""
+                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (account.is_customer) {
+                    updateField("sales_posting_group_id", val);
+                  } else {
+                    updateField("purchase_posting_group_id", val);
+                  }
+                }}
+                className={getInputClass("general.posting_group_id")}
+              >
+                <option value="">Select Ledger Control Profile...</option>
+                {account.is_customer
+                  ? salesPostingGroups.map((pg) => (
+                      <option key={pg.id} value={pg.id}>
+                        {pg.name}
+                      </option>
+                    ))
+                  : purchasePostingGroups.map((pg) => (
+                      <option key={pg.id} value={pg.id}>
+                        {pg.name}
+                      </option>
+                    ))}
               </select>
             </div>
           </div>

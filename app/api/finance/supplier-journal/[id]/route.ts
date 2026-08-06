@@ -2,6 +2,85 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
+import { JournalService } from "@/lib/services/journal.service";
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const companyId = await getCompanyId();
+    if (!companyId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    // Utilize JournalService.get to properly fetch joined party & G/L metadata
+    const result = await JournalService.get(companyId, id);
+
+    if (!result) {
+      return NextResponse.json(
+        { error: "Supplier journal voucher not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("Get Individual Supplier Journal Error:", err);
+    return NextResponse.json(
+      { error: "Failed to load journal record data details" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const companyId = await getCompanyId();
+    if (!companyId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await req.json();
+
+    const balancedPayload = {
+      entry_date: body.entry_date,
+      source: "SUPPLIER_JOURNAL" as const,
+      reference: body.reference,
+      description: body.description,
+      lines: body.lines,
+    };
+
+    // 1. Persist updates to the journal entry and lines draft
+    await JournalService.update(companyId, id, balancedPayload);
+
+    // 2. If the user clicked "Post Journal" from the UI, post it to the GL ledger
+    if (body.is_posted) {
+      await JournalService.post(companyId, id);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const dbError = err as { code?: string; message?: string };
+    console.error("Update Supplier Journal Error:", err);
+    return NextResponse.json(
+      {
+        error:
+          dbError.message || "Failed to save journal voucher modifications",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/* import { NextRequest, NextResponse } from "next/server";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { pool } from "@/lib/db";
 import { JournalService } from "@/lib/services/journal.service";
 
@@ -88,3 +167,4 @@ export async function PUT(
     );
   }
 }
+ */

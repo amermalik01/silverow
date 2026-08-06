@@ -34,7 +34,7 @@ const CompanyHeader = () => {
       <header
         className={`sticky top-0 z-40 border-b transition-all ${
           isSticky
-            ? "bg-background/95 backdrop-blur shadow-sm"
+            ? "bg-[#103701] dark:bg-[#262F3C] text-white"
             : "bg-[#103701] dark:bg-[#262F3C] text-white"
         }`}
       >

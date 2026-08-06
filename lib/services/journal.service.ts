@@ -87,7 +87,8 @@ export class JournalService {
     const linesResult = await pool.query(
       `
           SELECT 
-            l.*, 
+            l.*,
+            l.party_type::text AS raw_party_type,
             a.code AS account_code,
             a.name AS account_name, 
             p.name AS party_name,
@@ -105,9 +106,28 @@ export class JournalService {
       [id],
     );
 
+    const formattedLines = linesResult.rows.map((row) => {
+      // Determine exact UI transaction_type
+      let transactionType: "gl_no" | "customer" | "supplier" = "gl_no";
+
+      if (row.raw_party_type === "customer" || row.customer_code) {
+        transactionType = "customer";
+      } else if (row.raw_party_type === "supplier" || row.supplier_code) {
+        transactionType = "supplier";
+      }
+
+      return {
+        ...row,
+        transaction_type: transactionType,
+        party_type:
+          row.raw_party_type ||
+          (transactionType !== "gl_no" ? transactionType : null),
+      };
+    });
+
     return {
       journal: journalResult.rows[0],
-      lines: linesResult.rows,
+      lines: formattedLines,
     };
   }
 
@@ -479,27 +499,36 @@ export class JournalService {
     line: JournalLineInput,
   ) {
     let resolvedAccountId = line.account_id?.trim() || null;
-    const transType = line.transaction_type || "gl_no"; // Incoming UI tracking field
 
-    // Map your UI structural names to your exact database ENUM values ('customer', 'supplier')
-    // If it's a standard gl_no line, we leave the party_type blank (null)
+    // 1. Resolve transaction_type from incoming UI payload
+    const transType =
+      line.transaction_type || (line.party_type as string) || "gl_no";
+
+    // 2. Map transaction_type to db party_type ('customer' | 'supplier' | null)
     const dbPartyType =
       transType === "customer" || transType === "supplier" ? transType : null;
 
-    // If the frontend didn't pass an account_id, look it up via the sub-ledger relationship
-    if (!resolvedAccountId && line.party_id) {
+    const partyId = line.party_id?.trim() || null;
+
+    // 3. Resolve Control Account if user selected a Sub-Ledger Party (Customer/Supplier)
+    if (dbPartyType && partyId) {
       resolvedAccountId = await this.getControlAccountForParty(
         client,
         companyId,
-        line.party_id,
-        dbPartyType || "customer", // Falls back to looking up customer tables if unclear
+        partyId,
+        dbPartyType,
       );
 
       if (!resolvedAccountId) {
         throw new Error(
-          `A valid G/L control account configuration could not be found for Sub-Ledger Party: ${line.party_id}`,
+          `A valid G/L control account configuration could not be found for ${dbPartyType} ID: ${partyId}`,
         );
       }
+    }
+
+    // 4. Fallback guard for pure G/L lines
+    if (!resolvedAccountId) {
+      throw new Error(`Missing G/L account for line entry`);
     }
 
     // Resolve structural balancing fields for persistence mapping
@@ -509,6 +538,7 @@ export class JournalService {
     const resolvedRefType = balancingAccountId
       ? "G/L Account"
       : line.reference_type || null;
+
     const resolvedRefId = balancingAccountId
       ? balancingAccountId
       : line.reference_id || null;
@@ -535,7 +565,7 @@ export class JournalService {
         reference_type,
         reference_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4::sub_ledger_type, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       `,
       [
         companyId,
@@ -559,6 +589,7 @@ export class JournalService {
 
   /**
    * Helper to fetch the control account from customer/supplier tables
+   * with multi-tier fallback resolution.
    */
   private static async getControlAccountForParty(
     client: PoolClient,
@@ -567,36 +598,79 @@ export class JournalService {
     type: "customer" | "supplier",
   ): Promise<string | null> {
     if (type === "customer") {
-      // Join the unified parties row to its assigned Sales Posting Group profile
+      // 1. Try resolving via sales_posting_group_id
       const res = await client.query(
         `SELECT spg.receivable_account_id 
-       FROM public.parties p
-       INNER JOIN public.sales_posting_groups spg ON p.sales_posting_group_id = spg.id
-       WHERE p.id = $1 
-         AND p.company_id = $2 
-         AND p.is_customer = true`,
+         FROM public.parties p
+         INNER JOIN public.sales_posting_groups spg ON p.sales_posting_group_id = spg.id
+         WHERE p.id = $1 AND p.company_id = $2`,
         [partyId, companyId],
       );
-      return res.rows[0]?.receivable_account_id || null;
+      if (res.rows[0]?.receivable_account_id) {
+        return res.rows[0].receivable_account_id;
+      }
+
+      // 2. Fallback: Check direct gl_account_receivable on party
+      const directRes = await client.query(
+        `SELECT gl_account_receivable 
+         FROM public.parties 
+         WHERE id = $1 AND company_id = $2`,
+        [partyId, companyId],
+      );
+      const directAcc = directRes.rows[0]?.gl_account_receivable;
+      if (directAcc && directAcc.trim() !== "") {
+        return directAcc.trim();
+      }
+
+      // 3. Last Fallback: First active sales posting group for company
+      const defaultRes = await client.query(
+        `SELECT receivable_account_id 
+         FROM public.sales_posting_groups 
+         WHERE company_id = $1 
+         ORDER BY created_at ASC LIMIT 1`,
+        [companyId],
+      );
+      return defaultRes.rows[0]?.receivable_account_id || null;
     }
 
     if (type === "supplier") {
-      // Join the unified parties row to its assigned Purchase Posting Group profile
+      // 1. Try resolving via purchase_posting_group_id
       const res = await client.query(
         `SELECT ppg.payable_account_id 
-       FROM public.parties p
-       INNER JOIN public.purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
-       WHERE p.id = $1 
-         AND p.company_id = $2 
-         AND p.is_supplier = true`,
+         FROM public.parties p
+         INNER JOIN public.purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
+         WHERE p.id = $1 AND p.company_id = $2`,
         [partyId, companyId],
       );
-      return res.rows[0]?.payable_account_id || null;
+      if (res.rows[0]?.payable_account_id) {
+        return res.rows[0].payable_account_id;
+      }
+
+      // 2. Fallback: Check direct gl_account_payable on party
+      const directRes = await client.query(
+        `SELECT gl_account_payable 
+         FROM public.parties 
+         WHERE id = $1 AND company_id = $2`,
+        [partyId, companyId],
+      );
+      const directAcc = directRes.rows[0]?.gl_account_payable;
+      if (directAcc && directAcc.trim() !== "") {
+        return directAcc.trim();
+      }
+
+      // 3. Last Fallback: First active purchase posting group for company
+      const defaultRes = await client.query(
+        `SELECT payable_account_id 
+         FROM public.purchase_posting_groups 
+         WHERE company_id = $1 
+         ORDER BY created_at ASC LIMIT 1`,
+        [companyId],
+      );
+      return defaultRes.rows[0]?.payable_account_id || null;
     }
 
     return null;
   }
-
   /**
    * VALIDATE - Matches legacy balancing account bypass rules with LCY decimal precision tracking
    */
@@ -630,7 +704,8 @@ export class JournalService {
         throw new Error("Line cannot have both debit and credit");
       }
 
-      const balAcc = line.balancing_account_id?.trim() || line.reference_id?.trim();
+      const balAcc =
+        line.balancing_account_id?.trim() || line.reference_id?.trim();
 
       if (balAcc) {
         // Line has a balancing account selected (e.g. Bank/Cash).
@@ -655,33 +730,6 @@ export class JournalService {
         }
       }
     }
-
-    /* for (const line of lines) {
-      const debit = Number(line.debit || 0);
-      const credit = Number(line.credit || 0);
-      const rate = Number(line.exchange_rate || 1.0);
-
-      if (debit > 0 && credit > 0) {
-        throw new Error("Line cannot have both debit and credit");
-      }
-
-      // Legacy rule: If a line handles its own offset via a balancing account,
-      // it bypasses the global document cross-line validation total sums.
-      if (
-        line.balancing_account_id &&
-        line.balancing_account_id.trim() !== ""
-      ) {
-        continue;
-      }
-
-      if (debit > 0) {
-        totalDebitConverted += Number((debit * rate).toFixed(2));
-      }
-
-      if (credit > 0) {
-        totalCreditConverted += Number((credit * rate).toFixed(2));
-      }
-    } */
 
     // Match variance constraint validation threshold to two decimal precision (0.01)
     const variance = Math.abs(totalDebitConverted - totalCreditConverted);
@@ -761,3 +809,69 @@ export class JournalService {
     }
   }
 }
+
+/* for (const line of lines) {
+      const debit = Number(line.debit || 0);
+      const credit = Number(line.credit || 0);
+      const rate = Number(line.exchange_rate || 1.0);
+
+      if (debit > 0 && credit > 0) {
+        throw new Error("Line cannot have both debit and credit");
+      }
+
+      // Legacy rule: If a line handles its own offset via a balancing account,
+      // it bypasses the global document cross-line validation total sums.
+      if (
+        line.balancing_account_id &&
+        line.balancing_account_id.trim() !== ""
+      ) {
+        continue;
+      }
+
+      if (debit > 0) {
+        totalDebitConverted += Number((debit * rate).toFixed(2));
+      }
+
+      if (credit > 0) {
+        totalCreditConverted += Number((credit * rate).toFixed(2));
+      }
+    } */
+/**
+ * Helper to fetch the control account from customer/supplier tables
+ */
+/* private static async getControlAccountForParty(
+    client: PoolClient,
+    companyId: string,
+    partyId: string,
+    type: "customer" | "supplier",
+  ): Promise<string | null> {
+    if (type === "customer") {
+      // Join the unified parties row to its assigned Sales Posting Group profile
+      const res = await client.query(
+        `SELECT spg.receivable_account_id 
+       FROM public.parties p
+       INNER JOIN public.sales_posting_groups spg ON p.sales_posting_group_id = spg.id
+       WHERE p.id = $1 
+         AND p.company_id = $2 
+         AND p.is_customer = true`,
+        [partyId, companyId],
+      );
+      return res.rows[0]?.receivable_account_id || null;
+    }
+
+    if (type === "supplier") {
+      // Join the unified parties row to its assigned Purchase Posting Group profile
+      const res = await client.query(
+        `SELECT ppg.payable_account_id 
+       FROM public.parties p
+       INNER JOIN public.purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
+       WHERE p.id = $1 
+         AND p.company_id = $2 
+         AND p.is_supplier = true`,
+        [partyId, companyId],
+      );
+      return res.rows[0]?.payable_account_id || null;
+    }
+
+    return null;
+  } */

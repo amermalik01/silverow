@@ -88,6 +88,7 @@ type Props = {
   slug: string;
   journalId?: string;
   journalType: "customer" | "supplier" | "item" | "general";
+  readOnly?: boolean;
   apiBase: string;
   redirectPath: string;
 };
@@ -95,6 +96,7 @@ type Props = {
 export default function JournalForm({
   journalId,
   journalType,
+  readOnly = false,
   apiBase,
   redirectPath,
 }: Props) {
@@ -105,6 +107,7 @@ export default function JournalForm({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isGeneral = journalType === "general";
+  const formDisabled = readOnly || isPosted;
 
   const [activeModal, setActiveModal] = useState<{
     index: number;
@@ -118,6 +121,25 @@ export default function JournalForm({
     description: "",
     entry_no: "",
   });
+
+  /* const createInitialRow = (): JournalLineRow => {
+    return {
+      posting_date: metadata.entry_date || new Date().toISOString().split("T")[0],
+      document_type: isGeneral ? "General Journal" : "Payment",
+      transaction_type: isGeneral ? "gl_no" : (journalType as "customer" | "supplier"),
+      account_id: "",
+      party_id: "",
+      currency_id: "",
+      exchange_rate: 1.0,
+      debit: 0,
+      credit: 0,
+      description: "",
+      balancing_account_id: "",
+      display_code: "",
+      display_name: "",
+      balancing_display_name: "",
+    };
+  }; */
 
   const createInitialRow = (): JournalLineRow => {
     let initialDebit = 0;
@@ -152,24 +174,6 @@ export default function JournalForm({
       balancing_display_name: "",
     };
   };
-  /* const createInitialRow = (): JournalLineRow => ({
-    posting_date: metadata.entry_date || new Date().toISOString().split("T")[0],
-    document_type: isGeneral ? "General Journal" : "Payment",
-    transaction_type: isGeneral
-      ? "gl_no"
-      : (journalType as "customer" | "supplier"),
-    account_id: "",
-    party_id: "",
-    currency_id: "",
-    exchange_rate: 1.0,
-    debit: 0,
-    credit: 0,
-    description: "",
-    balancing_account_id: "",
-    display_code: "",
-    display_name: "",
-    balancing_display_name: "",
-  }); */
 
   const [lines, setLines] = useState<JournalLineRow[]>([createInitialRow()]);
 
@@ -228,31 +232,103 @@ export default function JournalForm({
   );
   const isBalanced = Math.abs(difference) < 0.01;
 
-  // Converted tracking totals (bypassing lines with explicit balancing targets)
-  /* const totalDebitConverted = lines.reduce((sum, line) => {
-    if (line.balancing_account_id && line.balancing_account_id.trim() !== "")
-      return sum;
-    if (Number(line.debit || 0) <= 0) return sum;
-
-    const rate = Number(line.exchange_rate || 1.0);
-    return sum + Number((Number(line.debit) * rate).toFixed(2));
-  }, 0);
-
-  const totalCreditConverted = lines.reduce((sum, line) => {
-    if (line.balancing_account_id && line.balancing_account_id.trim() !== "")
-      return sum;
-    if (Number(line.credit || 0) <= 0) return sum;
-
-    const rate = Number(line.exchange_rate || 1.0);
-    return sum + Number((Number(line.credit) * rate).toFixed(2));
-  }, 0);
-
-  const difference = Number(
-    (totalDebitConverted - totalCreditConverted).toFixed(2),
-  );
-  const isBalanced = Math.abs(difference) < 0.01; */
-
   useEffect(() => {
+    const loadLookupsAndData = async () => {
+      try {
+        const curRes = await fetch(`/api/parties/currencies`);
+        if (curRes.ok) setCurrencies((await curRes.json()) || []);
+
+        if (journalId) {
+          const res = await fetch(`${apiBase}/${journalId}`);
+          const data: ApiResponsePayload = await res.json();
+
+          setIsPosted(!!data.journal.is_posted);
+          setMetadata({
+            entry_date: data.journal.entry_date?.split("T")[0] || "",
+            reference: data.journal.reference || "",
+            description: data.journal.description || "",
+            entry_no: data.journal.entry_no || "",
+          });
+
+          if (data.lines && data.lines.length > 0) {
+            setLines(
+              data.lines.map((l) => {
+                // 1. Extract transaction type
+                const txType: "gl_no" | "customer" | "supplier" =
+                  (l.party_type === "customer" || l.customer_code
+                    ? "customer"
+                    : null) ||
+                  (l.party_type === "supplier" || l.supplier_code
+                    ? "supplier"
+                    : null) ||
+                  "gl_no";
+
+                // let txType: "gl_no" | "customer" | "supplier" = "gl_no";
+                // const rawPartyType = l.party_type || "";
+
+                // if (rawPartyType === "customer" || l.customer_id)
+                //   txType = "customer";
+                // else if (rawPartyType === "supplier" || l.supplier_id)
+                //   txType = "supplier";
+
+                // 2. Resolve display values accurately based on transaction_type
+                let dispCode = "";
+                let dispName = "";
+
+                if (txType === "customer") {
+                  dispCode = l.customer_code || "";
+                  dispName = l.party_name || l.customer_name || "";
+                } else if (txType === "supplier") {
+                  dispCode = l.supplier_code || "";
+                  dispName = l.party_name || l.supplier_name || "";
+                } else {
+                  dispCode = l.account_code || "";
+                  dispName = l.account_name || "";
+                }
+
+                // 3. Format Date
+                let finalLineDate = new Date().toISOString().split("T")[0];
+                const rawDateValue = l.posting_date || data.journal.entry_date;
+                if (rawDateValue) {
+                  finalLineDate =
+                    typeof rawDateValue === "string"
+                      ? rawDateValue.split("T")[0]
+                      : new Date(rawDateValue).toISOString().split("T")[0];
+                }
+
+                return {
+                  posting_date: finalLineDate,
+                  document_type:
+                    l.document_type ||
+                    (isGeneral ? "General Journal" : "Payment"),
+                  transaction_type: txType,
+                  account_id: l.account_id || "",
+                  party_id: l.party_id || l.supplier_id || l.customer_id || "",
+                  currency_id: l.currency_id || "",
+                  exchange_rate: Number(l.exchange_rate || 1.0),
+                  debit: Number(l.debit || 0),
+                  credit: Number(l.credit || 0),
+                  description: l.description || "",
+                  balancing_account_id:
+                    l.reference_id || l.balancing_account_id || "",
+                  display_code: dispCode,
+                  display_name: dispName,
+                  balancing_display_name: l.balancing_account_name
+                    ? `${l.balancing_account_code || ""} - ${l.balancing_account_name}`
+                    : "",
+                };
+              }),
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Error loading journal configuration data:", err);
+      }
+    };
+    loadLookupsAndData();
+  }, [journalId, apiBase, isGeneral]);
+
+  /* useEffect(() => {
     const loadLookupsAndData = async () => {
       try {
         const curRes = await fetch(`/api/parties/currencies`);
@@ -333,7 +409,7 @@ export default function JournalForm({
       }
     };
     loadLookupsAndData();
-  }, [journalId, apiBase, isGeneral]);
+  }, [journalId, apiBase, isGeneral]); */
 
   const baseCurrencyObj = currencies.find((c) => c.is_base) || { code: "GBP" };
   const baseCurrencyCode = baseCurrencyObj.code;
@@ -343,7 +419,8 @@ export default function JournalForm({
     field: keyof JournalLineRow,
     value: string | number,
   ) => {
-    if (isPosted) return;
+    // if (isPosted) return;
+    if (formDisabled) return;
     const updated = [...lines];
 
     if (field === "transaction_type") {
@@ -353,31 +430,31 @@ export default function JournalForm({
       updated[index].display_name = "";
     }
 
-    if (field === "document_type") {
-      const docType = String(value);
+    // if (field === "document_type") {
+    //   const docType = String(value);
 
-      if (journalType === "supplier") {
-        if (docType === "Payment") {
-          // Move credit value to debit, zero out credit
-          updated[index].debit = updated[index].debit || updated[index].credit;
-          updated[index].credit = 0;
-        } else if (docType === "Refund") {
-          // Move debit value to credit, zero out debit
-          updated[index].credit = updated[index].credit || updated[index].debit;
-          updated[index].debit = 0;
-        }
-      } else if (journalType === "customer") {
-        if (docType === "Payment") {
-          // Move debit value to credit, zero out debit
-          updated[index].credit = updated[index].credit || updated[index].debit;
-          updated[index].debit = 0;
-        } else if (docType === "Refund") {
-          // Move credit value to debit, zero out credit
-          updated[index].debit = updated[index].debit || updated[index].credit;
-          updated[index].credit = 0;
-        }
-      }
-    }
+    //   if (journalType === "supplier") {
+    //     if (docType === "Payment") {
+    //       // Move credit value to debit, zero out credit
+    //       updated[index].debit = updated[index].debit || updated[index].credit;
+    //       updated[index].credit = 0;
+    //     } else if (docType === "Refund") {
+    //       // Move debit value to credit, zero out debit
+    //       updated[index].credit = updated[index].credit || updated[index].debit;
+    //       updated[index].debit = 0;
+    //     }
+    //   } else if (journalType === "customer") {
+    //     if (docType === "Payment") {
+    //       // Move debit value to credit, zero out debit
+    //       updated[index].credit = updated[index].credit || updated[index].debit;
+    //       updated[index].debit = 0;
+    //     } else if (docType === "Refund") {
+    //       // Move credit value to debit, zero out credit
+    //       updated[index].debit = updated[index].debit || updated[index].credit;
+    //       updated[index].credit = 0;
+    //     }
+    //   }
+    // }
 
     if (field === "debit" && Number(value) > 0) {
       updated[index].credit = 0;
@@ -433,17 +510,17 @@ export default function JournalForm({
   };
 
   const addLineRow = () => {
-    if (isPosted) return;
+    if (formDisabled) return;
     setLines([...lines, createInitialRow()]);
   };
 
   const removeLineRow = (index: number) => {
-    if (isPosted || lines.length <= 1) return;
+    if (formDisabled || lines.length <= 1) return;
     setLines(lines.filter((_, i) => i !== index));
   };
 
   const handlePersistAction = async (postToLedger: boolean) => {
-    if (isPosted) return;
+    if (formDisabled) return;
     setErrorMsg(null);
 
     if (!metadata.entry_date) {
@@ -482,13 +559,6 @@ export default function JournalForm({
         );
         return;
       }
-
-      // if (line.debit === 0 && line.credit === 0) {
-      //   setErrorMsg(
-      //     `Line ${i + 1}: Entry legs require an amount value (Debit or Credit)`,
-      //   );
-      //   return;
-      // }
     }
 
     if (postToLedger && !isBalanced) {
@@ -577,6 +647,7 @@ export default function JournalForm({
             className="border bg-zinc-50 p-1 px-2 rounded w-32 font-bold tracking-wide outline-none text-zinc-700"
             value={metadata.entry_no || "DRAFT"}
           />
+          {journalType}
         </div>
 
         <div className="flex items-center gap-2">
@@ -605,7 +676,7 @@ export default function JournalForm({
               <th className="p-2 w-32">Doc. Type</th>
               <th className="p-2 w-24">Doc. No.</th>
               <th className="p-2 w-32">Tx Type</th>
-              <th className="p-2 w-72">Account Search Selection</th>
+              <th className="p-2 w-72">Account Selection</th>
               <th className="p-2 w-20">Currency</th>
               <th className="p-2 w-24">Debit</th>
               <th className="p-2 w-24">Credit</th>
@@ -656,7 +727,7 @@ export default function JournalForm({
 
                   <td className="p-1.5">
                     <select
-                      disabled={isPosted}
+                      disabled={formDisabled}
                       value={line.document_type || "Payment"}
                       onChange={(e) =>
                         handleLineChange(index, "document_type", e.target.value)
@@ -682,7 +753,7 @@ export default function JournalForm({
                   <td className="p-1.5">
                     <input
                       type="text"
-                      disabled={isPosted}
+                      disabled={formDisabled}
                       placeholder="REF"
                       value={metadata.reference}
                       onChange={(e) =>
@@ -693,7 +764,7 @@ export default function JournalForm({
                   </td>
                   <td className="p-1.5">
                     <select
-                      disabled={isPosted || journalType !== "general"}
+                      disabled={formDisabled || journalType !== "general"}
                       value={line.transaction_type}
                       onChange={(e) =>
                         handleLineChange(
@@ -715,7 +786,7 @@ export default function JournalForm({
                       <input
                         type="text"
                         readOnly
-                        placeholder={`Click Select to lookup ${line.transaction_type}...`}
+                        placeholder={`Select ${line.transaction_type}...`}
                         value={
                           line.display_code
                             ? `${line.display_code} - ${line.display_name}`
@@ -725,7 +796,7 @@ export default function JournalForm({
                       />
                       <button
                         type="button"
-                        disabled={isPosted}
+                        disabled={formDisabled}
                         onClick={() =>
                           setActiveModal({
                             index,
@@ -745,7 +816,7 @@ export default function JournalForm({
 
                   <td className="p-1.5">
                     <select
-                      disabled={isPosted}
+                      disabled={formDisabled}
                       value={line.currency_id}
                       onChange={(e) =>
                         handleLineChange(index, "currency_id", e.target.value)
@@ -810,7 +881,7 @@ export default function JournalForm({
                     <input
                       type="number"
                       step="0.000001"
-                      disabled={!line.currency_id || isPosted}
+                      disabled={!line.currency_id || formDisabled}
                       value={line.currency_id ? line.exchange_rate : 1}
                       onChange={(e) =>
                         handleLineChange(
@@ -832,13 +903,13 @@ export default function JournalForm({
                       <input
                         type="text"
                         readOnly
-                        placeholder="None (Cross-balance layout)"
+                        placeholder="None"
                         value={line.balancing_display_name || ""}
                         className="w-full border p-1 rounded bg-zinc-50 text-zinc-700 font-mono text-[11px] outline-none truncate"
                       />
                       <button
                         type="button"
-                        disabled={isPosted}
+                        disabled={formDisabled}
                         onClick={() =>
                           setActiveModal({
                             index,
@@ -853,7 +924,7 @@ export default function JournalForm({
                       {line.balancing_account_id && (
                         <button
                           type="button"
-                          disabled={isPosted}
+                          disabled={formDisabled}
                           onClick={() => {
                             const updated = [...lines];
                             updated[index].balancing_account_id = "";
@@ -872,7 +943,7 @@ export default function JournalForm({
                   <td className="p-1.5 text-center">
                     <button
                       type="button"
-                      disabled={lines.length === 1 || isPosted}
+                      disabled={lines.length === 1 || formDisabled}
                       onClick={() => removeLineRow(index)}
                       className="w-5 h-5 bg-zinc-100 hover:bg-red-100 hover:text-red-600 rounded text-zinc-400 font-bold flex items-center justify-center disabled:opacity-20"
                     >
@@ -890,12 +961,12 @@ export default function JournalForm({
           type="button"
           variant="outline"
           size="sm"
-          disabled={isPosted}
+          disabled={formDisabled}
           onClick={addLineRow}
           className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/50 border-emerald-200"
         >
           <span className="text-xs font-bold">+</span>
-          Add Row Line
+          Add Row
         </Button>
 
         <div className="flex items-center gap-6 font-mono text-zinc-600 bg-zinc-50 border p-2 px-4 rounded font-bold">
@@ -921,7 +992,7 @@ export default function JournalForm({
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        {!isPosted && (
+        {!formDisabled && (
           <>
             <Button
               type="button"
@@ -970,18 +1041,6 @@ export default function JournalForm({
         />
       )}
 
-      {/* <GLAccountLookupModal
-        open={activeModal?.target === "gl"}
-        onClose={() => setActiveModal(null)}
-        onSelect={(account: GLAccountLookupRecord) =>
-          handleModalSelection({
-            id: account.id,
-            code: account.code,
-            name: account.name,
-          })
-        }
-      /> */}
-
       {activeModal?.target === "customer" && (
         <CustomerLookupModal
           open={true}
@@ -996,18 +1055,6 @@ export default function JournalForm({
         />
       )}
 
-      {/* <CustomerLookupModal
-        open={activeModal?.target === "customer"}
-        onClose={() => setActiveModal(null)}
-        onSelect={(customer: CustomerLookupItem) =>
-          handleModalSelection({
-            id: customer.id,
-            code: customer.customer_code || "CUST",
-            name: customer.name,
-          })
-        }
-      /> */}
-
       {activeModal?.target === "supplier" && (
         <SupplierLookupModal
           open={true}
@@ -1021,8 +1068,39 @@ export default function JournalForm({
           }
         />
       )}
+    </div>
+  );
+}
 
-      {/* <SupplierLookupModal
+{
+  /* <GLAccountLookupModal
+        open={activeModal?.target === "gl"}
+        onClose={() => setActiveModal(null)}
+        onSelect={(account: GLAccountLookupRecord) =>
+          handleModalSelection({
+            id: account.id,
+            code: account.code,
+            name: account.name,
+          })
+        }
+      /> */
+}
+
+{
+  /* <CustomerLookupModal
+        open={activeModal?.target === "customer"}
+        onClose={() => setActiveModal(null)}
+        onSelect={(customer: CustomerLookupItem) =>
+          handleModalSelection({
+            id: customer.id,
+            code: customer.customer_code || "CUST",
+            name: customer.name,
+          })
+        }
+      /> */
+}
+{
+  /* <SupplierLookupModal
         open={activeModal?.target === "supplier"}
         onClose={() => setActiveModal(null)}
         onSelect={(supplier: SupplierLookupItem) =>
@@ -1032,33 +1110,5 @@ export default function JournalForm({
             name: supplier.name,
           })
         }
-      /> */}
-    </div>
-  );
+      /> */
 }
-
-/* 
-
-
-
-  const [lines, setLines] = useState<JournalLineRow[]>([
-    {
-      posting_date: new Date().toISOString().split("T")[0],
-      document_type: isGeneral ? "General Journal" : "Payment",
-      transaction_type: isGeneral
-        ? "gl_no"
-        : (journalType as "customer" | "supplier"),
-      account_id: "",
-      party_id: "",
-      currency_id: "",
-      exchange_rate: 1.0,
-      debit: 0,
-      credit: 0,
-      description: "",
-      balancing_account_id: "",
-      display_code: "",
-      display_name: "",
-      balancing_display_name: "",
-    },
-  ]);
-*/

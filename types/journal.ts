@@ -91,6 +91,7 @@ export interface JournalLineInput {
   credit?: number;
   description?: string;
   party_id?: string;
+  party_type?: string;
   item_id?: string;
   currency_id?: string;
   exchange_rate?: number;
