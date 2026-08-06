@@ -52,7 +52,7 @@ export default function StockDeAllocationModal({
 
     // setLoading(true);
     fetch(
-      `/api/inventory-allocations?purchase_invoice_line_id=${purchaseInvoiceLineId}`,
+      `/api/debit-notes/inventory-allocations?purchase_invoice_line_id=${purchaseInvoiceLineId}`,
     )
       .then((res) => res.json())
       .then((data) => {

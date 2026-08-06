@@ -1,4 +1,4 @@
-// app/api/inventory-allocations/route.ts
+// app/api/debit-notes/inventory-allocations/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
