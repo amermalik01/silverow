@@ -190,6 +190,12 @@ export default function LeaveList() {
           onChange={(e) => setStartDate(e.target.value)}
           className="border p-2 rounded"
         />
+        {/* <DatePicker
+                            value={startDate}
+                            onChange={(date) =>
+                              setStartDate( date ? format(date, "yyyy-MM-dd") : "")
+                            }
+                          /> */}
 
         <input
           type="date"

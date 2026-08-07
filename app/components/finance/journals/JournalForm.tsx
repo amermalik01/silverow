@@ -529,9 +529,9 @@ export default function JournalForm({
             value={metadata.entry_no || "DRAFT"}
           />
           {/* {journalType} */}
-          <span className="uppercase font-semibold text-zinc-500">
+          {/* <span className="uppercase font-semibold text-zinc-500">
             [{journalType}]
-          </span>
+          </span> */}
         </div>
 
         <div className="flex items-center gap-2">
