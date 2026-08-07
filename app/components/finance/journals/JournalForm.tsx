@@ -24,6 +24,7 @@ import SupplierLookupModal, {
 
 import AllocateJournalPaymentModal from "./modals/AllocateJournalPaymentModal";
 import { useLoader } from "@/app/context/LoaderContext";
+import { PostedTransactionsModal } from "./modals/PostedTransactionsModal";
 
 type Currency = {
   id: string;
@@ -117,6 +118,7 @@ export default function JournalForm({
   const [loading, setLoading] = useState(false);
   const [isPosted, setIsPosted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showNavigateModal, setShowNavigateModal] = useState(false);
 
   const { show, hide } = useLoader();
 
@@ -941,6 +943,16 @@ export default function JournalForm({
           </>
         )}
 
+        {isPosted && (
+          <button
+            type="button"
+            onClick={() => setShowNavigateModal(true)}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+          >
+            Navigate
+          </button>
+        )}
+
         <Button
           type="button"
           variant="outline"
@@ -1008,6 +1020,15 @@ export default function JournalForm({
           onApplyAllocations={(allocations) => {
             handleLineChange(allocationModalIndex, "allocations", allocations);
           }}
+        />
+      )}
+
+      {isPosted && journalId && (
+        <PostedTransactionsModal
+          isOpen={showNavigateModal}
+          onClose={() => setShowNavigateModal(false)}
+          journalId={journalId}
+          journalNo={metadata.entry_no}
         />
       )}
     </div>

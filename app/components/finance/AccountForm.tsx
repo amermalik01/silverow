@@ -5,31 +5,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-/* ---------------- CONSTANT LEGACY MAPPINGS ---------------- */
-/* const LEGACY_STRUCTURE = {
-  ASSET: [
-    { code: "1001", name: "Non-Current Assets" },
-    { code: "1501", name: "Current Assets" },
-  ],
-  LIABILITY: [
-    { code: "2501", name: "Current Liabilities" },
-    { code: "2901", name: "Non-Current Liabilities" },
-  ],
-  EQUITY: [],
-  REVENUE: [
-    { code: "4001", name: "Sales" },
-    { code: "4300", name: "Other Income" },
-  ],
-  EXPENSE: [
-    { code: "4510", name: "Direct Expenses" },
-    { code: "5100", name: "Overheads" },
-  ],
-} as const;
-
-type AccountTypeKeys = keyof typeof LEGACY_STRUCTURE; */
-
-/* ---------------- EXPLICIT TYPING INTERFACES ---------------- */
-
 interface DropdownItem {
   id: string;
   name: string;
@@ -100,14 +75,12 @@ export default function AccountForm({ slug, id }: Props) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Core lookups are loaded for both modes
         const endpoints = [
           fetch("/api/finance/accounts"),
           fetch("/api/setup/vat-rates"),
           fetch("/api/finance/accounts/predata", { method: "POST" }),
         ];
 
-        // Append the lookups fetch only if editing an existing entity
         if (isEditMode) {
           endpoints.push(fetch(`/api/finance/accounts/${id}`));
         }
@@ -170,57 +143,6 @@ export default function AccountForm({ slug, id }: Props) {
             range_end_code: current.range_end_code || "",
           });
         }
-
-        /* if (isEditMode && responses[3]) {
-          const current = await responses[2].json();
-
-          // Walk back up the parent hierarchy references to pre-fill dependent drop-downs
-          let inferredCategoryId = "";
-          let inferredSubCategoryId = "";
-          let inferredHeadingId = "";
-
-          if (current.parent_id) {
-            const directParent = accData.find(
-              (a) => a.id === current.parent_id,
-            );
-            if (directParent) {
-              if (directParent.gl_account_type === "Heading") {
-                inferredHeadingId = directParent.id;
-                if (directParent.parent_id) {
-                  const subParent = accData.find(
-                    (a) => a.id === directParent.parent_id,
-                  );
-                  if (subParent) {
-                    inferredSubCategoryId = subParent.id;
-                    if (subParent.parent_id)
-                      inferredCategoryId = subParent.parent_id;
-                  }
-                }
-              } else if (directParent.gl_account_type === "Sub-Category") {
-                inferredSubCategoryId = directParent.id;
-                if (directParent.parent_id)
-                  inferredCategoryId = directParent.parent_id;
-              } else if (directParent.gl_account_type === "Category") {
-                inferredCategoryId = directParent.id;
-              }
-            }
-          }
-
-          setForm({
-            code: current.code || "",
-            name: current.name || "",
-            account_type: (current.account_type || "ASSET") as AccountTypeKeys,
-            gl_account_type: current.gl_account_type || "Posting",
-            category_id: inferredCategoryId,
-            sub_category_id: inferredSubCategoryId,
-            heading_id: inferredHeadingId,
-            gl_no_display_as: current.gl_no_display_as || "",
-            vat_rate_id: current.vat_rate_id || "",
-            status: current.status || "Active",
-            range_start_code: current.range_start_code || "",
-            range_end_code: current.range_end_code || "",
-          });
-        } */
       } catch (err) {
         console.error(
           "Failed handling chart of accounts component state initialization.",
@@ -234,7 +156,6 @@ export default function AccountForm({ slug, id }: Props) {
     loadData();
   }, [id, isEditMode]);
 
-  /* ---------------- FORM EVENT HANDLERS ---------------- */
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
@@ -256,26 +177,6 @@ export default function AccountForm({ slug, id }: Props) {
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
-    /* if (name === "account_type") {
-      setForm((prev) => ({
-        ...prev,
-        account_type: value as AccountTypeKeys,
-        category_id: "",
-        sub_category_id: "",
-        heading_id: "",
-      }));
-    } else if (name === "category_id") {
-      setForm((prev) => ({
-        ...prev,
-        category_id: value,
-        sub_category_id: "",
-        heading_id: "",
-      }));
-    } else if (name === "sub_category_id") {
-      setForm((prev) => ({ ...prev, sub_category_id: value, heading_id: "" }));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
-    } */
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -287,10 +188,8 @@ export default function AccountForm({ slug, id }: Props) {
       : "/api/finance/accounts";
     const targetMethod = isEditMode ? "PUT" : "POST";
 
-    // --- NEW LOGIC: Clean up the payload right before submission ---
     const submissionForm = { ...form };
 
-    // If category_id looks like a legacy code (not a UUID), try to resolve its real UUID
     const isUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         submissionForm.category_id,
@@ -347,45 +246,17 @@ export default function AccountForm({ slug, id }: Props) {
       </p>
     );
 
-  // Filter static hardcoded subcategories matched to the selected top-level classification
-  // const availableSubCategories = LEGACY_STRUCTURE[form.account_type] || [];
-
   return (
     <div className="bg-white border rounded-xl shadow-md max-w-4xl mx-auto overflow-hidden font-sans text-xs text-gray-700">
       <div className="bg-gray-50 border-b p-3 font-semibold text-xs text-gray-800 tracking-wide text-center">
         G/L No. Configuration Terminal
       </div>
-      {/* <div className="bg-gray-50 border-b p-3 font-semibold text-center text-xs text-gray-800 tracking-wide">
-        {isEditMode
-          ? "G/L Ledger Entry: Modification Terminal"
-          : "G/L Ledger Entry: Provision Terminal"}
-      </div> */}
 
       <form
         onSubmit={handleSubmit}
         className="p-6 grid grid-cols-2 gap-x-8 gap-y-4 bg-white"
       >
-        {/* Left Column Controls */}
         <div className="space-y-4">
-          {/* <div>
-            <label className="block font-medium text-gray-600 mb-1">
-              Category
-              <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="account_type"
-              value={form.account_type}
-              onChange={handleChange}
-              className="w-full border p-2 rounded bg-white font-medium border-blue-400 outline-none"
-            >
-              <option value="ASSET">Asset</option>
-              <option value="LIABILITY">Liability</option>
-              <option value="EQUITY">Equity</option>
-              <option value="REVENUE">Revenue</option>
-              <option value="EXPENSE">Expense</option>
-            </select>
-          </div> */}
-
           <div>
             <label className="block font-medium text-gray-600 mb-1">
               Category <span className="text-red-500">*</span>
@@ -463,47 +334,6 @@ export default function AccountForm({ slug, id }: Props) {
             </select>
           </div>
 
-          {/* <div>
-            <label className="block font-medium text-gray-600 mb-1">
-              Sub Category
-            </label>
-            <select
-              name="sub_category_id"
-              value={form.sub_category_id}
-              onChange={handleChange}
-              disabled={!form.category_id}
-              className="w-full border p-2 rounded bg-gray-50/50 focus:bg-white outline-none disabled:bg-gray-100"
-            >
-              <option value="">Select Group Node</option>
-              {lookupAccounts
-                .filter(
-                  (a) => a.gl_account_type === "Sub-Category" && a.id !== id,
-                )
-                .map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.code} - {a.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-medium text-gray-600 mb-1">
-              Account Type
-              <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="gl_account_type"
-              value={form.gl_account_type}
-              onChange={handleChange}
-              className="w-full border p-2 rounded bg-white outline-none"
-            > 
-              <option value="Heading">Heading</option>
-              <option value="Posting">Posting</option>
-              <option value="End Total">End Total</option>
-            </select>
-          </div> */}
-
           {form.gl_account_type === "End Total" && (
             <div className="grid grid-cols-2 gap-2 p-3 bg-yellow-50/50 border border-yellow-200 rounded-lg">
               <div>
@@ -534,7 +364,6 @@ export default function AccountForm({ slug, id }: Props) {
           )}
         </div>
 
-        {/* Right Column Fields */}
         <div className="space-y-4">
           <div>
             <label className="block font-medium text-gray-600 mb-1">
@@ -601,11 +430,7 @@ export default function AccountForm({ slug, id }: Props) {
           </div>
         </div>
 
-        {/* Form Submission Actions Panel */}
         <div className="col-span-2 border-t border-border pt-4 flex justify-end gap-2">
-          {" "}
-          {/* Adjusted gap to 2 for uniform layout alignment */}
-          {/* Cancel Navigation Button */}
           <Button
             type="button"
             variant="outline"
@@ -614,7 +439,6 @@ export default function AccountForm({ slug, id }: Props) {
           >
             Cancel
           </Button>
-          {/* Form Action Submission Button */}
           <Button
             type="submit"
             disabled={loading}
@@ -627,68 +451,7 @@ export default function AccountForm({ slug, id }: Props) {
                 : "Create G/L Account"}
           </Button>
         </div>
-        {/* <div className="col-span-2 border-t pt-4 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
-            className="px-4 py-1.5 border rounded hover:bg-gray-50 tracking-wide font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-5 py-1.5 bg-blue-700 text-white rounded shadow hover:bg-blue-800 tracking-wide font-semibold disabled:opacity-50"
-          >
-            {loading
-              ? "Processing..."
-              : isEditMode
-                ? "Save Changes"
-                : "Create G/L Account"}
-          </button>
-        </div> */}
       </form>
     </div>
   );
-}
-
-{
-  /* 
-
-          <div>
-            <label className="block font-medium text-gray-600 mb-1">
-              Dynamic Structural Heading
-            </label>
-            <select
-              name="heading_id"
-              value={form.heading_id}
-              onChange={handleChange}
-              disabled={!form.sub_category_id}
-              className="w-full border p-2 rounded bg-gray-50/50 focus:bg-white outline-none disabled:bg-gray-100"
-            >
-              <option value="">Select Heading Parent</option>
-              {lookupAccounts
-                .filter((a) => a.gl_account_type === "Heading" && a.id !== id)
-                .map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.code} - {a.name}
-                  </option>
-                ))}
-            </select>
-          </div> */
-}
-
-{
-  /* <div>
-            <label className="block font-medium text-gray-600 mb-1">
-              Custom Display Mapping Override (Alias)
-            </label>
-            <input
-              type="text"
-              name="gl_no_display_as"
-              value={form.gl_no_display_as}
-              onChange={handleChange}
-              className="w-full border p-2 rounded outline-none"
-            />
-          </div> */
 }

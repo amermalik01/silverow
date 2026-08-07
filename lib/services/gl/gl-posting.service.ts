@@ -246,18 +246,19 @@ export class GLPostingService {
           party_type,
           party_id,
           document_no,
-          posted_by
+          posted_by,
+          posted_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
         `,
         [
           data.company_id,
           line.account_id,
-          journalId, // Links back to the source document header
-          entryNo, // E.g., 'JV-00004'
-          data.entry_date, // Your posting date
-          data.source, // 'PURCHASE'
-          data.reference || null, // The PO or Receipt No
+          journalId,
+          entryNo,
+          data.entry_date,
+          data.source,
+          data.reference || null,
           line.description || data.description,
           line.debit || 0,
           line.credit || 0,

@@ -32,10 +32,13 @@ interface GLAccountNode {
 export default function ChartOfAccountsList() {
   const [accounts, setAccounts] = useState<GLAccountNode[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  // const [loading, setLoading] = useState(true);
   const { show, hide } = useLoader();
 
-  const [selectedAccount, setSelectedAccount] = useState<{ id: string; name: string; code: string } | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<{
+    id: string;
+    name: string;
+    code: string;
+  } | null>(null);
 
   useEffect(() => {
     async function loadAccounts() {
@@ -52,14 +55,12 @@ export default function ChartOfAccountsList() {
           err,
         );
       } finally {
-        // setLoading(false);
         hide();
       }
     }
     loadAccounts();
   }, []);
 
-  // Filter logic covering Code and Name properties
   const filteredAccounts = accounts.filter((acc) => {
     const term = searchTerm.toLowerCase().trim();
     if (!term) return true;
@@ -69,7 +70,6 @@ export default function ChartOfAccountsList() {
     );
   });
 
-  // Balanced text and nesting indent utility classes for Light and Dark configurations
   const getRowStyle = (type: string) => {
     switch (type) {
       case "Category":
@@ -100,17 +100,8 @@ export default function ChartOfAccountsList() {
     }
   };
 
-  /* if (loading) {
-    return (
-      <div className="p-6 text-xs text-slate-400 dark:text-slate-500 animate-pulse font-sans">
-        Parsing global ledger topology maps...
-      </div>
-    );
-  } */
-
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden transition-colors duration-200">
-      {/* Upper Terminal Title Block */}
       <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/50">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white">
@@ -121,21 +112,13 @@ export default function ChartOfAccountsList() {
             aggregation matrices.
           </p>
         </div>
-        {/* <Link
-          href="./chart-of-accounts/create"
-          className="bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow hover:bg-indigo-700 dark:hover:bg-indigo-600 transition tracking-wide shrink-0"
-        >
-          Add Account
-        </Link> */}
 
         <Button
           asChild
           size="sm"
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
-          <Link 
-		  href="./chart-of-accounts/create"
-		  >
+          <Link href="./chart-of-accounts/create">
             <Icon icon="solar:add-circle-linear" width={16} height={16} />
             Create
           </Link>
@@ -208,42 +191,39 @@ export default function ChartOfAccountsList() {
                     key={acc.id}
                     className={`hover:bg-slate-200/50 dark:hover:bg-slate-800/30 transition-colors duration-100 ${rowStyles}`}
                   >
-                    {/* Code Reference */}
                     <td className="p-3 pl-4 font-mono font-medium tracking-wide text-slate-900 dark:text-slate-200">
                       {acc.code}
                     </td>
 
-                    {/* Indented Name Label */}
                     <td className="p-3 truncate">
-                      {/* <div className={`${indentClass} truncate`}>
-                        {acc.name}
-                      </div> */}
-
                       <div className={`${indentClass} truncate`}>
-                      {acc.gl_account_type === "Posting" ? (
-                        <button
-                          onClick={() => setSelectedAccount({ id: acc.id, name: acc.name, code: acc.code })}
-                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium text-left transition"
-                        >
-                          {acc.name}
-                        </button>
-                      ) : (
-                        acc.name
-                      )}
-                    </div>
+                        {acc.gl_account_type === "Posting" ? (
+                          <button
+                            onClick={() =>
+                              setSelectedAccount({
+                                id: acc.id,
+                                name: acc.name,
+                                code: acc.code,
+                              })
+                            }
+                            className="text-blue-600 dark:text-blue-400 hover:underline font-medium text-left transition"
+                          >
+                            {acc.name}
+                          </button>
+                        ) : (
+                          acc.name
+                        )}
+                      </div>
                     </td>
 
-                    {/* Core Class Hierarchy Context */}
                     <td className="p-3 text-slate-400 dark:text-slate-500 truncate">
                       {acc.category_name || "—"}
                     </td>
 
-                    {/* Sub Category Context */}
                     <td className="p-3 text-slate-400 dark:text-slate-500 truncate">
                       {acc.sub_category_name || "—"}
                     </td>
 
-                    {/* Type Badging */}
                     <td className="p-3">
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-medium tracking-wide ${
@@ -258,19 +238,11 @@ export default function ChartOfAccountsList() {
                       </span>
                     </td>
 
-                    {/* VAT Rate */}
                     <td className="p-3 text-slate-500 dark:text-slate-400">
                       {acc.vat_rate_name || "—"}
                     </td>
 
-                    {/* Calculation range for rollups */}
                     <td className="p-3 font-mono text-slate-400 dark:text-slate-500 text-[11px]">
-                      {/* {acc.gl_account_type === "End Total" ||
-                      acc.gl_account_type === "Heading" ||
-                      acc.gl_account_type === "Category"
-                        ? `${acc.range_start_code || acc.code} → ${acc.range_end_code || "EOF"}`
-                        : "—"} */}
-
                       {["End Total", "Heading", "Category"].includes(
                         acc.gl_account_type,
                       )
@@ -278,7 +250,6 @@ export default function ChartOfAccountsList() {
                         : "—"}
                     </td>
 
-                    {/* Total Debit Balance */}
                     <td className="p-3 text-right font-mono font-medium text-slate-900 dark:text-slate-200">
                       {acc.display_debit > 0
                         ? acc.display_debit.toLocaleString("en-US", {
@@ -288,7 +259,6 @@ export default function ChartOfAccountsList() {
                         : "0.00"}
                     </td>
 
-                    {/* Total Credit Balance */}
                     <td className="p-3 text-right font-mono font-medium text-slate-900 dark:text-slate-200">
                       {acc.display_credit > 0
                         ? acc.display_credit.toLocaleString("en-US", {
@@ -298,7 +268,6 @@ export default function ChartOfAccountsList() {
                         : "0.00"}
                     </td>
 
-                    {/* Operational Settings Trigger Modifier */}
                     <td className="p-3 text-center">
                       <Link
                         href={`./chart-of-accounts/${acc.id}/edit`}
@@ -316,7 +285,6 @@ export default function ChartOfAccountsList() {
         </table>
       </div>
 
-      {/* Render overlay modal portal frame safely when requested */}
       {selectedAccount && (
         <LedgerDrilldownModal
           accountId={selectedAccount.id}
@@ -328,182 +296,3 @@ export default function ChartOfAccountsList() {
     </div>
   );
 }
-
-/* "use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-
-interface AccountNode {
-  id: string;
-  code: string;
-  name: string;
-  account_type: string;
-  parent_id: string | null;
-  is_summary: boolean;
-  balance: number;
-  display_debit: number;
-  display_credit: number;
-  indent_level?: number;
-}
-
-export default function ChartOfAccountsList() {
-  const [orderedTree, setOrderedTree] = useState<AccountNode[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadTree() {
-      try {
-        const res = await fetch("/api/finance/accounts");
-        if (!res.ok) throw new Error();
-        const data: AccountNode[] = await res.json();
-
-        // Dynamic nesting sequencer algorithm
-        const buildTree = (
-          parentId: string | null,
-          depth = 0,
-        ): AccountNode[] => {
-          return data
-            .filter((node) => node.parent_id === parentId)
-            .reduce<AccountNode[]>((acc, current) => {
-              const formattedNode = { ...current, indent_level: depth };
-              return [
-                ...acc,
-                formattedNode,
-                ...buildTree(current.id, depth + 1),
-              ];
-            }, []);
-        };
-
-        setOrderedTree(buildTree(null));
-      } catch {
-        console.error("Critical error building chart tracking maps.");
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadTree();
-  }, []);
-
-  if (loading)
-    return (
-      <div className="p-6 text-xs text-gray-500 animate-pulse">
-        Assembling account balance structures...
-      </div>
-    );
-
-  return (
-    <div className="bg-white dark:bg-slate-900 text-black dark:text-white border rounded-xl shadow-sm overflow-hidden">
-      <div className="p-5 border-b flex justify-between items-center bg-gray-50/50">
-        <div>
-          <h2 className="text-lg font-bold ">General Ledger Mappings</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Manage accounting structures and multi-level summary grouping nodes.
-          </p>
-        </div>
-        <Link
-          href="./chart-of-accounts/create"
-          className="bg-indigo-600  text-xs font-semibold px-4 py-2.5 rounded-lg shadow hover:bg-indigo-700 transition"
-        >
-          Add Account
-        </Link>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="bg-gray-50 text-gray-600 font-semibold border-b text-left">
-              <th className="p-3 pl-6">Code</th>
-              <th className="p-3">Account Title</th>
-              <th className="p-3">Type</th>
-              <th className="p-3 text-right">Debit Vector</th>
-              <th className="p-3 text-right">Credit Vector</th>
-       
-              <th className="p-3 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y font-mono ">
-            {orderedTree.length === 0 && (
-              <tr>
-                <td
-                  colSpan={7}
-                  className="p-12 text-center text-gray-400 font-sans"
-                >
-                  No accounting structures initialized yet.
-                </td>
-              </tr>
-            )}
-            {orderedTree.map((acc) => (
-              <tr
-                key={acc.id}
-                className={`transition ${acc.is_summary ? "bg-gray-50/60 font-semibold  group" : "hover:bg-slate-50/50"}`}
-              >
-                <td className="p-3 pl-6 whitespace-nowrap tracking-wider font-medium">
-                  {acc.code}
-                </td>
-                <td className="p-3 whitespace-nowrap font-sans">
-                  <span
-                    style={{
-                      paddingLeft: `${(acc.indent_level ?? 0) * 1.5}rem`,
-                    }}
-                    className="inline-flex items-center gap-1.5"
-                  >
-                    {acc.is_summary ? (
-                      <span className="text-gray-400 text-[10px] select-none">
-                        📁
-                      </span>
-                    ) : (
-                      <span className="text-indigo-400 text-[10px] select-none">
-                        📄
-                      </span>
-                    )}
-                    {acc.is_summary ? (
-                      <span className="text-gray-900 font-semibold">
-                        {acc.name}
-                      </span>
-                    ) : (
-                      <Link
-                        href={`./chart-of-accounts/${acc.id}/ledger`}
-                        className="text-indigo-600 hover:text-indigo-900 hover:underline"
-                      >
-                        {acc.name}
-                      </Link>
-                    )}
-                  </span>
-                </td>
-                <td className="p-3 font-sans">
-                  <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600 border">
-                    {acc.account_type}
-                  </span>
-                </td>
-                <td className="p-3 text-right text-gray-500">
-                  {acc.display_debit > 0
-                    ? acc.display_debit.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })
-                    : "—"}
-                </td>
-                <td className="p-3 text-right text-gray-500">
-                  {acc.display_credit > 0
-                    ? acc.display_credit.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })
-                    : "—"}
-                </td>
-                
-                <td className="p-3 text-center font-sans">
-                  <Link
-                    href={`./chart-of-accounts/${acc.id}/edit`}
-                    className="text-xs font-semibold text-gray-600 border px-2.5 py-1 rounded-md bg-white hover:bg-gray-50 shadow-sm transition"
-                  >
-                    Settings
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-} */
