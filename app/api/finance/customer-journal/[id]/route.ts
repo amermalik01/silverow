@@ -7,6 +7,80 @@ import { JournalService } from "@/lib/services/journal.service";
 
 export async function GET(
   req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const companyId = await getCompanyId();
+    if (!companyId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    // Utilize JournalService.get to properly fetch joined party & G/L metadata
+    const result = await JournalService.get(companyId, id);
+
+    if (!result) {
+      return NextResponse.json(
+        { error: "Customer journal voucher not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(result);
+  } catch (err) {
+    const dbError = err as { code?: string; message?: string };
+    console.error("Get Individual Customer Journal Exception:", dbError);
+    return NextResponse.json(
+      { error: "Failed to load journal records details" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const companyId = await getCompanyId();
+    if (!companyId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await req.json();
+
+    const balancedPayload = {
+      entry_date: body.entry_date,
+      source: "CUSTOMER_JOURNAL" as const,
+      reference: body.reference,
+      description: body.description,
+      lines: body.lines,
+    };
+
+    // 1. Persist updates to the journal entry and lines draft
+    await JournalService.update(companyId, id, balancedPayload);
+
+    // 2. If the user clicked "Post Journal" from the UI, post it to the GL ledger
+    if (body.is_posted) {
+      await JournalService.post(companyId, id);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const dbError = err as { code?: string; message?: string };
+    console.error("Update Customer Journal Exception:", err);
+    return NextResponse.json(
+      { error: dbError.message || "Failed to update current journal record" },
+      { status: 500 },
+    );
+  }
+}
+
+/* 
+export async function GET(
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -87,65 +161,4 @@ export async function PUT(
       { status: 500 },
     );
   }
-}
-
-/* import { NextResponse } from "next/server";
-import { pool } from "@/lib/db";
-
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-
-  const header = await pool.query(`SELECT * FROM journal_entries WHERE id=$1`, [
-    id,
-  ]);
-
-  const lines = await pool.query(
-    `
-    SELECT l.*, a.name as account_name
-    FROM journal_entry_lines l
-    JOIN chart_of_accounts a ON a.id=l.account_id
-    WHERE journal_id=$1
-    `,
-    [id],
-  );
-
-  return NextResponse.json({
-    ...header.rows[0],
-    lines: lines.rows,
-  });
-}
-
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const body = await req.json();
-
-  const { id } = await params;
-
-  await pool.query(`DELETE FROM journal_entry_lines WHERE journal_id=$1`, [id]);
-
-  // reinsert (same logic as POST)
-
-  return NextResponse.json({ success: true });
-}
-
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-
-  await pool.query(
-    `UPDATE journal_entries
-     SET is_posted=true, posted_at=now()
-     WHERE id=$1`,
-    [id],
-  );
-
-  return NextResponse.json({ success: true });
-}
- */
+} */
