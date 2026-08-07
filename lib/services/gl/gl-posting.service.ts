@@ -7,7 +7,268 @@ export type GLJournalSource =
   | "PURCHASE"
   | "PAYMENT"
   | "RECEIPT"
-  | "INVENTORY";
+  | "INVENTORY"
+  | "SUPPLIER_JOURNAL"
+  | "CUSTOMER_JOURNAL";
+
+export type GLLineInput = {
+  account_id?: string | null;
+  party_id?: string | null;
+  party_type?: string | null;
+  description?: string | null;
+
+  debit?: number;
+  credit?: number;
+
+  balancing_account_id?: string | null;
+  reference_id?: string | null;
+  reference_type?: string | null;
+
+  item_id?: string | null;
+  warehouse_id?: string | null;
+  quantity?: number | null;
+  unit_cost?: number | null;
+  currency_amount?: number | null;
+};
+
+export type PostGLTransactionInput = {
+  company_id: string;
+  entry_date: string;
+
+  source: GLJournalSource;
+
+  journal_type: string;
+
+  reference?: string | null;
+  source_id?: string | null;
+  description?: string | null;
+
+  currency_id?: string | null;
+  exchange_rate?: number;
+
+  created_by?: string | null;
+
+  lines: GLLineInput[];
+};
+
+export class GLPostingService {
+  //  * =========================================================
+  //  * POST JOURNAL
+  //  * =========================================================
+
+  static async postJournal(
+    client: PoolClient,
+    data: PostGLTransactionInput,
+  ): Promise<{
+    id: string;
+    entry_no: string;
+  }> {
+    // 1. Expand single UI lines into explicit Debit and Credit pairs
+    const expandedLines: Array<{
+      account_id: string;
+      party_id: string | null;
+      party_type: string | null;
+      debit: number;
+      credit: number;
+      description: string | null;
+    }> = [];
+
+    for (const line of data.lines) {
+      const debitVal = Number(line.debit || 0);
+      const creditVal = Number(line.credit || 0);
+      const mainAccountId = line.account_id;
+      const balancingAccountId = line.balancing_account_id || line.reference_id;
+
+      // Primary Leg
+      if (mainAccountId || line.party_id) {
+        expandedLines.push({
+          account_id: mainAccountId || "",
+          party_id: line.party_id || null,
+          party_type: line.party_type || null,
+          debit: debitVal,
+          credit: creditVal,
+          description: line.description || data.description || null,
+        });
+      }
+
+      // Offsetting Balancing Leg (Inverts Debit <-> Credit)
+      if (balancingAccountId) {
+        expandedLines.push({
+          account_id: balancingAccountId,
+          party_id: null,
+          party_type: null,
+          debit: creditVal, // Swapped: line credit becomes balancing debit
+          credit: debitVal, // Swapped: line debit becomes balancing credit
+          description: line.description
+            ? `Balancing: ${line.description}`
+            : data.description || null,
+        });
+      }
+    }
+
+    // 2. Enforce Double-Entry Balancing Rule (\sum Debit = \sum Credit)
+    const totalDebit = expandedLines.reduce((sum, l) => sum + l.debit, 0);
+    const totalCredit = expandedLines.reduce((sum, l) => sum + l.credit, 0);
+
+    if (Number(totalDebit.toFixed(2)) !== Number(totalCredit.toFixed(2))) {
+      throw new Error(
+        `Journal is not balanced. Total Debit (${totalDebit.toFixed(
+          2,
+        )}) must equal Total Credit (${totalCredit.toFixed(2)}).`,
+      );
+    }
+
+    if (expandedLines.length < 2) {
+      throw new Error(
+        "A valid posting requires at least 2 ledger entries (1 Debit and 1 Credit).",
+      );
+    }
+
+    // 3. Resolve Sequence Code
+    const moduleSequenceMap: Record<string, string> = {
+      PURCHASE: "supplier_journal",
+      SUPPLIER_JOURNAL: "supplier_journal",
+      SALES: "customer_journal",
+      CUSTOMER_JOURNAL: "customer_journal",
+      INVENTORY: "item_journal",
+      GENERAL: "gl_journal",
+    };
+
+    const sequenceModule = moduleSequenceMap[data.source] || "gl_journal";
+
+    const seqResult = await client.query(
+      `
+      SELECT get_next_sequence($1,$2) AS code
+      `,
+      [data.company_id, sequenceModule],
+    );
+
+    const entryNo = seqResult.rows[0].code;
+
+    // 4. Create Header in journal_entries
+    const headerResult = await client.query(
+      `
+      INSERT INTO journal_entries (
+        company_id,
+        entry_no,
+        entry_date,
+        source,
+        journal_type,
+        reference,
+        source_id,
+        description,
+        currency_id,
+        exchange_rate,
+        is_posted,
+        posted_at,
+        created_by,
+        created_at
+      )
+      VALUES (
+        $1,$2,$3,$4,$5,
+        $6,$7,$8,$9,$10,
+        true,now(),$11,now()
+      )
+      RETURNING id, entry_no
+      `,
+      [
+        data.company_id,
+        entryNo,
+        data.entry_date,
+        data.source,
+        data.journal_type,
+        data.reference || null,
+        data.source_id || null,
+        data.description || null,
+        data.currency_id || null,
+        data.exchange_rate || 1,
+        data.created_by || null,
+      ],
+    );
+    const journal = headerResult.rows[0];
+    let lineNo = 10000;
+
+    const journalId = journal.id;
+
+    // 5. Post all expanded legs to gl_ledger_entries
+    for (const leg of expandedLines) {
+      // Resolve AP/AR control account if main account is blank but party_id is present
+      let resolvedAccountId = leg.account_id;
+
+      if (!resolvedAccountId && leg.party_id) {
+        if (
+          leg.party_type === "supplier" ||
+          data.source === "SUPPLIER_JOURNAL"
+        ) {
+          const ppg = await client.query(
+            `SELECT payable_account_id FROM purchase_posting_groups WHERE company_id = $1 LIMIT 1`,
+            [data.company_id],
+          );
+          resolvedAccountId = ppg.rows[0]?.payable_account_id;
+        } else if (
+          leg.party_type === "customer" ||
+          data.source === "CUSTOMER_JOURNAL"
+        ) {
+          const spg = await client.query(
+            `SELECT receivable_account_id FROM sales_posting_groups WHERE company_id = $1 LIMIT 1`,
+            [data.company_id],
+          );
+          resolvedAccountId = spg.rows[0]?.receivable_account_id;
+        }
+      }
+
+      if (!resolvedAccountId) {
+        throw new Error(
+          `Unable to resolve G/L account for party profile ${leg.party_id || "Unknown"}`,
+        );
+      }
+
+      // Write to gl_ledger_entries
+      await client.query(
+        `
+        INSERT INTO gl_ledger_entries (
+          company_id, account_id, source_journal_id, entry_no, posting_date,
+          source_type, reference, description, debit, credit,
+          party_type, party_id, document_no, posted_by, posted_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        `,
+        [
+          data.company_id,
+          resolvedAccountId,
+          journalId,
+          entryNo,
+          data.entry_date,
+          data.source,
+          data.reference || null,
+          leg.description,
+          leg.debit,
+          leg.credit,
+          leg.party_type || null,
+          leg.party_id || null,
+          data.reference || entryNo,
+          data.created_by || null,
+        ],
+      );
+
+      lineNo += 10000;
+    }
+
+    return journal;
+  }
+}
+
+/* 
+import { PoolClient } from "pg";
+
+export type GLJournalSource =
+  | "GENERAL"
+  | "SALES"
+  | "PURCHASE"
+  | "PAYMENT"
+  | "RECEIPT"
+  | "INVENTORY"
+  | "SUPPLIER_JOURNAL"
+  | "CUSTOMER_JOURNAL";
 
 export type GLLineInput = {
   account_id: string;
@@ -275,3 +536,5 @@ export class GLPostingService {
     return journal;
   }
 }
+
+*/

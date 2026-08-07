@@ -136,46 +136,53 @@ export const PostedTransactionsModal: React.FC<
                     </td>
                   </tr>
                 ) : (
-                  filteredEntries.map((row, idx) => (
-                    <tr
-                      key={row.entry_no || idx}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                    >
-                      <td className="p-2.5 whitespace-nowrap">
-                        {row.posting_date
-                          ? new Date(row.posting_date).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td className="p-2.5">
-                        {row.document_type || "Purchase Invoice"}
-                      </td>
-                      <td className="p-2.5 font-semibold">
-                        {row.document_number || journalNo}
-                      </td>
-                      <td className="p-2.5 font-semibold">{row.gl_no}</td>
-                      <td className="p-2.5 font-sans font-medium">
-                        {row.name}
-                      </td>
-                      <td className="p-2.5">{row.source_no || "-"}</td>
-                      <td className="p-2.5 text-right font-semibold">
-                        {Number(row.debit || 0) > 0
-                          ? Number(row.debit).toFixed(2)
-                          : ""}
-                      </td>
-                      <td className="p-2.5 text-right font-semibold">
-                        {Number(row.credit || 0) > 0
-                          ? Number(row.credit).toFixed(2)
-                          : ""}
-                      </td>
-                      <td className="p-2.5 text-right font-semibold">
-                        {Number(row.amount_lcy || 0) < 0
-                          ? `(${Math.abs(Number(row.amount_lcy)).toFixed(2)})`
-                          : Number(row.amount_lcy || 0).toFixed(2)}
-                      </td>
-                      <td className="p-2.5 font-sans">{row.user_id || "-"}</td>
-                      <td className="p-2.5">{row.entry_no}</td>
-                    </tr>
-                  ))
+                  filteredEntries.map((row, idx) => {
+                    // Guaranteed Unique Key Construction
+                    const rowKey = `${row.entry_no}-${row.gl_no}-${idx}` || idx;
+
+                    return (
+                      <tr
+                        key={rowKey}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      >
+                        <td className="p-2.5 whitespace-nowrap">
+                          {row.posting_date
+                            ? new Date(row.posting_date).toLocaleDateString()
+                            : "-"}
+                        </td>
+                        <td className="p-2.5">
+                          {row.document_type || "Purchase Invoice"}
+                        </td>
+                        <td className="p-2.5 font-semibold">
+                          {row.document_number || journalNo}
+                        </td>
+                        <td className="p-2.5 font-semibold">{row.gl_no}</td>
+                        <td className="p-2.5 font-sans font-medium">
+                          {row.name}
+                        </td>
+                        <td className="p-2.5">{row.source_no || "-"}</td>
+                        <td className="p-2.5 text-right font-semibold">
+                          {Number(row.debit || 0) > 0
+                            ? Number(row.debit).toFixed(2)
+                            : ""}
+                        </td>
+                        <td className="p-2.5 text-right font-semibold">
+                          {Number(row.credit || 0) > 0
+                            ? Number(row.credit).toFixed(2)
+                            : ""}
+                        </td>
+                        <td className="p-2.5 text-right font-semibold">
+                          {Number(row.amount_lcy || 0) < 0
+                            ? `(${Math.abs(Number(row.amount_lcy)).toFixed(2)})`
+                            : Number(row.amount_lcy || 0).toFixed(2)}
+                        </td>
+                        <td className="p-2.5 font-sans">
+                          {row.user_id || "-"}
+                        </td>
+                        <td className="p-2.5">{row.entry_no}</td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

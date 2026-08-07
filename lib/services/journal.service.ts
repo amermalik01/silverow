@@ -7,6 +7,8 @@ import {
   JournalLineInput,
   JournalPayload2,
 } from "@/types/journal";
+import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
+import { validateLedgerPostingDate } from "@/lib/validations/postingGate";
 
 export class JournalService {
   static async list(
@@ -339,7 +341,7 @@ export class JournalService {
   }
 
   /**
-   * POST - Moves entries to the optimized ledger and marks draft document as posted
+   * POST - Validates accounting rules, expands balancing legs, and writes entries to gl_ledger_entries
    */
   static async post(companyId: string, id: string): Promise<void> {
     const client = await pool.connect();
@@ -347,46 +349,148 @@ export class JournalService {
     try {
       await client.query("BEGIN");
 
-      // 1. Fetch the original draft unposted header to verify status
+      // 1. Fetch draft header & lock row
       const journalResult = await client.query(
         `
-        SELECT id, entry_no, entry_date, source, reference, description
+        SELECT id, entry_no, entry_date, source, reference, description, is_posted
         FROM journal_entries
-        WHERE id = $1 AND company_id = $2 AND is_posted = false
+        WHERE id = $1 AND company_id = $2
         FOR UPDATE
         `,
         [id, companyId],
       );
 
       if (journalResult.rows.length === 0) {
-        throw new Error(
-          "Journal entry not found, or it has already been posted.",
-        );
+        throw new Error("Journal entry not found.");
       }
 
       const journal = journalResult.rows[0];
 
-      // 2. Fetch the draft lines associated with this document
+      if (journal.is_posted) {
+        throw new Error(
+          "This journal entry has already been posted to the ledgers.",
+        );
+      }
+
+      // 🛡️ VALIDATION 1: Enforce Posting Date Restrictions (Accounting Period Gatekeeper)
+      const formattedDate =
+        journal.entry_date instanceof Date
+          ? journal.entry_date.toISOString().split("T")[0]
+          : String(journal.entry_date);
+
+      const gateCheck = await validateLedgerPostingDate(
+        companyId,
+        formattedDate,
+      );
+      if (!gateCheck.allowed) {
+        throw new Error(gateCheck.reason);
+      }
+
+      // 2. Fetch draft lines
       const linesResult = await client.query(
         `
-        SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate
+        SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate, reference_id
         FROM journal_entry_lines
-        WHERE journal_id = $1
+        WHERE journal_id = $1 AND company_id = $2
         `,
-        [id],
+        [id, companyId],
       );
 
       if (linesResult.rows.length === 0) {
         throw new Error("Cannot post a journal entry with zero lines.");
       }
 
-      // 3. Obtain next global GL transaction key from the PostgreSQL sequence
+      // 3. Expand single UI lines into balanced pairs (Primary Leg + Balancing Leg)
+      const expandedLegs: Array<{
+        account_id: string;
+        party_type: string | null;
+        party_id: string | null;
+        description: string | null;
+        debit: number;
+        credit: number;
+      }> = [];
+
+      for (const line of linesResult.rows) {
+        const rate = Number(line.exchange_rate || 1.0);
+        const debitLCY = Number((Number(line.debit || 0) * rate).toFixed(2));
+        const creditLCY = Number((Number(line.credit || 0) * rate).toFixed(2));
+
+        // 🛡️ VALIDATION 2: Zero Amount Check
+        if (debitLCY === 0 && creditLCY === 0) {
+          throw new Error(
+            "Every line entry must have a debit or credit value greater than zero.",
+          );
+        }
+
+        // Resolve main G/L Account if it's missing but a sub-ledger party is present
+        let mainAccountId = line.account_id;
+        if (!mainAccountId && line.party_id) {
+          if (
+            line.party_type === "supplier" ||
+            journal.source === "SUPPLIER_JOURNAL"
+          ) {
+            const ppg = await client.query(
+              `SELECT payable_account_id FROM purchase_posting_groups WHERE company_id = $1 LIMIT 1`,
+              [companyId],
+            );
+            mainAccountId = ppg.rows[0]?.payable_account_id;
+          } else if (
+            line.party_type === "customer" ||
+            journal.source === "CUSTOMER_JOURNAL"
+          ) {
+            const spg = await client.query(
+              `SELECT receivable_account_id FROM sales_posting_groups WHERE company_id = $1 LIMIT 1`,
+              [companyId],
+            );
+            mainAccountId = spg.rows[0]?.receivable_account_id;
+          }
+        }
+
+        if (!mainAccountId) {
+          throw new Error(
+            `Line is missing a valid G/L Account binding target.`,
+          );
+        }
+
+        // 🛡️ VALIDATION 3: G/L Account Active & Posting Status
+        await GLValidationService.validateAccount(client, mainAccountId);
+
+        // Add Primary Leg
+        expandedLegs.push({
+          account_id: mainAccountId,
+          party_type: line.party_type || null,
+          party_id: line.party_id || null,
+          description: line.description || journal.description || null,
+          debit: debitLCY,
+          credit: creditLCY,
+        });
+
+        // Add Offsetting Balancing Leg if inline reference_id exists
+        if (line.reference_id) {
+          await GLValidationService.validateAccount(client, line.reference_id);
+
+          expandedLegs.push({
+            account_id: line.reference_id,
+            party_type: null,
+            party_id: null,
+            description: line.description
+              ? `Balancing: ${line.description}`
+              : journal.description || null,
+            debit: creditLCY, // Inverted: line credit becomes balancing debit
+            credit: debitLCY, // Inverted: line debit becomes balancing credit
+          });
+        }
+      }
+
+      // 🛡️ VALIDATION 4: Total Double-Entry Balance Check
+      GLValidationService.validateBalanced(expandedLegs);
+
+      // 4. Sequence Keys
       const txKeyResult = await client.query(
         "SELECT nextval('gl_transaction_id_seq') AS tx_id",
       );
       const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
 
-      // 4. (Optional) Check if VAT tracking numbers are required based on source type
       let vatTransactionId: number | null = null;
       const vatSettlementId: number | null = null;
 
@@ -401,13 +505,8 @@ export class JournalService {
         vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
       }
 
-      // 5. Bulk insert lines cleanly into the 'gl_ledger_entries' table
-      for (const line of linesResult.rows) {
-        // Calculate Base Currency Amount (LCY) exactly as done during verification
-        const rate = Number(line.exchange_rate || 1.0);
-        const debitLCY = Number((Number(line.debit || 0) * rate).toFixed(2));
-        const creditLCY = Number((Number(line.credit || 0) * rate).toFixed(2));
-
+      // 5. Bulk insert validated legs into gl_ledger_entries
+      for (const leg of expandedLegs) {
         await client.query(
           `
           INSERT INTO gl_ledger_entries (
@@ -432,34 +531,35 @@ export class JournalService {
           `,
           [
             companyId,
-            line.account_id,
+            leg.account_id,
             nextTransactionId,
             vatTransactionId,
             vatSettlementId,
             journal.id,
             journal.entry_no,
-            journal.entry_date,
-            journal.source, // maps to journal_source_enum
-            journal.reference,
-            line.description || journal.description, // Fallback to header note if lines are empty
-            debitLCY,
-            creditLCY,
-            line.party_type,
-            line.party_id,
+            formattedDate,
+            journal.source,
+            journal.reference || null,
+            leg.description,
+            leg.debit,
+            leg.credit,
+            leg.party_type,
+            leg.party_id,
           ],
         );
       }
 
-      // 6. Update the header flag on the draft workspace so it shows as 'posted'
+      // 6. Update Header status
       await client.query(
         `
         UPDATE journal_entries
         SET
           is_posted = true,
-          posted_at = now()
-        WHERE id = $1
+          posted_at = now(),
+          updated_at = now()
+        WHERE id = $1 AND company_id = $2
         `,
-        [id],
+        [id, companyId],
       );
 
       await client.query("COMMIT");
@@ -810,6 +910,135 @@ export class JournalService {
   }
 }
 
+/* static async post(companyId: string, id: string): Promise<void> {
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      // 1. Fetch the original draft unposted header to verify status
+      const journalResult = await client.query(
+        `
+        SELECT id, entry_no, entry_date, source, reference, description
+        FROM journal_entries
+        WHERE id = $1 AND company_id = $2 AND is_posted = false
+        FOR UPDATE
+        `,
+        [id, companyId],
+      );
+
+      if (journalResult.rows.length === 0) {
+        throw new Error(
+          "Journal entry not found, or it has already been posted.",
+        );
+      }
+
+      const journal = journalResult.rows[0];
+
+      // 2. Fetch the draft lines associated with this document
+      const linesResult = await client.query(
+        `
+        SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate
+        FROM journal_entry_lines
+        WHERE journal_id = $1
+        `,
+        [id],
+      );
+
+      if (linesResult.rows.length === 0) {
+        throw new Error("Cannot post a journal entry with zero lines.");
+      }
+
+      // 3. Obtain next global GL transaction key from the PostgreSQL sequence
+      const txKeyResult = await client.query(
+        "SELECT nextval('gl_transaction_id_seq') AS tx_id",
+      );
+      const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
+
+      // 4. (Optional) Check if VAT tracking numbers are required based on source type
+      let vatTransactionId: number | null = null;
+      const vatSettlementId: number | null = null;
+
+      if (
+        journal.source === "VAT_POSTING" ||
+        journal.source === "SALES" ||
+        journal.source === "PURCHASE"
+      ) {
+        const vatKeyResult = await client.query(
+          "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
+        );
+        vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
+      }
+
+      // 5. Bulk insert lines cleanly into the 'gl_ledger_entries' table
+      for (const line of linesResult.rows) {
+        // Calculate Base Currency Amount (LCY) exactly as done during verification
+        const rate = Number(line.exchange_rate || 1.0);
+        const debitLCY = Number((Number(line.debit || 0) * rate).toFixed(2));
+        const creditLCY = Number((Number(line.credit || 0) * rate).toFixed(2));
+
+        await client.query(
+          `
+          INSERT INTO gl_ledger_entries (
+            company_id,
+            account_id,
+            transaction_id,
+            vat_transaction_id,
+            vat_settlement_transaction_id,
+            source_journal_id,
+            entry_no,
+            posting_date,
+            source_type,
+            reference,
+            description,
+            debit,
+            credit,
+            party_type,
+            party_id,
+            posted_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())
+          `,
+          [
+            companyId,
+            line.account_id,
+            nextTransactionId,
+            vatTransactionId,
+            vatSettlementId,
+            journal.id,
+            journal.entry_no,
+            journal.entry_date,
+            journal.source, // maps to journal_source_enum
+            journal.reference,
+            line.description || journal.description, // Fallback to header note if lines are empty
+            debitLCY,
+            creditLCY,
+            line.party_type,
+            line.party_id,
+          ],
+        );
+      }
+
+      // 6. Update the header flag on the draft workspace so it shows as 'posted'
+      await client.query(
+        `
+        UPDATE journal_entries
+        SET
+          is_posted = true,
+          posted_at = now()
+        WHERE id = $1
+        `,
+        [id],
+      );
+
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  } */
 /* for (const line of lines) {
       const debit = Number(line.debit || 0);
       const credit = Number(line.credit || 0);
