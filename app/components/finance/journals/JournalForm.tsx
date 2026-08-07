@@ -194,7 +194,7 @@ export default function JournalForm({
   };
 
   // Corrected converted total calculations
-  const totalDebitConverted = lines.reduce((sum, line) => {
+  /* const totalDebitConverted = lines.reduce((sum, line) => {
     const rate = Number(line.exchange_rate || 1.0);
     const lineDebit = Number(line.debit || 0);
 
@@ -214,11 +214,41 @@ export default function JournalForm({
     }
 
     return sum + Number((lineCredit * rate).toFixed(2));
+  }, 0); */
+
+  // Corrected double-entry balance calculation incorporating balancing accounts for both debits & credits
+  const totalDebitConverted = lines.reduce((sum, line) => {
+    const rate = Number(line.exchange_rate || 1.0);
+    const lineDebit = Number(line.debit || 0);
+
+    // If a balancing account is selected, a primary credit acts as a balancing debit
+    if (line.balancing_account_id && line.balancing_account_id.trim() !== "") {
+      const balancingDebit = Number(line.credit || 0);
+      const activeDebit = lineDebit > 0 ? lineDebit : balancingDebit;
+      return sum + Number((activeDebit * rate).toFixed(2));
+    }
+
+    return sum + Number((lineDebit * rate).toFixed(2));
+  }, 0);
+
+  const totalCreditConverted = lines.reduce((sum, line) => {
+    const rate = Number(line.exchange_rate || 1.0);
+    const lineCredit = Number(line.credit || 0);
+
+    // If a balancing account is selected, a primary debit acts as a balancing credit
+    if (line.balancing_account_id && line.balancing_account_id.trim() !== "") {
+      const balancingCredit = Number(line.debit || 0);
+      const activeCredit = lineCredit > 0 ? lineCredit : balancingCredit;
+      return sum + Number((activeCredit * rate).toFixed(2));
+    }
+
+    return sum + Number((lineCredit * rate).toFixed(2));
   }, 0);
 
   const difference = Number(
     (totalDebitConverted - totalCreditConverted).toFixed(2),
   );
+
   const isBalanced = Math.abs(difference) < 0.01;
 
   useEffect(() => {
