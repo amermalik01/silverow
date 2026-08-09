@@ -78,6 +78,8 @@ export const DebitNoteForm: React.FC<Props> = ({
     status: "draft",
     reference: "",
     notes: "",
+    is_dispatched: false,
+    is_posted: false,
   });
 
   const [primaryAddress, setPrimaryAddress] = useState<
@@ -242,7 +244,6 @@ export const DebitNoteForm: React.FC<Props> = ({
       const res = await fetch(`/api/purchase-invoices/${invoice.id}`);
       const payload = await res.json();
       hide();
-
 
       if (payload?.success && payload.data) {
         const {
@@ -511,6 +512,50 @@ export const DebitNoteForm: React.FC<Props> = ({
     }
   };
 
+  const handleDispatchStock = async () => {
+    if (!id) return;
+    try {
+      show("Dispatching stock return...");
+      const res = await fetch(`/api/debit-notes/${id}/dispatch`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      hide();
+
+      if (data.success) {
+        toast.success("Stock dispatched successfully!");
+        refreshLines();
+      } else {
+        toast.error(data.error || "Failed to dispatch stock.");
+      }
+    } catch (err) {
+      hide();
+      toast.error("An error occurred while dispatching stock.");
+    }
+  };
+
+  const handlePostInvoice = async () => {
+    if (!id) return;
+    try {
+      show("Posting financial entry...");
+      const res = await fetch(`/api/debit-notes/${id}/post-invoice`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      hide();
+
+      if (data.success) {
+        toast.success("Debit note posted successfully!");
+        refreshLines();
+      } else {
+        toast.error(data.error || "Failed to post debit note.");
+      }
+    } catch (err) {
+      hide();
+      toast.error("An error occurred while posting debit note.");
+    }
+  };
+
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const labelStyle =
@@ -714,6 +759,30 @@ export const DebitNoteForm: React.FC<Props> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            {!note.is_dispatched && (
+              <button
+                type="button"
+                onClick={handleDispatchStock}
+                className="px-3 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1"
+              >
+                <Icon icon="tabler:truck-delivery" className="w-4 h-4" />
+                Dispatch Stock
+              </button>
+            )}
+
+            {!note.is_posted && (
+              <button
+                type="button"
+                onClick={handlePostInvoice}
+                className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded flex items-center gap-1"
+              >
+                <Icon icon="tabler:file-check" className="w-4 h-4" />
+                Post Invoice
+              </button>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={handleSave}

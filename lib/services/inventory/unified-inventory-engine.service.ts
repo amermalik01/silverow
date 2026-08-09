@@ -8,6 +8,7 @@ import { JournalLineInput } from "@/types/journal";
 
 export type InventoryTransactionType =
   | "PURCHASE_RECEIPT"
+  | "PURCHASE_RETURN"
   | "SALES_SHIPMENT"
   | "STOCK_TRANSFER_OUT"
   | "STOCK_TRANSFER_IN"

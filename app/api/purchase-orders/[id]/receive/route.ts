@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { PurchaseReceiptService } from "@/lib/services/purchase-receipts/purchase-receipt.service";
-// import { InventoryAllocationEngineService } from "@/lib/services/inventory/inventory-allocation-engine.service";
 import { PurchaseOrderService } from "@/lib/services/purchase-orders/purchase-order.service";
 import { PurchaseReceiptPayload } from "@/types/purchase-receipt";
 
@@ -108,25 +107,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       receiptPayload,
     );
 
-    // 3. Process Inventory Allocations for FIFO matching
-    // for (const line of validLines) {
-    //   const lineId = line.id || line.purchase_order_line_id;
-
-    //   if (lineId) {
-    //     await InventoryAllocationEngineService.allocate(
-    //       client,
-    //       companyId,
-    //       line.item_id,
-    //       line.warehouse_id,
-    //       Number(line.quantity),
-    //       id,
-    //       lineId,
-    //       "FIFO",
-    //     );
-    //   }
-    // }
-
-    // 4. Recalculate Purchase Order status dynamically
+    // 3. Recalculate Purchase Order status dynamically
     await PurchaseOrderService.recalculateStatus(client, id);
 
     await client.query("COMMIT");

@@ -40,7 +40,7 @@ export class DebitNoteService {
       LEFT JOIN shipment_method sm ON sm.id = dn.shipment_method_id
       WHERE dn.id = $1 AND dn.company_id = $2
       `,
-      [id, companyId]
+      [id, companyId],
     );
 
     if (!orderResult.rows.length) return null;
@@ -110,7 +110,8 @@ export class DebitNoteService {
         .filter(
           (alloc) =>
             alloc.debit_note_line_id === line.id ||
-            (line.purchase_invoice_line_id && alloc.purchase_invoice_line_id === line.purchase_invoice_line_id)
+            (line.purchase_invoice_line_id &&
+              alloc.purchase_invoice_line_id === line.purchase_invoice_line_id),
         )
         .map((alloc) => ({
           id: alloc.id,
@@ -137,15 +138,18 @@ export class DebitNoteService {
 
     const addressResult = await pool.query(
       `SELECT * FROM debit_note_addresses WHERE debit_note_id = $1`,
-      [id]
+      [id],
     );
 
     return {
       note: orderResult.rows[0],
       lines: linesWithAllocations,
-      primary_address: addressResult.rows.find((x) => x.address_type === "primary") || null,
-      billing_address: addressResult.rows.find((x) => x.address_type === "billing") || null,
-      shipping_address: addressResult.rows.find((x) => x.address_type === "shipping") || null,
+      primary_address:
+        addressResult.rows.find((x) => x.address_type === "primary") || null,
+      billing_address:
+        addressResult.rows.find((x) => x.address_type === "billing") || null,
+      shipping_address:
+        addressResult.rows.find((x) => x.address_type === "shipping") || null,
     };
   }
 
@@ -292,7 +296,6 @@ export class DebitNoteService {
     id: string,
     rawPayload: unknown,
   ): Promise<DebitNoteLine[]> {
-
     const payload = DebitNotePayloadSchema.parse(
       rawPayload,
     ) as DebitNotePayload;
@@ -574,9 +577,266 @@ export class DebitNoteService {
     if (!payload.lines.length)
       throw new Error("Debit note requires at least one line item");
   }
+
+  static async recalculateStatus(
+    client: PoolClient,
+    debitNoteId: string
+  ): Promise<void> {
+    const result = await client.query(
+      `
+      SELECT quantity, returned_quantity, COALESCE(cancelled_quantity, 0) as cancelled_quantity
+      FROM debit_note_lines
+      WHERE debit_note_id = $1 AND is_deleted = false AND line_type = 'ITEM'
+      `,
+      [debitNoteId]
+    );
+
+    const lines = result.rows;
+    if (!lines.length) return;
+
+    let fullyReturned = true;
+    let partiallyReturned = false;
+
+    for (const line of lines) {
+      const qty = Number(line.quantity || 0);
+      const returned =
+        Number(line.returned_quantity || 0) + Number(line.cancelled_quantity);
+
+      if (returned > 0) partiallyReturned = true;
+      if (returned < qty) fullyReturned = false;
+    }
+
+    const status = fullyReturned
+      ? "dispatched"
+      : partiallyReturned
+      ? "partial_dispatched"
+      : "open";
+
+    await client.query(
+      `UPDATE debit_notes SET status = $1, is_dispatched = $2, updated_at = NOW() WHERE id = $3`,
+      [status, fullyReturned || partiallyReturned, debitNoteId]
+    );
+  }
+
+  /**
+   * 1. DISPATCH STOCK (Post Physical Return / Stock De-allocation)
+   * Decrements physical stock from inventory_allocations and logs inventory transaction entries.
+   */
+  static async dispatchStock(companyId: string, debitNoteId: string) {
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      // Check Debit Note status
+      const dnResult = await client.query(
+        `SELECT id, debit_note_no, status, is_dispatched, is_posted 
+         FROM debit_notes 
+         WHERE id = $1 AND company_id = $2 FOR UPDATE`,
+        [debitNoteId, companyId],
+      );
+
+      if (!dnResult.rows.length) throw new Error("Debit note not found.");
+      const note = dnResult.rows[0];
+
+      if (note.is_dispatched)
+        throw new Error(
+          "Stock has already been dispatched for this debit note.",
+        );
+
+      // Fetch Debit Note lines
+      const linesResult = await client.query(
+        `SELECT id, item_id, warehouse_id, warehouse_location_id, quantity, line_no, purchase_invoice_line_id
+         FROM debit_note_lines 
+         WHERE debit_note_id = $1 AND line_type = 'ITEM' AND is_deleted = false`,
+        [debitNoteId],
+      );
+
+      for (const line of linesResult.rows) {
+        // Fetch active allocations linked to this debit note line or parent purchase invoice line
+        const allocResult = await client.query(
+          `SELECT id, allocated_quantity, batch_no, bin_code, warehouse_location_id, expiry_date, unit_cost
+           FROM inventory_allocations
+           WHERE company_id = $1 AND (debit_note_line_id = $2 OR purchase_invoice_line_id = $3) AND status = 'ACTIVE'`,
+          [companyId, line.id, line.purchase_invoice_line_id],
+        );
+
+        let remainingToReturn = Number(line.quantity);
+
+        for (const alloc of allocResult.rows) {
+          if (remainingToReturn <= 0) break;
+
+          const allocQty = Number(alloc.allocated_quantity);
+          const deductQty = Math.min(allocQty, remainingToReturn);
+
+          if (deductQty === allocQty) {
+            // Fully consume allocation
+            await client.query(
+              `UPDATE inventory_allocations 
+               SET status = 'RETURNED', updated_at = now() 
+               WHERE id = $1`,
+              [alloc.id],
+            );
+          } else {
+            // Partially reduce allocation
+            await client.query(
+              `UPDATE inventory_allocations 
+               SET allocated_quantity = allocated_quantity - $1, updated_at = now() 
+               WHERE id = $2`,
+              [deductQty, alloc.id],
+            );
+          }
+
+          // Create Outward Inventory Movement Ledger Entry
+          await client.query(
+            `INSERT INTO inventory_transactions (
+               company_id, transaction_type, reference_no, item_id, warehouse_id, 
+               warehouse_location_id, batch_no, bin_code, quantity, unit_cost, created_at
+             ) VALUES ($1, 'PURCHASE_RETURN', $2, $3, $4, $5, $6, $7, $8, $9, now())`,
+            [
+              companyId,
+              note.debit_note_no,
+              line.item_id,
+              line.warehouse_id,
+              alloc.warehouse_location_id || line.warehouse_location_id,
+              alloc.batch_no || null,
+              alloc.bin_code || null,
+              -deductQty, // Negative for outward return
+              alloc.unit_cost || 0,
+            ],
+          );
+
+          remainingToReturn -= deductQty;
+        }
+      }
+
+      // Update Debit Note Header
+      await client.query(
+        `UPDATE debit_notes 
+         SET is_dispatched = true, dispatched_at = now(), status = 'dispatched', updated_at = now()
+         WHERE id = $1 AND company_id = $2`,
+        [debitNoteId, companyId],
+      );
+
+      await client.query("COMMIT");
+      return { success: true, message: "Stock dispatched successfully." };
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * 2. POST INVOICE (Financial Posting / G/L Ledger Generation)
+   * Creates G/L Entries (Debit Supplier Payable, Credit Return/Purchase Account & VAT Account).
+   */
+  static async post(companyId: string, debitNoteId: string) {
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const dnResult = await client.query(
+        `SELECT id, debit_note_no, supplier_id, subtotal, tax_amount, total_amount, is_posted, status 
+         FROM debit_notes 
+         WHERE id = $1 AND company_id = $2 FOR UPDATE`,
+        [debitNoteId, companyId],
+      );
+
+      if (!dnResult.rows.length) throw new Error("Debit note not found.");
+      const note = dnResult.rows[0];
+
+      if (note.is_posted) throw new Error("Debit note is already posted.");
+
+      // Generate GL Entry Header Sequence
+      const seqResult = await client.query(
+        `SELECT get_next_sequence($1, 'gl_entry') AS code`,
+        [companyId],
+      );
+      const glHeaderNo = seqResult.rows[0].code;
+
+      // Create General Ledger Header Entry
+      const glHeaderRes = await client.query(
+        `INSERT INTO gl_entries (
+           company_id, entry_no, document_type, document_no, posting_date, created_at
+         ) VALUES ($1, $2, 'DEBIT_NOTE', $3, CURRENT_DATE, now())
+         RETURNING id`,
+        [companyId, glHeaderNo, note.debit_note_no],
+      );
+      const glHeaderId = glHeaderRes.rows[0].id;
+
+      // 1. DEBIT: Payable Account (Reduce Liability to Supplier for Total Amount)
+      const supplierRes = await client.query(
+        `SELECT payable_gl_account_id FROM parties WHERE id = $1 AND company_id = $2`,
+        [note.supplier_id, companyId],
+      );
+      const supplierPayableGlId = supplierRes.rows[0]?.payable_gl_account_id;
+
+      if (supplierPayableGlId) {
+        await client.query(
+          `INSERT INTO gl_entry_lines (
+             company_id, gl_entry_id, gl_account_id, debit, credit, description
+           ) VALUES ($1, $2, $3, $4, 0, $5)`,
+          [
+            companyId,
+            glHeaderId,
+            supplierPayableGlId,
+            note.total_amount,
+            `Debit Note ${note.debit_note_no} - Supplier Refund`,
+          ],
+        );
+      }
+
+      // 2. CREDIT: Purchase Returns / Expense GL Account for Subtotal
+      const linesResult = await client.query(
+        `SELECT gl_account_id, net_amount, description 
+         FROM debit_note_lines 
+         WHERE debit_note_id = $1 AND is_deleted = false`,
+        [debitNoteId],
+      );
+
+      for (const line of linesResult.rows) {
+        if (line.gl_account_id && Number(line.net_amount) > 0) {
+          await client.query(
+            `INSERT INTO gl_entry_lines (
+               company_id, gl_entry_id, gl_account_id, debit, credit, description
+             ) VALUES ($1, $2, $3, 0, $4, $5)`,
+            [
+              companyId,
+              glHeaderId,
+              line.gl_account_id,
+              line.net_amount,
+              line.description || `Debit Note Line`,
+            ],
+          );
+        }
+      }
+
+      // Update Debit Note Header Status
+      await client.query(
+        `UPDATE debit_notes 
+         SET is_posted = true, posted_at = now(), status = 'posted', updated_at = now()
+         WHERE id = $1 AND company_id = $2`,
+        [debitNoteId, companyId],
+      );
+
+      await client.query("COMMIT");
+      return {
+        success: true,
+        message: "Debit note posted to G/L successfully.",
+      };
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 }
 
-  /* static async get(companyId: string, id: string) {
+/* static async get(companyId: string, id: string) {
     const noteResult = await pool.query(
       `SELECT * FROM debit_notes WHERE id = $1 AND company_id = $2`,
       [id, companyId],

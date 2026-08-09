@@ -32,20 +32,6 @@ export class GLValidationService {
     }
   }
 
-  //  * =========================================================
-  //  * VALIDATE JOURNAL BALANCE
-  //  * =========================================================
-
-  // static validateBalanced(lines: JournalLineInput[]) {
-  //   const debit = lines.reduce((sum, l) => sum + Number(l.debit || 0), 0);
-
-  //   const credit = lines.reduce((sum, l) => sum + Number(l.credit || 0), 0);
-
-  //   if (Number(debit.toFixed(2)) !== Number(credit.toFixed(2))) {
-  //     throw new Error(`Journal not balanced: Debit=${debit}, Credit=${credit}`);
-  //   }
-  // }
-
   static validateBalanced(lines: Array<{ debit?: number | null; credit?: number | null }>) {
     const debit = lines.reduce((sum, l) => sum + Number(l.debit || 0), 0);
     const credit = lines.reduce((sum, l) => sum + Number(l.credit || 0), 0);
@@ -65,3 +51,18 @@ export class GLValidationService {
     }
   }
 }
+
+
+  //  * =========================================================
+  //  * VALIDATE JOURNAL BALANCE
+  //  * =========================================================
+
+  // static validateBalanced(lines: JournalLineInput[]) {
+  //   const debit = lines.reduce((sum, l) => sum + Number(l.debit || 0), 0);
+
+  //   const credit = lines.reduce((sum, l) => sum + Number(l.credit || 0), 0);
+
+  //   if (Number(debit.toFixed(2)) !== Number(credit.toFixed(2))) {
+  //     throw new Error(`Journal not balanced: Debit=${debit}, Credit=${credit}`);
+  //   }
+  // }
