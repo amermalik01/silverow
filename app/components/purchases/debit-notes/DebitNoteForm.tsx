@@ -243,7 +243,6 @@ export const DebitNoteForm: React.FC<Props> = ({
       const payload = await res.json();
       hide();
 
-      // if (payload?.success && Array.isArray(payload.data?.lines)) {
 
       if (payload?.success && payload.data) {
         const {
@@ -290,25 +289,6 @@ export const DebitNoteForm: React.FC<Props> = ({
               gross_amount: Number(l.gross_amount || 0),
             }),
           );
-
-          // const fetchedLines: DebitNoteLine[] = payload.data.lines.map(
-          //   (l: PurchaseOrderLine, idx: number) => ({
-          //     line_no: idx + 1,
-          //     line_type: l.line_type || "ITEM",
-          //     purchase_invoice_line_id: l.id,
-          //     item_id: l.item_id,
-          //     item_code: l.item_code,
-          //     item_name: l.item_name || l.description,
-          //     description: l.description,
-          //     warehouse_id: l.warehouse_id,
-          //     quantity: Number(l.quantity || 0),
-          //     unit_cost: Number(l.unit_cost || 0),
-          //     vat_percent: Number(l.vat_percent || 0),
-          //     vat_amount: Number(l.vat_amount || 0),
-          //     net_amount: Number(l.net_amount || 0),
-          //     gross_amount: Number(l.gross_amount || 0),
-          //   }),
-          // );
 
           setLines(mappedLines);
           toast.success(

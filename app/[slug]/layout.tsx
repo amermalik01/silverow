@@ -38,21 +38,13 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-background bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] flex flex-col">
-      {/* <div
-  class="absolute inset-0 h-full w-full bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px]"
-></div> */}
-      {/* Full width header */}
       <CompanyHeader />
 
-      {/* Body */}
       <div className="flex flex-1">
-        {/* Desktop Sidebar */}
-        <aside className="hidden xl:block w-[190px] border-r ">
+        <aside className="hidden xl:block w-[190px] shrink-0 sticky top-[64px] h-[calc(100vh-4rem)] border-r">
           <CompanySidebar />
         </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-x-auto px-4">
+        <main className="flex-1 min-w-0 overflow-x-auto px-4">
           <div className="container mx-auto py-6">{children}</div>
         </main>
       </div>

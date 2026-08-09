@@ -101,14 +101,15 @@ const CompanySidebarLayout = () => {
                 e.stopPropagation();
                 toggleMenu(item.id!);
               }
-            }}/* text-[13px] */
+            }} /* text-[13px] */
             className={`flex items-center justify-between cursor-pointer px-1.5 py-2 rounded-md transition-all duration-150 text-xs group mb-0.5
               ${isSelected ? "text-emerald-400 font-semibold bg-slate-900/40" : "text-slate-300"}
               ${isActive && !isSelected ? "bg-slate-800/30 text-white" : ""}
               hover:bg-slate-800/60 hover:text-white`}
             style={{ paddingLeft: `${level * 12 + 10}px` }}
           >
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">{/* ri:circle-line */}
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              {/* ri:circle-line */}
               <Icon
                 icon={item.icon || ""}
                 width={16}
@@ -124,16 +125,8 @@ const CompanySidebarLayout = () => {
                 </span>
               )}
             </div>
-
-            {/* {hasChildren && (
-              <Icon
-                icon="heroicons:chevron-down-20-solid"
-                className={`w-4 h-4 text-slate-500 transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180 text-slate-300" : ""}`}
-              />
-            )} */}
           </div>
 
-          {/* Children with pure CSS height transition flags */}
           {hasChildren && (
             <div
               className={`overflow-hidden transition-all duration-200 ease-in-out ${
@@ -151,10 +144,10 @@ const CompanySidebarLayout = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-65px)] w-auto flex flex-col overflow-hidden bg-slate-950">
-      {/* Navigation Links Scroll Container */}
+    // <div className="h-[calc(100vh-65px)] w-auto flex flex-col overflow-hidden bg-slate-950">
       <SimpleBar
-        className="flex-1 px-1.5 py-3 overflow-y-auto overflow-x-hidden bg-[#103701] text-xs text-[#fff] dark:bg-[#11161D] dark:text-[#8C9DAF]"
+        // className="flex-1 px-1.5 py-3 overflow-y-auto overflow-x-hidden bg-[#103701] text-xs text-[#fff] dark:bg-[#11161D] dark:text-[#8C9DAF]"
+        className="h-full px-1.5 py-3 overflow-x-hidden bg-[#103701] text-xs text-[#fff] dark:bg-[#11161D] dark:text-[#8C9DAF]"  
         style={{
           height: "100%",
         }}
@@ -168,7 +161,7 @@ const CompanySidebarLayout = () => {
           </div>
         ))}
       </SimpleBar>
-    </div>
+    // </div>
   );
 };
 

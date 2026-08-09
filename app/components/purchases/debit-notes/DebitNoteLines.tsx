@@ -72,19 +72,6 @@ export default function DebitNoteLines({
     return lines[idx] || null;
   }, [activeDeAllocRowKey, lines]);
 
-  // Allocation Modal state wrappers using index keys
-  // const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
-  // const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
-  //   string | null
-  // >(null);
-
-  // Derive the active line component via parsed row-index safely
-  // const activeAllocationLine = useMemo(() => {
-  //   if (activeAllocationRowKey === null) return null;
-  //   const idx = parseInt(activeAllocationRowKey, 10);
-  //   return lines[idx] || null;
-  // }, [activeAllocationRowKey, lines]);
-
   /**
    * =====================================================
    * ADD LINE
@@ -205,30 +192,6 @@ export default function DebitNoteLines({
    * De ALLOCATION SAVE HANDLER
    * =====================================================
    */
-  /* const handleSaveAllocations = (allocationsData: StockAllocationRecord[]) => {
-    if (activeAllocationRowKey === null) return;
-    const targetIdx = parseInt(activeAllocationRowKey, 10);
-
-    setLines((prev) =>
-      prev.map((line, index) => {
-        if (index !== targetIdx) return line;
-
-        const totalAllocated = allocationsData.reduce(
-          (sum, a) => sum + a.quantity,
-          0,
-        );
-
-        return {
-          ...line,
-          allocations: allocationsData,
-          is_allocated: totalAllocated === (line.quantity || 0),
-        };
-      }),
-    );
-
-    setIsAllocationModalOpen(false);
-    setActiveAllocationRowKey(null);
-  }; */
 
   const handleSaveDeAllocations = (
     deAllocationsData: StockDeAllocationRecord[],
@@ -681,13 +644,19 @@ export default function DebitNoteLines({
               setIsDeAllocModalOpen(false);
               setActiveDeAllocRowKey(null);
             }}
+            debitNoteLineId={activeDeAllocLine.id}
             purchaseInvoiceLineId={activeDeAllocLine.purchase_invoice_line_id} // mapped from API
+            initialAllocations={activeDeAllocLine.allocations}
             itemCode={activeDeAllocLine.item_code}
             itemName={activeDeAllocLine.item_name}
             warehouseName={activeDeAllocLine.warehouse_name}
             onSave={handleSaveDeAllocations}
           />
         )}
+    </div>
+  );
+}
+
 
       {/* {isAllocationModalOpen &&
         activeAllocationRowKey !== null &&
@@ -722,6 +691,3 @@ export default function DebitNoteLines({
             }
           />
         )} */}
-    </div>
-  );
-}

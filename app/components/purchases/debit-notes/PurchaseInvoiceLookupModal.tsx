@@ -1,7 +1,5 @@
 // app/components/purchases/debit-notes/PurchaseInvoiceLookupModal.tsx
 
-// app/components/purchases/debit-notes/PurchaseInvoiceLookupModal.tsx
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -49,7 +47,7 @@ export const PurchaseInvoiceLookupModal: React.FC<Props> = ({
       limit: "50",
     });
 
-    fetch(`/api/purchase-invoices?${query.toString()}`)
+    fetch(`/api/debit-notes/purchase-invoices-list?${query.toString()}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
@@ -72,7 +70,7 @@ export const PurchaseInvoiceLookupModal: React.FC<Props> = ({
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Modal Header */}
         <div className="p-3 bg-emerald-800 dark:bg-slate-800 text-white flex items-center justify-between">
-          <h3 className="text-xs font-bold tracking-wide">
+          <h3 className="text-xs font-bold tracking-wide text-white">
             Purchase Invoices for {supplierCode} - {supplierName}
           </h3>
           <button
