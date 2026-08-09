@@ -101,7 +101,8 @@ main {
   --radius: 10px;
   
   /* GREEN SYSTEM: Layout Components */
-  --background: #f0fdf4;                 /* Light Green Tint Main Body (green-50) */
+  /* --background: #f0fdf4;  */                /* Light Green Tint Main Body (green-50) */
+  --background: #A5D6A7;                 /* Light Green Tint Main Body (green-50) */
   --foreground: #14532d;                 /* Dark Green Forest for main text */
   --card: #ffffff;
   --card-foreground: #1c2536;

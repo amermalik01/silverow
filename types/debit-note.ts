@@ -85,7 +85,9 @@ export interface DebitNoteAddress {
   state?: string;
   postcode?: string;
   country?: string;
-  county?: string;
+  county?: string;  
+  contact_person?: string;
+  contact_name?: string;
 }
 
 export interface DebitNotePayload {

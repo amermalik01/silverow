@@ -37,14 +37,17 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] flex flex-col">
+      {/* <div
+  class="absolute inset-0 h-full w-full bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px]"
+></div> */}
       {/* Full width header */}
       <CompanyHeader />
 
       {/* Body */}
       <div className="flex flex-1">
         {/* Desktop Sidebar */}
-        <aside className="hidden xl:block w-[190px] border-r bg-slate-950">
+        <aside className="hidden xl:block w-[190px] border-r ">
           <CompanySidebar />
         </aside>
 

@@ -25,7 +25,7 @@ export class DebitNoteService {
     return result.rows;
   }
 
-  static async get(companyId: string, id: string) {
+  /* static async get(companyId: string, id: string) {
     const noteResult = await pool.query(
       `SELECT * FROM debit_notes WHERE id = $1 AND company_id = $2`,
       [id, companyId],
@@ -53,6 +53,155 @@ export class DebitNoteService {
       lines: linesResult.rows,
       billing_address:
         addressResult.rows.find((x) => x.address_type === "billing") || null,
+      shipping_address:
+        addressResult.rows.find((x) => x.address_type === "shipping") || null,
+    };
+  } */
+
+  static async get(companyId: string, id: string) {
+    const orderResult = await pool.query(
+      `
+      SELECT dn.*, 
+        p.name AS supplier_name,
+        pt.name AS payment_terms,
+        pm.name AS payment_method,
+        sm.name AS shipment_method
+
+      FROM debit_notes dn
+
+      LEFT JOIN parties p ON p.id = dn.supplier_id
+
+      LEFT JOIN payment_terms pt ON pt.id=dn.payment_terms_id
+
+      LEFT JOIN payment_method pm ON pm.id=dn.payment_method_id
+
+      LEFT JOIN shipment_method sm ON sm.id=dn.shipment_method_id
+
+      WHERE dn.id = $1 AND dn.company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    if (!orderResult.rows.length) return null;
+
+    // Fetch PO Lines with standard UI components metadata
+    const linesResult = await pool.query(
+      `
+      SELECT 
+        dnl.*, 
+        (dnl.quantity - COALESCE(dnl.received_quantity, 0)) AS remaining_quantity,
+        
+        i.item_code,
+        i.name AS item_name,        
+
+        gl.code AS account_code,
+        gl.name AS account_name,        
+
+        w.code AS warehouse_code,
+        w.name AS warehouse_name,
+
+        dnl.warehouse_location_id AS location_id,
+        wl.code AS location_code,
+        wl.title AS location_name,
+
+        u.name AS uom_name
+
+      FROM debit_note_lines dnl
+      LEFT JOIN items i ON dnl.item_id = i.id AND i.company_id = $2
+      LEFT JOIN chart_of_accounts gl ON dnl.gl_account_id = gl.id AND gl.company_id = $2
+      LEFT JOIN warehouses w ON dnl.warehouse_id = w.id AND w.company_id = $2
+      LEFT JOIN warehouse_locations wl ON dnl.warehouse_id = wl.warehouse_id AND dnl.warehouse_location_id = wl.id AND w.company_id = $2
+      LEFT JOIN uoms u ON dnl.uom_id = u.id AND u.company_id = $2
+
+      WHERE dnl.debit_note_id = $1 AND dnl.is_deleted = false
+      ORDER BY dnl.line_no
+      `,
+      [id, companyId],
+    );
+
+    // 🌟 FIX: Join with debit_note_lines to look up by PO ID and select correct columns
+    const allocationsResult = await pool.query(
+      `
+      SELECT
+          ia.id,
+          ia.debit_note_line_id,
+          ia.item_id,
+          ia.warehouse_id,
+          ia.warehouse_location_id AS location_id,
+          wl.title AS location_name,
+          ia.allocated_quantity AS quantity,
+          ia.batch_no,
+          ia.bin_code,
+          TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
+          TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_received
+      FROM inventory_allocations ia
+      LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
+      INNER JOIN debit_note_lines dnl ON ia.debit_note_line_id = dnl.id
+      WHERE dnl.purchase_order_id = $1 AND ia.company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    // Map the accurate database properties to your frontend modal structures safely
+    const linesWithAllocations = linesResult.rows.map((line) => {
+      const lineAllocations = allocationsResult.rows
+        .filter((alloc) => alloc.debit_note_line_id === line.id)
+        .map((alloc) => ({
+          date_received: alloc.date_received || "",
+          prod_date: "",
+          expiry_date: alloc.expiry_date || "",
+          batch_no: alloc.batch_no || "",
+          bin_code: alloc.bin_code || "",
+
+          location_id: alloc.location_id || "",
+          location_name: alloc.location_name || "",
+          quantity: Number(alloc.quantity) || 0,
+        }));
+
+      return {
+        ...line,
+        allocations: lineAllocations,
+        initialAllocations: lineAllocations,
+        is_allocated:
+          lineAllocations.length > 0 &&
+          lineAllocations.reduce((sum, a) => sum + a.quantity, 0) ===
+            Number(line.quantity),
+      };
+    });
+
+    const addressResult = await pool.query(
+      `SELECT
+          id,
+          address_type,
+          name,
+          attention,
+          contact_name,
+          contact_person,
+          phone,
+          email,
+          address_1,
+          address_2,
+          city,
+          state,
+          county,
+          postcode,
+          country
+        FROM debit_note_addresses
+        WHERE debit_note_id=$1`,
+      [id],
+    );
+
+    return {
+      order: orderResult.rows[0],
+
+      lines: linesWithAllocations,
+
+      primary_address:
+        addressResult.rows.find((x) => x.address_type === "primary") || null,
+
+      billing_address:
+        addressResult.rows.find((x) => x.address_type === "billing") || null,
+
       shipping_address:
         addressResult.rows.find((x) => x.address_type === "shipping") || null,
     };
@@ -448,9 +597,10 @@ export class DebitNoteService {
       `
       INSERT INTO debit_note_addresses (
         debit_note_id, address_type, name, phone, email, 
-        address_1, address_2, city, state, postcode, country, company_id
+        address_1, address_2, city, state, postcode, country, 
+        contact_person, contact_name, company_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       `,
       [
         debitNoteId,
@@ -464,6 +614,8 @@ export class DebitNoteService {
         address.state || null,
         address.postcode || null,
         address.country || null,
+        address.contact_person || null,
+        address.contact_name || null,
         companyId,
       ],
     );
