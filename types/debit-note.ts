@@ -93,6 +93,7 @@ export interface DebitNoteAddress {
 
 export interface DebitNotePayload {
   debitNote: DebitNote;
+  primary_address?: DebitNoteAddress;
   billing_address?: DebitNoteAddress;
   shipping_address?: DebitNoteAddress;
   lines: DebitNoteLine[];
@@ -104,6 +105,7 @@ export interface DebitNoteLine {
   id?: string;
   debit_note_id?: string;
   line_no?: number;
+  purchase_order_line_id?: string;
   purchase_invoice_line_id?: string;
   line_type: DebitNoteLineType;
 

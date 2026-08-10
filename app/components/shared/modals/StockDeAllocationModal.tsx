@@ -9,6 +9,7 @@ import { useLoader } from "@/app/context/LoaderContext";
 
 export interface StockDeAllocationRecord {
   id: string; // inventory_allocations.id
+  purchase_order_line_id?: string;
   purchase_invoice_line_id?: string;
   debit_note_line_id?: string;
   batch_no?: string;
@@ -24,6 +25,8 @@ export interface StockDeAllocationRecord {
 interface Props {
   open: boolean;
   onClose: () => void;
+  requiredQuantity?: number;
+  purchaseOrderLineId?: string;
   purchaseInvoiceLineId?: string;
   debitNoteLineId?: string;
   itemCode?: string;
@@ -35,6 +38,7 @@ interface Props {
 
 interface DBAllocationRecord {
   id: string;
+  purchase_order_line_id?: string;
   purchase_invoice_line_id?: string;
   debit_note_line_id?: string;
   batch_no?: string;
@@ -46,9 +50,15 @@ interface DBAllocationRecord {
   unit_cost?: string | number;
 }
 
+const formatQty = (value: number | string | undefined): number => {
+  return Number(value || 0);
+};
+
 export default function StockDeAllocationModal({
   open,
   onClose,
+  requiredQuantity = 0,
+  purchaseOrderLineId,
   purchaseInvoiceLineId,
   debitNoteLineId,
   itemCode = "",
@@ -66,11 +76,18 @@ export default function StockDeAllocationModal({
   const [prevInitialAllocations, setPrevInitialAllocations] =
     useState<StockDeAllocationRecord[]>(initialAllocations);
 
-  // Synchronize state during render (React-recommended pattern to avoid sync setState in useEffect)
+  const cleanRequiredQty = formatQty(requiredQuantity);
+
   if (initialAllocations !== prevInitialAllocations) {
     setPrevInitialAllocations(initialAllocations);
     if (initialAllocations && initialAllocations.length > 0) {
-      setAllocations(initialAllocations);
+      setAllocations(
+        initialAllocations.map((a) => ({
+          ...a,
+          allocated_quantity: formatQty(a.allocated_quantity),
+          return_quantity: formatQty(a.return_quantity),
+        }))
+      );
     }
   }
 
@@ -79,13 +96,19 @@ export default function StockDeAllocationModal({
 
     // Skip API request if we already have initial local allocations
     if (initialAllocations && initialAllocations.length > 0) return;
-    if (!purchaseInvoiceLineId && !debitNoteLineId) return;
+    if (!purchaseInvoiceLineId && !purchaseInvoiceLineId && !debitNoteLineId)
+      return;
 
     let isMounted = true;
     // setLoading(true);
 
     const queryParams = new URLSearchParams();
+
     if (debitNoteLineId) queryParams.set("debit_note_line_id", debitNoteLineId);
+
+    if (purchaseOrderLineId)
+      queryParams.set("purchase_order_line_id", purchaseOrderLineId);
+
     if (purchaseInvoiceLineId)
       queryParams.set("purchase_invoice_line_id", purchaseInvoiceLineId);
 
@@ -97,11 +120,22 @@ export default function StockDeAllocationModal({
         if (!isMounted) return;
 
         if (data.success && Array.isArray(data.data)) {
+          let remainingToAllocate = cleanRequiredQty;
+
           const mapped: StockDeAllocationRecord[] = data.data.map(
             (item: DBAllocationRecord) => {
-              const origQty = Number(item.allocated_quantity || 0);
+              const origQty = formatQty(item.allocated_quantity);
+
+              // Auto-fill batch returns up to required quantity
+              let initialReturnQty = 0;
+              if (remainingToAllocate > 0) {
+                initialReturnQty = Math.min(origQty, remainingToAllocate);
+                remainingToAllocate -= initialReturnQty;
+              }
+
               return {
                 id: item.id,
+                purchase_order_line_id: item.purchase_order_line_id,
                 purchase_invoice_line_id: item.purchase_invoice_line_id,
                 debit_note_line_id: item.debit_note_line_id,
                 batch_no: item.batch_no || "",
@@ -112,7 +146,7 @@ export default function StockDeAllocationModal({
                 location_id: item.location_id || "",
                 location_name: item.location_name || "",
                 allocated_quantity: origQty,
-                return_quantity: origQty,
+                return_quantity: initialReturnQty,
                 unit_cost: Number(item.unit_cost || 0),
               };
             },
@@ -135,9 +169,24 @@ export default function StockDeAllocationModal({
     return () => {
       isMounted = false;
     };
-  }, [open, purchaseInvoiceLineId, debitNoteLineId, initialAllocations]);
+  }, [
+    open,
+    purchaseOrderLineId,
+    purchaseInvoiceLineId,
+    debitNoteLineId,
+    initialAllocations,
+    cleanRequiredQty,
+  ]);
 
   if (!open) return null;
+
+  const currentTotalReturn = allocations.reduce(
+    (sum, row) => sum + formatQty(row.return_quantity),
+    0
+  );
+
+  const variance = currentTotalReturn - cleanRequiredQty;
+  const isValidAllocation = Math.abs(variance) < 0.0001;
 
   const handleQuantityChange = (index: number, val: string) => {
     const numericVal = parseFloat(val) || 0;
@@ -156,10 +205,29 @@ export default function StockDeAllocationModal({
   };
 
   const handleSave = () => {
+    if (!isValidAllocation) {
+      if (currentTotalReturn < cleanRequiredQty) {
+        toast.error(
+          `De-allocation incomplete. You need to allocate ${cleanRequiredQty - currentTotalReturn} more items across batches.`,
+        );
+      } else {
+        toast.error(
+          `Over-allocated. You have selected ${currentTotalReturn - cleanRequiredQty} more items than the required ${cleanRequiredQty}.`,
+        );
+      }
+      return;
+    }
+
     const validDeAllocations = allocations.filter((a) => a.return_quantity > 0);
     onSave(validDeAllocations);
     onClose();
   };
+
+  // const handleSave = () => {
+  //   const validDeAllocations = allocations.filter((a) => a.return_quantity > 0);
+  //   onSave(validDeAllocations);
+  //   onClose();
+  // };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -185,7 +253,51 @@ export default function StockDeAllocationModal({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {/* Summary Status Box */}
+          <div className="p-3 rounded-lg border bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+            <div>
+              <span className="text-slate-500 dark:text-slate-400">
+                Required Return Qty:
+              </span>{" "}
+              <strong className="font-mono text-slate-900 dark:text-slate-100">
+                {cleanRequiredQty}
+              </strong>
+            </div>
+
+            <div>
+              <span className="text-slate-500 dark:text-slate-400">
+                Selected Return Qty:
+              </span>{" "}
+              <strong
+                className={`font-mono ${
+                  isValidAllocation
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-red-600 dark:text-red-400"
+                }`}
+              >
+                {currentTotalReturn}
+              </strong>
+            </div>
+
+            <div>
+              <span className="text-slate-500 dark:text-slate-400">
+                Status:
+              </span>{" "}
+              {isValidAllocation ? (
+                <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                  <Icon icon="tabler:circle-check-filled" className="w-4 h-4" />
+                  Matched
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 font-semibold text-red-600 dark:text-red-400">
+                  <Icon icon="tabler:alert-triangle-filled" className="w-4 h-4" />
+                  {variance > 0 ? `+${variance} Excess` : `${variance} Remaining`}
+                </span>
+              )}
+            </div>
+          </div>
+
           {loading ? (
             <div className="py-12 text-center text-xs text-slate-500">
               Loading original batch allocations...
@@ -249,7 +361,8 @@ export default function StockDeAllocationModal({
                         onChange={(e) =>
                           handleQuantityChange(idx, e.target.value)
                         }
-                        className="w-full text-right px-2 py-1 border border-slate-300 dark:border-slate-700 rounded text-xs bg-white dark:bg-slate-800 focus:border-red-600 outline-none font-mono"
+                        className="w-full text-right px-2 py-1 border border-slate-300 dark:border-slate-700 rounded text-xs bg-white dark:bg-slate-800"
+                        // className="w-full text-right px-2 py-1 border border-slate-300 dark:border-slate-700 rounded text-xs bg-white dark:bg-slate-800 focus:border-red-600 outline-none font-mono"
                       />
                     </td>
                   </tr>
@@ -258,24 +371,33 @@ export default function StockDeAllocationModal({
             </table>
           )}
         </div>
-
-        {/* Footer Actions */}
-        <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2 bg-slate-50 dark:bg-slate-900">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={allocations.length === 0}
-            className="px-4 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50 transition"
-          >
-            Confirm De-Allocation
-          </button>
+        {/* Modal Footer */}
+        <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            * Total return quantity across batches must equal{" "}
+            <strong>{cleanRequiredQty}</strong>.
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-xs font-medium text-slate-700 dark:text-slate-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!isValidAllocation || allocations.length === 0}
+              className={`px-4 py-1.5 rounded text-xs font-semibold text-white transition ${
+                isValidAllocation && allocations.length > 0
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-slate-400 cursor-not-allowed opacity-60"
+              }`}
+            >
+              Confirm De-Allocation
+            </button>
+          </div>
         </div>
       </div>
     </div>

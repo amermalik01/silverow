@@ -201,7 +201,7 @@ export const Login = () => {
                   {/* <Label htmlFor="email1" className="font-medium"> */}
                   <Label
                     htmlFor="email1"
-                    className="mb-1.5 block text-sm font-semibold text-slate-700"
+                    className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-700"
                   >
                     Email
                   </Label>
@@ -238,7 +238,7 @@ export const Login = () => {
                 <div>
                   <Label
                     htmlFor="password1"
-                    className="mb-1.5 block text-sm font-semibold text-slate-700"
+                    className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-700"
                   >
                     Password
                   </Label>

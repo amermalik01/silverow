@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const purchaseInvoiceLineId = searchParams.get("purchase_invoice_line_id");
+    const purchaseOrderLineId = searchParams.get("purchase_order_line_id");
     const debitNoteLineId = searchParams.get("debit_note_line_id");
 
     if (!purchaseInvoiceLineId && !debitNoteLineId) {
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
       const res = await client.query(
         `SELECT 
            ia.id, 
+           ia.purchase_order_line_id,
            ia.purchase_invoice_line_id, 
            ia.debit_note_line_id,
            ia.batch_no, 
@@ -45,13 +47,24 @@ export async function GET(req: NextRequest) {
            wl.title AS location_name
          FROM public.inventory_allocations ia
          LEFT JOIN public.warehouse_locations wl ON wl.id = ia.warehouse_location_id
+         LEFT JOIN public.purchase_invoice_lines pil ON pil.id = $3::uuid
          WHERE ia.company_id = $1 
            AND (
              ($2::uuid IS NOT NULL AND ia.debit_note_line_id = $2::uuid)
              OR 
-             ($3::uuid IS NOT NULL AND ia.purchase_invoice_line_id = $3::uuid)
+             ($4::uuid IS NOT NULL AND ia.purchase_order_line_id = $4::uuid)
+             OR 
+             ($3::uuid IS NOT NULL AND (
+               ia.purchase_invoice_line_id = $3::uuid 
+               OR (pil.purchase_order_line_id IS NOT NULL AND ia.purchase_order_line_id = pil.purchase_order_line_id)
+             ))
            )`,
-        [companyId, debitNoteLineId || null, purchaseInvoiceLineId || null],
+        [
+          companyId,
+          debitNoteLineId || null,
+          purchaseInvoiceLineId || null,
+          purchaseOrderLineId || null,
+        ],
       );
 
       return NextResponse.json({ success: true, data: res.rows });

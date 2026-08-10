@@ -85,6 +85,7 @@ export class DebitNoteService {
       SELECT
           ia.id,
           ia.debit_note_line_id,
+          ia.purchase_order_line_id,
           ia.purchase_invoice_line_id,
           ia.item_id,
           ia.warehouse_id,
@@ -98,7 +99,10 @@ export class DebitNoteService {
       FROM inventory_allocations ia
       LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
       INNER JOIN debit_note_lines dnl
-        ON (ia.debit_note_line_id = dnl.id OR (ia.purchase_invoice_line_id IS NOT NULL AND ia.purchase_invoice_line_id = dnl.purchase_invoice_line_id))
+        ON (ia.debit_note_line_id = dnl.id OR 
+        (ia.purchase_order_line_id IS NOT NULL AND ia.purchase_order_line_id = dnl.purchase_order_line_id) OR 
+        (ia.purchase_invoice_line_id IS NOT NULL AND ia.purchase_invoice_line_id = dnl.purchase_invoice_line_id) 
+        )
       WHERE dnl.debit_note_id = $1 AND ia.company_id = $2 AND ia.status = 'ACTIVE'
       `,
       [id, companyId],
@@ -110,6 +114,8 @@ export class DebitNoteService {
         .filter(
           (alloc) =>
             alloc.debit_note_line_id === line.id ||
+            (line.purchase_order_line_id &&
+              alloc.purchase_order_line_id === line.purchase_order_line_id) ||
             (line.purchase_invoice_line_id &&
               alloc.purchase_invoice_line_id === line.purchase_invoice_line_id),
         )
@@ -263,6 +269,15 @@ export class DebitNoteService {
         lineNo += 10000;
       }
 
+      if (payload.primary_address) {
+        await this.insertAddress(
+          client,
+          createdNote.id,
+          payload.primary_address,
+          companyId,
+        );
+      }
+
       if (payload.billing_address) {
         await this.insertAddress(
           client,
@@ -412,15 +427,16 @@ export class DebitNoteService {
           `
           UPDATE debit_note_lines
           SET
-            purchase_invoice_line_id = $1, line_type = $2, item_id = $3, gl_account_id = $4, description = $5,
-            warehouse_id = $6, warehouse_location_id = $7, uom_id = $8, quantity = $9,
-            unit_cost = $10, discount_type = $11, discount_value = $12, discount_amount = $13,
-            vat_percent = $14, vat_amount = $15, net_amount = $16, gross_amount = $17,
-            line_no = $18, updated_at = now()
-          WHERE id = $19
+            purchase_order_line_id = $1, purchase_invoice_line_id=$2, line_type = $3, item_id = $4, gl_account_id = $5, description = $6,
+            warehouse_id = $7, warehouse_location_id = $8, uom_id = $9, quantity = $10,
+            unit_cost = $11, discount_type = $12, discount_value = $13, discount_amount = $14,
+            vat_percent = $15, vat_amount = $16, net_amount = $17, gross_amount = $18,
+            line_no = $19, updated_at = now()
+          WHERE id = $20
           RETURNING *
           `,
           [
+            line.purchase_order_line_id || null,
             line.purchase_invoice_line_id || null,
             line.line_type,
             line.item_id || null,
@@ -462,6 +478,10 @@ export class DebitNoteService {
       [id],
     );
 
+    if (payload.primary_address) {
+      await this.insertAddress(client, id, payload.primary_address, companyId);
+    }
+
     if (payload.billing_address) {
       await this.insertAddress(client, id, payload.billing_address, companyId);
     }
@@ -498,7 +518,7 @@ export class DebitNoteService {
     const res = await client.query(
       `
       INSERT INTO debit_note_lines (
-        company_id, debit_note_id, purchase_invoice_line_id, line_no, line_type,
+        company_id, debit_note_id, purchase_order_line_id, purchase_invoice_line_id, line_no, line_type,
         item_id, gl_account_id, description, warehouse_id, 
         warehouse_location_id, uom_id, quantity, unit_cost,
         discount_type, discount_value, discount_amount,
@@ -507,13 +527,14 @@ export class DebitNoteService {
       )
       VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 
-        $13, $14, $15, $16, $17, $18, $19, $20, false, now()
+        $13, $14, $15, $16, $17, $18, $19, $20, $21, false, now()
       )
       RETURNING *
       `,
       [
         companyId,
         debitNoteId,
+        line.purchase_order_line_id || null,
         line.purchase_invoice_line_id || null,
         lineNo,
         line.line_type,
@@ -646,7 +667,7 @@ export class DebitNoteService {
 
       // Fetch Debit Note lines
       const linesResult = await client.query(
-        `SELECT id, item_id, warehouse_id, warehouse_location_id, quantity, line_no, purchase_invoice_line_id
+        `SELECT id, item_id, warehouse_id, warehouse_location_id, quantity, line_no, purchase_order_line_id, purchase_invoice_line_id
          FROM debit_note_lines 
          WHERE debit_note_id = $1 AND line_type = 'ITEM' AND is_deleted = false`,
         [debitNoteId],
@@ -657,8 +678,8 @@ export class DebitNoteService {
         const allocResult = await client.query(
           `SELECT id, allocated_quantity, batch_no, bin_code, warehouse_location_id, expiry_date, unit_cost
            FROM inventory_allocations
-           WHERE company_id = $1 AND (debit_note_line_id = $2 OR purchase_invoice_line_id = $3) AND status = 'ACTIVE'`,
-          [companyId, line.id, line.purchase_invoice_line_id],
+           WHERE company_id = $1 AND (debit_note_line_id = $2 OR purchase_order_line_id = $3 OR purchase_invoice_line_id = $4) AND status = 'ACTIVE'`,
+          [companyId, line.id, line.purchase_order_line_id, line.purchase_invoice_line_id],
         );
 
         let remainingToReturn = Number(line.quantity);

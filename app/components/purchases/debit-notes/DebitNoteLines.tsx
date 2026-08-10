@@ -32,6 +32,7 @@ export type DebitNoteLineUI = DebitNoteLine & {
   reserved_quantity?: number;
   available_stock?: number;
   is_allocated?: boolean;
+  purchase_order_line_id?: string;
   purchase_invoice_line_id?: string;
   allocations?: StockDeAllocationRecord[];
 };
@@ -644,8 +645,10 @@ export default function DebitNoteLines({
               setIsDeAllocModalOpen(false);
               setActiveDeAllocRowKey(null);
             }}
+            requiredQuantity={activeDeAllocLine.quantity || 0}
             debitNoteLineId={activeDeAllocLine.id}
-            purchaseInvoiceLineId={activeDeAllocLine.purchase_invoice_line_id} // mapped from API
+            purchaseOrderLineId={activeDeAllocLine.purchase_order_line_id}
+            purchaseInvoiceLineId={activeDeAllocLine.purchase_invoice_line_id}
             initialAllocations={activeDeAllocLine.allocations}
             itemCode={activeDeAllocLine.item_code}
             itemName={activeDeAllocLine.item_name}

@@ -72,6 +72,8 @@ export const DebitNoteLineSchema = z
   .object({
     id: looseUuid,
     debit_note_id: looseUuid,
+    purchase_order_line_id: looseUuid,
+    purchase_invoice_line_id: looseUuid,
     line_no: z.coerce.number().optional(),
     line_type: z.enum(["ITEM", "GL_ACCOUNT", "COMMENT"]),
     item_id: z.string().uuid().optional().nullable(),
