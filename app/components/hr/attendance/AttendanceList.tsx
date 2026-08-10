@@ -37,7 +37,7 @@ export default function AttendanceList() {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href="./attendance/new">
-            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
             Create
           </Link>
         </Button>

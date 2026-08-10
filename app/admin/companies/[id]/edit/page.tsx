@@ -11,8 +11,8 @@ export interface Company {
   id: string;
   name: string;
   slug: string;
-  plan: 'free' | 'pro' | 'enterprise';
-  status: 'active' | 'suspended';
+  plan: "free" | "pro" | "enterprise";
+  status: "active" | "suspended";
   created_at: string;
   updated_at: string;
 }
@@ -26,7 +26,7 @@ export default function EditCompanyPage() {
 
   useEffect(() => {
     fetch(`/api/admin/companies`) // In a real app, create a GET /api/admin/companies/[id]
-      .then(res => res.json())
+      .then((res) => res.json())
       .then((data: Company[]) => {
         const found = data.find((c) => c.id === id);
         setCompany(found || null);
@@ -52,16 +52,20 @@ export default function EditCompanyPage() {
       router.refresh();
     } else {
       setSaving(false);
-    //   alert("Failed to update");
+      //   alert("Failed to update");
     }
   }
 
   if (loading) return <div className="p-10 text-center">Loading...</div>;
 
   return (
-    <div className="max-w-xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold mb-8">Edit Company: {company?.name}</h1>
-      
+    <div className="space-y-6 container mx-auto p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <h1 className="text-2xl font-bold mb-8">
+          Edit Company: {company?.name}
+        </h1>
+      </div>
+
       <form onSubmit={handleUpdate} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="name">Company Name</Label>
@@ -71,15 +75,18 @@ export default function EditCompanyPage() {
         <div className="space-y-2">
           <Label>Subdomain (Cannot be changed)</Label>
           <div className="flex gap-2 items-center">
-            <Input 
-              id="slug" 
-              name="slug" 
-              value={company?.slug} disabled
-              placeholder="acme" 
-              required 
-              pattern="^[a-z0-9-]+$" 
+            <Input
+              id="slug"
+              name="slug"
+              value={company?.slug}
+              disabled
+              placeholder="acme"
+              required
+              pattern="^[a-z0-9-]+$"
             />
-            <span className="text-muted-foreground text-xs font-mono">.silverow.com</span>
+            <span className="text-muted-foreground text-xs font-mono">
+              .silverow.com
+            </span>
           </div>
           <p className="text-[10px] text-gray-400">
             Preview: https://{company?.slug || "your-subdomain"}.silverow.com
@@ -89,7 +96,11 @@ export default function EditCompanyPage() {
 
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <select name="status" defaultValue={company?.status} className="w-full h-10 border rounded-md px-3 ">
+          <select
+            name="status"
+            defaultValue={company?.status}
+            className="w-full h-10 border rounded-md px-3 "
+          >
             <option value="active">Active</option>
             <option value="suspended">Suspended</option>
           </select>
@@ -97,7 +108,11 @@ export default function EditCompanyPage() {
 
         <div className="space-y-2">
           <Label htmlFor="plan">Plan</Label>
-          <select name="plan" defaultValue={company?.plan} className="w-full h-10 border rounded-md px-3 ">
+          <select
+            name="plan"
+            defaultValue={company?.plan}
+            className="w-full h-10 border rounded-md px-3 "
+          >
             <option value="free">Free</option>
             <option value="pro">Pro</option>
             <option value="enterprise">Enterprise</option>
@@ -109,24 +124,25 @@ export default function EditCompanyPage() {
           <Button variant="ghost" onClick={() => router.back()}>Cancel</Button>
         </div> */}
 
-        <div className="flex gap-2 pt-4"> {/* Adjusted gap from 4 to 2 to match previous button group spacing */}
-  <Button 
-    type="submit" 
-    disabled={saving}
-    className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
-  >
-    {saving ? "Saving..." : "Save Changes"}
-  </Button>
-  
-  <Button 
-    type="button" // Always good practice to explicitly define type="button" to prevent accidental submits
-    variant="outline" // Swapped from "ghost" to "outline" to perfectly match the "Cancel" action look from your other screens
-    onClick={() => router.back()}
-    className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
-  >
-    Cancel
-  </Button>
-</div>
+        <div className="flex gap-2 pt-4">
+          {" "}
+          {/* Adjusted gap from 4 to 2 to match previous button group spacing */}
+          <Button
+            type="submit"
+            disabled={saving}
+            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
+          <Button
+            type="button" // Always good practice to explicitly define type="button" to prevent accidental submits
+            variant="outline" // Swapped from "ghost" to "outline" to perfectly match the "Cancel" action look from your other screens
+            onClick={() => router.back()}
+            className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
+          >
+            Cancel
+          </Button>
+        </div>
       </form>
     </div>
   );

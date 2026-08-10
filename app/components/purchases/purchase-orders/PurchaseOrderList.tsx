@@ -8,6 +8,8 @@ import { PurchaseOrder } from "@/types/purchase-order";
 import PurchaseOrderStatusBadge from "./PurchaseOrderStatusBadge";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 type Props = {
   slug: string;
@@ -113,7 +115,7 @@ export default function PurchaseOrderList({ slug }: Props) {
   return (
     <div className="space-y-6 container mx-auto p-4">
       {/* Header Controls Element Block */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">Purchase Orders</h2>
           <p className="text-xs text-gray-500">
@@ -127,7 +129,7 @@ export default function PurchaseOrderList({ slug }: Props) {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={`/${slug}/purchases/purchase-orders/create`}>
-            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            {/* <Icon icon="solar:add-circle-linear" width={32} height={32} /> */}+
             Create
           </Link>
         </Button>
@@ -171,6 +173,32 @@ export default function PurchaseOrderList({ slug }: Props) {
         </div>
 
         <div className="flex items-center gap-2 md:col-span-2">
+          <DatePicker
+            value={startDate ? new Date(`${startDate}T00:00:00`) : undefined}
+            onChange={(date) => {
+              setStartDate(date ? format(date, "yyyy-MM-dd") : "");
+              setPage(1);
+            }}
+            maxDate={endDate ? new Date(`${endDate}T00:00:00`) : undefined}
+            placeholder="Start date"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
+          />
+
+          <span className="text-xs text-gray-400 shrink-0">to</span>
+
+          <DatePicker
+            value={endDate ? new Date(`${endDate}T00:00:00`) : undefined}
+            onChange={(date) => {
+              setEndDate(date ? format(date, "yyyy-MM-dd") : "");
+              setPage(1);
+            }}
+            minDate={startDate ? new Date(`${startDate}T00:00:00`) : undefined}
+            placeholder="End date"
+            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
+          />
+        </div>
+
+        {/* <div className="flex items-center gap-2 md:col-span-2">
           <input
             type="date"
             value={startDate}
@@ -190,7 +218,7 @@ export default function PurchaseOrderList({ slug }: Props) {
             }}
             className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Primary Data Display Frame */}

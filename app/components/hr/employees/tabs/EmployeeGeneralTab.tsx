@@ -4,6 +4,8 @@
 
 import { useEffect, useState } from "react";
 import { Employee } from "@/types/hr/employee";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO, startOfDay } from "date-fns";
 
 type Option = { id: string; name: string };
 type EmployeeOption = {
@@ -99,13 +101,24 @@ export default function EmployeeGeneralTab({ employee, setEmployee }: Props) {
 
       <div>
         <label className={labelClass}>Hire Date</label>
-        <input
+        {/* <input
           type="date"
           value={employee.hire_date || ""}
           onChange={(e) =>
             setEmployee({ ...employee, hire_date: e.target.value })
           }
           className={inputClass}
+        /> */}
+
+        <DatePicker
+          value={employee.hire_date ? parseISO(employee.hire_date) : undefined}
+          containerClassName="col-span-8"
+          onChange={(date) =>
+            setEmployee({
+              ...employee,
+              hire_date: date ? format(date, "yyyy-MM-dd") : "",
+            })
+          }
         />
       </div>
 

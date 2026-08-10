@@ -2,8 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { LeaveRequest } from "@/types/hr/leave";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO, startOfDay } from "date-fns";
 
 type EmployeeOption = {
   id: string;
@@ -23,8 +24,10 @@ export default function LeaveList() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [employeeId, setEmployeeId] = useState("");
   const [leaveTypeId, setLeaveTypeId] = useState("");
+
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
   const [reason, setReason] = useState("");
   const [status, setStatus] = useState("pending");
 
@@ -123,8 +126,15 @@ export default function LeaveList() {
     setEditingId(row.id || null);
     setEmployeeId(row.employee_id);
     setLeaveTypeId(row.leave_type_id);
-    setStartDate(row.start_date);
-    setEndDate(row.end_date);
+
+    // Normalize API date values to yyyy-MM-dd
+    setStartDate(
+      row.start_date ? format(new Date(row.start_date), "yyyy-MM-dd") : "",
+    );
+    setEndDate(
+      row.end_date ? format(new Date(row.end_date), "yyyy-MM-dd") : "",
+    );
+
     setReason(row.reason || "");
     setStatus(row.status || "pending");
   };
@@ -138,6 +148,11 @@ export default function LeaveList() {
 
     loadData();
   };
+
+  const startDateValue = startDate ? parseISO(startDate) : undefined;
+  const endDateValue = endDate ? parseISO(endDate) : undefined;
+
+  const today = startOfDay(new Date());
 
   return (
     <div className="space-y-6">
@@ -184,25 +199,45 @@ export default function LeaveList() {
           <option value="rejected">Rejected</option>
         </select>
 
-        <input
+        {/* <input
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
           className="border p-2 rounded"
+        /> */}
+        <DatePicker
+          value={startDateValue}
+          onChange={(date) => {
+            const value = date ? format(date, "yyyy-MM-dd") : "";
+            setStartDate(value);
+            if (endDate && date) {
+              const currentEndDate = parseISO(endDate);
+              if (date > currentEndDate) {
+                setEndDate("");
+              }
+            }
+          }}
+          maxDate={endDateValue || today}
+          className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
-        {/* <DatePicker
-                            value={startDate}
-                            onChange={(date) =>
-                              setStartDate( date ? format(date, "yyyy-MM-dd") : "")
-                            }
-                          /> */}
 
-        <input
+        <span className="text-emerald-300 font-medium self-center"> to </span>
+        <DatePicker
+          value={endDateValue}
+          onChange={(date) =>
+            setEndDate(date ? format(date, "yyyy-MM-dd") : "")
+          }
+          minDate={startDateValue}
+          maxDate={today}
+          className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        />
+
+        {/* <input
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
           className="border p-2 rounded"
-        />
+        /> */}
 
         <input
           value={reason}
@@ -219,25 +254,16 @@ export default function LeaveList() {
         </button>
       </div>
 
-      {/* TABLE */}
-
       <table className="w-full border text-xs">
         <thead>
           <tr>
             <th className="p-2 text-left">Leave No</th>
-
             <th className="p-2 text-left">Employee</th>
-
             <th className="p-2 text-left">Leave Type</th>
-
             <th className="p-2 text-left">From</th>
-
             <th className="p-2 text-left">To</th>
-
             <th className="p-2 text-left">Days</th>
-
             <th className="p-2 text-left">Status</th>
-
             <th className="p-2 text-center">Action</th>
           </tr>
         </thead>
@@ -246,17 +272,11 @@ export default function LeaveList() {
           {data.map((row) => (
             <tr key={row.id} className="border-t">
               <td className="p-2">{row.leave_no}</td>
-
               <td className="p-2">{row.employee_name}</td>
-
               <td className="p-2">{row.leave_type_name}</td>
-
               <td className="p-2">{row.start_date}</td>
-
               <td className="p-2">{row.end_date}</td>
-
               <td className="p-2">{row.total_days}</td>
-
               <td className="p-2">{row.status}</td>
 
               <td className="p-2 text-center space-x-2">
@@ -278,60 +298,3 @@ export default function LeaveList() {
     </div>
   );
 }
-
-/* "use client";
-
-import { useEffect, useState } from "react";
-
-import { LeaveRequest } from "@/types/hr/leave";
-
-export default function LeaveList() {
-  const [data, setData] = useState<LeaveRequest[]>([]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      const res = await fetch("/api/hr/leaves");
-
-      const json = await res.json();
-
-      setData(json.data || []);
-    };
-    loadData();
-  }, []);
-
-  return (
-    <div className="border rounded p-4">
-      <table className="w-full border text-xs">
-        <thead>
-          <tr>
-            <th className="p-2 text-left">Leave No</th>
-
-            <th className="p-2 text-left">Employee</th>
-
-            <th className="p-2 text-left">From</th>
-
-            <th className="p-2 text-left">To</th>
-
-            <th className="p-2 text-left">Status</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {data.map((row) => (
-            <tr key={row.id} className="border-t">
-              <td className="p-2">{row.leave_no}</td>
-
-              <td className="p-2">{row.employee_id}</td>
-
-              <td className="p-2">{row.start_date}</td>
-
-              <td className="p-2">{row.end_date}</td>
-
-              <td className="p-2">{row.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-} */

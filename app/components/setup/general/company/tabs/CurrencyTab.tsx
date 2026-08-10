@@ -6,6 +6,9 @@ import React, { useEffect, useState } from "react";
 import CurrencyDropdown from "@/app/components/common/CurrencyDropdown";
 import { CompanyCurrency } from "@/types/currency";
 
+import { format } from "date-fns";
+import { DatePicker } from "@/components/ui/date-picker";
+
 interface RateHistoryItem {
   id: string;
   start_date: string;
@@ -27,7 +30,9 @@ export default function CurrencyTab() {
   const [currencyCode, setCurrencyCode] = useState("");
   const [currencyName, setCurrencyName] = useState("");
   const [rate, setRate] = useState<number | "">(1);
-  const [startDate, setStartDate] = useState("2020-06-23");
+  // const [startDate, setStartDate] = useState("2020-06-23");
+
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [saving, setSaving] = useState(false);
 
   // Conversion History Modal State
@@ -274,14 +279,19 @@ export default function CurrencyTab() {
               <label className="font-medium text-gray-700">
                 Start Date <span className="text-red-500">*</span>
               </label>
-              <div className="col-span-2 relative">
-                <input
+              <div className="col-span-2">
+                <DatePicker
+                  value={startDate}
+                  onChange={setStartDate}
+                  className="w-full border px-2.5 py-1.5 rounded focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                />
+                {/* <input
                   type="date"
                   required
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="w-full border px-2.5 py-1.5 rounded focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                />
+                /> */}
               </div>
             </div>
           </div>

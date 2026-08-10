@@ -4,6 +4,8 @@
 
 import { useState } from "react";
 import { WarehouseLocation } from "@/types/warehouse";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO } from "date-fns";
 
 type Props = {
   warehouseId: string;
@@ -109,12 +111,24 @@ export default function LocationForm({
             <label className={labelClass}>
               Start Date <span className="text-rose-500">*</span>
             </label>
-            <input
+            {/* <input
               type="date"
               value={form.start_date}
               onChange={(e) => setForm({ ...form, start_date: e.target.value })}
               disabled={isReadOnly}
               className={inputClass}
+            /> */}
+            <DatePicker
+              value={form.start_date ? parseISO(form.start_date) : undefined}
+              onChange={(date) =>
+                setForm({
+                  ...form,
+                  start_date: date ? format(date, "yyyy-MM-dd") : "",
+                })
+              }
+              disabled={isReadOnly}
+              containerClassName="col-span-8"
+              className="w-full bg-white border border-slate-300 text-slate-900 px-2 py-1 rounded text-xs transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>

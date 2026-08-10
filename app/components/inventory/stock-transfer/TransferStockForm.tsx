@@ -8,6 +8,8 @@ import ItemLookupModal, {
   ItemLookupRecord,
 } from "../../shared/modals/ItemLookupModal";
 import StockAllocationModal from "./StockAllocationModal";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 export interface AllocationPayload {
   production_date: string;

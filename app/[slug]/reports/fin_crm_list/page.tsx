@@ -8,6 +8,8 @@ import { Loader2, Search, Printer, X } from "lucide-react";
 import CRMLookupModal, {
   CRMLookupItem,
 } from "@/app/components/shared/modals/CRMLookupModal";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 interface AddressPayload {
   id: string;
@@ -30,7 +32,7 @@ interface CRMReportGroup {
 }
 
 export default function LegacyCRMListing() {
-  const [dateAsAt, setDateAsAt] = useState("2026-06-14");
+  const [dateAsAt, setDateAsAt] = useState<Date | undefined>(new Date());
   const [selectedCRMs, setSelectedCRMs] = useState<CRMLookupItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -59,7 +61,7 @@ export default function LegacyCRMListing() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          dateAsAt,
+          dateAsAt: dateAsAt ? format(dateAsAt, "yyyy-MM-dd") : "",
           crmIds: selectedCRMs.map((c) => c.id),
           statusFilters,
           displayFilters,
@@ -84,7 +86,7 @@ export default function LegacyCRMListing() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          dateAsAt,
+          dateAsAt: dateAsAt ? format(dateAsAt, "yyyy-MM-dd") : "",
           crmIds: selectedCRMs.map((c) => c.id),
           statusFilters,
           displayFilters,
@@ -122,10 +124,17 @@ export default function LegacyCRMListing() {
               <label className="text-xs font-bold w-24 text-slate-200">
                 Date as at <span className="text-red-400">*</span>
               </label>
-              <input
+              {/* <input
                 type="date"
                 value={dateAsAt}
                 onChange={(e) => setDateAsAt(e.target.value)}
+                className="bg-white text-slate-900 px-2 py-1 text-xs rounded border-0 focus:outline-none w-full max-w-[180px]"
+              /> */}
+
+              <DatePicker
+                value={dateAsAt}
+                containerClassName="col-span-8"
+                onChange={setDateAsAt}
                 className="bg-white text-slate-900 px-2 py-1 text-xs rounded border-0 focus:outline-none w-full max-w-[180px]"
               />
             </div>
@@ -288,7 +297,8 @@ export default function LegacyCRMListing() {
                   CRM Listing
                 </h1>
                 <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                  As-of Target Evaluation Constraint: {dateAsAt}
+                  As-of Target Evaluation Constraint:{" "}
+                  {dateAsAt ? format(dateAsAt, "yyyy-MM-dd") : ""}
                 </p>
               </div>
               <div className="text-right">

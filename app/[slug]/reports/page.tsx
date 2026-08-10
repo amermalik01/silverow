@@ -130,10 +130,8 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-6 container mx-auto p-2">
-    
-      {/* Upper Navigation Tracking Bar */}
-      <div className="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
+    <div className="space-y-6 container mx-auto p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div className="flex items-center space-x-2 text-xs text-slate-500">
           <span>Reports</span>
           <span>/</span>

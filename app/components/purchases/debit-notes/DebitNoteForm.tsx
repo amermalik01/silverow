@@ -577,7 +577,7 @@ export const DebitNoteForm: React.FC<Props> = ({
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar">
           {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
             <button

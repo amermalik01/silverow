@@ -118,7 +118,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
   return (
     <div className="space-y-6 container mx-auto p-4">
       {/* Top Heading Panel */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h1 className="text-2xl font-bold">Sales Returns & Credit Notes</h1>
           <p className="text-xs text-gray-500 mt-0.5">
@@ -138,7 +138,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={`/${slug}/sales/returns/new`}>
-            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
             Create
           </Link>
         </Button>

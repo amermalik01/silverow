@@ -17,6 +17,8 @@ import SalespersonLookupModal, {
 import SupplierLookupModal, {
   SupplierLookupItem,
 } from "@/app/components/shared/modals/SupplierLookupModal";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 export type TicketStage =
   | "Open"
@@ -393,7 +395,9 @@ export default function SupportTicketFormView({ slug, id }: Props) {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className={labelStyle}>Customer No. <span className="text-red-500">*</span></label>
+              <label className={labelStyle}>
+                Customer No. <span className="text-red-500">*</span>
+              </label>
               <div className="flex gap-1 w-full">
                 <input
                   type="text"
@@ -657,21 +661,52 @@ export default function SupportTicketFormView({ slug, id }: Props) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className={labelStyle}>Open Date</label>
-              <input
+
+              <DatePicker
+                value={
+                  ticket.open_date
+                    ? new Date(`${ticket.open_date}T00:00:00`)
+                    : undefined
+                }
+                onChange={(date) =>
+                  updateField(
+                    "open_date",
+                    date ? format(date, "yyyy-MM-dd") : "",
+                  )
+                }
+                className={inputStyle}
+              />
+
+              {/* <input
                 type="date"
                 className={inputStyle}
                 value={ticket.open_date}
                 onChange={(e) => updateField("open_date", e.target.value)}
-              />
+              /> */}
             </div>
 
             <div className="flex items-center justify-between">
               <label className={labelStyle}>Close Date</label>
-              <input
+              {/* <input
                 type="date"
                 className={inputStyle}
                 value={ticket.close_date}
                 onChange={(e) => updateField("close_date", e.target.value)}
+              /> */}
+
+              <DatePicker
+                value={
+                  ticket.close_date
+                    ? new Date(`${ticket.close_date}T00:00:00`)
+                    : undefined
+                }
+                onChange={(date) =>
+                  updateField(
+                    "close_date",
+                    date ? format(date, "yyyy-MM-dd") : "",
+                  )
+                }
+                className={inputStyle}
               />
             </div>
 

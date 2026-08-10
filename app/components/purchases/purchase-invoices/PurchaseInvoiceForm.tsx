@@ -163,7 +163,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
   const isFormDisabled = isReadOnly || isCompleted;
 
   return (
-    <div className="space-y-4 w-full max-w-[100vw] px-4 py-2 mx-auto overflow-x-auto">
+    <div className="space-y-4 w-full max-w-[100vw] py-2 mx-auto overflow-x-auto">
       <div className="p-3 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
         <span className="flex items-center gap-2">
           <Icon icon="tabler:eye" className="w-4 h-4 text-blue-600" />
@@ -188,7 +188,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
       )} */}
 
       {/* Header Tabs */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar">
           {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
             <button

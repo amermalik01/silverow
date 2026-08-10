@@ -2,8 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { Attendance } from "@/types/hr/attendance";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO, startOfDay } from "date-fns";
 
 type Props = {
   id: string;
@@ -15,9 +16,7 @@ export default function AttendanceRecord({ id }: Props) {
   useEffect(() => {
     const loadData = async () => {
       const res = await fetch(`/api/hr/attendance/${id}`);
-
       const json = await res.json();
-
       setData(json);
     };
     loadData();
@@ -46,7 +45,7 @@ export default function AttendanceRecord({ id }: Props) {
       <h1 className="text-xl font-semibold">Attendance Record</h1>
 
       <div className="grid grid-cols-2 gap-4">
-        <input
+        {/* <input
           type="date"
           value={data.attendance_date}
           onChange={(e) =>
@@ -56,6 +55,19 @@ export default function AttendanceRecord({ id }: Props) {
             })
           }
           className="border p-2 rounded"
+        /> */}
+
+        <DatePicker
+          value={
+            data.attendance_date ? parseISO(data.attendance_date) : undefined
+          }
+          containerClassName="col-span-8"
+          onChange={(date) =>
+            setData({
+              ...data,
+              attendance_date: date ? format(date, "yyyy-MM-dd") : "",
+            })
+          }
         />
 
         <input

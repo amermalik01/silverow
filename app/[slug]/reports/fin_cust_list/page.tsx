@@ -8,6 +8,8 @@ import { Loader2, Search, FileText, Printer, X, RefreshCw } from "lucide-react";
 import CustomerLookupModal, {
   CustomerLookupItem,
 } from "@/app/components/shared/modals/CustomerLookupModal";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 interface AddressPayload {
   id: string;
@@ -30,7 +32,7 @@ interface CustomerReportGroup {
 }
 
 export default function LegacyCustomerListing() {
-  const [dateAsAt, setDateAsAt] = useState("2026-06-14");
+  const [dateAsAt, setDateAsAt] = useState<Date | undefined>(new Date());
   const [selectedCustomers, setSelectedCustomers] = useState<
     CustomerLookupItem[]
   >([]);
@@ -126,10 +128,17 @@ export default function LegacyCustomerListing() {
               <label className="text-xs font-bold w-24 text-slate-200">
                 Date as at <span className="text-red-400">*</span>
               </label>
-              <input
+              {/* <input
                 type="date"
                 value={dateAsAt}
                 onChange={(e) => setDateAsAt(e.target.value)}
+                className="bg-white text-slate-900 px-2 py-1 text-xs rounded border-0 focus:outline-none w-full max-w-[180px]"
+              /> */}
+
+              <DatePicker
+                value={dateAsAt}
+                containerClassName="col-span-8"
+                onChange={setDateAsAt}
                 className="bg-white text-slate-900 px-2 py-1 text-xs rounded border-0 focus:outline-none w-full max-w-[180px]"
               />
             </div>
@@ -326,7 +335,8 @@ export default function LegacyCustomerListing() {
                   Customer Listing
                 </h1>
                 <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                  As-of Target Evaluation Constraint: {dateAsAt}
+                  As-of Target Evaluation Constraint:{" "}
+                  {dateAsAt ? format(dateAsAt, "yyyy-MM-dd") : ""}
                 </p>
               </div>
               <div className="text-right">

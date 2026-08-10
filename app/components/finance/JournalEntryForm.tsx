@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { JournalLine } from "@/types/finance";
 
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO, startOfDay } from "date-fns";
+
 type Props = {
   slug: string;
   journalId?: string;
@@ -40,7 +43,7 @@ export default function JournalEntryForm({
   ]);
 
   const [header, setHeader] = useState({
-    entry_date: "",
+    entry_date: format(startOfDay(new Date()), "yyyy-MM-dd"),
     reference: "",
     description: "",
   });
@@ -58,8 +61,16 @@ export default function JournalEntryForm({
       const loadJournal = fetch(`/api/finance/journal/${journalId}`)
         .then((res) => res.json())
         .then((data) => {
+          // setHeader({
+          //   entry_date: data.entry_date,
+          //   reference: data.reference || "",
+          //   description: data.description || "",
+          // });
+
           setHeader({
-            entry_date: data.entry_date,
+            entry_date: data.entry_date
+              ? format(parseISO(data.entry_date), "yyyy-MM-dd")
+              : "",
             reference: data.reference || "",
             description: data.description || "",
           });
@@ -219,12 +230,24 @@ export default function JournalEntryForm({
       {/* HEADER */}
 
       <div className="grid grid-cols-3 gap-4">
-        <input
+        {/* <input
           type="date"
           value={header.entry_date}
           onChange={(e) => setHeader({ ...header, entry_date: e.target.value })}
           className="border p-2 rounded"
           required
+        /> */}
+
+        <DatePicker
+          value={header.entry_date ? parseISO(header.entry_date) : undefined}
+          containerClassName="col-span-8"
+          maxDate={new Date()}
+          onChange={(date) =>
+            setHeader({
+              ...header,
+              entry_date: date ? format(date, "yyyy-MM-dd") : "",
+            })
+          }
         />
 
         <input

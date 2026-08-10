@@ -337,17 +337,18 @@ export default function DebitNoteLines({
                         <button
                           type="button"
                           disabled={isReadonly}
+                          title={line.item_name}
                           onClick={() => setItemIndex(index)}
                           className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
                         >
                           {line.item_code || "Select Item"}
                         </button>
 
-                        {line.item_name && (
+                        {/* {line.item_name && (
                           <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
                             {line.item_name}
                           </div>
-                        )}
+                        )} */}
                       </div>
                     )}
 
@@ -356,17 +357,18 @@ export default function DebitNoteLines({
                         <button
                           type="button"
                           disabled={isReadonly}
+                          title={line.account_name}
                           onClick={() => setGlIndex(index)}
                           className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate"
                         >
                           {line.account_code || "Select GL"}
                         </button>
 
-                        {line.account_name && (
+                        {/* {line.account_name && (
                           <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
                             {line.account_name}
                           </div>
-                        )}
+                        )} */}
                       </div>
                     )}
                   </td>
@@ -378,8 +380,8 @@ export default function DebitNoteLines({
                       onChange={(e) =>
                         updateLine(index, "description", e.target.value)
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-xs"
-                      rows={2}
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded w-full text-xs px-2 py-1.5"
+                      rows={1}
                     />
                   </td>
 

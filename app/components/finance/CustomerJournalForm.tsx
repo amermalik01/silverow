@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CustomerJournal, CustomerJournalLine } from "@/types/finance";
 
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO, startOfDay } from "date-fns";
+
 type Customer = { id: string; name: string };
 type Account = { id: string; code: string; name: string };
 
@@ -21,8 +24,16 @@ export default function CustomerJournalForm({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
 
+  // const [form, setForm] = useState({
+  //   entry_date: "",
+  //   customer_id: "",
+  //   account_id: "",
+  //   amount: "",
+  //   type: "RECEIPT",
+  // });
+
   const [form, setForm] = useState({
-    entry_date: "",
+    entry_date: format(startOfDay(new Date()), "yyyy-MM-dd"),
     customer_id: "",
     account_id: "",
     amount: "",
@@ -79,11 +90,22 @@ export default function CustomerJournalForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <input
+      {/* <input
         type="date"
         value={form.entry_date}
         onChange={(e) => setForm({ ...form, entry_date: e.target.value })}
         required
+      /> */}
+
+      <DatePicker
+        value={form.entry_date ? parseISO(form.entry_date) : undefined}
+        containerClassName="col-span-8"
+        onChange={(date) =>
+          setForm({
+            ...form,
+            entry_date: date ? format(date, "yyyy-MM-dd") : "",
+          })
+        }
       />
 
       <select

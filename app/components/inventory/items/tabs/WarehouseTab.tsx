@@ -9,6 +9,9 @@ import type {
   StorageLocationOption,
 } from "@/types/inventory";
 
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO } from "date-fns";
+
 type Props = {
   warehouses?: ItemWarehouseDraft[]; // Made optional to prevent runtime crashes
   setWarehouses: React.Dispatch<React.SetStateAction<ItemWarehouseDraft[]>>;
@@ -67,7 +70,7 @@ export default function WarehouseTab({
         cost: "0.00",
         is_default: currentList.length === 0,
         status: 1,
-        start_date: new Date().toISOString().split("T")[0],
+        start_date: format(new Date(), "yyyy-MM-dd"),
         comments: "",
       },
     ]);
@@ -266,6 +269,25 @@ export default function WarehouseTab({
                   <label className="font-medium text-slate-700 dark:text-slate-300">
                     Start Date
                   </label>
+
+                  <DatePicker
+                    value={w.start_date ? parseISO(w.start_date) : undefined}
+                    onChange={(date) =>
+                      updateWarehouseRow(
+                        idx,
+                        "start_date",
+                        date ? format(date, "yyyy-MM-dd") : "",
+                      )
+                    }
+                    disabled={isReadonly}
+                    className="col-span-2 w-full bg-white text-slate-900 border border-slate-300 dark:border-slate-700 dark:bg-slate-900 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="font-medium text-slate-700 dark:text-slate-300">
+                    Start Date
+                  </label>
                   <input
                     type="date"
                     disabled={isReadonly}
@@ -275,7 +297,7 @@ export default function WarehouseTab({
                     }
                     className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                   />
-                </div>
+                </div> */}
 
                 <div className="grid grid-cols-3 gap-3 items-start">
                   <label className="font-medium text-slate-700 dark:text-slate-300 pt-2">

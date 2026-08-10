@@ -11,6 +11,9 @@ import CustomerLookupModal, {
   CustomerLookupItem,
 } from "@/app/components/shared/modals/CustomerLookupModal";
 
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, startOfDay } from "date-fns";
+
 type ReportLineItem = {
   id: string;
   order_date: string;
@@ -30,8 +33,14 @@ export default function UnpostedSalesOrdersReport() {
   const [reportData, setReportData] = useState<ReportLineItem[]>([]);
 
   // Filter Target Controls Hooks
-  const [fromDate, setFromDate] = useState("2026-01-01");
-  const [toDate, setToDate] = useState("2026-06-14");
+  // const [fromDate, setFromDate] = useState("2026-01-01");
+  // const [toDate, setToDate] = useState("2026-06-14");
+
+  const [fromDate, setFromDate] = useState<Date | undefined>();
+  const [toDate, setToDate] = useState<Date | undefined>(
+    startOfDay(new Date()),
+  );
+
   const [reportType, setReportType] = useState("By Order Date");
 
   // Selection Arrays for Lookup IDs
@@ -56,8 +65,16 @@ export default function UnpostedSalesOrdersReport() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (fromDate) params.append("fromDate", fromDate);
-      if (toDate) params.append("toDate", toDate);
+      // if (fromDate) params.append("fromDate", fromDate);
+      // if (toDate) params.append("toDate", toDate);
+
+      if (fromDate) {
+        params.append("fromDate", format(fromDate, "yyyy-MM-dd"));
+      }
+
+      if (toDate) {
+        params.append("toDate", format(toDate, "yyyy-MM-dd"));
+      }
       params.append("reportType", reportType);
 
       if (selectedCustomerIds.length > 0)
@@ -84,9 +101,19 @@ export default function UnpostedSalesOrdersReport() {
     }
   };
 
+  // const handleClearFilters = () => {
+  //   setFromDate("");
+  //   setToDate("2026-06-14");
+  //   setReportType("By Order Date");
+  //   setSelectedCustomerIds([]);
+  //   setSelectedSalespersonIds([]);
+  //   setSelectedOrderStageIds([]);
+  //   setReportData([]);
+  // };
+
   const handleClearFilters = () => {
-    setFromDate("");
-    setToDate("2026-06-14");
+    setFromDate(undefined);
+    setToDate(startOfDay(new Date()));
     setReportType("By Order Date");
     setSelectedCustomerIds([]);
     setSelectedSalespersonIds([]);
@@ -102,10 +129,20 @@ export default function UnpostedSalesOrdersReport() {
     });
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB"); // Output format: DD/MM/YYYY
+  // const formatDate = (dateString: string | null) => {
+  //   if (!dateString) return "";
+  //   const date = new Date(dateString);
+  //   return date.toLocaleDateString("en-GB"); // Output format: DD/MM/YYYY
+  // };
+
+  const formatDate = (date: Date | string | null | undefined) => {
+    if (!date) return "";
+
+    if (date instanceof Date) {
+      return date.toLocaleDateString("en-GB");
+    }
+
+    return new Date(date).toLocaleDateString("en-GB");
   };
 
   return (
@@ -119,7 +156,21 @@ export default function UnpostedSalesOrdersReport() {
               Date Range Bounds
             </label>
             <div className="flex gap-2">
-              <input
+              <DatePicker
+                value={fromDate}
+                onChange={setFromDate}
+                maxDate={toDate || new Date()}
+                className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <span>to</span>
+              <DatePicker
+                value={toDate}
+                onChange={setToDate}
+                minDate={fromDate}
+                maxDate={new Date()}
+                className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              {/* <input
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
@@ -130,7 +181,7 @@ export default function UnpostedSalesOrdersReport() {
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 focus:outline-none"
-              />
+              /> */}
             </div>
           </div>
 

@@ -2,8 +2,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { Attendance } from "@/types/hr/attendance";
+
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO, startOfDay } from "date-fns";
 
 type EmployeeOption = {
   id: string;
@@ -11,38 +13,62 @@ type EmployeeOption = {
   last_name: string;
 };
 
+type AttendanceFormData = {
+  employee_id: string;
+  attendance_date: string;
+  attendance_status: string;
+  check_in: string;
+  check_out: string;
+  break_minutes: number;
+  remarks: string;
+};
+
 export default function AttendanceForm() {
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
 
-  const [data, setData] = useState<Attendance>({
-    employee_id: "",
-    attendance_date: "",
+  const [data, setData] = useState<AttendanceFormData>({
+    employee_id: "", // Default to today's date
+    attendance_date: format(startOfDay(new Date()), "yyyy-MM-dd"),
     attendance_status: "present",
+    check_in: "",
+    check_out: "",
+    break_minutes: 0,
+    remarks: "",
   });
+
+  // const [data, setData] = useState<Attendance>({
+  //   employee_id: "",
+  //   attendance_date: "",
+  //   attendance_status: "present",
+  // });
 
   useEffect(() => {
     const loadEmployees = async () => {
-      const res = await fetch("/api/hr/employees");
-
-      const json = await res.json();
-
-      setEmployees(json.data || []);
+      try {
+        const res = await fetch("/api/hr/employees");
+        const json = await res.json();
+        setEmployees(json.data || []);
+      } catch (error) {
+        console.error("Failed to load employees:", error);
+      }
     };
     loadEmployees();
   }, []);
 
   const handleSubmit = async () => {
-    await fetch("/api/hr/attendance", {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-      },
-
-      body: JSON.stringify(data),
-    });
-
-    window.location.href = "../attendance";
+    try {
+      const res = await fetch("/api/hr/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to save attendance");
+      }
+      window.location.href = "../attendance";
+    } catch (error) {
+      console.error("Failed to save attendance:", error);
+    }
   };
 
   return (
@@ -69,7 +95,7 @@ export default function AttendanceForm() {
           ))}
         </select>
 
-        <input
+        {/* <input
           type="date"
           value={data.attendance_date}
           onChange={(e) =>
@@ -79,6 +105,20 @@ export default function AttendanceForm() {
             })
           }
           className="border p-2 rounded"
+        /> */}
+
+        <DatePicker
+          value={
+            data.attendance_date ? parseISO(data.attendance_date) : undefined
+          }
+          maxDate={startOfDay(new Date())}
+          containerClassName="col-span-8"
+          onChange={(date) =>
+            setData({
+              ...data,
+              attendance_date: date ? format(date, "yyyy-MM-dd") : "",
+            })
+          }
         />
 
         <input
@@ -128,14 +168,10 @@ export default function AttendanceForm() {
           }
           className="border p-2 rounded"
         >
-          <option value="present">Present</option>
-
-          <option value="absent">Absent</option>
-
-          <option value="leave">Leave</option>
-
-          <option value="half_day">Half Day</option>
-
+          <option value="present">Present</option>{" "}
+          <option value="absent">Absent</option>{" "}
+          <option value="leave">Leave</option>{" "}
+          <option value="half_day">Half Day</option>{" "}
           <option value="holiday">Holiday</option>
         </select>
       </div>

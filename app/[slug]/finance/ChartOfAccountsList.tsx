@@ -119,7 +119,7 @@ export default function ChartOfAccountsList() {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href="./chart-of-accounts/create">
-            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
             Create
           </Link>
         </Button>

@@ -60,9 +60,9 @@ export default function WarehouseList() {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+    <div className="space-y-6 container mx-auto p-4">
       {/* Header Bar */}
-      <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+      <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Warehouses</h2>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -83,7 +83,7 @@ export default function WarehouseList() {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={`/${slug}/setup/inventory/warehouses/new`}>
-            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
             Create
           </Link>
         </Button>

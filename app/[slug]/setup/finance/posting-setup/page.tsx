@@ -7,8 +7,10 @@ import SalesPostingGroups from "@/app/components/setup/posting/SalesPostingGroup
 
 export default function PostingSetupPage() {
   return (
-    <div className="container mx-auto p-6 space-y-10">
-      <h1 className="text-2xl font-bold">Posting Setup</h1>
+    <div className="space-y-6 container mx-auto p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <h1 className="text-2xl font-bold">Posting Setup</h1>
+      </div>
 
       <InventorySystemSetup />
 

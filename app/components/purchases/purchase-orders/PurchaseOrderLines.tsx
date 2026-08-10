@@ -386,17 +386,18 @@ export default function PurchaseOrderLines({
                         <button
                           type="button"
                           disabled={isLineDisabled}
+                          title={line.item_name}
                           onClick={() => setItemIndex(index)}
                           className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {line.item_code || "Select Item"}
                         </button>
 
-                        {line.item_name && (
+                        {/* {line.item_name && (
                           <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
                             {line.item_name}
                           </div>
-                        )}
+                        )} */}
                       </div>
                     )}
 
@@ -404,6 +405,7 @@ export default function PurchaseOrderLines({
                       <div className="space-y-1">
                         <button
                           type="button"
+                          title={line.account_name}
                           disabled={isLineDisabled}
                           onClick={() => setGlIndex(index)}
                           className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
@@ -411,11 +413,11 @@ export default function PurchaseOrderLines({
                           {line.account_code || "Select GL"}
                         </button>
 
-                        {line.account_name && (
+                        {/* {line.account_name && (
                           <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
                             {line.account_name}
                           </div>
-                        )}
+                        )} */}
                       </div>
                     )}
                   </td>
@@ -427,8 +429,8 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "description", e.target.value)
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-xs disabled:opacity-60 disabled:cursor-not-allowed"
-                      rows={2}
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-xs disabled:opacity-60 disabled:cursor-not-allowed"
+                      rows={1}
                     />
                   </td>
 

@@ -15,6 +15,9 @@ import SalespersonLookupModal, {
   Employee,
 } from "@/app/components/shared/modals/SalespersonLookupModal";
 
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, startOfDay } from "date-fns";
+
 // --- Type System Definitions ---
 type DocumentTypeFilter = "sales invoices" | "posted credit notes" | "both";
 type DropdownFilterOptions = "Exclude" | "Include" | "Both";
@@ -36,8 +39,13 @@ interface TransactionItem {
 
 export default function PostedSalesInvoiceAndCreditNoteReport() {
   // --- Core Filtering State Hooks ---
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("2026-06-14"); // Synced to current application runtime era
+  // const [fromDate, setFromDate] = useState<string>("");
+  // const [toDate, setToDate] = useState<string>("2026-06-14"); // Synced to current application runtime era
+  const [fromDate, setFromDate] = useState<Date | undefined>();
+  const [toDate, setToDate] = useState<Date | undefined>(
+    startOfDay(new Date()),
+  );
+
   const [documentType, setDocumentType] = useState<DocumentTypeFilter>("both");
   const [financeOption, setFinanceOption] =
     useState<DropdownFilterOptions>("Both");
@@ -62,13 +70,22 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
       setLoading(true);
 
       const queryParams = new URLSearchParams({
-        fromDate,
-        toDate,
+        fromDate: fromDate ? format(fromDate, "yyyy-MM-dd") : "",
+        toDate: toDate ? format(toDate, "yyyy-MM-dd") : "",
         documentType,
         finance: financeOption,
         insurance: insuranceOption,
         salespersons: selectedSalespersonIds.join(","),
       });
+
+      // const queryParams = new URLSearchParams({
+      //   fromDate,
+      //   toDate,
+      //   documentType,
+      //   finance: financeOption,
+      //   insurance: insuranceOption,
+      //   salespersons: selectedSalespersonIds.join(","),
+      // });
 
       const response = await fetch(
         `/api/reports/posted-sales-transactions?${queryParams.toString()}`,
@@ -92,8 +109,8 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
 
   // --- Reset All Parameters to Baseline Matrix ---
   const handleClearFilters = () => {
-    setFromDate("");
-    setToDate("2026-06-14");
+    setFromDate(undefined);
+    setToDate(startOfDay(new Date()));
     setDocumentType("both");
     setFinanceOption("Both");
     setInsuranceOption("Both");
@@ -101,22 +118,33 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
     setTransactions([]);
     setHasGenerated(false);
   };
+  // const handleClearFilters = () => {
+  //   setFromDate("");
+  //   setToDate("2026-06-14");
+  //   setDocumentType("both");
+  //   setFinanceOption("Both");
+  //   setInsuranceOption("Both");
+  //   setSelectedSalespersonIds([]);
+  //   setTransactions([]);
+  //   setHasGenerated(false);
+  // };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6 font-sans antialiased text-slate-800">
-      {/* Top Breadcrumb Navigation Deck */}
-      <div className="flex items-center gap-2 text-xs text-slate-500 mb-4 bg-white px-4 py-2 rounded shadow-sm border border-slate-200/60 w-fit">
-        <span className="cursor-pointer hover:text-emerald-800 transition">
-          Reports
-        </span>
-        <span>/</span>
-        <span className="cursor-pointer hover:text-emerald-800 transition">
-          All Reports
-        </span>
-        <span>/</span>
-        <span className="text-slate-800 font-semibold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded">
-          Posted Sales Invoice and Credit Note
-        </span>
+    <div className="space-y-6 container mx-auto p-4">
+      <div className="gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-xs text-slate-500 mb-4 bg-white px-4 py-2">
+          <span className="cursor-pointer hover:text-emerald-800 transition">
+            Reports
+          </span>
+          <span>/</span>
+          <span className="cursor-pointer hover:text-emerald-800 transition">
+            All Reports
+          </span>
+          <span>/</span>
+          <span className="text-slate-800 font-semibold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded">
+            Posted Sales Invoice and Credit Note
+          </span>
+        </div>
       </div>
 
       {/* Primary Control Hub Panel Block */}
@@ -129,20 +157,33 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
               <span className="text-red-400 font-bold">*</span>
             </label>
             <div className="flex items-center gap-2">
-              <input
+              <DatePicker
+                value={fromDate}
+                onChange={setFromDate}
+                maxDate={toDate}
+                className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              {/* <input
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
                 placeholder="From"
                 className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
+              /> */}
               <span className="text-emerald-300 font-medium">to</span>
-              <input
+              <DatePicker
+                value={toDate}
+                onChange={setToDate}
+                minDate={fromDate}
+                maxDate={new Date()}
+                className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              {/* <input
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
                 className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
+              /> */}
             </div>
 
             {/* Document Class Selector Dropdown */}

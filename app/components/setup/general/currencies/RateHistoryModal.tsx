@@ -4,6 +4,8 @@
 
 import { formatDate, formatRate } from "@/lib/utils/currency";
 import { useEffect, useState } from "react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO } from "date-fns";
 
 type Rate = {
   id: string;
@@ -90,10 +92,18 @@ export default function RateHistoryModal({
             className="border p-2 rounded w-1/3"
           />
 
-          <input
+          {/* <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
+            className="border p-2 rounded"
+          /> */}
+
+          <DatePicker
+            value={date ? parseISO(date) : undefined}
+            onChange={(selectedDate) =>
+              setDate(selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")
+            }
             className="border p-2 rounded"
           />
 
@@ -134,7 +144,8 @@ export default function RateHistoryModal({
                   </td>
 
                   <td className="p-3 font-mono">
-                    {currencySymbol}{formatRate(r.rate)}
+                    {currencySymbol}
+                    {formatRate(r.rate)}
                   </td>
                 </tr>
               ))}
@@ -151,5 +162,4 @@ export default function RateHistoryModal({
       </div>
     </div>
   );
-
 }

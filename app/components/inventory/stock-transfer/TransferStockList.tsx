@@ -90,7 +90,7 @@ export default function StockTransferList({
   return (
     <div className="p-6 rounded border bg-white dark:bg-zinc-900 shadow-sm space-y-6">
       {/* HEADER SECTION */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
             {title}
@@ -113,7 +113,7 @@ export default function StockTransferList({
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={createPath}>
-            <Icon icon="solar:add-circle-linear" width={16} height={16} />
+            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
             Create
           </Link>
         </Button>

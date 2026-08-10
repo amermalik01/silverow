@@ -2,6 +2,8 @@
 "use client";
 
 import { useState } from "react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO } from "date-fns";
 
 type Props = {
   itemId: string;
@@ -46,21 +48,18 @@ export default function PriceModal({
     setLoading(true);
 
     try {
-      await fetch(
-        `/api/inventory/items/${itemId}/prices`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...form,
-            price_type: priceType,
-          }),
-        }
-      );
+      await fetch(`/api/inventory/items/${itemId}/prices`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...form,
+          price_type: priceType,
+        }),
+      });
 
-      onSaved();   // 🔥 IMPORTANT: refresh parent table
+      onSaved(); // 🔥 IMPORTANT: refresh parent table
       onClose();
     } finally {
       setLoading(false);
@@ -70,11 +69,8 @@ export default function PriceModal({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
       <div className="bg-white text-black w-[600px] p-6 space-y-4">
-
         <h2 className="text-lg font-semibold">
-          {priceType === 1
-            ? "Sales Price"
-            : "Purchase Price"}
+          {priceType === 1 ? "Sales Price" : "Purchase Price"}
         </h2>
 
         <input
@@ -96,13 +92,34 @@ export default function PriceModal({
           onChange={(e) =>
             setForm({
               ...form,
-              minimum_price:
-                e.target.value,
+              minimum_price: e.target.value,
             })
           }
         />
 
-        <input
+        <DatePicker
+          value={form.start_date ? parseISO(form.start_date) : undefined}
+          onChange={(date) =>
+            setForm({
+              ...form,
+              start_date: date ? format(date, "yyyy-MM-dd") : "",
+            })
+          }
+          className="border p-2 w-full"
+        />
+
+        <DatePicker
+          value={form.end_date ? parseISO(form.end_date) : undefined}
+          onChange={(date) =>
+            setForm({
+              ...form,
+              end_date: date ? format(date, "yyyy-MM-dd") : "",
+            })
+          }
+          className="border p-2 w-full"
+        />
+
+        {/* <input
           type="date"
           className="border p-2 w-full"
           value={form.start_date}
@@ -126,13 +143,10 @@ export default function PriceModal({
                 e.target.value,
             })
           }
-        />
+        /> */}
 
         <div className="flex justify-end gap-2">
-
-          <button onClick={onClose}>
-            Cancel
-          </button>
+          <button onClick={onClose}>Cancel</button>
 
           <button
             onClick={submit}
@@ -141,9 +155,7 @@ export default function PriceModal({
           >
             Save
           </button>
-
         </div>
-
       </div>
     </div>
   );

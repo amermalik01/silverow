@@ -53,8 +53,8 @@ export default function CompaniesPage() {
   if (loading) return <div className="p-8">Loading companies...</div>;
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="space-y-6 container mx-auto p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h1 className="text-2xl font-bold">Companies</h1>
           <p className="text-muted-foreground">

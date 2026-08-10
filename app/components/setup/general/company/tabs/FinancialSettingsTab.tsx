@@ -3,6 +3,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO } from "date-fns";
 
 export interface FinancialSettingsData {
   business_type: string;
@@ -252,13 +254,32 @@ export default function FinancialSettingsTab({
               Financial Year Start Date <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2">
-              <input
+              {/* <input
                 type="date"
                 value={formData.financial_year_start_date}
                 onChange={(e) =>
                   handleChange("financial_year_start_date", e.target.value)
                 }
                 className={`w-full border rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white ${
+                  errors.financial_year_start_date
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
+              /> */}
+
+              <DatePicker
+                value={
+                  formData.financial_year_start_date
+                    ? parseISO(formData.financial_year_start_date)
+                    : undefined
+                }
+                onChange={(date) =>
+                  handleChange(
+                    "financial_year_start_date",
+                    date ? format(date, "yyyy-MM-dd") : "",
+                  )
+                }
+                className={`w-full ${
                   errors.financial_year_start_date
                     ? "border-red-500"
                     : "border-gray-300"
@@ -277,13 +298,32 @@ export default function FinancialSettingsTab({
               Financial Year End Date <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2">
-              <input
+              {/* <input
                 type="date"
                 value={formData.financial_year_end_date}
                 onChange={(e) =>
                   handleChange("financial_year_end_date", e.target.value)
                 }
                 className={`w-full border rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white ${
+                  errors.financial_year_end_date
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
+              /> */}
+
+              <DatePicker
+                value={
+                  formData.financial_year_end_date
+                    ? parseISO(formData.financial_year_end_date)
+                    : undefined
+                }
+                onChange={(date) =>
+                  handleChange(
+                    "financial_year_end_date",
+                    date ? format(date, "yyyy-MM-dd") : "",
+                  )
+                }
+                className={`w-full ${
                   errors.financial_year_end_date
                     ? "border-red-500"
                     : "border-gray-300"
@@ -302,7 +342,25 @@ export default function FinancialSettingsTab({
               Date of Incorporation
             </label>
             <div className="col-span-2">
-              <input
+              <DatePicker
+                value={
+                  formData.date_of_incorporation
+                    ? parseISO(formData.date_of_incorporation)
+                    : undefined
+                }
+                onChange={(date) =>
+                  handleChange(
+                    "date_of_incorporation",
+                    date ? format(date, "yyyy-MM-dd") : "",
+                  )
+                }
+                className={`w-full ${
+                  errors.date_of_incorporation
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
+              />
+              {/* <input
                 type="date"
                 value={formData.date_of_incorporation}
                 onChange={(e) =>
@@ -313,7 +371,7 @@ export default function FinancialSettingsTab({
                     ? "border-red-500"
                     : "border-gray-300"
                 }`}
-              />
+              /> */}
               {errors.date_of_incorporation && (
                 <p className="text-red-500 text-[10px] mt-1">
                   {errors.date_of_incorporation}

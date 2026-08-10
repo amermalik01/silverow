@@ -643,7 +643,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
 
   return (
-    <div className="space-y-4 w-full max-w-[100vw] px-4 py-2 mx-auto overflow-x-auto">
+    <div className="space-y-4 w-full max-w-[100vw] py-2 mx-auto overflow-x-auto">
       {validationErrors.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
           {validationErrors.map((err, idx) => (
@@ -671,8 +671,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
-        <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200  pb-2 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar ">
           {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
             <button
               key={tab}

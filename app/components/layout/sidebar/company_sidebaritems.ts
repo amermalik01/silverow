@@ -116,46 +116,72 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             id: "CRM",
             name: "CRM",
             url: `/${slug}/sales/crm`,
-            icon: "solar:shield-keyhole-minimalistic-linear",
+            // icon: "solar:shield-keyhole-minimalistic-linear",
           },
           {
             id: "Customers",
             name: "Customers",
             url: `/${slug}/sales/customer`,
           },
-          {
-            id: "Orders",
-            name: "Orders",
-            icon: "solar:shield-keyhole-minimalistic-linear",
 
-            children: [
-              {
-                id: "Sales Quotes",
-                name: "Sales Quotes",
-                url: `/${slug}/sales/quotes`,
-              },
-              {
-                id: "Sales Orders",
-                name: "Sales Orders",
-                url: `/${slug}/sales/orders`,
-              },
-              {
-                id: "Sales Invoices",
-                name: "Sales Invoices",
-                url: `/${slug}/sales/invoices`,
-              },
-              {
-                id: "Credit Notes",
-                name: "Credit Notes",
-                url: `/${slug}/sales/returns`,
-              },
-              {
-                id: "Posted Credit Notes",
-                name: "Posted Credit Notes",
-                url: `/${slug}/sales/posted-credit-notes`,
-              },
-            ],
+          {
+            id: "Sales Quotes",
+            name: "Sales Quotes",
+            url: `/${slug}/sales/quotes`,
           },
+          {
+            id: "Sales Orders",
+            name: "Sales Orders",
+            url: `/${slug}/sales/orders`,
+          },
+          {
+            id: "Sales Invoices",
+            name: "Sales Invoices",
+            url: `/${slug}/sales/invoices`,
+          },
+          {
+            id: "Credit Notes",
+            name: "Credit Notes",
+            url: `/${slug}/sales/returns`,
+          },
+          {
+            id: "Posted Credit Notes",
+            name: "Posted Credit Notes",
+            url: `/${slug}/sales/posted-credit-notes`,
+          },
+          // {
+          //   id: "Orders",
+          //   name: "Orders",
+          //   icon: "solar:shield-keyhole-minimalistic-linear",
+
+          //   children: [
+          //     {
+          //       id: "Sales Quotes",
+          //       name: "Sales Quotes",
+          //       url: `/${slug}/sales/quotes`,
+          //     },
+          //     {
+          //       id: "Sales Orders",
+          //       name: "Sales Orders",
+          //       url: `/${slug}/sales/orders`,
+          //     },
+          //     {
+          //       id: "Sales Invoices",
+          //       name: "Sales Invoices",
+          //       url: `/${slug}/sales/invoices`,
+          //     },
+          //     {
+          //       id: "Credit Notes",
+          //       name: "Credit Notes",
+          //       url: `/${slug}/sales/returns`,
+          //     },
+          //     {
+          //       id: "Posted Credit Notes",
+          //       name: "Posted Credit Notes",
+          //       url: `/${slug}/sales/posted-credit-notes`,
+          //     },
+          //   ],
+          // },
           {
             id: "Support Tickets",
             name: "Support Tickets",
@@ -190,34 +216,55 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Suppliers",
             url: `/${slug}/purchases/supplier`,
           },
-          {
-            id: "Orders",
-            name: "Orders",
-            icon: "solar:shield-keyhole-minimalistic-linear",
 
-            children: [
-              {
-                id: "Purchase Orders",
-                name: "Purchase Orders",
-                url: `/${slug}/purchases/purchase-orders`,
-              },
-              {
-                id: "Purchase Invoices",
-                name: "Purchase Invoices",
-                url: `/${slug}/purchases/purchase-invoices`,
-              },
-              {
-                id: "Debit Notes",
-                name: "Debit Notes",
-                url: `/${slug}/purchases/debit-notes`,
-              },
-              {
-                id: "Posted Debit Notes",
-                name: "Posted Debit Notes",
-                url: `/${slug}/purchases/posted-debit-notes`,
-              },
-            ],
+          {
+            id: "Purchase Orders",
+            name: "Purchase Orders",
+            url: `/${slug}/purchases/purchase-orders`,
           },
+          {
+            id: "Purchase Invoices",
+            name: "Purchase Invoices",
+            url: `/${slug}/purchases/purchase-invoices`,
+          },
+          {
+            id: "Debit Notes",
+            name: "Debit Notes",
+            url: `/${slug}/purchases/debit-notes`,
+          },
+          {
+            id: "Posted Debit Notes",
+            name: "Posted Debit Notes",
+            url: `/${slug}/purchases/posted-debit-notes`,
+          },
+          // {
+          //   id: "Orders",
+          //   name: "Orders",
+          //   icon: "solar:shield-keyhole-minimalistic-linear",
+
+          //   children: [
+          //     {
+          //       id: "Purchase Orders",
+          //       name: "Purchase Orders",
+          //       url: `/${slug}/purchases/purchase-orders`,
+          //     },
+          //     {
+          //       id: "Purchase Invoices",
+          //       name: "Purchase Invoices",
+          //       url: `/${slug}/purchases/purchase-invoices`,
+          //     },
+          //     {
+          //       id: "Debit Notes",
+          //       name: "Debit Notes",
+          //       url: `/${slug}/purchases/debit-notes`,
+          //     },
+          //     {
+          //       id: "Posted Debit Notes",
+          //       name: "Posted Debit Notes",
+          //       url: `/${slug}/purchases/posted-debit-notes`,
+          //     },
+          //   ],
+          // },
           // {
           //   // id: uniqueId(),
           //   id: "Purchase Matrix",

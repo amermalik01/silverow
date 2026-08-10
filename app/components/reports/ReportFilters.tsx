@@ -1,9 +1,11 @@
 // components/reports/ReportFilters.tsx
 
-'use client';
+"use client";
 
-import React from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import React from "react";
+import { SlidersHorizontal } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 export interface AccountOption {
   id: string;
@@ -26,75 +28,113 @@ interface ReportFiltersProps {
   onGenerate: () => void;
   onClear: () => void;
   children?: React.ReactNode;
-  
+
   // --- NEW FEATURE FLAGS ---
-  showAccountRanges?: boolean;       // Control the G/L Code inputs
+  showAccountRanges?: boolean; // Control the G/L Code inputs
   showOpeningClosingToggle?: boolean; // Control the Trial Balance checkbox
-  hideFromDate?: boolean;             // Balance Sheets only need a target cutoff date
+  hideFromDate?: boolean; // Balance Sheets only need a target cutoff date
 }
 
 export const ReportFilters: React.FC<ReportFiltersProps> = ({
-  fromDate, setFromDate,
-  toDate, setToDate,
-  fromAccount = '', setFromAccount,
-  toAccount = '', setToAccount,
-  showBalances = false, setShowBalances,
+  fromDate,
+  setFromDate,
+  toDate,
+  setToDate,
+  fromAccount = "",
+  setFromAccount,
+  toAccount = "",
+  setToAccount,
+  showBalances = false,
+  setShowBalances,
   accountsList = [],
   onGenerate,
   onClear,
   children,
   showAccountRanges = false,
   showOpeningClosingToggle = false,
-  hideFromDate = false
+  hideFromDate = false,
 }) => {
+  const fromDateValue = fromDate ? new Date(`${fromDate}T00:00:00`) : undefined;
+  const toDateValue = toDate ? new Date(`${toDate}T00:00:00`) : undefined;
+
   return (
     <div className="mb-6 rounded-xl border border-slate-200 bg-emerald-950 p-4 text-white shadow-sm">
-      <div className="flex items-center space-x-2 border-b border-emerald-800/60 pb-2.5 mb-4">
+      <div className="flex items-center space-x-2 border-b border-emerald-800/60 pb-2.5 mb-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <SlidersHorizontal className="h-4 w-4 text-emerald-400" />
-        <h2 className="text-xs font-semibold tracking-wide">Report Parameters</h2>
+        <h2 className="text-xs font-semibold tracking-wide">
+          Report Parameters
+        </h2>
       </div>
 
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 items-end">
-          
           {/* Date From (Hidden on Balance Sheets) */}
           {!hideFromDate && (
             <div className="flex flex-col space-y-1">
-              <label className="text-xs font-medium text-emerald-300">Date From</label>
-              <input
+              <label className="text-xs font-medium text-emerald-300">
+                Date From
+              </label>
+
+              <DatePicker
+                value={fromDateValue}
+                onChange={(date) => {
+                  setFromDate(date ? format(date, "yyyy-MM-dd") : "");
+                }}
+                maxDate={toDateValue}
+                placeholder="Date From"
+                className="h-9 w-full rounded border-0 bg-white/10 px-3 text-xs text-white outline-none ring-1 ring-white/20 transition focus:bg-white focus:text-slate-900 focus:ring-emerald-500"
+              />
+              {/* <input
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
                 className="h-9 w-full rounded border-0 bg-white/10 px-3 text-xs text-white outline-none ring-1 ring-white/20 transition focus:bg-white focus:text-slate-900 focus:ring-emerald-500"
-              />
+              /> */}
             </div>
           )}
 
           {/* Date To / As Of Cutoff */}
           <div className="flex flex-col space-y-1">
             <label className="text-xs font-medium text-emerald-300">
-              {hideFromDate ? 'As Of Date' : 'Date To'}
+              {hideFromDate ? "As Of Date" : "Date To"}
             </label>
-            <input
+            <DatePicker
+              value={toDateValue}
+              onChange={(date) => {
+                setToDate(date ? format(date, "yyyy-MM-dd") : "");
+              }}
+              minDate={!hideFromDate ? fromDateValue : undefined}
+              placeholder={hideFromDate ? "As Of Date" : "Date To"}
+              className="h-9 w-full rounded border-0 bg-white/10 px-3 text-xs text-white outline-none ring-1 ring-white/20 transition focus:bg-white focus:text-slate-900 focus:ring-emerald-500"
+            />
+            {/* <input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
               className="h-9 w-full rounded border-0 bg-white/10 px-3 text-xs text-white outline-none ring-1 ring-white/20 transition focus:bg-white focus:text-slate-900 focus:ring-emerald-500"
-            />
+            /> */}
           </div>
 
           {/* G/L From Dropdown (Shown only if flagged true) */}
           {showAccountRanges && setFromAccount && (
             <div className="flex flex-col space-y-1">
-              <label className="text-xs font-medium text-emerald-300">G/L Account From</label>
+              <label className="text-xs font-medium text-emerald-300">
+                G/L Account From
+              </label>
               <select
                 value={fromAccount}
                 onChange={(e) => setFromAccount(e.target.value)}
                 className="h-9 w-full rounded border-0 bg-white/10 px-2 text-xs text-white outline-none ring-1 ring-white/20 transition focus:bg-white focus:text-slate-900 focus:ring-emerald-500"
               >
-                <option value="" className="text-slate-900">-- Start of Ledger --</option>
+                <option value="" className="text-slate-900">
+                  -- Start of Ledger --
+                </option>
                 {accountsList.map((acc) => (
-                  <option key={acc.id} value={acc.code} className="text-slate-900">
+                  <option
+                    key={acc.id}
+                    value={acc.code}
+                    className="text-slate-900"
+                  >
                     {acc.code} - {acc.name}
                   </option>
                 ))}
@@ -105,15 +145,23 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
           {/* G/L To Dropdown (Shown only if flagged true) */}
           {showAccountRanges && setToAccount && (
             <div className="flex flex-col space-y-1">
-              <label className="text-xs font-medium text-emerald-300">G/L Account To</label>
+              <label className="text-xs font-medium text-emerald-300">
+                G/L Account To
+              </label>
               <select
                 value={toAccount}
                 onChange={(e) => setToAccount(e.target.value)}
                 className="h-9 w-full rounded border-0 bg-white/10 px-2 text-xs text-white outline-none ring-1 ring-white/20 transition focus:bg-white focus:text-slate-900 focus:ring-emerald-500"
               >
-                <option value="" className="text-slate-900">-- End of Ledger --</option>
+                <option value="" className="text-slate-900">
+                  -- End of Ledger --
+                </option>
                 {accountsList.map((acc) => (
-                  <option key={acc.id} value={acc.code} className="text-slate-900">
+                  <option
+                    key={acc.id}
+                    value={acc.code}
+                    className="text-slate-900"
+                  >
                     {acc.code} - {acc.name}
                   </option>
                 ))}
@@ -136,7 +184,9 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
                   onChange={(e) => setShowBalances(e.target.checked)}
                   className="h-4 w-4 rounded border-emerald-700 bg-white/10 text-emerald-600 focus:ring-emerald-500"
                 />
-                <span className="font-medium">✓ Show Opening & Closing Balance</span>
+                <span className="font-medium">
+                  ✓ Show Opening & Closing Balance
+                </span>
               </label>
             )}
           </div>

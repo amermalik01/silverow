@@ -3,6 +3,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO } from "date-fns";
 
 interface AccountingPeriod {
   id: string;
@@ -130,22 +132,36 @@ export default function PostingDateRangeSetup() {
           <label className="text-xs font-medium text-gray-600">
             Start Date
           </label>
-          <input
+          <DatePicker
+            value={startDate ? parseISO(startDate) : undefined}
+            onChange={(date) =>
+              setStartDate(date ? format(date, "yyyy-MM-dd") : "")
+            }
+            className="w-full bg-white text-black border border-gray-300 px-3 py-1.5 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {/* <input
             type="date"
             required
             className="border px-3 py-1.5 rounded text-xs text-black"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-          />
+          /> */}
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-600">End Date</label>
-          <input
+          {/* <input
             type="date"
             required
             className="border px-3 py-1.5 rounded text-xs text-black"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
+          /> */}
+          <DatePicker
+            value={endDate ? parseISO(endDate) : undefined}
+            onChange={(date) =>
+              setEndDate(date ? format(date, "yyyy-MM-dd") : "")
+            }
+            className="w-full bg-white text-black border border-gray-300 px-3 py-1.5 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <button
@@ -184,10 +200,12 @@ export default function PostingDateRangeSetup() {
                   className="border-b hover:bg-gray-50 transition-colors"
                 >
                   <td className="p-3 font-mono">
-                    {new Date(period.start_date).toLocaleDateString()}
+                    {/* {new Date(period.start_date).toLocaleDateString()} */}
+                    {format(parseISO(period.start_date), "dd/MM/yyyy")}
                   </td>
                   <td className="p-3 font-mono">
-                    {new Date(period.end_date).toLocaleDateString()}
+                    {/* {new Date(period.end_date).toLocaleDateString()} */}
+                    {format(parseISO(period.end_date), "dd/MM/yyyy")}
                   </td>
                   <td className="p-3">
                     <span

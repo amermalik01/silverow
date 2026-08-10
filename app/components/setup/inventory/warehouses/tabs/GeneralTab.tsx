@@ -3,6 +3,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO } from "date-fns";
+
 import MasterDropdown from "@/app/components/common/MasterDropdown";
 import { Warehouse, WarehouseLocation } from "@/types/warehouse";
 
@@ -393,13 +396,31 @@ export default function GeneralTab({
               <label className={labelClass}>
                 Start Date <span className="text-rose-500">*</span>
               </label>
-              <input
+
+              <div className="col-span-8">
+                <DatePicker
+                  value={
+                    warehouse.start_date
+                      ? parseISO(warehouse.start_date)
+                      : undefined
+                  }
+                  onChange={(date) =>
+                    updateField(
+                      "start_date",
+                      date ? format(date, "yyyy-MM-dd") : "",
+                    )
+                  }
+                  disabled={isReadOnly}
+                  className="w-full bg-white text-slate-900 border border-slate-300 px-2 py-1 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-700"
+                />
+              </div>
+              {/* <input
                 type="date"
                 value={warehouse.start_date || ""}
                 onChange={(e) => updateField("start_date", e.target.value)}
                 disabled={isReadOnly}
                 className={inputClass}
-              />
+              /> */}
             </div>
           </div>
 
