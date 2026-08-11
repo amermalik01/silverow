@@ -8,12 +8,14 @@ import MasterDropdown from "@/app/components/common/MasterDropdown";
 type Props = {
   addresses: PartyAddressDraft[];
   setAddresses: React.Dispatch<React.SetStateAction<PartyAddressDraft[]>>;
+  isReadonly?: boolean;
   errors: Record<string, string>;
 };
 
 export default function AddressesTab({
   addresses,
   setAddresses,
+  isReadonly = false,
   errors,
 }: Props) {
   const addAddressRow = () => {
@@ -47,20 +49,42 @@ export default function AddressesTab({
     );
   };
 
+  const getInputClass = (
+    errorKey: string,
+    extraClasses: string = "",
+    disabled: boolean = isReadonly,
+  ) => {
+    const baseClasses =
+      "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
+
+    if (disabled) {
+      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none ${extraClasses}`;
+    }
+
+    const stateClasses = errors[errorKey]
+      ? "border-red-500 bg-red-50/10 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+
+    return `${baseClasses} ${stateClasses} ${extraClasses}`;
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
         <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider">
           Location(s)
         </h3>
-        <button
-          type="button"
-          onClick={addAddressRow}
-          // className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-        >
-          Add Location
-        </button>
+
+        {!isReadonly && (
+          <button
+            type="button"
+            onClick={addAddressRow}
+            // className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          >
+            Add Location
+          </button>
+        )}
       </div>
 
       {addresses.length === 0 && (
@@ -104,15 +128,17 @@ export default function AddressesTab({
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                setAddresses(addresses.filter((_, i) => i !== idx))
-              }
-              className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
-            >
-              ✕
-            </button>
+            {!isReadonly && (
+              <button
+                type="button"
+                onClick={() =>
+                  setAddresses(addresses.filter((_, i) => i !== idx))
+                }
+                className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           {/* Body */}
@@ -123,28 +149,44 @@ export default function AddressesTab({
                 <label className="text-xs font-medium">
                   Name <span className="text-red-500">*</span>
                 </label>
-
-                <input
-                  type="text"
-                  value={a.label}
-                  onChange={(e) =>
-                    updateAddressRow(idx, "label", e.target.value)
-                  }
-                  className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                />
+                <div className="col-span-2">
+                  <input
+                    type="text"
+                    value={a.label}
+                    disabled={isReadonly}
+                    onChange={(e) =>
+                      updateAddressRow(idx, "label", e.target.value)
+                    }
+                    className={getInputClass(`addresses.${idx}.label`)}
+                    // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  />
+                  {errors[`addresses.${idx}.label`] && (
+                    <p className="text-red-500 text-[11px] mt-0.5">
+                      {errors[`addresses.${idx}.label`]}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium">Address Line 1</label>
-
-                <input
-                  type="text"
-                  value={a.address_1}
-                  onChange={(e) =>
-                    updateAddressRow(idx, "address_1", e.target.value)
-                  }
-                  className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                />
+                <div className="col-span-2">
+                  <input
+                    type="text"
+                    value={a.address_1}
+                    disabled={isReadonly}
+                    onChange={(e) =>
+                      updateAddressRow(idx, "address_1", e.target.value)
+                    }
+                    className={getInputClass(`addresses.${idx}.address_1`)}
+                    // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  />
+                  {errors[`addresses.${idx}.address_1`] && (
+                    <p className="text-red-500 text-[11px] mt-0.5">
+                      {errors[`addresses.${idx}.address_1`]}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
@@ -156,34 +198,52 @@ export default function AddressesTab({
                   onChange={(e) =>
                     updateAddressRow(idx, "address_2", e.target.value)
                   }
-                  className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  disabled={isReadonly}
+                  className={getInputClass(
+                    `addresses.${idx}.address_2`,
+                    "col-span-2",
+                  )}
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium">City</label>
-
-                <input
-                  type="text"
-                  value={a.city || ""}
-                  onChange={(e) =>
-                    updateAddressRow(idx, "city", e.target.value)
-                  }
-                  className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                />
+                <div className="col-span-2">
+                  <input
+                    type="text"
+                    value={a.city || ""}
+                    onChange={(e) =>
+                      updateAddressRow(idx, "city", e.target.value)
+                    }
+                    disabled={isReadonly}
+                    // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                    className={getInputClass(`addresses.${idx}.city`)}
+                  />
+                  {errors[`addresses.${idx}.city`] && (
+                    <p className="text-red-500 text-[11px] mt-0.5">
+                      {errors[`addresses.${idx}.city`]}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium">State / Province</label>
-
-                <input
-                  type="text"
-                  value={a.state || ""}
-                  onChange={(e) =>
-                    updateAddressRow(idx, "state", e.target.value)
-                  }
-                  className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                />
+                <div className="col-span-2">
+                  <input
+                    type="text"
+                    value={a.state || ""}
+                    onChange={(e) =>
+                      updateAddressRow(idx, "state", e.target.value)
+                    }
+                    disabled={isReadonly}
+                    className={getInputClass(
+                      `addresses.${idx}.state`,
+                      "col-span-2",
+                    )}
+                    // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  />
+                </div>
               </div>
             </div>
 
@@ -192,14 +252,22 @@ export default function AddressesTab({
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium">Postcode</label>
 
-                <input
-                  type="text"
-                  value={a.postcode || ""}
-                  onChange={(e) =>
-                    updateAddressRow(idx, "postcode", e.target.value)
-                  }
-                  className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                />
+                <div className="col-span-2">
+                  <input
+                    type="text"
+                    value={a.postcode || ""}
+                    onChange={(e) =>
+                      updateAddressRow(idx, "postcode", e.target.value)
+                    }
+                    disabled={isReadonly}
+                    className={getInputClass(`addresses.${idx}.postcode`)}
+                  />
+                  {errors[`addresses.${idx}.postcode`] && (
+                    <p className="text-red-500 text-[11px] mt-0.5">
+                      {errors[`addresses.${idx}.postcode`]}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
@@ -208,32 +276,36 @@ export default function AddressesTab({
                 </label>
 
                 <div className="col-span-2">
-                  <MasterDropdown
+                  {/* <MasterDropdown
                     type="country"
                     value={a.country || "United Kingdom"}
                     onChange={(val) =>
                       updateAddressRow(idx, "country", val ?? "")
                     }
+                    disabled={isReadonly}
                     defaultFilter={(item) => item.country_id === 225}
-                    // className={
-                    //   errors[`addresses.${idx}.country`] ? "border-red-500" : ""
-                    // }
+                  /> */}
+
+                  <MasterDropdown
+                    type="country"
+                    value={a.country || "UK"}
+                    displayFormat="name" // Displays "United Kingdom"
+                    valueKey="code" // Saves "GB" to a.country
+                    onChange={(val) =>
+                      updateAddressRow(idx, "country", val ?? "")
+                    }
+                    disabled={isReadonly}
+                    defaultFilter={(item) =>
+                      item.code === "UK" || item.country_id === 225
+                    }
                   />
+                  {errors[`addresses.${idx}.country`] && (
+                    <p className="text-red-500 text-[11px] mt-0.5">
+                      {errors[`addresses.${idx}.country`]}
+                    </p>
+                  )}
                 </div>
               </div>
-
-              {/* <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">Country</label>
-
-                <input
-                  type="text"
-                  value={a.country || ""}
-                  onChange={(e) =>
-                    updateAddressRow(idx, "country", e.target.value)
-                  }
-                  className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                />
-              </div> */}
 
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium">Telephone</label>
@@ -244,7 +316,12 @@ export default function AddressesTab({
                   onChange={(e) =>
                     updateAddressRow(idx, "phone", e.target.value)
                   }
-                  className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  disabled={isReadonly}
+                  className={getInputClass(
+                    `addresses.${idx}.phone`,
+                    "col-span-2",
+                  )}
+                  // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                 />
               </div>
 
@@ -257,8 +334,16 @@ export default function AddressesTab({
                   onChange={(e) =>
                     updateAddressRow(idx, "email", e.target.value)
                   }
-                  className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  disabled={isReadonly}
+                  className={getInputClass(`addresses.${idx}.email`)}
+                  // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                 />
+
+                {errors[`addresses.${idx}.email`] && (
+                  <p className="text-red-500 text-[11px] mt-0.5">
+                    {errors[`addresses.${idx}.email`]}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
@@ -271,9 +356,15 @@ export default function AddressesTab({
                       <input
                         type="checkbox"
                         checked={!!a.is_primary}
+                        disabled={isReadonly}
                         onChange={(e) =>
                           updateAddressRow(idx, "is_primary", e.target.checked)
                         }
+                        className={`w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 ${
+                          isReadonly
+                            ? "cursor-not-allowed opacity-60"
+                            : "cursor-pointer"
+                        }`}
                       />
                       Primary
                     </label>
@@ -282,9 +373,15 @@ export default function AddressesTab({
                       <input
                         type="checkbox"
                         checked={!!a.is_billing}
+                        disabled={isReadonly}
                         onChange={(e) =>
                           updateAddressRow(idx, "is_billing", e.target.checked)
                         }
+                        className={`w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 ${
+                          isReadonly
+                            ? "cursor-not-allowed opacity-60"
+                            : "cursor-pointer"
+                        }`}
                       />
                       Billing
                     </label>
@@ -293,9 +390,15 @@ export default function AddressesTab({
                       <input
                         type="checkbox"
                         checked={!!a.is_shipping}
+                        disabled={isReadonly}
                         onChange={(e) =>
                           updateAddressRow(idx, "is_shipping", e.target.checked)
                         }
+                        className={`w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 ${
+                          isReadonly
+                            ? "cursor-not-allowed opacity-60"
+                            : "cursor-pointer"
+                        }`}
                       />
                       Shipping
                     </label>
@@ -304,6 +407,7 @@ export default function AddressesTab({
                       <input
                         type="checkbox"
                         checked={!!a.is_collection}
+                        disabled={isReadonly}
                         onChange={(e) =>
                           updateAddressRow(
                             idx,
@@ -311,65 +415,17 @@ export default function AddressesTab({
                             e.target.checked,
                           )
                         }
+                        className={`w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 ${
+                          isReadonly
+                            ? "cursor-not-allowed opacity-60"
+                            : "cursor-pointer"
+                        }`}
                       />
                       Collection
                     </label>
                   </div>
                 </div>
               </div>
-
-              {/* <div className="border rounded-md border-slate-200 dark:border-slate-700 p-3 mt-3">
-                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-3">
-                  Location Type
-                </p>
-
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={!!a.is_primary}
-                      onChange={(e) =>
-                        updateAddressRow(idx, "is_primary", e.target.checked)
-                      }
-                    />
-                    Primary Address
-                  </label>
-
-                  <label className="flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={!!a.is_billing}
-                      onChange={(e) =>
-                        updateAddressRow(idx, "is_billing", e.target.checked)
-                      }
-                    />
-                    Billing Address
-                  </label>
-
-                  <label className="flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={!!a.is_shipping}
-                      onChange={(e) =>
-                        updateAddressRow(idx, "is_shipping", e.target.checked)
-                      }
-                    />
-                    Shipping Address
-                  </label>
-
-                  <label className="flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={!!a.is_collection}
-                      onChange={(e) =>
-                        updateAddressRow(idx, "is_collection", e.target.checked)
-                      }
-                    />
-                    Collection Address
-                  </label>
-
-                </div>
-              </div> */}
             </div>
           </div>
         </div>
@@ -377,201 +433,72 @@ export default function AddressesTab({
     </div>
   );
 }
-/* {addresses.map((a, idx) => (
-        <div
-          key={idx}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start border border-slate-200 dark:border-slate-800 p-4 relative "
-        >
-          <div className="space-y-2">
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Name *
-              </label>
-              <input
-                type="text"
-                value={a.label}
-                onChange={(e) => updateAddressRow(idx, "label", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.label`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
-              />
-              {errors[`addresses.${idx}.label`] && (
-                <p className="text-red-500 text-[11px] mt-0.5">
-                  {errors[`addresses.${idx}.label`]}
-                </p>
-              )}
-            </div>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Address Line 1
-              </label>
-              <input
-                type="text"
-                value={a.address_1}
-                onChange={(e) =>
-                  updateAddressRow(idx, "address_1", e.target.value)
-                }
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.address_1`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
-              />
-              {errors[`addresses.${idx}.address_1`] && (
-                <p className="text-red-500 text-[11px] mt-0.5">
-                  {errors[`addresses.${idx}.address_1`]}
-                </p>
-              )}
-            </div>
+{
+  /* <div className="grid grid-cols-3 gap-2 items-center">
+        <label className="text-xs font-medium">Country</label>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Address Line 2
-              </label>
-              <input
-                type="text"
-                value={a.address_2 || ""}
-                onChange={(e) =>
-                  updateAddressRow(idx, "address_2", e.target.value)
-                }
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // className="w-full border p-2 rounded text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-              />
-            </div>
+        <input
+          type="text"
+          value={a.country || ""}
+          onChange={(e) =>
+            updateAddressRow(idx, "country", e.target.value)
+          }
+          className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+        />
+      </div> */
+}
+{
+  /* <div className="border rounded-md border-slate-200 dark:border-slate-700 p-3 mt-3">
+        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-3">
+          Location Type
+        </p>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                City
-              </label>
-              <input
-                type="text"
-                value={a.city || ""}
-                onChange={(e) => updateAddressRow(idx, "city", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.city`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
-              />
-              {errors[`addresses.${idx}.city`] && (
-                <p className="text-red-500 text-[11px] mt-0.5">
-                  {errors[`addresses.${idx}.city`]}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                State / Province
-              </label>
-              <input
-                type="text"
-                value={a.state || ""}
-                onChange={(e) => updateAddressRow(idx, "state", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // className="w-full border p-2 rounded text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Postcode
-              </label>
-              <input
-                type="text"
-                value={a.postcode || ""}
-                onChange={(e) =>
-                  updateAddressRow(idx, "postcode", e.target.value)
-                }
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.postcode`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
-              />
-              {errors[`addresses.${idx}.postcode`] && (
-                <p className="text-red-500 text-[11px] mt-0.5">
-                  {errors[`addresses.${idx}.postcode`]}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Country *
-              </label>
-              <input
-                type="text"
-                value={a.country || ""}
-                placeholder="e.g. US, GB"
-                onChange={(e) =>
-                  updateAddressRow(idx, "country", e.target.value)
-                }
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.country`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
-              />
-              {errors[`addresses.${idx}.country`] && (
-                <p className="text-red-500 text-[11px] mt-0.5">
-                  {errors[`addresses.${idx}.country`]}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Telephone
-              </label>
-              <input
-                type="text"
-                value={a.phone || ""}
-                onChange={(e) => updateAddressRow(idx, "phone", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // className="w-full border p-2 rounded text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Email
-              </label>
-              <input
-                type="email"
-                value={a.email || ""}
-                onChange={(e) => updateAddressRow(idx, "email", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`addresses.${idx}.email`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
-              />
-              {errors[`addresses.${idx}.email`] && (
-                <p className="text-red-500 text-[11px] mt-0.5">
-                  {errors[`addresses.${idx}.email`]}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() =>
-                setAddresses(addresses.filter((_, i) => i !== idx))
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={!!a.is_primary}
+              onChange={(e) =>
+                updateAddressRow(idx, "is_primary", e.target.checked)
               }
-              className="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors text-base"
-            >
-              ✕
-            </button>
+            />
+            Primary Address
+          </label>
 
-            <div className="md:col-span-2 flex flex-wrap gap-4 pt-2">
-              {["is_primary", "is_billing", "is_shipping"].map((f) => (
-                <label
-                  key={f}
-                  className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer capitalize"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!a[f as keyof PartyAddressDraft]}
-                    onChange={(e) =>
-                      updateAddressRow(
-                        idx,
-                        f as keyof PartyAddressDraft,
-                        e.target.checked,
-                      )
-                    }
-                    className="w-4 h-4 rounded text-emerald-600 border-slate-300 dark:border-slate-700"
-                  />
-                  {f.replace("is_", "")}
-                </label>
-              ))}
-            </div>
-          </div>
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={!!a.is_billing}
+              onChange={(e) =>
+                updateAddressRow(idx, "is_billing", e.target.checked)
+              }
+            />
+            Billing Address
+          </label>
+
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={!!a.is_shipping}
+              onChange={(e) =>
+                updateAddressRow(idx, "is_shipping", e.target.checked)
+              }
+            />
+            Shipping Address
+          </label>
+
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={!!a.is_collection}
+              onChange={(e) =>
+                updateAddressRow(idx, "is_collection", e.target.checked)
+              }
+            />
+            Collection Address
+          </label>
+
         </div>
-      ))} */
+      </div> */
+}

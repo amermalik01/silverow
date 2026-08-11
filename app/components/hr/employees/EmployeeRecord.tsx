@@ -171,7 +171,7 @@ export default function EmployeeRecord({ id }: Props) {
             disabled={saving}
             className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm min-w-[140px] justify-center"
           >
-            {saving ? "Synchronizing..." : "Save Changes"}
+            {saving ? "Synchronizing..." : "Save"}
           </Button>
         </div>
         {/* <div className="flex items-center gap-3">
@@ -180,7 +180,7 @@ export default function EmployeeRecord({ id }: Props) {
             disabled={saving}
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium text-xs px-5 py-2.5 rounded-lg shadow-sm transition-colors duration-150 flex items-center gap-2"
           >
-            {saving ? "Synchronizing..." : "Save Changes"}
+            {saving ? "Synchronizing..." : "Save"}
           </button>
         </div> */}
       </div>

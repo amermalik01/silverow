@@ -171,12 +171,28 @@ export default function GeneralTab({
     });
   };
 
+  /* 
   const getInputClass = (errorKey: string) =>
     `w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white ${
       errors[errorKey]
         ? "border-red-500 bg-red-50/10"
         : "border-slate-300 dark:border-slate-700"
-    }`;
+    }`; */
+
+  const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
+    const baseClasses =
+      "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
+
+    if (disabled) {
+      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none`;
+    }
+
+    const stateClasses = errors[errorKey]
+      ? "border-red-500 bg-red-50/10 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+
+    return `${baseClasses} ${stateClasses}`;
+  };
 
   const activeModule =
     account.is_customer || account.is_crm_lead ? "sales" : "purchases";

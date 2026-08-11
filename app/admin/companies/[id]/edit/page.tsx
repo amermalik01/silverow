@@ -120,7 +120,7 @@ export default function EditCompanyPage() {
         </div>
 
         {/* <div className="flex gap-4 pt-4">
-          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
+          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
           <Button variant="ghost" onClick={() => router.back()}>Cancel</Button>
         </div> */}
 
@@ -132,7 +132,7 @@ export default function EditCompanyPage() {
             disabled={saving}
             className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
           >
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? "Saving..." : "Save"}
           </Button>
           <Button
             type="button" // Always good practice to explicitly define type="button" to prevent accidental submits

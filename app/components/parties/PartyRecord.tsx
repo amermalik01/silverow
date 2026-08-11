@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
+import { toast } from "sonner";
 
 import GeneralTab, { type CompanyCurrency } from "./tabs/GeneralTab";
 import FinanceTab from "./tabs/FinanceTab";
@@ -40,14 +41,30 @@ type Props = {
   isReadonly?: boolean;
 };
 
-export default function PartyRecord({ id, module, isReadonly = false }: Props) {
+export default function PartyRecord({
+  id,
+  module,
+  isReadonly: isReadonlyProp = false,
+}: Props) {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState("general");
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Current working state
   const [account, setAccount] = useState<Partial<Party>>({ id: "" });
   const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
   const [addresses, setAddresses] = useState<PartyAddressDraft[]>([]);
   const [currencies, setCurrencies] = useState<CompanyCurrency[]>([]);
+
+  // Snapshot states for rolling back on Cancel
+  const [initialAccount, setInitialAccount] = useState<Partial<Party>>({});
+  const [initialContacts, setInitialContacts] = useState<PartyContactDraft[]>(
+    [],
+  );
+  const [initialAddresses, setInitialAddresses] = useState<PartyAddressDraft[]>(
+    [],
+  );
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -57,7 +74,6 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
 
   useEffect(() => {
     const loadData = async () => {
-
       show("Fetching Record...");
       try {
         const [partyRes, currencyRes] = await Promise.all([
@@ -69,9 +85,23 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
           throw new Error("Entity target footprint retrieval failed.");
 
         const data = await partyRes.json();
-        setAccount(data.account ?? {});
-        setContacts(data.contacts || []);
-        setAddresses(data.addresses || []);
+        const loadedAccount = data.account ?? {};
+        const loadedContacts = data.contacts || [];
+        const loadedAddresses = data.addresses || [];
+
+        // Set working state
+        setAccount(loadedAccount);
+        setContacts(loadedContacts);
+        setAddresses(loadedAddresses);
+
+        // Save initial snapshot for rollback capability
+        setInitialAccount(loadedAccount);
+        setInitialContacts(loadedContacts);
+        setInitialAddresses(loadedAddresses);
+
+        // setAccount(data.account ?? {});
+        // setContacts(data.contacts || []);
+        // setAddresses(data.addresses || []);
 
         if (currencyRes.ok) {
           const currencyData = await currencyRes.json();
@@ -79,6 +109,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
         }
       } catch (err) {
         console.error(err);
+        toast.error("Failed to load party record details.");
       } finally {
         setLoading(false);
         hide();
@@ -158,16 +189,40 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
           result.error || "Save operational error failure exception.",
         );
 
-      // alert("Changes saved securely! ✅");
+      // Refresh snapshot with saved response or updated local data
+      const updatedAccount = result.account || account;
+      setAccount(updatedAccount);
+      setInitialAccount(updatedAccount);
+      setInitialContacts(contacts);
+      setInitialAddresses(addresses);
+
+      // Clear errors, exit edit mode & notify user
+      setFormErrors({});
+      setIsEditing(false);
+      toast.success("Record saved successfully! ✅");
     } catch (err) {
-      if (err instanceof Error)
+      if (err instanceof Error) {
         setFormErrors({
           global: err.message || "An unexpected error occurred.",
         });
+        toast.error(err.message || "Failed to save record");
+      }
     } finally {
       setSaving(false);
     }
   };
+
+  const handleCancelEdit = () => {
+    // Revert state back to latest saved snapshot
+    setAccount(initialAccount);
+    setContacts(initialContacts);
+    setAddresses(initialAddresses);
+    setFormErrors({});
+    setIsEditing(false);
+  };
+
+  // Combine parent force-readonly prop with internal edit mode state
+  const effectiveReadonly = isReadonlyProp || !isEditing;
 
   // Base tabs
   const tabs = ["general"];
@@ -214,9 +269,13 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
       {/* 1. Header with Conversion Buttons */}
       <PartyDetailHeader
         party={account}
-        onPartyUpdated={(updatedAccount) =>
-          setAccount((prev) => ({ ...prev, ...updatedAccount }))
-        }
+        onPartyUpdated={(updatedAccount) => {
+          setAccount((prev) => ({ ...prev, ...updatedAccount }));
+          setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
+        }}
+        // onPartyUpdated={(updatedAccount) =>
+        //   setAccount((prev) => ({ ...prev, ...updatedAccount }))
+        // }
       />
       {/* Validation Errors display */}
       {Object.keys(formErrors).length > 0 && (
@@ -277,6 +336,7 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
             setAddresses={setAddresses}
             errors={formErrors}
             currencies={currencies}
+            isReadonly={effectiveReadonly}
           />
         )}
 
@@ -284,15 +344,16 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
           <FinanceTab
             account={account}
             setAccount={setAccount}
-            isReadonly={isReadonly}
+            isReadonly={effectiveReadonly}
             errors={formErrors}
           />
         )}
-        
+
         {activeTab === "contacts" && (
           <ContactsTab
             contacts={contacts}
             setContacts={setContacts}
+            isReadonly={effectiveReadonly}
             errors={formErrors}
           />
         )}
@@ -300,47 +361,109 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
           <AddressesTab
             addresses={addresses}
             setAddresses={setAddresses}
+            isReadonly={effectiveReadonly}
             errors={formErrors}
           />
         )}
 
         {activeTab === "opportunities" && (
-          <OpportunityCycleTab partyId={id} readonly={isReadonly} />
+          <OpportunityCycleTab partyId={id} readonly={effectiveReadonly} />
         )}
 
         {activeTab === "activities" && (
-          <>
-          {/* <ActivitiesTab module={module} recordId={id} /> */}
-          </>
+          <>{/* <ActivitiesTab module={module} recordId={id} /> */}</>
         )}
         {activeTab === "notes" && (
-          <NotesTab module={module} recordId={id} readonly={isReadonly} />
+          <NotesTab
+            module={module}
+            recordId={id}
+            readonly={effectiveReadonly}
+          />
         )}
         {activeTab === "attachments" && (
-          <AttachmentsTab module={module} recordId={id} readonly={isReadonly} />
+          <AttachmentsTab
+            module={module}
+            recordId={id}
+            readonly={effectiveReadonly}
+          />
         )}
       </div>
 
       {/* Persistent Bottom Action Drawer */}
 
-      {!isReadonly && (
-        <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
-          {/* Cancel Button */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()} // Or your custom close/cancel action handler
-            className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
-          >
-            Cancel
-          </Button>
+      {/* Persistent Bottom Action Drawer */}
+      <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
+        {!isReadonlyProp && (
+          <>
+            {!isEditing ? (
+              /* VIEW MODE BUTTONS */
+              <>
+                <Button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2"
+                >
+                  {/* <Icon icon="tabler:edit" className="w-4 h-4" /> */}
+                  Edit
+                </Button>
 
-          {/* Save/Commit Changes Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white dark:bg-slate-800 dark:text-zinc-200"
+                >
+                  Close
+                </Button>
+              </>
+            ) : (
+              /* EDIT MODE BUTTONS */
+              <>
+                <Button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm flex items-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      {/* <Icon
+                        icon="svg-spinners:180-ring-with-bg"
+                        className="w-4 h-4"
+                      /> */}
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      {/* <Icon icon="tabler:check" className="w-4 h-4" /> */}
+                      Save
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                  disabled={saving}
+                  className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white dark:bg-slate-800 dark:text-zinc-200"
+                >
+                  Cancel
+                </Button>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* {!isReadonlyProp && (
+        <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
+
           <Button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm flex items-center gap-2 min-w-[140px] justify-center"
+            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm flex items-center gap-2 justify-center"
           >
             {saving ? (
               <>
@@ -351,202 +474,20 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
                 <span>Committing...</span>
               </>
             ) : (
-              "Save Changes"
+              "Save"
             )}
           </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()} // Or your custom close/cancel action handler
+            className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
+          >
+            Cancel
+          </Button>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
-
-/* "use client";
-
-import { useEffect, useState } from "react";
-
-import GeneralTab from "./tabs/GeneralTab";
-import ContactsTab from "./tabs/ContactsTab";
-import AddressesTab from "./tabs/AddressesTab";
-
-import ActivitiesTab from "../shared/ActivitiesTab";
-import NotesTab from "../shared/NotesTab";
-import AttachmentsTab from "../shared/AttachmentsTab";
-
-import {
-  Party,
-  PartyModule,
-  PartyDraft,
-  PartyContactDraft,
-  PartyAddressDraft,
-} from "@/types/erp";
-
-type Props = {
-  id: string;
-  module: PartyModule | "customer" | "supplier";
-  isReadonly?: boolean;
-};
-
-export default function PartyRecord({ id, module, isReadonly = false }: Props) {
-  const [activeTab, setActiveTab] = useState("general");
-
-  // const [account, setAccount] = useState<Partial<Party> | null>(null);
-  const [account, setAccount] = useState<Partial<Party>>({
-    id: "",
-    type:
-      module === "crm"
-        ? "lead"
-        : module === "srm"
-          ? "vendor"
-          : module === "supplier"
-            ? "vendor"
-            : "customer",
-    status: "active",
-  });
-
-  const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
-
-  const [addresses, setAddresses] = useState<PartyAddressDraft[]>([]);
-
-  const [loading, setLoading] = useState(true);
-
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const res = await fetch(`/api/parties/${id}`);
-
-        const data = await res.json();
-
-        setAccount(data.account ?? {});
-        setContacts(data.contacts || []);
-        setAddresses(data.addresses || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [id]);
-
-  const handleSave = async () => {
-    if (!account) return;
-
-    try {
-      setSaving(true);
-
-      const res = await fetch(`/api/parties/${id}`, {
-        method: "PUT",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          account,
-          contacts,
-          addresses,
-        }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.error);
-      }
-
-      alert("Updated Successfully ✅");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
-    return <p>Loading record...</p>;
-  }
-
-  // if (!account) {
-  //   return <p>Record not found</p>;
-  // }
-
-  const tabs = [
-    "general",
-    "contacts",
-    "addresses",
-    "activities",
-    "notes",
-    "attachments",
-  ];
-
-  if (module === "crm") {
-    tabs.splice(3, 0, "opportunities");
-  }
-
-  return (
-    <div className="space-y-6">
-
-      <div className="flex gap-4 border-b pb-2 flex-wrap">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`capitalize px-3 py-1 ${
-              activeTab === tab ? "font-bold border-b-2 border-blue-600" : ""
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-
-      {activeTab === "general" && (
-        <GeneralTab
-          account={account}
-          setAccount={setAccount}
-          isReadonly={isReadonly}
-        />
-      )}
-
-
-      {activeTab === "contacts" && (
-        <ContactsTab contacts={contacts} setContacts={setContacts} />
-      )}
-
-
-      {activeTab === "addresses" && (
-        <AddressesTab addresses={addresses} setAddresses={setAddresses} />
-      )}
-
-
-      {activeTab === "activities" && (
-        <ActivitiesTab module={module} recordId={id} />
-      )}
-
-
-      {activeTab === "notes" && <NotesTab module={module} recordId={id} />}
-
-
-      {activeTab === "attachments" && (
-        <AttachmentsTab module={module} recordId={id} />
-      )}
-
-
-      {!isReadonly && (
-        <div className="flex justify-end pt-4 border-t">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-blue-600 text-white px-6 py-2 rounded"
-          >
-            {saving ? "Saving..." : "Update"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-} */

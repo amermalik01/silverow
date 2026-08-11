@@ -447,7 +447,7 @@ export default function AccountForm({ slug, id }: Props) {
             {loading
               ? "Processing..."
               : isEditMode
-                ? "Save Changes"
+                ? "Save"
                 : "Create G/L Account"}
           </Button>
         </div>

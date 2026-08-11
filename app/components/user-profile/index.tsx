@@ -406,7 +406,7 @@ const UserProfile = () => {
               color={'primary'}
               className='rounded-md'
               onClick={handleSave}>
-              Save Changes
+              Save
             </Button>
             <Button
               color={'lighterror'}
