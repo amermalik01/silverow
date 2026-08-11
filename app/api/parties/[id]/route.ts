@@ -29,8 +29,26 @@ export async function GET(_: Request, { params }: Props) {
   const client = await pool.connect();
 
   try {
+    // const party = await client.query(
+    //   `SELECT * FROM parties WHERE id = $1 AND company_id = $2`,
+    //   [id, companyId],
+    // );
+
     const party = await client.query(
-      `SELECT * FROM parties WHERE id = $1 AND company_id = $2`,
+      `
+      SELECT 
+        p.*,
+        ar.code AS gl_account_receivable_code,
+        ar.name AS gl_account_receivable_name,
+        ap.code AS gl_account_payable_code,
+        ap.name AS gl_account_payable_name
+      FROM parties p
+      LEFT JOIN chart_of_accounts ar 
+        ON NULLIF(p.gl_account_receivable, '')::uuid = ar.id
+      LEFT JOIN chart_of_accounts ap 
+        ON NULLIF(p.gl_account_payable, '')::uuid = ap.id
+      WHERE p.id = $1 AND p.company_id = $2
+      `,
       [id, companyId],
     );
 

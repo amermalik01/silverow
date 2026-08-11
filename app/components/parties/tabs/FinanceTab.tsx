@@ -3,7 +3,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
 import type { Party } from "@/types/erp";
+// Lookup Modal Imports
+import GLAccountLookupModal, {
+  GLAccountLookupRecord,
+} from "@/app/components/shared/modals/GLAccountLookupModal";
 
 type Option = {
   id: string | number;
@@ -41,7 +46,14 @@ export default function FinanceTab({
     paymentTerms: [],
     paymentMethods: [],
   });
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
+
+  const [selectedReceivableGL, setSelectedReceivableGL] =
+    useState<GLAccountLookupRecord | null>(null);
+  const [selectedPayableGL, setSelectedPayableGL] =
+    useState<GLAccountLookupRecord | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -79,6 +91,9 @@ export default function FinanceTab({
   };
 
   const isCustomer = !!account.is_customer;
+  const activeGlField = isCustomer
+    ? "gl_account_receivable"
+    : "gl_account_payable";
 
   const getInputClass = (errorKey: string) =>
     `w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white ${
@@ -86,6 +101,55 @@ export default function FinanceTab({
         ? "border-red-500 bg-red-50/10"
         : "border-slate-300 dark:border-slate-700"
     }`;
+
+  const handleSelectGLAccount = (gl: GLAccountLookupRecord) => {
+    if (isCustomer) {
+      setSelectedReceivableGL(gl);
+      updateField("gl_account_receivable", gl.id);
+    } else {
+      setSelectedPayableGL(gl);
+      updateField("gl_account_payable", gl.id);
+    }
+    setIsModalOpen(false);
+  };
+
+  const getGlDisplayLabel = () => {
+    if (isCustomer) {
+      // 1. If newly selected via modal in current session
+      if (selectedReceivableGL) {
+        return `${selectedReceivableGL.code} - ${selectedReceivableGL.name}`;
+      }
+      // 2. If loaded from database with joined columns
+      if (
+        account.gl_account_receivable_code &&
+        account.gl_account_receivable_name
+      ) {
+        return `${account.gl_account_receivable_code} - ${account.gl_account_receivable_name}`;
+      }
+      // 3. Fallback
+      return account.gl_account_receivable || "";
+    } else {
+      // 1. If newly selected via modal in current session
+      if (selectedPayableGL) {
+        return `${selectedPayableGL.code} - ${selectedPayableGL.name}`;
+      }
+      // 2. If loaded from database with joined columns
+      if (account.gl_account_payable_code && account.gl_account_payable_name) {
+        return `${account.gl_account_payable_code} - ${account.gl_account_payable_name}`;
+      }
+      // 3. Fallback
+      return account.gl_account_payable || "";
+    }
+  };
+
+  // 2. Compute display value safely
+  // const currentGlDisplay = isCustomer
+  //   ? selectedReceivableGL
+  //     ? `${selectedReceivableGL.code} - ${selectedReceivableGL.name}`
+  //     : account.gl_account_receivable || ""
+  //   : selectedPayableGL
+  //     ? `${selectedPayableGL.code} - ${selectedPayableGL.name}`
+  //     : account.gl_account_payable || "";
 
   return (
     <div className="space-y-8">
@@ -395,26 +459,60 @@ export default function FinanceTab({
                 : "Default G/L Account Payable"}
             </label>
             <div className="col-span-2">
-              <input
-                type="text"
-                value={
-                  isCustomer
-                    ? account.gl_account_receivable || ""
-                    : account.gl_account_payable || ""
-                }
-                onChange={(e) =>
-                  updateField(
-                    isCustomer ? "gl_account_receivable" : "gl_account_payable",
-                    e.target.value,
-                  )
-                }
-                disabled={isReadonly}
-                className={getInputClass(
-                  isCustomer
-                    ? "finance.gl_account_receivable"
-                    : "finance.gl_account_payable",
-                )}
-              />
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  readOnly
+                  placeholder="Choose G/L..."
+                  // value={account[activeGlField] || ""}
+                  value={getGlDisplayLabel()}
+                  disabled={isReadonly}
+                  className={`${getInputClass(`finance.${activeGlField}`)} font-mono cursor-pointer`}
+                  onClick={() => !isReadonly && setIsModalOpen(true)}
+                />
+
+                <button
+                  type="button"
+                  disabled={isReadonly}
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border dark:border-slate-700 rounded text-slate-600 dark:text-slate-300 transition"
+                >
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
+                </button>
+              </div>
+              {/* <div className="flex gap-1">
+                <input
+                  type="text"
+                  value={
+                    isCustomer
+                      ? account.gl_account_receivable || ""
+                      : account.gl_account_payable || ""
+                  }
+                  onChange={(e) =>
+                    updateField(
+                      isCustomer
+                        ? "gl_account_receivable"
+                        : "gl_account_payable",
+                      e.target.value,
+                    )
+                  }
+                  disabled={isReadonly}
+                  className={getInputClass(
+                    isCustomer
+                      ? "finance.gl_account_receivable"
+                      : "finance.gl_account_payable",
+                  )}
+                />
+
+                <button
+                  type="button"
+                  disabled={isReadonly}
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                >
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
+                </button>
+              </div> */}
             </div>
           </div>
 
@@ -693,6 +791,13 @@ export default function FinanceTab({
           </div>
         </div>
       </div>
+
+      <GLAccountLookupModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelect={handleSelectGLAccount}
+        multiple={false}
+      />
     </div>
   );
 }

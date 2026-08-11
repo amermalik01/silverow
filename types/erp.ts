@@ -116,6 +116,12 @@ export type PartyDraft = {
 
   gl_account_receivable?: string | null;
   gl_account_payable?: string | null;
+
+  // Joined G/L account detail fields for UI display
+  gl_account_receivable_code?: string | null;
+  gl_account_receivable_name?: string | null;
+  gl_account_payable_code?: string | null;
+  gl_account_payable_name?: string | null;
   posting_group?: string;
 
   finance_charge?: string | null;
