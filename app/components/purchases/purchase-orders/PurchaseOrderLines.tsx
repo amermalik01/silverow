@@ -303,8 +303,8 @@ export default function PurchaseOrderLines({
         </div>
       </div>
 
-      <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
-        <table className="w-full text-left text-xs border-collapse min-w-[1300px]">
+      <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm ">
+        <table className="w-full text-left text-xs border-collapse min-w-[1300px] p-2">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
               <th className="p-2 w-[110px]">Type</th>

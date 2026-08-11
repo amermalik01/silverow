@@ -115,7 +115,7 @@ export default function PurchaseOrderList({ slug }: Props) {
   return (
     <div className="space-y-6 container mx-auto p-4">
       {/* Header Controls Element Block */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">Purchase Orders</h2>
           <p className="text-xs text-gray-500">

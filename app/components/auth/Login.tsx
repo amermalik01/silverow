@@ -99,7 +99,7 @@ export const Login = () => {
         {" "}
         {/* bg-lightprimary */}
         {/* <div className="md:min-w-[480px] min-w-max "> */}
-        <div className="w-full max-w-[480px]">
+        <div className="w-full sm:max-w-[480px] md:max-w-[520px] ">
           <CardBox
             className="
             w-full
@@ -113,7 +113,7 @@ export const Login = () => {
           "
           >
             {/* <div className="h-1.5 w-20 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-700 mx-auto mb-6" /> */}
-            <div className="h-1.5 w-16 rounded-full bg-emerald-600 mx-auto mb-6" />
+            {/* <div className="h-1.5 w-16 rounded-full bg-emerald-600 mx-auto mb-6" /> */}
 
             <div className="text-center space-y-4">
               <div className="flex justify-center mb-4">
@@ -164,9 +164,12 @@ export const Login = () => {
                 <span className="text-xs font-bold tracking-widest text-emerald-800 uppercase block mb-1">
                   Go Beyond With Nevico{/* SILVEROW */}
                 </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+                {/* <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
                   Welcome Back
-                </h1>
+                </h1> */}
+                <h2 className=" text-center text-xl font-semibold text-slate-800">
+                  Take full control of your business
+                </h2>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">
                   Sign in to continue to your workspace
                 </p>
@@ -197,7 +200,8 @@ export const Login = () => {
 
             <form onSubmit={handleLogin} className="mt-6 space-y-4">
               <div>
-                <div >{/* className="mb-2 block" */}
+                <div>
+                  {/* className="mb-2 block" */}
                   {/* <Label htmlFor="email1" className="font-medium"> */}
                   <Label
                     htmlFor="email1"
@@ -272,8 +276,8 @@ export const Login = () => {
               </div>
 
               {/* <div className="flex items center gap-2 justify-center mt-6 flex-wrap"> */}
-                <Button
-                  className="
+              <Button
+                className="
                     w-full
                     h-12
                     mt-2
@@ -288,26 +292,26 @@ export const Login = () => {
                     duration-200
                     active:scale-[0.99]
                   "
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading ? "Signing in..." : "Sign In"}
-                </Button>
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? "Signing in..." : "Sign In"}
+              </Button>
               {/* </div> */}
             </form>
           </CardBox>
 
           {/* Bottom Modules Section */}
-        <div className="mt-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-white/90 drop-shadow-sm mb-4">
-            Business in Motion
-          </p>
+          <div className="mt-8 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/90 drop-shadow-sm mb-4">
+              Business in Motion
+            </p>
 
-          <div className="grid grid-cols-5 gap-2.5">
-            {modules.map((item) => (
-              <div
-                key={item.title}
-                className="
+            <div className="grid grid-cols-5 gap-2.5">
+              {modules.map((item) => (
+                <div
+                  key={item.title}
+                  className="
                   backdrop-blur-md
                   bg-slate-900/40
                   border
@@ -325,14 +329,14 @@ export const Login = () => {
                   hover:-translate-y-0.5
                   shadow-sm
                 "
-              >
-                <Icon icon={item.icon} className="text-xl text-emerald-300" />
-                <span className="mt-1.5 text-[11px] font-medium text-slate-100">
-                  {item.title}
-                </span>
-              </div>
-            ))}
-          </div>
+                >
+                  <Icon icon={item.icon} className="text-xl text-emerald-300" />
+                  <span className="mt-1.5 text-[11px] font-medium text-slate-100">
+                    {item.title}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* <div className="mt-10">
