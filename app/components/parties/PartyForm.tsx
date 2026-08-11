@@ -31,9 +31,12 @@ export default function PartyForm({
   redirectPath,
 }: Props) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<
-    "general" | "contacts" | "locations"
-  >("general");
+  // const [activeTab, setActiveTab] = useState<
+  //   "general" | "contacts" | "locations"
+  // >("general");
+
+  const [activeTab, setActiveTab] = useState("general");
+  
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [currencies, setCurrencies] = useState<CompanyCurrency[]>([]);
@@ -181,9 +184,11 @@ export default function PartyForm({
     }
   };
 
+  const tabs = ["general", "contacts", "locations"];
+
   return (
-    <div className="space-y-6 container mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-6">
-      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4">
+    <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
+      {/* <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">
             {title}
@@ -192,7 +197,7 @@ export default function PartyForm({
             Configure corporate identity configuration metrics securely.
           </p>
         </div>
-      </div>
+      </div> */}
 
       {Object.keys(formErrors).length > 0 && (
         <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
@@ -215,7 +220,7 @@ export default function PartyForm({
         </div>
       )}
 
-      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800">
+      {/* <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800">
         {(["general", "contacts", "locations"] as const).map((tab) => {
           const matchingTabErrors = Object.keys(formErrors).some((k) =>
             k.startsWith(`${tab}.`),
@@ -236,6 +241,30 @@ export default function PartyForm({
                 <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-red-500 text-white rounded-full font-bold">
                   !
                 </span>
+              )}
+            </button>
+          );
+        })}
+      </div> */}
+
+      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
+        {tabs.map((tab) => {
+          const hasErrorInTab = Object.keys(formErrors).some((k) =>
+            k.startsWith(`${tab}.`),
+          );
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`capitalize px-4 py-2.5 text-xs font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
+                activeTab === tab
+                  ? "border-blue-600 text-blue-600 font-semibold"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+            >
+              {tab}
+              {hasErrorInTab && (
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
               )}
             </button>
           );
