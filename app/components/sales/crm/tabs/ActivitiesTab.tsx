@@ -9,8 +9,8 @@ type Props = {
 export default function ActivitiesTab({ module, recordId }: Props) {
   return (
     <div className="space-y-4">
-      <button className="bg-blue-600 text-white px-3 py-1 rounded">
-        + Add Activity
+      <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+        Add Activity
       </button>
 
       <div className="border rounded p-4">

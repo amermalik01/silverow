@@ -161,9 +161,10 @@ export default function WarehouseTab({
             type="button"
             onClick={addWarehouseRow}
             disabled={loadingLookups}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            // className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm disabled:opacity-50"
           >
-            + Add Warehouse
+            Add Warehouse
           </button>
         )}
       </div>

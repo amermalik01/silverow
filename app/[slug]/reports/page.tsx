@@ -167,7 +167,7 @@ export default function ReportsPage() {
           return (
             <div
               key={category}
-              className="flex flex-col overflow-hidden rounded-lg border border-slate-200 shadow-sm"
+              className="flex flex-col overflow-hidden rounded-lg border border-slate-200 shadow-sm bg-white"
             >
               {/* Category Header Bar (Emulating legacy dark forest green style) */}
               <div className="bg-emerald-950 px-4 py-3 text-xs font-semibold tracking-wide text-white">

@@ -244,7 +244,8 @@ export default function AccountingTab({
                       onClick={() => setActiveModalTarget("inventory")}
                       className="h-9 px-3"
                     >
-                      <Icon icon="lucide:search" className="w-4 h-4" />
+                      {/* <Icon icon="lucide:search" className="w-4 h-4" /> */}
+                      <Icon icon="tabler:external-link" className="w-4 h-4" />
                     </Button>
                     {item?.inventory_gl_id && (
                       <Button
@@ -278,7 +279,8 @@ export default function AccountingTab({
                       onClick={() => setActiveModalTarget("cogs")}
                       className="h-9 px-3"
                     >
-                      <Icon icon="lucide:search" className="w-4 h-4" />
+                      {/* <Icon icon="lucide:search" className="w-4 h-4" /> */}
+                      <Icon icon="tabler:external-link" className="w-4 h-4" />
                     </Button>
                     {item?.cogs_gl_id && (
                       <Button

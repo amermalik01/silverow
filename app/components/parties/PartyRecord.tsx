@@ -309,7 +309,9 @@ export default function PartyRecord({ id, module, isReadonly = false }: Props) {
         )}
 
         {activeTab === "activities" && (
-          <ActivitiesTab module={module} recordId={id} />
+          <>
+          {/* <ActivitiesTab module={module} recordId={id} /> */}
+          </>
         )}
         {activeTab === "notes" && (
           <NotesTab module={module} recordId={id} readonly={isReadonly} />

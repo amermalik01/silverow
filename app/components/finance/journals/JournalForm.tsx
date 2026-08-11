@@ -599,8 +599,8 @@ export default function JournalForm({
               <th className="p-2 w-20 text-center">Cnv. Rate</th>
               <th className="p-2 w-28">Converted</th>
               <th className="p-2 w-64">Balancing G/L Selector</th>
-              <th className="p-2 w-28 text-center">Allocate Amount</th>
-              <th className="p-2 w-8 text-center"></th>
+              {/* <th className="p-2 w-28 text-center">Allocate Amount</th> */}
+              <th className="p-2 w-24 text-center">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 font-medium text-zinc-600">
@@ -733,9 +733,10 @@ export default function JournalForm({
                                 : line.transaction_type,
                           })
                         }
-                        className="px-2 bg-zinc-200 hover:bg-zinc-300 border text-zinc-700 rounded font-semibold transition"
+                        // className="px-2 bg-zinc-200 hover:bg-zinc-300 border text-zinc-700 rounded font-semibold transition"
+                        className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                       >
-                        <Icon icon="tabler:search" />
+                        <Icon icon="tabler:external-link" className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -844,9 +845,10 @@ export default function JournalForm({
                             target: "gl",
                           })
                         }
-                        className="px-2 bg-zinc-200 hover:bg-zinc-300 border text-zinc-700 rounded font-semibold transition"
+                        // className="px-2 bg-zinc-200 hover:bg-zinc-300 border text-zinc-700 rounded font-semibold transition"
+                        className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                       >
-                        <Icon icon="tabler:search" />
+                        <Icon icon="tabler:external-link" className="w-4 h-4" />
                       </button>
 
                       {/* {line.balancing_account_id && (
@@ -869,42 +871,52 @@ export default function JournalForm({
                   </td>
 
                   {/* 🌟 ALLOCATE AMOUNT BUTTON COLUMN */}
-                  <td className="p-1.5 text-center">
-                    {isPartyLine ? (
-                      <button
-                        type="button"
-                        disabled={
-                          formDisabled || !line.party_id || localAmount <= 0
-                        }
-                        onClick={() => setAllocationModalIndex(index)}
-                        className={`flex items-center justify-center gap-1 w-full py-1 px-2 border rounded font-semibold transition ${
-                          totalLineAllocated > 0
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                            : "bg-zinc-100 text-zinc-700 border-zinc-300 hover:bg-zinc-200"
-                        } disabled:opacity-40 disabled:cursor-not-allowed`}
-                        title="Allocate payment to open invoices"
-                      >
-                        <span className="font-bold">📋</span>
+                  <td className="p-1.5 ">
+                    <div className="flex flex-row gap-1">
+                      {isPartyLine ? (
+                        <button
+                          type="button"
+                          title={
+                            totalLineAllocated > 0
+                              ? `$${totalLineAllocated.toFixed(2)}`
+                              : "Allocate"
+                          }
+                          disabled={
+                            formDisabled || !line.party_id || localAmount <= 0
+                          }
+                          onClick={() => setAllocationModalIndex(index)}
+                          className={`flex items-center justify-center gap-1 py-1 px-2 border rounded font-semibold transition ${
+                            totalLineAllocated > 0
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                              : "bg-zinc-100 text-zinc-700 border-zinc-300 hover:bg-zinc-200"
+                          } disabled:opacity-40 disabled:cursor-not-allowed`}
+                          // title="Allocate payment to open invoices"
+                        >
+                          <Icon icon="tabler:box-seam" className="w-4 h-4" />
+                          {/* <span className="font-bold">📋</span>
                         <span>
                           {totalLineAllocated > 0
                             ? `$${totalLineAllocated.toFixed(2)}`
                             : "Allocate"}
-                        </span>
-                      </button>
-                    ) : (
-                      <span className="text-zinc-300">-</span>
-                    )}
-                  </td>
+                        </span> */}
+                        </button>
+                      ) : (
+                        <span className="text-zinc-300">-</span>
+                      )}
+                      {/* </td>
 
-                  <td className="p-1.5 text-center">
-                    <button
-                      type="button"
-                      disabled={lines.length === 1 || formDisabled}
-                      onClick={() => removeLineRow(index)}
-                      className="w-5 h-5 bg-zinc-100 hover:bg-red-100 hover:text-red-600 rounded text-zinc-400 font-bold flex items-center justify-center disabled:opacity-20"
-                    >
-                      ✕
-                    </button>
+                  <td className="p-1.5 text-center"> */}
+                      <button
+                        type="button"
+                        disabled={lines.length === 1 || formDisabled}
+                        onClick={() => removeLineRow(index)}
+                        className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                        // className="w-5 h-5 bg-zinc-100 hover:bg-red-100 hover:text-red-600 rounded text-zinc-400 font-bold flex items-center justify-center disabled:opacity-20"
+                      >
+                        <Icon icon="lucide:x" className="w-4 h-4" />
+                        {/* ✕ */}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -919,10 +931,10 @@ export default function JournalForm({
           size="sm"
           disabled={formDisabled}
           onClick={addLineRow}
-          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/50 border-emerald-200"
+          // className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/50 border-emerald-200"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
         >
-          <span className="text-xs font-bold">+</span>
-          Add Row
+          Add Line
         </Button>
 
         <div className="flex items-center gap-6 font-mono text-zinc-600 bg-zinc-50 border p-2 px-4 rounded font-bold">

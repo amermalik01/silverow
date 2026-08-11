@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Icon } from "@iconify/react";
 import {
   PurchaseOrder,
   PurchaseOrderLine,
@@ -601,7 +602,16 @@ export default function PurchaseOrderLines({
                               setActiveAllocationRowKey(index.toString());
                               setIsAllocationModalOpen(true);
                             }}
-                            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                            className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                                // 🟡 YELLOW / AMBER = Stock Received
+                                isStockReceived
+                                  ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
+                                  : // 🟢 GREEN = Allocated Stock (Fully allocated)
+                                    line.is_allocated
+                                    ? "text-emerald-500"
+                                    : // 🔴 RED = Partially Allocated (Not fully allocated yet)
+                                      "text-rose-500"
+                              }`}
                             title={
                               isStockReceived
                                 ? `Stock Received (${receivedQty}/${displayQty}).`
@@ -617,7 +627,7 @@ export default function PurchaseOrderLines({
                             //       : "Open Allocation Matrix"
                             // }
                           >
-                            <span
+                           {/*  <span
                               className={`inline-block w-3 h-3 rounded-full transition-all ${
                                 // 🟡 YELLOW / AMBER = Stock Received
                                 isStockReceived
@@ -628,6 +638,10 @@ export default function PurchaseOrderLines({
                                     : // 🔴 RED = Partially Allocated (Not fully allocated yet)
                                       "bg-rose-500"
                               }`}
+                            /> */}
+                            <Icon
+                              icon="tabler:box-seam"
+                              className="w-4 h-4"
                             />
                           </button>
                         ) : (
@@ -661,16 +675,17 @@ export default function PurchaseOrderLines({
                           <button
                             type="button"
                             onClick={() => removeLine(index)}
-                            className="text-red-600 hover:text-red-800 font-medium text-xs"
+                            // className="text-red-600 hover:text-red-800 font-medium text-xs"
+                            className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
                           >
-                            Remove
+                            <Icon icon="lucide:x" className="w-4 h-4" />
                           </button>
                         ) : (
                           <span
                             className="text-[10px] text-slate-400 italic cursor-help"
                             title="Line locked because stock has been received against it."
                           >
-                            Locked
+                            -{/* Locked */}
                           </span>
                         )}
                       </div>

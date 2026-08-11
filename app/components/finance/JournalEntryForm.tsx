@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { JournalLine } from "@/types/finance";
 
@@ -338,9 +339,11 @@ export default function JournalEntryForm({
                 <button
                   type="button"
                   onClick={() => removeLine(index)}
-                  className="text-red-500"
+                  // className="text-red-500"
+                  className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
                 >
-                  ✕
+                  <Icon icon="lucide:x" className="w-4 h-4" />
+                  {/* ✕ */}
                 </button>
               </td>
             </tr>
@@ -350,12 +353,19 @@ export default function JournalEntryForm({
 
       {/* ADD LINE */}
 
-      <button
+      {/* <button
         type="button"
         onClick={addLine}
         className="bg-gray-200 px-3 py-1 rounded"
       >
         + Add Line
+      </button> */}
+      <button
+        type="button"
+        onClick={addLine}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+      >
+        Add Line
       </button>
 
       {/* TOTALS */}

@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Trash2, Plus } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 import { useRouter } from "next/navigation";
 import ItemLookupModal, {
@@ -406,7 +407,7 @@ export default function ItemJournalForm({
       // };
 
       const payload = {
-        entry_date: new Date().toISOString().split('T')[0],// metadata.entry_date || metadata.postingDate || 
+        entry_date: new Date().toISOString().split("T")[0], // metadata.entry_date || metadata.postingDate ||
         reference: metadata.reference || "",
         description: metadata.description || "",
         is_item_journal: true,
@@ -884,9 +885,11 @@ export default function ItemJournalForm({
                             type="button"
                             onClick={() => removeLineRow(line.local_key)}
                             disabled={lines.length <= 1}
-                            className="p-1 rounded text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 disabled:opacity-20 text-xs transition"
+                            className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                            // className="p-1 rounded text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 disabled:opacity-20 text-xs transition"
                           >
-                            ✕
+                            <Icon icon="lucide:x" className="w-4 h-4" />
+                            {/* ✕ */}
                           </button>
                         )}
                       </div>
@@ -898,15 +901,23 @@ export default function ItemJournalForm({
           </table>
         </div>
 
+        {/* 
+<button
+              type="button"
+              onClick={addLineRow}
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            >
+              + Add Voucher Entry Line
+            </button> */}
         {/* BOTTOM MATRIX CONTROLS ACTION RIBBON */}
         <div className="p-2 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
           {!isPosted ? (
             <button
               type="button"
               onClick={addLineRow}
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
             >
-              + Add Voucher Entry Line
+              Add Line
             </button>
           ) : (
             <span className="text-xs text-slate-400 dark:text-slate-500 font-medium px-2">

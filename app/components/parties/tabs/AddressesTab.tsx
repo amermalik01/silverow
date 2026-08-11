@@ -50,15 +50,16 @@ export default function AddressesTab({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 capitalize tracking-wider">
+        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider">
           Location(s)
         </h3>
         <button
           type="button"
           onClick={addAddressRow}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm"
+          // className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
         >
-          + Add Location
+          Add Location
         </button>
       </div>
 
@@ -101,7 +102,6 @@ export default function AddressesTab({
                   Collection
                 </span>
               )}
-              
             </div>
 
             <button
@@ -120,7 +120,9 @@ export default function AddressesTab({
             {/* Left */}
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">Name <span className="text-red-500">*</span></label>
+                <label className="text-xs font-medium">
+                  Name <span className="text-red-500">*</span>
+                </label>
 
                 <input
                   type="text"
@@ -209,7 +211,9 @@ export default function AddressesTab({
                   <MasterDropdown
                     type="country"
                     value={a.country || "United Kingdom"}
-                    onChange={(val) => updateAddressRow(idx, "country", val ?? "")}
+                    onChange={(val) =>
+                      updateAddressRow(idx, "country", val ?? "")
+                    }
                     defaultFilter={(item) => item.country_id === 225}
                     // className={
                     //   errors[`addresses.${idx}.country`] ? "border-red-500" : ""
@@ -257,9 +261,66 @@ export default function AddressesTab({
                 />
               </div>
 
-              <div className="border rounded-md border-slate-200 dark:border-slate-700 p-3 mt-3">
+              <div className="grid grid-cols-3 gap-2 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Location Type
+                </label>
+                <div className="col-span-2">
+                  <div className="flex flex-wrap gap-4 text-xs font-medium p-2 mb-1">
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={!!a.is_primary}
+                        onChange={(e) =>
+                          updateAddressRow(idx, "is_primary", e.target.checked)
+                        }
+                      />
+                      Primary
+                    </label>
+
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={!!a.is_billing}
+                        onChange={(e) =>
+                          updateAddressRow(idx, "is_billing", e.target.checked)
+                        }
+                      />
+                      Billing
+                    </label>
+
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={!!a.is_shipping}
+                        onChange={(e) =>
+                          updateAddressRow(idx, "is_shipping", e.target.checked)
+                        }
+                      />
+                      Shipping
+                    </label>
+
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={!!a.is_collection}
+                        onChange={(e) =>
+                          updateAddressRow(
+                            idx,
+                            "is_collection",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      Collection
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* <div className="border rounded-md border-slate-200 dark:border-slate-700 p-3 mt-3">
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-3">
-                  Location Usage
+                  Location Type
                 </p>
 
                 <div className="space-y-2">
@@ -308,7 +369,7 @@ export default function AddressesTab({
                   </label>
 
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

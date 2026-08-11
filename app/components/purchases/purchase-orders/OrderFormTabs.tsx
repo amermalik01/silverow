@@ -149,9 +149,10 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   type="button"
                   disabled={isReadOnly}
                   onClick={() => setSupplierModalOpen(true)}
-                  className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                 >
-                  <Icon icon="tabler:search" />
+                  {/* <Icon icon="tabler:search" /> */}
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -519,9 +520,10 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   type="button"
                   disabled={isReadOnly}
                   onClick={() => setSupplierModalOpen(true)}
-                  className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                 >
-                  <Icon icon="tabler:search" />
+                  {/* <Icon icon="tabler:search" /> */}
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
                 </button>
               </div>
             </div>

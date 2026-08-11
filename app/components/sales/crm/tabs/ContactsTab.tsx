@@ -25,9 +25,10 @@ export default function ContactsTab({
 
       <button
         onClick={addContact}
-        className="bg-blue-600 text-white px-3 py-1 rounded"
+        // className="bg-blue-600 text-white px-3 py-1 rounded"
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
       >
-        + Add Contact
+        Add Contact
       </button>
 
       {contacts.map((c, i) => (

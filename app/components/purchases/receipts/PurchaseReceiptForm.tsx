@@ -340,10 +340,17 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
       </div>
 
       <div className="flex gap-4">
-        <button
+        {/* <button
           type="button"
           onClick={addLine}
           className="bg-gray-200 px-4 py-2 rounded"
+        >
+          Add Line
+        </button> */}
+        <button
+          type="button"
+          onClick={addLine}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
         >
           Add Line
         </button>

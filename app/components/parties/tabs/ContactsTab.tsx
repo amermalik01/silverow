@@ -37,15 +37,16 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 capitalize tracking-wider">
-          Contacts
+        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider">
+          Contact(s)
         </h3>
         <button
           type="button"
           onClick={addContactRow}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm"
+          // className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
         >
-          + Add Contact
+          Add Contact
         </button>
       </div>
 
@@ -165,24 +166,29 @@ export default function ContactsTab({ contacts, setContacts, errors }: Props) {
               />
             </div>
 
-            <div className="flex items-center">
-              <label className="flex items-center gap-2 text-xs cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={!!c.is_primary}
-                  onChange={() =>
-                    setContacts(
-                      contacts.map((contact, i) => ({
-                        ...contact,
-                        is_primary: i === idx,
-                      })),
-                    )
-                  }
-                  className="w-4 h-4"
-                />
+            <div className="grid grid-cols-3 gap-3 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Mark as Primary
               </label>
+              <div className="col-span-2">
+                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
+                  <input
+                    type="checkbox"
+                    checked={!!c.is_primary}
+                    onChange={() =>
+                      setContacts(
+                        contacts.map((contact, i) => ({
+                          ...contact,
+                          is_primary: i === idx,
+                        })),
+                      )
+                    }
+                    className="w-4 h-4"
+                  />
+                </div>
+              </div>
             </div>
+
             <div className="xl:col-span-2 grid grid-cols-6 gap-3 items-start">
               <label className="text-xs font-medium col-span-1 pt-2">
                 Notes

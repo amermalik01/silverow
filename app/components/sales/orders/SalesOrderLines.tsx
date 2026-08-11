@@ -3,6 +3,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { Icon } from "@iconify/react";
 import { SalesOrderLineUI, SalesOrderLine } from "@/types/sales-order";
 
 import ItemLookupModal, {
@@ -172,7 +173,7 @@ export default function SalesOrderLines({
           <button
             type="button"
             onClick={addLine}
-            className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
             Add Line
           </button>
@@ -422,9 +423,13 @@ export default function SalesOrderLines({
                         <button
                           type="button"
                           onClick={() => removeLine(index)}
-                          className="text-red-500 hover:text-red-700 font-medium text-xs transition"
+                          // className="text-red-500 hover:text-red-700 font-medium text-xs transition"
+                          className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                         >
-                          Remove
+                          <Icon
+                            icon="tabler:external-link"
+                            className="w-4 h-4"
+                          />
                         </button>
                       </td>
                     )}

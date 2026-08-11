@@ -571,7 +571,54 @@ export default function GeneralTab({
         </div>
 
         <div className="space-y-2">
-          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-lg">
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Location Type
+            </label>
+            <div className="col-span-2">
+              <div className="flex flex-wrap gap-4 text-xs font-medium p-2 mb-1">
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={!!primaryAddress.is_billing}
+                    onChange={(e) =>
+                      updatePrimaryAddress("is_billing", e.target.checked)
+                    }
+                    disabled={isReadonly}
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />{" "}
+                  Billing
+                </label>
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={!!primaryAddress.is_shipping}
+                    onChange={(e) =>
+                      updatePrimaryAddress("is_shipping", e.target.checked)
+                    }
+                    disabled={isReadonly}
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />{" "}
+                  Shipping
+                </label>
+                {account.is_supplier && (
+                  <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={!!primaryAddress.is_collection}
+                      onChange={(e) =>
+                        updatePrimaryAddress("is_collection", e.target.checked)
+                      }
+                      disabled={isReadonly}
+                      className="rounded text-blue-600 focus:ring-blue-500"
+                    />{" "}
+                    Collection
+                  </label>
+                )}
+              </div>
+            </div>
+          </div>
+          {/* <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-lg">
             <span className="block text-xs font-bold capitalize tracking-wider text-slate-500 mb-2">
               Location Type
             </span>
@@ -615,7 +662,7 @@ export default function GeneralTab({
                 </label>
               )}
             </div>
-          </div>
+          </div> */}
 
           {(account.is_customer || account.is_crm_lead) && (
             <div className="grid grid-cols-3 gap-2 items-center">
@@ -972,15 +1019,20 @@ export default function GeneralTab({
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Anonymous Supplier
               </label>
-              <input
-                type="checkbox"
-                disabled={isReadonly}
-                checked={!!account.anonymous_supplier}
-                onChange={(e) =>
-                  updateField("anonymous_supplier", e.target.checked)
-                }
-                className={getInputClass("general.anonymous_supplier")}
-              />
+
+              <div className="col-span-2">
+                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
+                  <input
+                    type="checkbox"
+                    disabled={isReadonly}
+                    checked={!!account.anonymous_supplier}
+                    onChange={(e) =>
+                      updateField("anonymous_supplier", e.target.checked)
+                    }
+                    className={getInputClass("general.anonymous_supplier")}
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -989,15 +1041,20 @@ export default function GeneralTab({
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Anonymous Customer
               </label>
-              <input
-                type="checkbox"
-                disabled={isReadonly}
-                checked={!!account.anonymous_customer}
-                onChange={(e) =>
-                  updateField("anonymous_customer", e.target.checked)
-                }
-                className={getInputClass("general.anonymous_customer")}
-              />
+
+              <div className="col-span-2">
+                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
+                  <input
+                    type="checkbox"
+                    disabled={isReadonly}
+                    checked={!!account.anonymous_customer}
+                    onChange={(e) =>
+                      updateField("anonymous_customer", e.target.checked)
+                    }
+                    className={getInputClass("general.anonymous_customer")}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>

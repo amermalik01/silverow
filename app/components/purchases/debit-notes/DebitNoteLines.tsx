@@ -510,7 +510,11 @@ export default function DebitNoteLines({
                         {line.line_type === "ITEM" ? (
                           <button
                             type="button"
-                            title="Manage Batch De-Allocation"
+                            title={
+                              line.is_allocated
+                                ? "De-Allocated"
+                                : "Alloc Batches"
+                            }
                             disabled={!line.item_id || !line.warehouse_id}
                             onClick={() => {
                               setActiveDeAllocRowKey(String(index));
@@ -526,11 +530,11 @@ export default function DebitNoteLines({
                               icon="tabler:box-seam"
                               className="w-3.5 h-3.5"
                             />
-                            <span>
+                            {/* <span>
                               {line.is_allocated
                                 ? "De-Allocated"
                                 : "Alloc Batches"}
-                            </span>
+                            </span> */}
                           </button>
                         ) : (
                           <div className="w-4 h-4" />
@@ -539,9 +543,9 @@ export default function DebitNoteLines({
                         <button
                           type="button"
                           onClick={() => removeLine(index)}
-                          className="text-red-600 hover:text-red-800 font-medium"
+                          className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
                         >
-                          Remove
+                          <Icon icon="lucide:x" className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -662,8 +666,8 @@ export default function DebitNoteLines({
   );
 }
 
-
-      {/* {isAllocationModalOpen &&
+{
+  /* {isAllocationModalOpen &&
         activeAllocationRowKey !== null &&
         activeAllocationLine && (
           <StockAllocationModal
@@ -695,4 +699,5 @@ export default function DebitNoteLines({
               handleSaveAllocations(allocationsPayload)
             }
           />
-        )} */}
+        )} */
+}

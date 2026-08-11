@@ -2,6 +2,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Icon } from "@iconify/react";
 
 import { SalesQuoteLineUI, SalesQuoteLine2 } from "@/types/sales-quote";
 
@@ -194,9 +195,9 @@ export default function SalesQuoteLines({
           <button
             type="button"
             onClick={addLine}
-            className="bg-gray-800 text-white dark:bg-slate-700 text-xs px-3 py-1.5 rounded"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
-            + Add Line Row
+            Add Line
           </button>
         )}
       </div>
@@ -229,7 +230,10 @@ export default function SalesQuoteLines({
                     value={line.line_type || "ITEM"}
                     disabled={isReadonly}
                     onChange={(e) =>
-                      changeLineType(index, e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT")
+                      changeLineType(
+                        index,
+                        e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
+                      )
                     }
                     className="border rounded p-1 w-full dark:bg-slate-900"
                   >
@@ -354,9 +358,10 @@ export default function SalesQuoteLines({
                     <button
                       type="button"
                       onClick={() => removeLine(index)}
-                      className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                      // className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                      className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
                     >
-                      Delete
+                      <Icon icon="lucide:x" className="w-4 h-4" />
                     </button>
                   </td>
                 )}
