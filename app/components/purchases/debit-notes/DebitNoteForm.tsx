@@ -23,11 +23,13 @@ import { useLoader } from "@/app/context/LoaderContext";
 import SupplierLookupModal, {
   SupplierLookupItem,
 } from "../purchase-orders/SupplierLookupModal";
+// import SupplierShippingLocationsModal from "./SupplierShippingLocationsModal";
 
 import {
   PurchaseInvoiceLookupModal,
   PurchaseInvoiceLookupItem,
 } from "./PurchaseInvoiceLookupModal";
+import SupplierShippingLocationsModal from "../purchase-orders/SupplierShippingLocationsModal";
 
 interface Props {
   slug: string;
@@ -50,6 +52,8 @@ export const DebitNoteForm: React.FC<Props> = ({
   const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
   const [piModalOpen, setPiModalOpen] = useState(false);
@@ -643,6 +647,7 @@ export const DebitNoteForm: React.FC<Props> = ({
         masterData={masterData}
         updateField={updateField}
         setSupplierModalOpen={setSupplierModalOpen}
+        setLocationModalOpen={setLocationModalOpen}
         setPiModalOpen={setPiModalOpen}
         labelStyle={labelStyle}
         inputStyle={inputStyle}
@@ -806,6 +811,27 @@ export const DebitNoteForm: React.FC<Props> = ({
         open={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}
         onSelect={handleSupplierSelect}
+      />
+
+      {/* Modal to Select Location */}
+      <SupplierShippingLocationsModal
+        open={locationModalOpen}
+        supplierId={note.supplier_id}
+        onClose={() => setLocationModalOpen(false)}
+        onSelect={(selectedLocation) => {
+          setShippingAddress({
+            name: selectedLocation.name,
+            address_1: selectedLocation.address_1,
+            address_2: selectedLocation.address_2,
+            city: selectedLocation.city,
+            county: selectedLocation.county,
+            postcode: selectedLocation.postcode,
+            country: selectedLocation.country,
+            contact_person: selectedLocation.contact_person,
+            phone: selectedLocation.phone,
+            email: selectedLocation.email,
+          });
+        }}
       />
 
       <PurchaseInvoiceLookupModal
