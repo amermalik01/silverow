@@ -222,6 +222,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
         masterData={masterData}
         updateField={noop}
         setSupplierModalOpen={noop}
+        setLocationModalOpen={noop}
         labelStyle={labelStyle}
         inputStyle={inputStyle}
         isReadOnly={true}

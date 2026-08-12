@@ -20,6 +20,7 @@ import PurchaseOrderLines from "./PurchaseOrderLines";
 import { OrderFormTabs } from "./OrderFormTabs";
 import { StockReceiveConfirmModal } from "@/app/components/shared/modals/StockReceiveConfirmModal";
 import SupplierLookupModal, { SupplierLookupItem } from "./SupplierLookupModal";
+import SupplierShippingLocationsModal from "./SupplierShippingLocationsModal";
 
 interface Currency {
   id: string;
@@ -57,6 +58,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   // const [stages, setStages] = useState<OrderStage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -748,6 +750,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           masterData={masterData}
           updateField={updateField}
           setSupplierModalOpen={setSupplierModalOpen}
+          setLocationModalOpen={setLocationModalOpen}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
           inputDateStyle={inputDateStyle}
@@ -968,6 +971,27 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         open={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}
         onSelect={handleSupplierSelect}
+      />
+
+      {/* Modal to Select Location */}
+      <SupplierShippingLocationsModal
+        open={locationModalOpen}
+        supplierId={order.supplier_id}
+        onClose={() => setLocationModalOpen(false)}
+        onSelect={(selectedLocation) => {
+          setShippingAddress({
+            name: selectedLocation.name,
+            address_1: selectedLocation.address_1,
+            address_2: selectedLocation.address_2,
+            city: selectedLocation.city,
+            county: selectedLocation.county,
+            postcode: selectedLocation.postcode,
+            country: selectedLocation.country,
+            contact_person: selectedLocation.contact_person,
+            phone: selectedLocation.phone,
+            email: selectedLocation.email,
+          });
+        }}
       />
     </div>
   );
