@@ -645,7 +645,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
 
   return (
-    <div className="space-y-4 w-full max-w-[100vw] py-2 mx-auto overflow-x-auto">
+    <div className="space-y-4 ">{/* max-w-[100vw] w-full py-2 mx-auto overflow-x-auto */}
       {validationErrors.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
           {validationErrors.map((err, idx) => (

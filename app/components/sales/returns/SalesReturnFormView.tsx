@@ -23,6 +23,7 @@ import {
 import SalesReturnLines from "./SalesReturnLines";
 import { useLoader } from "@/app/context/LoaderContext";
 import { OrderFormTabs } from "./OrderFormTabs";
+import CustomerDeliveryLocationModal from "../orders/CustomerDeliveryLocationModal";
 
 export type SalesReturnLineUI = SalesReturnLine & {
   item_code?: string;
@@ -56,6 +57,7 @@ export default function SalesReturnFormView({
   const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
   const [saving, setSaving] = useState(false);
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>("general");
 
@@ -392,11 +394,15 @@ export default function SalesReturnFormView({
 
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+  const inputDateStyle =
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700  rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+
   const labelStyle =
     "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
 
   return (
-    <div className="space-y-4 container mx-auto p-1 text-black dark:text-white">
+    <div className="space-y-4">
+      {/*  container mx-auto p-1 text-black dark:text-white */}
       {validationErrors.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
           {validationErrors.map((err, idx) => (
@@ -411,204 +417,208 @@ export default function SalesReturnFormView({
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar">
-          {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap 
+      <div className=" bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200  pb-2 mb-4">
+          <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar ">
+            {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap 
                 ${activeTab === tab ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-400 hover:text-slate-600"}`}
-            >
-              {tab}
-            </button>
-          ))}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {isUpdateMode && !isLoadingStages && stages.length > 0 && (
+            <div className="flex justify-end ml-auto overflow-x-auto">
+              <div
+                className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
+              >
+                {stages.map((stage, index) => {
+                  const isLast = index === stages.length - 1;
+                  const isActive =
+                    returnOrder.status?.toLowerCase() ===
+                    stage.name.toLowerCase();
+
+                  let activeBg = "bg-blue-600 text-white";
+                  if (index === 1) activeBg = "bg-amber-500 text-white";
+                  if (index === 2) activeBg = "bg-indigo-600 text-white";
+                  if (index >= 3) activeBg = "bg-emerald-600 text-white";
+
+                  return (
+                    <button
+                      type="button"
+                      key={stage.id}
+                      onClick={() => handleStageClick(stage.name)}
+                      className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95 ${index === 0 ? "rounded-l-md" : ""} ${isLast ? "rounded-r-md" : ""} ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
+                    >
+                      {stage.name}
+                      {!isLast && (
+                        <Icon
+                          icon="tabler:chevron-right"
+                          className="w-3 h-3 text-slate-400"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {isUpdateMode && !isLoadingStages && stages.length > 0 && (
-          <div className="flex justify-end ml-auto overflow-x-auto">
-            <div
-              className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
-            >
-              {stages.map((stage, index) => {
-                const isLast = index === stages.length - 1;
-                const isActive =
-                  returnOrder.status?.toLowerCase() ===
-                  stage.name.toLowerCase();
-
-                let activeBg = "bg-blue-600 text-white";
-                if (index === 1) activeBg = "bg-amber-500 text-white";
-                if (index === 2) activeBg = "bg-indigo-600 text-white";
-                if (index >= 3) activeBg = "bg-emerald-600 text-white";
-
-                return (
-                  <button
-                    type="button"
-                    key={stage.id}
-                    onClick={() => handleStageClick(stage.name)}
-                    className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95 ${index === 0 ? "rounded-l-md" : ""} ${isLast ? "rounded-r-md" : ""} ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
-                  >
-                    {stage.name}
-                    {!isLast && (
-                      <Icon
-                        icon="tabler:chevron-right"
-                        className="w-3 h-3 text-slate-400"
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        <OrderFormTabs
+          activeTab={activeTab}
+          order={returnOrder}
+          primaryAddress={primaryAddress}
+          setPrimaryAddress={setPrimaryAddress}
+          billingAddress={billingAddress}
+          setBillingAddress={setBillingAddress}
+          shippingAddress={shippingAddress}
+          setShippingAddress={setShippingAddress}
+          currencyConfig={currencyConfig}
+          setCurrencyConfig={setCurrencyConfig}
+          masterData={masterData}
+          updateField={updateReturnField}
+          setCustomerModalOpen={setCustomerModalOpen}
+          setLocationModalOpen={setLocationModalOpen}
+          labelStyle={labelStyle}
+          inputStyle={inputStyle}
+        />
       </div>
-
-      <OrderFormTabs
-        activeTab={activeTab}
-        order={returnOrder}
-        primaryAddress={primaryAddress}
-        setPrimaryAddress={setPrimaryAddress}
-        billingAddress={billingAddress}
-        setBillingAddress={setBillingAddress}
-        shippingAddress={shippingAddress}
-        setShippingAddress={setShippingAddress}
-        currencyConfig={currencyConfig}
-        setCurrencyConfig={setCurrencyConfig}
-        masterData={masterData}
-        updateField={updateReturnField}
-        setCustomerModalOpen={setCustomerModalOpen}
-        labelStyle={labelStyle}
-        inputStyle={inputStyle}
-      />
-
       <SalesReturnLines
         lines={lines}
         setLines={setLines}
         onTotalsChange={handleTotalsChange}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end bg-slate-50 dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-        <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
-          <div>
-            <textarea
-              placeholder="Add Internal Notes"
-              className={`${inputStyle} font-mono`}
-              value={returnOrder.internal_notes || ""}
-              onChange={(e) =>
-                updateReturnField("internal_notes", e.target.value)
-              }
-            />
-          </div>
-          <div className="col-span-2">
-            <textarea
-              placeholder="Add External Notes"
-              className={`${inputStyle} font-mono`}
-              value={returnOrder.notes || ""}
-              onChange={(e) => updateReturnField("notes", e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+      <div className="  bg-white  border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 pl-4 pr-4">
+          <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
             <div>
-              <span className="text-xs font-semibold text-slate-500 col">
-                Conversion Rate
-              </span>
-            </div>
-            <div>
-              <input
-                type="number"
-                step="any"
-                className={`${inputStyle} font-mono max-w-[100px] text-end`}
-                value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
+              <textarea
+                placeholder="Add Internal Notes"
+                className={`${inputStyle} font-mono`}
+                value={returnOrder.internal_notes || ""}
                 onChange={(e) =>
-                  setCurrencyConfig({
-                    ...currencyConfig,
-                    exchange_rate: parseFloat(e.target.value) || 1,
-                  })
+                  updateReturnField("internal_notes", e.target.value)
                 }
               />
             </div>
+            <div className="col-span-2">
+              <textarea
+                placeholder="Add External Notes"
+                className={`${inputStyle} font-mono`}
+                value={returnOrder.notes || ""}
+                onChange={(e) => updateReturnField("notes", e.target.value)}
+              />
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 items-center">
-            <span className="text-xs font-semibold text-slate-500">
-              Amount Incl. VAT ({baseCurrencyCode})
-            </span>
-            <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
-              {financials.amountInclVatLCY.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+              <div>
+                <span className="text-xs font-semibold text-slate-500 col">
+                  Conversion Rate
+                </span>
+              </div>
+              <div>
+                <input
+                  type="number"
+                  step="any"
+                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                  value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
+                  onChange={(e) =>
+                    setCurrencyConfig({
+                      ...currencyConfig,
+                      exchange_rate: parseFloat(e.target.value) || 1,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 items-center">
+              <span className="text-xs font-semibold text-slate-500">
+                Amount Incl. VAT ({baseCurrencyCode})
+              </span>
+              <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
+                {financials.amountInclVatLCY.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
+            <div className="flex justify-between pb-1">
+              <span className="font-semibold">Amount</span>
+              <span>
+                {financials.amount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+            <div className="flex justify-between pb-1">
+              <span className="font-semibold">VAT</span>
+              <span>
+                {financials.vat.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+            <div className="flex justify-between  pt-1 text-slate-900 dark:text-white">
+              <span className="font-semibold">Amount Incl. VAT</span>
+              <span>
+                {financials.amountInclVat.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
-          <div className="flex justify-between pb-1">
-            <span className="font-semibold">Amount</span>
-            <span>
-              {financials.amount.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}{" "}
-              {selectedCurrency?.code || ""}
+        <div className="flex items-center justify-between pt-4 bg-slate-50 dark:bg-slate-900/60 pl-4 pr-4 pb-4 rounded-lg">
+          <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
+              Partial Allocated Stock
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
+              Allocated Stock
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
+              Received Stock
             </span>
           </div>
-          <div className="flex justify-between pb-1">
-            <span className="font-semibold">VAT</span>
-            <span>
-              {financials.vat.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}{" "}
-              {selectedCurrency?.code || ""}
-            </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
+            >
+              Edit / Save
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.push(`/${slug}/sales/orders`)}
+              className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </button>
           </div>
-          <div className="flex justify-between  pt-1 text-slate-900 dark:text-white">
-            <span className="font-semibold">Amount Incl. VAT</span>
-            <span>
-              {financials.amountInclVat.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}{" "}
-              {selectedCurrency?.code || ""}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between pt-4">
-        <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
-            Partial Allocated Stock
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
-            Allocated Stock
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
-            Received Stock
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
-          >
-            Edit / Save
-          </button>
-
-          <button
-            type="button"
-            onClick={() => router.push(`/${slug}/sales/orders`)}
-            className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
-          >
-            Cancel
-          </button>
         </div>
       </div>
 
@@ -616,6 +626,27 @@ export default function SalesReturnFormView({
         open={customerModalOpen}
         onClose={() => setCustomerModalOpen(false)}
         onSelect={handleCustomerSelect}
+      />
+
+      {/* Modal to Select Location */}
+      <CustomerDeliveryLocationModal
+        open={locationModalOpen}
+        customerId={returnOrder.customer_id}
+        onClose={() => setLocationModalOpen(false)}
+        onSelect={(selectedLocation) => {
+          setShippingAddress({
+            name: selectedLocation.name,
+            address_1: selectedLocation.address_1,
+            address_2: selectedLocation.address_2,
+            city: selectedLocation.city,
+            county: selectedLocation.county,
+            postcode: selectedLocation.postcode,
+            country: selectedLocation.country,
+            contact_person: selectedLocation.contact_person,
+            phone: selectedLocation.phone,
+            email: selectedLocation.email,
+          });
+        }}
       />
     </div>
   );

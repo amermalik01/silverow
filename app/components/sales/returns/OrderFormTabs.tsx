@@ -70,6 +70,7 @@ interface OrderFormTabsProps {
     value: SalesReturn[K],
   ) => void;
   setCustomerModalOpen: (open: boolean) => void;
+  setLocationModalOpen: (open: boolean) => void;
   labelStyle?: string;
   inputStyle?: string;
 }
@@ -88,6 +89,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   masterData,
   updateField,
   setCustomerModalOpen,
+  setLocationModalOpen,
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
   inputStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
 }) => {
@@ -710,7 +712,23 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
           <div className="space-y-2">
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Location Name</label>
-              <input
+              <div className="col-span-8 flex gap-1">
+                <input
+                  type="text"
+                  readOnly
+                  className={`${inputStyle} font-mono`}
+                  value={shippingAddress.name || "Click Select..."}
+                />
+                <button
+                  type="button"
+                  disabled={isSettingsDisabled || !order.customer_id}
+                  onClick={() => setLocationModalOpen(true)}
+                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                >
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
+                </button>
+              </div>
+              {/* <input
                 type="text"
                 className={inputStyle}
                 disabled={isSettingsDisabled}
@@ -721,7 +739,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     name: e.target.value,
                   })
                 }
-              />
+              /> */}
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Address Line 1</label>
