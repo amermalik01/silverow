@@ -1,0 +1,836 @@
+// app/components/DataTable/DataTable.tsx
+
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ColumnConfig,
+  FetchParams,
+  FetchResponse,
+  FilterValue,
+} from "@/types/table";
+import { ColumnHeaderFilter } from "./ColumnHeaderFilter";
+import { CustomisationModal } from "./CustomisationModal";
+
+interface DataTableProps<T> {
+  moduleKey: string;
+  fetchApi: (params: FetchParams) => Promise<FetchResponse<T>>;
+  columnsConfigApi: {
+    get: (moduleKey: string) => Promise<ColumnConfig[]>;
+    save: (moduleKey: string, configs: ColumnConfig[]) => Promise<void>;
+    reset: (moduleKey: string) => Promise<ColumnConfig[]>;
+  };
+  renderRowCell?: (row: T, columnKey: string) => React.ReactNode;
+}
+
+export function DataTable<T extends object>({
+  moduleKey,
+  fetchApi,
+  columnsConfigApi,
+  renderRowCell,
+}: DataTableProps<T>) {
+  const [data, setData] = useState<T[]>([]);
+  const [columns, setColumns] = useState<ColumnConfig[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+
+  // Pagination & Filter State
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+  const [filters, setFilters] = useState<FilterValue>({});
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  // 1. Fetch Column Configuration
+  const loadColumns = useCallback(async () => {
+    try {
+      const config = await columnsConfigApi.get(moduleKey);
+      setColumns(config.sort((a, b) => a.columnOrder - b.columnOrder));
+    } catch (err) {
+      console.error("Failed to load column configuration:", err);
+    }
+  }, [moduleKey, columnsConfigApi]);
+
+  // 2. Fetch Data
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchApi({ page, pageSize, filters });
+      setData(res.data || []);
+      setTotalRecords(res.totalRecords || 0);
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, filters, fetchApi]);
+
+  useEffect(() => {
+    loadColumns();
+  }, [loadColumns]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleFilterChange = (
+    columnKey: string,
+    filterData: FilterValue[string],
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [columnKey]: filterData,
+    }));
+    setPage(1);
+  };
+
+  const handleSaveCustomisation = async (updatedCols: ColumnConfig[]) => {
+    await columnsConfigApi.save(moduleKey, updatedCols);
+    setColumns(updatedCols);
+    setIsModalOpen(false);
+  };
+
+  const handleResetDefault = async () => {
+    const defaultConfig = await columnsConfigApi.reset(moduleKey);
+    setColumns(defaultConfig);
+    setIsModalOpen(false);
+  };
+
+  const getRowValue = (row: T, key: string): React.ReactNode => {
+    const value = (row as Record<string, unknown>)[key];
+    if (value === null || value === undefined) return "-";
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      return String(value);
+    }
+    return value as React.ReactNode;
+  };
+
+  const getRowId = (row: T, index: number): string | number => {
+    const rowObj = row as Record<string, unknown>;
+    if (
+      "id" in rowObj &&
+      (typeof rowObj.id === "string" || typeof rowObj.id === "number")
+    ) {
+      return rowObj.id;
+    }
+    return index;
+  };
+
+  const visibleColumns = columns.filter((col) => col.isVisible);
+  const startRecord = (page - 1) * pageSize + 1;
+  const endRecord = Math.min(page * pageSize, totalRecords);
+
+  return (
+    <div className="w-full font-sans text-slate-800 dark:text-slate-100 rounded-xl overflow-hidden shadow-lg border border-emerald-900/30">
+      {/* Top Toolbar */}
+      <div className="flex items-center justify-between bg-emerald-950 px-4 py-2 text-emerald-100 border-b border-emerald-900">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            title="Customise Table Columns"
+            className="flex items-center gap-1.5 rounded-lg bg-emerald-900/60 px-3 py-1.5 text-xs font-semibold hover:bg-emerald-800 transition-colors border border-emerald-700/50"
+          >
+            ⚙️ Customise Table
+          </button>
+        </div>
+        <div className="text-xs text-emerald-300 font-medium">
+          {totalRecords} Total Entries Found
+        </div>
+      </div>
+
+      {/* Main Table Scroll Container */}
+      <div className="relative overflow-x-auto bg-white dark:bg-slate-900">
+        <table className="w-full border-collapse text-left text-xs">
+          <thead>
+            {/* Header Row 1: Titles */}
+            <tr className="bg-emerald-900 font-semibold text-emerald-50">
+              <th className="w-10 border-r border-emerald-800 p-3 text-center">
+                <input
+                  type="checkbox"
+                  className="accent-emerald-600 cursor-pointer rounded"
+                />
+              </th>
+              {visibleColumns.map((col) => (
+                <th
+                  key={col.columnKey}
+                  style={{
+                    width: col.columnWidth ? `${col.columnWidth}px` : "auto",
+                    backgroundColor: col.headerColor || undefined,
+                  }}
+                  className={`border-r border-emerald-800/80 p-3 font-bold uppercase tracking-wider text-[11px] ${
+                    col.isPinned
+                      ? "sticky left-0 z-20 bg-emerald-900 shadow-md"
+                      : ""
+                  }`}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+
+            {/* Header Row 2: Dynamic Filters */}
+            <tr className="bg-emerald-900/90 border-b border-emerald-800">
+              <td className="border-r border-emerald-800/80 p-2 text-center bg-emerald-900"></td>
+              {visibleColumns.map((col) => (
+                <td
+                  key={`filter-${col.columnKey}`}
+                  className="border-r border-emerald-800/80 p-2 bg-emerald-900"
+                >
+                  <ColumnHeaderFilter
+                    column={col}
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                  />
+                </td>
+              ))}
+            </tr>
+          </thead>
+
+          {/* Table Rows */}
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={visibleColumns.length + 1}
+                  className="p-12 text-center text-slate-400 font-medium"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="animate-spin text-emerald-600">🌀</span>
+                    Fetching records...
+                  </div>
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={visibleColumns.length + 1}
+                  className="p-12 text-center text-slate-400 font-medium"
+                >
+                  No data matching filter criteria.
+                </td>
+              </tr>
+            ) : (
+              data.map((row, idx) => (
+                <tr
+                  key={getRowId(row, idx)}
+                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors"
+                >
+                  <td className="border-r border-slate-200 dark:border-slate-800 p-3 text-center">
+                    <input
+                      type="checkbox"
+                      className="accent-emerald-600 cursor-pointer rounded"
+                    />
+                  </td>
+                  {visibleColumns.map((col) => (
+                    <td
+                      key={col.columnKey}
+                      className={`border-r border-slate-200 dark:border-slate-800 p-3 font-medium ${
+                        col.isPinned
+                          ? "sticky left-0 z-10 bg-white dark:bg-slate-900 shadow-sm"
+                          : ""
+                      }`}
+                    >
+                      {renderRowCell
+                        ? renderRowCell(row, col.columnKey)
+                        : getRowValue(row, col.columnKey)}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer / Pagination Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between border-t bg-slate-50 dark:bg-slate-800/60 p-3 text-xs text-slate-600 dark:text-slate-300 gap-3">
+        <div className="font-semibold">{totalRecords} Total Records</div>
+        <div className="flex items-center gap-4">
+          <div>
+            Showing{" "}
+            <span className="font-bold">
+              {totalRecords > 0 ? startRecord : 0}
+            </span>{" "}
+            to <span className="font-bold">{endRecord}</span>
+          </div>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 outline-none font-medium cursor-pointer"
+          >
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
+          <div className="flex gap-1.5">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 disabled:opacity-40 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              Previous
+            </button>
+            <button
+              disabled={endRecord >= totalRecords}
+              onClick={() => setPage((p) => p + 1)}
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 disabled:opacity-40 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Customisation Modal */}
+      <CustomisationModal
+        key={`${isModalOpen}-${columns.length}`}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        columns={columns}
+        onSave={handleSaveCustomisation}
+        onResetDefault={handleResetDefault}
+      />
+    </div>
+  );
+}
+
+/* "use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ColumnConfig,
+  FetchParams,
+  FetchResponse,
+  FilterValue,
+} from "@/types/table";
+import { ColumnHeaderFilter } from "./ColumnHeaderFilter";
+import { CustomisationModal } from "./CustomisationModal";
+
+interface DataTableProps<T> {
+  moduleKey: string;
+  fetchApi: (params: FetchParams) => Promise<FetchResponse<T>>;
+  columnsConfigApi: {
+    get: (moduleKey: string) => Promise<ColumnConfig[]>;
+    save: (moduleKey: string, configs: ColumnConfig[]) => Promise<void>;
+    reset: (moduleKey: string) => Promise<ColumnConfig[]>;
+  };
+  renderRowCell?: (row: T, columnKey: string) => React.ReactNode;
+}
+
+export function DataTable<T extends object>({
+  moduleKey,
+  fetchApi,
+  columnsConfigApi,
+  renderRowCell,
+}: DataTableProps<T>) {
+  const [data, setData] = useState<T[]>([]);
+  const [columns, setColumns] = useState<ColumnConfig[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+
+  // Pagination & Filter State
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+  const [filters, setFilters] = useState<FilterValue>({});
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  // 1. Fetch Column Configuration
+  const loadColumns = useCallback(async () => {
+    try {
+      const config = await columnsConfigApi.get(moduleKey);
+      setColumns(config.sort((a, b) => a.columnOrder - b.columnOrder));
+    } catch (err) {
+      console.error("Failed to load column configuration:", err);
+    }
+  }, [moduleKey, columnsConfigApi]);
+
+  // 2. Fetch Data
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchApi({ page, pageSize, filters });
+      setData(res.data);
+      setTotalRecords(res.totalRecords);
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, filters, fetchApi]);
+
+  useEffect(() => {
+    loadColumns();
+  }, [loadColumns]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleFilterChange = (
+    columnKey: string,
+    filterData: FilterValue[string],
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [columnKey]: filterData,
+    }));
+    setPage(1); // Reset to first page on search
+  };
+
+  const handleSaveCustomisation = async (updatedCols: ColumnConfig[]) => {
+    await columnsConfigApi.save(moduleKey, updatedCols);
+    setColumns(updatedCols);
+    setIsModalOpen(false);
+  };
+
+  const handleResetDefault = async () => {
+    const defaultConfig = await columnsConfigApi.reset(moduleKey);
+    setColumns(defaultConfig);
+    setIsModalOpen(false);
+  };
+
+  // Safe accessor helper for row object properties
+  const getRowValue = (row: T, key: string): React.ReactNode => {
+    const value = (row as Record<string, unknown>)[key];
+    if (value === null || value === undefined) return "-";
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      return String(value);
+    }
+    return value as React.ReactNode;
+  };
+
+  // Safe unique key generator for table rows
+  const getRowId = (row: T, index: number): string | number => {
+    const rowObj = row as Record<string, unknown>;
+    if (
+      "id" in rowObj &&
+      (typeof rowObj.id === "string" || typeof rowObj.id === "number")
+    ) {
+      return rowObj.id;
+    }
+    return index;
+  };
+
+  const visibleColumns = columns.filter((col) => col.isVisible);
+  const startRecord = (page - 1) * pageSize + 1;
+  const endRecord = Math.min(page * pageSize, totalRecords);
+
+  return (
+    <div className="w-full font-sans text-slate-800">
+
+      <div className="flex items-center justify-between bg-emerald-950 p-2 text-white">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            title="Table Customisation"
+            className="rounded p-1 hover:bg-emerald-800"
+          >
+            ⚙️
+          </button>
+        </div>
+      </div>
+
+      <div className="relative overflow-x-auto border border-slate-300">
+        <table className="w-full border-collapse text-left text-xs">
+          <thead>
+
+            <tr className="bg-emerald-900 font-semibold text-white">
+              <th className="w-10 border-r border-emerald-800 p-2 text-center">
+                <input type="checkbox" className="accent-emerald-600" />
+              </th>
+              {visibleColumns.map((col) => (
+                <th
+                  key={col.columnKey}
+                  style={{
+                    width: col.columnWidth ? `${col.columnWidth}px` : "auto",
+                    backgroundColor: col.headerColor || undefined,
+                  }}
+                  className={`border-r border-emerald-800 p-2 ${
+                    col.isPinned ? "sticky left-0 z-10 bg-emerald-900" : ""
+                  }`}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+
+
+            <tr className="border-b border-slate-300 bg-emerald-850">
+              <td className="border-r border-emerald-800 p-1"></td>
+              {visibleColumns.map((col) => (
+                <td
+                  key={`filter-${col.columnKey}`}
+                  className="border-r border-emerald-800 bg-emerald-900 p-1"
+                >
+                  <ColumnHeaderFilter
+                    column={col}
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                  />
+                </td>
+              ))}
+            </tr>
+          </thead>
+
+
+          <tbody>
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={visibleColumns.length + 1}
+                  className="p-8 text-center text-slate-500"
+                >
+                  Loading data...
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={visibleColumns.length + 1}
+                  className="p-8 text-center text-slate-500"
+                >
+                  No records found.
+                </td>
+              </tr>
+            ) : (
+              data.map((row, idx) => (
+                <tr
+                  key={getRowId(row, idx)}
+                  className="border-b border-slate-200 text-slate-700 hover:bg-slate-50"
+                >
+                  <td className="border-r border-slate-200 p-2 text-center">
+                    <input type="checkbox" className="accent-emerald-600" />
+                  </td>
+                  {visibleColumns.map((col) => (
+                    <td
+                      key={col.columnKey}
+                      className={`border-r border-slate-200 p-2 ${
+                        col.isPinned ? "sticky left-0 z-0 bg-white" : ""
+                      }`}
+                    >
+                      {renderRowCell
+                        ? renderRowCell(row, col.columnKey)
+                        : getRowValue(row, col.columnKey)}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+
+      <div className="flex items-center justify-between border-t bg-slate-100 p-2 text-xs text-slate-600">
+        <div>{totalRecords} Total Records</div>
+        <div className="flex items-center gap-4">
+          <div>
+            Showing {totalRecords > 0 ? startRecord : 0} to {endRecord} Records
+          </div>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+            className="rounded border p-1 outline-none"
+          >
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+          <div className="flex gap-1">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="rounded border bg-white px-2 py-1 disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <button
+              disabled={endRecord >= totalRecords}
+              onClick={() => setPage((p) => p + 1)}
+              className="rounded border bg-white px-2 py-1 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+      <CustomisationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        columns={columns}
+        onSave={handleSaveCustomisation}
+        onResetDefault={handleResetDefault}
+      />
+    </div>
+  );
+} */
+/* "use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ColumnConfig,
+  FetchParams,
+  FetchResponse,
+  FilterValue,
+} from "@/types/table";
+import { ColumnHeaderFilter } from "./ColumnHeaderFilter";
+import { CustomisationModal } from "./CustomisationModal";
+
+interface DataTableProps<T> {
+  moduleKey: string;
+  fetchApi: (params: FetchParams) => Promise<FetchResponse<T>>;
+  columnsConfigApi: {
+    get: (moduleKey: string) => Promise<ColumnConfig[]>;
+    save: (moduleKey: string, configs: ColumnConfig[]) => Promise<void>;
+    reset: (moduleKey: string) => Promise<ColumnConfig[]>;
+  };
+  renderRowCell?: (row: T, columnKey: string) => React.ReactNode;
+}
+
+export function DataTable<T extends Record<string, unknown>>({
+  moduleKey,
+  fetchApi,
+  columnsConfigApi,
+  renderRowCell,
+}: DataTableProps<T>) {
+  const [data, setData] = useState<T[]>([]);
+  const [columns, setColumns] = useState<ColumnConfig[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+
+  // Pagination & Filter State
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+  const [filters, setFilters] = useState<FilterValue>({});
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  // 1. Fetch Column Configuration
+  const loadColumns = useCallback(async () => {
+    try {
+      const config = await columnsConfigApi.get(moduleKey);
+      setColumns(config.sort((a, b) => a.columnOrder - b.columnOrder));
+    } catch (err) {
+      console.error("Failed to load column configuration:", err);
+    }
+  }, [moduleKey, columnsConfigApi]);
+
+  // 2. Fetch Data
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchApi({ page, pageSize, filters });
+      setData(res.data);
+      setTotalRecords(res.totalRecords);
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, filters, fetchApi]);
+
+  useEffect(() => {
+    loadColumns();
+  }, [loadColumns]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleFilterChange = (
+    columnKey: string,
+    filterData: FilterValue[string],
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [columnKey]: filterData,
+    }));
+    setPage(1); // Reset to first page on search
+  };
+
+  const handleSaveCustomisation = async (updatedCols: ColumnConfig[]) => {
+    await columnsConfigApi.save(moduleKey, updatedCols);
+    setColumns(updatedCols);
+    setIsModalOpen(false);
+  };
+
+  const handleResetDefault = async () => {
+    const defaultConfig = await columnsConfigApi.reset(moduleKey);
+    setColumns(defaultConfig);
+    setIsModalOpen(false);
+  };
+
+  const visibleColumns = columns.filter((col) => col.isVisible);
+  const startRecord = (page - 1) * pageSize + 1;
+  const endRecord = Math.min(page * pageSize, totalRecords);
+
+  return (
+    <div className="w-full font-sans text-slate-800">
+
+      <div className="flex items-center justify-between bg-emerald-950 p-2 text-white">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            title="Table Customisation"
+            className="rounded p-1 hover:bg-emerald-800"
+          >
+            ⚙️
+          </button>
+        </div>
+      </div>
+
+
+      <div className="relative overflow-x-auto border border-slate-300">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+
+            <tr className="bg-emerald-900 text-white font-semibold">
+              <th className="w-10 border-r border-emerald-800 p-2 text-center">
+                <input type="checkbox" className="accent-emerald-600" />
+              </th>
+              {visibleColumns.map((col) => (
+                <th
+                  key={col.columnKey}
+                  style={{
+                    width: col.columnWidth ? `${col.columnWidth}px` : "auto",
+                    backgroundColor: col.headerColor || undefined,
+                  }}
+                  className={`border-r border-emerald-800 p-2 ${
+                    col.isPinned ? "sticky left-0 bg-emerald-900 z-10" : ""
+                  }`}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+
+
+            <tr className="bg-emerald-850 border-b border-slate-300">
+              <td className="border-r border-emerald-800 p-1"></td>
+              {visibleColumns.map((col) => (
+                <td
+                  key={`filter-${col.columnKey}`}
+                  className="border-r border-emerald-800 p-1 bg-emerald-900"
+                >
+                  <ColumnHeaderFilter
+                    column={col}
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                  />
+                </td>
+              ))}
+            </tr>
+          </thead>
+
+
+          <tbody>
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={visibleColumns.length + 1}
+                  className="p-8 text-center text-slate-500"
+                >
+                  Loading data...
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={visibleColumns.length + 1}
+                  className="p-8 text-center text-slate-500"
+                >
+                  No records found.
+                </td>
+              </tr>
+            ) : (
+              data.map((row, idx) => (
+                <tr
+                  key={row.id || idx}
+                  className="border-b border-slate-200 hover:bg-slate-50 text-slate-700"
+                >
+                  <td className="p-2 text-center border-r border-slate-200">
+                    <input type="checkbox" className="accent-emerald-600" />
+                  </td>
+                  {visibleColumns.map((col) => (
+                    <td
+                      key={col.columnKey}
+                      className={`p-2 border-r border-slate-200 ${
+                        col.isPinned ? "sticky left-0 bg-white z-0" : ""
+                      }`}
+                    >
+                      {renderRowCell
+                        ? renderRowCell(row, col.columnKey)
+                        : (row[col.columnKey] ?? "-")}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+
+      <div className="flex items-center justify-between border-t bg-slate-100 p-2 text-xs text-slate-600">
+        <div>{totalRecords} Total Records</div>
+        <div className="flex items-center gap-4">
+          <div>
+            Showing {totalRecords > 0 ? startRecord : 0} to {endRecord} Records
+          </div>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+            className="rounded border p-1 outline-none"
+          >
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+          <div className="flex gap-1">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="rounded border bg-white px-2 py-1 disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <button
+              disabled={endRecord >= totalRecords}
+              onClick={() => setPage((p) => p + 1)}
+              className="rounded border bg-white px-2 py-1 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+      <CustomisationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        columns={columns}
+        onSave={handleSaveCustomisation}
+        onResetDefault={handleResetDefault}
+      />
+    </div>
+  );
+}
+ */

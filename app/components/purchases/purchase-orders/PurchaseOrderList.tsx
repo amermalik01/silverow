@@ -3,6 +3,145 @@
 "use client";
 
 import Link from "next/link";
+import { PurchaseOrder } from "@/types/purchase-order";
+import PurchaseOrderStatusBadge from "./PurchaseOrderStatusBadge";
+import { Button } from "@/components/ui/button";
+import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
+import { DataTable } from "@/app/components/DataTable/DataTable";
+
+type Props = {
+  slug: string;
+};
+
+export default function PurchaseOrderList({ slug }: Props) {
+  // Data Fetching Handler
+  const fetchPurchaseOrders = async (
+    params: FetchParams,
+  ): Promise<FetchResponse<PurchaseOrder>> => {
+    const res = await fetch("/api/purchase-orders/listing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    return res.json();
+  };
+
+  // Config Persistence APIs
+  const columnsConfigApi = {
+    get: async (moduleKey: string): Promise<ColumnConfig[]> => {
+      const res = await fetch(`/api/table-config?moduleKey=${moduleKey}`);
+      return res.json();
+    },
+    save: async (moduleKey: string, configs: ColumnConfig[]): Promise<void> => {
+      await fetch("/api/table-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleKey, configs }),
+      });
+    },
+    reset: async (moduleKey: string): Promise<ColumnConfig[]> => {
+      await fetch(`/api/table-config/reset?moduleKey=${moduleKey}`, {
+        method: "POST",
+      });
+      const res = await fetch(`/api/table-config?moduleKey=${moduleKey}`);
+      return res.json();
+    },
+  };
+
+  // Custom Cell Rendering Method for Specific Formatted Columns
+  const renderRowCell = (row: PurchaseOrder, columnKey: string) => {
+    switch (columnKey) {
+      case "order_no":
+        return (
+          <Link
+            href={`/${slug}/purchases/purchase-orders/${row.id}`}
+            className="font-medium text-blue-600 hover:underline"
+          >
+            {row.order_no || "Draft"}
+          </Link>
+        );
+
+      case "supplier_name":
+        return row.supplier_name;
+
+      case "order_date":
+        return row.order_date
+          ? new Date(row.order_date).toLocaleDateString()
+          : "-";
+
+      case "status":
+        return <PurchaseOrderStatusBadge status={row.status} />;
+
+      case "total_amount":
+        return (
+          <span className="font-mono text-right block">
+            {Number(row.total_amount || 0).toFixed(2)}
+          </span>
+        );
+
+      case "actions":
+        return (
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/${slug}/purchases/purchase-orders/${row.id}/edit`}
+              className="rounded border dark:border-slate-700 px-2 py-1 text-xs hover:bg-gray-100 dark:hover:bg-slate-800"
+            >
+              Edit
+            </Link>
+            {row.status?.toLowerCase() === "open" && (
+              <Link
+                href={`/${slug}/purchases/receipts/create?po=${row.id}`}
+                className="rounded border border-green-600 px-2 py-1 text-xs text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20"
+              >
+                Receive
+              </Link>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="space-y-4 container mx-auto p-4">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold">Purchase Orders</h2>
+          <p className="text-xs text-gray-500">
+            Manage supplier orders, shipments and invoices
+          </p>
+        </div>
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={`/${slug}/purchases/purchase-orders/create`}>
+            + Create
+          </Link>
+        </Button>
+      </div>
+
+      {/* Main Data Table */}
+      <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <DataTable<PurchaseOrder>
+          moduleKey="purchase_orders"
+          fetchApi={fetchPurchaseOrders}
+          columnsConfigApi={columnsConfigApi}
+          renderRowCell={renderRowCell}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
+
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PurchaseOrder } from "@/types/purchase-order";
 import PurchaseOrderStatusBadge from "./PurchaseOrderStatusBadge";
@@ -114,7 +253,7 @@ export default function PurchaseOrderList({ slug }: Props) {
 
   return (
     <div className="space-y-6 container mx-auto p-4">
-      {/* Header Controls Element Block */}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">Purchase Orders</h2>
@@ -129,13 +268,13 @@ export default function PurchaseOrderList({ slug }: Props) {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={`/${slug}/purchases/purchase-orders/create`}>
-            {/* <Icon icon="solar:add-circle-linear" width={32} height={32} /> */}+
+            +
             Create
           </Link>
         </Button>
       </div>
 
-      {/* Filter Toolbar Element Interface Layout */}
+
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
         <form
           onSubmit={handleSearchSubmit}
@@ -197,31 +336,9 @@ export default function PurchaseOrderList({ slug }: Props) {
             className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
           />
         </div>
-
-        {/* <div className="flex items-center gap-2 md:col-span-2">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
-          />
-          <span className="text-xs text-gray-400">to</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              setPage(1);
-            }}
-            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
-          />
-        </div> */}
       </div>
 
-      {/* Primary Data Display Frame */}
+
       <div className="border dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
         <div className="overflow-auto">
           <table className="w-full text-xs">
@@ -293,7 +410,7 @@ export default function PurchaseOrderList({ slug }: Props) {
           </table>
         </div>
 
-        {/* Dynamic Pagination Footer Control Bar */}
+   
         {!loading && totalRecords > 0 && (
           <div className="bg-gray-50 dark:bg-slate-800/40 p-4 border-t dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
             <span className="text-gray-500 dark:text-slate-400">
@@ -322,3 +439,4 @@ export default function PurchaseOrderList({ slug }: Props) {
     </div>
   );
 }
+ */

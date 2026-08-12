@@ -2,6 +2,7 @@
 
 import { PoolClient } from "pg";
 import { pool } from "@/lib/db";
+import { FetchParams, FetchResponse } from "@/types/table";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { PurchaseOrderPayloadSchema } from "@/lib/validations/purchase-order.schema";
 import {
@@ -25,6 +26,92 @@ export class PurchaseOrderService {
       [companyId],
     );
     return result.rows;
+  }
+
+  static async listPaginated(
+    companyId: string,
+    params: FetchParams,
+  ): Promise<FetchResponse<PurchaseOrder>> {
+    const { page = 1, pageSize = 50, filters = {} } = params;
+    const offset = (page - 1) * pageSize;
+
+    const queryValues: (string | number)[] = [companyId];
+    const whereClauses = ["po.company_id = $1", "po.status != 'completed'"];
+
+    // Dynamic Filter Builder mapping columnKey to SQL fields
+    Object.entries(filters).forEach(([colKey, filter]) => {
+      if (!filter) return;
+
+      // Handle Text / Dropdown Filtering
+      if (filter.value !== undefined && filter.value !== "") {
+        if (colKey === "status") {
+          // Exact match for status dropdown values
+          queryValues.push(String(filter.value));
+          whereClauses.push(`po.status = $${queryValues.length}`);
+        } else if (colKey === "order_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`po.order_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "supplier_name") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`p.name ILIKE $${queryValues.length}`);
+        }
+      }
+
+      // Handle Date / Numeric Range Filtering
+      if (filter.from !== undefined && filter.from !== "") {
+        queryValues.push(filter.from);
+        const idx = queryValues.length;
+        if (colKey === "order_date") {
+          whereClauses.push(`po.order_date >= $${idx}::date`);
+        } else if (colKey === "total_amount") {
+          whereClauses.push(`po.total_amount >= $${idx}::numeric`);
+        }
+      }
+
+      if (filter.to !== undefined && filter.to !== "") {
+        queryValues.push(filter.to);
+        const idx = queryValues.length;
+        if (colKey === "order_date") {
+          whereClauses.push(`po.order_date <= $${idx}::date`);
+        } else if (colKey === "total_amount") {
+          whereClauses.push(`po.total_amount <= $${idx}::numeric`);
+        }
+      }
+    });
+
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // 1. Fetch Total Count for Pagination Calculation
+    const countQuery = `
+    SELECT COUNT(*) as total 
+    FROM purchase_orders po
+    LEFT JOIN parties p ON p.id = po.supplier_id
+    ${whereSql}
+  `;
+    const countResult = await pool.query(countQuery, queryValues);
+    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
+
+    // 2. Fetch Paginated Data Records
+    const dataQueryValues = [...queryValues, pageSize, offset];
+    const limitIdx = dataQueryValues.length - 1;
+    const offsetIdx = dataQueryValues.length;
+
+    const dataQuery = `
+    SELECT po.*, p.name AS supplier_name
+    FROM purchase_orders po
+    LEFT JOIN parties p ON p.id = po.supplier_id
+    ${whereSql}
+    ORDER BY po.created_at DESC
+    LIMIT $${limitIdx} OFFSET $${offsetIdx}
+  `;
+
+    const dataResult = await pool.query(dataQuery, dataQueryValues);
+
+    return {
+      data: dataResult.rows,
+      totalRecords,
+    };
   }
 
   static async get(companyId: string, id: string) {

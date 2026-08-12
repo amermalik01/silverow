@@ -114,12 +114,12 @@ export default function PurchaseInvoiceList({ slug }: Props) {
             View and manage bills received from suppliers against orders
           </p>
         </div>
-        <Link
+        {/* <Link
           href={`/${slug}/purchases/purchase-invoices/create`}
           className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-xs font-medium transition-colors"
         >
           Create Invoice
-        </Link>
+        </Link> */}
       </div>
 
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
