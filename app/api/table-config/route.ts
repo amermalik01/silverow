@@ -6,71 +6,6 @@ import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { ColumnConfig } from "@/types/table";
 import { getDefaultTableConfig } from "@/lib/constants/table-configs";
 
-// System Default Fallback Configurations
-// const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
-//   purchase_orders: [
-//     {
-//       columnKey: "order_no",
-//       label: "Order No.",
-//       dataType: "text",
-//       isVisible: true,
-//       isPinned: false,
-//       columnOrder: 1,
-//       columnWidth: 150,
-//     },
-//     {
-//       columnKey: "supplier_name",
-//       label: "Supplier Name",
-//       dataType: "text",
-//       isVisible: true,
-//       isPinned: false,
-//       columnOrder: 2,
-//       columnWidth: 200,
-//     },
-//     {
-//       columnKey: "order_date",
-//       label: "Order Date",
-//       dataType: "date",
-//       isVisible: true,
-//       isPinned: false,
-//       columnOrder: 3,
-//       columnWidth: 160,
-//     },
-//     {
-//       columnKey: "status",
-//       label: "Status",
-//       dataType: "select",
-//       isVisible: true,
-//       isPinned: false,
-//       columnOrder: 4,
-//       columnWidth: 130,
-//       options: [
-//         { label: "Open", value: "OPEN" },
-//         { label: "Closed", value: "CLOSED" },
-//         { label: "Cancelled", value: "CANCELLED" },
-//       ],
-//     },
-//     {
-//       columnKey: "total_amount",
-//       label: "Total Amount",
-//       dataType: "number",
-//       isVisible: true,
-//       isPinned: false,
-//       columnOrder: 5,
-//       columnWidth: 140,
-//     },
-//     {
-//       columnKey: "actions",
-//       label: "Actions",
-//       dataType: "text",
-//       isVisible: true,
-//       isPinned: false,
-//       columnOrder: 6,
-//       columnWidth: 160,
-//     },
-//   ],
-// };
-
 /**
  * Resolves dynamic options for select fields (Currencies, Stages, etc.)
  */
@@ -128,13 +63,6 @@ export async function GET(req: NextRequest) {
   const userId = "DEFAULT_USER";
 
   try {
-    // const res = await pool.query(
-    //   `SELECT column_key as "columnKey", label, data_type as "dataType", is_visible as "isVisible", is_pinned as "isPinned", column_order as "columnOrder", column_width as "columnWidth", header_color as "headerColor"
-    //    FROM table_column_configs
-    //    WHERE user_id = $1 AND module_key = $2
-    //    ORDER BY column_order ASC`,
-    //   [userId, moduleKey],
-    // );
 
     const res = await pool.query(
       `SELECT column_key as "columnKey", label, data_type as "dataType", 
@@ -166,11 +94,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(fallbackConfigs);
   }
-
-  //   return NextResponse.json(DEFAULT_CONFIGS[moduleKey] || []);
-  // } catch {
-  //   return NextResponse.json(DEFAULT_CONFIGS[moduleKey] || []);
-  // }
 }
 
 export async function POST(req: NextRequest) {

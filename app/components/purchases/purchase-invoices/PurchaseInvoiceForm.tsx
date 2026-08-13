@@ -163,7 +163,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
   const isFormDisabled = isReadOnly || isCompleted;
 
   return (
-    <div className="space-y-4 w-full max-w-[100vw] py-2 mx-auto overflow-x-auto">
+    <div className="space-y-4">
       <div className="p-3 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
         <span className="flex items-center gap-2">
           <Icon icon="tabler:eye" className="w-4 h-4 text-blue-600" />
@@ -188,45 +188,47 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
       )} */}
 
       {/* Header Tabs */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar">
-          {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap ${
-                activeTab === tab
-                  ? "border-emerald-600 text-emerald-600"
-                  : "border-transparent text-slate-400 hover:text-slate-600"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+      <div className=" bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200  pb-2 mb-4">
+          <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar ">
+            {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap ${
+                  activeTab === tab
+                    ? "border-emerald-600 text-emerald-600"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Read-Only Form Tabs */}
-      <OrderFormTabs
-        activeTab={activeTab}
-        order={invoice}
-        primaryAddress={primaryAddress}
-        setPrimaryAddress={noop}
-        billingAddress={billingAddress}
-        setBillingAddress={noop}
-        shippingAddress={shippingAddress}
-        setShippingAddress={noop}
-        currencyConfig={currencyConfig}
-        setCurrencyConfig={noop}
-        masterData={masterData}
-        updateField={noop}
-        setSupplierModalOpen={noop}
-        setLocationModalOpen={noop}
-        labelStyle={labelStyle}
-        inputStyle={inputStyle}
-        isReadOnly={true}
-      />
+        {/* Read-Only Form Tabs */}
+        <OrderFormTabs
+          activeTab={activeTab}
+          order={invoice}
+          primaryAddress={primaryAddress}
+          setPrimaryAddress={noop}
+          billingAddress={billingAddress}
+          setBillingAddress={noop}
+          shippingAddress={shippingAddress}
+          setShippingAddress={noop}
+          currencyConfig={currencyConfig}
+          setCurrencyConfig={noop}
+          masterData={masterData}
+          updateField={noop}
+          setSupplierModalOpen={noop}
+          setLocationModalOpen={noop}
+          labelStyle={labelStyle}
+          inputStyle={inputStyle}
+          isReadOnly={true}
+        />
+      </div>
 
       {/* Read-Only Purchase Lines */}
       <PurchaseOrderLines
@@ -237,112 +239,131 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
         refreshLines={asyncNoop}
       />
 
-      {/* Financial Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end bg-slate-50 dark:bg-slate-900/60 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-        <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
-          <div>
-            <textarea
-              placeholder="Internal Notes"
-              disabled
-              readOnly
-              className={`${inputStyle} font-mono resize-none`}
-              value={invoice.internal_notes || ""}
-            />
-          </div>
-          <div className="col-span-2">
-            <textarea
-              placeholder="External Notes"
-              disabled
-              readOnly
-              className={`${inputStyle} font-mono resize-none`}
-              value={invoice.notes || ""}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+      <div className="  bg-white  border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 pl-4 pr-4">
+          <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
             <div>
-              <span className="text-xs font-semibold text-slate-500">
-                Conversion Rate
-              </span>
-            </div>
-            <div>
-              <input
-                type="number"
+              <textarea
+                placeholder="Internal Notes"
                 disabled
                 readOnly
-                className={`${inputStyle} font-mono max-w-[100px] text-end`}
-                value={
-                  Number(currencyConfig.exchange_rate).toFixed(2) ?? "1.00"
-                }
+                className={`${inputStyle} font-mono resize-none`}
+                value={invoice.internal_notes || ""}
+              />
+            </div>
+            <div className="col-span-2">
+              <textarea
+                placeholder="External Notes"
+                disabled
+                readOnly
+                className={`${inputStyle} font-mono resize-none`}
+                value={invoice.notes || ""}
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 items-center">
-            <span className="text-xs font-semibold text-slate-500">
-              Amount Incl. VAT ({baseCurrencyCode})
-            </span>
-            <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
-              {financials.amountInclVatLCY.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+              <div>
+                <span className="text-xs font-semibold text-slate-500">
+                  Conversion Rate
+                </span>
+              </div>
+              <div>
+                <input
+                  type="number"
+                  disabled
+                  readOnly
+                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                  value={
+                    Number(currencyConfig.exchange_rate).toFixed(2) ?? "1.00"
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 items-center">
+              <span className="text-xs font-semibold text-slate-500">
+                Amount Incl. VAT ({baseCurrencyCode})
+              </span>
+              <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
+                {financials.amountInclVatLCY.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
+            <div className="flex justify-between pb-1">
+              <span className="font-semibold">Amount</span>
+              <span>
+                {financials.amount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+            <div className="flex justify-between pb-1">
+              <span className="font-semibold">VAT</span>
+              <span>
+                {financials.vat.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+            <div className="flex justify-between pt-1 text-slate-900 dark:text-white">
+              <span className="font-semibold">Amount Incl. VAT</span>
+              <span>
+                {financials.amountInclVat.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
-          <div className="flex justify-between pb-1">
-            <span className="font-semibold">Amount</span>
-            <span>
-              {financials.amount.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}{" "}
-              {selectedCurrency?.code || ""}
+        <div className="flex items-center justify-between pt-4 bg-slate-50 dark:bg-slate-900/60 pl-4 pr-4 pb-4 rounded-lg">
+          {/* Legend Indicators */}
+          <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
+              Partially Allocated
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
+              Allocated Stock
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
+              Stock Received
             </span>
           </div>
-          <div className="flex justify-between pb-1">
-            <span className="font-semibold">VAT</span>
-            <span>
-              {financials.vat.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}{" "}
-              {selectedCurrency?.code || ""}
-            </span>
-          </div>
-          <div className="flex justify-between pt-1 text-slate-900 dark:text-white">
-            <span className="font-semibold">Amount Incl. VAT</span>
-            <span>
-              {financials.amountInclVat.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}{" "}
-              {selectedCurrency?.code || ""}
-            </span>
+          <div className="flex items-center gap-2">
+            {/* Navigate Button (Opens Legacy Modal) */}
+            {isUpdateMode && (
+              <button
+                type="button"
+                onClick={() => setShowNavigateModal(true)}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Navigate
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() =>
+                router.push(`/${slug}/purchases/purchase-invoices`)
+              }
+              className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+            >
+              Cancel
+            </button>
           </div>
         </div>
-      </div>
-
-      {/* Bottom Action Bar matching Legacy Screenshot buttons */}
-      <div className="flex items-center justify-end pt-4 gap-2">
-        {/* Navigate Button (Opens Legacy Modal) */}
-        {isUpdateMode && (
-          <button
-            type="button"
-            onClick={() => setShowNavigateModal(true)}
-            className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
-          >
-            Navigate
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={() => router.push(`/${slug}/purchases/purchase-invoices`)}
-          className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-        >
-          Cancel
-        </button>
       </div>
 
       {/* General Ledger Posted Transactions Modal */}

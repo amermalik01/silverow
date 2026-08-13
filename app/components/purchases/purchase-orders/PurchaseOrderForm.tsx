@@ -853,27 +853,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* {!isReadOnly && (
-        <div className="flex justify-end gap-2 pt-4">
-          <button
-            type="button"
-            onClick={() => router.push(`/${slug}/purchases/purchase-orders`)}
-            className="px-4 py-2 text-xs border border-slate-300 dark:border-slate-700 font-bold capitalize rounded hover:bg-slate-50 dark:hover:bg-slate-800"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 text-xs bg-emerald-600 text-white font-bold capitalize rounded shadow hover:bg-emerald-700 disabled:opacity-40"
-          >
-            {saving ? "Writing..." : "Save Purchase Order"}
-          </button>
-        </div>
-      )} */}
 
-        {/* Form Bottom Action Toolbar matching Legacy UI */}
+
         <div className="flex items-center justify-between pt-4 bg-slate-50 dark:bg-slate-900/60 pl-4 pr-4 pb-4 rounded-lg">
           {/* Legend Indicators */}
           <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">

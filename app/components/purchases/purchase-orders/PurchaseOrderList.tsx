@@ -4,7 +4,6 @@
 
 import Link from "next/link";
 import { PurchaseOrder } from "@/types/purchase-order";
-// import PurchaseOrderStatusBadge from "./PurchaseOrderStatusBadge";
 import { Button } from "@/components/ui/button";
 import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
 import { DataTable } from "@/app/components/DataTable/DataTable";
