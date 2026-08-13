@@ -34,13 +34,28 @@ export function DataTable<T extends object>({
   const [loading, setLoading] = useState<boolean>(true);
   const [totalRecords, setTotalRecords] = useState<number>(0);
 
-  // Pagination & Filter State
+  // Pagination, Filter & Sorting State
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(50);
   const [filters, setFilters] = useState<FilterValue>({});
+  const [debouncedFilters, setDebouncedFilters] = useState<FilterValue>({});
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(
+    undefined,
+  );
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // 1. Fetch Column Configuration
+  // 1. Debounce Filters (300ms Delay)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedFilters(filters);
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [filters]);
+
+  // 2. Fetch Column Configurations
   const loadColumns = useCallback(async () => {
     try {
       const config = await columnsConfigApi.get(moduleKey);
@@ -50,11 +65,17 @@ export function DataTable<T extends object>({
     }
   }, [moduleKey, columnsConfigApi]);
 
-  // 2. Fetch Data
+  // 3. Fetch Paginated & Sorted Data
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchApi({ page, pageSize, filters });
+      const res = await fetchApi({
+        page,
+        pageSize,
+        filters: debouncedFilters,
+        sortBy,
+        sortOrder,
+      });
       setData(res.data || []);
       setTotalRecords(res.totalRecords || 0);
     } catch (err) {
@@ -62,7 +83,7 @@ export function DataTable<T extends object>({
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, filters, fetchApi]);
+  }, [page, pageSize, debouncedFilters, sortBy, sortOrder, fetchApi]);
 
   useEffect(() => {
     loadColumns();
@@ -80,6 +101,27 @@ export function DataTable<T extends object>({
       ...prev,
       [columnKey]: filterData,
     }));
+    setPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({});
+    setPage(1);
+  };
+
+  // Toggle column sort order: asc -> desc -> none
+  const handleSortChange = (columnKey: string) => {
+    if (columnKey === "actions") return; // Skip actions column
+
+    if (sortBy !== columnKey) {
+      setSortBy(columnKey);
+      setSortOrder("asc");
+    } else if (sortOrder === "asc") {
+      setSortOrder("desc");
+    } else {
+      setSortBy(undefined);
+      setSortOrder(undefined);
+    }
     setPage(1);
   };
 
@@ -119,6 +161,12 @@ export function DataTable<T extends object>({
     return index;
   };
 
+  // Count active filters to display badge
+  const activeFilterCount = Object.values(filters).filter((f) => {
+    if (!f) return false;
+    return Boolean(f.value || f.from || f.to);
+  }).length;
+
   const visibleColumns = columns.filter((col) => col.isVisible);
   const startRecord = (page - 1) * pageSize + 1;
   const endRecord = Math.min(page * pageSize, totalRecords);
@@ -126,15 +174,41 @@ export function DataTable<T extends object>({
   return (
     <div className="w-full font-sans text-slate-800 dark:text-slate-100 rounded-xl overflow-hidden shadow-lg border border-emerald-900/30">
       {/* Top Toolbar */}
-      <div className="flex items-center justify-between bg-emerald-950 px-4 py-2 text-emerald-100 border-b border-emerald-900">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between bg-emerald-950 px-3 py-2 text-emerald-100 border-b border-emerald-900">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsModalOpen(true)}
             title="Customise Table Columns"
-            className="flex items-center gap-1.5 rounded-lg bg-emerald-900/60 px-3 py-1.5 text-xs font-semibold hover:bg-emerald-800 transition-colors border border-emerald-700/50"
+            // className="flex items-center gap-1.5 rounded-lg bg-emerald-900/60 px-3 py-1.5 text-xs font-semibold hover:bg-emerald-800 transition-colors border border-emerald-700/50"
+          className="p-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50 transition-colors"
           >
             ⚙️ Customise Table
           </button>
+
+
+          {/* Filter Toggle Button (Yellow Highlighted in Screenshot) */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            title={showFilters ? "Hide Filter Row" : "Show Filter Row"}
+            className={`relative p-1.5 rounded-lg transition-colors border ${
+              showFilters
+                ? "bg-emerald-700 text-white border-emerald-500"
+                : "bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50"
+            }`}
+          >
+            🔍
+          </button>
+
+          {/* Clear Filters Button */}
+          {activeFilterCount > 0 && (
+            <button
+              onClick={handleClearFilters}
+              title="Clear All Filters"
+              className="flex items-center gap-1 text-[11px] font-semibold bg-rose-950/80 hover:bg-rose-900 text-rose-200 px-2.5 py-1 rounded-lg border border-rose-800/80 transition-colors ml-1"
+            >
+              ✕ Clear Filters ({activeFilterCount})
+            </button>
+          )}
         </div>
         <div className="text-xs text-emerald-300 font-medium">
           {totalRecords} Total Entries Found
@@ -145,7 +219,7 @@ export function DataTable<T extends object>({
       <div className="relative overflow-x-auto bg-white dark:bg-slate-900">
         <table className="w-full border-collapse text-left text-xs">
           <thead>
-            {/* Header Row 1: Titles */}
+            {/* Header Row 1: Titles & Sorting */}
             <tr className="bg-emerald-900 font-semibold text-emerald-50">
               <th className="w-10 border-r border-emerald-800 p-3 text-center">
                 <input
@@ -153,31 +227,47 @@ export function DataTable<T extends object>({
                   className="accent-emerald-600 cursor-pointer rounded"
                 />
               </th>
-              {visibleColumns.map((col) => (
-                <th
-                  key={col.columnKey}
-                  style={{
-                    width: col.columnWidth ? `${col.columnWidth}px` : "auto",
-                    backgroundColor: col.headerColor || undefined,
-                  }}
-                  className={`border-r border-emerald-800/80 p-3 font-bold uppercase tracking-wider text-[11px] ${
-                    col.isPinned
-                      ? "sticky left-0 z-20 bg-emerald-900 shadow-md"
-                      : ""
-                  }`}
-                >
-                  {col.label}
-                </th>
-              ))}
+              {visibleColumns.map((col) => {
+                const isSorted = sortBy === col.columnKey;
+                return (
+                  <th
+                    key={col.columnKey}
+                    onClick={() => handleSortChange(col.columnKey)}
+                    style={{
+                      width: col.columnWidth ? `${col.columnWidth}px` : "auto",
+                      backgroundColor: col.headerColor || undefined,
+                    }}
+                    className={`border-r border-emerald-800/80 p-3 font-bold uppercase tracking-wider text-[11px] select-none ${
+                      col.columnKey !== "actions"
+                        ? "cursor-pointer hover:bg-emerald-800/60"
+                        : ""
+                    } ${
+                      col.isPinned
+                        ? "sticky left-0 z-20 bg-emerald-900 shadow-md"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span>{col.label}</span>
+                      {col.columnKey !== "actions" && (
+                        <span className="text-[10px] text-emerald-300 opacity-80">
+                          {isSorted ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
 
             {/* Header Row 2: Dynamic Filters */}
+            {showFilters && (
             <tr className="bg-emerald-900/90 border-b border-emerald-800">
               <td className="border-r border-emerald-800/80 p-2 text-center bg-emerald-900"></td>
               {visibleColumns.map((col) => (
                 <td
                   key={`filter-${col.columnKey}`}
-                  className="border-r border-emerald-800/80 p-2 bg-emerald-900"
+                  className="border-r border-emerald-800/80 p-2 bg-emerald-900 items-start content-start"
                 >
                   <ColumnHeaderFilter
                     column={col}
@@ -187,6 +277,7 @@ export function DataTable<T extends object>({
                 </td>
               ))}
             </tr>
+            )}
           </thead>
 
           {/* Table Rows */}
@@ -264,10 +355,10 @@ export function DataTable<T extends object>({
             }}
             className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 outline-none font-medium cursor-pointer"
           >
-            <option value={20}>20 per page</option>
-            <option value={50}>50 per page</option>
-            <option value={100}>100 per page</option>
-          </select>
+            <option value={20}>20 &nbsp;&nbsp;</option>
+            <option value={50}>50 &nbsp;&nbsp;</option>
+            <option value={100}>100 &nbsp;&nbsp;</option>
+          </select>per page
           <div className="flex gap-1.5">
             <button
               disabled={page === 1}

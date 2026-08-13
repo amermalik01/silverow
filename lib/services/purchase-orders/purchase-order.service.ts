@@ -32,8 +32,115 @@ export class PurchaseOrderService {
     companyId: string,
     params: FetchParams,
   ): Promise<FetchResponse<PurchaseOrder>> {
-    const { page = 1, pageSize = 50, filters = {} } = params;
+    // const { page = 1, pageSize = 50, filters = {} } = params;
+    const {
+      page = 1,
+      pageSize = 50,
+      filters = {},
+      sortBy,
+      sortOrder = "asc",
+    } = params;
     const offset = (page - 1) * pageSize;
+
+    // Map client column keys to safe SQL fields (prevents SQL Injection)
+    const SORT_FIELDS: Record<string, string> = {
+      order_no: "po.order_no",
+      supplier_no: "p.code",
+      supplier_name: "p.name",
+      order_date: "po.order_date",
+      invoice_date: "po.invoice_date",
+      supplier_invoice_no: "po.supplier_invoice_no",
+      contact_person: "po.contact_person",
+      status: "po.status",
+      total_amount: "po.total_amount",
+    };
+
+    /* 
+    export const purchaseOrdersConfig: ColumnConfig[] = [
+
+
+      {
+        columnKey: "current_stage",
+        label: "Current Stage",
+        dataType: "select",
+        isVisible: true,
+        isPinned: false,
+        columnOrder: 5,
+        columnWidth: 140,
+        optionSource: "stages",
+        // options: [
+        //   { label: "PO Sent", value: "PO Sent" },
+        //   { label: "Completed", value: "Completed" },
+        //   { label: "Draft", value: "Draft" },
+        // ],
+      },
+      
+      {
+        columnKey: "city",
+        label: "City",
+        dataType: "text",
+        isVisible: true,
+        isPinned: false,
+        columnOrder: 8,
+        columnWidth: 130,
+      },
+      {
+        columnKey: "contact_person",
+        label: "Contact Person",
+        dataType: "text",
+        isVisible: true,
+        isPinned: false,
+        columnOrder: 9,
+        columnWidth: 150,
+      },
+      {
+        columnKey: "purchaser",
+        label: "Purchaser",
+        dataType: "text",
+        isVisible: true,
+        isPinned: false,
+        columnOrder: 10,
+        columnWidth: 140,
+      },
+      {
+        columnKey: "currency",
+        label: "Currency",
+        dataType: "select",
+        isVisible: true,
+        isPinned: false,
+        columnOrder: 11,
+        columnWidth: 100,
+        optionSource: "currencies",
+        // options: [
+        //   { label: "EUR", value: "EUR" },
+        //   { label: "GBP", value: "GBP" },
+        //   { label: "USD", value: "USD" },
+        // ],
+      },
+      {
+        columnKey: "total_amount",
+        label: "Amount",
+        dataType: "number",
+        isVisible: true,
+        isPinned: false,
+        columnOrder: 12,
+        columnWidth: 130,
+      },
+      {
+        columnKey: "actions",
+        label: "Actions",
+        dataType: "text",
+        isVisible: true,
+        isPinned: false,
+        columnOrder: 13,
+        columnWidth: 100,
+      },
+    ];
+    */
+
+    const orderByColumn =
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "po.created_at";
+    const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     const queryValues: (string | number)[] = [companyId];
     const whereClauses = ["po.company_id = $1", "po.status != 'completed'"];
@@ -84,11 +191,11 @@ export class PurchaseOrderService {
 
     // 1. Fetch Total Count for Pagination Calculation
     const countQuery = `
-    SELECT COUNT(*) as total 
-    FROM purchase_orders po
-    LEFT JOIN parties p ON p.id = po.supplier_id
-    ${whereSql}
-  `;
+      SELECT COUNT(*) as total 
+      FROM purchase_orders po
+      LEFT JOIN parties p ON p.id = po.supplier_id
+      ${whereSql}
+    `;
     const countResult = await pool.query(countQuery, queryValues);
     const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
 
@@ -98,13 +205,13 @@ export class PurchaseOrderService {
     const offsetIdx = dataQueryValues.length;
 
     const dataQuery = `
-    SELECT po.*, p.name AS supplier_name
-    FROM purchase_orders po
-    LEFT JOIN parties p ON p.id = po.supplier_id
-    ${whereSql}
-    ORDER BY po.created_at DESC
-    LIMIT $${limitIdx} OFFSET $${offsetIdx}
-  `;
+      SELECT po.*, p.name AS supplier_name
+      FROM purchase_orders po
+      LEFT JOIN parties p ON p.id = po.supplier_id
+      ${whereSql}
+      ORDER BY ${orderByColumn} ${orderDirection}
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `;
 
     const dataResult = await pool.query(dataQuery, dataQueryValues);
 

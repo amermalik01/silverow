@@ -12,6 +12,7 @@ export interface ColumnConfig {
   columnWidth: number;
   headerColor?: string;
   options?: { label: string; value: string }[]; // For select inputs
+  optionSource?: string;
 }
 
 export interface FilterValue {
