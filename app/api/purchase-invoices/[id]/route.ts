@@ -1,7 +1,5 @@
 // app/api/purchase-invoices/[id]/route.ts
 
-// app/api/purchase-invoices/[id]/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { PurchaseInvoiceService } from "@/lib/services/purchase-invoices/purchase-invoice.service";

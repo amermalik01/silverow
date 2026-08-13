@@ -237,7 +237,7 @@ export function DataTable<T extends object>({
                       width: col.columnWidth ? `${col.columnWidth}px` : "auto",
                       backgroundColor: col.headerColor || undefined,
                     }}
-                    className={`border-r border-emerald-800/80 p-3 font-bold uppercase tracking-wider text-[11px] select-none ${
+                    className={`border-r border-emerald-800/80 p-3 font-bold capitalize tracking-wider text-[11px] select-none ${
                       col.columnKey !== "actions"
                         ? "cursor-pointer hover:bg-emerald-800/60"
                         : ""
