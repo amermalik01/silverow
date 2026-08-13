@@ -2,7 +2,20 @@
 
 import PartyList from "@/app/components/parties/PartyList";
 
-export default function SRMPage() {
+export default async function SRMPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  return (
+    <PartyList
+      slug={slug}
+      title="SRM Vendors"
+      moduleKey="srm_vendors"
+      roleFlag="is_srm_vendor"
+      basePath="purchases/srm"
+    />
+  );
+}
+
+/* export default function SRMPage() {
   return (
     <div>
       <PartyList
@@ -12,17 +25,4 @@ export default function SRMPage() {
       />
     </div>
   );
-}
-
-// export default function SRMPage() {
-//   return (
-//     <div>
-//       <PartyList
-//         title="Supplier Relationship Management"
-//         module="srm"
-//         basePath="./srm"
-//         typeFilter={["supplier"]}
-//       />
-//     </div>
-//   );
-// }
+} */

@@ -24,12 +24,22 @@ export interface FilterValue {
   };
 }
 
+// export interface FetchParams {
+//   page: number;
+//   pageSize: number;
+//   filters: FilterValue;
+//   sortBy?: string;
+//   sortOrder?: "asc" | "desc" | "ASC" | "DESC";
+// }
+
 export interface FetchParams {
-  page: number;
-  pageSize: number;
-  filters: FilterValue;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortColumn?: string;
   sortBy?: string;
-  sortOrder?: "asc" | "desc";
+  sortOrder?: "asc" | "desc" | "ASC" | "DESC";
+  filters?: FilterValue;
 }
 
 export interface FetchResponse<T> {

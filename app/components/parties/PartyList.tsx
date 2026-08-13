@@ -2,6 +2,104 @@
 
 "use client";
 
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/app/components/DataTable/DataTable";
+import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
+import { getPartyCellRenderers, PartyRecord } from "./partyCellRenderers";
+
+type Props = {
+  slug?: string;
+  title: string;
+  moduleKey?: string;
+  roleFlag: "is_crm_lead" | "is_srm_vendor" | "is_customer" | "is_supplier";
+  basePath: string;
+};
+
+export default function PartyList({
+  slug="parties",
+  title,
+  moduleKey="parties",
+  roleFlag,
+  basePath,
+}: Props) {
+  const cellRenderers = getPartyCellRenderers(slug, roleFlag, basePath);
+
+  const renderRowCell = (row: PartyRecord, columnKey: string) => {
+    const renderer = cellRenderers[columnKey as keyof typeof cellRenderers];
+    return renderer ? renderer(row) : undefined;
+  };
+
+  const fetchParties = async (
+    params: FetchParams,
+  ): Promise<FetchResponse<PartyRecord>> => {
+    const res = await fetch("/api/parties/listing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...params, role: roleFlag }),
+    });
+    return res.json();
+  };
+
+  const columnsConfigApi = {
+    get: async (key: string): Promise<ColumnConfig[]> => {
+      const res = await fetch(`/api/table-config?moduleKey=${key}`);
+      return res.json();
+    },
+    save: async (key: string, configs: ColumnConfig[]): Promise<void> => {
+      await fetch("/api/table-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleKey: key, configs }),
+      });
+    },
+    reset: async (key: string): Promise<ColumnConfig[]> => {
+      await fetch(`/api/table-config/reset?moduleKey=${key}`, {
+        method: "POST",
+      });
+      const res = await fetch(`/api/table-config?moduleKey=${key}`);
+      return res.json();
+    },
+  };
+
+  return (
+    <div className="space-y-4 container mx-auto p-4">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+          <p className="text-xs text-slate-500">
+            Manage directory records and system visibility configurations.
+          </p>
+        </div>
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={`/${slug}/${basePath}/new`}>
+           +
+            Create
+          </Link>
+        </Button>
+      </div>
+
+      {/* Main Data Table */}
+      <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <DataTable<PartyRecord>
+          moduleKey={moduleKey}
+          fetchApi={fetchParties}
+          columnsConfigApi={columnsConfigApi}
+          renderRowCell={renderRowCell}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -97,7 +195,7 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
 
   return (
     <div className="space-y-6 container mx-auto p-4">
-      {/* Action Header */}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -114,13 +212,13 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={`${basePath}/new`}>
-            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
+           +
             Create
           </Link>
         </Button>
       </div>
 
-      {/* Filtering Toolbar */}
+  
       <div className="bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm flex items-center">
         <input
           type="text"
@@ -131,7 +229,7 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
         />
       </div>
 
-      {/* Main UI Data Matrix Grid */}
+
       <div className="border rounded-xl bg-white dark:bg-slate-900 shadow-sm overflow-hidden border-slate-200 dark:border-slate-800">
         <div className="overflow-auto">
           <table className="w-full text-xs text-left border-collapse">
@@ -247,7 +345,7 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
             </tbody>
           </table>
 
-          {/* Dynamic Pagination Element */}
+   
           {!loading && totalRecords > 0 && (
             <div className="bg-slate-50 dark:bg-slate-800/30 p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
               <span className="text-slate-500 font-medium">
@@ -276,4 +374,4 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
       </div>
     </div>
   );
-}
+} */
