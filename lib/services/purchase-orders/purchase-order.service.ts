@@ -28,11 +28,12 @@ export class PurchaseOrderService {
     return result.rows;
   }
 
+  // Insert / Update inside lib/services/purchase-orders/purchase-order.service.ts
+
   static async listPaginated(
     companyId: string,
     params: FetchParams,
   ): Promise<FetchResponse<PurchaseOrder>> {
-    // const { page = 1, pageSize = 50, filters = {} } = params;
     const {
       page = 1,
       pageSize = 50,
@@ -42,119 +43,53 @@ export class PurchaseOrderService {
     } = params;
     const offset = (page - 1) * pageSize;
 
-    // Map client column keys to safe SQL fields (prevents SQL Injection)
     const SORT_FIELDS: Record<string, string> = {
-      order_no: "po.order_no",
-      supplier_no: "p.code",
-      supplier_name: "p.name",
-      order_date: "po.order_date",
       invoice_date: "po.invoice_date",
-      supplier_invoice_no: "po.supplier_invoice_no",
-      contact_person: "po.contact_person",
-      status: "po.status",
+      order_date: "po.order_date",
+      order_no: "po.order_no",
+      supp_order_no: "po.supp_order_no",
+      previous_code: "po.previous_code",
+      current_stage: "cos.name",
+      supplier_no: "po.supplier_no",
+      supplier_name: "p.name",
+      city: "poa.city",
+      purchaser: "po.purchaser",
+      currency: "c.code",
+      net_amount: "po.net_amount",
+      vat_amount: "po.vat_amount",
       total_amount: "po.total_amount",
+      due_date: "po.due_date",
+      req_receipt_date: "po.req_receipt_date",
+      receipt_date: "po.receipt_date",
+      shipping_agent: "po.shipping_agent",
+      shipment_method: "sm.name",
     };
-
-    /* 
-    export const purchaseOrdersConfig: ColumnConfig[] = [
-
-
-      {
-        columnKey: "current_stage",
-        label: "Current Stage",
-        dataType: "select",
-        isVisible: true,
-        isPinned: false,
-        columnOrder: 5,
-        columnWidth: 140,
-        optionSource: "stages",
-        // options: [
-        //   { label: "PO Sent", value: "PO Sent" },
-        //   { label: "Completed", value: "Completed" },
-        //   { label: "Draft", value: "Draft" },
-        // ],
-      },
-      
-      {
-        columnKey: "city",
-        label: "City",
-        dataType: "text",
-        isVisible: true,
-        isPinned: false,
-        columnOrder: 8,
-        columnWidth: 130,
-      },
-      {
-        columnKey: "contact_person",
-        label: "Contact Person",
-        dataType: "text",
-        isVisible: true,
-        isPinned: false,
-        columnOrder: 9,
-        columnWidth: 150,
-      },
-      {
-        columnKey: "purchaser",
-        label: "Purchaser",
-        dataType: "text",
-        isVisible: true,
-        isPinned: false,
-        columnOrder: 10,
-        columnWidth: 140,
-      },
-      {
-        columnKey: "currency",
-        label: "Currency",
-        dataType: "select",
-        isVisible: true,
-        isPinned: false,
-        columnOrder: 11,
-        columnWidth: 100,
-        optionSource: "currencies",
-        // options: [
-        //   { label: "EUR", value: "EUR" },
-        //   { label: "GBP", value: "GBP" },
-        //   { label: "USD", value: "USD" },
-        // ],
-      },
-      {
-        columnKey: "total_amount",
-        label: "Amount",
-        dataType: "number",
-        isVisible: true,
-        isPinned: false,
-        columnOrder: 12,
-        columnWidth: 130,
-      },
-      {
-        columnKey: "actions",
-        label: "Actions",
-        dataType: "text",
-        isVisible: true,
-        isPinned: false,
-        columnOrder: 13,
-        columnWidth: 100,
-      },
-    ];
-    */
 
     const orderByColumn =
       sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "po.created_at";
     const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     const queryValues: (string | number)[] = [companyId];
-    const whereClauses = ["po.company_id = $1", "po.status != 'completed'"];
+    const whereClauses = [
+      "po.company_id = $1",
+      "po.status::text != 'completed'",
+    ];
 
-    // Dynamic Filter Builder mapping columnKey to SQL fields
+    // Dynamic Filters
     Object.entries(filters).forEach(([colKey, filter]) => {
       if (!filter) return;
 
-      // Handle Text / Dropdown Filtering
       if (filter.value !== undefined && filter.value !== "") {
-        if (colKey === "status") {
-          // Exact match for status dropdown values
+        if (colKey === "currency") {
           queryValues.push(String(filter.value));
-          whereClauses.push(`po.status = $${queryValues.length}`);
+          whereClauses.push(`c.code = $${queryValues.length}`);
+        } else if (colKey === "current_stage") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`cos.name = $${queryValues.length}`);
+        } else if (colKey === "status") {
+          // 2. FIX: Cast po.status to text when filtering by status
+          queryValues.push(String(filter.value));
+          whereClauses.push(`po.status::text = $${queryValues.length}`);
         } else if (colKey === "order_no") {
           queryValues.push(`%${filter.value}%`);
           whereClauses.push(`po.order_no ILIKE $${queryValues.length}`);
@@ -164,52 +99,89 @@ export class PurchaseOrderService {
         }
       }
 
-      // Handle Date / Numeric Range Filtering
       if (filter.from !== undefined && filter.from !== "") {
         queryValues.push(filter.from);
         const idx = queryValues.length;
-        if (colKey === "order_date") {
+        if (colKey === "order_date")
           whereClauses.push(`po.order_date >= $${idx}::date`);
-        } else if (colKey === "total_amount") {
-          whereClauses.push(`po.total_amount >= $${idx}::numeric`);
-        }
+        if (colKey === "invoice_date")
+          whereClauses.push(`po.invoice_date >= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`po.net_amount >= $${idx}::numeric`);
       }
 
       if (filter.to !== undefined && filter.to !== "") {
         queryValues.push(filter.to);
         const idx = queryValues.length;
-        if (colKey === "order_date") {
+        if (colKey === "order_date")
           whereClauses.push(`po.order_date <= $${idx}::date`);
-        } else if (colKey === "total_amount") {
-          whereClauses.push(`po.total_amount <= $${idx}::numeric`);
-        }
+        if (colKey === "invoice_date")
+          whereClauses.push(`po.invoice_date <= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`po.net_amount <= $${idx}::numeric`);
       }
     });
+    
 
     const whereSql =
       whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-    // 1. Fetch Total Count for Pagination Calculation
-    const countQuery = `
-      SELECT COUNT(*) as total 
+    // Base Join SQL string reused for count and query
+    const joinSql = `
       FROM purchase_orders po
       LEFT JOIN parties p ON p.id = po.supplier_id
-      ${whereSql}
+      LEFT JOIN currencies c ON c.id = po.currency_id
+      LEFT JOIN shipment_method sm ON sm.id = po.shipment_method_id
+      LEFT JOIN common_order_stages cos 
+          ON cos.company_id = po.company_id 
+          AND cos.stage_type = 'purchase_order' 
+          AND cos.name ILIKE po.status::text
+      LEFT JOIN purchase_order_addresses poa 
+          ON poa.purchase_order_id = po.id 
+          AND poa.address_type = 'primary'
+      LEFT JOIN purchase_order_addresses ship_a 
+          ON ship_a.purchase_order_id = po.id 
+          AND ship_a.address_type = 'shipping'
     `;
+
+    // Count Query
+    const countQuery = `SELECT COUNT(DISTINCT po.id) as total ${joinSql} ${whereSql}`;
     const countResult = await pool.query(countQuery, queryValues);
     const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
 
-    // 2. Fetch Paginated Data Records
+    // Paginated Data Query mapping legacy fields
     const dataQueryValues = [...queryValues, pageSize, offset];
     const limitIdx = dataQueryValues.length - 1;
     const offsetIdx = dataQueryValues.length;
 
     const dataQuery = `
-      SELECT po.*, p.name AS supplier_name
-      FROM purchase_orders po
-      LEFT JOIN parties p ON p.id = po.supplier_id
+      SELECT DISTINCT ON (po.id, ${orderByColumn})
+        po.*,
+        p.name AS supplier_name,
+        c.code AS currency,
+        cos.name AS current_stage,
+        sm.name AS shipment_method,
+        
+        -- Primary / Supplier Address details
+        poa.address_1 AS supplier_address,
+        poa.address_2 AS supplier_address2,
+        poa.city AS city,
+        poa.county AS county,
+        poa.postcode AS post_code,
+        poa.country AS country,
+        poa.phone AS phone,
+        poa.email AS email,
+
+        -- Shipping Address details
+        ship_a.address_1 AS ship_to_address,
+        ship_a.address_2 AS ship_to_address2,
+        ship_a.city AS ship_to_city,
+        ship_a.county AS ship_to_county,
+        ship_a.postcode AS ship_to_post_code
+
+      ${joinSql}
       ${whereSql}
-      ORDER BY ${orderByColumn} ${orderDirection}
+      ORDER BY ${orderByColumn} ${orderDirection}, po.id ASC
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
 
@@ -1306,3 +1278,115 @@ export class PurchaseOrderService {
     );
   }
 }
+/* static async listPaginated(
+    companyId: string,
+    params: FetchParams,
+  ): Promise<FetchResponse<PurchaseOrder>> {
+    // const { page = 1, pageSize = 50, filters = {} } = params;
+    const {
+      page = 1,
+      pageSize = 50,
+      filters = {},
+      sortBy,
+      sortOrder = "asc",
+    } = params;
+    const offset = (page - 1) * pageSize;
+
+    // Map client column keys to safe SQL fields (prevents SQL Injection)
+    const SORT_FIELDS: Record<string, string> = {
+      order_no: "po.order_no",
+      supplier_no: "po.supplier_no",
+      supplier_name: "p.name",
+      order_date: "po.order_date",
+      invoice_date: "po.invoice_date",
+      supplier_invoice_no: "po.supp_order_no",
+      contact_person: "po.contact",
+      status: "po.status",
+      currency_id: "po.currency_id",
+      total_amount: "po.total_amount",
+      net_amount: "po.net_amount",
+      vat_amount: "po.vat_amount",
+    };
+
+    const orderByColumn =
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "po.created_at";
+    const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    const queryValues: (string | number)[] = [companyId];
+    const whereClauses = ["po.company_id = $1", "po.status != 'completed'"];
+
+    // Dynamic Filter Builder mapping columnKey to SQL fields
+    Object.entries(filters).forEach(([colKey, filter]) => {
+      if (!filter) return;
+
+      // Handle Text / Dropdown Filtering
+      if (filter.value !== undefined && filter.value !== "") {
+        if (colKey === "status") {
+          // Exact match for status dropdown values
+          queryValues.push(String(filter.value));
+          whereClauses.push(`po.status = $${queryValues.length}`);
+        } else if (colKey === "order_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`po.order_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "supplier_name") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`p.name ILIKE $${queryValues.length}`);
+        }
+      }
+
+      // Handle Date / Numeric Range Filtering
+      if (filter.from !== undefined && filter.from !== "") {
+        queryValues.push(filter.from);
+        const idx = queryValues.length;
+        if (colKey === "order_date") {
+          whereClauses.push(`po.order_date >= $${idx}::date`);
+        } else if (colKey === "total_amount") {
+          whereClauses.push(`po.total_amount >= $${idx}::numeric`);
+        }
+      }
+
+      if (filter.to !== undefined && filter.to !== "") {
+        queryValues.push(filter.to);
+        const idx = queryValues.length;
+        if (colKey === "order_date") {
+          whereClauses.push(`po.order_date <= $${idx}::date`);
+        } else if (colKey === "total_amount") {
+          whereClauses.push(`po.total_amount <= $${idx}::numeric`);
+        }
+      }
+    });
+
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // 1. Fetch Total Count for Pagination Calculation
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM purchase_orders po
+      LEFT JOIN parties p ON p.id = po.supplier_id
+      ${whereSql}
+    `;
+    const countResult = await pool.query(countQuery, queryValues);
+    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
+
+    // 2. Fetch Paginated Data Records
+    const dataQueryValues = [...queryValues, pageSize, offset];
+    const limitIdx = dataQueryValues.length - 1;
+    const offsetIdx = dataQueryValues.length;
+
+    const dataQuery = `
+      SELECT po.*, p.name AS supplier_name
+      FROM purchase_orders po
+      LEFT JOIN parties p ON p.id = po.supplier_id
+      ${whereSql}
+      ORDER BY ${orderByColumn} ${orderDirection}
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `;
+
+    const dataResult = await pool.query(dataQuery, dataQueryValues);
+
+    return {
+      data: dataResult.rows,
+      totalRecords,
+    };
+  } */

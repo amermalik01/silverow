@@ -4,16 +4,26 @@
 
 import Link from "next/link";
 import { PurchaseOrder } from "@/types/purchase-order";
-import PurchaseOrderStatusBadge from "./PurchaseOrderStatusBadge";
+// import PurchaseOrderStatusBadge from "./PurchaseOrderStatusBadge";
 import { Button } from "@/components/ui/button";
 import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
 import { DataTable } from "@/app/components/DataTable/DataTable";
+import { getPurchaseOrderCellRenderers } from "./purchaseOrderCellRenderers";
 
 type Props = {
   slug: string;
 };
 
 export default function PurchaseOrderList({ slug }: Props) {
+  // 1. Get registry renderers for purchase order table
+  const cellRenderers = getPurchaseOrderCellRenderers(slug);
+
+  // 2. Ultra-clean render row cell dispatcher
+  const renderRowCell = (row: PurchaseOrder, columnKey: string) => {
+    const renderer = cellRenderers[columnKey as keyof typeof cellRenderers];
+    return renderer ? renderer(row) : undefined; // Fallback to raw value in DataTable
+  };
+
   // Data Fetching Handler
   const fetchPurchaseOrders = async (
     params: FetchParams,
@@ -46,62 +56,6 @@ export default function PurchaseOrderList({ slug }: Props) {
       const res = await fetch(`/api/table-config?moduleKey=${moduleKey}`);
       return res.json();
     },
-  };
-
-  // Custom Cell Rendering Method for Specific Formatted Columns
-  const renderRowCell = (row: PurchaseOrder, columnKey: string) => {
-    switch (columnKey) {
-      case "order_no":
-        return (
-          <Link
-            href={`/${slug}/purchases/purchase-orders/${row.id}`}
-            className="font-medium text-blue-600 hover:underline"
-          >
-            {row.order_no || "Draft"}
-          </Link>
-        );
-
-      case "supplier_name":
-        return row.supplier_name;
-
-      case "order_date":
-        return row.order_date
-          ? new Date(row.order_date).toLocaleDateString()
-          : "-";
-
-      case "status":
-        return <PurchaseOrderStatusBadge status={row.status} />;
-
-      case "total_amount":
-        return (
-          <span className="font-mono text-right block">
-            {Number(row.total_amount || 0).toFixed(2)}
-          </span>
-        );
-
-      case "actions":
-        return (
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/${slug}/purchases/purchase-orders/${row.id}/edit`}
-              className="rounded border dark:border-slate-700 px-2 py-1 text-xs hover:bg-gray-100 dark:hover:bg-slate-800"
-            >
-              Edit
-            </Link>
-            {row.status?.toLowerCase() === "open" && (
-              <Link
-                href={`/${slug}/purchases/receipts/create?po=${row.id}`}
-                className="rounded border border-green-600 px-2 py-1 text-xs text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20"
-              >
-                Receive
-              </Link>
-            )}
-          </div>
-        );
-
-      default:
-        return null;
-    }
   };
 
   return (
@@ -138,7 +92,7 @@ export default function PurchaseOrderList({ slug }: Props) {
     </div>
   );
 }
-
+/* tax_amount */
 /* "use client";
 
 import Link from "next/link";

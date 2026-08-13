@@ -1,340 +1,541 @@
 // lib/services/purchase-invoices/purchase-invoice.service.ts
 
-import { PoolClient } from "pg";
-/* import { pool } from "@/lib/db";
-
-import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
-import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
-
-import { JournalLineInput } from "@/types/journal";
-import { PurchaseOrderStatusService } from "../purchase-orders/purchase-order-status.service";
-import { GRNIClearingService } from "../grni/grni-clearing.service";
-
+import { pool } from "@/lib/db";
+import { FetchParams, FetchResponse } from "@/types/table";
 import { PurchaseInvoice } from "@/types/purchase-invoice";
-
-interface ListFilters {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  startDate?: string;
-  endDate?: string;
-} */
+import { PurchaseOrderAddress } from "@/types/purchase-order";
 
 export class PurchaseInvoiceService {
-  private static async getPayableAccount(
-    client: PoolClient,
+  static async listPaginated(
     companyId: string,
-  ): Promise<string> {
-    const result = await client.query(
-      `
-    SELECT payable_account_id
-    FROM purchase_posting_groups
-    WHERE company_id = $1
-    LIMIT 1
-    `,
-      [companyId],
-    );
+    params: FetchParams,
+  ): Promise<FetchResponse<PurchaseInvoice>> {
+    const {
+      page = 1,
+      pageSize = 50,
+      filters = {},
+      sortBy,
+      sortOrder = "asc",
+    } = params;
+    const offset = (page - 1) * pageSize;
 
-    if (!result.rows.length) {
-      throw new Error("Purchase posting group not configured");
-    }
+    const SORT_FIELDS: Record<string, string> = {
+      invoice_date: "pi.invoice_date",
+      order_date: "po.order_date",
+      invoice_code: "pi.invoice_no",
+      order_code: "po.order_no",
+      supp_order_no: "pi.supplier_invoice_no",
+      sell_to_cust_no: "p.supplier_code",
+      sell_to_cust_name: "p.name",
+      sell_to_city: "poa.city",
+      srm_purchase_code: "COALESCE(po.purchaser, '')",
+      crcode: "c.code",
+      current_stage: "cos.name",
+      net_amount: "pi.subtotal",
+      tax_amount: "pi.tax_amount",
+      grand_total: "pi.total_amount",
+      due_date: "pi.due_date",
+    };
 
-    return result.rows[0].payable_account_id;
-  }
+    const orderByColumn =
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "pi.invoice_date";
+    const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
-  /* static async list(companyId: string, filters: ListFilters = {}) {
-    const page = Number(filters.page) || 1;
-    const limit = Number(filters.limit) || 10;
-    const offset = (page - 1) * limit;
+    const queryValues: (string | number)[] = [companyId];
+    const whereClauses = ["pi.company_id = $1"];
 
-    const queryParams: unknown[] = [companyId];
-    let paramIndex = 2;
+    // Dynamic Filters
+    Object.entries(filters).forEach(([colKey, filter]) => {
+      if (!filter) return;
 
-    let whereClause = "WHERE pi.company_id = $1";
+      if (filter.value !== undefined && filter.value !== "") {
+        if (colKey === "crcode") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`c.code = $${queryValues.length}`);
+        } else if (colKey === "current_stage") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`cos.name = $${queryValues.length}`);
+        } else if (colKey === "status") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`pi.status::text = $${queryValues.length}`);
+        } else if (colKey === "invoice_code") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`pi.invoice_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "order_code") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`po.order_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sell_to_cust_name") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`p.name ILIKE $${queryValues.length}`);
+        }
+      }
 
-    // Filter by Invoice No or Purchase Order No
-    if (filters.search) {
-      whereClause += ` AND (pi.invoice_no ILIKE $${paramIndex} OR po.order_no ILIKE $${paramIndex})`;
-      queryParams.push(`%${filters.search}%`);
-      paramIndex++;
-    }
+      if (filter.from !== undefined && filter.from !== "") {
+        queryValues.push(filter.from);
+        const idx = queryValues.length;
+        if (colKey === "invoice_date")
+          whereClauses.push(`pi.invoice_date >= $${idx}::date`);
+        if (colKey === "order_date")
+          whereClauses.push(`po.order_date >= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`pi.subtotal >= $${idx}::numeric`);
+      }
 
-    // Filter by explicit Status
-    if (filters.status) {
-      whereClause += ` AND pi.status = $${paramIndex}`;
-      queryParams.push(filters.status.toUpperCase());
-      paramIndex++;
-    }
+      if (filter.to !== undefined && filter.to !== "") {
+        queryValues.push(filter.to);
+        const idx = queryValues.length;
+        if (colKey === "invoice_date")
+          whereClauses.push(`pi.invoice_date <= $${idx}::date`);
+        if (colKey === "order_date")
+          whereClauses.push(`po.order_date <= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`pi.subtotal <= $${idx}::numeric`);
+      }
+    });
 
-    // Filter by Date Ranges
-    if (filters.startDate) {
-      whereClause += ` AND pi.invoice_date >= $${paramIndex}`;
-      queryParams.push(filters.startDate);
-      paramIndex++;
-    }
-    if (filters.endDate) {
-      whereClause += ` AND pi.invoice_date <= $${paramIndex}`;
-      queryParams.push(filters.endDate);
-      paramIndex++;
-    }
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-    // Count total matching records for pagination metadata
-    const countQuery = `
-      SELECT COUNT(DISTINCT pi.id) as total
+    // Base Joins targeting purchase_order_addresses via pi.purchase_order_id
+    const joinSql = `
       FROM purchase_invoices pi
-      LEFT JOIN purchase_orders po ON pi.purchase_order_id = po.id
-      ${whereClause}
+      LEFT JOIN parties p ON p.id = pi.supplier_id
+      LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id
+      LEFT JOIN currencies c ON c.id = pi.currency_id
+      LEFT JOIN shipment_method sm ON sm.id = po.shipment_method_id
+      LEFT JOIN common_order_stages cos 
+             ON cos.company_id = pi.company_id 
+            AND cos.stage_type = 'purchase_invoice' 
+            AND cos.name ILIKE pi.status::text
+      LEFT JOIN purchase_order_addresses poa 
+             ON poa.purchase_order_id = pi.purchase_order_id 
+            AND poa.address_type = 'primary'
+      LEFT JOIN purchase_order_addresses ship_a 
+             ON ship_a.purchase_order_id = pi.purchase_order_id 
+            AND ship_a.address_type = 'shipping'
     `;
-    const countResult = await pool.query(countQuery, queryParams);
+
+    // Count Query
+    const countQuery = `SELECT COUNT(DISTINCT pi.id) as total ${joinSql} ${whereSql}`;
+    const countResult = await pool.query(countQuery, queryValues);
     const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
-    const totalPages = Math.ceil(totalRecords / limit);
 
-    // Retrieve data row payloads
+    // Paginated Data Query
+    const dataQueryValues = [...queryValues, pageSize, offset];
+    const limitIdx = dataQueryValues.length - 1;
+    const offsetIdx = dataQueryValues.length;
+
     const dataQuery = `
-      SELECT 
-        pi.*,
-        po.order_no as purchase_order_no
-      FROM purchase_invoices pi
-      LEFT JOIN purchase_orders po ON pi.purchase_order_id = po.id
-      ${whereClause}
-      ORDER BY pi.invoice_date DESC, pi.created_at DESC
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      SELECT DISTINCT ON (pi.id, ${orderByColumn})
+        pi.id,
+        pi.company_id,
+        pi.purchase_order_id,
+        pi.supplier_id,
+        pi.invoice_date,
+        po.order_date,
+        pi.invoice_no AS invoice_code,
+        po.order_no AS order_code,
+        pi.supplier_invoice_no AS supp_order_no,
+        po.previous_code AS prev_code,
+        p.supplier_code AS sell_to_cust_no,
+        p.name AS sell_to_cust_name,
+        
+        -- Supplier Address Details (from purchase_order_addresses)
+        poa.address_1 AS sell_to_address,
+        poa.address_2 AS sell_to_address2,
+        poa.city AS sell_to_city,
+        poa.county AS sell_to_county,
+        poa.postcode AS sell_to_post_code,
+        poa.country AS country,
+        poa.contact_person AS sell_to_contact_no,
+        poa.phone AS cust_phone,
+        poa.email AS cust_email,
+
+        COALESCE(po.purchaser, '') AS srm_purchase_code,
+        po.supplier_posting_group_id AS posting_grp,
+        c.code AS crcode,
+        cos.name AS current_stage,
+        pi.status,
+        
+        -- Amounts
+        pi.subtotal AS net_amount,
+        pi.tax_amount,
+        pi.total_amount AS grand_total,
+
+        -- Dates & Shipping
+        pi.due_date,
+        po.req_receipt_date AS requested_delivery_date,
+        po.receipt_date AS "receiptDate",
+        po.shipping_agent,
+        sm.name AS shipment_method,
+
+        -- Shipping Address Details (from purchase_order_addresses)
+        ship_a.address_1 AS ship_to_address,
+        ship_a.address_2 AS ship_to_address2,
+        ship_a.city AS ship_to_city,
+        ship_a.county AS ship_to_county,
+        ship_a.postcode AS ship_to_post_code,
+
+        -- Booking / Warehouse Metadata from PO
+        po.book_in_contact,
+        po.book_in_phone AS book_in_tel,
+        po.book_in_email,
+        po.warehouse_ref_no AS warehouse_booking_ref,
+        po.consignment_no AS "consignmentNo",
+        po.link_to_so_no AS "LinkToSo"
+
+      ${joinSql}
+      ${whereSql}
+      ORDER BY ${orderByColumn} ${orderDirection}, pi.id ASC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
 
-    queryParams.push(limit, offset);
-    const dataResult = await pool.query(dataQuery, queryParams);
+    const dataResult = await pool.query(dataQuery, dataQueryValues);
 
     return {
       data: dataResult.rows,
-      pagination: {
-        page,
-        limit,
-        totalRecords,
-        totalPages,
-      },
+      totalRecords,
     };
-  } */
+  }
 
-  //  * =========================================================
-  //  * POST PURCHASE INVOICE
-  //  * =========================================================
+  static async get(companyId: string, id: string) {
+    // 1. Fetch Purchase Invoice metadata joined with Purchase Order and lookup tables
+    const invoiceResult = await pool.query(
+      `
+      SELECT 
+        pi.*,
+        po.order_no AS purchase_order_no,
+        po.order_date AS purchase_order_date,
+        po.req_receipt_date,
+        po.receipt_date,
+        po.shipping_agent,
+        po.consignment_no,
+        po.link_to_so_no,
+        po.book_in_contact,
+        po.book_in_phone,
+        po.book_in_email,
+        po.purchaser,
+        po.shipment_ref_no,
+        po.warehouse_ref_no,
+        po.anonymous_supplier,
+        po.vat_business_posting_group_id,
+        COALESCE(po.supplier_posting_group_id, p.purchase_posting_group_id) AS supplier_posting_group_id,
 
-  /* static async postInvoice(
-    client: PoolClient,
+        p.name AS supplier_name,
+        p.supplier_code,
+        
+        c.code AS currency_code,
+        pt.name AS payment_terms,
+        pm.name AS payment_method,
+        sm.name AS shipment_method
+
+      FROM purchase_invoices pi
+      LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id AND po.company_id = $2
+      LEFT JOIN parties p ON p.id = pi.supplier_id AND p.company_id = $2
+      LEFT JOIN currencies c ON c.id = pi.currency_id
+      LEFT JOIN payment_terms pt ON pt.id = po.payment_terms_id
+      LEFT JOIN payment_method pm ON pm.id = po.payment_method_id
+      LEFT JOIN shipment_method sm ON sm.id = po.shipment_method_id
+
+      WHERE pi.id = $1 AND pi.company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    if (!invoiceResult.rows.length) return null;
+
+    const purchaseInvoice = invoiceResult.rows[0];
+
+    // 2. Fetch Purchase Invoice Lines joined with PO Lines, Items, Accounts, Warehouses & UOMs
+    const linesResult = await pool.query(
+      `
+      SELECT 
+        pil.id AS purchase_invoice_line_id,
+        pil.id,
+        pil.purchase_invoice_id,
+        pil.line_no,
+        pil.purchase_order_line_id,
+        pil.item_id,
+        pil.description,
+        pil.quantity,
+        pil.unit_cost,
+        pil.tax_percent,
+        pil.tax_amount,
+        pil.net_amount,
+        pil.gross_amount,
+        COALESCE(pil.warehouse_id, pol.warehouse_id) AS warehouse_id,
+
+        -- PO Line details & GL Account resolution
+        pol.line_type,
+        pol.gl_account_id,
+        pol.account_code,
+        gl.name AS account_name,
+        pol.warehouse_location_id,
+        pol.discount_type,
+        pol.discount_value,
+        pol.discount_amount,
+        pol.original_amount,
+        pol.vat_business_posting_group_id,
+        pol.vat_product_posting_group_id,
+        pol.vat_percent,
+
+        -- Metadata fallbacks
+        COALESCE(pol.item_code, i.item_code) AS item_code,
+        COALESCE(pol.item_name, i.name) AS item_name,
+        COALESCE(pol.uom_id, i.base_uom_id) AS uom_id,
+        COALESCE(pol.uom_name, u.name) AS uom_name,
+        COALESCE(pol.warehouse_name, w.name) AS warehouse_name
+
+      FROM purchase_invoice_lines pil
+      LEFT JOIN purchase_order_lines pol ON pol.id = pil.purchase_order_line_id AND pol.company_id = $2
+      LEFT JOIN items i ON i.id = pil.item_id AND i.company_id = $2
+      LEFT JOIN chart_of_accounts gl ON gl.id = pol.gl_account_id AND gl.company_id = $2
+      LEFT JOIN warehouses w ON w.id = COALESCE(pil.warehouse_id, pol.warehouse_id) AND w.company_id = $2
+      LEFT JOIN uoms u ON u.id = pol.uom_id AND u.company_id = $2
+
+      WHERE pil.purchase_invoice_id = $1 AND pil.company_id = $2
+      ORDER BY pil.line_no ASC
+      `,
+      [id, companyId],
+    );
+
+    // 3. Fetch Addresses from purchase_order_addresses using purchase_order_id
+    let addressRows: PurchaseOrderAddress[] = [];
+    if (purchaseInvoice.purchase_order_id) {
+      const addressResult = await pool.query(
+        `
+        SELECT 
+          id,
+          address_type,
+          name,
+          attention,
+          contact_name,
+          contact_person,
+          phone,
+          email,
+          address_1,
+          address_2,
+          city,
+          state,
+          county,
+          postcode,
+          country
+        FROM purchase_order_addresses
+        WHERE purchase_order_id = $1 AND company_id = $2
+        `,
+        [purchaseInvoice.purchase_order_id, companyId],
+      );
+      addressRows = addressResult.rows;
+    }
+
+    return {
+      invoice: purchaseInvoice,
+      lines: linesResult.rows,
+      primary_address:
+        addressRows.find((x) => x.address_type === "primary") || null,
+      billing_address:
+        addressRows.find((x) => x.address_type === "billing") || null,
+      shipping_address:
+        addressRows.find((x) => x.address_type === "shipping") || null,
+    };
+  }
+}
+
+/* import { PoolClient } from "pg";
+import { pool } from "@/lib/db";
+import { FetchParams, FetchResponse } from "@/types/table";
+import { PurchaseInvoice } from "@/types/purchase-invoice";
+
+export class PurchaseInvoiceService {
+
+  static async listPaginated(
     companyId: string,
-    invoiceId: string,
-    userId?: string,
-  ) {
-    const invoiceResult = await client.query(
-      `
-      SELECT *
-      FROM purchase_invoices
-      WHERE id = $1
-      `,
-      [invoiceId],
-    );
+    params: FetchParams,
+  ): Promise<FetchResponse<PurchaseInvoice>> {
+    const {
+      page = 1,
+      pageSize = 50,
+      filters = {},
+      sortBy,
+      sortOrder = "asc",
+    } = params;
+    const offset = (page - 1) * pageSize;
 
-    if (!invoiceResult.rows.length) {
-      throw new Error("Invoice not found");
-    }
+    const SORT_FIELDS: Record<string, string> = {
+      invoice_date: "pi.invoice_date",
+      order_date: "po.order_date",
+      invoice_code: "pi.invoice_no",
+      order_code: "po.order_no",
+      supp_order_no: "pi.supplier_invoice_no",
+      sell_to_cust_no: "p.supplier_code",
+      sell_to_cust_name: "p.name",
+      sell_to_city: "pia.city",
+      srm_purchase_code: "pi.purchaser",
+      crcode: "c.code",
+      current_stage: "cos.name",
+      net_amount: "pi.subtotal",
+      tax_amount: "pi.tax_amount",
+      grand_total: "pi.total_amount",
+      due_date: "pi.due_date",
+    };
 
-    const invoice = invoiceResult.rows[0];
+    const orderByColumn =
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "pi.invoice_date";
+    const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
-    if (invoice.is_posted) {
-      throw new Error("Invoice already posted");
-    }
+    const queryValues: (string | number)[] = [companyId];
+    const whereClauses = ["pi.company_id = $1"];
 
-    const linesResult = await client.query(
-      `
-      SELECT *
-      FROM purchase_invoice_lines
-      WHERE purchase_invoice_id = $1
-      ORDER BY line_no ASC
-      `,
-      [invoiceId],
-    );
+    // Dynamic Filters
+    Object.entries(filters).forEach(([colKey, filter]) => {
+      if (!filter) return;
 
-    const lines = linesResult.rows;
-
-    if (!lines.length) {
-      throw new Error("No invoice lines found");
-    }
-
-    const payableAccountId = await this.getPayableAccount(client, companyId);
-    const glLines: JournalLineInput[] = [];
-
-    for (const line of lines) {
-      if (line.purchase_order_line_id) {
-        const poLineResult = await client.query(
-          `
-          SELECT
-            quantity,
-            received_quantity,
-            invoiced_quantity
-          FROM purchase_order_lines
-          WHERE id = $1
-          `,
-          [line.purchase_order_line_id],
-        );
-
-        if (!poLineResult.rows.length) {
-          throw new Error("Purchase order line not found");
-        }
-
-        const poLine = poLineResult.rows[0];
-
-        const receivedQty = Number(poLine.received_quantity || 0);
-
-        const alreadyInvoiced = Number(poLine.invoiced_quantity || 0);
-
-        const remainingToInvoice = receivedQty - alreadyInvoiced;
-
-        if (Number(line.quantity) > remainingToInvoice) {
-          throw new Error(
-            `Invoice quantity exceeds received quantity for item ${line.item_id}`,
-          );
+      if (filter.value !== undefined && filter.value !== "") {
+        if (colKey === "crcode") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`c.code = $${queryValues.length}`);
+        } else if (colKey === "current_stage") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`cos.name = $${queryValues.length}`);
+        } else if (colKey === "status") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`pi.status::text = $${queryValues.length}`);
+        } else if (colKey === "invoice_code") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`pi.invoice_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "order_code") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`po.order_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sell_to_cust_name") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`p.name ILIKE $${queryValues.length}`);
         }
       }
 
-      const grniLines = await GRNIClearingService.buildLines(
-        client,
-        invoice.id,
-      );
+      if (filter.from !== undefined && filter.from !== "") {
+        queryValues.push(filter.from);
+        const idx = queryValues.length;
+        if (colKey === "invoice_date")
+          whereClauses.push(`pi.invoice_date >= $${idx}::date`);
+        if (colKey === "order_date")
+          whereClauses.push(`po.order_date >= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`pi.subtotal >= $${idx}::numeric`);
+      }
 
-      glLines.push(...grniLines);
-
-      const totalAmount = lines.reduce(
-        (sum, line) => sum + Number(line.quantity) * Number(line.unit_cost),
-        0,
-      );
-
-      //  * ---------------------------------------------------
-      //  * CR AP LIABILITY
-      //  * ---------------------------------------------------
-
-      glLines.push({
-        account_id: payableAccountId,
-
-        debit: 0,
-
-        credit: totalAmount,
-
-        reference_type: "PURCHASE_INVOICE",
-
-        reference_id: invoice.id,
-      });
-    }
-
-    //  * -----------------------------------------------------
-    //  * VALIDATE BALANCE
-    //  * -----------------------------------------------------
-
-    GLValidationService.validateBalanced(glLines);
-
-    //  * -----------------------------------------------------
-    //  * POST JOURNAL
-    //  * -----------------------------------------------------
-
-    const journal = await GLPostingService.postJournal(client, {
-      company_id: companyId,
-
-      entry_date: invoice.invoice_date,
-
-      source: "PURCHASE",
-
-      journal_type: "PURCHASE_INVOICE",
-
-      reference: invoice.invoice_no,
-
-      source_id: invoice.id,
-
-      description: `Purchase Invoice ${invoice.invoice_no}`,
-
-      created_by: userId || null,
-
-      lines: glLines,
+      if (filter.to !== undefined && filter.to !== "") {
+        queryValues.push(filter.to);
+        const idx = queryValues.length;
+        if (colKey === "invoice_date")
+          whereClauses.push(`pi.invoice_date <= $${idx}::date`);
+        if (colKey === "order_date")
+          whereClauses.push(`po.order_date <= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`pi.subtotal <= $${idx}::numeric`);
+      }
     });
 
-    for (const line of lines) {
-      if (!line.purchase_order_line_id) {
-        continue;
-      }
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-      await client.query(
-        `
-        UPDATE purchase_order_lines
-        SET
-          invoiced_quantity =
-            COALESCE(invoiced_quantity,0) + $1,
+    // Base Joins cast pi.status::text safely to prevent type operator errors
+    const joinSql = `
+      FROM purchase_invoices pi
+      LEFT JOIN parties p ON p.id = pi.supplier_id
+      LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id
+      LEFT JOIN currencies c ON c.id = pi.currency_id
+      LEFT JOIN shipment_method sm ON sm.id = pi.shipment_method_id
+      LEFT JOIN common_order_stages cos 
+             ON cos.company_id = pi.company_id 
+            AND cos.stage_type = 'purchase_invoice' 
+            AND cos.name ILIKE pi.status::text
+      LEFT JOIN purchase_invoice_addresses pia 
+             ON pia.purchase_invoice_id = pi.id 
+            AND pia.address_type = 'primary'
+      LEFT JOIN purchase_invoice_addresses ship_a 
+             ON ship_a.purchase_invoice_id = pi.id 
+            AND ship_a.address_type = 'shipping'
+    `;
 
-          updated_at = now()
+    // Count Query
+    const countQuery = `SELECT COUNT(DISTINCT pi.id) as total ${joinSql} ${whereSql}`;
+    const countResult = await pool.query(countQuery, queryValues);
+    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
 
-        WHERE id = $2
-        `,
-        [Number(line.quantity), line.purchase_order_line_id],
-      );
-    }
+    // Paginated Data Query mapping legacy fields
+    const dataQueryValues = [...queryValues, pageSize, offset];
+    const limitIdx = dataQueryValues.length - 1;
+    const offsetIdx = dataQueryValues.length;
 
-    //  * -----------------------------------------------------
-    //  * CREATE AP LEDGER ENTRY
-    //  * -----------------------------------------------------
+    const dataQuery = `
+      SELECT DISTINCT ON (pi.id, ${orderByColumn})
+        pi.id,
+        pi.invoice_date,
+        po.order_date,
+        pi.invoice_no AS invoice_code,
+        po.order_no AS order_code,
+        pi.supplier_invoice_no AS supp_order_no,
+        pi.previous_code AS prev_code,
+        p.supplier_code AS sell_to_cust_no,
+        p.name AS sell_to_cust_name,
+        
+        -- Supplier Address Details
+        pia.address_1 AS sell_to_address,
+        pia.address_2 AS sell_to_address2,
+        pia.city AS sell_to_city,
+        pia.county AS sell_to_county,
+        pia.postcode AS sell_to_post_code,
+        pia.country AS country,
+        pia.contact_person AS sell_to_contact_no,
+        pia.phone AS cust_phone,
+        pia.email AS cust_email,
 
-    await client.query(
-      `
-        INSERT INTO vendor_ledger_entries (
-          company_id,
-          vendor_id,
-          document_type,
-          document_id,
-          document_no,
-          posting_date,
-          description,
-          original_amount,
-          remaining_amount,
-          currency_id,
-          is_open,
-          journal_entry_id
-        )
-        VALUES (
-          $1,$2,$3,$4,$5,
-          $6,$7,$8,$9,$10,
-          true,$11
-        )
-        `,
-      [
-        companyId,
-        invoice.supplier_id,
-        "PURCHASE_INVOICE",
-        invoice.id,
-        invoice.invoice_no,
-        invoice.invoice_date,
-        "Purchase invoice",
-        invoice.total_amount,
-        invoice.total_amount,
-        invoice.currency_id || null,
-        journal.id,
-      ],
-    );
+        pi.purchaser AS srm_purchase_code,
+        pi.posting_group AS posting_grp,
+        pi.segment,
+        c.code AS crcode,
+        cos.name AS current_stage,
+        pi.status,
+        
+        -- Amounts
+        pi.subtotal AS net_amount,
+        pi.tax_amount,
+        pi.total_amount AS grand_total,
 
-    if (invoice.purchase_order_id) {
-      await PurchaseOrderStatusService.recalculate(
-        client,
-        invoice.purchase_order_id,
-      );
-    }
+        -- Dates & Shipping
+        pi.due_date,
+        po.req_receipt_date AS requested_delivery_date,
+        pi.receipt_date AS "receiptDate",
+        pi.shipping_agent,
+        sm.name AS shipment_method,
 
-    await client.query(
-      `
-      UPDATE purchase_invoices
-      SET
-        is_posted = true,
-        posted_at = now(),
-        journal_entry_id = $2,
-        updated_at = now()
-      WHERE id = $1
-      `,
-      [invoiceId, journal.id],
-    );
-  } */
-}
+        -- Shipping Address Details
+        ship_a.address_1 AS ship_to_address,
+        ship_a.address_2 AS ship_to_address2,
+        ship_a.city AS ship_to_city,
+        ship_a.county AS ship_to_county,
+        ship_a.postcode AS ship_to_post_code,
+
+        -- Booking / Warehouse Metadata
+        pi.book_in_contact,
+        pi.book_in_phone AS book_in_tel,
+        pi.book_in_email,
+        pi.warehouse_booking_ref,
+        pi.consignment_no AS "consignmentNo",
+        pi.vat_posted AS "vatPosted",
+        pi.link_to_so_no AS "LinkToSo"
+
+      ${joinSql}
+      ${whereSql}
+      ORDER BY ${orderByColumn} ${orderDirection}, pi.id ASC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `;
+
+    const dataResult = await pool.query(dataQuery, dataQueryValues);
+
+    return {
+      data: dataResult.rows,
+      totalRecords,
+    };
+  }
+} */

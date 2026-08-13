@@ -140,9 +140,9 @@ export const PartySchema = z.object({
 
   // Add these rules inside your export const PartySchema = z.object({ ... }) matrix:
   vat_reg_no: looseString,
-  // segment_id: looseString,
+  segment_id: looseString,
   // segment_id: z.string().min(1, "Segment is required"),
-  segment_id: requiredSelect("Segment is required"),
+  // segment_id: requiredSelect("Segment is required"),
   territory_id: looseString,
   buying_group_id: looseString,
   credit_rating_id: looseString,

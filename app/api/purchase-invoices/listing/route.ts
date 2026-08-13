@@ -1,8 +1,8 @@
-// app/api/purchase-orders/listing/route.ts
+// app/api/purchase-invoices/listing/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
-import { PurchaseOrderService } from "@/lib/services/purchase-orders/purchase-order.service";
+import { PurchaseInvoiceService } from "@/lib/services/purchase-invoices/purchase-invoice.service";
 import { FetchParams } from "@/types/table";
 
 export async function POST(req: NextRequest) {
@@ -16,19 +16,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const params: FetchParams = await req.json();
-    const result = await PurchaseOrderService.listPaginated(companyId, params);
-
-    console.log('result.data === ',result.data);
+    const body: FetchParams = await req.json();
+    const result = await PurchaseInvoiceService.listPaginated(companyId, body);
 
     return NextResponse.json({
+      success: true,
       data: result.data,
       totalRecords: result.totalRecords,
     });
   } catch (err) {
-    console.error("Purchase order list error:", err);
+    console.error("[PURCHASE_INVOICE_LISTING_ERROR]:", err);
     return NextResponse.json(
-      { success: false, error: "Failed to load purchase orders" },
+      { success: false, error: "Failed to load purchase invoices." },
       { status: 500 },
     );
   }

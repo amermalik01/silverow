@@ -1,14 +1,49 @@
 // app/api/purchase-invoices/[id]/route.ts
 
+// app/api/purchase-invoices/[id]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
-import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
+import { PurchaseInvoiceService } from "@/lib/services/purchase-invoices/purchase-invoice.service";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  try {
+    const companyId = await getCompanyId();
+    const { id } = await params;
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const invoiceData = await PurchaseInvoiceService.get(companyId, id);
+
+    if (!invoiceData) {
+      return NextResponse.json(
+        { success: false, error: "Purchase invoice not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: invoiceData,
+    });
+  } catch (err) {
+    console.error("[GET_PURCHASE_INVOICE_ERROR]:", err);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch purchase invoice details." },
+      { status: 500 },
+    );
+  }
+}
+/* export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
     const companyId = await getCompanyId();
     const { id } = await params;
@@ -58,19 +93,6 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       }
 
       const invoiceData = invoiceRes.rows[0];
-
-      // Load Lines joined with items (item_code)
-      /* const linesRes = await client.query(
-        `SELECT 
-          pil.*,
-          i.item_code,
-          i.name AS item_name
-         FROM purchase_invoice_lines pil
-         LEFT JOIN items i ON i.id = pil.item_id AND i.company_id = $2
-         WHERE pil.purchase_invoice_id = $1 AND pil.company_id = $2
-         ORDER BY pil.line_no ASC`,
-        [id, companyId]
-      ); */
 
       // 2. Fetch Invoice Lines joined with PO Lines, Items, Warehouses, and UOMs
       const linesRes = await client.query(
@@ -160,4 +182,4 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       { status: 500 }
     );
   }
-}
+} */

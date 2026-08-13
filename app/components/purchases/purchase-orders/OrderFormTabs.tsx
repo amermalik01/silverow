@@ -1100,38 +1100,3 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   );
 };
 
-{
-  /* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Previous Code</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.previous_code || ""}
-                onChange={(e) => updateField("previous_code", e.target.value)}
-              />
-            </div> */
-}
-{
-  /* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle} title="Shipment PO Not Required">Shipt. PO Not Req.</label>
-              <input
-                type="checkbox"
-                checked={!!order.shipment_po_not_req}
-                onChange={(e) =>
-                  updateField("shipment_po_not_req", e.target.checked)
-                }
-                className="rounded bg-white/20 border-0 text-emerald-700 h-3.5 w-3.5"
-              />
-            </div>
-
-            
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Reason <span className="text-red-500">*</span></label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.reason || ""}
-                onChange={(e) => updateField("reason", e.target.value)}
-              />
-            </div> */
-}

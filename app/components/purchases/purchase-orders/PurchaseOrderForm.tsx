@@ -377,7 +377,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           result.error || "Execution error writing back purchase records.",
         );
 
-      toast.success("Purchase Document Updated cleanly");
+      toast.success("Purchase Order Updated");
       router.push(`/${slug}/purchases/purchase-orders`);
     } catch (err) {
       if (err instanceof Error) setValidationErrors([err.message]);

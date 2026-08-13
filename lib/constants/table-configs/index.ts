@@ -3,9 +3,11 @@
 import { ColumnConfig } from "@/types/table";
 import { purchaseOrdersConfig } from "./purchase-orders";
 import { suppliersConfig } from "./suppliers";
+import { purchaseInvoicesConfig } from "./purchase-invoices";
 
 export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   purchase_orders: purchaseOrdersConfig,
+  purchase_invoices: purchaseInvoicesConfig,
   suppliers: suppliersConfig,
 };
 

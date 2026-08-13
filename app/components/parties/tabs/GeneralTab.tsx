@@ -540,7 +540,7 @@ export default function GeneralTab({
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Segment <span className="text-red-500">*</span>
+              Segment {/* <span className="text-red-500">*</span> */}
             </label>
             <div className="col-span-2">
               <select

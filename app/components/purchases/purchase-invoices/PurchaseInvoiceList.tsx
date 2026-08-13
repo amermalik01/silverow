@@ -2,6 +2,85 @@
 
 "use client";
 
+import { PurchaseInvoice } from "@/types/purchase-invoice";
+import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
+import { DataTable } from "@/app/components/DataTable/DataTable";
+import { getPurchaseInvoiceCellRenderers } from "./purchaseInvoiceCellRenderers";
+
+type Props = {
+  slug: string;
+};
+
+export default function PurchaseOrderList({ slug }: Props) {
+  // 1. Get registry renderers for purchase order table
+  const cellRenderers = getPurchaseInvoiceCellRenderers(slug);
+
+  // 2. Ultra-clean render row cell dispatcher
+  const renderRowCell = (row: PurchaseInvoice, columnKey: string) => {
+    const renderer = cellRenderers[columnKey as keyof typeof cellRenderers];
+    return renderer ? renderer(row) : undefined; // Fallback to raw value in DataTable
+  };
+
+  // Data Fetching Handler
+  const fetchPurchaseInvoice = async (
+    params: FetchParams,
+  ): Promise<FetchResponse<PurchaseInvoice>> => {
+    const res = await fetch("/api/purchase-invoices/listing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    return res.json();
+  };
+
+  // Config Persistence APIs
+  const columnsConfigApi = {
+    get: async (moduleKey: string): Promise<ColumnConfig[]> => {
+      const res = await fetch(`/api/table-config?moduleKey=${moduleKey}`);
+      return res.json();
+    },
+    save: async (moduleKey: string, configs: ColumnConfig[]): Promise<void> => {
+      await fetch("/api/table-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleKey, configs }),
+      });
+    },
+    reset: async (moduleKey: string): Promise<ColumnConfig[]> => {
+      await fetch(`/api/table-config/reset?moduleKey=${moduleKey}`, {
+        method: "POST",
+      });
+      const res = await fetch(`/api/table-config?moduleKey=${moduleKey}`);
+      return res.json();
+    },
+  };
+
+  return (
+    <div className="space-y-4 container mx-auto p-4">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold">Purchase Invoices</h2>
+        </div>
+      </div>
+
+      {/* Main Data Table */}
+      <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <DataTable<PurchaseInvoice>
+          moduleKey="purchase_invoices"
+          fetchApi={fetchPurchaseInvoice}
+          columnsConfigApi={columnsConfigApi}
+          renderRowCell={renderRowCell}
+        />
+      </div>
+    </div>
+  );
+}
+
+
+
+/* "use client";
+
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PurchaseInvoice } from "@/types/purchase-invoice";
@@ -114,12 +193,6 @@ export default function PurchaseInvoiceList({ slug }: Props) {
             View and manage bills received from suppliers against orders
           </p>
         </div>
-        {/* <Link
-          href={`/${slug}/purchases/purchase-invoices/create`}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-xs font-medium transition-colors"
-        >
-          Create Invoice
-        </Link> */}
       </div>
 
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -184,28 +257,6 @@ export default function PurchaseInvoiceList({ slug }: Props) {
             className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
           />
         </div>
-
-        {/* <div className="flex items-center gap-2 md:col-span-2">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
-          />
-          <span className="text-xs text-gray-400">to</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              setPage(1);
-            }}
-            className="border dark:border-slate-700 rounded p-2 text-xs w-full bg-transparent text-black dark:text-white"
-          />
-        </div> */}
       </div>
 
       <div className="border dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
@@ -314,3 +365,4 @@ export default function PurchaseInvoiceList({ slug }: Props) {
     </div>
   );
 }
+ */
