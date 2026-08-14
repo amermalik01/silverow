@@ -2,6 +2,96 @@
 
 "use client";
 
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
+import { DataTable } from "@/app/components/DataTable/DataTable";
+import { getEmployeeCellRenderers } from "./EmployeeCellRenderers";
+import { Employee } from "@/types/hr/employee";
+
+type Props = {
+  slug: string;
+};
+
+export default function EmployeeList({ slug }: Props) {
+  // 1. Cell renderers registry
+  const cellRenderers = getEmployeeCellRenderers(slug);
+
+  // 2. Cell dispatcher
+  const renderRowCell = (row: Employee, columnKey: string) => {
+    const renderer = cellRenderers[columnKey as keyof typeof cellRenderers];
+    return renderer ? renderer(row) : undefined;
+  };
+
+  // 3. Server Data Fetcher
+  const fetchEmployees = async (
+    params: FetchParams
+  ): Promise<FetchResponse<Employee>> => {
+    const res = await fetch("/api/hr/employees/listings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    return res.json();
+  };
+
+  // 4. Configuration APIs
+  const columnsConfigApi = {
+    get: async (moduleKey: string): Promise<ColumnConfig[]> => {
+      const res = await fetch(`/api/table-config?moduleKey=${moduleKey}`);
+      return res.json();
+    },
+    save: async (moduleKey: string, configs: ColumnConfig[]): Promise<void> => {
+      await fetch("/api/table-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleKey, configs }),
+      });
+    },
+    reset: async (moduleKey: string): Promise<ColumnConfig[]> => {
+      await fetch(`/api/table-config/reset?moduleKey=${moduleKey}`, {
+        method: "POST",
+      });
+      const res = await fetch(`/api/table-config?moduleKey=${moduleKey}`);
+      return res.json();
+    },
+  };
+
+  return (
+    <div className="space-y-4 container mx-auto p-4">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold">HR / Employees</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Manage employee profiles, designations, departments, and user access
+          </p>
+        </div>
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={`/${slug}/hr/employees/new`}>+ Create</Link>
+        </Button>
+      </div>
+
+      {/* Main Data Table */}
+      <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <DataTable<Employee>
+          moduleKey="hr_employees"
+          fetchApi={fetchEmployees}
+          columnsConfigApi={columnsConfigApi}
+          renderRowCell={renderRowCell}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -83,7 +173,7 @@ export default function EmployeeList() {
 
   return (
     <div className="space-y-6 container mx-auto p-4">
-      {/* HEADER */}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -99,19 +189,14 @@ export default function EmployeeList() {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href="./employees/new">
-            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
+            +
             Create
           </Link>
         </Button>
-        {/* <Link
-          href="./employees/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition-colors text-xs"
-        >
-          + Add New Employee
-        </Link> */}
+
       </div>
 
-      {/* FILTER CONTROLS TOOLBAR */}
+
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-50 p-4 rounded-md bg-white dark:bg-slate-900 border">
         <div className="w-full md:w-1/3">
           <input
@@ -139,7 +224,7 @@ export default function EmployeeList() {
         </div>
       </div>
 
-      {/* DATA VIEW TABLE */}
+
       {loading ? (
         <div className="flex justify-center items-center h-32">
           <p className="text-xs font-medium text-slate-500 animate-pulse">
@@ -218,7 +303,7 @@ export default function EmployeeList() {
             </table>
           </div>
 
-          {/* SYSTEM PAGINATION CONTROLS BAR */}
+  
           <div className="bg-slate-50 dark:bg-slate-800/30 p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
             <span className="text-slate-500 font-medium">
               Showing page <b>{pagination.page}</b> of{" "}
@@ -248,4 +333,4 @@ export default function EmployeeList() {
       )}
     </div>
   );
-}
+} */

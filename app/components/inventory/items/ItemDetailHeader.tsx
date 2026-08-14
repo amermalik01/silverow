@@ -19,7 +19,7 @@ export default function ItemDetailHeader({ item, metrics }: MetricProps) {
     <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-4">
       <div>
         <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-          {item.name || "New Item"}
+          {item.name || ""}
           {item.item_code && (
             <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-full font-mono">
               {item.item_code}

@@ -16,7 +16,7 @@ export default async function ViewItemPage({ params }: Props) {
     <div className="py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
-          View Item Details
+          View Item
         </h1>
       </div>
 

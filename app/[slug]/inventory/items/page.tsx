@@ -2,11 +2,11 @@
 
 import ItemList from "@/app/components/inventory/items/ItemList";
 
-export default function ItemsPage() {
-  return (
-    <div>
-      <ItemList />
-    </div>
-  );
+export default async function ItemsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  return <ItemList slug={slug} />;
 }
-

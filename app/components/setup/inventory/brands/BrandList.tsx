@@ -53,7 +53,7 @@ export default function BrandList() {
   };
 
   return (
-    <div className="space-y-6 container mx-auto p-4">
+    <div className="space-y-6 rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm container mx-auto p-4">
       <div className="flex justify-between items-center bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <h2 className="text-xl font-semibold">Brands</h2>
 

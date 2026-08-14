@@ -19,6 +19,9 @@ import { customersConfig } from "./customers";
 import { salesOrdersConfig } from "./sales-orders";
 import { salesInvoicesConfig } from "./sales-invoices";
 
+import { itemColumnsConfig } from "./Items";
+import { EmployeeConfig } from "./Employee";
+
 export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
 
   purchase_orders: purchaseOrdersConfig,
@@ -36,6 +39,11 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   suppliers: suppliersConfig,
   crm_leads: CRM_LeadConfig,
   customers: customersConfig,
+
+  inventory_items: itemColumnsConfig,
+
+  hr_employees: EmployeeConfig,
+  
 };
 
 export function getDefaultTableConfig(moduleKey: string): ColumnConfig[] {

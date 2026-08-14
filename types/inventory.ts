@@ -9,6 +9,7 @@ export type ItemListRow = {
   brand_name: string | null;
   item_type: number;
   item_type_label: string;
+  posting_group_name?: string;
   status: number;
   status_label: string;
 };

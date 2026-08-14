@@ -1,5 +1,95 @@
 // /app/components/sales/invoices/SalesInvoiceList.tsx
+
 "use client";
+
+import Link from "next/link";
+import { SalesInvoice } from "@/types/sales-invoice";
+import { Button } from "@/components/ui/button";
+import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
+import { DataTable } from "@/app/components/DataTable/DataTable";
+import { getSalesInvoiceCellRenderers } from "./salesInvoiceCellRenderers";
+
+type Props = {
+  slug: string;
+};
+
+export default function SalesInvoiceList({ slug }: Props) {
+  // 1. Get registry renderers for sales invoice table
+  const cellRenderers = getSalesInvoiceCellRenderers(slug);
+
+  // 2. Ultra-clean render row cell dispatcher
+  const renderRowCell = (row: SalesInvoice, columnKey: string) => {
+    const renderer = cellRenderers[columnKey as keyof typeof cellRenderers];
+    return renderer ? renderer(row) : undefined; // Fallback to raw value in DataTable
+  };
+
+  // Data Fetching Handler
+  const fetchSalesInvoices = async (
+    params: FetchParams,
+  ): Promise<FetchResponse<SalesInvoice>> => {
+    const res = await fetch("/api/sales/sales-invoices/listing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    return res.json();
+  };
+
+  // Config Persistence APIs
+  const columnsConfigApi = {
+    get: async (moduleKey: string): Promise<ColumnConfig[]> => {
+      const res = await fetch(`/api/table-config?moduleKey=${moduleKey}`);
+      return res.json();
+    },
+    save: async (moduleKey: string, configs: ColumnConfig[]): Promise<void> => {
+      await fetch("/api/table-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleKey, configs }),
+      });
+    },
+    reset: async (moduleKey: string): Promise<ColumnConfig[]> => {
+      await fetch(`/api/table-config/reset?moduleKey=${moduleKey}`, {
+        method: "POST",
+      });
+      const res = await fetch(`/api/table-config?moduleKey=${moduleKey}`);
+      return res.json();
+    },
+  };
+
+  return (
+    <div className="space-y-4 container mx-auto p-4">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold">Sales Invoices</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Manage customer sales invoices, payment terms, and billing records
+          </p>
+        </div>
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={`/${slug}/sales/invoices/create`}>+ Create</Link>
+        </Button>
+      </div>
+
+      {/* Main Data Table */}
+      <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <DataTable<SalesInvoice>
+          moduleKey="sales_invoices"
+          fetchApi={fetchSalesInvoices}
+          columnsConfigApi={columnsConfigApi}
+          renderRowCell={renderRowCell}
+        />
+      </div>
+    </div>
+  );
+}
+/* "use client";
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
@@ -83,7 +173,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-6 container mx-auto p-4">
-      {/* Top Banner Toolbar Block */}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h1 className="text-2xl font-bold">Sales Invoices</h1>
@@ -91,15 +181,9 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
             Review and manage company operational sub-ledgers
           </p>
         </div>
-        {/* <Link
-          href={`/${slug}/sales/invoices/new`}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-xs font-medium transition shadow-sm"
-        >
-          + Create Invoice
-        </Link> */}
       </div>
 
-      {/* Control Strip & Filter Forms */}
+
       <div className="bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="flex-1">
           <input
@@ -136,7 +220,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
         </button>
       </div>
 
-      {/* Content Rendering Grid Layout Table Wrapper */}
+
       <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
         <div className="overflow-auto">
           {(loading || isPending) && (
@@ -211,7 +295,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
             </tbody>
           </table>
 
-          {/* Dynamic Pagination Footer Control Hub */}
+
           {data && data.pagination.totalPages > 1 && (
             <div className="bg-gray-50 border-t p-4 flex items-center justify-between text-xs text-gray-600">
               <div>
@@ -259,4 +343,4 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
       </div>
     </div>
   );
-}
+} */

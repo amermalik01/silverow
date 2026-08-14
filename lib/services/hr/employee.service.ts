@@ -103,6 +103,106 @@ export class EmployeeService {
     };
   }
 
+  static async listPaginated(
+    companyId: string,
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      status?: string;
+      department_id?: string;
+      designation_id?: string;
+      sort_by?: string;
+      sort_order?: "asc" | "desc";
+    },
+  ) {
+    const page = Math.max(1, params.page || 1);
+    const limit = Math.max(1, params.limit || 10);
+    const offset = (page - 1) * limit;
+
+    const values: unknown[] = [companyId];
+    let where = `WHERE e.company_id = $1`;
+
+    if (params.search && params.search.trim() !== "") {
+      values.push(`%${params.search.trim()}%`);
+      where += `
+      AND (
+        e.first_name ILIKE $${values.length}
+        OR e.last_name ILIKE $${values.length}
+        OR e.display_name ILIKE $${values.length}
+        OR e.employee_code ILIKE $${values.length}
+        OR e.email ILIKE $${values.length}
+      )
+    `;
+    }
+
+    if (params.status) {
+      values.push(params.status);
+      where += ` AND e.status = $${values.length}`;
+    }
+
+    if (params.department_id) {
+      values.push(params.department_id);
+      where += ` AND e.department_id = $${values.length}`;
+    }
+
+    if (params.designation_id) {
+      values.push(params.designation_id);
+      where += ` AND e.designation_id = $${values.length}`;
+    }
+
+    const allowedSortColumns: Record<string, string> = {
+      employee_code: "e.employee_code",
+      display_name: "e.first_name",
+      email: "e.email",
+      department_name: "d.name",
+      designation_name: "des.name",
+      status: "e.status",
+      created_at: "e.created_at",
+    };
+
+    const sortColumn =
+      allowedSortColumns[params.sort_by || ""] || "e.created_at";
+    const sortDirection =
+      params.sort_order?.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+    values.push(limit, offset);
+    const limitPlaceholder = `$${values.length - 1}`;
+    const offsetPlaceholder = `$${values.length}`;
+
+    const query = `
+      SELECT
+        e.*,
+        d.name AS department_name,
+        des.name AS designation_name,
+        CONCAT(m.first_name, ' ', m.last_name) AS manager_name,
+        COUNT(*) OVER() as total_count
+      FROM employees e
+      LEFT JOIN hr_departments d ON d.id = e.department_id
+      LEFT JOIN hr_designations des ON des.id = e.designation_id
+      LEFT JOIN employees m ON m.id = e.manager_id
+      ${where}
+      ORDER BY ${sortColumn} ${sortDirection}
+      LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}
+    `;
+
+    const result = await pool.query(query, values);
+    const totalCount = parseInt(result.rows[0]?.total_count || "0", 10);
+
+    return {
+      data: result.rows.map((row) => {
+        const { total_count, ...cleanRow } = row;
+        return cleanRow;
+      }),
+      meta: {
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
+  }
+
   static async get(companyId: string, id: string) {
     const result = await pool.query(
       `

@@ -14,17 +14,13 @@ type Department = {
 
 export default function DepartmentList() {
   const [data, setData] = useState<Department[]>([]);
-
   const [name, setName] = useState("");
-
   const [description, setDescription] = useState("");
 
   const loadData = async () => {
     try {
       const res = await fetch("/api/hr/departments");
-
       const result = await res.json();
-
       setData(result || []);
     } catch (err) {
       console.error(err);
@@ -35,9 +31,7 @@ export default function DepartmentList() {
     const loadData = async () => {
       try {
         const res = await fetch("/api/hr/departments");
-
         const result = await res.json();
-
         setData(result || []);
       } catch (err) {
         console.error(err);
@@ -49,7 +43,6 @@ export default function DepartmentList() {
   const save = async () => {
     await fetch("/api/hr/departments", {
       method: "POST",
-
       headers: {
         "Content-Type": "application/json",
       },
@@ -61,9 +54,7 @@ export default function DepartmentList() {
     });
 
     setName("");
-
     setDescription("");
-
     loadData();
   };
 
@@ -78,7 +69,7 @@ export default function DepartmentList() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm container mx-auto p-4">
       <div className="border rounded p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <input
           value={name}
@@ -103,11 +94,8 @@ export default function DepartmentList() {
         <thead>
           <tr>
             <th className="p-2 text-left">Code</th>
-
             <th className="p-2 text-left">Name</th>
-
             <th className="p-2 text-left">Description</th>
-
             <th className="p-2 text-center">Action</th>
           </tr>
         </thead>
@@ -116,11 +104,8 @@ export default function DepartmentList() {
           {data?.map((row) => (
             <tr key={row.id} className="border-t">
               <td className="p-2">{row.code}</td>
-
               <td className="p-2">{row.name}</td>
-
               <td className="p-2">{row.description}</td>
-
               <td className="p-2 text-center">
                 <button
                   onClick={() => remove(row.id!)}
@@ -135,53 +120,4 @@ export default function DepartmentList() {
       </table>
     </div>
   );
-
-  /* return (
-    <div className="space-y-6">
-      <div className="border p-4 rounded space-y-4">
-        <input
-          placeholder="Department Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-
-        <button
-          onClick={save}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Save
-        </button>
-      </div>
-
-      <table className="w-full border">
-        <thead>
-          <tr>
-            <th className="p-2">Code</th>
-            <th className="p-2">Name</th>
-            <th className="p-2">Description</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {data.map((row) => (
-            <tr key={row.id} className="border-t">
-              <td className="p-2">{row.code}</td>
-
-              <td className="p-2">{row.name}</td>
-
-              <td className="p-2">{row.description}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  ); */
 }

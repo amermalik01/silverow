@@ -155,7 +155,7 @@ export default function LeaveList() {
   const today = startOfDay(new Date());
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm container mx-auto p-4">
       {/* FORM */}
 
       <div className="border rounded p-4 grid grid-cols-1 md:grid-cols-3 gap-4">

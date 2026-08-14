@@ -67,7 +67,7 @@ export default function PostingGroupsList() {
   };
 
   return (
-    <div className=" p-6 rounded shadow dark:shadow-white space-y-4">
+    <div className=" rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm container mx-auto p-4 space-y-4">
       {/* Form */}
       <div className="flex gap-2">
         <input
