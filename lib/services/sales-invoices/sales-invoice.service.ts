@@ -1,12 +1,181 @@
 //  lib/services/sales-invoices/sales-invoice.service.ts
 import { PoolClient } from "pg";
+import { pool } from "@/lib/db";
+import { FetchParams, FetchResponse } from "@/types/table";
 
 import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
 import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 import { JournalLineInput } from "@/types/journal";
+import { SalesInvoice } from "@/types/sales-invoice";
 
 export class SalesInvoiceService {
+  static async listPaginated(
+    companyId: string,
+    params: FetchParams,
+  ): Promise<FetchResponse<SalesInvoice>> {
+    const {
+      page = 1,
+      pageSize = 50,
+      filters = {},
+      sortBy,
+      sortOrder = "asc",
+    } = params;
+    const offset = (page - 1) * pageSize;
+
+    const SORT_FIELDS: Record<string, string> = {
+      invoice_date: "si.invoice_date",
+      due_date: "si.due_date",
+      invoice_no: "si.invoice_no",
+      status: "si.status",
+      is_posted: "si.is_posted",
+      customer_no: "p.customer_code",
+      customer_name: "p.name",
+      reference: "si.reference",
+      currency_code: "c.code",
+      exchange_rate: "si.exchange_rate",
+      subtotal: "si.subtotal",
+      vat_amount: "si.vat_amount",
+      discount_amount: "si.discount_amount",
+      total_amount: "si.total_amount",
+      posted_at: "si.posted_at",
+      created_at: "si.created_at",
+    };
+
+    const orderByColumn =
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "si.invoice_date";
+    const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    const queryValues: (string | number | boolean)[] = [companyId];
+    const whereClauses = ["si.company_id = $1"];
+
+    // Dynamic Filters
+    Object.entries(filters).forEach(([colKey, filter]) => {
+      if (!filter) return;
+
+      if (filter.value !== undefined && filter.value !== "") {
+        if (colKey === "currency_code") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`c.code = $${queryValues.length}`);
+        } else if (colKey === "status") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`si.status::text = $${queryValues.length}`);
+        } else if (colKey === "is_posted") {
+          queryValues.push(filter.value === "true" );// || filter.value === true
+          whereClauses.push(`si.is_posted = $${queryValues.length}`);
+        } else if (colKey === "invoice_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`si.invoice_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "customer_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`p.customer_code ILIKE $${queryValues.length}`);
+        } else if (colKey === "customer_name") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`p.name ILIKE $${queryValues.length}`);
+        } else if (colKey === "reference") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`si.reference ILIKE $${queryValues.length}`);
+        }
+      }
+
+      if (filter.from !== undefined && filter.from !== "") {
+        queryValues.push(filter.from);
+        const idx = queryValues.length;
+        if (colKey === "invoice_date")
+          whereClauses.push(`si.invoice_date >= $${idx}::date`);
+        if (colKey === "due_date")
+          whereClauses.push(`si.due_date >= $${idx}::date`);
+        if (colKey === "subtotal")
+          whereClauses.push(`si.subtotal >= $${idx}::numeric`);
+        if (colKey === "total_amount")
+          whereClauses.push(`si.total_amount >= $${idx}::numeric`);
+      }
+
+      if (filter.to !== undefined && filter.to !== "") {
+        queryValues.push(filter.to);
+        const idx = queryValues.length;
+        if (colKey === "invoice_date")
+          whereClauses.push(`si.invoice_date <= $${idx}::date`);
+        if (colKey === "due_date")
+          whereClauses.push(`si.due_date <= $${idx}::date`);
+        if (colKey === "subtotal")
+          whereClauses.push(`si.subtotal <= $${idx}::numeric`);
+        if (colKey === "total_amount")
+          whereClauses.push(`si.total_amount <= $${idx}::numeric`);
+      }
+    });
+
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // Base Joins targeting parties, sales_orders, and currencies
+    const joinSql = `
+      FROM sales_invoices si
+      LEFT JOIN parties p ON p.id = si.customer_id
+      LEFT JOIN sales_orders so ON so.id = si.sales_order_id
+      LEFT JOIN currencies c ON c.id = si.currency_id
+    `;
+
+    // Count Query
+    const countQuery = `SELECT COUNT(DISTINCT si.id) as total ${joinSql} ${whereSql}`;
+    const countResult = await pool.query(countQuery, queryValues);
+    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
+
+    // Paginated Data Query
+    const dataQueryValues = [...queryValues, pageSize, offset];
+    const limitIdx = dataQueryValues.length - 1;
+    const offsetIdx = dataQueryValues.length;
+
+    const dataQuery = `
+      SELECT DISTINCT ON (si.id, ${orderByColumn})
+        si.id,
+        si.company_id,
+        si.invoice_no,
+        si.customer_id,
+        si.sales_order_id,
+        si.shipment_id,
+        si.invoice_date,
+        si.due_date,
+        si.currency_id,
+        si.exchange_rate,
+        si.subtotal,
+        si.vat_amount,
+        si.discount_amount,
+        si.total_amount,
+        si.status,
+        si.is_posted,
+        si.posted_at,
+        si.journal_entry_id,
+        si.reference,
+        si.remarks,
+        si.created_by,
+        si.updated_by,
+        si.created_at,
+        si.updated_at,
+
+        -- Customer Info Aliases
+        p.customer_code AS customer_no,
+        p.name AS customer_name,
+
+        -- Currency Code
+        c.code AS currency_code,
+
+        -- Linked Sales Order Code
+        so.order_no AS sales_order_no
+
+      ${joinSql}
+      ${whereSql}
+      ORDER BY ${orderByColumn} ${orderDirection}, si.id ASC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `;
+
+    const dataResult = await pool.query(dataQuery, dataQueryValues);
+
+    return {
+      data: dataResult.rows,
+      totalRecords,
+    };
+  }
   /**
    * =========================================================
    * GET AR ACCOUNT

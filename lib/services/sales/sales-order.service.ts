@@ -1,12 +1,212 @@
 // lib/services/sales/sales-order.service.ts
 
 import { PoolClient } from "pg";
-import { SalesOrderAddress, SalesOrderPayload } from "@/types/sales-order";
+import { pool } from "@/lib/db";
+import { FetchParams, FetchResponse } from "@/types/table";
+import {
+  SalesOrder,
+  SalesOrderAddress,
+  SalesOrderPayload,
+} from "@/types/sales-order";
 import { SalesOrderPayloadSchema } from "@/lib/validations/sales-order.schema";
 import { InventoryAllocationService } from "@/lib/services/inventory/inventory-allocation.service";
 import { SalesOrderStatusService } from "./sales-order-status.service";
 
 export class SalesOrderService {
+  static async listPaginated(
+    companyId: string,
+    params: FetchParams,
+  ): Promise<FetchResponse<SalesOrder>> {
+    const {
+      page = 1,
+      pageSize = 50,
+      filters = {},
+      sortBy,
+      sortOrder = "asc",
+    } = params;
+    const offset = (page - 1) * pageSize;
+
+    // Mapping table column keys to DB table columns
+    const SORT_FIELDS: Record<string, string> = {
+      posting_date: "so.posting_date",
+      offer_date: "so.order_date",
+      sale_order_code: "so.order_no",
+      sale_quote_code: "so.sales_quote_no",
+      cust_order_no: "so.cust_order_no",
+      current_stage: "cos.name",
+      sell_to_cust_no: "p.code",
+      sell_to_cust_name: "p.name",
+      sell_to_city: "so.billing_address->>'city'",
+      sale_person: "so.salesperson",
+      currency_code: "c.code",
+      net_amount: "so.subtotal",
+      tax_amount: "so.vat_amount",
+      grand_total: "so.total_amount",
+      due_date: "so.due_date",
+      requested_delivery_date: "so.requested_delivery_date",
+      dispatch_date: "so.dispatch_date",
+      delivery_date: "so.delivery_date",
+      shipment_method_code: "sm.name",
+      ship_to_city: "so.shipping_address->>'city'",
+    };
+
+    const orderByColumn =
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "so.created_at";
+    const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    const queryValues: (string | number)[] = [companyId];
+    const whereClauses = ["so.company_id = $1", "so.status::text != 'CLOSED'"];
+
+    // Dynamic Filter Parsing
+    Object.entries(filters).forEach(([colKey, filter]) => {
+      if (!filter) return;
+
+      if (filter.value !== undefined && filter.value !== "") {
+        if (colKey === "currency_code") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`c.code = $${queryValues.length}`);
+        } else if (colKey === "current_stage") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`cos.name = $${queryValues.length}`);
+        } else if (colKey === "status") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`so.status::text = $${queryValues.length}`);
+        } else if (colKey === "sale_order_code") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`so.order_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sell_to_cust_name") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`p.name ILIKE $${queryValues.length}`);
+        } else if (colKey === "cust_order_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`so.cust_order_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sale_person") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`so.salesperson ILIKE $${queryValues.length}`);
+        }
+      }
+
+      // Date & Range Filters
+      if (filter.from !== undefined && filter.from !== "") {
+        queryValues.push(filter.from);
+        const idx = queryValues.length;
+        if (colKey === "posting_date")
+          whereClauses.push(`so.posting_date >= $${idx}::date`);
+        if (colKey === "offer_date")
+          whereClauses.push(`so.order_date >= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`so.subtotal >= $${idx}::numeric`);
+      }
+
+      if (filter.to !== undefined && filter.to !== "") {
+        queryValues.push(filter.to);
+        const idx = queryValues.length;
+        if (colKey === "posting_date")
+          whereClauses.push(`so.posting_date <= $${idx}::date`);
+        if (colKey === "offer_date")
+          whereClauses.push(`so.order_date <= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`so.subtotal <= $${idx}::numeric`);
+      }
+    });
+
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // Shared SQL Join Clause
+    const joinSql = `
+      FROM sales_orders so
+      LEFT JOIN parties p ON p.id = so.customer_id
+      LEFT JOIN currencies c ON c.id = so.currency_id
+      LEFT JOIN employees e ON (
+        e.company_id = so.company_id AND (
+          e.id::text = so.salesperson OR 
+          e.display_name ILIKE so.salesperson OR
+          CONCAT(e.first_name, ' ', e.last_name) ILIKE so.salesperson
+        )
+      )
+      
+      LEFT JOIN shipment_method sm ON sm.id = so.shipment_method_id
+      LEFT JOIN common_order_stages cos 
+          ON cos.company_id = so.company_id 
+          AND cos.stage_type = 'sales_order' 
+          AND cos.name ILIKE so.status::text
+    `;
+
+    // Total Count Query
+    const countQuery = `SELECT COUNT(DISTINCT so.id) as total ${joinSql} ${whereSql}`;
+    const countResult = await pool.query(countQuery, queryValues);
+    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
+
+    // Paginated Record Set Query
+    const dataQueryValues = [...queryValues, pageSize, offset];
+    const limitIdx = dataQueryValues.length - 1;
+    const offsetIdx = dataQueryValues.length;
+
+    const dataQuery = `
+      SELECT DISTINCT ON (so.id, ${orderByColumn})
+        so.id,
+        so.order_no AS sale_order_code,
+        COALESCE(so.sales_quote_no, so.sq_no) AS sale_quote_code,
+        so.cust_order_no,
+        so.posting_date,
+        so.order_date AS offer_date,
+        so.due_date,
+        so.requested_delivery_date,
+        so.dispatch_date,
+        so.delivery_date,
+        so.subtotal AS net_amount,
+        so.vat_amount AS tax_amount,
+        so.total_amount AS grand_total,
+        (so.finance_charges > 0) AS finance_charges_exists,
+        (so.insurance_charges > 0) AS insurance_charges_exists,
+        so.book_in_phone AS book_in_tel,
+        so.book_in_contact AS comm_book_in_contact,
+        so.book_in_email,
+        so.warehouse_ref_no AS warehouse_booking_ref,
+        so.cust_warehouse_ref_no AS customer_warehouse_ref,
+        so.converted_by AS converted_to_so_by_name,
+        
+        -- Joined Labels & Classifications
+        COALESCE(cos.name, so.status) AS current_stage,
+        p.customer_code AS sell_to_cust_no,
+        p.name AS sell_to_cust_name,
+        c.code AS currency_code,
+        COALESCE(e.display_name, TRIM(CONCAT(e.first_name, ' ', e.last_name)), so.salesperson) AS sale_person,
+        -- sa.code AS shipping_agent_code,
+        sm.name AS shipment_method_code,
+
+        -- Primary Customer Billing Address (from JSONB)
+        so.billing_address->>'address_1' AS sell_to_address,
+        so.billing_address->>'address_2' AS sell_to_address2,
+        so.billing_address->>'city' AS sell_to_city,
+        so.billing_address->>'county' AS sell_to_county,
+        so.billing_address->>'postcode' AS sell_to_post_code,
+        so.billing_address->>'country' AS country_code,
+        so.contact AS sell_to_contact_no,
+        so.book_in_phone AS cust_phone,
+        so.email AS cust_email,
+
+        -- Shipping Address (from JSONB)
+        so.shipping_address->>'address_1' AS ship_to_address,
+        so.shipping_address->>'address_2' AS ship_to_address2,
+        so.shipping_address->>'city' AS ship_to_city,
+        so.shipping_address->>'county' AS ship_to_county,
+        so.shipping_address->>'postcode' AS ship_to_post_code
+
+      ${joinSql}
+      ${whereSql}
+      ORDER BY ${orderByColumn} ${orderDirection}, so.id ASC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `;
+
+    const dataResult = await pool.query(dataQuery, dataQueryValues);
+
+    return {
+      data: dataResult.rows,
+      totalRecords,
+    };
+  }
   /**
    * CREATE SALES ORDER
    */
