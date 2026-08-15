@@ -84,7 +84,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
   };
 
   return (
-    <div className="p-4 space-y-6">{/* rounded border bg-white dark:bg-zinc-900 shadow-sm  */}
+    <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
       {/* HEADER SECTION */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
@@ -101,8 +101,8 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={createPath}>
-            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
-            Create
+            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}
+            + Create
           </Link>
         </Button>
 

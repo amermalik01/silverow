@@ -390,8 +390,6 @@ export default function PartyRecord({
       </div>
 
       {/* Persistent Bottom Action Drawer */}
-
-      {/* Persistent Bottom Action Drawer */}
       <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
         {!isReadonlyProp && (
           <>
@@ -427,17 +425,10 @@ export default function PartyRecord({
                 >
                   {saving ? (
                     <>
-                      {/* <Icon
-                        icon="svg-spinners:180-ring-with-bg"
-                        className="w-4 h-4"
-                      /> */}
                       <span>Saving...</span>
                     </>
                   ) : (
-                    <>
-                      {/* <Icon icon="tabler:check" className="w-4 h-4" /> */}
-                      Save
-                    </>
+                    <>Save</>
                   )}
                 </Button>
 
@@ -455,39 +446,6 @@ export default function PartyRecord({
           </>
         )}
       </div>
-
-      {/* {!isReadonlyProp && (
-        <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
-
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm flex items-center gap-2 justify-center"
-          >
-            {saving ? (
-              <>
-                <Icon
-                  icon="svg-spinners:180-ring-with-bg"
-                  className="w-4 h-4"
-                />
-                <span>Committing...</span>
-              </>
-            ) : (
-              "Save"
-            )}
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()} // Or your custom close/cancel action handler
-            className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
-          >
-            Cancel
-          </Button>
-        </div>
-      )} */}
     </div>
   );
 }
