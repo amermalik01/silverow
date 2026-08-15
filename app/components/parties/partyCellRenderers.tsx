@@ -104,12 +104,12 @@ export function getPartyCellRenderers(
 
     actions: (row: PartyRecord) => (
       <div className="flex items-center gap-1.5">
-        <Link
+        {/* <Link
           href={`/${slug}/${basePath}/${row.id}`}
           className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-medium text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
           View
-        </Link>
+        </Link> */}
         <Link
           href={`/${slug}/${basePath}/${row.id}/edit`}
           className="rounded border border-emerald-600 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"

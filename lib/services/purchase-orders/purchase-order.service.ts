@@ -39,7 +39,7 @@ export class PurchaseOrderService {
       pageSize = 50,
       filters = {},
       sortBy,
-      sortOrder = "asc",
+      sortOrder = "DESC",
     } = params;
     const offset = (page - 1) * pageSize;
 
@@ -66,8 +66,11 @@ export class PurchaseOrderService {
     };
 
     const orderByColumn =
-      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "po.created_at";
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "po.order_no";
     const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    // console.log('orderByColumn === ',orderByColumn);
+    // console.log('orderDirection === ',orderDirection);
 
     const queryValues: (string | number)[] = [companyId];
     const whereClauses = [
@@ -181,9 +184,11 @@ export class PurchaseOrderService {
 
       ${joinSql}
       ${whereSql}
-      ORDER BY ${orderByColumn} ${orderDirection}, po.id ASC
+      ORDER BY ${orderByColumn} ${orderDirection}
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
+
+    // console.log('dataQuery === ',dataQuery); // , po.order_no DESC
 
     const dataResult = await pool.query(dataQuery, dataQueryValues);
 

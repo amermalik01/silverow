@@ -116,14 +116,14 @@ export function getPurchaseOrderCellRenderers(slug: string) {
         >
           Edit
         </Link>
-        {row.status?.toLowerCase() === "open" && (
+        {/* {row.status?.toLowerCase() === "open" && (
           <Link
             href={`/${slug}/purchases/receipts/create?po=${row.id}`}
             className="rounded border border-emerald-600 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
           >
             Receive
           </Link>
-        )}
+        )} */}
       </div>
     ),
   };

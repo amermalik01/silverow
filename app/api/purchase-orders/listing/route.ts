@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const params: FetchParams = await req.json();
     const result = await PurchaseOrderService.listPaginated(companyId, params);
 
-    console.log('result.data === ',result.data);
+    // console.log('result.data === ',result.data);
 
     return NextResponse.json({
       data: result.data,
