@@ -71,7 +71,7 @@ export class PurchaseReceiptService {
     const glLines: JournalLineInput[] = [];
 
     for (const line of payload.lines) {
-      if (!line.warehouse_id) {
+      if (line.item_id && !line.warehouse_id) {
         throw new Error(
           `Warehouse identification is required for item ${line.item_id}`,
         );
@@ -146,30 +146,40 @@ export class PurchaseReceiptService {
 
       const receiptLine = lineResult.rows[0];
 
-      // 3. Delegate to Unified Inventory Engine (Inbound Ledger Entry & Reservation Consumption)
-      const { ledgerEntry, ppvAmount } =
-        await UnifiedInventoryEngineService.processInboundStock(
-          client,
-          companyId,
-          receipt.posting_date,
-          "PURCHASE_RECEIPT",
-          {
-            item_id: line.item_id,
-            warehouse_id: line.warehouse_id,
-            location_id: line.location_id,
-            bin_code: line.bin_code,
-            batch_no: line.batch_no,
-            serial_no: line.serial_no,
-            expiry_date: line.expiry_date,
-            quantity: qtyReceived,
-            unit_cost: unitCost,
-            reference_type: "PURCHASE_RECEIPT",
-            reference_id: receipt.id,
-            reference_line_id: receiptLine.id,
-          },
-        );
+      // 3. Delegate to Inventory Engine ONLY if physical item exists
+      let inventoryValueToCapitalize = totalCost;
+      let ppvAmount = 0;
+      let ledgerEntryUnitCost = 0;
 
-      const inventoryValueToCapitalize = Number(ledgerEntry.total_cost);
+      if (line.item_id && line.warehouse_id) {
+        const inboundRes =
+          await UnifiedInventoryEngineService.processInboundStock(
+            client,
+            companyId,
+            receipt.posting_date,
+            "PURCHASE_RECEIPT",
+            {
+              item_id: line.item_id,
+              warehouse_id: line.warehouse_id,
+              location_id: line.location_id,
+              bin_code: line.bin_code,
+              batch_no: line.batch_no,
+              serial_no: line.serial_no,
+              expiry_date: line.expiry_date,
+              quantity: qtyReceived,
+              unit_cost: unitCost,
+              reference_type: "PURCHASE_RECEIPT",
+              reference_id: receipt.id,
+              reference_line_id: receiptLine.id,
+            },
+          );
+        inventoryValueToCapitalize = Number(inboundRes.ledgerEntry.total_cost);
+        ledgerEntryUnitCost = Number(inboundRes.ledgerEntry.unit_cost);
+
+        ppvAmount = inboundRes.ppvAmount;
+      }
+
+      // const inventoryValueToCapitalize = Number(ledgerEntry.total_cost);
 
       // 4. Create GRNI entry for invoice matching
       await client.query(
@@ -182,10 +192,10 @@ export class PurchaseReceiptService {
         `,
         [
           companyId,
-          line.purchase_order_line_id,
+          line.purchase_order_line_id || null,
           receiptLine.id,
-          line.warehouse_id,
-          line.item_id,
+          line.warehouse_id || null,
+          line.item_id || null,
           receipt.id,
           totalCost,
         ],
@@ -220,7 +230,6 @@ export class PurchaseReceiptService {
 
       // Build General Ledger Posting Entries (ONLY for PERPETUAL mode)
       if (inventorySystem === "PERPETUAL") {
-
         // DR - Inventory Asset (Interim)
         glLines.push({
           account_id: accounts.inventory_account_id,
@@ -229,7 +238,7 @@ export class PurchaseReceiptService {
           item_id: line.item_id,
           warehouse_id: line.warehouse_id,
           quantity: qtyReceived,
-          unit_cost: Number(ledgerEntry.unit_cost),
+          unit_cost: ledgerEntryUnitCost,//Number(inboundRes.ledgerEntry.unit_cost),
           reference_type: "PURCHASE_RECEIPT",
           reference_id: receipt.id,
           description: `Asset receipt for item ${line.item_id}`,

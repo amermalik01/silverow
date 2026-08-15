@@ -35,7 +35,7 @@ export function getPurchaseInvoiceCellRenderers(slug: string) {
         href={`/${slug}/purchases/purchase-invoices/${row.id}`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
-        {row.invoice_no || "Draft"}
+        {row.invoice_code || "Draft"}
       </Link>
     ),
 

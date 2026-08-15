@@ -447,7 +447,7 @@ export default function PurchaseOrderLines({
                     />
 
                     {/* RECEIVED STOCK INDICATOR BADGE */}
-                    {isStockReceived && (
+                    {/* {isStockReceived && (
                       <div
                         className={`text-[10px] font-medium px-1.5 py-0.5 rounded text-center whitespace-nowrap ${
                           isFullyReceived
@@ -457,7 +457,7 @@ export default function PurchaseOrderLines({
                       >
                         Rcvd: {receivedQty} / {displayQty}
                       </div>
-                    )}
+                    )} */}
                   </td>
 
                   <td className="p-2">

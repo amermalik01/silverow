@@ -22,7 +22,9 @@ interface IncomingOrder {
 interface IncomingLine {
   id?: string;
   purchase_order_line_id?: string;
+  line_type?: "ITEM" | "GL_ACCOUNT" | "COMMENT";
   item_id: string;
+  gl_account_id?: string;
   warehouse_id: string;
   location_id?: string;
   bin_code?: string;
@@ -57,8 +59,14 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const { order, lines = [] } = body;
 
     // Filter down using strongly-typed line parameters
+    // const validLines = lines.filter(
+    //   (l: IncomingLine) => Number(l.quantity) > 0,
+    // );
+
     const validLines = lines.filter(
-      (l: IncomingLine) => Number(l.quantity) > 0,
+      (l: IncomingLine) =>
+        Number(l.quantity) > 0 &&
+        (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
     );
 
     if (!validLines.length) {

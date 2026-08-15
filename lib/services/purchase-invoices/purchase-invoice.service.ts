@@ -15,7 +15,7 @@ export class PurchaseInvoiceService {
       pageSize = 50,
       filters = {},
       sortBy,
-      sortOrder = "asc",
+      sortOrder = "DESC",
     } = params;
     const offset = (page - 1) * pageSize;
 
@@ -38,7 +38,7 @@ export class PurchaseInvoiceService {
     };
 
     const orderByColumn =
-      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "pi.invoice_date";
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "pi.invoice_no";
     const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     const queryValues: (string | number)[] = [companyId];
@@ -186,7 +186,7 @@ export class PurchaseInvoiceService {
 
       ${joinSql}
       ${whereSql}
-      ORDER BY ${orderByColumn} ${orderDirection}, pi.id ASC
+      ORDER BY ${orderByColumn} ${orderDirection}
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
 

@@ -8,6 +8,7 @@ import {
 } from "@/lib/services/gl/gl-posting.service";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 
+
 export interface PostInvoiceInput {
   companyId: string;
   purchaseOrderId: string;
@@ -15,8 +16,11 @@ export interface PostInvoiceInput {
   invoiceData: {
     supplier_invoice_no: string;
     invoice_date?: string;
+    due_date?: string;
     posting_date?: string;
     notes?: string;
+    currency_id?: string;
+    exchange_rate?: number;
   };
   financials: {
     amount: number;
@@ -36,7 +40,7 @@ export class PurchaseInvoicePostingService {
 
       // 1. Fetch & lock Purchase Order record
       const poResult = await client.query(
-        `SELECT id, supplier_id, status 
+        `SELECT id, supplier_id, status, currency_id, exchange_rate
          FROM purchase_orders 
          WHERE id = $1 AND company_id = $2 
          FOR UPDATE`,
@@ -51,7 +55,7 @@ export class PurchaseInvoicePostingService {
 
       // 2. Load active order lines
       const linesResult = await client.query(
-        `SELECT id, item_id, warehouse_id, quantity, unit_cost, description, tax_percent, tax_amount, net_amount, gross_amount
+        `SELECT id, item_id, line_type, warehouse_id, quantity, received_quantity, unit_cost, description, tax_percent, tax_amount, net_amount, gross_amount
          FROM purchase_order_lines 
          WHERE purchase_order_id = $1 AND company_id = $2 AND is_deleted = false`,
         [purchaseOrderId, companyId],
@@ -63,7 +67,11 @@ export class PurchaseInvoicePostingService {
       }
 
       // 2. 🌟 ENFORCE 3-WAY MATCHING (Scenario A: Goods-First Workflow)
-      const unreceivedLines = lines.filter(
+      const stockLines = lines.filter(
+        (line) => line.line_type === "ITEM" || (!line.line_type && !!line.item_id),
+      );
+
+      const unreceivedLines = stockLines.filter(
         (line) => Number(line.received_quantity) < Number(line.quantity),
       );
 
@@ -82,6 +90,13 @@ export class PurchaseInvoicePostingService {
 
       const invoiceDate =
         invoiceData.invoice_date || new Date().toISOString().split("T")[0];
+      const dueDate = invoiceData.due_date || invoiceDate;
+
+      // Currency resolution: Request body override -> PO header fallback
+      const currencyId = invoiceData.currency_id || po.currency_id || null;
+      const exchangeRate = Number(
+        invoiceData.exchange_rate || po.exchange_rate || 1,
+      );
 
       // Calculate total GRNI subtotal directly from order lines
       const grniSubtotal = lines.reduce(
@@ -102,16 +117,23 @@ export class PurchaseInvoicePostingService {
           supplier_id, 
           invoice_no,
           supplier_invoice_no,
-          invoice_date, 
+          invoice_date,
+          due_date,
+          currency_id,
+          exchange_rate,
           subtotal, 
           tax_amount, 
           total_amount, 
           status, 
           is_posted,
           posted_at,
+          approved_at,
           notes,
           created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'POSTED', true, NOW(), $10, $11)
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 
+          'POSTED', true, NOW(), NOW(), $13, $14
+        )
         RETURNING id, invoice_no`,
         [
           companyId,
@@ -120,6 +142,9 @@ export class PurchaseInvoicePostingService {
           invoiceNo,
           invoiceData.supplier_invoice_no,
           invoiceDate,
+          dueDate,
+          currencyId,
+          exchangeRate,
           grniSubtotal,
           vatAmount,
           grossTotal,
@@ -168,8 +193,8 @@ export class PurchaseInvoicePostingService {
             createdInvoice.id,
             lineNo,
             line.id,
-            line.item_id,
-            line.warehouse_id,
+            line.item_id || null,
+            line.warehouse_id || null,
             line.description || null,
             line.quantity,
             line.unit_cost,
@@ -188,42 +213,6 @@ export class PurchaseInvoicePostingService {
           line.item_id,
         );
 
-        // Insert into vendor_ledger_entries for AP Sub-Ledger Tracking
-        // await client.query(
-        //   `
-        //   INSERT INTO vendor_ledger_entries (
-        //     company_id,
-        //     vendor_id,
-        //     document_type,
-        //     document_id,
-        //     document_no,
-        //     posting_date,
-        //     due_date,
-        //     description,
-        //     original_amount,
-        //     remaining_amount,
-        //     currency_id,
-        //     is_open,
-        //     journal_entry_id,
-        //     created_at
-        //   )
-        //   VALUES ($1, $2, 'PURCHASE_INVOICE', $3, $4, $5, $6, $7, $8, $9, $10, true, $11, NOW())
-        //   `,
-        //   [
-        //     companyId,
-        //     po.supplier_id,
-        //     createdInvoice.id,
-        //     createdInvoice.invoice_no,
-        //     invoiceDate,
-        //     invoiceData.due_date || invoiceDate, // Fallback if due date isn't set
-        //     `Purchase Invoice ${createdInvoice.invoice_no}`,
-        //     grossTotal,       // Positive balance representing liability
-        //     grossTotal,       // Initially remaining_amount = original_amount
-        //     po.currency_id || null,
-        //     postedJournal.id, // Foreign key linking back to journal_entries.id
-        //   ]
-        // );
-
         if (!fallbackApAccountId && accounts.payable_account_id) {
           fallbackApAccountId = accounts.payable_account_id;
         }
@@ -231,7 +220,10 @@ export class PurchaseInvoicePostingService {
           fallbackVatAccountId = accounts.vat_account_id;
         }
 
-        if (inventorySystem === "PERPETUAL") {
+        const isStockItem =
+          line.line_type === "ITEM" || (!line.line_type && !!line.item_id);
+
+        if (inventorySystem === "PERPETUAL" && isStockItem) {
           // DEBIT: Clear GRNI Liability
           glLines.push({
             account_id: accounts.grni_account_id,
@@ -313,7 +305,7 @@ export class PurchaseInvoicePostingService {
       // 8. Validate journal balance
       GLValidationService.validateBalanced(glLines);
 
-      // 9. Post journal entry
+      // 9. Post journal entry with currency details
       await GLPostingService.postJournal(client, {
         company_id: companyId,
         entry_date: invoiceDate,
@@ -322,6 +314,8 @@ export class PurchaseInvoicePostingService {
         reference: createdInvoice.invoice_no,
         source_id: createdInvoice.id,
         description: `Posted Invoice ${createdInvoice.invoice_no} (Vendor Ref: ${invoiceData.supplier_invoice_no})`,
+        currency_id: currencyId,
+        exchange_rate: exchangeRate,
         created_by: userId || null,
         lines: glLines,
       });

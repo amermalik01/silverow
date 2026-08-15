@@ -12,6 +12,23 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
+interface IncomingLine {
+  id?: string;
+  purchase_order_line_id?: string;
+  line_type?: "ITEM" | "GL_ACCOUNT" | "COMMENT";
+  item_id: string;
+  gl_account_id?: string;
+  warehouse_id: string;
+  location_id?: string;
+  bin_code?: string;
+  batch_no?: string;
+  serial_no?: string;
+  expiry_date?: string;
+  quantity: number | string;
+  unit_price?: number | string;
+  unit_cost?: number | string;
+}
+
 export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
     const companyId = await getCompanyId();
@@ -103,25 +120,74 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 
     // 4. Downstream Automated Ledger integration if explicitly marked as processed
     if (order?.status === "received") {
-      const receiptPayload: PurchaseReceiptPayload = {
-        receipt: {
-          purchase_order_id: id,
-          vendor_id: order.supplier_id,
-          receipt_date:
-            order.receipt_date || new Date().toISOString().split("T")[0],
-          posting_date:
-            order.posting_date || new Date().toISOString().split("T")[0],
-          reference_no: order.reference,
-          notes: order.notes,
-        },
-        lines: lines,
-      };
+      const receiptLinesPayload = lines
+        .map((line: IncomingLine, idx: number) => {
+          const matchedDbLine = dbLines[idx];
+          return {
+            ...line,
+            // Ensure purchase_order_line_id gets resolved correctly from updated DB lines
+            purchase_order_line_id:
+              line.id || line.purchase_order_line_id || matchedDbLine?.id,
+          };
+        })
+        .filter(
+          (l: IncomingLine) =>
+            Number(l.quantity) > 0 &&
+            (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
+        );
 
-      await PurchaseReceiptService.createTransactional(
-        client,
-        companyId,
-        receiptPayload,
-      );
+      if (receiptLinesPayload.length) {
+        // Calculate unreceived quantity remaining before attempting receipt
+        const poLinesResult = await client.query(
+          `SELECT id, quantity, COALESCE(received_quantity, 0) as received_quantity 
+           FROM purchase_order_lines 
+           WHERE purchase_order_id = $1 AND COALESCE(is_deleted, false) = false`,
+          [id],
+        );
+
+        const hasUnreceivedItems = poLinesResult.rows.some((row) => {
+          const remaining =
+            Number(row.quantity) - Number(row.received_quantity || 0);
+          return remaining > 0;
+        });
+
+        // 1. Structure payload for your existing PurchaseReceiptService
+
+        if (hasUnreceivedItems) {
+          const receiptPayload: PurchaseReceiptPayload = {
+            receipt: {
+              purchase_order_id: id,
+              vendor_id: order.supplier_id,
+              receipt_date:
+                order.receipt_date || new Date().toISOString().split("T")[0],
+              posting_date:
+                order.posting_date || new Date().toISOString().split("T")[0],
+              reference_no: order.reference,
+              notes: order.notes,
+            },
+            lines: receiptLinesPayload.map(
+              (line: IncomingLine, idx: number) => ({
+                line_no: idx + 1,
+                purchase_order_line_id: line.purchase_order_line_id,
+                item_id: line.item_id,
+                warehouse_id: line.warehouse_id,
+                location_id: line.location_id,
+                bin_code: line.bin_code,
+                batch_no: line.batch_no,
+                serial_no: line.serial_no,
+                expiry_date: line.expiry_date,
+                quantity: Number(line.quantity),
+                unit_cost: Number(line.unit_price || line.unit_cost || 0),
+              })),
+          };
+
+          await PurchaseReceiptService.createTransactional(
+            client,
+            companyId,
+            receiptPayload,
+          );
+        }
+      }
 
       await PurchaseOrderService.recalculateStatus(client, id);
     }
@@ -131,14 +197,26 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Purchase order update transactional engine crash:", err);
+
+    const errorMessage =
+      err instanceof Error
+        ? err.message
+        : "Failed to update purchase order pipeline";
+
+    // Check for business validation errors and return 400 instead of 500
+    if (errorMessage.includes("exceeds remaining open line quantity")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This order (or line) has already been fully received. Cannot receive additional stock.",
+        },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json(
-      {
-        success: false,
-        error:
-          err instanceof Error
-            ? err.message
-            : "Failed to update purchase order pipeline",
-      },
+      { success: false, error: errorMessage },
       { status: 500 },
     );
   } finally {
@@ -189,28 +267,3 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     );
   }
 }
-
-
-      /* for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const dbLineId = dbLines[i]?.id;
-
-        if (dbLineId && Number(line.quantity) > 0) {
-          await PurchaseOrderService.updateReceivedQuantity(
-            client,
-            dbLineId,
-            Number(line.quantity),
-          );
-
-          await InventoryAllocationEngineService.allocate(
-            client,
-            companyId,
-            line.item_id,
-            line.warehouse_id,
-            Number(line.quantity),
-            id,
-            dbLineId,
-            "FIFO",
-          );
-        }
-      } */

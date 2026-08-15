@@ -11,8 +11,11 @@ type RouteContext = {
 interface PostInvoiceRequestBody {
   supplier_invoice_no: string;
   invoice_date?: string;
+  due_date?: string;
   posting_date?: string;
   notes?: string;
+  currency_id?: string;
+  exchange_rate?: number;
   financials: {
     amount: number;
     vat: number;
@@ -49,8 +52,11 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       invoiceData: {
         supplier_invoice_no: body.supplier_invoice_no,
         invoice_date: body.invoice_date,
+        due_date: body.due_date,
         posting_date: body.posting_date,
         notes: body.notes,
+        currency_id: body.currency_id,
+        exchange_rate: body.exchange_rate,
       },
       financials: body.financials,
     });
