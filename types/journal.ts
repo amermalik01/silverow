@@ -84,7 +84,9 @@ export interface JournalListItem {
 } 
 
 export interface JournalLineInput {
-  posting_date?: string;          // Made optional to support fallbacks
+  posting_date?: string;
+  document_type?: string;
+  document_no?: string;
   transaction_type?: "gl_no" | "customer" | "supplier" | "item"; 
   account_id: string;
   debit?: number;
@@ -98,7 +100,7 @@ export interface JournalLineInput {
   warehouse_id?: string;
   quantity?: number;
   unit_cost?: number;
-  balancing_account_id?: string; // 🟢 Ensure this is marked optional so it doesn't cause errors elsewhere
+  balancing_account_id?: string;
   reference_type?: string;
   reference_id?: string;
   currency_amount?: number;

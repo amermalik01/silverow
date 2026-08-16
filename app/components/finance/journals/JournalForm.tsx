@@ -24,6 +24,7 @@ import SupplierLookupModal, {
 import AllocateJournalPaymentModal from "./modals/AllocateJournalPaymentModal";
 import { useLoader } from "@/app/context/LoaderContext";
 import { PostedTransactionsModal } from "./modals/PostedTransactionsModal";
+import { JournalPayload2, JournalSource } from "@/types/journal";
 
 type Currency = {
   id: string;
@@ -574,12 +575,38 @@ export default function JournalForm({
         };
       });
 
-      const payload = {
+      // const payload = {
+      //   entry_date: metadata.entry_date,
+      //   reference: metadata.reference,
+      //   description: metadata.description,
+      //   lines: sanitizedLines,
+      //   is_posted: postToLedger,
+      // };
+
+      const payload: JournalPayload2 = {
         entry_date: metadata.entry_date,
-        reference: metadata.reference,
-        description: metadata.description,
-        lines: sanitizedLines,
-        is_posted: postToLedger,
+        source:
+          journalType === "general"
+            ? "GENERAL"
+            : (journalType.toUpperCase() as JournalSource),
+        lines: lines.map((line) => ({
+          posting_date: line.posting_date,
+          document_type: line.document_type,
+          document_no: line.document_no,
+          transaction_type: line.transaction_type,
+          account_id: line.account_id,
+          party_id: line.party_id,
+          party_type:
+            line.transaction_type !== "gl_no"
+              ? line.transaction_type
+              : undefined,
+          currency_id: line.currency_id || undefined,
+          exchange_rate: line.exchange_rate,
+          debit: line.debit,
+          credit: line.credit,
+          description: line.description,
+          balancing_account_id: line.balancing_account_id || undefined,
+        })),
       };
 
       const method = journalId ? "PUT" : "POST";
@@ -996,6 +1023,15 @@ export default function JournalForm({
       <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
         {!readOnly && (
           <>
+            {isPosted && (
+              <button
+                type="button"
+                onClick={() => setShowNavigateModal(true)}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Navigate
+              </button>
+            )}
             {!isEditing ? (
               /* VIEW MODE BUTTONS */
               <>
@@ -1020,6 +1056,18 @@ export default function JournalForm({
             ) : (
               /* EDIT MODE BUTTONS */
               <>
+                <Button
+                  type="button"
+                  disabled={
+                    loading ||
+                    (!isBalanced && lines.every((l) => !l.balancing_account_id))
+                  }
+                  onClick={() => handlePersistAction(true)}
+                  className="px-5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm disabled:opacity-40"
+                >
+                  {loading ? "Posting..." : "Post Journal"}
+                </Button>
+
                 <Button
                   type="button"
                   onClick={() => handlePersistAction(false)}

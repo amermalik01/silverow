@@ -188,7 +188,7 @@ export class JournalService {
       );
       const sequenceCode = seqResult.rows[0].sequence_code;
 
-      console.log("sequenceCode === ", sequenceCode);
+      // console.log("sequenceCode === ", sequenceCode);
 
       // 3. Extract purely digits for integer entry_no configuration
       // const entryNo = parseInt(sequenceCode.replace(/\D/g, ""), 10) || 1;
@@ -205,11 +205,9 @@ export class JournalService {
         entry_date,
         source,
         journal_type,
-        reference,
-        description,
         is_posted
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, false)
+      VALUES ($1, $2, $3, $4, $5, false)
       RETURNING *
       `,
         [
@@ -217,17 +215,27 @@ export class JournalService {
           sequenceCode,
           payload.entry_date,
           payload.source,
-          journalType, // Added here
-          payload.reference || sequenceCode,
-          payload.description || null,
+          journalType,
+          // payload.reference || sequenceCode,
+          // payload.description || null,
         ],
       );
 
       const journal = journalResult.rows[0];
 
-      for (const line of payload.lines) {
-        await this.insertLine(client, companyId, journal.id, line);
+      for (let i = 0; i < payload.lines.length; i++) {
+        await this.insertLine(
+          client,
+          companyId,
+          journal.id,
+          payload.lines[i],
+          i + 1,
+        );
       }
+
+      // for (const line of payload.lines) {
+      //   await this.insertLine(client, companyId, journal.id, line);
+      // }
 
       await client.query("COMMIT");
 
@@ -302,17 +310,15 @@ export class JournalService {
         SET
           entry_date = $1,
           source = $2,
-          reference = $3,
-          description = $4,
           updated_at = now(),
-          entry_no = $5
-        WHERE id = $6
+          entry_no = $3
+        WHERE id = $4
         `,
         [
           payload.entry_date,
           payload.source,
-          payload.reference || null,
-          payload.description || null,
+          // payload.reference || null,
+          // payload.description || null,
           sequenceCode || null,
           id,
         ],
@@ -326,9 +332,13 @@ export class JournalService {
         [id],
       );
 
-      for (const line of payload.lines) {
-        await this.insertLine(client, companyId, id, line);
+      for (let i = 0; i < payload.lines.length; i++) {
+        await this.insertLine(client, companyId, id, payload.lines[i], i + 1);
       }
+
+      // for (const line of payload.lines) {
+      //   await this.insertLine(client, companyId, id, line);
+      // }
 
       await client.query("COMMIT");
     } catch (err) {
@@ -597,6 +607,7 @@ export class JournalService {
     companyId: string,
     journalId: string,
     line: JournalLineInput,
+    lineNo: number = 1,
   ) {
     let resolvedAccountId = line.account_id?.trim() || null;
 
@@ -646,43 +657,52 @@ export class JournalService {
     const fallbackDate = new Date().toISOString().split("T")[0];
     const finalLineDate = line.posting_date || fallbackDate;
 
+    const referenceType = line.balancing_account_id ? "G/L Account" : null;
+    const referenceId = line.balancing_account_id || null;
+
     await client.query(
       `
       INSERT INTO journal_entry_lines (
         company_id,
         journal_id,
+        line_no,
         posting_date,
-        party_type,
+        document_type,
+        document_no,
         account_id,
-        debit,
-        credit,
-        description,
         party_id,
+        party_type,
         item_id,
         warehouse_id,
         currency_id,
         exchange_rate,
+        description,
+        debit,
+        credit,
         reference_type,
         reference_id
       )
-      VALUES ($1, $2, $3, $4::sub_ledger_type, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::sub_ledger_type, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       `,
       [
         companyId,
         journalId,
+        lineNo,
         finalLineDate,
-        dbPartyType,
+        line.document_type || null,
+        line.document_no || null,
         resolvedAccountId,
-        line.debit ?? 0,
-        line.credit ?? 0,
-        line.description || null,
         line.party_id?.trim() || null,
+        dbPartyType,
         line.item_id?.trim() || null,
         line.warehouse_id?.trim() || null,
         line.currency_id?.trim() || null,
         line.currency_id?.trim() ? (line.exchange_rate ?? 1.0) : 1.0,
-        resolvedRefType,
-        resolvedRefId,
+        line.description || null,
+        line.debit ?? 0,
+        line.credit ?? 0,
+        referenceType,
+        referenceId,
       ],
     );
   }
@@ -895,9 +915,19 @@ export class JournalService {
 
       const journal = journalResult.rows[0];
 
-      for (const line of payload.lines) {
-        await this.insertLine(client, companyId, journal.id, line);
+      for (let i = 0; i < payload.lines.length; i++) {
+        await this.insertLine(
+          client,
+          companyId,
+          journal.id,
+          payload.lines[i],
+          i + 1,
+        );
       }
+
+      // for (const line of payload.lines) {
+      //   await this.insertLine(client, companyId, journal.id, line);
+      // }
 
       await client.query("COMMIT");
       return journal;
