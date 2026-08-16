@@ -2,9 +2,9 @@
 
 export type JournalSource = 
   | "GENERAL" 
-  | "CUSTOMER_JOURNAL"  // 🔥 Added
-  | "SUPPLIER_JOURNAL"  // 🔥 Added (Good to add now for the next module)
-  | "ITEM_JOURNAL"      // 🔥 Added (Good to add now for the next module)
+  | "CUSTOMER_JOURNAL"
+  | "SUPPLIER_JOURNAL"
+  | "ITEM_JOURNAL"
   | "SALES" 
   | "PURCHASE" 
   | "INVENTORY";
@@ -103,23 +103,3 @@ export interface JournalLineInput {
   reference_id?: string;
   currency_amount?: number;
 }
-
-// export interface JournalLineInput {
-//   posting_date: string;
-//   transaction_type?: "gl_no" | "customer" | "supplier" | "item"; // 🔥 Added to prevent type "any" errors
-//   account_id: string;
-//   debit?: number;
-//   credit?: number;
-//   description?: string;
-//   party_id?: string;
-//   item_id?: string;
-//   currency_id?: string;
-//   exchange_rate?: number;
-//   warehouse_id?: string;
-//   quantity?: number;
-//   unit_cost?: number;
-//   balancing_account_id: string;
-//   reference_type?: string;
-//   reference_id?: string;
-//   currency_amount?: number;
-// }

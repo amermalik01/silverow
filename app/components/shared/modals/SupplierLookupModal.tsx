@@ -27,6 +27,9 @@ export type SupplierLookupItem = {
   country?: string;
   currency_id?: string;
 
+  gl_account_payable?: string;
+  gl_account_receivable?: string;
+
   anonymous_supplier?: boolean;
   purchaser_code?: string;
   payable_bank?: string;

@@ -15,13 +15,27 @@ import {
 
 export type CustomerLookupItem = {
   id: string;
+
   customer_code?: string;
   name: string;
+
   email?: string;
   phone?: string;
+
   city?: string;
   postcode?: string;
   country?: string;
+  currency_id?: string;
+
+  gl_account_payable?: string;
+  gl_account_receivable?: string;
+
+  anonymous_supplier?: boolean;
+  purchaser_code?: string;
+  payable_bank?: string;
+  payment_terms?: string;
+  payment_method?: string;
+
   primary_address?: CustomerAddress | null;
   billing_address?: CustomerAddress | null;
   shipping_address?: CustomerAddress | null;

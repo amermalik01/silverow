@@ -9,7 +9,6 @@ import { Icon } from "@iconify/react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 
-// Lookup Modal Imports
 import GLAccountLookupModal, {
   GLAccountLookupRecord,
 } from "@/app/components/shared/modals/GLAccountLookupModal";
@@ -42,6 +41,7 @@ export type LineAllocationItem = {
 type JournalLineRow = {
   posting_date: string;
   document_type: string;
+  document_no: string;
   transaction_type: "gl_no" | "customer" | "supplier";
   account_id: string;
   party_id: string;
@@ -60,6 +60,7 @@ type JournalLineRow = {
 interface ApiJournalLine {
   posting_date: string;
   document_type: string;
+  document_no: string;
   account_id: string;
   party_id: string;
   party_type: string;
@@ -143,7 +144,6 @@ export default function JournalForm({
     target: "gl" | "customer" | "supplier";
   } | null>(null);
 
-  // Modal state for allocation drawer
   const [allocationModalIndex, setAllocationModalIndex] = useState<
     number | null
   >(null);
@@ -160,6 +160,7 @@ export default function JournalForm({
       posting_date:
         metadata.entry_date || new Date().toISOString().split("T")[0],
       document_type: isGeneral ? "General Journal" : "Payment",
+      document_no: "",
       transaction_type: isGeneral
         ? "gl_no"
         : (journalType as "customer" | "supplier"),
@@ -171,9 +172,9 @@ export default function JournalForm({
       credit: 0,
       description: "",
       balancing_account_id: "",
+      balancing_display_name: "",
       display_code: "",
       display_name: "",
-      balancing_display_name: "",
       allocations: [],
     };
   };
@@ -202,12 +203,10 @@ export default function JournalForm({
     return false;
   };
 
-  // Corrected double-entry balance calculation incorporating balancing accounts for both debits & credits
   const totalDebitConverted = lines.reduce((sum, line) => {
     const rate = Number(line.exchange_rate || 1.0);
     const lineDebit = Number(line.debit || 0);
 
-    // If a balancing account is selected, a primary credit acts as a balancing debit
     if (line.balancing_account_id && line.balancing_account_id.trim() !== "") {
       const balancingDebit = Number(line.credit || 0);
       const activeDebit = lineDebit > 0 ? lineDebit : balancingDebit;
@@ -221,7 +220,6 @@ export default function JournalForm({
     const rate = Number(line.exchange_rate || 1.0);
     const lineCredit = Number(line.credit || 0);
 
-    // If a balancing account is selected, a primary debit acts as a balancing credit
     if (line.balancing_account_id && line.balancing_account_id.trim() !== "") {
       const balancingCredit = Number(line.debit || 0);
       const activeCredit = lineCredit > 0 ? lineCredit : balancingCredit;
@@ -299,6 +297,7 @@ export default function JournalForm({
                 document_type:
                   l.document_type ||
                   (isGeneral ? "General Journal" : "Payment"),
+                document_no: l.document_no,
                 transaction_type: txType,
                 account_id: l.account_id || "",
                 party_id: l.party_id || l.supplier_id || l.customer_id || "",
@@ -307,10 +306,12 @@ export default function JournalForm({
                 debit: Number(l.debit || 0),
                 credit: Number(l.credit || 0),
                 description: l.description || "",
-                balancing_account_id:
-                  l.reference_id || l.balancing_account_id || "",
                 display_code: dispCode,
                 display_name: dispName,
+
+                balancing_account_id:
+                  l.reference_id || l.balancing_account_id || "",
+
                 balancing_display_name: l.balancing_account_name
                   ? `${l.balancing_account_code || ""} - ${l.balancing_account_name}`
                   : "",
@@ -371,33 +372,105 @@ export default function JournalForm({
     setLines(updated);
   };
 
-  const handleModalSelection = (selectedRecord: {
+  const fetchGLAccountDetails = async (accountId: string) => {
+    if (!accountId) return null;
+
+    try {
+      const res = await fetch(`/api/finance/accounts/${accountId}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return {
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        displayName: `${data.code} - ${data.name}`,
+      };
+    } catch (err) {
+      console.error("Failed to fetch GL Account details:", err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModalSelection = async (selectedRecord: {
     id: string;
     code?: string;
     name: string;
+    currency_id?: string;
+    gl_account_receivable?: string;
+    gl_account_payable?: string;
   }) => {
     if (!activeModal) return;
-    const { index, type } = activeModal;
+
+    const { index, type, target } = activeModal;
     const updated = [...lines];
+    const targetLine = { ...updated[index] };
 
     if (type === "main_account") {
-      if (updated[index].transaction_type === "gl_no") {
-        updated[index].account_id = selectedRecord.id;
-        updated[index].party_id = "";
+      if (targetLine.transaction_type === "gl_no") {
+        targetLine.account_id = selectedRecord.id;
+        targetLine.party_id = "";
       } else {
-        updated[index].account_id = "";
-        updated[index].party_id = selectedRecord.id;
+        targetLine.account_id = "";
+        targetLine.party_id = selectedRecord.id;
       }
 
-      updated[index].display_code = selectedRecord.code || "";
-      updated[index].display_name = selectedRecord.name;
+      targetLine.display_code = selectedRecord.code || "";
+      targetLine.display_name = selectedRecord.name;
+
+      if (selectedRecord.currency_id && !targetLine.currency_id) {
+        targetLine.currency_id = selectedRecord.currency_id;
+        const matchedCurr = currencies.find(
+          (c) => c.id === selectedRecord.currency_id,
+        );
+        if (matchedCurr) {
+          targetLine.exchange_rate = Number(matchedCurr.exchange_rate);
+        }
+      }
+
+      if (target === "customer") {
+        targetLine.balancing_account_id =
+          selectedRecord.gl_account_receivable || "";
+
+        if (targetLine.balancing_account_id) {
+          const glAccount = await fetchGLAccountDetails(
+            targetLine.balancing_account_id,
+          );
+          if (glAccount) {
+            targetLine.balancing_display_name = glAccount.displayName;
+          }
+        }
+      } else if (target === "supplier") {
+        targetLine.balancing_account_id =
+          selectedRecord.gl_account_payable || "";
+
+        if (targetLine.balancing_account_id) {
+          const glAccount = await fetchGLAccountDetails(
+            targetLine.balancing_account_id,
+          );
+          if (glAccount) {
+            targetLine.balancing_display_name = glAccount.displayName;
+          }
+        }
+      }
     } else if (type === "balancing_account") {
-      updated[index].balancing_account_id = selectedRecord.id;
-      updated[index].balancing_display_name = selectedRecord.code
+      if (target === "customer") {
+        targetLine.balancing_account_id =
+          selectedRecord.gl_account_receivable || "";
+      } else if (target === "supplier") {
+        targetLine.balancing_account_id =
+          selectedRecord.gl_account_payable || "";
+      } else {
+        targetLine.balancing_account_id = selectedRecord.id;
+      }
+
+      targetLine.balancing_display_name = selectedRecord.code
         ? `${selectedRecord.code} - ${selectedRecord.name}`
         : selectedRecord.name;
     }
 
+    updated[index] = targetLine;
     setLines(updated);
     setActiveModal(null);
   };
@@ -484,6 +557,7 @@ export default function JournalForm({
         return {
           posting_date: line.posting_date,
           document_type: line.document_type,
+          document_no: line.document_no,
           account_id: line.account_id || null,
           party_id: line.party_id || null,
           party_type:
@@ -545,7 +619,6 @@ export default function JournalForm({
         </div>
       )}
 
-      {/* HEADER METADATA WORKSPACE */}
       <div className="flex flex-wrap items-center gap-6 bg-white p-3 rounded shadow-sm border border-zinc-200">
         <div className="flex items-center gap-2">
           <span className="font-medium text-zinc-600">Journal No.</span>
@@ -648,7 +721,6 @@ export default function JournalForm({
                       onChange={(e) =>
                         handleLineChange(index, "document_type", e.target.value)
                       }
-                      // className="w-full border p-1 rounded bg-white text-zinc-700"
                       className="w-full border p-1 rounded bg-white text-zinc-700 disabled:bg-zinc-100 disabled:text-zinc-500"
                     >
                       {isGeneral ? (
@@ -667,19 +739,20 @@ export default function JournalForm({
                       )}
                     </select>
                   </td>
+
                   <td className="p-1.5">
                     <input
                       type="text"
                       disabled={formDisabled}
                       placeholder="REF"
-                      value={metadata.reference}
+                      value={line.document_no}
                       onChange={(e) =>
-                        setMetadata({ ...metadata, reference: e.target.value })
+                        handleLineChange(index, "document_no", e.target.value)
                       }
-                      // className="w-full border p-1 rounded text-center capitalize font-mono"
                       className="w-full border bg-white p-1 rounded text-center capitalize font-mono disabled:bg-zinc-100 disabled:text-zinc-500"
                     />
                   </td>
+
                   <td className="p-1.5">
                     <select
                       disabled={formDisabled || journalType !== "general"}
@@ -691,7 +764,6 @@ export default function JournalForm({
                           e.target.value,
                         )
                       }
-                      // className="w-full border p-1 rounded bg-white text-zinc-700 font-semibold"
                       className="w-full border p-1 rounded bg-white text-zinc-700 font-semibold disabled:bg-zinc-100 disabled:text-zinc-500"
                     >
                       <option value="gl_no">G/L No.</option>
@@ -727,7 +799,6 @@ export default function JournalForm({
                                 : line.transaction_type,
                           })
                         }
-                        // className="px-2 bg-zinc-200 hover:bg-zinc-300 border text-zinc-700 rounded font-semibold transition"
                         className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                       >
                         <Icon icon="tabler:external-link" className="w-4 h-4" />
@@ -844,7 +915,6 @@ export default function JournalForm({
                     </div>
                   </td>
 
-                  {/* 🌟 ALLOCATE AMOUNT BUTTON COLUMN */}
                   <td className="p-1.5 ">
                     <div className="flex flex-row gap-1">
                       {isPartyLine ? (
@@ -887,17 +957,6 @@ export default function JournalForm({
         </table>
       </div>
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 bg-white rounded border border-zinc-200">
-        {/* <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={formDisabled}
-          onClick={addLineRow}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-        >
-          Add Line
-        </Button> */}
-
         {!formDisabled && (
           <div className="flex justify-start">
             <Button
@@ -934,7 +993,6 @@ export default function JournalForm({
         </div>
       </div>
 
-      {/* PERSISTENT BOTTOM ACTION DRAWER */}
       <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
         {!readOnly && (
           <>
@@ -986,7 +1044,84 @@ export default function JournalForm({
         )}
       </div>
 
-      {/* <div className="flex justify-end gap-2 pt-2">
+      {activeModal?.target === "gl" && (
+        <GLAccountLookupModal
+          open={true}
+          onClose={() => setActiveModal(null)}
+          onSelect={(rec: GLAccountLookupRecord) =>
+            handleModalSelection({
+              id: rec.id,
+              code: rec.code,
+              name: rec.name,
+            })
+          }
+        />
+      )}
+
+      {activeModal?.target === "customer" && (
+        <CustomerLookupModal
+          open={true}
+          onClose={() => setActiveModal(null)}
+          onSelect={(rec: CustomerLookupItem) =>
+            handleModalSelection({
+              id: rec.id,
+              code: rec.customer_code || "CUST",
+              name: rec.name,
+              currency_id: rec.currency_id,
+              gl_account_receivable: rec.gl_account_receivable,
+            })
+          }
+        />
+      )}
+
+      {activeModal?.target === "supplier" && (
+        <SupplierLookupModal
+          open={true}
+          onClose={() => setActiveModal(null)}
+          onSelect={(rec: SupplierLookupItem) =>
+            handleModalSelection({
+              id: rec.id,
+              code: rec.supplier_code || "SUPP",
+              name: rec.name,
+              currency_id: rec.currency_id,
+              gl_account_payable: rec.gl_account_payable,
+            })
+          }
+        />
+      )}
+
+      {/* 🌟 INLINE JOURNAL PAYMENT ALLOCATION MODAL */}
+      {allocationModalIndex !== null && activeAllocationLine && (
+        <AllocateJournalPaymentModal
+          isOpen={true}
+          onClose={() => setAllocationModalIndex(null)}
+          vendorId={activeAllocationLine.party_id}
+          paymentAmount={
+            activeAllocationLine.debit > 0
+              ? activeAllocationLine.debit
+              : activeAllocationLine.credit
+          }
+          initialAllocations={activeAllocationLine.allocations || []}
+          onApplyAllocations={(allocations) => {
+            handleLineChange(allocationModalIndex, "allocations", allocations);
+          }}
+        />
+      )}
+
+      {isPosted && journalId && (
+        <PostedTransactionsModal
+          isOpen={showNavigateModal}
+          onClose={() => setShowNavigateModal(false)}
+          journalId={journalId}
+          journalNo={metadata.entry_no}
+        />
+      )}
+    </div>
+  );
+}
+
+{
+  /* <div className="flex justify-end gap-2 pt-2">
         {!formDisabled && (
           <>
             <Button
@@ -1030,76 +1165,5 @@ export default function JournalForm({
         >
           {isPosted ? "Back" : "Cancel"}
         </Button>
-      </div> */}
-
-      {activeModal?.target === "gl" && (
-        <GLAccountLookupModal
-          open={true}
-          onClose={() => setActiveModal(null)}
-          onSelect={(rec: GLAccountLookupRecord) =>
-            handleModalSelection({
-              id: rec.id,
-              code: rec.code,
-              name: rec.name,
-            })
-          }
-        />
-      )}
-
-      {activeModal?.target === "customer" && (
-        <CustomerLookupModal
-          open={true}
-          onClose={() => setActiveModal(null)}
-          onSelect={(rec: CustomerLookupItem) =>
-            handleModalSelection({
-              id: rec.id,
-              code: rec.customer_code || "CUST",
-              name: rec.name,
-            })
-          }
-        />
-      )}
-
-      {activeModal?.target === "supplier" && (
-        <SupplierLookupModal
-          open={true}
-          onClose={() => setActiveModal(null)}
-          onSelect={(rec: SupplierLookupItem) =>
-            handleModalSelection({
-              id: rec.id,
-              code: rec.supplier_code || "SUPP",
-              name: rec.name,
-            })
-          }
-        />
-      )}
-
-      {/* 🌟 INLINE JOURNAL PAYMENT ALLOCATION MODAL */}
-      {allocationModalIndex !== null && activeAllocationLine && (
-        <AllocateJournalPaymentModal
-          isOpen={true}
-          onClose={() => setAllocationModalIndex(null)}
-          vendorId={activeAllocationLine.party_id}
-          paymentAmount={
-            activeAllocationLine.debit > 0
-              ? activeAllocationLine.debit
-              : activeAllocationLine.credit
-          }
-          initialAllocations={activeAllocationLine.allocations || []}
-          onApplyAllocations={(allocations) => {
-            handleLineChange(allocationModalIndex, "allocations", allocations);
-          }}
-        />
-      )}
-
-      {isPosted && journalId && (
-        <PostedTransactionsModal
-          isOpen={showNavigateModal}
-          onClose={() => setShowNavigateModal(false)}
-          journalId={journalId}
-          journalNo={metadata.entry_no}
-        />
-      )}
-    </div>
-  );
+      </div> */
 }
