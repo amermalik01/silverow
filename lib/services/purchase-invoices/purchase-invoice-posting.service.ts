@@ -7,7 +7,7 @@ import {
   GLLineInput,
 } from "@/lib/services/gl/gl-posting.service";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
-
+import { VendorLedgerService } from "../ledger/vendor-ledger.service";
 
 export interface PostInvoiceInput {
   companyId: string;
@@ -68,7 +68,8 @@ export class PurchaseInvoicePostingService {
 
       // 2. 🌟 ENFORCE 3-WAY MATCHING (Scenario A: Goods-First Workflow)
       const stockLines = lines.filter(
-        (line) => line.line_type === "ITEM" || (!line.line_type && !!line.item_id),
+        (line) =>
+          line.line_type === "ITEM" || (!line.line_type && !!line.item_id),
       );
 
       const unreceivedLines = stockLines.filter(
@@ -306,7 +307,7 @@ export class PurchaseInvoicePostingService {
       GLValidationService.validateBalanced(glLines);
 
       // 9. Post journal entry with currency details
-      await GLPostingService.postJournal(client, {
+      const journal = await GLPostingService.postJournal(client, {
         company_id: companyId,
         entry_date: invoiceDate,
         source: "PURCHASE",
@@ -319,6 +320,34 @@ export class PurchaseInvoicePostingService {
         created_by: userId || null,
         lines: glLines,
       });
+
+      // 10. Post Vendor Sub-Ledger Entry
+      const vendorLedgerEntry = await VendorLedgerService.createEntry(client, {
+        companyId,
+        vendorId: po.supplier_id,
+        documentType: "PURCHASE_INVOICE",
+        documentId: createdInvoice.id,
+        documentNo: createdInvoice.invoice_no,
+        postingDate: invoiceDate,
+        dueDate,
+        description: `Invoice ${createdInvoice.invoice_no} (Vendor Ref: ${invoiceData.supplier_invoice_no})`,
+        originalAmount: grossTotal,
+        currencyId,
+        exchangeRate,
+        journalEntryId: journal.id,
+      });
+
+      // 3. Optional: If payments/prepayments were pre-selected during invoice posting, call AllocationService
+      // if (allocations && allocations.length > 0) {
+      //   await AllocationService.applyAP(
+      //     client,
+      //     companyId,
+      //     paymentLedgerId,
+      //     po.supplier_id,
+      //     allocations,
+      //     userId,
+      //   );
+      // }
 
       // 10. Mark Purchase Order completed
       await client.query(

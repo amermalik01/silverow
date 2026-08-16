@@ -52,9 +52,9 @@ export async function PUT(
     const balancedPayload = {
       entry_date: body.entry_date,
       source: "SUPPLIER_JOURNAL" as const,
-      reference: body.reference,
-      description: body.description,
-      lines: body.lines,
+      reference: body.reference || null,
+      description: body.description || null,
+      lines: body.lines || [],
     };
 
     // 1. Persist updates to the journal entry and lines draft

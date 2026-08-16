@@ -497,6 +497,11 @@ export default function JournalForm({
     setIsEditing(false);
   };
 
+  // Callback function when allocations are applied from modal
+  const handleApplyAllocations = (index: number, newAllocations: LineAllocationItem[]) => {
+    handleLineChange(index, "allocations", newAllocations);
+  };
+
   const handlePersistAction = async (postToLedger: boolean = false) => {
     if (formDisabled) return;
     setErrorMsg(null);
@@ -601,11 +606,13 @@ export default function JournalForm({
               ? line.transaction_type
               : undefined,
           currency_id: line.currency_id || undefined,
-          exchange_rate: line.exchange_rate,
+          exchange_rate: Number(line.exchange_rate || 1.0),
           debit: line.debit,
           credit: line.credit,
+          currency_amount: Number(((line.debit > 0 ? line.debit : line.credit) * (Number(line.exchange_rate || 1.0))).toFixed(2)),
           description: line.description,
           balancing_account_id: line.balancing_account_id || undefined,
+          allocations: line.allocations || [],
         })),
       };
 
@@ -1138,8 +1145,46 @@ export default function JournalForm({
         />
       )}
 
-      {/* 🌟 INLINE JOURNAL PAYMENT ALLOCATION MODAL */}
-      {allocationModalIndex !== null && activeAllocationLine && (
+      {/* 🌟 INLINE JOURNAL ALLOCATION MODAL */}
+      {/* {allocationModalIndex !== null && activeAllocationLine && (
+        <AllocateJournalPaymentModal
+          isOpen={true}
+          onClose={() => setAllocationModalIndex(null)}
+          partyId={activeAllocationLine.party_id}
+          partyType={journalType === "supplier" ? "supplier" : "customer"}
+          documentType={activeAllocationLine.document_type}
+          paymentAmount={
+            activeAllocationLine.debit > 0
+              ? activeAllocationLine.debit
+              : activeAllocationLine.credit
+          }
+          initialAllocations={activeAllocationLine.allocations || []}
+          onApplyAllocations={(allocations) => {
+            handleLineChange(allocationModalIndex, "allocations", allocations);
+          }}
+        />
+      )} */}
+
+      {/* ALLOCATION MODAL BINDING */}
+      {activeAllocationLine && allocationModalIndex !== null && (
+        <AllocateJournalPaymentModal
+          isOpen={allocationModalIndex !== null}
+          onClose={() => setAllocationModalIndex(null)}
+          partyId={activeAllocationLine.party_id}
+          partyType={activeAllocationLine.transaction_type as "supplier" | "customer"}
+          documentType={activeAllocationLine.document_type}
+          paymentAmount={
+            activeAllocationLine.debit > 0
+              ? activeAllocationLine.debit
+              : activeAllocationLine.credit
+          }
+          initialAllocations={activeAllocationLine.allocations || []}
+          onApplyAllocations={(allocations) =>
+            handleApplyAllocations(allocationModalIndex, allocations)
+          }
+        />
+      )}
+      {/* {allocationModalIndex !== null && activeAllocationLine && (
         <AllocateJournalPaymentModal
           isOpen={true}
           onClose={() => setAllocationModalIndex(null)}
@@ -1154,7 +1199,7 @@ export default function JournalForm({
             handleLineChange(allocationModalIndex, "allocations", allocations);
           }}
         />
-      )}
+      )} */}
 
       {isPosted && journalId && (
         <PostedTransactionsModal

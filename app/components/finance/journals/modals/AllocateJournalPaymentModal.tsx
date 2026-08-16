@@ -11,6 +11,212 @@ export interface LineAllocationItem {
   amount: number;
 }
 
+interface OpenDocument {
+  id: string;
+  document_no: string;
+  document_type: string;
+  posting_date: string;
+  original_amount: number;
+  remaining_amount: number;
+}
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  partyId: string;
+  partyType: "supplier" | "customer";
+  documentType: string; // e.g., "Payment", "Refund"
+  paymentAmount: number;
+  initialAllocations?: LineAllocationItem[];
+  onApplyAllocations: (allocations: LineAllocationItem[]) => void;
+}
+
+export default function AllocateJournalPaymentModal({
+  isOpen,
+  onClose,
+  partyId,
+  partyType,
+  documentType,
+  paymentAmount,
+  initialAllocations = [],
+  onApplyAllocations,
+}: Props) {
+  const { show, hide } = useLoader();
+  const [documents, setDocuments] = useState<OpenDocument[]>([]);
+
+  const isSupplier = partyType === "supplier";
+  const isRefund = documentType?.toLowerCase() === "refund";
+
+  // Dynamic modal title based on context
+  const targetDocLabel = isSupplier
+    ? isRefund
+      ? "Debit Notes"
+      : "Purchase Invoices"
+    : isRefund
+    ? "Credit Notes"
+    : "Sales Invoices";
+
+  const [allocations, setAllocations] = useState<Record<string, number>>(() => {
+    const initialMap: Record<string, number> = {};
+    initialAllocations.forEach((item) => {
+      initialMap[item.invoice_ledger_id] = item.amount;
+    });
+    return initialMap;
+  });
+
+  useEffect(() => {
+    if (isOpen && partyId) {
+      let isMounted = true;
+      const targetDocType = isRefund ? (isSupplier ? "DEBIT_NOTE" : "CREDIT_NOTE") : "INVOICE";
+
+      try {
+        show("Fetching Records...");
+        fetch(`/api/finance/${partyType}s/${partyId}/open-documents?docType=${targetDocType}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (isMounted) {
+              setDocuments(Array.isArray(data) ? data : []);
+            }
+          })
+          .catch((err) => console.error("Error fetching open documents:", err));
+
+        return () => {
+          isMounted = false;
+        };
+      } catch (err) {
+        console.error("Error loading allocation data:", err);
+      } finally {
+        hide();
+      }
+    }
+  }, [isOpen, partyId, partyType, isRefund]);
+
+  if (!isOpen) return null;
+
+  const totalAllocated = Object.values(allocations).reduce((sum, v) => sum + (v || 0), 0);
+  const remainingToAllocate = paymentAmount - totalAllocated;
+
+  const handleAmountChange = (docId: string, val: number, maxRem: number) => {
+    const clamped = Math.min(Math.max(0, val), maxRem);
+    setAllocations((prev) => ({ ...prev, [docId]: clamped }));
+  };
+
+  const handleSave = () => {
+    const result: LineAllocationItem[] = Object.entries(allocations)
+      .filter(([_, amount]) => amount > 0)
+      .map(([invoice_ledger_id, amount]) => ({ invoice_ledger_id, amount }));
+
+    onApplyAllocations(result);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 text-xs">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-4 space-y-4">
+        <div className="flex justify-between items-center border-b pb-2">
+          <h2 className="font-bold text-sm text-zinc-800">
+            Allocate {documentType || "Transaction"} to {targetDocLabel}
+          </h2>
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-800">
+            ✕
+          </button>
+        </div>
+
+        <div className="overflow-x-auto max-h-72 border rounded">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-zinc-100 font-semibold text-zinc-600">
+              <tr>
+                <th className="p-2">Date</th>
+                <th className="p-2">Document No.</th>
+                <th className="p-2">Type</th>
+                <th className="p-2 text-right">Original</th>
+                <th className="p-2 text-right">Remaining</th>
+                <th className="p-2 w-32 text-right">Allocate Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y font-mono">
+              {documents.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-4 text-center text-zinc-400">
+                    No open {targetDocLabel.toLowerCase()} available for allocation.
+                  </td>
+                </tr>
+              ) : (
+                documents.map((doc) => (
+                  <tr key={doc.id}>
+                    <td className="p-2">{doc.posting_date}</td>
+                    <td className="p-2 font-bold">{doc.document_no}</td>
+                    <td className="p-2 text-zinc-500">{doc.document_type}</td>
+                    <td className="p-2 text-right">
+                      ${Number(doc.original_amount).toFixed(2)}
+                    </td>
+                    <td className="p-2 text-right">
+                      ${Number(doc.remaining_amount).toFixed(2)}
+                    </td>
+                    <td className="p-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="w-full border p-1 rounded text-right bg-white"
+                        value={allocations[doc.id] || ""}
+                        onChange={(e) =>
+                          handleAmountChange(
+                            doc.id,
+                            parseFloat(e.target.value) || 0,
+                            doc.remaining_amount
+                          )
+                        }
+                      />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex items-center justify-between bg-zinc-50 p-2 rounded border font-mono">
+          <div>
+            Transaction Amount: <strong>${paymentAmount.toFixed(2)}</strong>
+          </div>
+          <div>
+            Allocated:{" "}
+            <strong className="text-emerald-600">
+              ${totalAllocated.toFixed(2)}
+            </strong>
+          </div>
+          <div>
+            Remaining: <strong>${remainingToAllocate.toFixed(2)}</strong>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={totalAllocated <= 0 || remainingToAllocate < 0}
+          >
+            Confirm Allocation
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
+
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useLoader } from "@/app/context/LoaderContext";
+
+export interface LineAllocationItem {
+  invoice_ledger_id: string;
+  amount: number;
+}
+
 interface OpenInvoice {
   id: string;
   document_no: string;
@@ -76,21 +282,6 @@ export default function AllocateJournalPaymentModal({
     }
   }, [isOpen, vendorId]);
 
-  /* useEffect(() => {
-    if (isOpen && vendorId) {
-      // Initialize existing line allocations into local map state
-      const initialMap: Record<string, number> = {};
-      initialAllocations.forEach((item) => {
-        initialMap[item.invoice_ledger_id] = item.amount;
-      });
-      setAllocations(initialMap);
-
-      // Fetch open invoices for this supplier
-      fetch(`/api/finance/suppliers/${vendorId}/open-invoices`)
-        .then((res) => res.json())
-        .then((data) => setInvoices(data || []));
-    }
-  }, [isOpen, vendorId]); */
 
   if (!isOpen) return null;
 
@@ -205,4 +396,4 @@ export default function AllocateJournalPaymentModal({
       </div>
     </div>
   );
-}
+} */

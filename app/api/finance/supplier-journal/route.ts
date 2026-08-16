@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
     const balancedPayload = {
       entry_date: body.entry_date,
       source: "SUPPLIER_JOURNAL" as const, // Triggers "supplier_journal" sequence rules (Prefix: SJ)
-      reference: body.reference,
-      description: body.description,
-      lines: body.lines, // Handles multiple rows balancing debts/credits dynamically from UI form
+      reference: body.reference || null,
+      description: body.description || null,
+      lines: body.lines || [], // Handles multiple rows balancing debts/credits dynamically from UI form
     };
 
     const result = await JournalService.create(companyId, balancedPayload);

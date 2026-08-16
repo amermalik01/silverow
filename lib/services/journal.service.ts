@@ -161,6 +161,24 @@ export class JournalService {
     return "general"; // Default fallback for GENERAL / GL_JOURNAL
   }
 
+  private static async getNextSequenceCode(
+    client: PoolClient,
+    companyId: string,
+    source: string,
+  ): Promise<string> {
+    const moduleKey =
+      source === "GENERAL"
+        ? this.getModuleKey("gl_journal")
+        : this.getModuleKey(source);
+
+    const seqResult = await client.query(
+      `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
+      [companyId, moduleKey],
+    );
+
+    return seqResult.rows[0].sequence_code;
+  }
+
   /**
    * CREATE
    */
@@ -176,40 +194,45 @@ export class JournalService {
       this.validateLines(payload.lines, payload.source);
 
       // 1. Get sequence module key
-      const moduleKey =
-        payload.source == "GENERAL"
-          ? this.getModuleKey("gl_journal")
-          : this.getModuleKey(payload.source);
-
-      // 2. Fetch the formatted sequence string
-      const seqResult = await client.query(
-        `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
-        [companyId, moduleKey],
+      const sequenceCode = await this.getNextSequenceCode(
+        client,
+        companyId,
+        payload.source,
       );
-      const sequenceCode = seqResult.rows[0].sequence_code;
+      // const moduleKey =
+      //   payload.source == "GENERAL"
+      //     ? this.getModuleKey("gl_journal")
+      //     : this.getModuleKey(payload.source);
+
+      // // 2. Fetch the formatted sequence string
+      // const seqResult = await client.query(
+      //   `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
+      //   [companyId, moduleKey],
+      // );
+      // const sequenceCode = seqResult.rows[0].sequence_code;
 
       // console.log("sequenceCode === ", sequenceCode);
 
       // 3. Extract purely digits for integer entry_no configuration
       // const entryNo = parseInt(sequenceCode.replace(/\D/g, ""), 10) || 1;
 
-      // 4. Resolve the lowercase journal type string ("general", "customer", etc.)
+      // 2. Resolve journal type
       const journalType = this.getJournalType(payload.source);
 
-      // 5. ✅ FIXED: Added journal_type column and values parameter map pointer
+      // 3. Insert Header
       const journalResult = await client.query(
         `
-      INSERT INTO journal_entries (
-        company_id,
-        entry_no,
-        entry_date,
-        source,
-        journal_type,
-        is_posted
-      )
-      VALUES ($1, $2, $3, $4, $5, false)
-      RETURNING *
-      `,
+        INSERT INTO journal_entries (
+          company_id,
+          entry_no,
+          entry_date,
+          source,
+          journal_type,
+          is_posted
+        )
+        VALUES ($1, $2, $3, $4, $5, false)
+        RETURNING *
+        `,
         [
           companyId,
           sequenceCode,
@@ -347,255 +370,6 @@ export class JournalService {
       throw err;
     } finally {
       client.release();
-    }
-  }
-
-  /**
-   * POST - Validates accounting rules, expands balancing legs, and writes entries to gl_ledger_entries
-   */
-  static async post(companyId: string, id: string): Promise<void> {
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      // 1. Fetch draft header & lock row
-      const journalResult = await client.query(
-        `
-        SELECT id, entry_no, entry_date, source, reference, description, is_posted
-        FROM journal_entries
-        WHERE id = $1 AND company_id = $2
-        FOR UPDATE
-        `,
-        [id, companyId],
-      );
-
-      if (journalResult.rows.length === 0) {
-        throw new Error("Journal entry not found.");
-      }
-
-      const journal = journalResult.rows[0];
-
-      if (journal.is_posted) {
-        throw new Error(
-          "This journal entry has already been posted to the ledgers.",
-        );
-      }
-
-      // 🛡️ VALIDATION 1: Enforce Posting Date Restrictions (Accounting Period Gatekeeper)
-      const formattedDate =
-        journal.entry_date instanceof Date
-          ? journal.entry_date.toISOString().split("T")[0]
-          : String(journal.entry_date);
-
-      const gateCheck = await validateLedgerPostingDate(
-        companyId,
-        formattedDate,
-      );
-      if (!gateCheck.allowed) {
-        throw new Error(gateCheck.reason);
-      }
-
-      // 2. Fetch draft lines
-      const linesResult = await client.query(
-        `
-        SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate, reference_id
-        FROM journal_entry_lines
-        WHERE journal_id = $1 AND company_id = $2
-        `,
-        [id, companyId],
-      );
-
-      if (linesResult.rows.length === 0) {
-        throw new Error("Cannot post a journal entry with zero lines.");
-      }
-
-      // 3. Expand single UI lines into balanced pairs (Primary Leg + Balancing Leg)
-      const expandedLegs: Array<{
-        account_id: string;
-        party_type: string | null;
-        party_id: string | null;
-        description: string | null;
-        debit: number;
-        credit: number;
-      }> = [];
-
-      for (const line of linesResult.rows) {
-        const rate = Number(line.exchange_rate || 1.0);
-        const debitLCY = Number((Number(line.debit || 0) * rate).toFixed(2));
-        const creditLCY = Number((Number(line.credit || 0) * rate).toFixed(2));
-
-        // 🛡️ VALIDATION 2: Zero Amount Check
-        if (debitLCY === 0 && creditLCY === 0) {
-          throw new Error(
-            "Every line entry must have a debit or credit value greater than zero.",
-          );
-        }
-
-        // Resolve main G/L Account if it's missing but a sub-ledger party is present
-        let mainAccountId = line.account_id;
-        if (!mainAccountId && line.party_id) {
-          if (
-            line.party_type === "supplier" ||
-            journal.source === "SUPPLIER_JOURNAL"
-          ) {
-            const ppg = await client.query(
-              `SELECT payable_account_id FROM purchase_posting_groups WHERE company_id = $1 LIMIT 1`,
-              [companyId],
-            );
-            mainAccountId = ppg.rows[0]?.payable_account_id;
-          } else if (
-            line.party_type === "customer" ||
-            journal.source === "CUSTOMER_JOURNAL"
-          ) {
-            const spg = await client.query(
-              `SELECT receivable_account_id FROM sales_posting_groups WHERE company_id = $1 LIMIT 1`,
-              [companyId],
-            );
-            mainAccountId = spg.rows[0]?.receivable_account_id;
-          }
-        }
-
-        if (!mainAccountId) {
-          throw new Error(
-            `Line is missing a valid G/L Account binding target.`,
-          );
-        }
-
-        // 🛡️ VALIDATION 3: G/L Account Active & Posting Status
-        await GLValidationService.validateAccount(client, mainAccountId);
-
-        // Add Primary Leg
-        expandedLegs.push({
-          account_id: mainAccountId,
-          party_type: line.party_type || null,
-          party_id: line.party_id || null,
-          description: line.description || journal.description || null,
-          debit: debitLCY,
-          credit: creditLCY,
-        });
-
-        // Add Offsetting Balancing Leg if inline reference_id exists
-        if (line.reference_id) {
-          await GLValidationService.validateAccount(client, line.reference_id);
-
-          expandedLegs.push({
-            account_id: line.reference_id,
-            party_type: null,
-            party_id: null,
-            description: line.description
-              ? `Balancing: ${line.description}`
-              : journal.description || null,
-            debit: creditLCY, // Inverted: line credit becomes balancing debit
-            credit: debitLCY, // Inverted: line debit becomes balancing credit
-          });
-        }
-      }
-
-      // 🛡️ VALIDATION 4: Total Double-Entry Balance Check
-      GLValidationService.validateBalanced(expandedLegs);
-
-      // 4. Sequence Keys
-      const txKeyResult = await client.query(
-        "SELECT nextval('gl_transaction_id_seq') AS tx_id",
-      );
-      const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
-
-      let vatTransactionId: number | null = null;
-      const vatSettlementId: number | null = null;
-
-      if (
-        journal.source === "VAT_POSTING" ||
-        journal.source === "SALES" ||
-        journal.source === "PURCHASE"
-      ) {
-        const vatKeyResult = await client.query(
-          "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
-        );
-        vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
-      }
-
-      // 5. Bulk insert validated legs into gl_ledger_entries
-      for (const leg of expandedLegs) {
-        await client.query(
-          `
-          INSERT INTO gl_ledger_entries (
-            company_id,
-            account_id,
-            transaction_id,
-            vat_transaction_id,
-            vat_settlement_transaction_id,
-            source_journal_id,
-            entry_no,
-            posting_date,
-            source_type,
-            reference,
-            description,
-            debit,
-            credit,
-            party_type,
-            party_id,
-            posted_at
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())
-          `,
-          [
-            companyId,
-            leg.account_id,
-            nextTransactionId,
-            vatTransactionId,
-            vatSettlementId,
-            journal.id,
-            journal.entry_no,
-            formattedDate,
-            journal.source,
-            journal.reference || null,
-            leg.description,
-            leg.debit,
-            leg.credit,
-            leg.party_type,
-            leg.party_id,
-          ],
-        );
-      }
-
-      // 6. Update Header status
-      await client.query(
-        `
-        UPDATE journal_entries
-        SET
-          is_posted = true,
-          posted_at = now(),
-          updated_at = now()
-        WHERE id = $1 AND company_id = $2
-        `,
-        [id, companyId],
-      );
-
-      await client.query("COMMIT");
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
-  }
-
-  /**
-   * DELETE
-   */
-  static async delete(companyId: string, id: string): Promise<void> {
-    const result = await pool.query(
-      `
-      DELETE FROM journal_entries
-      WHERE id = $1
-      AND company_id = $2
-      `,
-      [id, companyId],
-    );
-
-    if (!result.rowCount) {
-      throw new Error("Journal not found");
     }
   }
 
@@ -936,6 +710,255 @@ export class JournalService {
       throw err;
     } finally {
       client.release();
+    }
+  }
+
+  /**
+   * POST - Validates accounting rules, expands balancing legs, and writes entries to gl_ledger_entries
+   */
+  static async post(companyId: string, id: string): Promise<void> {
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      // 1. Fetch draft header & lock row
+      const journalResult = await client.query(
+        `
+        SELECT id, entry_no, entry_date, source, reference, description, is_posted
+        FROM journal_entries
+        WHERE id = $1 AND company_id = $2
+        FOR UPDATE
+        `,
+        [id, companyId],
+      );
+
+      if (journalResult.rows.length === 0) {
+        throw new Error("Journal entry not found.");
+      }
+
+      const journal = journalResult.rows[0];
+
+      if (journal.is_posted) {
+        throw new Error(
+          "This journal entry has already been posted to the ledgers.",
+        );
+      }
+
+      // 🛡️ VALIDATION 1: Enforce Posting Date Restrictions (Accounting Period Gatekeeper)
+      const formattedDate =
+        journal.entry_date instanceof Date
+          ? journal.entry_date.toISOString().split("T")[0]
+          : String(journal.entry_date);
+
+      const gateCheck = await validateLedgerPostingDate(
+        companyId,
+        formattedDate,
+      );
+      if (!gateCheck.allowed) {
+        throw new Error(gateCheck.reason);
+      }
+
+      // 2. Fetch draft lines
+      const linesResult = await client.query(
+        `
+        SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate, reference_id
+        FROM journal_entry_lines
+        WHERE journal_id = $1 AND company_id = $2
+        `,
+        [id, companyId],
+      );
+
+      if (linesResult.rows.length === 0) {
+        throw new Error("Cannot post a journal entry with zero lines.");
+      }
+
+      // 3. Expand single UI lines into balanced pairs (Primary Leg + Balancing Leg)
+      const expandedLegs: Array<{
+        account_id: string;
+        party_type: string | null;
+        party_id: string | null;
+        description: string | null;
+        debit: number;
+        credit: number;
+      }> = [];
+
+      for (const line of linesResult.rows) {
+        const rate = Number(line.exchange_rate || 1.0);
+        const debitLCY = Number((Number(line.debit || 0) * rate).toFixed(2));
+        const creditLCY = Number((Number(line.credit || 0) * rate).toFixed(2));
+
+        // 🛡️ VALIDATION 2: Zero Amount Check
+        if (debitLCY === 0 && creditLCY === 0) {
+          throw new Error(
+            "Every line entry must have a debit or credit value greater than zero.",
+          );
+        }
+
+        // Resolve main G/L Account if it's missing but a sub-ledger party is present
+        let mainAccountId = line.account_id;
+        if (!mainAccountId && line.party_id) {
+          if (
+            line.party_type === "supplier" ||
+            journal.source === "SUPPLIER_JOURNAL"
+          ) {
+            const ppg = await client.query(
+              `SELECT payable_account_id FROM purchase_posting_groups WHERE company_id = $1 LIMIT 1`,
+              [companyId],
+            );
+            mainAccountId = ppg.rows[0]?.payable_account_id;
+          } else if (
+            line.party_type === "customer" ||
+            journal.source === "CUSTOMER_JOURNAL"
+          ) {
+            const spg = await client.query(
+              `SELECT receivable_account_id FROM sales_posting_groups WHERE company_id = $1 LIMIT 1`,
+              [companyId],
+            );
+            mainAccountId = spg.rows[0]?.receivable_account_id;
+          }
+        }
+
+        if (!mainAccountId) {
+          throw new Error(
+            `Line is missing a valid G/L Account binding target.`,
+          );
+        }
+
+        // 🛡️ VALIDATION 3: G/L Account Active & Posting Status
+        await GLValidationService.validateAccount(client, mainAccountId);
+
+        // Add Primary Leg
+        expandedLegs.push({
+          account_id: mainAccountId,
+          party_type: line.party_type || null,
+          party_id: line.party_id || null,
+          description: line.description || journal.description || null,
+          debit: debitLCY,
+          credit: creditLCY,
+        });
+
+        // Add Offsetting Balancing Leg if inline reference_id exists
+        if (line.reference_id) {
+          await GLValidationService.validateAccount(client, line.reference_id);
+
+          expandedLegs.push({
+            account_id: line.reference_id,
+            party_type: null,
+            party_id: null,
+            description: line.description
+              ? `Balancing: ${line.description}`
+              : journal.description || null,
+            debit: creditLCY, // Inverted: line credit becomes balancing debit
+            credit: debitLCY, // Inverted: line debit becomes balancing credit
+          });
+        }
+      }
+
+      // 🛡️ VALIDATION 4: Total Double-Entry Balance Check
+      GLValidationService.validateBalanced(expandedLegs);
+
+      // 4. Sequence Keys
+      const txKeyResult = await client.query(
+        "SELECT nextval('gl_transaction_id_seq') AS tx_id",
+      );
+      const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
+
+      let vatTransactionId: number | null = null;
+      const vatSettlementId: number | null = null;
+
+      if (
+        journal.source === "VAT_POSTING" ||
+        journal.source === "SALES" ||
+        journal.source === "PURCHASE"
+      ) {
+        const vatKeyResult = await client.query(
+          "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
+        );
+        vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
+      }
+
+      // 5. Bulk insert validated legs into gl_ledger_entries
+      for (const leg of expandedLegs) {
+        await client.query(
+          `
+          INSERT INTO gl_ledger_entries (
+            company_id,
+            account_id,
+            transaction_id,
+            vat_transaction_id,
+            vat_settlement_transaction_id,
+            source_journal_id,
+            entry_no,
+            posting_date,
+            source_type,
+            reference,
+            description,
+            debit,
+            credit,
+            party_type,
+            party_id,
+            posted_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())
+          `,
+          [
+            companyId,
+            leg.account_id,
+            nextTransactionId,
+            vatTransactionId,
+            vatSettlementId,
+            journal.id,
+            journal.entry_no,
+            formattedDate,
+            journal.source,
+            journal.reference || null,
+            leg.description,
+            leg.debit,
+            leg.credit,
+            leg.party_type,
+            leg.party_id,
+          ],
+        );
+      }
+
+      // 6. Update Header status
+      await client.query(
+        `
+        UPDATE journal_entries
+        SET
+          is_posted = true,
+          posted_at = now(),
+          updated_at = now()
+        WHERE id = $1 AND company_id = $2
+        `,
+        [id, companyId],
+      );
+
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * DELETE
+   */
+  static async delete(companyId: string, id: string): Promise<void> {
+    const result = await pool.query(
+      `
+      DELETE FROM journal_entries
+      WHERE id = $1
+      AND company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    if (!result.rowCount) {
+      throw new Error("Journal not found");
     }
   }
 }

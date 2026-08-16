@@ -14,7 +14,8 @@ import FinanceTab from "./tabs/FinanceTab";
 import ContactsTab from "./tabs/ContactsTab";
 import AddressesTab from "./tabs/AddressesTab";
 import OpportunityCycleTab from "./tabs/OpportunityCycleTab";
-import ActivitiesTab from "../shared/ActivitiesTab";
+// import ActivitiesTab from "../shared/ActivitiesTab";
+import PartyLedgerActivityTab from "./tabs/PartyLedgerActivityTab";
 import NotesTab from "../shared/NotesTab";
 import AttachmentsTab from "../shared/AttachmentsTab";
 
@@ -369,9 +370,17 @@ export default function PartyRecord({
         {activeTab === "opportunities" && (
           <OpportunityCycleTab partyId={id} readonly={effectiveReadonly} />
         )}
+        {/* <><ActivitiesTab module={module} recordId={id} /></> */}
 
         {activeTab === "activities" && (
-          <>{/* <ActivitiesTab module={module} recordId={id} /> */}</>
+          <PartyLedgerActivityTab
+            partyId={id}
+            partyType={
+              module === "supplier" || account.is_supplier
+                ? "supplier"
+                : "customer"
+            }
+          />
         )}
         {activeTab === "notes" && (
           <NotesTab
