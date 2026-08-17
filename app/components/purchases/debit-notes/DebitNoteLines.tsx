@@ -646,6 +646,7 @@ export default function DebitNoteLines({
         activeDeAllocRowKey !== null &&
         activeDeAllocLine && (
           <StockDeAllocationModal
+            // key={activeDeAllocLine?.id || "dealloc-modal"}
             open={isDeAllocModalOpen}
             onClose={() => {
               setIsDeAllocModalOpen(false);
