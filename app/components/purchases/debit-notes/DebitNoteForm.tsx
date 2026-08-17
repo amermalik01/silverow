@@ -30,6 +30,7 @@ import {
   PurchaseInvoiceLookupItem,
 } from "./PurchaseInvoiceLookupModal";
 import SupplierShippingLocationsModal from "../purchase-orders/SupplierShippingLocationsModal";
+import { StockReceiveConfirmModal } from "../../shared/modals/StockReceiveConfirmModal";
 
 interface Props {
   slug: string;
@@ -54,9 +55,16 @@ export const DebitNoteForm: React.FC<Props> = ({
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 
+  // Manage view/edit state locally
+  const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
+
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
   const [piModalOpen, setPiModalOpen] = useState(false);
+  // Add states for modal control
+  const [showDispatchModal, setShowDispatchModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   const { show, hide } = useLoader();
 
@@ -102,6 +110,22 @@ export const DebitNoteForm: React.FC<Props> = ({
   });
 
   const [lines, setLines] = useState<DebitNoteLine[]>([]);
+
+  const isCompleted = note.status === "completed" || note.status === "POSTED";
+  const isFormDisabled = !isEditMode || isCompleted;
+
+  // Check if all line items with quantity > 0 have been received
+  const isFullyDispatched = useMemo(() => {
+    if (lines.length === 0) return false;
+    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
+    if (itemLines.length === 0) return false;
+
+    return itemLines.every((l) => {
+      const qty = Number(l.quantity || 0);
+      const rcvd = Number(l.returned_quantity || 0);
+      return qty > 0 && rcvd >= qty;
+    });
+  }, [lines]);
 
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
@@ -376,6 +400,8 @@ export const DebitNoteForm: React.FC<Props> = ({
       return;
     }
 
+    show("Saving Record...");
+
     try {
       setSaving(true);
       setValidationErrors([]);
@@ -410,11 +436,19 @@ export const DebitNoteForm: React.FC<Props> = ({
         );
 
       toast.success("Debit Document records compiled and updated cleanly");
-      router.push(`/${slug}/purchases/debit-notes`);
+
+      if (id) {
+        // Toggle back to View Mode after saving existing PO
+        setIsEditMode(false);
+      } else {
+        // Redirect to list page on initial creation
+        router.push(`/${slug}/purchases/debit-notes`);
+      }
     } catch (err) {
       if (err instanceof Error) setValidationErrors([err.message]);
     } finally {
       setSaving(false);
+      hide();
     }
   };
 
@@ -516,7 +550,7 @@ export const DebitNoteForm: React.FC<Props> = ({
     }
   };
 
-  const handleDispatchStock = async () => {
+  /* const handleDispatchStock = async () => {
     if (!id) return;
     try {
       show("Dispatching stock return...");
@@ -536,7 +570,48 @@ export const DebitNoteForm: React.FC<Props> = ({
       hide();
       toast.error("An error occurred while dispatching stock.");
     }
+  }; */
+
+  // 1. Separate Handler for Dispatch Stock
+  const handleDispatchStock = async () => {
+    if (!id) return;
+    setIsPosting(true);
+
+    show("Dispatching stock return...");
+
+    try {
+      toast.loading("Processing physical stock dispatch...", {
+        id: "action-toast",
+      });
+
+      const res = await fetch(`/api/debit-notes/${id}/dispatch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note, lines }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to receive stock");
+
+      toast.success("Stock dispatched & ledger entries committed!", {
+        id: "action-toast",
+      });
+      setShowDispatchModal(false);
+      refreshLines();
+      router.refresh();
+    } catch (err) {
+      if (err instanceof Error)
+        toast.error(err.message || "Error dispatching stock", {
+          id: "action-toast",
+        });
+    } finally {
+      setIsPosting(false);
+      hide();
+    }
   };
+
+  /* 
+    
 
   const handlePostInvoice = async () => {
     if (!id) return;
@@ -557,6 +632,48 @@ export const DebitNoteForm: React.FC<Props> = ({
     } catch (err) {
       hide();
       toast.error("An error occurred while posting debit note.");
+    }
+  };
+    */
+
+  // 2. Separate Handler for Posting Invoice (Financial Posting to Accounts Payable)
+  const handlePostInvoice = async () => {
+    if (!id) return;
+    setIsPosting(true);
+
+    show("Posting Invoice...");
+    try {
+      toast.loading("Posting Debit note to G/L ledger...", {
+        id: "action-toast",
+      });
+
+      const res = await fetch(`/api/debit-notes/${id}/post-invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplier_invoice_no: note.reference,
+          invoice_date: note.invoice_date,
+          posting_date: note.order_date,
+          financials: financials, // { amount, vat, amountInclVat }
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to post Debit note");
+
+      toast.success("Debit note posted cleanly!", { id: "action-toast" });
+      setShowInvoiceModal(false);
+
+      router.push(`/${slug}/purchases/debit-notes`);
+    } catch (err) {
+      if (err instanceof Error)
+        // setValidationErrors([err.message]);
+        toast.error(err.message || "Error posting debit note", {
+          id: "action-toast",
+        });
+    } finally {
+      setIsPosting(false);
+      hide();
     }
   };
 
@@ -583,6 +700,19 @@ export const DebitNoteForm: React.FC<Props> = ({
               {err}
             </p>
           ))}
+        </div>
+      )}
+
+      {isCompleted && (
+        <div className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Icon icon="tabler:lock" className="w-4 h-4 text-emerald-600" />
+            This Debit Note is <strong>Completed / Fully Posted</strong> and
+            cannot be edited.
+          </span>
+          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] capitalize font-bold tracking-wider">
+            Read Only
+          </span>
         </div>
       )}
 
@@ -657,13 +787,14 @@ export const DebitNoteForm: React.FC<Props> = ({
           setPiModalOpen={setPiModalOpen}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
+          isReadOnly={isFormDisabled}
         />
       </div>
 
       <DebitNoteLines
         lines={lines}
         setLines={setLines}
-        isReadonly={isReadOnly}
+        isReadonly={isFormDisabled}
         debitNote={note}
         refreshLines={refreshLines}
       />
@@ -674,6 +805,7 @@ export const DebitNoteForm: React.FC<Props> = ({
             <div>
               <textarea
                 placeholder="Add Internal Notes"
+                disabled={isFormDisabled}
                 className={`${inputStyle} font-mono`}
                 value={note.internal_notes || ""}
                 onChange={(e) => updateField("internal_notes", e.target.value)}
@@ -682,6 +814,7 @@ export const DebitNoteForm: React.FC<Props> = ({
             <div className="col-span-2">
               <textarea
                 placeholder="Add External Notes"
+                disabled={isFormDisabled}
                 className={`${inputStyle} font-mono`}
                 value={note.notes || ""}
                 onChange={(e) => updateField("notes", e.target.value)}
@@ -700,6 +833,7 @@ export const DebitNoteForm: React.FC<Props> = ({
                 <input
                   type="number"
                   step="0.01"
+                  disabled={isFormDisabled}
                   className={`${inputStyle} font-mono max-w-[100px] text-end`}
                   value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
                   onChange={(e) =>
@@ -772,7 +906,34 @@ export const DebitNoteForm: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
+            {isUpdateMode && (
+              <>
+                <button
+                  type="button"
+                  // onClick={handlePostInvoice}
+                  onClick={() => setShowInvoiceModal(true)}
+                  disabled={isPosting || isCompleted}
+                  className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
+                >
+                  Post Invoice
+                </button>
+
+                <button
+                  type="button"
+                  // onClick={handleDispatchStock}
+                  onClick={() => setShowDispatchModal(true)}
+                  disabled={isPosting || isFullyDispatched || isCompleted}
+                  className={`px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded transition-colors ${
+                    isFullyDispatched || isCompleted
+                      ? "text-amber-500 dark:text-amber-400 opacity-60 cursor-not-allowed"
+                      : "text-amber-600 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  Dispatch Stock
+                </button>
+              </>
+            )}
+            {/* <div className="flex items-center gap-2">
               {!note.is_dispatched && (
                 <button
                   type="button"
@@ -794,16 +955,39 @@ export const DebitNoteForm: React.FC<Props> = ({
                   Post Invoice
                 </button>
               )}
-            </div>
+            </div> */}
 
-            <button
+            {/* <button
               type="button"
               onClick={handleSave}
               disabled={saving}
               className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
             >
               Edit / Save
-            </button>
+            </button> */}
+
+            {!isCompleted && (
+              <>
+                {!isEditMode ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditMode(true)}
+                    className="px-3.5 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Edit
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                )}
+              </>
+            )}
 
             <button
               type="button"
@@ -815,6 +999,25 @@ export const DebitNoteForm: React.FC<Props> = ({
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <StockReceiveConfirmModal
+        isOpen={showDispatchModal}
+        title="Confirmation"
+        message="Are you sure you want to Dispatch the stock?"
+        onConfirm={handleDispatchStock}
+        onCancel={() => setShowDispatchModal(false)}
+        loading={isPosting}
+      />
+
+      <StockReceiveConfirmModal
+        isOpen={showInvoiceModal}
+        title="Confirmation"
+        message="Are you sure you want to post the invoice for this Debit Note?"
+        onConfirm={handlePostInvoice}
+        onCancel={() => setShowInvoiceModal(false)}
+        loading={isPosting}
+      />
 
       <SupplierLookupModal
         open={supplierModalOpen}

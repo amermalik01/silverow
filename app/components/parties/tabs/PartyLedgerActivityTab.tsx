@@ -21,7 +21,11 @@ interface LedgerEntry {
   description?: string;
   original_amount: number;
   remaining_amount: number;
+  amount_lcy: number;
+  remaining_amount_lcy: number;
   is_open: boolean;
+  on_hold: boolean;
+  on_hold_reason?: string;
 }
 
 interface Summary {
@@ -51,13 +55,43 @@ export default function PartyLedgerActivityTab({
   const [filter, setFilter] = useState<"ALL" | "OPEN" | "CLOSED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Allocation Modal State
   const [selectedPayment, setSelectedPayment] = useState<LedgerEntry | null>(
     null,
   );
+  const [onHoldEntry, setOnHoldEntry] = useState<LedgerEntry | null>(null);
+  const [holdComment, setHoldComment] = useState("");
+  const [holdStatus, setHoldStatus] = useState<boolean>(true);
+
+  const currencyFormatter = useMemo(() => {
+    const safeCurrency =
+      currencyCode && currencyCode.trim().length === 3
+        ? currencyCode.trim().toUpperCase()
+        : "GBP";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: safeCurrency,
+      currencyDisplay: "code",
+      minimumFractionDigits: 2,
+    });
+  }, [currencyCode]);
+
+  const lcyFormatter = useMemo(() => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "GBP",
+      currencyDisplay: "code",
+      minimumFractionDigits: 2,
+    });
+  }, []);
+
+  const formatAmount = (val: number, isLcy = false) => {
+    return isLcy
+      ? lcyFormatter.format(val || 0)
+      : currencyFormatter.format(val || 0);
+  };
 
   // Dynamic currency formatter based on the party's assigned currency code
-  const currencyFormatter = useMemo(() => {
+  /* const currencyFormatter = useMemo(() => {
     const sanitizeCurrency = (code?: string) => {
       return code && code.trim().length === 3
         ? code.trim().toUpperCase()
@@ -84,9 +118,9 @@ export default function PartyLedgerActivityTab({
         maximumFractionDigits: 2,
       });
     }
-  }, [currencyCode]);
+  }, [currencyCode]); */
 
-  const formatAmount = (val: number) => currencyFormatter.format(val || 0);
+  // const formatAmount = (val: number) => currencyFormatter.format(val || 0);
 
   const fetchLedger = useCallback(async () => {
     show("Loading Ledger Activity...");
@@ -114,6 +148,33 @@ export default function PartyLedgerActivityTab({
     }
   }, [partyId, fetchLedger]);
 
+  const handleUpdateHoldStatus = async () => {
+    if (!onHoldEntry) return;
+    show("Updating Hold Status...");
+    try {
+      const res = await fetch(`/api/parties/${partyId}/ledger`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entryId: onHoldEntry.id,
+          partyType,
+          onHold: holdStatus,
+          reason: holdComment,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update status.");
+      toast.success("On hold status updated successfully!");
+      setOnHoldEntry(null);
+      await fetchLedger();
+    } catch (err) {
+      const e = err as Error;
+      toast.error(e.message || "Failed to update status.");
+    } finally {
+      hide();
+    }
+  };
+
   const handleApplyAllocations = async (allocations: LineAllocationItem[]) => {
     if (!selectedPayment) return;
 
@@ -134,7 +195,7 @@ export default function PartyLedgerActivityTab({
 
       toast.success("Allocation updated successfully! ✅");
       setSelectedPayment(null);
-      await fetchLedger(); // Refresh balances
+      await fetchLedger();
     } catch (err) {
       const e = err as Error;
       toast.error(e.message || "Failed to process allocation.");
@@ -203,7 +264,183 @@ export default function PartyLedgerActivityTab({
         </div>
       </div>
 
-      {/* Search & Filter Toolbar */}
+      {/* Sub-Ledger Table */}
+      <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+            <tr>
+              <th className="p-2.5">Date</th>
+              <th className="p-2.5">Document No</th>
+              <th className="p-2.5">Type</th>
+              <th className="p-2.5 text-right">Amount</th>
+              <th className="p-2.5 text-right">Amount (LCY)</th>
+              <th className="p-2.5 text-right">Remaining</th>
+              <th className="p-2.5 text-center">Allocations</th>
+              <th className="p-2.5 text-center">On Hold</th>
+              <th className="p-2.5 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
+            {filteredEntries.map((row) => (
+              <tr
+                key={row.id}
+                className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+              >
+                <td className="p-2.5 text-slate-600">
+                  {row.posting_date
+                    ? new Date(row.posting_date).toLocaleDateString()
+                    : "-"}
+                </td>
+                <td className="p-2.5 font-semibold text-slate-800">
+                  {row.document_no}
+                </td>
+                <td className="p-2.5 uppercase text-[10px]">
+                  {row.document_type.replace(/_/g, " ")}
+                </td>
+                <td className="p-2.5 text-right font-medium">
+                  {formatAmount(row.original_amount)}
+                </td>
+                <td className="p-2.5 text-right font-medium text-slate-500">
+                  {formatAmount(row.amount_lcy, true)}
+                </td>
+                <td className="p-2.5 text-right font-bold text-amber-600">
+                  {formatAmount(row.remaining_amount)}
+                </td>
+                <td className="p-2.5 text-center">
+                  <button
+                    onClick={() => setSelectedPayment(row)}
+                    className="p-1 hover:text-blue-600 text-slate-500"
+                  >
+                    <Icon icon="tabler:eye" className="w-4 h-4 inline" />
+                  </button>
+                </td>
+                <td className="p-2.5 text-center">
+                  <button
+                    onClick={() => {
+                      setOnHoldEntry(row);
+                      setHoldStatus(row.on_hold);
+                      setHoldComment(row.on_hold_reason || "");
+                    }}
+                    className={`p-1 rounded ${row.on_hold ? "text-red-500 font-bold" : "text-slate-400"}`}
+                  >
+                    <Icon
+                      icon="tabler:external-link"
+                      className="w-4 h-4 inline"
+                    />
+                  </button>
+                </td>
+                <td className="p-2.5 text-center">
+                  {row.is_open && Math.abs(row.remaining_amount) > 0 ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedPayment(row)}
+                    >
+                      Allocate
+                    </Button>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* On Hold Modal */}
+      {onHoldEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-slate-900 border rounded-lg p-5 w-full max-w-md space-y-4">
+            <h3 className="font-bold text-slate-800 dark:text-slate-100">
+              On Hold Status
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-slate-500">Comment</label>
+                <input
+                  type="text"
+                  value={holdComment}
+                  onChange={(e) => setHoldComment(e.target.value)}
+                  className="w-full text-xs border rounded p-2 mt-1"
+                  placeholder="Enter reason..."
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500">Status</label>
+                <select
+                  value={holdStatus ? "On Hold" : "Active"}
+                  onChange={(e) => setHoldStatus(e.target.value === "On Hold")}
+                  className="w-full text-xs border rounded p-2 mt-1"
+                >
+                  <option value="On Hold">On Hold</option>
+                  <option value="Active">Active</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOnHoldEntry(null)}
+              >
+                Close
+              </Button>
+              <Button size="sm" onClick={handleUpdateHoldStatus}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedPayment && (
+        <AllocateJournalPaymentModal
+          isOpen={true}
+          onClose={() => setSelectedPayment(null)}
+          partyId={partyId}
+          partyType={partyType}
+          documentType={selectedPayment.document_type}
+          paymentAmount={selectedPayment.remaining_amount}
+          onApplyAllocations={handleApplyAllocations}
+        />
+      )}
+    </div>
+  );
+}
+/* return (
+    <div className="space-y-4">
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
+          <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
+            Total Ledger Value ({currencyCode})
+          </span>
+          <div className="text-lg font-bold font-mono text-slate-800 dark:text-slate-100">
+            {formatAmount(summary.totalOriginal)}
+          </div>
+        </div>
+
+        <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
+          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+            Open Outstanding Balance
+          </span>
+          <div className="text-lg font-bold font-mono text-amber-800 dark:text-amber-300">
+            {formatAmount(summary.totalRemaining)}
+          </div>
+        </div>
+
+        <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-200/50 dark:border-blue-900/30">
+          <span className="text-[11px] font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider">
+            Open Entries Count
+          </span>
+          <div className="text-lg font-bold font-mono text-blue-800 dark:text-blue-300">
+            {summary.openCount} Documents
+          </div>
+        </div>
+      </div>
+
+
       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
           {(["ALL", "OPEN", "CLOSED"] as const).map((mode) => (
@@ -236,7 +473,7 @@ export default function PartyLedgerActivityTab({
         </div>
       </div>
 
-      {/* Sub-Ledger Table */}
+
       <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
         <table className="w-full text-left text-xs border-collapse">
           <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
@@ -325,7 +562,7 @@ export default function PartyLedgerActivityTab({
         </table>
       </div>
 
-      {/* Inline Allocation Modal */}
+
       {selectedPayment && (
         <AllocateJournalPaymentModal
           isOpen={true}
@@ -338,5 +575,4 @@ export default function PartyLedgerActivityTab({
         />
       )}
     </div>
-  );
-}
+  ); */

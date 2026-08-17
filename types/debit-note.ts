@@ -129,6 +129,7 @@ export interface DebitNoteLine {
   uom_name?: string;
 
   quantity: number;
+  returned_quantity?: string | number;
   unit_cost: number;
 
   discount_type?: "PERCENT" | "FIXED";
