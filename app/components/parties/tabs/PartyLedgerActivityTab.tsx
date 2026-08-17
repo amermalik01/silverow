@@ -58,18 +58,28 @@ export default function PartyLedgerActivityTab({
 
   // Dynamic currency formatter based on the party's assigned currency code
   const currencyFormatter = useMemo(() => {
+    const sanitizeCurrency = (code?: string) => {
+      return code && code.trim().length === 3
+        ? code.trim().toUpperCase()
+        : "GBP";
+    };
+
+    const safeCurrency = sanitizeCurrency(currencyCode);
+
     try {
       return new Intl.NumberFormat("en-US", {
         style: "currency",
-        currency: currencyCode,
+        currency: safeCurrency,
+        currencyDisplay: "code", // Forces rendering as ISO code (e.g., USD 1,234.56)
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
     } catch {
-      // Fallback if an invalid/unknown currency code is provided
+      // Fallback if an invalid/unsupported 3-letter currency code is provided
       return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "GBP",
+        currencyDisplay: "code",
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });

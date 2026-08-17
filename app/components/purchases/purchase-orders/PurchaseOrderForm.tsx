@@ -13,7 +13,6 @@ import {
   PurchaseOrderAddress,
   PurchaseOrderLine,
   PurchaseOrderMasterData,
-  PurchaseOrderStatus,
 } from "@/types/purchase-order";
 
 import PurchaseOrderLines from "./PurchaseOrderLines";
@@ -22,24 +21,10 @@ import { StockReceiveConfirmModal } from "@/app/components/shared/modals/StockRe
 import SupplierLookupModal, { SupplierLookupItem } from "./SupplierLookupModal";
 import SupplierShippingLocationsModal from "./SupplierShippingLocationsModal";
 
-interface Currency {
-  id: string;
-  code: string;
-  name: string;
-  exchange_rate: number;
-}
-
 interface Props {
   slug: string;
   id?: string;
   isReadOnly?: boolean;
-  // initialData?: Partial<PurchaseOrderPayloadInput>;
-}
-
-interface OrderStage {
-  id: string;
-  name: string;
-  rank: number;
 }
 
 type TabType = "general" | "invoicing" | "shipping";
@@ -48,7 +33,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   slug,
   id,
   isReadOnly = false,
-  // initialData,
 }) => {
   const router = useRouter();
   const { data: session } = useSession();
@@ -60,9 +44,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 
-  // const [stages, setStages] = useState<OrderStage[]>([]);
+  // Manage view/edit state locally
+  const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  // const [isLoadingStages, setIsLoadingStages] = useState<boolean>(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
   // Add states for modal control
@@ -109,12 +94,14 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   >({ address_type: "shipping" });
 
   const [lines, setLines] = useState<PurchaseOrderLine[]>([]);
-  // const [currencies, setCurrencies] = useState<Currency[]>([]);
 
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
     exchange_rate: 1,
   });
+
+  const isCompleted = order.status === "completed" || order.status === "POSTED";
+  const isFormDisabled = !isEditMode || isCompleted;
 
   // Check if all line items with quantity > 0 have been received
   const isFullyReceived = useMemo(() => {
@@ -140,8 +127,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         if (payload && payload.success && payload.data) {
           const actualData = payload.data;
 
-          // console.log("API payload parsed successfully:", actualData);
-
           setOrder(actualData.order || {});
           setLines(actualData.lines || []);
 
@@ -166,9 +151,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       );
   }, [id]);
 
-  const isCompleted = order.status === "completed" || order.status === "POSTED";
-  const isFormDisabled = isReadOnly || isCompleted;
-
   useEffect(() => {
     async function loadMasterData() {
       try {
@@ -176,7 +158,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         if (!res.ok) throw new Error();
 
         const data = await res.json();
-
         setMasterData(data);
       } catch (err) {
         console.error(err);
@@ -377,8 +358,15 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           result.error || "Execution error writing back purchase records.",
         );
 
-      toast.success("Purchase Order Updated");
-      router.push(`/${slug}/purchases/purchase-orders`);
+      toast.success(id ? "Purchase Order Updated" : "Purchase Order Created");
+
+      if (id) {
+        // Toggle back to View Mode after saving existing PO
+        setIsEditMode(false);
+      } else {
+        // Redirect to list page on initial creation
+        router.push(`/${slug}/purchases/purchase-orders`);
+      }
     } catch (err) {
       if (err instanceof Error) setValidationErrors([err.message]);
     } finally {
@@ -645,7 +633,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
 
   return (
-    <div className="space-y-4 ">{/* max-w-[100vw] w-full py-2 mx-auto overflow-x-auto */}
+    <div className="space-y-4 ">
       {validationErrors.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
           {validationErrors.map((err, idx) => (
@@ -772,6 +760,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             <div>
               <textarea
                 placeholder="Add Internal Notes"
+                disabled={isFormDisabled}
                 className={`${inputStyle} font-mono`}
                 value={order.internal_notes || ""}
                 onChange={(e) => updateField("internal_notes", e.target.value)}
@@ -780,6 +769,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             <div className="col-span-2">
               <textarea
                 placeholder="Add External Notes"
+                disabled={isFormDisabled}
                 className={`${inputStyle} font-mono`}
                 value={order.notes || ""}
                 onChange={(e) => updateField("notes", e.target.value)}
@@ -797,7 +787,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
               <div>
                 <input
                   type="number"
-                  step="any"
+                  step="0.01"
+                  disabled={isFormDisabled}
                   className={`${inputStyle} font-mono max-w-[100px] text-end`}
                   value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
                   onChange={(e) =>
@@ -853,8 +844,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           </div>
         </div>
 
-
-
         <div className="flex items-center justify-between pt-4 bg-slate-50 dark:bg-slate-900/60 pl-4 pr-4 pb-4 rounded-lg">
           {/* Legend Indicators */}
           <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
@@ -874,22 +863,13 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
           {/* Dedicated Action Buttons */}
           <div className="flex items-center gap-2">
-            {/* <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || isReadOnly}
-            className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
-          >
-            Purchase Order
-          </button> */}
-
             {isUpdateMode && (
               <>
                 <button
                   type="button"
                   onClick={() => setShowInvoiceModal(true)}
-                  disabled={isPosting}
-                  className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+                  disabled={isPosting || isCompleted}
+                  className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   Post Invoice
                 </button>
@@ -897,32 +877,45 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setShowReceiveModal(true)}
-                  disabled={isPosting || isFullyReceived}
+                  disabled={isPosting || isFullyReceived || isCompleted}
                   className={`px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded transition-colors ${
-                    isFullyReceived
+                    isFullyReceived || isCompleted
                       ? "text-amber-500 dark:text-amber-400 opacity-60 cursor-not-allowed"
                       : "text-amber-600 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700"
                   }`}
-                  // className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
                 >
                   Receive Stock
                 </button>
               </>
             )}
 
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
-            >
-              Edit / Save
-            </button>
+            {!isCompleted && (
+              <>
+                {!isEditMode ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditMode(true)}
+                    className="px-3.5 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Edit
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                )}
+              </>
+            )}
 
             <button
               type="button"
               onClick={() => router.push(`/${slug}/purchases/purchase-orders`)}
-              className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="px-3.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
             >
               Cancel
             </button>
@@ -977,3 +970,15 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     </div>
   );
 };
+
+// interface Currency {
+//   id: string;
+//   code: string;
+//   name: string;
+//   exchange_rate: number;
+// }
+// interface OrderStage {
+//   id: string;
+//   name: string;
+//   rank: number;
+// }

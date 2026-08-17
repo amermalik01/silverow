@@ -581,30 +581,30 @@ export default function JournalForm({
       setLoading(true);
       show("Saving Record...");
 
-      const sanitizedLines = lines.map((line) => {
-        const rate = Number(line.exchange_rate || 1.0);
-        const amt = line.debit > 0 ? line.debit : line.credit;
-        const convertedAmount = Number((amt * rate).toFixed(2));
+      // const sanitizedLines = lines.map((line) => {
+      //   const rate = Number(line.exchange_rate || 1.0);
+      //   const amt = line.debit > 0 ? line.debit : line.credit;
+      //   const convertedAmount = Number((amt * rate).toFixed(2));
 
-        return {
-          posting_date: line.posting_date,
-          document_type: line.document_type,
-          document_no: line.document_no,
-          account_id: line.account_id || null,
-          party_id: line.party_id || null,
-          party_type:
-            line.transaction_type === "gl_no" ? null : line.transaction_type,
-          currency_id: line.currency_id || null,
-          exchange_rate: rate,
-          debit: line.debit,
-          credit: line.credit,
-          currency_amount: convertedAmount,
-          description: line.description || metadata.description || "",
-          reference_id: line.balancing_account_id || null,
-          reference_type: line.balancing_account_id ? "G/L Account" : null,
-          allocations: line.allocations || [],
-        };
-      });
+      //   return {
+      //     posting_date: line.posting_date,
+      //     document_type: line.document_type,
+      //     document_no: line.document_no,
+      //     account_id: line.account_id || null,
+      //     party_id: line.party_id || null,
+      //     party_type:
+      //       line.transaction_type === "gl_no" ? null : line.transaction_type,
+      //     currency_id: line.currency_id || null,
+      //     exchange_rate: rate,
+      //     debit: line.debit,
+      //     credit: line.credit,
+      //     currency_amount: convertedAmount,
+      //     description: line.description || metadata.description || "",
+      //     reference_id: line.balancing_account_id || null,
+      //     reference_type: line.balancing_account_id ? "G/L Account" : null,
+      //     allocations: line.allocations || [],
+      //   };
+      // });
 
       // const payload = {
       //   entry_date: metadata.entry_date,
@@ -664,9 +664,28 @@ export default function JournalForm({
         );
       }
 
+      const resData = await res.json();
+
+      if (postToLedger) {
+        // Posted: Navigate back to the main listing page
+        router.push(redirectPath);
+      } else {
+        // Saved as draft: Update original state snapshots and switch to View Mode
+        setOriginalMetadata(metadata);
+        setOriginalLines(lines);
+        setIsEditing(false);
+
+        if (!journalId && resData?.id) {
+          // If creating a new record, update the URL without triggering full reload
+          router.replace(`${redirectPath}/${resData.id}`);
+        } else {
+          router.refresh();
+        }
+      }
+
       // router.push(redirectPath);
-      router.refresh();
-      setIsEditing(false);
+      // router.refresh();
+      // setIsEditing(false);
     } catch (err) {
       if (err instanceof Error) setErrorMsg(err.message);
     } finally {
@@ -937,7 +956,7 @@ export default function JournalForm({
                   <td className="p-1.5">
                     <input
                       type="number"
-                      step="0.000001"
+                      step="0.01"
                       disabled={!line.currency_id || formDisabled}
                       value={line.currency_id ? line.exchange_rate : 1}
                       onChange={(e) =>
@@ -1212,6 +1231,10 @@ export default function JournalForm({
             activeAllocationLine.debit > 0
               ? activeAllocationLine.debit
               : activeAllocationLine.credit
+          }
+          currencyIsoCode={
+            currencies.find((c) => c.id === activeAllocationLine.currency_id)
+              ?.code || baseCurrencyCode
           }
           initialAllocations={activeAllocationLine.allocations || []}
           onApplyAllocations={(allocations) =>

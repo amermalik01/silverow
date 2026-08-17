@@ -699,7 +699,7 @@ export const DebitNoteForm: React.FC<Props> = ({
               <div>
                 <input
                   type="number"
-                  step="any"
+                  step="0.01"
                   className={`${inputStyle} font-mono max-w-[100px] text-end`}
                   value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
                   onChange={(e) =>

@@ -27,6 +27,7 @@ interface Props {
   partyType: "supplier" | "customer";
   documentType: string; // e.g., "Payment", "Refund"
   paymentAmount: number;
+  currencyIsoCode?: string;
   initialAllocations?: LineAllocationItem[];
   onApplyAllocations: (allocations: LineAllocationItem[]) => void;
 }
@@ -38,6 +39,7 @@ export default function AllocateJournalPaymentModal({
   partyType,
   documentType,
   paymentAmount,
+  currencyIsoCode = "USD",
   initialAllocations = [],
   onApplyAllocations,
 }: Props) {
@@ -57,6 +59,11 @@ export default function AllocateJournalPaymentModal({
     : isRefund
       ? "Credit Notes"
       : "Sales Invoices";
+
+  // Helper function for clean currency formatting
+  const formatCurrency = (val: number) => {
+    return `${currencyIsoCode} ${val.toFixed(2)}`;
+  };
 
   // Load Open Documents
   useEffect(() => {
@@ -249,7 +256,7 @@ export default function AllocateJournalPaymentModal({
               checked={autoAllocateChecked}
               onChange={(e) => handleAutoAllocateToggle(e.target.checked)}
             />
-            Allocate Full Payment (${paymentAmount.toFixed(2)})
+            Allocate Full Payment ({formatCurrency(paymentAmount)})
           </label>
 
           <div className="flex gap-2">
@@ -329,10 +336,10 @@ export default function AllocateJournalPaymentModal({
                       <td className="p-2 font-bold">{doc.document_no}</td>
                       <td className="p-2 text-zinc-500">{doc.document_type}</td>
                       <td className="p-2 text-right">
-                        ${Number(doc.original_amount).toFixed(2)}
+                        {formatCurrency(Number(doc.original_amount))}
                       </td>
                       <td className="p-2 text-right">
-                        ${Number(doc.remaining_amount).toFixed(2)}
+                        {formatCurrency(Number(doc.remaining_amount))}
                       </td>
                       <td className="p-2">
                         <input
@@ -366,27 +373,27 @@ export default function AllocateJournalPaymentModal({
         {/* Validation Errors */}
         {isOverAllocated && (
           <div className="p-2 bg-red-50 border border-red-200 text-red-700 rounded text-xs font-semibold">
-            Warning: Total allocated amount (${totalAllocated.toFixed(2)}) exceeds available payment amount (${paymentAmount.toFixed(2)}).
+            Warning: Total allocated amount ({formatCurrency(totalAllocated)}) exceeds available payment amount ({formatCurrency(paymentAmount)}).
           </div>
         )}
 
         {/* Footer Summary */}
         <div className="flex items-center justify-between bg-zinc-50 p-2.5 rounded border font-mono">
           <div>
-            Payment Amount: <strong>${paymentAmount.toFixed(2)}</strong>
+            Payment Amount: <strong>{formatCurrency(paymentAmount)}</strong>
           </div>
           <div>
             Allocated:{" "}
             <strong
               className={isOverAllocated ? "text-red-600" : "text-emerald-600"}
             >
-              ${totalAllocated.toFixed(2)}
+              {formatCurrency(totalAllocated)}
             </strong>
           </div>
           <div>
             Remaining:{" "}
             <strong className={remainingToAllocate < 0 ? "text-red-600" : ""}>
-              ${remainingToAllocate.toFixed(2)}
+              {formatCurrency(remainingToAllocate)}
             </strong>
           </div>
         </div>
