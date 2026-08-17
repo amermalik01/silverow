@@ -53,6 +53,7 @@ export async function GET(
     const rows = result.rows.map((row) => {
       const orig = Number(row.original_amount) || 0;
       const rem = Number(row.remaining_amount) || 0;
+
       totalOriginal += orig;
       totalRemaining += rem;
 
@@ -68,7 +69,8 @@ export async function GET(
       summary: {
         totalOriginal,
         totalRemaining,
-        openCount: rows.filter((r) => r.is_open).length,
+        openCount: rows.filter((r) => r.is_open && r.remaining_amount > 0)
+          .length,
       },
     });
   } catch (err) {

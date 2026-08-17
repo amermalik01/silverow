@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
@@ -14,7 +14,7 @@ import AllocateJournalPaymentModal, {
 interface LedgerEntry {
   id: string;
   document_type: string;
-  document_id: string;
+  document_id?: string;
   document_no: string;
   posting_date: string;
   due_date?: string;
@@ -33,9 +33,14 @@ interface Summary {
 interface Props {
   partyId: string;
   partyType: "supplier" | "customer";
+  currencyCode?: string;
 }
 
-export default function PartyLedgerActivityTab({ partyId, partyType }: Props) {
+export default function PartyLedgerActivityTab({
+  partyId,
+  partyType,
+  currencyCode = "GBP",
+}: Props) {
   const { show, hide } = useLoader();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [summary, setSummary] = useState<Summary>({
@@ -50,6 +55,28 @@ export default function PartyLedgerActivityTab({ partyId, partyType }: Props) {
   const [selectedPayment, setSelectedPayment] = useState<LedgerEntry | null>(
     null,
   );
+
+  // Dynamic currency formatter based on the party's assigned currency code
+  const currencyFormatter = useMemo(() => {
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: currencyCode,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    } catch {
+      // Fallback if an invalid/unknown currency code is provided
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "GBP",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
+  }, [currencyCode]);
+
+  const formatAmount = (val: number) => currencyFormatter.format(val || 0);
 
   const fetchLedger = useCallback(async () => {
     show("Loading Ledger Activity...");
@@ -120,13 +147,17 @@ export default function PartyLedgerActivityTab({ partyId, partyType }: Props) {
     return true;
   });
 
+  // Expanded check to capture all incoming payments/unapplied credit lines
   const isAllocatableType = (docType: string) => {
+    if (!docType) return false;
     const dt = docType.toUpperCase();
     return (
       dt.includes("PAYMENT") ||
       dt.includes("CREDIT_NOTE") ||
+      dt.includes("CREDIT_MEMO") ||
       dt.includes("DEBIT_NOTE") ||
-      dt.includes("REFUND")
+      dt.includes("REFUND") ||
+      dt === "JOURNAL"
     );
   };
 
@@ -136,10 +167,10 @@ export default function PartyLedgerActivityTab({ partyId, partyType }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
           <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-            Total Ledger Value
+            Total Ledger Value ({currencyCode})
           </span>
           <div className="text-lg font-bold font-mono text-slate-800 dark:text-slate-100">
-            ${summary.totalOriginal.toFixed(2)}
+            {formatAmount(summary.totalOriginal)}
           </div>
         </div>
 
@@ -148,7 +179,7 @@ export default function PartyLedgerActivityTab({ partyId, partyType }: Props) {
             Open Outstanding Balance
           </span>
           <div className="text-lg font-bold font-mono text-amber-800 dark:text-amber-300">
-            ${summary.totalRemaining.toFixed(2)}
+            {formatAmount(summary.totalRemaining)}
           </div>
         </div>
 
@@ -228,23 +259,25 @@ export default function PartyLedgerActivityTab({ partyId, partyType }: Props) {
                 >
                   <td className="p-2.5 text-slate-600 dark:text-slate-400">
                     {row.posting_date
-                            ? new Date(row.posting_date).toLocaleDateString()
-                            : "-"}
+                      ? new Date(row.posting_date).toLocaleDateString()
+                      : "-"}
                   </td>
                   <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
                     {row.document_no}
                   </td>
                   <td className="p-2.5 text-slate-500 dark:text-slate-400 uppercase text-[10px]">
-                    {row.document_type.replace(/_/g, " ")}
+                    {row.document_type
+                      ? row.document_type.replace(/_/g, " ")
+                      : "OTHER"}
                   </td>
                   <td className="p-2.5 font-sans text-slate-600 dark:text-slate-300 max-w-xs truncate">
                     {row.description || "-"}
                   </td>
                   <td className="p-2.5 text-right font-medium text-slate-700 dark:text-slate-300">
-                    ${row.original_amount.toFixed(2)}
+                    {formatAmount(row.original_amount)}
                   </td>
                   <td className="p-2.5 text-right font-bold text-amber-600 dark:text-amber-400">
-                    ${row.remaining_amount.toFixed(2)}
+                    {formatAmount(row.remaining_amount)}
                   </td>
                   <td className="p-2.5 text-center font-sans">
                     {row.is_open ? (

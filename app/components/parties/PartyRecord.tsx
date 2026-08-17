@@ -58,6 +58,9 @@ export default function PartyRecord({
   const [addresses, setAddresses] = useState<PartyAddressDraft[]>([]);
   const [currencies, setCurrencies] = useState<CompanyCurrency[]>([]);
 
+  const activeCurrencyCode =
+    currencies.find((c) => c.id === account.currency_id)?.code || "GBP";
+
   // Snapshot states for rolling back on Cancel
   const [initialAccount, setInitialAccount] = useState<Partial<Party>>({});
   const [initialContacts, setInitialContacts] = useState<PartyContactDraft[]>(
@@ -380,6 +383,7 @@ export default function PartyRecord({
                 ? "supplier"
                 : "customer"
             }
+            currencyCode={activeCurrencyCode}
           />
         )}
         {activeTab === "notes" && (

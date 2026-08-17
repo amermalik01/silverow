@@ -1007,6 +1007,7 @@ export class JournalService {
 
       // 5. Bulk insert validated legs into gl_ledger_entries
       for (const leg of expandedLegs) {
+        // 1. Insert into gl_ledger_entries
         const insertedGlEntry = await client.query(
           `
           INSERT INTO gl_ledger_entries (
@@ -1050,6 +1051,60 @@ export class JournalService {
         );
 
         const glLedgerEntryId = insertedGlEntry.rows[0].id;
+        let subLedgerEntryId: string | null = null;
+
+        // 2. CREATE SUB-LEDGER ENTRY IF A PARTY IS ATTACHED
+        if (!leg.is_balancing && leg.party_id && leg.party_type) {
+          const isSupplier = leg.party_type === "supplier";
+          const subLedgerTable = isSupplier
+            ? "vendor_ledger_entries"
+            : "customer_ledger_entries";
+          const partyCol = isSupplier ? "vendor_id" : "customer_id";
+
+          // Standardize document type (PAYMENT vs INVOICE)
+          // For AP (Supplier): Debit = Payment/Debit Note, Credit = Invoice/Bill
+          // For AR (Customer): Credit = Payment/Credit Note, Debit = Invoice
+          let docType = "PAYMENT";
+          if (isSupplier) {
+            docType = leg.debit > 0 ? "PAYMENT" : "INVOICE";
+          } else {
+            docType = leg.credit > 0 ? "PAYMENT" : "INVOICE";
+          }
+
+          const netAmount = leg.debit > 0 ? leg.debit : leg.credit;
+
+          const insertedSubLedger = await client.query(
+            `
+            INSERT INTO ${subLedgerTable} (
+              company_id,
+              ${partyCol},
+              document_type,
+              document_no,
+              posting_date,
+              description,
+              original_amount,
+              remaining_amount,
+              is_open,
+              journal_entry_id,
+              created_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $7, true, $8, NOW())
+            RETURNING id
+            `,
+            [
+              companyId,
+              leg.party_id,
+              docType,
+              journal.entry_no,
+              formattedDate,
+              leg.description,
+              netAmount,
+              journal.id,
+            ],
+          );
+
+          subLedgerEntryId = insertedSubLedger.rows[0].id;
+        }
 
         // Update allocations for primary sub-ledger legs
         if (!leg.is_balancing && leg.journal_line_id) {
@@ -1061,22 +1116,13 @@ export class JournalService {
               AND company_id = $3
               AND is_unapplied = false
             `,
-            [glLedgerEntryId, leg.journal_line_id, companyId],
+            [
+              subLedgerEntryId || glLedgerEntryId,
+              leg.journal_line_id,
+              companyId,
+            ],
           );
         }
-        // if (!leg.is_balancing && leg.journal_line_id) {
-        //   await client.query(
-        //     `
-        //     UPDATE ledger_allocations
-        //     SET gl_ledger_entry_id = $1,
-        //         is_posted = true,
-        //         updated_at = now()
-        //     WHERE journal_line_id = $2
-        //       AND company_id = $3
-        //     `,
-        //     [glLedgerEntryId, leg.journal_line_id, companyId],
-        //   );
-        // }
       }
 
       // 6. Update Header status

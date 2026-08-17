@@ -132,8 +132,6 @@ export const PartySchema = z.object({
   // country: z.string().min(1, "Country designation code required").default("United Kingdom"),
 
   credit_limit: looseNumber,
-  // currency_id: looseString,
-  // currency_id: z.string().min(1, "Currency selection is required"),
   currency_id: requiredSelect("Currency selection is required"),
   salesperson_id: looseString,
   bucket_id: looseString,

@@ -98,7 +98,7 @@ export default function AllocateJournalPaymentModal({
         hide();
       }
     }
-  }, [isOpen, partyId, partyType, isRefund]);
+  }, [isOpen, partyId, partyType, isRefund, show, hide]);
 
   // Total allocated amount calculation
   const totalAllocated = useMemo(() => {
