@@ -498,7 +498,10 @@ export default function JournalForm({
   };
 
   // Callback function when allocations are applied from modal
-  const handleApplyAllocations = (index: number, newAllocations: LineAllocationItem[]) => {
+  const handleApplyAllocations = (
+    index: number,
+    newAllocations: LineAllocationItem[],
+  ) => {
     handleLineChange(index, "allocations", newAllocations);
   };
 
@@ -530,17 +533,40 @@ export default function JournalForm({
         return;
       }
 
-      if (Number(line.debit || 0) === 0 && Number(line.credit || 0) === 0) {
+      const lineAmount =
+        Number(line.debit || 0) > 0
+          ? Number(line.debit)
+          : Number(line.credit || 0);
+
+      if (lineAmount === 0) {
         setErrorMsg(
           `Line ${i + 1}: Entry legs require an amount value greater than 0 (Debit or Credit)`,
         );
         return;
       }
+
       if (Number(line.exchange_rate || 0) <= 0) {
         setErrorMsg(
           `Line ${i + 1}: Exchange conversion rate cannot be zero or a negative expression`,
         );
         return;
+      }
+
+      // Validate allocations against total line amount
+      if (line.allocations && line.allocations.length > 0) {
+        const totalAllocated = line.allocations.reduce(
+          (sum, item) => sum + Number(item.amount || 0),
+          0,
+        );
+
+        if (totalAllocated > lineAmount) {
+          setErrorMsg(
+            `Line ${i + 1}: Total allocated amount (${totalAllocated.toFixed(
+              2,
+            )}) exceeds the line total (${lineAmount.toFixed(2)}).`,
+          );
+          return;
+        }
       }
     }
 
@@ -590,6 +616,7 @@ export default function JournalForm({
 
       const payload: JournalPayload2 = {
         entry_date: metadata.entry_date,
+        is_posted: postToLedger,
         source:
           journalType === "general"
             ? "GENERAL"
@@ -609,7 +636,12 @@ export default function JournalForm({
           exchange_rate: Number(line.exchange_rate || 1.0),
           debit: line.debit,
           credit: line.credit,
-          currency_amount: Number(((line.debit > 0 ? line.debit : line.credit) * (Number(line.exchange_rate || 1.0))).toFixed(2)),
+          currency_amount: Number(
+            (
+              (line.debit > 0 ? line.debit : line.credit) *
+              Number(line.exchange_rate || 1.0)
+            ).toFixed(2),
+          ),
           description: line.description,
           balancing_account_id: line.balancing_account_id || undefined,
           allocations: line.allocations || [],
@@ -632,8 +664,9 @@ export default function JournalForm({
         );
       }
 
-      router.push(redirectPath);
+      // router.push(redirectPath);
       router.refresh();
+      setIsEditing(false);
     } catch (err) {
       if (err instanceof Error) setErrorMsg(err.message);
     } finally {
@@ -1171,7 +1204,9 @@ export default function JournalForm({
           isOpen={allocationModalIndex !== null}
           onClose={() => setAllocationModalIndex(null)}
           partyId={activeAllocationLine.party_id}
-          partyType={activeAllocationLine.transaction_type as "supplier" | "customer"}
+          partyType={
+            activeAllocationLine.transaction_type as "supplier" | "customer"
+          }
           documentType={activeAllocationLine.document_type}
           paymentAmount={
             activeAllocationLine.debit > 0

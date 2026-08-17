@@ -77,10 +77,10 @@ export class JournalService {
   static async get(companyId: string, id: string) {
     const journalResult = await pool.query(
       `
-      SELECT *
-      FROM journal_entries
-      WHERE id = $1 AND company_id = $2
-      `,
+    SELECT *
+    FROM journal_entries
+    WHERE id = $1 AND company_id = $2
+    `,
       [id, companyId],
     );
 
@@ -88,28 +88,40 @@ export class JournalService {
 
     const linesResult = await pool.query(
       `
-          SELECT 
-            l.*,
-            l.party_type::text AS raw_party_type,
-            a.code AS account_code,
-            a.name AS account_name, 
-            p.name AS party_name,
-            p.customer_code,
-            p.supplier_code, 
-            bal.code AS balancing_account_code,
-            bal.name AS balancing_account_name
-          FROM journal_entry_lines l
-          LEFT JOIN chart_of_accounts a ON l.account_id = a.id
-          LEFT JOIN public.parties p ON l.party_id = p.id
-          LEFT JOIN chart_of_accounts bal ON l.reference_id = bal.id AND l.reference_type = 'G/L Account'
-          WHERE l.journal_id = $1
-          ORDER BY l.line_no ASC, l.created_at ASC
-          `,
+    SELECT 
+      l.*,
+      l.party_type::text AS raw_party_type,
+      a.code AS account_code,
+      a.name AS account_name, 
+      p.name AS party_name,
+      p.customer_code,
+      p.supplier_code, 
+      bal.code AS balancing_account_code,
+      bal.name AS balancing_account_name,
+      COALESCE(
+        JSON_AGG(
+          JSON_BUILD_OBJECT(
+            'invoice_ledger_id', alloc.ledger_entry_id,
+            'amount', alloc.allocated_amount,
+            'allocated_amount', alloc.allocated_amount,
+            'allocation_type', alloc.allocation_type
+          )
+        ) FILTER (WHERE alloc.id IS NOT NULL),
+        '[]'
+      ) AS allocations
+    FROM journal_entry_lines l
+    LEFT JOIN chart_of_accounts a ON l.account_id = a.id
+    LEFT JOIN public.parties p ON l.party_id = p.id
+    LEFT JOIN chart_of_accounts bal ON l.reference_id = bal.id AND l.reference_type = 'G/L Account'
+    LEFT JOIN ledger_allocations alloc ON l.id = alloc.journal_line_id
+    WHERE l.journal_id = $1
+    GROUP BY l.id, a.code, a.name, p.name, p.customer_code, p.supplier_code, bal.code, bal.name
+    ORDER BY l.line_no ASC, l.created_at ASC
+    `,
       [id],
     );
 
     const formattedLines = linesResult.rows.map((row) => {
-      // Determine exact UI transaction_type
       let transactionType: "gl_no" | "customer" | "supplier" = "gl_no";
 
       if (row.raw_party_type === "customer" || row.customer_code) {
@@ -124,6 +136,7 @@ export class JournalService {
         party_type:
           row.raw_party_type ||
           (transactionType !== "gl_no" ? transactionType : null),
+        allocations: row.allocations || [],
       };
     });
 
@@ -199,22 +212,6 @@ export class JournalService {
         companyId,
         payload.source,
       );
-      // const moduleKey =
-      //   payload.source == "GENERAL"
-      //     ? this.getModuleKey("gl_journal")
-      //     : this.getModuleKey(payload.source);
-
-      // // 2. Fetch the formatted sequence string
-      // const seqResult = await client.query(
-      //   `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
-      //   [companyId, moduleKey],
-      // );
-      // const sequenceCode = seqResult.rows[0].sequence_code;
-
-      // console.log("sequenceCode === ", sequenceCode);
-
-      // 3. Extract purely digits for integer entry_no configuration
-      // const entryNo = parseInt(sequenceCode.replace(/\D/g, ""), 10) || 1;
 
       // 2. Resolve journal type
       const journalType = this.getJournalType(payload.source);
@@ -246,19 +243,34 @@ export class JournalService {
 
       const journal = journalResult.rows[0];
 
+      const insertedLinesWithIds: (JournalLineInput & {
+        journal_line_id: string;
+      })[] = [];
+
+      // 4. Insert lines using the shared helper function
       for (let i = 0; i < payload.lines.length; i++) {
-        await this.insertLine(
+        const insertedLine = await this.insertLine(
           client,
           companyId,
           journal.id,
           payload.lines[i],
           i + 1,
         );
+
+        insertedLinesWithIds.push({
+          ...payload.lines[i],
+          journal_line_id: insertedLine.id,
+        });
       }
 
-      // for (const line of payload.lines) {
-      //   await this.insertLine(client, companyId, journal.id, line);
-      // }
+      // 5. Insert allocations across all lines
+      await this.insertAllocations(
+        client,
+        companyId,
+        journal.id,
+        payload.entry_date,
+        insertedLinesWithIds,
+      );
 
       await client.query("COMMIT");
 
@@ -305,28 +317,22 @@ export class JournalService {
         throw new Error("Posted journal cannot be modified");
       }
 
-      let sequenceCode = "";
+      let sequenceCode = existing.rows[0].entry_no;
 
-      const entryNo = existing.rows[0].entry_no;
-      const isOnlyNumber = /^\d+$/.test(String(entryNo));
-
+      const isOnlyNumber = /^\d+$/.test(String(sequenceCode));
       const isNumberType =
-        typeof entryNo === "number" && Number.isInteger(entryNo);
+        typeof sequenceCode === "number" && Number.isInteger(sequenceCode);
 
+      // Re-generate sequence code if the previous entry_no was purely integer fallback
       if (isOnlyNumber && isNumberType) {
-        const moduleKey =
-          payload.source == "GENERAL"
-            ? this.getModuleKey("gl_journal")
-            : this.getModuleKey(payload.source);
-
-        const seqResult = await client.query(
-          `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
-          [companyId, moduleKey],
+        sequenceCode = await this.getNextSequenceCode(
+          client,
+          companyId,
+          payload.source,
         );
+      }
 
-        sequenceCode = seqResult.rows[0].sequence_code;
-      } else sequenceCode = existing.rows[0].entry_no;
-
+      // 1. Update master entry
       await client.query(
         `
         UPDATE journal_entries
@@ -347,6 +353,16 @@ export class JournalService {
         ],
       );
 
+      // 2. Clear old allocations FIRST (Fixes Foreign Key Constraint Error)
+      await client.query(
+        `
+        DELETE FROM ledger_allocations
+        WHERE payment_entry_id = $1 AND company_id = $2
+        `,
+        [id, companyId],
+      );
+
+      // 3. Clear existing lines AFTER allocations are removed
       await client.query(
         `
         DELETE FROM journal_entry_lines
@@ -355,13 +371,34 @@ export class JournalService {
         [id],
       );
 
+      // 4. Insert new lines and collect generated IDs
+      const insertedLinesWithIds: (JournalLineInput & {
+        journal_line_id: string;
+      })[] = [];
+
       for (let i = 0; i < payload.lines.length; i++) {
-        await this.insertLine(client, companyId, id, payload.lines[i], i + 1);
+        const insertedLine = await this.insertLine(
+          client,
+          companyId,
+          id,
+          payload.lines[i],
+          i + 1,
+        );
+
+        insertedLinesWithIds.push({
+          ...payload.lines[i],
+          journal_line_id: insertedLine.id,
+        });
       }
 
-      // for (const line of payload.lines) {
-      //   await this.insertLine(client, companyId, id, line);
-      // }
+      // 5. Insert fresh allocations with updated line IDs
+      await this.insertAllocations(
+        client,
+        companyId,
+        id,
+        payload.entry_date,
+        insertedLinesWithIds,
+      );
 
       await client.query("COMMIT");
     } catch (err) {
@@ -382,7 +419,7 @@ export class JournalService {
     journalId: string,
     line: JournalLineInput,
     lineNo: number = 1,
-  ) {
+  ): Promise<{ id: string }> {
     let resolvedAccountId = line.account_id?.trim() || null;
 
     // 1. Resolve transaction_type from incoming UI payload
@@ -434,7 +471,7 @@ export class JournalService {
     const referenceType = line.balancing_account_id ? "G/L Account" : null;
     const referenceId = line.balancing_account_id || null;
 
-    await client.query(
+    const result = await client.query(
       `
       INSERT INTO journal_entry_lines (
         company_id,
@@ -457,6 +494,7 @@ export class JournalService {
         reference_id
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::sub_ledger_type, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      RETURNING id
       `,
       [
         companyId,
@@ -479,6 +517,62 @@ export class JournalService {
         referenceId,
       ],
     );
+
+    return result.rows[0];
+  }
+
+  /**
+   * INSERT ALLOCATIONS HELPER
+   * Iterates over lines and saves document payment allocations to the ledger_allocations table.
+   */
+
+  private static async insertAllocations(
+    client: PoolClient,
+    companyId: string,
+    journalId: string,
+    entryDate: string,
+    lines: (JournalLineInput & { journal_line_id?: string })[],
+  ) {
+    for (const line of lines) {
+      if (line.allocations && line.allocations.length > 0) {
+        for (const alloc of line.allocations) {
+          const targetLedgerId =
+            alloc.ledger_entry_id || alloc.invoice_ledger_id;
+          const allocatedAmount = alloc.allocated_amount ?? alloc.amount ?? 0;
+          const allocType =
+            alloc.allocation_type ||
+            (line.party_type === "supplier" ? "AP" : "AR");
+
+          await client.query(
+            `
+          INSERT INTO ledger_allocations (
+            company_id,
+            allocation_type,
+            payment_entry_id,
+            journal_line_id,
+            ledger_entry_id,
+            allocated_amount,
+            exchange_rate,
+            allocation_date,
+            remarks
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          `,
+            [
+              companyId,
+              allocType,
+              journalId,
+              line.journal_line_id || null, // Link allocation to the exact line
+              targetLedgerId,
+              allocatedAmount,
+              alloc.exchange_rate || 1.0,
+              entryDate,
+              alloc.remarks || null,
+            ],
+          );
+        }
+      }
+    }
   }
 
   /**
@@ -689,15 +783,32 @@ export class JournalService {
 
       const journal = journalResult.rows[0];
 
+      const insertedLinesWithIds: (JournalLineInput & {
+        journal_line_id: string;
+      })[] = [];
+
       for (let i = 0; i < payload.lines.length; i++) {
-        await this.insertLine(
+        const insertedLine = await this.insertLine(
           client,
           companyId,
           journal.id,
           payload.lines[i],
           i + 1,
         );
+
+        insertedLinesWithIds.push({
+          ...payload.lines[i],
+          journal_line_id: insertedLine.id,
+        });
       }
+
+      await this.insertAllocations(
+        client,
+        companyId,
+        journal.id,
+        payload.entry_date,
+        insertedLinesWithIds,
+      );
 
       // for (const line of payload.lines) {
       //   await this.insertLine(client, companyId, journal.id, line);
@@ -760,9 +871,19 @@ export class JournalService {
       }
 
       // 2. Fetch draft lines
+      // const linesResult = await client.query(
+      //   `
+      //   SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate, reference_id
+      //   FROM journal_entry_lines
+      //   WHERE journal_id = $1 AND company_id = $2
+      //   `,
+      //   [id, companyId],
+      // );
+
+      // 2. Fetch draft lines
       const linesResult = await client.query(
         `
-        SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate, reference_id
+        SELECT id AS journal_line_id, account_id, party_type, party_id, description, debit, credit, exchange_rate, reference_id
         FROM journal_entry_lines
         WHERE journal_id = $1 AND company_id = $2
         `,
@@ -773,14 +894,16 @@ export class JournalService {
         throw new Error("Cannot post a journal entry with zero lines.");
       }
 
-      // 3. Expand single UI lines into balanced pairs (Primary Leg + Balancing Leg)
+      // 3. Expand single UI lines into balanced pairs
       const expandedLegs: Array<{
+        journal_line_id: string;
         account_id: string;
         party_type: string | null;
         party_id: string | null;
         description: string | null;
         debit: number;
         credit: number;
+        is_balancing: boolean;
       }> = [];
 
       for (const line of linesResult.rows) {
@@ -830,12 +953,14 @@ export class JournalService {
 
         // Add Primary Leg
         expandedLegs.push({
+          journal_line_id: line.journal_line_id,
           account_id: mainAccountId,
           party_type: line.party_type || null,
           party_id: line.party_id || null,
           description: line.description || journal.description || null,
           debit: debitLCY,
           credit: creditLCY,
+          is_balancing: false,
         });
 
         // Add Offsetting Balancing Leg if inline reference_id exists
@@ -843,14 +968,16 @@ export class JournalService {
           await GLValidationService.validateAccount(client, line.reference_id);
 
           expandedLegs.push({
+            journal_line_id: line.journal_line_id,
             account_id: line.reference_id,
             party_type: null,
             party_id: null,
             description: line.description
               ? `Balancing: ${line.description}`
               : journal.description || null,
-            debit: creditLCY, // Inverted: line credit becomes balancing debit
-            credit: debitLCY, // Inverted: line debit becomes balancing credit
+            debit: creditLCY,
+            credit: debitLCY,
+            is_balancing: true,
           });
         }
       }
@@ -880,7 +1007,7 @@ export class JournalService {
 
       // 5. Bulk insert validated legs into gl_ledger_entries
       for (const leg of expandedLegs) {
-        await client.query(
+        const insertedGlEntry = await client.query(
           `
           INSERT INTO gl_ledger_entries (
             company_id,
@@ -900,7 +1027,8 @@ export class JournalService {
             party_id,
             posted_at
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+          RETURNING id
           `,
           [
             companyId,
@@ -920,6 +1048,35 @@ export class JournalService {
             leg.party_id,
           ],
         );
+
+        const glLedgerEntryId = insertedGlEntry.rows[0].id;
+
+        // Update allocations for primary sub-ledger legs
+        if (!leg.is_balancing && leg.journal_line_id) {
+          await client.query(
+            `
+            UPDATE ledger_allocations
+            SET payment_entry_id = $1
+            WHERE journal_line_id = $2
+              AND company_id = $3
+              AND is_unapplied = false
+            `,
+            [glLedgerEntryId, leg.journal_line_id, companyId],
+          );
+        }
+        // if (!leg.is_balancing && leg.journal_line_id) {
+        //   await client.query(
+        //     `
+        //     UPDATE ledger_allocations
+        //     SET gl_ledger_entry_id = $1,
+        //         is_posted = true,
+        //         updated_at = now()
+        //     WHERE journal_line_id = $2
+        //       AND company_id = $3
+        //     `,
+        //     [glLedgerEntryId, leg.journal_line_id, companyId],
+        //   );
+        // }
       }
 
       // 6. Update Header status
@@ -1157,3 +1314,63 @@ export class JournalService {
 
     return null;
   } */
+/* 
+static async get(companyId: string, id: string) {
+    const journalResult = await pool.query(
+      `
+      SELECT *
+      FROM journal_entries
+      WHERE id = $1 AND company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    if (!journalResult.rows.length) return null;
+
+    const linesResult = await pool.query(
+      `
+          SELECT 
+            l.*,
+            l.party_type::text AS raw_party_type,
+            a.code AS account_code,
+            a.name AS account_name, 
+            p.name AS party_name,
+            p.customer_code,
+            p.supplier_code, 
+            bal.code AS balancing_account_code,
+            bal.name AS balancing_account_name
+          FROM journal_entry_lines l
+          LEFT JOIN chart_of_accounts a ON l.account_id = a.id
+          LEFT JOIN public.parties p ON l.party_id = p.id
+          LEFT JOIN chart_of_accounts bal ON l.reference_id = bal.id AND l.reference_type = 'G/L Account'
+          WHERE l.journal_id = $1
+          ORDER BY l.line_no ASC, l.created_at ASC
+          `,
+      [id],
+    );
+
+    const formattedLines = linesResult.rows.map((row) => {
+      // Determine exact UI transaction_type
+      let transactionType: "gl_no" | "customer" | "supplier" = "gl_no";
+
+      if (row.raw_party_type === "customer" || row.customer_code) {
+        transactionType = "customer";
+      } else if (row.raw_party_type === "supplier" || row.supplier_code) {
+        transactionType = "supplier";
+      }
+
+      return {
+        ...row,
+        transaction_type: transactionType,
+        party_type:
+          row.raw_party_type ||
+          (transactionType !== "gl_no" ? transactionType : null),
+      };
+    });
+
+    return {
+      journal: journalResult.rows[0],
+      lines: formattedLines,
+    };
+  }
+*/

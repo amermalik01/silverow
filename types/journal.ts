@@ -37,7 +37,8 @@ export interface JournalPayload2 {
   source: JournalSource;
   reference?: string;
   description?: string;
-  lines: JournalLineInput[];   // ✅ FIX HERE
+  is_posted?: boolean;
+  lines: JournalLineInput[];
 }
 
 export interface Journal {
@@ -81,8 +82,17 @@ export interface JournalListItem {
   reference?: string;
   description?: string;
   is_posted: boolean;
-} 
+}
 
+export interface JournalLineAllocation {
+  allocation_type?: "AP" | "AR" | string;
+  invoice_ledger_id?: string;
+  ledger_entry_id?: string;
+  allocated_amount?: number;
+  amount?: number;
+  exchange_rate?: number;
+  remarks?: string;
+}
 export interface JournalLineInput {
   posting_date?: string;
   document_type?: string;
@@ -104,4 +114,5 @@ export interface JournalLineInput {
   reference_type?: string;
   reference_id?: string;
   currency_amount?: number;
+  allocations?: JournalLineAllocation[];
 }
