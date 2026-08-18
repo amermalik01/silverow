@@ -883,7 +883,7 @@ export class JournalService {
       // 2. Fetch draft lines
       const linesResult = await client.query(
         `
-        SELECT id AS journal_line_id, account_id, party_type, party_id, description, debit, credit, exchange_rate, reference_id
+        SELECT id AS journal_line_id, account_id, party_type, party_id, document_type, description, debit, credit, exchange_rate, reference_id
         FROM journal_entry_lines
         WHERE journal_id = $1 AND company_id = $2
         `,
@@ -900,6 +900,7 @@ export class JournalService {
         account_id: string;
         party_type: string | null;
         party_id: string | null;
+        document_type: string | null;
         description: string | null;
         debit: number;
         credit: number;
@@ -957,6 +958,7 @@ export class JournalService {
           account_id: mainAccountId,
           party_type: line.party_type || null,
           party_id: line.party_id || null,
+          document_type: line.document_type || null,
           description: line.description || journal.description || null,
           debit: debitLCY,
           credit: creditLCY,
@@ -972,6 +974,7 @@ export class JournalService {
             account_id: line.reference_id,
             party_type: null,
             party_id: null,
+            document_type: line.document_type || null,
             description: line.description
               ? `Balancing: ${line.description}`
               : journal.description || null,
@@ -1064,11 +1067,41 @@ export class JournalService {
           // Standardize document type (PAYMENT vs INVOICE)
           // For AP (Supplier): Debit = Payment/Debit Note, Credit = Invoice/Bill
           // For AR (Customer): Credit = Payment/Credit Note, Debit = Invoice
-          let docType = "PAYMENT";
-          if (isSupplier) {
-            docType = leg.debit > 0 ? "PAYMENT" : "INVOICE";
+          // let docType = "PAYMENT";
+          // if (isSupplier) {
+          //   docType = leg.debit > 0 ? "PAYMENT" : "INVOICE";
+          // } else {
+          //   docType = leg.credit > 0 ? "PAYMENT" : "INVOICE";
+          // }
+
+          let docType: string;
+
+          // 1. Honor explicit UI document type selection if present
+          if (leg.document_type) {
+            const rawType = leg.document_type.toUpperCase();
+            if (rawType === "REFUND") {
+              docType = "REFUND";
+            } else if (rawType === "DEBIT_NOTE") {
+              docType = "DEBIT_NOTE";
+            } else if (rawType === "CREDIT_NOTE" || rawType === "CREDIT_MEMO") {
+              docType = isSupplier ? "CREDIT_MEMO" : "CREDIT_NOTE";
+            } else if (
+              rawType === "INVOICE" ||
+              rawType === "PURCHASE_INVOICE"
+            ) {
+              docType = isSupplier ? "PURCHASE_INVOICE" : "SALES_INVOICE";
+            } else if (rawType === "PAYMENT" || rawType === "VENDOR_PAYMENT") {
+              docType = isSupplier ? "VENDOR_PAYMENT" : "PAYMENT";
+            } else {
+              docType = rawType;
+            }
           } else {
-            docType = leg.credit > 0 ? "PAYMENT" : "INVOICE";
+            // 2. Default fallback based on debit/credit direction
+            if (isSupplier) {
+              docType = leg.debit > 0 ? "PAYMENT" : "PURCHASE_INVOICE";
+            } else {
+              docType = leg.credit > 0 ? "PAYMENT" : "SALES_INVOICE";
+            }
           }
 
           const netAmount = leg.debit > 0 ? leg.debit : leg.credit;
@@ -1079,6 +1112,7 @@ export class JournalService {
               company_id,
               ${partyCol},
               document_type,
+              document_id,
               document_no,
               posting_date,
               description,
@@ -1088,13 +1122,14 @@ export class JournalService {
               journal_entry_id,
               created_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $7, true, $8, NOW())
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, true, $9, NOW())
             RETURNING id
             `,
             [
               companyId,
               leg.party_id,
               docType,
+              journal.id,
               journal.entry_no,
               formattedDate,
               leg.description,

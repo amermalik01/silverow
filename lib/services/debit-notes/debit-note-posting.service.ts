@@ -233,7 +233,7 @@ export class DebitNotePostingService {
         lines: glLines,
       });
 
-      // 8. Post Vendor Sub-Ledger Entry (Negative amount reduces vendor balance/liability)
+      // 8. Post Vendor Sub-Ledger Entry (Positive magnitude // Negative amount reduces vendor balance/liability)
       await VendorLedgerService.createEntry(client, {
         companyId,
         vendorId: note.supplier_id,
@@ -243,7 +243,7 @@ export class DebitNotePostingService {
         postingDate,
         dueDate: postingDate,
         description: `Debit Note ${note.debit_note_no}`,
-        originalAmount: -grossTotal, // Negative amount to represent AP debit/credit-adjustment
+        originalAmount: grossTotal, // Positive magnitude // Remove Negative amount to represent AP debit/credit-adjustment
         currencyId,
         exchangeRate,
         journalEntryId: journal.id,
