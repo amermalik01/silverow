@@ -1,4 +1,4 @@
-// app/api/purchase-orders/[id]/lines/route.ts
+// app/api/debit-notes/[id]/lines/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   const result = await pool.query(
     `
     SELECT
-      pol.*,
+      dnl.*,
 
       i.item_code,
       i.name as item_name,
@@ -27,13 +27,13 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       u.name as uom_name,
       u.code as uom_code
 
-    FROM purchase_order_lines pol
-    LEFT JOIN items i ON i.id = pol.item_id
-    LEFT JOIN warehouses w ON w.id = pol.warehouse_id
-    LEFT JOIN uoms u ON u.id = pol.uom_id -- Updated from "units" to "uoms"
+    FROM debit_note_lines dnl
+    LEFT JOIN items i ON i.id = dnl.item_id
+    LEFT JOIN warehouses w ON w.id = dnl.warehouse_id
+    LEFT JOIN uoms u ON u.id = dnl.uom_id
 
-    WHERE pol.company_id=$1 AND pol.purchase_order_id=$2 AND pol.is_deleted=false
-    ORDER BY pol.line_no
+    WHERE dnl.company_id=$1 AND dnl.debit_note_id=$2 AND dnl.is_deleted=false
+    ORDER BY dnl.line_no
     `,
     [companyId, id],
   );

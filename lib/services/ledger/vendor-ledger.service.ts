@@ -7,9 +7,11 @@ export interface CreateVendorLedgerEntryInput {
   vendorId: string;
   documentType:
     | "PURCHASE_INVOICE"
+    | "PAYMENT"
     | "VENDOR_PAYMENT"
     | "CREDIT_MEMO"
-    | "REFUND";
+    | "REFUND"
+    | "DEBIT_NOTE";
   documentId: string;
   documentNo: string;
   postingDate: string;
