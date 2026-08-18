@@ -219,18 +219,18 @@ export default function PartyLedgerActivityTab({
   });
 
   // Expanded check to capture all incoming payments/unapplied credit lines
-  const isAllocatableType = (docType: string) => {
-    if (!docType) return false;
-    const dt = docType.toUpperCase();
-    return (
-      dt.includes("PAYMENT") ||
-      dt.includes("CREDIT_NOTE") ||
-      dt.includes("CREDIT_MEMO") ||
-      dt.includes("DEBIT_NOTE") ||
-      dt.includes("REFUND") ||
-      dt === "JOURNAL"
-    );
-  };
+  // const isAllocatableType = (docType: string) => {
+  //   if (!docType) return false;
+  //   const dt = docType.toUpperCase();
+  //   return (
+  //     dt.includes("PAYMENT") ||
+  //     dt.includes("CREDIT_NOTE") ||
+  //     dt.includes("CREDIT_MEMO") ||
+  //     dt.includes("DEBIT_NOTE") ||
+  //     dt.includes("REFUND") ||
+  //     dt === "JOURNAL"
+  //   );
+  // };
 
   return (
     <div className="space-y-4">
@@ -264,6 +264,50 @@ export default function PartyLedgerActivityTab({
         </div>
       </div>
 
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+          <button
+            onClick={() => setFilter("ALL")}
+            className={`px-3 py-1 rounded-md transition-colors ${
+              filter === "ALL"
+                ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100"
+                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilter("OPEN")}
+            className={`px-3 py-1 rounded-md transition-colors ${
+              filter === "OPEN"
+                ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-amber-600 dark:text-amber-400"
+                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            Open
+          </button>
+          <button
+            onClick={() => setFilter("CLOSED")}
+            className={`px-3 py-1 rounded-md transition-colors ${
+              filter === "CLOSED"
+                ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-emerald-600 dark:text-emerald-400"
+                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            Closed
+          </button>
+        </div>
+
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search document no, type..."
+          className="w-full sm:w-64 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-slate-400"
+        />
+      </div>
+
       {/* Sub-Ledger Table */}
       <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
         <table className="w-full text-left text-xs border-collapse">
@@ -275,7 +319,7 @@ export default function PartyLedgerActivityTab({
               <th className="p-2.5 text-right">Amount</th>
               <th className="p-2.5 text-right">Amount (LCY)</th>
               <th className="p-2.5 text-right">Remaining</th>
-              <th className="p-2.5 text-center">Allocations</th>
+              {/* <th className="p-2.5 text-center">Allocations</th> */}
               <th className="p-2.5 text-center">On Hold</th>
               <th className="p-2.5 text-center">Action</th>
             </tr>
@@ -306,14 +350,14 @@ export default function PartyLedgerActivityTab({
                 <td className="p-2.5 text-right font-bold text-amber-600">
                   {formatAmount(row.remaining_amount)}
                 </td>
-                <td className="p-2.5 text-center">
+                {/* <td className="p-2.5 text-center">
                   <button
                     onClick={() => setSelectedPayment(row)}
                     className="p-1 hover:text-blue-600 text-slate-500"
                   >
                     <Icon icon="tabler:eye" className="w-4 h-4 inline" />
                   </button>
-                </td>
+                </td> */}
                 <td className="p-2.5 text-center">
                   <button
                     onClick={() => {
@@ -321,7 +365,7 @@ export default function PartyLedgerActivityTab({
                       setHoldStatus(row.on_hold);
                       setHoldComment(row.on_hold_reason || "");
                     }}
-                    className={`p-1 rounded ${row.on_hold ? "text-red-500 font-bold" : "text-slate-400"}`}
+                    className={`p-1 rounded ${row.on_hold ? "text-red-500 font-bold" : "text-slate-400 hover:text-slate-600"}`}
                   >
                     <Icon
                       icon="tabler:external-link"
@@ -353,7 +397,7 @@ export default function PartyLedgerActivityTab({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-slate-900 border rounded-lg p-5 w-full max-w-md space-y-4">
             <h3 className="font-bold text-slate-800 dark:text-slate-100">
-              On Hold Status
+              On Hold Status - {onHoldEntry.document_no}
             </h3>
             <div className="space-y-3">
               <div>
@@ -362,7 +406,7 @@ export default function PartyLedgerActivityTab({
                   type="text"
                   value={holdComment}
                   onChange={(e) => setHoldComment(e.target.value)}
-                  className="w-full text-xs border rounded p-2 mt-1"
+                  className="w-full text-xs border rounded p-2 mt-1 dark:bg-slate-800 dark:border-slate-700"
                   placeholder="Enter reason..."
                 />
               </div>
@@ -371,7 +415,7 @@ export default function PartyLedgerActivityTab({
                 <select
                   value={holdStatus ? "On Hold" : "Active"}
                   onChange={(e) => setHoldStatus(e.target.value === "On Hold")}
-                  className="w-full text-xs border rounded p-2 mt-1"
+                  className="w-full text-xs border rounded p-2 mt-1 dark:bg-slate-800 dark:border-slate-700"
                 >
                   <option value="On Hold">On Hold</option>
                   <option value="Active">Active</option>

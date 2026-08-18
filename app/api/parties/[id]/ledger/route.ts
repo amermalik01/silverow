@@ -19,9 +19,11 @@ export async function GET(
     const partyType = searchParams.get("type") || "supplier"; // "supplier" | "customer"
 
     const isSupplier = partyType.toLowerCase() === "supplier";
+
     const tableName = isSupplier
       ? "vendor_ledger_entries"
       : "customer_ledger_entries";
+
     const partyColumn = isSupplier ? "vendor_id" : "customer_id";
 
     const query = `
@@ -97,8 +99,9 @@ export async function GET(
       summary: {
         totalOriginal,
         totalRemaining,
-        openCount: rows.filter((r) => r.is_open && r.remaining_amount > 0)
-          .length,
+        openCount: rows.filter(
+          (r) => r.is_open && Math.abs(r.remaining_amount) > 0,
+        ).length,
       },
     });
   } catch (err) {

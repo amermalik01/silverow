@@ -39,7 +39,7 @@ export default function AllocateJournalPaymentModal({
   partyType,
   documentType,
   paymentAmount,
-  currencyIsoCode = "USD",
+  currencyIsoCode = "GBP",
   initialAllocations = [],
   onApplyAllocations,
 }: Props) {
@@ -83,7 +83,14 @@ export default function AllocateJournalPaymentModal({
           .then((res) => res.json())
           .then((data) => {
             if (isMounted) {
-              const loadedDocs: OpenDocument[] = Array.isArray(data) ? data : [];
+              // const loadedDocs: OpenDocument[] = Array.isArray(data) ? data : [];
+              const loadedDocs: OpenDocument[] = Array.isArray(data)
+                ? data.map((d) => ({
+                    ...d,
+                    original_amount: Math.abs(Number(d.original_amount) || 0),
+                    remaining_amount: Math.abs(Number(d.remaining_amount) || 0),
+                  }))
+                : [];
               setDocuments(loadedDocs);
 
               // Map initial allocations
@@ -95,15 +102,15 @@ export default function AllocateJournalPaymentModal({
             }
           })
           .catch((err) => console.error("Error fetching open documents:", err));
-
-        return () => {
-          isMounted = false;
-        };
       } catch (err) {
         console.error("Error loading allocation data:", err);
       } finally {
         hide();
       }
+
+      return () => {
+        isMounted = false;
+      };
     }
   }, [isOpen, partyId, partyType, isRefund, show, hide]);
 
@@ -113,7 +120,7 @@ export default function AllocateJournalPaymentModal({
   }, [allocations]);
 
   const remainingToAllocate = paymentAmount - totalAllocated;
-  const isOverAllocated = totalAllocated > paymentAmount;
+  const isOverAllocated = totalAllocated > paymentAmount + 0.001;
 
   // Sync auto-allocate checkbox state with current allocation total
   useEffect(() => {
@@ -305,8 +312,12 @@ export default function AllocateJournalPaymentModal({
             <tbody className="divide-y font-mono">
               {documents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-4 text-center text-zinc-400 font-sans">
-                    No open {targetDocLabel.toLowerCase()} available for allocation.
+                  <td
+                    colSpan={7}
+                    className="p-4 text-center text-zinc-400 font-sans"
+                  >
+                    No open {targetDocLabel.toLowerCase()} available for
+                    allocation.
                   </td>
                 </tr>
               ) : (
@@ -317,7 +328,9 @@ export default function AllocateJournalPaymentModal({
                   return (
                     <tr
                       key={doc.id}
-                      className={isChecked ? "bg-indigo-50/40" : "hover:bg-zinc-50"}
+                      className={
+                        isChecked ? "bg-indigo-50/40" : "hover:bg-zinc-50"
+                      }
                     >
                       <td className="p-2 text-center">
                         <input
@@ -373,7 +386,8 @@ export default function AllocateJournalPaymentModal({
         {/* Validation Errors */}
         {isOverAllocated && (
           <div className="p-2 bg-red-50 border border-red-200 text-red-700 rounded text-xs font-semibold">
-            Warning: Total allocated amount ({formatCurrency(totalAllocated)}) exceeds available payment amount ({formatCurrency(paymentAmount)}).
+            Warning: Total allocated amount ({formatCurrency(totalAllocated)})
+            exceeds available payment amount ({formatCurrency(paymentAmount)}).
           </div>
         )}
 
@@ -406,9 +420,7 @@ export default function AllocateJournalPaymentModal({
           <Button
             onClick={handleSave}
             disabled={
-              totalAllocated <= 0 ||
-              isOverAllocated ||
-              documents.length === 0
+              totalAllocated <= 0 || isOverAllocated || documents.length === 0
             }
           >
             Confirm Allocation
@@ -642,4 +654,3 @@ export default function AllocateJournalPaymentModal({
   );
 }
  */
-

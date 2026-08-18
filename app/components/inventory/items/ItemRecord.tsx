@@ -16,6 +16,7 @@ import MarginAnalysisTab from "./tabs/MarginAnalysisTab";
 import WarehouseTab from "./tabs/WarehouseTab";
 import AccountingTab from "./tabs/AccountingTab";
 import AttributesTab from "./tabs/AttributesTab";
+import ItemActivityTab from "./tabs/ItemActivityTab";
 
 import {
   ItemFormData,
@@ -85,95 +86,6 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  /* 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      show("Loading item details...");
-      try {
-        const [itemRes, catRes, brandRes, uomRes, vatRes] = await Promise.all([
-          fetch(`/api/inventory/items/${id}`),
-          fetch("/api/setup/inventory/categories"),
-          fetch("/api/setup/inventory/brands"),
-          fetch("/api/setup/inventory/uoms"),
-          fetch("/api/setup/vat-product-posting-groups"),
-        ]);
-
-        if (catRes.ok) setCategories(await catRes.json());
-        if (brandRes.ok) setBrands(await brandRes.json());
-        if (uomRes.ok) setUoms(await uomRes.json());
-
-        let fetchedVatGroups: ItemLookupOption[] = [];
-        if (vatRes && vatRes.ok) {
-          fetchedVatGroups = await vatRes.json();
-          setVatProductGroups(fetchedVatGroups);
-        }
-
-        // Auto-find default "Standard" group ID
-        const standardVatGroup = fetchedVatGroups.find(
-          (g) => g.name.toLowerCase() === "standard",
-        );
-
-        if (itemRes.ok) {
-          const result = await itemRes.json();
-
-          const itemData = result.item || result;
-          const warehouseData = result.warehouses || [];
-
-          setItem({
-            item_code: itemData.item_code || "",
-            barcode: itemData.barcode || "",
-            name: itemData.name || "",
-            description: itemData.description || "",
-            item_type: itemData.item_type || 1,
-            status: itemData.status || 1,
-            category_id: itemData.category_id || "",
-            brand_id: itemData.brand_id || "",
-            base_uom_id: itemData.base_uom_id || "",
-            purchase_uom_id: itemData.purchase_uom_id || "",
-            sales_uom_id: itemData.sales_uom_id || "",
-            stock_tracking: itemData.stock_tracking ?? true,
-            reorder_qty: itemData.reorder_qty?.toString() || "",
-            standard_sales_price:
-              itemData.standard_sales_price?.toString() || "",
-            standard_cost: itemData.standard_cost?.toString() || "",
-            costing_method: itemData.costing_method || 1,
-
-            // If no VAT group exists on item, default to "Standard"
-            vat_product_group_id:
-              itemData.vat_product_group_id || standardVatGroup?.id || "",
-            inventory_posting_group_id:
-              itemData.inventory_posting_group_id || "",
-            inventory_gl_id: itemData.inventory_gl_id || "",
-            cogs_gl_id: itemData.cogs_gl_id || "",
-            sales_gl_id: itemData.sales_gl_id || "",
-            purchase_gl_id: itemData.purchase_gl_id || "",
-          });
-
-          if (itemData.item_code) setAutoCode(false);
-
-          if (itemData.stock_metrics) setStockMetrics(itemData.stock_metrics);
-
-          // Populate warehouses state safely without re-reading stream
-          if (Array.isArray(warehouseData)) setWarehouses(warehouseData);
-        } else {
-          // Handle new item setup with default "Standard" VAT Group
-          if (standardVatGroup) {
-            setItem((prev) => ({
-              ...prev,
-              vat_product_group_id: standardVatGroup.id,
-            }));
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load item record context", err);
-      } finally {
-        hide();
-      }
-    };
-
-    if (id) loadInitialData();
-  }, [id]); */
-
   useEffect(() => {
     const loadInitialData = async () => {
       show("Loading item details...");
@@ -212,8 +124,8 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
           }
 
           return;
-        } 
-        
+        }
+
         const itemRes = await fetch(`/api/inventory/items/${id}`);
 
         if (!itemRes.ok) return;
@@ -348,6 +260,7 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
     { key: "sales", label: "Sales Information" },
     { key: "margin", label: "Item Margin Analysis" },
     { key: "warehouse", label: "Warehouse Location & Cost" },
+    { key: "activities", label: "Activities" },
     { key: "accounting", label: "Accounting GL" },
     { key: "attributes", label: "Attributes" },
   ];
@@ -446,6 +359,9 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
             isReadonly={isReadonly}
           />
         )}
+
+        {activeTab === "activities" && <ItemActivityTab itemId={id} />}
+
         {activeTab === "accounting" && (
           <AccountingTab
             item={item}
@@ -461,14 +377,7 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
       {/* 4. Action Footer */}
       {!isReadonly && (
         <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            className="px-5 font-semibold text-zinc-700 bg-white"
-          >
-            Cancel
-          </Button>
+          
           <Button
             type="button"
             onClick={handleSave}
@@ -487,8 +396,104 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
               "Save Item"
             )}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            className="px-5 font-semibold text-zinc-700 bg-white"
+          >
+            Cancel
+          </Button>
         </div>
       )}
     </div>
   );
 }
+/* 
+  useEffect(() => {
+    const loadInitialData = async () => {
+      show("Loading item details...");
+      try {
+        const [itemRes, catRes, brandRes, uomRes, vatRes] = await Promise.all([
+          fetch(`/api/inventory/items/${id}`),
+          fetch("/api/setup/inventory/categories"),
+          fetch("/api/setup/inventory/brands"),
+          fetch("/api/setup/inventory/uoms"),
+          fetch("/api/setup/vat-product-posting-groups"),
+        ]);
+
+        if (catRes.ok) setCategories(await catRes.json());
+        if (brandRes.ok) setBrands(await brandRes.json());
+        if (uomRes.ok) setUoms(await uomRes.json());
+
+        let fetchedVatGroups: ItemLookupOption[] = [];
+        if (vatRes && vatRes.ok) {
+          fetchedVatGroups = await vatRes.json();
+          setVatProductGroups(fetchedVatGroups);
+        }
+
+        // Auto-find default "Standard" group ID
+        const standardVatGroup = fetchedVatGroups.find(
+          (g) => g.name.toLowerCase() === "standard",
+        );
+
+        if (itemRes.ok) {
+          const result = await itemRes.json();
+
+          const itemData = result.item || result;
+          const warehouseData = result.warehouses || [];
+
+          setItem({
+            item_code: itemData.item_code || "",
+            barcode: itemData.barcode || "",
+            name: itemData.name || "",
+            description: itemData.description || "",
+            item_type: itemData.item_type || 1,
+            status: itemData.status || 1,
+            category_id: itemData.category_id || "",
+            brand_id: itemData.brand_id || "",
+            base_uom_id: itemData.base_uom_id || "",
+            purchase_uom_id: itemData.purchase_uom_id || "",
+            sales_uom_id: itemData.sales_uom_id || "",
+            stock_tracking: itemData.stock_tracking ?? true,
+            reorder_qty: itemData.reorder_qty?.toString() || "",
+            standard_sales_price:
+              itemData.standard_sales_price?.toString() || "",
+            standard_cost: itemData.standard_cost?.toString() || "",
+            costing_method: itemData.costing_method || 1,
+
+            // If no VAT group exists on item, default to "Standard"
+            vat_product_group_id:
+              itemData.vat_product_group_id || standardVatGroup?.id || "",
+            inventory_posting_group_id:
+              itemData.inventory_posting_group_id || "",
+            inventory_gl_id: itemData.inventory_gl_id || "",
+            cogs_gl_id: itemData.cogs_gl_id || "",
+            sales_gl_id: itemData.sales_gl_id || "",
+            purchase_gl_id: itemData.purchase_gl_id || "",
+          });
+
+          if (itemData.item_code) setAutoCode(false);
+
+          if (itemData.stock_metrics) setStockMetrics(itemData.stock_metrics);
+
+          // Populate warehouses state safely without re-reading stream
+          if (Array.isArray(warehouseData)) setWarehouses(warehouseData);
+        } else {
+          // Handle new item setup with default "Standard" VAT Group
+          if (standardVatGroup) {
+            setItem((prev) => ({
+              ...prev,
+              vat_product_group_id: standardVatGroup.id,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load item record context", err);
+      } finally {
+        hide();
+      }
+    };
+
+    if (id) loadInitialData();
+  }, [id]); */
