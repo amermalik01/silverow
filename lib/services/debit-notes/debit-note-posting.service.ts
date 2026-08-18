@@ -254,7 +254,7 @@ export class DebitNotePostingService {
         `UPDATE debit_notes 
          SET is_posted = true, 
              posted_at = NOW(), 
-             status = 'POSTED', 
+             status = 'posted', 
              notes = COALESCE($3, notes),
              updated_at = NOW()
          WHERE id = $1 AND company_id = $2`,
