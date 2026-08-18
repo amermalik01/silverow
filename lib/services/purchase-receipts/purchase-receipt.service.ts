@@ -238,7 +238,7 @@ export class PurchaseReceiptService {
           item_id: line.item_id,
           warehouse_id: line.warehouse_id,
           quantity: qtyReceived,
-          unit_cost: ledgerEntryUnitCost,//Number(inboundRes.ledgerEntry.unit_cost),
+          unit_cost: ledgerEntryUnitCost, //Number(inboundRes.ledgerEntry.unit_cost),
           reference_type: "PURCHASE_RECEIPT",
           reference_id: receipt.id,
           description: `Asset receipt for item ${line.item_id}`,
@@ -246,8 +246,18 @@ export class PurchaseReceiptService {
 
         // Handle Purchase Price Variance (Standard Costing)
         if (ppvAmount !== 0) {
+          const varianceAccountId =
+            accounts.purchase_price_variance_account_id ||
+            accounts.purchase_account_id;
+
+          if (!varianceAccountId) {
+            throw new Error(
+              `Purchase variance/purchase GL account is missing for item ${line.item_id}.`,
+            );
+          }
+
           glLines.push({
-            account_id: accounts.purchase_price_variance_account_id,
+            account_id: varianceAccountId,
             debit: ppvAmount > 0 ? ppvAmount : 0,
             credit: ppvAmount < 0 ? Math.abs(ppvAmount) : 0,
             item_id: line.item_id,
@@ -429,8 +439,18 @@ export class PurchaseReceiptService {
       ];
 
       if (ppvReversalVal !== 0) {
+        const varianceAccountId =
+          accounts.purchase_price_variance_account_id ||
+          accounts.purchase_account_id;
+
+        if (!varianceAccountId) {
+          throw new Error(
+            `Purchase variance/purchase GL account is missing for item ${receiptLine.item_id}.`,
+          );
+        }
+
         reversalGlLines.push({
-          account_id: accounts.purchase_price_variance_account_id,
+          account_id: varianceAccountId,
           debit: ppvReversalVal < 0 ? Math.abs(ppvReversalVal) : 0,
           credit: ppvReversalVal > 0 ? ppvReversalVal : 0,
           item_id: receiptLine.item_id,

@@ -14,7 +14,6 @@ import {
   DebitNoteLine,
   DebitNoteMasterData,
 } from "@/types/debit-note";
-import { PurchaseOrderLine } from "@/types/purchase-order";
 
 import DebitNoteLines from "./DebitNoteLines";
 import { OrderFormTabs } from "./OrderFormTabs";
@@ -23,12 +22,12 @@ import { useLoader } from "@/app/context/LoaderContext";
 import SupplierLookupModal, {
   SupplierLookupItem,
 } from "../purchase-orders/SupplierLookupModal";
-// import SupplierShippingLocationsModal from "./SupplierShippingLocationsModal";
 
 import {
   PurchaseInvoiceLookupModal,
   PurchaseInvoiceLookupItem,
 } from "./PurchaseInvoiceLookupModal";
+
 import SupplierShippingLocationsModal from "../purchase-orders/SupplierShippingLocationsModal";
 import { StockReceiveConfirmModal } from "../../shared/modals/StockReceiveConfirmModal";
 
@@ -550,28 +549,6 @@ export const DebitNoteForm: React.FC<Props> = ({
     }
   };
 
-  /* const handleDispatchStock = async () => {
-    if (!id) return;
-    try {
-      show("Dispatching stock return...");
-      const res = await fetch(`/api/debit-notes/${id}/dispatch`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      hide();
-
-      if (data.success) {
-        toast.success("Stock dispatched successfully!");
-        refreshLines();
-      } else {
-        toast.error(data.error || "Failed to dispatch stock.");
-      }
-    } catch (err) {
-      hide();
-      toast.error("An error occurred while dispatching stock.");
-    }
-  }; */
-
   // 1. Separate Handler for Dispatch Stock
   const handleDispatchStock = async () => {
     if (!id) return;
@@ -584,10 +561,36 @@ export const DebitNoteForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
+      const payload = {
+        dispatch: {
+          supplier_id: note.supplier_id,
+          dispatch_date:
+            note.receipt_date ||
+            note.order_date ||
+            new Date().toISOString().split("T")[0],
+          posting_date:
+            note.document_date || new Date().toISOString().split("T")[0],
+          reference: note.debit_note_no || note.reference,
+          notes: note.notes,
+        },
+        lines: lines.map((line) => ({
+          id: line.id,
+          debit_note_line_id: line.id,
+          line_type: line.line_type,
+          item_id: line.item_id,
+          warehouse_id: line.warehouse_id,
+          location_id: line.warehouse_location_id || null,
+          quantity: Number(line.quantity || 0),
+          unit_price: Number(line.unit_cost || 0),
+          unit_cost: Number(line.unit_cost || 0),
+        })),
+      };
+
       const res = await fetch(`/api/debit-notes/${id}/dispatch`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note, lines }),
+        body: JSON.stringify(payload),
+        // body: JSON.stringify({ note, lines }),
       });
 
       const data = await res.json();
@@ -609,32 +612,6 @@ export const DebitNoteForm: React.FC<Props> = ({
       hide();
     }
   };
-
-  /* 
-    
-
-  const handlePostInvoice = async () => {
-    if (!id) return;
-    try {
-      show("Posting financial entry...");
-      const res = await fetch(`/api/debit-notes/${id}/post-invoice`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      hide();
-
-      if (data.success) {
-        toast.success("Debit note posted successfully!");
-        refreshLines();
-      } else {
-        toast.error(data.error || "Failed to post debit note.");
-      }
-    } catch (err) {
-      hide();
-      toast.error("An error occurred while posting debit note.");
-    }
-  };
-    */
 
   // 2. Separate Handler for Posting Invoice (Financial Posting to Accounts Payable)
   const handlePostInvoice = async () => {
@@ -933,38 +910,6 @@ export const DebitNoteForm: React.FC<Props> = ({
                 </button>
               </>
             )}
-            {/* <div className="flex items-center gap-2">
-              {!note.is_dispatched && (
-                <button
-                  type="button"
-                  onClick={handleDispatchStock}
-                  className="px-3 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1"
-                >
-                  <Icon icon="tabler:truck-delivery" className="w-4 h-4" />
-                  Dispatch Stock
-                </button>
-              )}
-
-              {!note.is_posted && (
-                <button
-                  type="button"
-                  onClick={handlePostInvoice}
-                  className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded flex items-center gap-1"
-                >
-                  <Icon icon="tabler:file-check" className="w-4 h-4" />
-                  Post Invoice
-                </button>
-              )}
-            </div> */}
-
-            {/* <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
-            >
-              Edit / Save
-            </button> */}
 
             {!isCompleted && (
               <>
@@ -1057,3 +1002,82 @@ export const DebitNoteForm: React.FC<Props> = ({
     </div>
   );
 };
+/* const handleDispatchStock = async () => {
+    if (!id) return;
+    try {
+      show("Dispatching stock return...");
+      const res = await fetch(`/api/debit-notes/${id}/dispatch`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      hide();
+
+      if (data.success) {
+        toast.success("Stock dispatched successfully!");
+        refreshLines();
+      } else {
+        toast.error(data.error || "Failed to dispatch stock.");
+      }
+    } catch (err) {
+      hide();
+      toast.error("An error occurred while dispatching stock.");
+    }
+  };
+  const handlePostInvoice = async () => {
+    if (!id) return;
+    try {
+      show("Posting financial entry...");
+      const res = await fetch(`/api/debit-notes/${id}/post-invoice`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      hide();
+
+      if (data.success) {
+        toast.success("Debit note posted successfully!");
+        refreshLines();
+      } else {
+        toast.error(data.error || "Failed to post debit note.");
+      }
+    } catch (err) {
+      hide();
+      toast.error("An error occurred while posting debit note.");
+    }
+  };
+    */
+{
+  /* <div className="flex items-center gap-2">
+              {!note.is_dispatched && (
+                <button
+                  type="button"
+                  onClick={handleDispatchStock}
+                  className="px-3 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1"
+                >
+                  <Icon icon="tabler:truck-delivery" className="w-4 h-4" />
+                  Dispatch Stock
+                </button>
+              )}
+
+              {!note.is_posted && (
+                <button
+                  type="button"
+                  onClick={handlePostInvoice}
+                  className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded flex items-center gap-1"
+                >
+                  <Icon icon="tabler:file-check" className="w-4 h-4" />
+                  Post Invoice
+                </button>
+              )}
+            </div> */
+}
+
+{
+  /* <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
+            >
+              Edit / Save
+            </button> */
+}

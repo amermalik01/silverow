@@ -49,16 +49,45 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    const { lines } = body;
 
     await client.query("BEGIN");
 
     // 1. Create base document
     const createdNote = await DebitNoteService.create(companyId, body);
 
+    // Runtime check to satisfy strict TypeScript constraints
     if (!createdNote || !createdNote.id) {
       throw new Error(
         "Failed to generate a valid debit note identification sequence.",
       );
+    }
+
+    const debitNoteID: string = createdNote.id;
+
+    // 2. Fetch the newly created lines to extract their primary key IDs
+    const savedLinesResult = await client.query(
+      `SELECT id, item_id, warehouse_id, line_no FROM debit_note_lines 
+       WHERE debit_note_id = $1 AND is_deleted = false ORDER BY line_no`,
+      [debitNoteID],
+    );
+
+    // 3. Match payload lines to real database IDs and save allocations
+    for (let i = 0; i < (lines || []).length; i++) {
+      const payloadLine = lines[i];
+      const dbLine = savedLinesResult.rows[i];
+
+      if (dbLine && payloadLine.allocations?.length > 0) {
+        await DebitNoteService.saveLineAllocations(
+          client,
+          companyId,
+          debitNoteID,
+          dbLine.id,
+          dbLine.item_id,
+          dbLine.warehouse_id,
+          payloadLine.allocations,
+        );
+      }
     }
 
     await client.query("COMMIT");
@@ -83,6 +112,7 @@ export async function POST(req: NextRequest) {
 }
 
 /* import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { DebitNoteService } from "@/lib/services/debit-notes/debit-note.service";
 
@@ -119,9 +149,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const client = await pool.connect();
   try {
     const companyId = await getCompanyId();
-
     if (!companyId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -130,29 +160,35 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const data = await DebitNoteService.create(companyId, body);
 
+    await client.query("BEGIN");
+
+    // 1. Create base document
+    const createdNote = await DebitNoteService.create(companyId, body);
+
+    if (!createdNote || !createdNote.id) {
+      throw new Error(
+        "Failed to generate a valid debit note identification sequence.",
+      );
+    }
+
+    await client.query("COMMIT");
     return NextResponse.json(
-      {
-        success: true,
-        data,
-      },
-      {
-        status: 201,
-      },
+      { success: true, data: createdNote },
+      { status: 201 },
     );
   } catch (err) {
+    await client.query("ROLLBACK");
     console.error("Debit note create error:", err);
-
     return NextResponse.json(
       {
         success: false,
         error:
           err instanceof Error ? err.message : "Failed to create debit note",
       },
-      {
-        status: 500,
-      },
+      { status: 500 },
     );
+  } finally {
+    client.release();
   }
 } */

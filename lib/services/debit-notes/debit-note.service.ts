@@ -10,6 +10,7 @@ import {
   DebitNotePayload,
 } from "@/types/debit-note";
 import { DebitNotePayloadSchema } from "@/lib/validations/debit-note.schema";
+import { StockDeAllocationRecord } from "@/app/components/shared/modals/StockDeAllocationModal";
 
 export class DebitNoteService {
   static async list(companyId: string): Promise<DebitNote[]> {
@@ -37,35 +38,55 @@ export class DebitNoteService {
       pageSize = 50,
       filters = {},
       sortBy,
-      sortOrder = "asc",
+      sortOrder = "DESC",
     } = params;
     const offset = (page - 1) * pageSize;
 
+    // const SORT_FIELDS: Record<string, string> = {
+    //   debitNoteCode: "dn.debit_note_no",
+    //   supplierCreditNoteDate: "dn.document_date",
+    //   supplierCreditNoteNo: "dn.supplier_cn_no",
+    //   prev_code: "dn.prev_code",
+    //   current_stage: "cos.name",
+    //   supplierNo: "dn.supplier_no",
+    //   supplierName: "p.name",
+    //   supplierCity: "dna.city",
+    //   purchaser: "dn.purchaser",
+    //   posting_grp: "dn.posting_grp",
+    //   segment: "dn.segment",
+    //   currency_code: "c.code",
+    //   Amount: "dn.net_amount",
+    //   tax_amount: "dn.tax_amount",
+    //   "Amount (incl VAT)": "dn.total_amount",
+    //   receipt_date: "dn.receipt_date",
+    //   dispatchDate: "dn.dispatch_date",
+    //   deliveryDate: "dn.delivery_date",
+    //   shipping_agent_code: "dn.shipping_agent_code",
+    //   shipment_method: "sm.name",
+    // };
+
     const SORT_FIELDS: Record<string, string> = {
       debitNoteCode: "dn.debit_note_no",
+      document_date: "dn.document_date",
       supplierCreditNoteDate: "dn.document_date",
-      supplierCreditNoteNo: "dn.supplier_cn_no",
-      prev_code: "dn.prev_code",
+      supp_order_no: "dn.supp_order_no",
+      previous_code: "dn.previous_code",
       current_stage: "cos.name",
       supplierNo: "dn.supplier_no",
       supplierName: "p.name",
       supplierCity: "dna.city",
       purchaser: "dn.purchaser",
-      posting_grp: "dn.posting_grp",
-      segment: "dn.segment",
       currency_code: "c.code",
-      Amount: "dn.net_amount",
+      Amount: "dn.subtotal",
       tax_amount: "dn.tax_amount",
       "Amount (incl VAT)": "dn.total_amount",
       receipt_date: "dn.receipt_date",
-      dispatchDate: "dn.dispatch_date",
       deliveryDate: "dn.delivery_date",
-      shipping_agent_code: "dn.shipping_agent_code",
       shipment_method: "sm.name",
     };
 
     const orderByColumn =
-      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "dn.created_at";
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "dn.debit_note_no";
     const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     const queryValues: (string | number)[] = [companyId];
@@ -809,6 +830,218 @@ export class DebitNoteService {
     );
   }
 
+  static async updateReturnedQuantity(
+    client: PoolClient,
+    debitNoteLineId: string,
+    returnedQty: number,
+  ): Promise<void> {
+    await client.query(
+      `
+      UPDATE debit_note_lines
+      SET
+        returned_quantity =
+          COALESCE(returned_quantity, 0) + $1,
+
+        remaining_quantity =
+          quantity - (
+            COALESCE(returned_quantity, 0)
+            + $1
+            + COALESCE(cancelled_quantity, 0)
+          ),
+
+        updated_at = NOW()
+
+      WHERE id = $2
+      `,
+      [returnedQty, debitNoteLineId],
+    );
+  }
+
+  static async saveLineAllocations(
+    client: PoolClient,
+    companyId: string,
+    debitNoteId: string,
+    debitNoteLineId: string,
+    itemId: string,
+    warehouseId: string,
+    initialAllocations: StockDeAllocationRecord[],
+  ): Promise<void> {
+    // 1. Lock check: If stock has already been dispatched/returned on this line, protect allocations from modification
+    const lineCheck = await client.query(
+      `
+      SELECT COALESCE(returned_quantity, 0) AS returned_quantity
+      FROM debit_note_lines
+      WHERE id = $1 AND company_id = $2
+      `,
+      [debitNoteLineId, companyId],
+    );
+
+    const returnedQty = Number(lineCheck.rows[0]?.returned_quantity || 0);
+
+    if (returnedQty > 0) {
+      return;
+    }
+
+    // 2. Clear existing allocations for unreturned lines
+    await client.query(
+      `
+      DELETE FROM inventory_allocations
+      WHERE debit_note_line_id = $1 AND company_id = $2
+      `,
+      [debitNoteLineId, companyId],
+    );
+
+    if (!initialAllocations || !initialAllocations.length) return;
+
+    // 3. Insert fresh allocation records
+    for (const alloc of initialAllocations) {
+      await client.query(
+        `
+        INSERT INTO inventory_allocations (
+          company_id,
+          outbound_entry_id,
+          inbound_entry_id,
+          debit_note_line_id,
+          item_id,
+          warehouse_id,
+          warehouse_location_id,
+          batch_no,
+          expiry_date,
+          allocated_quantity,
+          unit_cost,
+          total_cost,
+          allocation_method,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'FIFO', 'ACTIVE')
+        `,
+        [
+          companyId,
+          null,
+          null,
+          debitNoteLineId,
+          itemId,
+          warehouseId,
+          alloc.location_id || null,
+          alloc.batch_no || null,
+          alloc.expiry_date === "" ? null : alloc.expiry_date || null,
+          Number(alloc.return_quantity) || 0,
+          0,
+          0,
+        ],
+      );
+    }
+  }
+
+  
+
+  /**
+   * 2. POST INVOICE (Financial Posting / G/L Ledger Generation)
+   * Creates G/L Entries (Debit Supplier Payable, Credit Return/Purchase Account & VAT Account).
+   */
+  static async post(companyId: string, debitNoteId: string) {
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const dnResult = await client.query(
+        `SELECT id, debit_note_no, supplier_id, subtotal, tax_amount, total_amount, is_posted, status 
+         FROM debit_notes 
+         WHERE id = $1 AND company_id = $2 FOR UPDATE`,
+        [debitNoteId, companyId],
+      );
+
+      if (!dnResult.rows.length) throw new Error("Debit note not found.");
+      const note = dnResult.rows[0];
+
+      if (note.is_posted) throw new Error("Debit note is already posted.");
+
+      // Generate GL Entry Header Sequence
+      const seqResult = await client.query(
+        `SELECT get_next_sequence($1, 'gl_entry') AS code`,
+        [companyId],
+      );
+      const glHeaderNo = seqResult.rows[0].code;
+
+      // Create General Ledger Header Entry
+      const glHeaderRes = await client.query(
+        `INSERT INTO gl_entries (
+           company_id, entry_no, document_type, document_no, posting_date, created_at
+         ) VALUES ($1, $2, 'DEBIT_NOTE', $3, CURRENT_DATE, now())
+         RETURNING id`,
+        [companyId, glHeaderNo, note.debit_note_no],
+      );
+      const glHeaderId = glHeaderRes.rows[0].id;
+
+      // 1. DEBIT: Payable Account (Reduce Liability to Supplier for Total Amount)
+      const supplierRes = await client.query(
+        `SELECT payable_gl_account_id FROM parties WHERE id = $1 AND company_id = $2`,
+        [note.supplier_id, companyId],
+      );
+      const supplierPayableGlId = supplierRes.rows[0]?.payable_gl_account_id;
+
+      if (supplierPayableGlId) {
+        await client.query(
+          `INSERT INTO gl_entry_lines (
+             company_id, gl_entry_id, gl_account_id, debit, credit, description
+           ) VALUES ($1, $2, $3, $4, 0, $5)`,
+          [
+            companyId,
+            glHeaderId,
+            supplierPayableGlId,
+            note.total_amount,
+            `Debit Note ${note.debit_note_no} - Supplier Refund`,
+          ],
+        );
+      }
+
+      // 2. CREDIT: Purchase Returns / Expense GL Account for Subtotal
+      const linesResult = await client.query(
+        `SELECT gl_account_id, net_amount, description 
+         FROM debit_note_lines 
+         WHERE debit_note_id = $1 AND is_deleted = false`,
+        [debitNoteId],
+      );
+
+      for (const line of linesResult.rows) {
+        if (line.gl_account_id && Number(line.net_amount) > 0) {
+          await client.query(
+            `INSERT INTO gl_entry_lines (
+               company_id, gl_entry_id, gl_account_id, debit, credit, description
+             ) VALUES ($1, $2, $3, 0, $4, $5)`,
+            [
+              companyId,
+              glHeaderId,
+              line.gl_account_id,
+              line.net_amount,
+              line.description || `Debit Note Line`,
+            ],
+          );
+        }
+      }
+
+      // Update Debit Note Header Status
+      await client.query(
+        `UPDATE debit_notes 
+         SET is_posted = true, posted_at = now(), status = 'posted', updated_at = now()
+         WHERE id = $1 AND company_id = $2`,
+        [debitNoteId, companyId],
+      );
+
+      await client.query("COMMIT");
+      return {
+        success: true,
+        message: "Debit note posted to G/L successfully.",
+      };
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   /**
    * 1. DISPATCH STOCK (Post Physical Return / Stock De-allocation)
    * Decrements physical stock from inventory_allocations and logs inventory transaction entries.
@@ -916,113 +1149,6 @@ export class DebitNoteService {
 
       await client.query("COMMIT");
       return { success: true, message: "Stock dispatched successfully." };
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
-  }
-
-  /**
-   * 2. POST INVOICE (Financial Posting / G/L Ledger Generation)
-   * Creates G/L Entries (Debit Supplier Payable, Credit Return/Purchase Account & VAT Account).
-   */
-  static async post(companyId: string, debitNoteId: string) {
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      const dnResult = await client.query(
-        `SELECT id, debit_note_no, supplier_id, subtotal, tax_amount, total_amount, is_posted, status 
-         FROM debit_notes 
-         WHERE id = $1 AND company_id = $2 FOR UPDATE`,
-        [debitNoteId, companyId],
-      );
-
-      if (!dnResult.rows.length) throw new Error("Debit note not found.");
-      const note = dnResult.rows[0];
-
-      if (note.is_posted) throw new Error("Debit note is already posted.");
-
-      // Generate GL Entry Header Sequence
-      const seqResult = await client.query(
-        `SELECT get_next_sequence($1, 'gl_entry') AS code`,
-        [companyId],
-      );
-      const glHeaderNo = seqResult.rows[0].code;
-
-      // Create General Ledger Header Entry
-      const glHeaderRes = await client.query(
-        `INSERT INTO gl_entries (
-           company_id, entry_no, document_type, document_no, posting_date, created_at
-         ) VALUES ($1, $2, 'DEBIT_NOTE', $3, CURRENT_DATE, now())
-         RETURNING id`,
-        [companyId, glHeaderNo, note.debit_note_no],
-      );
-      const glHeaderId = glHeaderRes.rows[0].id;
-
-      // 1. DEBIT: Payable Account (Reduce Liability to Supplier for Total Amount)
-      const supplierRes = await client.query(
-        `SELECT payable_gl_account_id FROM parties WHERE id = $1 AND company_id = $2`,
-        [note.supplier_id, companyId],
-      );
-      const supplierPayableGlId = supplierRes.rows[0]?.payable_gl_account_id;
-
-      if (supplierPayableGlId) {
-        await client.query(
-          `INSERT INTO gl_entry_lines (
-             company_id, gl_entry_id, gl_account_id, debit, credit, description
-           ) VALUES ($1, $2, $3, $4, 0, $5)`,
-          [
-            companyId,
-            glHeaderId,
-            supplierPayableGlId,
-            note.total_amount,
-            `Debit Note ${note.debit_note_no} - Supplier Refund`,
-          ],
-        );
-      }
-
-      // 2. CREDIT: Purchase Returns / Expense GL Account for Subtotal
-      const linesResult = await client.query(
-        `SELECT gl_account_id, net_amount, description 
-         FROM debit_note_lines 
-         WHERE debit_note_id = $1 AND is_deleted = false`,
-        [debitNoteId],
-      );
-
-      for (const line of linesResult.rows) {
-        if (line.gl_account_id && Number(line.net_amount) > 0) {
-          await client.query(
-            `INSERT INTO gl_entry_lines (
-               company_id, gl_entry_id, gl_account_id, debit, credit, description
-             ) VALUES ($1, $2, $3, 0, $4, $5)`,
-            [
-              companyId,
-              glHeaderId,
-              line.gl_account_id,
-              line.net_amount,
-              line.description || `Debit Note Line`,
-            ],
-          );
-        }
-      }
-
-      // Update Debit Note Header Status
-      await client.query(
-        `UPDATE debit_notes 
-         SET is_posted = true, posted_at = now(), status = 'posted', updated_at = now()
-         WHERE id = $1 AND company_id = $2`,
-        [debitNoteId, companyId],
-      );
-
-      await client.query("COMMIT");
-      return {
-        success: true,
-        message: "Debit note posted to G/L successfully.",
-      };
     } catch (err) {
       await client.query("ROLLBACK");
       throw err;

@@ -37,6 +37,8 @@ export async function GET(
         remaining_amount,
         exchange_rate,
         is_open,
+        on_hold,
+        on_hold_reason,
         journal_entry_id,
         created_at
       FROM ${tableName}

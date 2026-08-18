@@ -10,12 +10,12 @@ export type AccountContext =
 
 export interface ResolvedPurchaseAccounts {
   inventory_account_id: string;
-  cogs_account_id: string;
-  purchase_account_id: string;
+  cogs_account_id: string | null;
+  purchase_account_id: string | null;
   grni_account_id: string;
   payable_account_id: string;
-  vat_account_id: string;
-  purchase_price_variance_account_id: string; // <-- Add to interface
+  vat_account_id: string | null;
+  purchase_price_variance_account_id: string | null;
 }
 
 export class AccountResolutionService {
@@ -29,8 +29,6 @@ export class AccountResolutionService {
     companyId: string,
     itemId?: string | null,
   ): Promise<ResolvedPurchaseAccounts> {
-    // let item = null;
-
     let item: {
       id: string;
       inventory_posting_group_id?: string | null;
@@ -89,7 +87,11 @@ export class AccountResolutionService {
 
     // 3. Fetch Inventory & COGS accounts
     // Priority: Specific assigned group -> Default fallback group (LIMIT 1)
-    let ipg = null;
+    // let ipg = null;
+    let ipg: {
+      inventory_account_id?: string;
+      cogs_account_id?: string;
+    } | null = null;
 
     if (item?.inventory_posting_group_id) {
       const specificIpgResult = await client.query(
@@ -121,11 +123,12 @@ export class AccountResolutionService {
     // Resolution priority order: Direct Override -> Assigned Group -> PPG Fallback
     const inventoryAccountId =
       item?.inventory_gl_id ||
-      ipg.inventory_account_id ||
+      ipg?.inventory_account_id ||
       ppg.inventory_account_id;
 
-    const cogsAccountId = item?.cogs_gl_id || ipg.cogs_account_id;
-    const purchaseAccountId = item?.purchase_gl_id || ppg.purchase_account_id;
+    const cogsAccountId = item?.cogs_gl_id || ipg?.cogs_account_id || null;
+    const purchaseAccountId =
+      item?.purchase_gl_id || ppg.purchase_account_id || null;
 
     const ppvAccountId = purchaseAccountId;
 
@@ -137,6 +140,10 @@ export class AccountResolutionService {
 
     if (!ppg.grni_account_id) {
       throw new Error("GRNI account is missing in purchase posting groups.");
+    }
+
+    if (!ppg.payable_account_id) {
+      throw new Error("Payable account is missing in purchase posting groups.");
     }
 
     return {

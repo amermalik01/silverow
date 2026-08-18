@@ -1,10 +1,10 @@
 // lib/services/inventory/unified-inventory-engine.service.ts
 
 import { PoolClient } from "pg";
-import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
-import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
-import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
-import { JournalLineInput } from "@/types/journal";
+// import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
+// import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
+// import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
+// import { JournalLineInput } from "@/types/journal";
 
 export type InventoryTransactionType =
   | "PURCHASE_RECEIPT"

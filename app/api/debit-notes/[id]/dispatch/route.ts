@@ -22,6 +22,7 @@ interface IncomingDispatch {
 interface IncomingLine {
   id?: string;
   debit_note_line_id?: string;
+  line_type?: "ITEM" | "GL_ACCOUNT";
   item_id: string;
   warehouse_id: string;
   location_id?: string;
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     if (!companyId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -56,7 +57,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const { dispatch, lines = [] } = body;
 
     const validLines = lines.filter(
-      (l: IncomingLine) => Number(l.quantity) > 0
+      (l: IncomingLine) =>
+        Number(l.quantity) > 0 &&
+        (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
     );
 
     if (!validLines.length) {
@@ -65,7 +68,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
           success: false,
           error: "No valid line quantities provided to dispatch.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -102,7 +105,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const dispatchResult = await StockDeAllocationService.createTransactional(
       client,
       companyId,
-      payload
+      payload,
     );
 
     // 3. Recalculate Debit Note status dynamically
@@ -118,44 +121,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         success: false,
         error: err instanceof Error ? err.message : "Failed to dispatch stock",
       },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     client.release();
   }
 }
-
-/* import { NextRequest, NextResponse } from "next/server";
-import { getCompanyId } from "@/lib/auth/getCompanyId";
-import { DebitNoteService } from "@/lib/services/debit-notes/debit-note.service";
-
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
-
-export async function POST(req: NextRequest, { params }: RouteContext) {
-  try {
-    const companyId = await getCompanyId();
-    const { id } = await params;
-
-    if (!companyId) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
-      );
-    }
-
-    const result = await DebitNoteService.dispatchStock(companyId, id);
-    return NextResponse.json(result);
-  } catch (err) {
-    console.error("[DEBIT_NOTE_DISPATCH_ERROR]:", err);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: err instanceof Error ? err.message : "Failed to dispatch stock.",
-      },
-      { status: 500 },
-    );
-  }
-} */
