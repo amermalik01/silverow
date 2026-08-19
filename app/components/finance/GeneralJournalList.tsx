@@ -84,14 +84,14 @@ export default function GeneralJournalList({ slug }: { slug: string }) {
               <td className="p-2 text-center space-x-2">
                 <Link
                   href={`/${slug}/finance/general-journal/${j.id}`}
-                  className="text-blue-600"
+                  className="text-blue-600   rounded"
                 >
                   Edit
                 </Link>
 
                 <Button
                   onClick={() => handlePost(j.id)}
-                  className="text-green-600"
+                  className="text-green-600 rounded"
                 >
                   Post
                 </Button>

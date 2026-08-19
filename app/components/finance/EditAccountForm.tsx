@@ -376,14 +376,14 @@ export default function EditAccountForm({ slug, id }: Props) {
           <Button
             type="button"
             onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
-            className="px-4 py-1.5 border rounded hover:bg-gray-50 tracking-wide font-medium"
+            className=" text-white rounded hover:bg-gray-50 tracking-wide "
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading}
-            className="px-5 py-1.5 bg-blue-700 text-white rounded shadow hover:bg-blue-800 tracking-wide font-semibold disabled:opacity-50"
+            className="bg-blue-700 text-white rounded shadow hover:bg-blue-800 tracking-wide disabled:opacity-50"
           >
             {loading ? "Updating..." : "Update Account"}
           </Button>

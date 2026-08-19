@@ -69,6 +69,47 @@ export default function AllocateJournalPaymentModal({
   useEffect(() => {
     if (isOpen && partyId) {
       let isMounted = true;
+      const cleanDocType = (documentType || "PAYMENT").toUpperCase();
+
+      try {
+        show("Fetching Records...");
+        fetch(
+          `/api/finance/${partyType}s/${partyId}/open-documents?docType=${cleanDocType}`,
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            if (isMounted) {
+              const loadedDocs: OpenDocument[] = Array.isArray(data)
+                ? data.map((d) => ({
+                    ...d,
+                    original_amount: Math.abs(Number(d.original_amount) || 0),
+                    remaining_amount: Math.abs(Number(d.remaining_amount) || 0),
+                  }))
+                : [];
+              setDocuments(loadedDocs);
+
+              const initialMap: Record<string, number> = {};
+              initialAllocations.forEach((item) => {
+                initialMap[item.invoice_ledger_id] = Number(item.amount) || 0;
+              });
+              setAllocations(initialMap);
+            }
+          })
+          .catch((err) => console.error("Error fetching open documents:", err));
+      } catch (err) {
+        console.error("Error loading allocation data:", err);
+      } finally {
+        hide();
+      }
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [isOpen, partyId, partyType, documentType, show, hide]);
+  /* useEffect(() => {
+    if (isOpen && partyId) {
+      let isMounted = true;
       const targetDocType = isRefund
         ? isSupplier
           ? "DEBIT_NOTE"
@@ -112,7 +153,7 @@ export default function AllocateJournalPaymentModal({
         isMounted = false;
       };
     }
-  }, [isOpen, partyId, partyType, isRefund, show, hide]);
+  }, [isOpen, partyId, partyType, isRefund, show, hide]); */
 
   // Total allocated amount calculation
   const totalAllocated = useMemo(() => {

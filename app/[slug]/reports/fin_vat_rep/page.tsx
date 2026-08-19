@@ -150,7 +150,7 @@ export default function VatReportComponent() {
             <Button
               type="button"
               onClick={() => handleSpecialAction("detailed")}
-              className="inline-flex items-center space-x-1 bg-white/10 hover:bg-white/20 text-white font-medium text-xs py-1 px-2.5 rounded transition border border-white/10"
+              className="inline-flex items-center space-x-1 bg-white/10 hover:bg-white/20  text-white rounded transition border border-white/10"
             >
               <Eye className="h-3 w-3 text-emerald-400" />
               <span>Detailed VAT Report</span>
@@ -158,7 +158,7 @@ export default function VatReportComponent() {
             <Button
               type="button"
               onClick={() => handleSpecialAction("open_before")}
-              className="inline-flex items-center space-x-1 bg-white/10 hover:bg-white/20 text-white font-medium text-xs py-1 px-2.5 rounded transition border border-white/10"
+              className="inline-flex items-center space-x-1 bg-white/10 hover:bg-white/20  text-white rounded transition border border-white/10"
             >
               <FileText className="h-3 w-3 text-emerald-400" />
               <span>Open Entries Before Date From</span>

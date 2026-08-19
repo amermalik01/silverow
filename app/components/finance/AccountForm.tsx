@@ -435,14 +435,14 @@ export default function AccountForm({ slug, id }: Props) {
             type="button"
             variant="outline"
             onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
-            className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
+            className=" text-white rounded hover:bg-zinc-50 bg-white"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading}
-            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm min-w-[150px] justify-center"
+            className=" text-white rounded bg-emerald-700 hover:bg-emerald-800 shadow-sm justify-center"
           >
             {loading
               ? "Processing..."

@@ -28,11 +28,13 @@ export async function GET(
         la.allocated_amount,
         CASE 
           WHEN la.payment_entry_id = $1 THEN target_entry.document_no
-          ELSE source_entry.document_no
+          WHEN la.ledger_entry_id = $1 THEN source_entry.document_no
+          ELSE COALESCE(target_entry.document_no, source_entry.document_no)
         END AS allocated_doc_no,
         CASE 
           WHEN la.payment_entry_id = $1 THEN target_entry.document_type
-          ELSE source_entry.document_type
+          WHEN la.ledger_entry_id = $1 THEN source_entry.document_type
+          ELSE COALESCE(target_entry.document_type, source_entry.document_type)
         END AS allocated_doc_type
       FROM ledger_allocations la
       LEFT JOIN ${ledgerTable} source_entry ON source_entry.id = la.payment_entry_id
@@ -48,7 +50,7 @@ export async function GET(
     const allocations = result.rows.map((row) => ({
       id: row.id,
       allocation_date: row.allocation_date,
-      allocated_amount: Number(row.allocated_amount) || 0,
+      allocated_amount: Math.abs(Number(row.allocated_amount)) || 0,
       allocated_doc_no: row.allocated_doc_no || "-",
       allocated_doc_type: row.allocated_doc_type || "-",
     }));

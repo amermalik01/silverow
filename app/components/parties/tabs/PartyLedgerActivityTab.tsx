@@ -57,8 +57,11 @@ export default function PartyLedgerActivityTab({
   const [filter, setFilter] = useState<"ALL" | "OPEN" | "CLOSED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [selectedPayment, setSelectedPayment] = useState<LedgerEntry | null>(null);
-  const [viewAllocationsEntry, setViewAllocationsEntry] = useState<LedgerEntry | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<LedgerEntry | null>(
+    null,
+  );
+  const [viewAllocationsEntry, setViewAllocationsEntry] =
+    useState<LedgerEntry | null>(null);
   const [onHoldEntry, setOnHoldEntry] = useState<LedgerEntry | null>(null);
   const [holdComment, setHoldComment] = useState("");
   const [holdStatus, setHoldStatus] = useState<boolean>(true);
@@ -97,10 +100,6 @@ export default function PartyLedgerActivityTab({
       ? lcyFormatter.format(val || 0)
       : currencyFormatter.format(val || 0);
   };
-
-  
-
-  // const formatAmount = (val: number) => currencyFormatter.format(val || 0);
 
   const fetchLedger = useCallback(async () => {
     show("Loading Ledger Activity...");
@@ -198,20 +197,6 @@ export default function PartyLedgerActivityTab({
     return true;
   });
 
-  // Expanded check to capture all incoming payments/unapplied credit lines
-  // const isAllocatableType = (docType: string) => {
-  //   if (!docType) return false;
-  //   const dt = docType.toUpperCase();
-  //   return (
-  //     dt.includes("PAYMENT") ||
-  //     dt.includes("CREDIT_NOTE") ||
-  //     dt.includes("CREDIT_MEMO") ||
-  //     dt.includes("DEBIT_NOTE") ||
-  //     dt.includes("REFUND") ||
-  //     dt === "JOURNAL"
-  //   );
-  // };
-
   return (
     <div className="space-y-4">
       {/* Summary KPI Cards */}
@@ -296,8 +281,8 @@ export default function PartyLedgerActivityTab({
               <th className="p-2.5">Date</th>
               <th className="p-2.5">Document No</th>
               <th className="p-2.5">Type</th>
-              <th className="p-2.5 text-right">Amount</th>
               <th className="p-2.5 text-right">Amount (LCY)</th>
+              <th className="p-2.5 text-right">Amount</th>
               <th className="p-2.5 text-right">Remaining</th>
               <th className="p-2.5 text-center">Allocations</th>
               {/* <th className="p-2.5 text-center">Allocations</th> */}
@@ -322,11 +307,11 @@ export default function PartyLedgerActivityTab({
                 <td className="p-2.5 uppercase text-[10px]">
                   {row.document_type.replace(/_/g, " ")}
                 </td>
-                <td className="p-2.5 text-right font-medium">
-                  {formatAmount(row.original_amount)}
-                </td>
                 <td className="p-2.5 text-right font-medium text-slate-500">
                   {formatAmount(row.amount_lcy, true)}
+                </td>
+                <td className="p-2.5 text-right font-medium">
+                  {formatAmount(row.original_amount)}
                 </td>
                 <td className="p-2.5 text-right font-bold text-amber-600">
                   {formatAmount(row.remaining_amount)}
@@ -449,15 +434,28 @@ export default function PartyLedgerActivityTab({
           partyType={partyType}
           documentType={selectedPayment.document_type}
           paymentAmount={selectedPayment.remaining_amount}
+          currencyIsoCode={currencyCode}
           onApplyAllocations={handleApplyAllocations}
         />
       )}
     </div>
   );
 }
-
+// Expanded check to capture all incoming payments/unapplied credit lines
+// const isAllocatableType = (docType: string) => {
+//   if (!docType) return false;
+//   const dt = docType.toUpperCase();
+//   return (
+//     dt.includes("PAYMENT") ||
+//     dt.includes("CREDIT_NOTE") ||
+//     dt.includes("CREDIT_MEMO") ||
+//     dt.includes("DEBIT_NOTE") ||
+//     dt.includes("REFUND") ||
+//     dt === "JOURNAL"
+//   );
+// };
 // Dynamic currency formatter based on the party's assigned currency code
-  /* const currencyFormatter = useMemo(() => {
+/* const currencyFormatter = useMemo(() => {
     const sanitizeCurrency = (code?: string) => {
       return code && code.trim().length === 3
         ? code.trim().toUpperCase()

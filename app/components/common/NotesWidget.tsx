@@ -84,7 +84,7 @@ export default function NotesWidget({ module, recordId }: Props) {
       <Button
         onClick={addNote}
         disabled={loading || !noteText.trim()}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2 rounded transition disabled:opacity-50"
+        className="bg-blue-600 hover:bg-blue-700  text-white rounded transition disabled:opacity-50"
       >
         {loading ? "Saving..." : "Add Note"}
       </Button>
@@ -110,7 +110,7 @@ export default function NotesWidget({ module, recordId }: Props) {
               </div>
               <Button
                 onClick={() => deleteNote(n.id)}
-                className="text-xs text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                className=" text-white rounded hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
               >
                 Delete
               </Button>

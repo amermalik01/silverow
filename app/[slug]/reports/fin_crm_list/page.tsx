@@ -221,7 +221,7 @@ export default function LegacyCRMListing() {
           <Button
             onClick={handleGenerateReport}
             disabled={isLoading}
-            className="bg-[#218838] hover:bg-[#1e7e34] font-medium text-xs px-4 py-1.5 rounded transition shadow-sm flex items-center space-x-1"
+            className="bg-[#218838] hover:bg-[#1e7e34] text-white rounded transition shadow-sm"
           >
             {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
             <span>Generate Report</span>
@@ -232,14 +232,14 @@ export default function LegacyCRMListing() {
               setSelectedCRMs([]);
               setHasGenerated(false);
             }}
-            className="bg-[#6c757d] hover:bg-[#5a6268] font-medium text-xs px-3 py-1.5 rounded transition"
+            className="bg-[#6c757d] hover:bg-[#5a6268]  text-white rounded transition"
           >
             Clear Filter
           </Button>
           <Button
             onClick={handlePrintPDF}
             disabled={records.length === 0 || isPrinting}
-            className="bg-[#17a2b8] hover:bg-[#138496] font-medium text-xs px-3 py-1.5 rounded transition flex items-center space-x-1 disabled:opacity-40"
+            className="bg-[#17a2b8] hover:bg-[#138496]  text-white rounded transition disabled:opacity-40"
           >
             {isPrinting ? (
               <Loader2 className="h-3 w-3 animate-spin" />

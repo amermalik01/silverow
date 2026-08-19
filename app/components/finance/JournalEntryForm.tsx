@@ -341,7 +341,7 @@ export default function JournalEntryForm({
                   type="button"
                   onClick={() => removeLine(index)}
                   // className="text-red-500"
-                  className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                  className="text-red-600 hover:text-red-800  text-white rounded bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
                 >
                   <Icon icon="lucide:x" className="w-4 h-4" />
                   {/* ✕ */}

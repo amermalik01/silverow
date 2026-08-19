@@ -130,7 +130,7 @@ export default function EditCompanyPage() {
           <Button
             type="submit"
             disabled={saving}
-            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
+            className=" text-white rounded bg-emerald-700 hover:bg-emerald-800 shadow-sm"
           >
             {saving ? "Saving..." : "Save"}
           </Button>
@@ -138,7 +138,7 @@ export default function EditCompanyPage() {
             type="button" // Always good practice to explicitly define type="button" to prevent accidental submits
             variant="outline" // Swapped from "ghost" to "outline" to perfectly match the "Cancel" action look from your other screens
             onClick={() => router.back()}
-            className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
+            className=" text-white rounded text-zinc-700 hover:bg-zinc-50 "
           >
             Cancel
           </Button>

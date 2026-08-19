@@ -297,7 +297,7 @@ export default function CreateAccountForm({ slug }: { slug: string }) {
           <Button
             type="submit"
             disabled={loading}
-            className="px-5 py-1.5 bg-green-700 text-white rounded shadow hover:bg-green-800 tracking-wide font-semibold disabled:opacity-50"
+            className=" text-white rounded bg-green-700  shadow hover:bg-green-800 tracking-wide disabled:opacity-50"
           >
             {loading ? "Processing..." : "Save"}
           </Button>
