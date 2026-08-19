@@ -10,6 +10,7 @@ import { useLoader } from "@/app/context/LoaderContext";
 import AllocateJournalPaymentModal, {
   LineAllocationItem,
 } from "@/app/components/finance/journals/modals/AllocateJournalPaymentModal";
+import ViewPaymentAllocationsModal from "../../finance/journals/modals/ViewPaymentAllocationsModal";
 
 interface LedgerEntry {
   id: string;
@@ -23,6 +24,7 @@ interface LedgerEntry {
   remaining_amount: number;
   amount_lcy: number;
   remaining_amount_lcy: number;
+  total_allocated?: number;
   is_open: boolean;
   on_hold: boolean;
   on_hold_reason?: string;
@@ -55,12 +57,18 @@ export default function PartyLedgerActivityTab({
   const [filter, setFilter] = useState<"ALL" | "OPEN" | "CLOSED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [selectedPayment, setSelectedPayment] = useState<LedgerEntry | null>(
-    null,
-  );
+  const [selectedPayment, setSelectedPayment] = useState<LedgerEntry | null>(null);
+  const [viewAllocationsEntry, setViewAllocationsEntry] = useState<LedgerEntry | null>(null);
   const [onHoldEntry, setOnHoldEntry] = useState<LedgerEntry | null>(null);
   const [holdComment, setHoldComment] = useState("");
   const [holdStatus, setHoldStatus] = useState<boolean>(true);
+
+  // const [selectedPayment, setSelectedPayment] = useState<LedgerEntry | null>(
+  //   null,
+  // );
+  // const [onHoldEntry, setOnHoldEntry] = useState<LedgerEntry | null>(null);
+  // const [holdComment, setHoldComment] = useState("");
+  // const [holdStatus, setHoldStatus] = useState<boolean>(true);
 
   const currencyFormatter = useMemo(() => {
     const safeCurrency =
@@ -208,14 +216,14 @@ export default function PartyLedgerActivityTab({
     <div className="space-y-4">
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
+        {/* <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
           <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
             Total Ledger Value ({currencyCode})
           </span>
           <div className="text-lg font-bold font-mono text-slate-800 dark:text-slate-100">
             {formatAmount(summary.totalOriginal)}
           </div>
-        </div>
+        </div> */}
 
         <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
           <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">
@@ -291,6 +299,7 @@ export default function PartyLedgerActivityTab({
               <th className="p-2.5 text-right">Amount</th>
               <th className="p-2.5 text-right">Amount (LCY)</th>
               <th className="p-2.5 text-right">Remaining</th>
+              <th className="p-2.5 text-center">Allocations</th>
               {/* <th className="p-2.5 text-center">Allocations</th> */}
               <th className="p-2.5 text-center">On Hold</th>
               <th className="p-2.5 text-center">Action</th>
@@ -321,6 +330,15 @@ export default function PartyLedgerActivityTab({
                 </td>
                 <td className="p-2.5 text-right font-bold text-amber-600">
                   {formatAmount(row.remaining_amount)}
+                </td>
+                <td className="p-2.5 text-center">
+                  <button
+                    onClick={() => setViewAllocationsEntry(row)}
+                    title="View Allocations"
+                    className="p-1 text-slate-500 hover:text-blue-600 transition-colors rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    <Icon icon="tabler:eye" className="w-4 h-4 inline" />
+                  </button>
                 </td>
                 {/* <td className="p-2.5 text-center">
                   <button
@@ -408,6 +426,19 @@ export default function PartyLedgerActivityTab({
             </div>
           </div>
         </div>
+      )}
+
+      {/* View Allocations Modal */}
+      {viewAllocationsEntry && (
+        <ViewPaymentAllocationsModal
+          isOpen={!!viewAllocationsEntry}
+          onClose={() => setViewAllocationsEntry(null)}
+          entryId={viewAllocationsEntry.id}
+          partyId={partyId}
+          partyType={partyType}
+          documentNo={viewAllocationsEntry.document_no}
+          currencyFormatter={(val) => formatAmount(val)}
+        />
       )}
 
       {selectedPayment && (
