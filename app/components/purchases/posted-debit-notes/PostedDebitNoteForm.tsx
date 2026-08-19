@@ -1,0 +1,463 @@
+// app/components/purchases/posted-debit-notes/PostedDebitNoteForm.tsx
+
+"use client";
+
+import React, { useState, useMemo, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Icon } from "@iconify/react";
+import { toast } from "sonner";
+
+import {
+  DebitNote,
+  DebitNoteAddress,
+  DebitNoteLine,
+  DebitNoteMasterData,
+} from "@/types/debit-note";
+import { useLoader } from "@/app/context/LoaderContext";
+
+import { StockReceiveConfirmModal } from "../../shared/modals/StockReceiveConfirmModal";
+import { Button } from "@/components/ui/button";
+import DebitNoteLines from "../debit-notes/DebitNoteLines";
+import { OrderFormTabs } from "../debit-notes/OrderFormTabs";
+
+interface Props {
+  slug: string;
+  id?: string;
+  isReadOnly?: boolean;
+}
+
+type TabType = "general" | "invoicing" | "shipping";
+
+export const PostedDebitNoteForm: React.FC<Props> = ({
+  slug,
+  id,
+  isReadOnly = false,
+}) => {
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
+  const [activeTab, setActiveTab] = useState<TabType>("general");
+  const [saving, setSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+
+  // Manage view/edit state locally
+  const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
+
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+
+  const [piModalOpen, setPiModalOpen] = useState(false);
+  // Add states for modal control
+  const [showDispatchModal, setShowDispatchModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+
+  const { show, hide } = useLoader();
+
+  const [masterData, setMasterData] = useState<DebitNoteMasterData | null>(
+    null,
+  );
+
+  const isLoadingStages = !masterData;
+  const stages = masterData?.stages ?? [];
+
+  const isUpdateMode = !!id;
+
+  const [note, setNote] = useState<Partial<DebitNote>>({
+    debit_note_no: id ? "" : "[Auto-Generated]",
+    supplier_id: "",
+    supplier_no: "",
+    supplier_name: "",
+    order_date: new Date().toISOString().split("T")[0],
+    expected_date: "",
+    invoice_date: new Date().toISOString().split("T")[0],
+    receipt_date: new Date().toISOString().split("T")[0],
+    due_date: new Date().toISOString().split("T")[0],
+    status: "draft",
+    reference: "",
+    notes: "",
+    is_dispatched: false,
+    is_posted: false,
+  });
+
+  const [primaryAddress, setPrimaryAddress] = useState<
+    Partial<DebitNoteAddress>
+  >({ address_type: "primary" });
+
+  const [billingAddress, setBillingAddress] = useState<
+    Partial<DebitNoteAddress>
+  >({
+    address_type: "billing",
+  });
+  const [shippingAddress, setShippingAddress] = useState<
+    Partial<DebitNoteAddress>
+  >({
+    address_type: "shipping",
+  });
+
+  const [lines, setLines] = useState<DebitNoteLine[]>([]);
+
+  const isCompleted = note.status === "completed" || note.status === "POSTED";
+  const isFormDisabled = !isEditMode || isCompleted;
+
+  // Check if all line items with quantity > 0 have been received
+  const isFullyDispatched = useMemo(() => {
+    if (lines.length === 0) return false;
+    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
+    if (itemLines.length === 0) return false;
+
+    return itemLines.every((l) => {
+      const qty = Number(l.quantity || 0);
+      const rcvd = Number(l.returned_quantity || 0);
+      return qty > 0 && rcvd >= qty;
+    });
+  }, [lines]);
+
+  const [currencyConfig, setCurrencyConfig] = useState({
+    currency_id: "",
+    exchange_rate: 1,
+  });
+
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/debit-notes/${id}`)
+      .then((r) => r.json())
+      .then((payload) => {
+        if (payload && payload.success && payload.data) {
+          const actualData = payload.data;
+
+          console.log("API payload parsed successfully:", actualData);
+
+          setNote(actualData.debitNote || actualData.note || {});
+          setLines(actualData.lines || []);
+
+          setPrimaryAddress(
+            actualData.primary_address || { address_type: "primary" },
+          );
+          setBillingAddress(
+            actualData.billing_address || { address_type: "billing" },
+          );
+          setShippingAddress(
+            actualData.shipping_address || { address_type: "shipping" },
+          );
+
+          setCurrencyConfig({
+            currency_id:
+              actualData.debitNote?.currency_id ||
+              actualData.note?.currency_id ||
+              "",
+            exchange_rate:
+              actualData.debitNote?.exchange_rate ||
+              actualData.note?.exchange_rate ||
+              1,
+          });
+        }
+      })
+      .catch((err) =>
+        console.error(
+          "Error hydrating historical debit document payload matrix:",
+          err,
+        ),
+      );
+  }, [id]);
+
+  const refreshLines = async () => {
+    if (!note.id) return;
+
+    const response = await fetch(`/api/debit-notes/${note.id}/lines`);
+
+    const data = await response.json();
+
+    setLines(data.lines ?? []);
+  };
+
+  useEffect(() => {
+    async function loadMasterData() {
+      try {
+        const res = await fetch("/api/purchase-orders/master-data");
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        setMasterData(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadMasterData();
+  }, []);
+
+  const selectedCurrency = useMemo(() => {
+    return (
+      masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
+      null
+    );
+  }, [currencyConfig.currency_id, masterData]);
+
+  const financials = useMemo(() => {
+    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
+    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
+    const amountInclVat = amount + vat;
+
+    const rate = Number(currencyConfig.exchange_rate || 1);
+    // const amountInclVatLCY = amountInclVat / rate;
+    const amountInclVatLCY = Number(amountInclVat) * rate;
+
+    return { amount, vat, amountInclVat, amountInclVatLCY };
+  }, [lines, currencyConfig.exchange_rate]);
+
+  const updateField = <K extends keyof DebitNote>(
+    field: K,
+    value: DebitNote[K],
+  ) => {
+    setNote((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const inputStyle =
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+
+  const inputDateStyle =
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700  rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+
+  const labelStyle =
+    "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
+
+  return (
+    <div className="space-y-4">
+      {/*  container mx-auto p-1 */}
+      {validationErrors.length > 0 && (
+        <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
+          {validationErrors.map((err, idx) => (
+            <p
+              key={idx}
+              className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1"
+            >
+              <Icon icon="tabler:alert-circle" className="inline w-3.5 h-3.5" />{" "}
+              {err}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {isCompleted && (
+        <div className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Icon icon="tabler:lock" className="w-4 h-4 text-emerald-600" />
+            This Debit Note is <strong>Completed / Fully Posted</strong> and
+            cannot be edited.
+          </span>
+          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] capitalize font-bold tracking-wider">
+            Read Only
+          </span>
+        </div>
+      )}
+
+      <div className=" bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200  pb-2 mb-4">
+          <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar ">
+            {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap 
+                ${activeTab === tab ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-400 hover:text-slate-600"}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {isUpdateMode && !isLoadingStages && stages.length > 0 && (
+            <div className="flex justify-end ml-auto overflow-x-auto">
+              <div
+                className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
+              >
+                {stages.map((stage, index) => {
+                  const isLast = index === stages.length - 1;
+                  const isActive =
+                    note.status?.toLowerCase() === stage.name.toLowerCase();
+
+                  let activeBg = "bg-blue-600 text-white";
+                  if (index === 1) activeBg = "bg-amber-500 text-white";
+                  if (index === 2) activeBg = "bg-indigo-600 text-white";
+                  if (index >= 3) activeBg = "bg-emerald-600 text-white";
+
+                  return (
+                    <button
+                      type="button"
+                      key={stage.id}
+                      //   onClick={() => handleStageClick(stage.name)}
+                      className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95 ${index === 0 ? "rounded-l-md" : ""} ${isLast ? "rounded-r-md" : ""} ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
+                    >
+                      {stage.name}
+                      {!isLast && (
+                        <Icon
+                          icon="tabler:chevron-right"
+                          className="w-3 h-3 text-slate-400"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <OrderFormTabs
+          activeTab={activeTab}
+          note={note}
+          primaryAddress={primaryAddress}
+          setPrimaryAddress={setPrimaryAddress}
+          billingAddress={billingAddress}
+          setBillingAddress={setBillingAddress}
+          shippingAddress={shippingAddress}
+          setShippingAddress={setShippingAddress}
+          currencyConfig={currencyConfig}
+          setCurrencyConfig={setCurrencyConfig}
+          masterData={masterData}
+          updateField={updateField}
+          setSupplierModalOpen={setSupplierModalOpen}
+          setLocationModalOpen={setLocationModalOpen}
+          setPiModalOpen={setPiModalOpen}
+          labelStyle={labelStyle}
+          inputStyle={inputStyle}
+          isReadOnly={isFormDisabled}
+        />
+      </div>
+
+      <DebitNoteLines
+        lines={lines}
+        setLines={setLines}
+        isReadonly={isFormDisabled}
+        debitNote={note}
+        refreshLines={refreshLines}
+      />
+
+      <div className="  bg-white  border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 pl-4 pr-4">
+          <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
+            <div>
+              <textarea
+                placeholder="Add Internal Notes"
+                disabled={isFormDisabled}
+                className={`${inputStyle} font-mono`}
+                value={note.internal_notes || ""}
+                onChange={(e) => updateField("internal_notes", e.target.value)}
+              />
+            </div>
+            <div className="col-span-2">
+              <textarea
+                placeholder="Add External Notes"
+                disabled={isFormDisabled}
+                className={`${inputStyle} font-mono`}
+                value={note.notes || ""}
+                onChange={(e) => updateField("notes", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+              <div>
+                <span className="text-xs font-semibold text-slate-500 col">
+                  Conversion Rate
+                </span>
+              </div>
+              <div>
+                <input
+                  type="number"
+                  step="0.01"
+                  disabled={isFormDisabled}
+                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                  value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
+                  onChange={(e) =>
+                    setCurrencyConfig({
+                      ...currencyConfig,
+                      exchange_rate: parseFloat(e.target.value) || 1,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 items-center">
+              <span className="text-xs font-semibold text-slate-500">
+                Amount Incl. VAT ({baseCurrencyCode})
+              </span>
+              <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
+                {financials.amountInclVatLCY.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
+            <div className="flex justify-between pb-1">
+              <span className="font-semibold">Amount</span>
+              <span>
+                {financials.amount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+            <div className="flex justify-between pb-1">
+              <span className="font-semibold">VAT</span>
+              <span>
+                {financials.vat.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+            <div className="flex justify-between  pt-1 text-slate-900 dark:text-white">
+              <span className="font-semibold">Amount Incl. VAT</span>
+              <span>
+                {financials.amountInclVat.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 bg-slate-50 dark:bg-slate-900/60 pl-4 pr-4 pb-4 rounded-lg">
+          <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
+              Partially Allocated
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
+              Allocated Stock
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
+              Stock Received
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              onClick={() =>
+                router.push(`/${slug}/purchases/posted-debit-notes`)
+              }
+              className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
