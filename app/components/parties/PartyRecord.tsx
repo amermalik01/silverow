@@ -293,10 +293,11 @@ export default function PartyRecord({
               .filter(([key]) => key !== "global")
               .map(([key, message]) => (
                 <li key={key}>
-                  <span className="capitalize font-medium">
+                  {/* <span className="capitalize font-medium">
                     {key.replace(".", " ")}
                   </span>
-                  : {message}
+                  : */} 
+                  {message}
                 </li>
               ))}
           </ul>

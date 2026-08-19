@@ -28,24 +28,29 @@ export async function GET(
 
     const query = `
       SELECT 
-        id,
-        document_type,
-        document_id,
-        document_no,
-        posting_date,
-        due_date,
-        description,
-        original_amount,
-        remaining_amount,
-        exchange_rate,
-        is_open,
-        on_hold,
-        on_hold_reason,
-        journal_entry_id,
-        created_at
-      FROM ${tableName}
-      WHERE company_id = $1 AND ${partyColumn} = $2
-      ORDER BY posting_date DESC, created_at DESC
+        e.id,
+        e.document_type,
+        e.document_id,
+        e.document_no,
+        e.posting_date,
+        e.due_date,
+        e.description,
+        e.original_amount,
+        e.remaining_amount,
+        e.exchange_rate,
+        e.is_open,
+        e.on_hold,
+        e.on_hold_reason,
+        e.journal_entry_id,
+        e.created_at,
+        COALESCE(SUM(la.allocated_amount), 0) AS total_allocated
+      FROM ${tableName} e
+      LEFT JOIN ledger_allocations la 
+        ON (la.payment_entry_id = e.id OR la.ledger_entry_id = e.id)
+        AND la.is_unapplied = false
+      WHERE e.company_id = $1 AND e.${partyColumn} = $2
+      GROUP BY e.id
+      ORDER BY e.posting_date DESC, e.created_at DESC
     `;
 
     const result = await pool.query(query, [companyId, partyId]);
@@ -73,6 +78,7 @@ export async function GET(
         ...row,
         original_amount: signedOrig,
         remaining_amount: signedRem,
+        total_allocated: Number(row.total_allocated) || 0,
         amount_lcy: signedOrig * rate,
         remaining_amount_lcy: signedRem * rate,
         on_hold: Boolean(row.on_hold),

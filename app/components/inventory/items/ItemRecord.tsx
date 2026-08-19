@@ -279,10 +279,10 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
           <ul className="list-disc pl-5 space-y-0.5">
             {Object.entries(formErrors).map(([key, msg]) => (
               <li key={key}>
-                <span className="capitalize font-medium">
+                {/* <span className="capitalize font-medium">
                   {key.replace(".", " ")}
                 </span>
-                : {msg}
+                : */} {msg}
               </li>
             ))}
           </ul>

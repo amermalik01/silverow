@@ -9,6 +9,7 @@ import {
 } from "@/types/journal";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 import { validateLedgerPostingDate } from "@/lib/validations/postingGate";
+import { FxVarianceService } from "./fx/fx-variance.service";
 
 export class JournalService {
   static async list(
@@ -543,21 +544,47 @@ export class JournalService {
             alloc.allocation_type ||
             (line.party_type === "supplier" ? "AP" : "AR");
 
+          const paymentRate = alloc.exchange_rate || line.exchange_rate || 1.0;
+
+          //  Fetch invoice exchange rate from sub-ledger
+          const subTable =
+            allocType === "AP"
+              ? "vendor_ledger_entries"
+              : "customer_ledger_entries";
+          const invRes = await client.query(
+            `SELECT exchange_rate FROM ${subTable} WHERE id = $1 AND company_id = $2`,
+            [targetLedgerId, companyId],
+          );
+
+          const invoiceRate = invRes.rows[0]?.exchange_rate
+            ? Number(invRes.rows[0].exchange_rate)
+            : paymentRate;
+
+          //  Calculate FX Variance
+          const fx = await FxVarianceService.calculateVariance(client, {
+            companyId,
+            allocationType: allocType as "AP" | "AR",
+            invoiceExchangeRate: invoiceRate,
+            paymentExchangeRate: Number(paymentRate),
+            allocatedAmountFCY: allocatedAmount,
+          });
+
           await client.query(
             `
-          INSERT INTO ledger_allocations (
-            company_id,
-            allocation_type,
-            payment_entry_id,
-            journal_line_id,
-            ledger_entry_id,
-            allocated_amount,
-            exchange_rate,
-            allocation_date,
-            remarks
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-          `,
+            INSERT INTO ledger_allocations (
+              company_id,
+              allocation_type,
+              payment_entry_id,
+              journal_line_id,
+              ledger_entry_id,
+              allocated_amount,
+              exchange_rate,
+              allocation_date,
+              realized_gain_loss,
+              remarks
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            `,
             [
               companyId,
               allocType,
@@ -565,8 +592,9 @@ export class JournalService {
               line.journal_line_id || null, // Link allocation to the exact line
               targetLedgerId,
               allocatedAmount,
-              alloc.exchange_rate || 1.0,
+              paymentRate,
               entryDate,
+              fx.realizedGainLoss,
               alloc.remarks || null,
             ],
           );

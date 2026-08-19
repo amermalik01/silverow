@@ -440,9 +440,14 @@ export const DebitNoteForm: React.FC<Props> = ({
       if (id) {
         // Toggle back to View Mode after saving existing PO
         setIsEditMode(false);
+        router.refresh();
       } else {
         // Redirect to list page on initial creation
-        router.push(`/${slug}/purchases/debit-notes`);
+        // router.push(`/${slug}/purchases/debit-notes`);
+        if (result?.data.id)
+          router.replace(
+            `/${slug}/purchases/debit-notes/${result?.data.id}/edit`,
+          );
       }
     } catch (err) {
       if (err instanceof Error) setValidationErrors([err.message]);

@@ -481,11 +481,11 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 name: "G/L Account(s) Setup for Opening Balances",
                 url: `/${slug}/setup/finance/posting-groups`,
               },
-              {
-                id: "G/L Account for Goods Received Not Invoiced",
-                name: "G/L Account for Goods Received Not Invoiced",
-                url: `/${slug}/setup/finance/posting-groups`,
-              },
+              // {
+              //   id: "G/L Account for Goods Received Not Invoiced",
+              //   name: "G/L Account for Goods Received Not Invoiced",
+              //   url: `/${slug}/setup/finance/posting-groups`,
+              // },
             ],
           },
           {

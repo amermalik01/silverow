@@ -364,10 +364,15 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       if (id) {
         // Toggle back to View Mode after saving existing PO
         setIsEditMode(false);
+        router.refresh();
       } else {
         // Redirect to list page on initial creation
         // router.push(`/${slug}/purchases/purchase-orders`);
-        router.replace(`/${slug}/purchases/purchase-orders/${id}/edit`);
+
+        if (result?.data.id)
+          router.replace(
+            `/${slug}/purchases/purchase-orders/${result?.data.id}/edit`,
+          );
       }
     } catch (err) {
       if (err instanceof Error) setValidationErrors([err.message]);

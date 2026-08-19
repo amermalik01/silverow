@@ -37,7 +37,7 @@ export default function PartyForm({
   // >("general");
 
   const [activeTab, setActiveTab] = useState("general");
-  
+
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [currencies, setCurrencies] = useState<CompanyCurrency[]>([]);
@@ -173,6 +173,10 @@ export default function PartyForm({
           payload.error || "Persistence operation processing error.",
         );
 
+      if (payload.id) {
+        router.replace(`${redirectPath}/${payload.id}/edit`);
+      }
+
       router.push(redirectPath);
       router.refresh();
     } catch (err) {
@@ -211,10 +215,11 @@ export default function PartyForm({
               .filter(([key]) => key !== "global")
               .map(([key, message]) => (
                 <li key={key}>
-                  <span className="capitalize font-medium">
+                  {/* <span className="capitalize font-medium">
                     {key.replace(".", " ")}
                   </span>
-                  : {message}
+                  :  */}
+                  {message}
                 </li>
               ))}
           </ul>

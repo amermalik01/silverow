@@ -7,14 +7,13 @@ import { initializeChartOfAccounts } from "./chartOfAccounts";
 import { initializePostingGroups } from "./postingGroups";
 import { initializeVat } from "./vat";
 import { initializeCurrency } from "./currency";
+import { initializeCurrencyMovementSetup } from "./currencySetup";
 
-export async function initializeCompany(
-  client: PoolClient,
-  companyId: string
-) {
+export async function initializeCompany(client: PoolClient, companyId: string) {
   await initializeSequences(client, companyId);
   await initializeChartOfAccounts(client, companyId);
   await initializePostingGroups(client, companyId);
   await initializeVat(client, companyId);
   await initializeCurrency(client, companyId);
+  await initializeCurrencyMovementSetup(client, companyId);
 }
