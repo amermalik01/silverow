@@ -961,7 +961,7 @@ export class JournalService {
 
             const party = partyRes.rows[0];
             mainAccountId =
-              party?.gl_account_payable || party?.group_account_id || null;
+              party?.group_account_id || party?.gl_account_payable || null;
 
             if (!mainAccountId) {
               const fallbackPpg = await client.query(
@@ -984,7 +984,7 @@ export class JournalService {
 
             const party = partyRes.rows[0];
             mainAccountId =
-              party?.gl_account_receivable || party?.group_account_id || null;
+              party?.group_account_id || party?.gl_account_receivable || null;
 
             if (!mainAccountId) {
               const fallbackSpg = await client.query(
