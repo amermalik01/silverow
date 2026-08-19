@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 interface AccountingPeriod {
   id: string;
@@ -164,12 +165,12 @@ export default function PostingDateRangeSetup() {
             className="w-full bg-white text-black border border-gray-300 px-3 py-1.5 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <button
+        <Button
           type="submit"
           className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded font-medium transition-colors"
         >
           Open New Period
-        </button>
+        </Button>
       </form>
 
       {/* Periods Table */}
@@ -221,7 +222,7 @@ export default function PostingDateRangeSetup() {
                     </span>
                   </td>
                   <td className="p-3 text-right">
-                    <button
+                    <Button
                       type="button"
                       onClick={() =>
                         handleToggleClose(period.id, period.is_closed)
@@ -233,7 +234,7 @@ export default function PostingDateRangeSetup() {
                       }`}
                     >
                       {period.is_closed ? "Reopen Period" : "Close Period"}
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))

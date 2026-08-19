@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useCallback } from "react";
 
 interface DropdownManagerProps {
@@ -107,12 +108,12 @@ export default function DropdownManager({
           placeholder="Enter configuration name..."
           className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-blue-500"
         />
-        <button
+        <Button
           onClick={createItem}
           className="px-4 py-2 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
         >
           Add Item
-        </button>
+        </Button>
       </div>
 
       <ul className="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
@@ -128,18 +129,18 @@ export default function DropdownManager({
                   onChange={(e) => setEditValue(e.target.value)}
                   className="p-1 border rounded dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
                 />
-                <button
+                <Button
                   onClick={() => updateItem(item.id)}
                   className="text-xs text-emerald-600 font-semibold"
                 >
                   Save
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setEditingId(null)}
                   className="text-xs text-slate-500"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             ) : (
               <>
@@ -147,7 +148,7 @@ export default function DropdownManager({
                   {item.name}
                 </span>
                 <div className="flex gap-3">
-                  <button
+                  <Button
                     onClick={() => {
                       setEditingId(item.id);
                       setEditValue(item.name);
@@ -155,13 +156,13 @@ export default function DropdownManager({
                     className="text-xs text-blue-600 hover:underline"
                   >
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => deleteItem(item.id)}
                     className="text-xs text-red-500 hover:underline"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -277,7 +278,7 @@ export default function DropdownManager({
           placeholder="New item"
         />
 
-        <button onClick={createItem}>Add</button>
+        <Button onClick={createItem}>Add</Button>
       </div>
 
       <ul>
@@ -290,27 +291,27 @@ export default function DropdownManager({
                   onChange={(e) => setEditValue(e.target.value)}
                 />
 
-                <button onClick={() => updateItem(item.id)}>Save</button>
+                <Button onClick={() => updateItem(item.id)}>Save</Button>
 
-                <button onClick={cancelEdit}>Cancel</button>
+                <Button onClick={cancelEdit}>Cancel</Button>
               </>
             ) : (
               <>
                 {item.name}
 
-                <button
+                <Button
                   onClick={() => startEdit(item)}
                   style={{ marginLeft: 10 }}
                 >
                   Edit
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={() => deleteItem(item.id)}
                   style={{ marginLeft: 10 }}
                 >
                   Delete
-                </button>
+                </Button>
               </>
             )}
           </li>

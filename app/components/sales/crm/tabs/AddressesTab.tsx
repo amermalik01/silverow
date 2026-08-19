@@ -2,6 +2,7 @@
 // app/components/sales/crm/tabs/AddressesTab.tsx
 
 "use client";
+import { Button } from "@/components/ui/button";
 import { CRMAddress } from "@/types/crm";
 
 export default function AddressesTab({
@@ -23,13 +24,13 @@ export default function AddressesTab({
   return (
     <div className="space-y-4">
 
-      <button
+      <Button
         onClick={addAddress}
         // className="bg-green-600 text-white px-3 py-1 rounded"
         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
       >
         Add Address
-      </button>
+      </Button>
 
       {addresses.map((a, i) => (
         <div key={i} className="border p-3 rounded grid grid-cols-2 gap-2">

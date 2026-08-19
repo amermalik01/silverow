@@ -5,6 +5,7 @@
 import { WarehouseLocation } from "@/types/warehouse";
 import { useState } from "react";
 import LocationForm from "./LocationForm";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   warehouseId: string;
@@ -41,7 +42,7 @@ export default function LocationsTab({
         />
 
         {!isReadOnly && (
-          <button
+          <Button
             onClick={() => {
               setShowForm(true);
               setSelectedLocation(null);
@@ -49,7 +50,7 @@ export default function LocationsTab({
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-sm px-4 py-1.5 rounded-md transition-colors"
           >
             + Add
-          </button>
+          </Button>
         )}
       </div>
 
@@ -123,7 +124,7 @@ export default function LocationsTab({
                     {loc.cost ?? "0.00"}
                   </td>
                   <td className="px-4 py-3 text-right font-medium text-xs">
-                    <button
+                    <Button
                       onClick={() => {
                         setSelectedLocation(loc);
                         setShowForm(false);
@@ -131,7 +132,7 @@ export default function LocationsTab({
                       className="text-blue-600 hover:underline"
                     >
                       {isReadOnly ? "View" : "Edit"}
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))
@@ -177,7 +178,7 @@ export default function LocationsTab({
             <span>{loc.title}</span>
 
             <div className="flex gap-2 text-xs">
-              <button
+              <Button
                 onClick={() => {
                   setActiveParent(loc.id);
                   setEditLocation(null);
@@ -185,9 +186,9 @@ export default function LocationsTab({
                 className="text-blue-600"
               >
                 + Add
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={() => {
                   setEditLocation(loc);
                   setActiveParent(null);
@@ -195,14 +196,14 @@ export default function LocationsTab({
                 className="text-green-600"
               >
                 ✏ Edit
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={() => handleDelete(loc.id)}
                 className="text-red-600"
               >
                 🗑
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -231,7 +232,7 @@ export default function LocationsTab({
       <h3 className="font-semibold mb-2">Location Tree</h3>
 
 
-      <button
+      <Button
         onClick={() => {
           setActiveParent(null);
           setEditLocation(null);
@@ -239,7 +240,7 @@ export default function LocationsTab({
         className="mb-3 bg-blue-600 text-white px-3 py-1 rounded"
       >
         + Root Location
-      </button>
+      </Button>
 
 
       {(activeParent !== undefined || editLocation) && (

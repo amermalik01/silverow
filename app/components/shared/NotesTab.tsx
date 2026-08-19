@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
 
 export type Note = {
@@ -80,13 +81,13 @@ export default function NotesTab({
             rows={4}
             placeholder="Log conversation minutes, compliance milestones or remarks..."
           />
-          <button
+          <Button
             onClick={handleSave}
             disabled={saving || !note.trim()}
             className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-xs font-medium py-2 rounded-lg transition-all disabled:opacity-40"
           >
             {saving ? "Posting..." : "Append Note Entry"}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -230,13 +231,13 @@ export default function NotesTab({
           />
 
           <div className="flex justify-end">
-            <button
+            <Button
               onClick={handleSave}
               disabled={saving || !note}
               className="bg-blue-600 text-white px-4 py-2 rounded"
             >
               {saving ? "Saving..." : "Save Note"}
-            </button>
+            </Button>
           </div>
         </div>
       )}

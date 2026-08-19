@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Party } from "@/types/erp";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   party: Party;
@@ -64,7 +65,7 @@ export default function PartyConversionActions({ party, onUpdate }: Props) {
       <div className="flex items-center gap-2">
         {/* Render "Convert to Customer" button if CRM Lead and NOT yet a Customer */}
         {party.is_crm_lead && !party.is_customer && (
-          <button
+          <Button
             type="button"
             onClick={() => handleConvert("to_customer")}
             disabled={loading !== null}
@@ -90,12 +91,12 @@ export default function PartyConversionActions({ party, onUpdate }: Props) {
                 Convert to Customer
               </>
             )}
-          </button>
+          </Button>
         )}
 
         {/* Render "Convert to Supplier" button if SRM Vendor and NOT yet a Supplier */}
         {party.is_srm_vendor && !party.is_supplier && (
-          <button
+          <Button
             type="button"
             onClick={() => handleConvert("to_supplier")}
             disabled={loading !== null}
@@ -121,7 +122,7 @@ export default function PartyConversionActions({ party, onUpdate }: Props) {
                 Convert to Supplier
               </>
             )}
-          </button>
+          </Button>
         )}
       </div>
     </div>

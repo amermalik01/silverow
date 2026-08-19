@@ -581,39 +581,6 @@ export default function JournalForm({
       setLoading(true);
       show("Saving Record...");
 
-      // const sanitizedLines = lines.map((line) => {
-      //   const rate = Number(line.exchange_rate || 1.0);
-      //   const amt = line.debit > 0 ? line.debit : line.credit;
-      //   const convertedAmount = Number((amt * rate).toFixed(2));
-
-      //   return {
-      //     posting_date: line.posting_date,
-      //     document_type: line.document_type,
-      //     document_no: line.document_no,
-      //     account_id: line.account_id || null,
-      //     party_id: line.party_id || null,
-      //     party_type:
-      //       line.transaction_type === "gl_no" ? null : line.transaction_type,
-      //     currency_id: line.currency_id || null,
-      //     exchange_rate: rate,
-      //     debit: line.debit,
-      //     credit: line.credit,
-      //     currency_amount: convertedAmount,
-      //     description: line.description || metadata.description || "",
-      //     reference_id: line.balancing_account_id || null,
-      //     reference_type: line.balancing_account_id ? "G/L Account" : null,
-      //     allocations: line.allocations || [],
-      //   };
-      // });
-
-      // const payload = {
-      //   entry_date: metadata.entry_date,
-      //   reference: metadata.reference,
-      //   description: metadata.description,
-      //   lines: sanitizedLines,
-      //   is_posted: postToLedger,
-      // };
-
       const payload: JournalPayload2 = {
         entry_date: metadata.entry_date,
         is_posted: postToLedger,
@@ -872,7 +839,7 @@ export default function JournalForm({
                         className="w-full border p-1 rounded bg-zinc-50 text-zinc-700 font-mono text-[11px] outline-none truncate"
                       />
 
-                      <button
+                      <Button
                         type="button"
                         disabled={formDisabled}
                         onClick={() =>
@@ -888,7 +855,7 @@ export default function JournalForm({
                         className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                       >
                         <Icon icon="tabler:external-link" className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
 
@@ -984,7 +951,7 @@ export default function JournalForm({
                         className="w-full border p-1 rounded bg-zinc-50 text-zinc-700 font-mono text-[11px] outline-none truncate"
                       />
 
-                      <button
+                      <Button
                         type="button"
                         disabled={formDisabled}
                         onClick={() =>
@@ -997,14 +964,14 @@ export default function JournalForm({
                         className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                       >
                         <Icon icon="tabler:external-link" className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
 
                   <td className="p-1.5 ">
                     <div className="flex flex-row gap-1">
                       {isPartyLine ? (
-                        <button
+                        <Button
                           type="button"
                           title={
                             totalLineAllocated > 0
@@ -1022,18 +989,18 @@ export default function JournalForm({
                           } disabled:opacity-40 disabled:cursor-not-allowed`}
                         >
                           <Icon icon="tabler:box-seam" className="w-4 h-4" />
-                        </button>
+                        </Button>
                       ) : (
                         <span className="text-zinc-300">-</span>
                       )}
-                      <button
+                      <Button
                         type="button"
                         disabled={lines.length === 1 || formDisabled}
                         onClick={() => removeLineRow(index)}
                         className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
                       >
                         <Icon icon="lucide:x" className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -1083,13 +1050,14 @@ export default function JournalForm({
         {!readOnly && (
           <>
             {isPosted && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setShowNavigateModal(true)}
-                className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+                className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2 disabled:opacity-50"
+                // className="px-5 font-semibold flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
               >
                 Navigate
-              </button>
+              </Button>
             )}
             {!isEditing ? (
               /* VIEW MODE BUTTONS */
@@ -1197,26 +1165,6 @@ export default function JournalForm({
         />
       )}
 
-      {/* 🌟 INLINE JOURNAL ALLOCATION MODAL */}
-      {/* {allocationModalIndex !== null && activeAllocationLine && (
-        <AllocateJournalPaymentModal
-          isOpen={true}
-          onClose={() => setAllocationModalIndex(null)}
-          partyId={activeAllocationLine.party_id}
-          partyType={journalType === "supplier" ? "supplier" : "customer"}
-          documentType={activeAllocationLine.document_type}
-          paymentAmount={
-            activeAllocationLine.debit > 0
-              ? activeAllocationLine.debit
-              : activeAllocationLine.credit
-          }
-          initialAllocations={activeAllocationLine.allocations || []}
-          onApplyAllocations={(allocations) => {
-            handleLineChange(allocationModalIndex, "allocations", allocations);
-          }}
-        />
-      )} */}
-
       {/* ALLOCATION MODAL BINDING */}
       {activeAllocationLine && allocationModalIndex !== null && (
         <AllocateJournalPaymentModal
@@ -1242,22 +1190,6 @@ export default function JournalForm({
           }
         />
       )}
-      {/* {allocationModalIndex !== null && activeAllocationLine && (
-        <AllocateJournalPaymentModal
-          isOpen={true}
-          onClose={() => setAllocationModalIndex(null)}
-          vendorId={activeAllocationLine.party_id}
-          paymentAmount={
-            activeAllocationLine.debit > 0
-              ? activeAllocationLine.debit
-              : activeAllocationLine.credit
-          }
-          initialAllocations={activeAllocationLine.allocations || []}
-          onApplyAllocations={(allocations) => {
-            handleLineChange(allocationModalIndex, "allocations", allocations);
-          }}
-        />
-      )} */}
 
       {isPosted && journalId && (
         <PostedTransactionsModal
@@ -1271,6 +1203,62 @@ export default function JournalForm({
   );
 }
 
+// const sanitizedLines = lines.map((line) => {
+//   const rate = Number(line.exchange_rate || 1.0);
+//   const amt = line.debit > 0 ? line.debit : line.credit;
+//   const convertedAmount = Number((amt * rate).toFixed(2));
+
+//   return {
+//     posting_date: line.posting_date,
+//     document_type: line.document_type,
+//     document_no: line.document_no,
+//     account_id: line.account_id || null,
+//     party_id: line.party_id || null,
+//     party_type:
+//       line.transaction_type === "gl_no" ? null : line.transaction_type,
+//     currency_id: line.currency_id || null,
+//     exchange_rate: rate,
+//     debit: line.debit,
+//     credit: line.credit,
+//     currency_amount: convertedAmount,
+//     description: line.description || metadata.description || "",
+//     reference_id: line.balancing_account_id || null,
+//     reference_type: line.balancing_account_id ? "G/L Account" : null,
+//     allocations: line.allocations || [],
+//   };
+// });
+
+// const payload = {
+//   entry_date: metadata.entry_date,
+//   reference: metadata.reference,
+//   description: metadata.description,
+//   lines: sanitizedLines,
+//   is_posted: postToLedger,
+// };
+
+{
+  /* 🌟 INLINE JOURNAL ALLOCATION MODAL */
+}
+{
+  /* {allocationModalIndex !== null && activeAllocationLine && (
+        <AllocateJournalPaymentModal
+          isOpen={true}
+          onClose={() => setAllocationModalIndex(null)}
+          partyId={activeAllocationLine.party_id}
+          partyType={journalType === "supplier" ? "supplier" : "customer"}
+          documentType={activeAllocationLine.document_type}
+          paymentAmount={
+            activeAllocationLine.debit > 0
+              ? activeAllocationLine.debit
+              : activeAllocationLine.credit
+          }
+          initialAllocations={activeAllocationLine.allocations || []}
+          onApplyAllocations={(allocations) => {
+            handleLineChange(allocationModalIndex, "allocations", allocations);
+          }}
+        />
+      )} */
+}
 {
   /* <div className="flex justify-end gap-2 pt-2">
         {!formDisabled && (
@@ -1299,13 +1287,13 @@ export default function JournalForm({
         )}
 
         {isPosted && (
-          <button
+          <Button
             type="button"
             onClick={() => setShowNavigateModal(true)}
             className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
           >
             Navigate
-          </button>
+          </Button>
         )}
 
         <Button

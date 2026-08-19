@@ -6,6 +6,7 @@ import { formatDate, formatRate } from "@/lib/utils/currency";
 import { useEffect, useState } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type Rate = {
   id: string;
@@ -107,13 +108,13 @@ export default function RateHistoryModal({
             className="border p-2 rounded"
           />
 
-          <button
+          <Button
             onClick={saveRate}
             className="bg-blue-600 text-white px-4 rounded"
             disabled={loading}
           >
             {loading ? "Saving..." : "Add"}
-          </button>
+          </Button>
         </div>
 
         {/* Table */}
@@ -155,9 +156,9 @@ export default function RateHistoryModal({
 
         {/* Footer */}
         <div className="mt-4 text-right">
-          <button onClick={onClose} className="text-red-500 text-xs">
+          <Button onClick={onClose} className="text-red-500 text-xs">
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </div>

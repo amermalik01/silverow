@@ -14,6 +14,7 @@ import NotesTab from "./tabs/NotesTab";
 import AttachmentsTab from "./tabs/AttachmentsTab";
 
 import { CRMAccount, CRMContact, CRMAddress } from "@/types/crm";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   id: string;
@@ -154,13 +155,13 @@ export default function CRMRecord({ id, isReadonly = false }: Props) {
 
       {!isReadonly && (
         <div className="flex justify-end pt-4 border-t">
-          <button
+          <Button
             onClick={handleSave}
             disabled={saving}
             className="bg-blue-600 text-white px-6 py-2 rounded"
           >
             {saving ? "Saving..." : "Update CRM"}
-          </button>
+          </Button>
         </div>
       )}
     </div>

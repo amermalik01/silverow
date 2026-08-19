@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 type Props = {
@@ -78,12 +79,12 @@ export default function ActivitiesTimeline({ module, recordId }: Props) {
           className="border p-2 rounded w-full"
         />
 
-        <button
+        <Button
           onClick={addActivity}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           Add
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-2">

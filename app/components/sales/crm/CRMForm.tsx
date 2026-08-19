@@ -9,6 +9,7 @@ import ContactsTab from "./tabs/ContactsTab";
 import AddressesTab from "./tabs/AddressesTab";
 
 import { CRMAccount, CRMContact, CRMAddress } from "@/types/crm";
+import { Button } from "@/components/ui/button";
 
 export default function CRMForm() {
   const [activeTab, setActiveTab] = useState("general");
@@ -83,13 +84,13 @@ export default function CRMForm() {
 
       {/* ACTIONS */}
       <div className="flex justify-end gap-3 pt-4 border-t">
-        <button
+        <Button
           onClick={handleSubmit}
           disabled={loading}
           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
         >
-          {loading ? "Saving..." : "Save CRM"}
-        </button>
+          {loading ? "Saving..." : "Save"}
+        </Button>
       </div>
     </div>
   );

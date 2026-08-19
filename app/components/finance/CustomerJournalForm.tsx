@@ -8,6 +8,7 @@ import { CustomerJournal, CustomerJournalLine } from "@/types/finance";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO, startOfDay } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type Customer = { id: string; name: string };
 type Account = { id: string; code: string; name: string };
@@ -146,12 +147,12 @@ export default function CustomerJournalForm({
         <option value="PAYMENT">Payment</option>
       </select>
 
-      <button
+      <Button
         type="submit"
         className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 px-4 py-2"
       >
         Save
-      </button>
+      </Button>
     </form>
   );
 }

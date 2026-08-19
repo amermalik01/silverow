@@ -1,6 +1,7 @@
 // app/components/setup/PostingGroupsList.tsx
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 type PostingGroup = {
@@ -76,12 +77,12 @@ export default function PostingGroupsList() {
           placeholder="Name"
           className="border p-2 rounded flex-1"
         />
-        <button
+        <Button
           onClick={createOrUpdate}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           {editingId ? "Update" : "Add"}
-        </button>
+        </Button>
       </div>
 
       {/* Table */}
@@ -97,18 +98,18 @@ export default function PostingGroupsList() {
             <tr key={g.id} className="border-t">
               <td className="p-2">{g.name}</td>
               <td className="p-2 text-center space-x-3">
-                <button
+                <Button
                   className="text-blue-600"
                   onClick={() => editGroup(g)}
                 >
                   Edit
-                </button>
-                <button
+                </Button>
+                <Button
                   className="text-red-600"
                   onClick={() => deleteGroup(g.id)}
                 >
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

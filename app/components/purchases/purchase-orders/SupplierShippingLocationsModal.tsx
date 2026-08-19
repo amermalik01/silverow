@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 export type SupplierLocationItem = {
@@ -148,7 +149,7 @@ export default function SupplierShippingLocationsModal({
                   <td className="border p-2">{loc.city || "—"}</td>
                   <td className="border p-2">{loc.postcode || "—"}</td>
                   <td className="border p-2 text-center">
-                    <button
+                    <Button
                       onClick={() => {
                         onSelect(loc);
                         onClose();
@@ -156,7 +157,7 @@ export default function SupplierShippingLocationsModal({
                       className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded transition text-xs"
                     >
                       Select
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

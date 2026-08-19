@@ -309,12 +309,12 @@ export default function ItemList() {
                         Edit
                       </Link>
                       <span className="text-slate-300 dark:text-slate-700">|</span>
-                      <button
+                      <Button
                         onClick={() => handleDelete(row.id)}
                         className="text-red-600 dark:text-red-400 hover:underline font-medium"
                       >
                         Delete
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -329,20 +329,20 @@ export default function ItemList() {
                 Showing page <b>{page}</b> of <b>{totalPages}</b> ({totalRecords} total items)
               </span>
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   disabled={page === 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   className="px-3 py-1.5 border rounded-lg bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 disabled:opacity-40 font-medium text-slate-700 dark:text-slate-200 transition-opacity"
                 >
                   Previous
-                </button>
-                <button
+                </Button>
+                <Button
                   disabled={page === totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   className="px-3 py-1.5 border rounded-lg bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 disabled:opacity-40 font-medium text-slate-700 dark:text-slate-200 transition-opacity"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
           )}

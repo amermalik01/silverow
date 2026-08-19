@@ -1,6 +1,7 @@
 // app/components/setup/system/roles/PermissionMatrix.tsx
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useMemo, useState } from "react";
 
 type Permission = {
@@ -80,13 +81,13 @@ export default function PermissionMatrix({
       <div className="flex justify-between items-center">
         <h2 className="font-semibold">Permissions</h2>
 
-        <button
+        <Button
           onClick={save}
           disabled={saving}
           className="bg-green-600 text-white px-4 py-2 rounded"
         >
           {saving ? "Saving..." : "Save Permissions"}
-        </button>
+        </Button>
       </div>
 
       {Object.entries(grouped).map(([module, perms]) => (

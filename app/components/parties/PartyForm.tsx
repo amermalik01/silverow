@@ -13,6 +13,7 @@ import GeneralTab from "./tabs/GeneralTab";
 import ContactsTab from "./tabs/ContactsTab";
 import AddressesTab from "./tabs/AddressesTab";
 import type { CompanyCurrency } from "./tabs/GeneralTab";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   title: string;
@@ -301,21 +302,21 @@ export default function PartyForm({
       </div>
 
       <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-        <button
-          type="button"
-          onClick={() => router.push(redirectPath)}
-          className="px-4 py-2 text-xs border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium"
-        >
-          Cancel
-        </button>
-        <button
+        <Button
           type="button"
           onClick={handleSubmit}
           disabled={loading}
           className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium px-5 py-2 rounded-lg text-xs transition-colors shadow-sm"
         >
-          {loading ? "Processing Ledger..." : "Save Record"}
-        </button>
+          {loading ? "Processing Ledger..." : "Save"}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => router.push(redirectPath)}
+          className="px-4 py-2 text-xs border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-white dark:text-slate-300 font-medium"
+        >
+          Cancel
+        </Button>
       </div>
     </div>
   );

@@ -129,13 +129,13 @@ export default function EmployeeForm() {
         </Button>
       </div>
       {/* <div className="flex justify-end border-t pt-4">
-        <button
+        <Button
           onClick={save}
           disabled={loading}
           className="bg-blue-600 text-white px-6 py-2 rounded"
         >
           {loading ? "Saving..." : "Save Employee"}
-        </button>
+        </Button>
       </div> */}
     </div>
   );

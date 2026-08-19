@@ -12,6 +12,7 @@ import type {
   MigrationUploadResponse,
   MigrationExecuteResponse,
 } from "@/lib/migration/migration.types";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   purchaseOrder: {
@@ -143,7 +144,7 @@ export default function MigrationUploader({
           </div>
         </div>
 
-        {/* <button
+        {/* <Button
           type="button"
           onClick={() => {
             window.location.href = "/api/migration/templates";
@@ -152,7 +153,7 @@ export default function MigrationUploader({
           className="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-800"
         >
           Download Template
-        </button> */}
+        </Button> */}
 
         <a
           href="/api/migration/templates"
@@ -205,14 +206,14 @@ export default function MigrationUploader({
       )}
       {rows.length > 0 && (
         <div className="flex justify-end">
-          <button
+          <Button
             type="button"
             disabled={loading || Object.keys(validationErrors).length > 0}
             onClick={executeMigration}
             className="rounded-lg bg-emerald-700 hover:bg-emerald-800 shadow-sm gap-1.5 px-6 py-2 font-medium text-white disabled:opacity-50"
           >
             {loading ? "Processing..." : "Execute Migration"}
-          </button>
+          </Button>
         </div>
       )}
       {result && <MigrationResult result={result} />}

@@ -967,7 +967,14 @@ export default function GeneralTab({
                     updateField("purchase_posting_group_id", val);
                   }
                 }}
-                className={getInputClass("general.posting_group_id")}
+                // className={getInputClass("general.posting_group_id")}
+                className={
+                  getInputClass(
+                    account.is_customer
+                      ? "general.sales_posting_group_id"
+                      : "general.purchase_posting_group_id",
+                  ) || getInputClass("general.posting_group_id")
+                }
               >
                 <option value="">Select Ledger Control Profile...</option>
                 {account.is_customer
@@ -982,6 +989,22 @@ export default function GeneralTab({
                       </option>
                     ))}
               </select>
+
+              {/* Error display for Customer posting group */}
+              {account.is_customer &&
+                errors?.["general.sales_posting_group_id"] && (
+                  <span className="text-xs text-red-500 mt-1 block">
+                    {errors["general.sales_posting_group_id"]}
+                  </span>
+                )}
+
+              {/* Error display for Supplier posting group */}
+              {!account.is_customer &&
+                errors?.["general.purchase_posting_group_id"] && (
+                  <span className="text-xs text-red-500 mt-1 block">
+                    {errors["general.purchase_posting_group_id"]}
+                  </span>
+                )}
             </div>
           </div>
 
@@ -1092,19 +1115,23 @@ export default function GeneralTab({
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Contact Name
               </label>
+              <div className="col-span-2">
               <input
                 type="text"
                 disabled={isReadonly}
                 value={primaryContact.name || ""}
                 onChange={(e) => updatePrimaryContact("name", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                placeholder="John Doe"
+                className={getInputClass("primaryContact.name")}
+                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+                // placeholder="John Doe"
               />
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Job Title
               </label>
+              <div className="col-span-2">
               <input
                 type="text"
                 disabled={isReadonly}
@@ -1112,9 +1139,11 @@ export default function GeneralTab({
                 onChange={(e) =>
                   updatePrimaryContact("job_title", e.target.value)
                 }
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                placeholder="Procurement Manager"
+                className={getInputClass("primaryContact.job_title")}
+                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+                // placeholder="Procurement Manager"
               />
+              </div>
             </div>
           </div>
           <div className="space-y-3">
@@ -1122,40 +1151,49 @@ export default function GeneralTab({
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Email
               </label>
+              <div className="col-span-2">
               <input
                 type="text"
                 disabled={isReadonly}
                 value={primaryContact.email || ""}
                 onChange={(e) => updatePrimaryContact("email", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+                className={getInputClass("primaryContact.email")}
+                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
               />
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Direct Line
               </label>
+              <div className="col-span-2">
               <input
                 type="text"
                 disabled={isReadonly}
                 value={primaryContact.phone || ""}
                 onChange={(e) => updatePrimaryContact("phone", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                placeholder="01326 564564"
+                className={getInputClass("primaryContact.phone")}
+                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+                // placeholder="01326 564564"
               />
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Mobile
               </label>
+              <div className="col-span-2">
               <input
                 type="text"
                 disabled={isReadonly}
                 value={primaryContact.mobile || ""}
                 onChange={(e) => updatePrimaryContact("mobile", e.target.value)}
-                className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                placeholder="07xxx xxxxxx"
+                className={getInputClass("primaryContact.mobile")}
+                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
+                // placeholder="07xxx xxxxxx"
               />
+              </div>
             </div>
           </div>
         </div>

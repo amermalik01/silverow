@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { Search, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type OrderStageItem = {
   id: string;
@@ -159,7 +160,7 @@ export default function OrderStageLookupModal({
             />
           </div>
           <div className="flex gap-1.5 justify-end">
-            <button
+            <Button
               onClick={() => {
                 setPage(1);
                 fetchStages(1);
@@ -167,8 +168,8 @@ export default function OrderStageLookupModal({
               className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-3 py-1.5 rounded flex items-center gap-1 shadow-sm transition"
             >
               <Search className="h-3 w-3" /> Search
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 setFilters({ name: "" });
                 setStages([]);
@@ -176,7 +177,7 @@ export default function OrderStageLookupModal({
               className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 px-2.5 py-1.5 rounded text-xs font-medium flex items-center gap-1 transition"
             >
               <RotateCcw className="h-3 w-3" /> Reset
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -324,19 +325,19 @@ export default function OrderStageLookupModal({
               </span>
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={handleSubmitBatch}
                 disabled={selectedStages.length === 0}
                 className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-1.5 rounded shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Add Selection
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={onClose}
                 className="border border-slate-200 bg-white hover:bg-slate-50 font-medium text-xs px-3 py-1.5 rounded transition"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -555,7 +556,7 @@ export default function OrderStageLookupModal({
             borderTop: "1px solid #eee",
           }}
         >
-          <button
+          <Button
             onClick={handleAdd}
             style={{
               backgroundColor: "#093009",
@@ -568,8 +569,8 @@ export default function OrderStageLookupModal({
             }}
           >
             Add
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onClose}
             style={{
               backgroundColor: "#fff",
@@ -581,7 +582,7 @@ export default function OrderStageLookupModal({
             }}
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import MasterDropdown from "@/app/components/common/MasterDropdown";
 import CurrencyDropdown from "@/app/components/common/CurrencyDropdown";
 
 import { CompanyProfile } from "../CompanySetupForm";
+import { Button } from "@/components/ui/button";
 
 interface GeneralTabProps {
   initialProfile: CompanyProfile | null;
@@ -270,12 +271,12 @@ export default function GeneralTab({
               Company Logo
             </label>
             <div className="col-span-2 space-y-3">
-              <button
+              <Button
                 type="button"
                 className="border border-gray-300 px-3 py-1.5 rounded bg-gray-50 hover:bg-gray-100 font-medium text-gray-700"
               >
                 Change File
-              </button>
+              </Button>
               <div className="p-3 border rounded bg-white w-48 h-20 flex items-center justify-center border-dashed">
                 {profile?.logo_url ? (
                   <img
@@ -301,19 +302,19 @@ export default function GeneralTab({
       </div>
 
       <div className="flex justify-end gap-2 pt-4 border-t">
-        <button
+        <Button
           type="submit"
           disabled={saving}
           className="bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 text-white font-medium px-5 py-1.5 rounded transition-colors"
         >
           {saving ? "Saving..." : "Edit / Save"}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-5 py-1.5 rounded transition-colors"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

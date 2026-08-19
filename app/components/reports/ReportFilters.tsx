@@ -6,6 +6,7 @@ import React from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 export interface AccountOption {
   id: string;
@@ -192,18 +193,18 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
           </div>
 
           <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
-            <button
+            <Button
               onClick={onGenerate}
               className="h-9 px-5 rounded bg-emerald-600 text-xs font-semibold text-white shadow transition hover:bg-emerald-500 active:bg-emerald-700"
             >
               Generate Report
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={onClear}
               className="h-9 rounded bg-white/10 px-3 text-xs font-medium text-emerald-200 transition hover:bg-white/20 hover:text-white"
             >
               Clear Filter
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -337,18 +338,18 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
 
 
           <div className="flex items-center space-x-2 w-full sm:w-auto">
-            <button
+            <Button
               onClick={onGenerate}
               className="h-9 px-5 rounded bg-emerald-600 text-xs font-semibold text-white shadow transition hover:bg-emerald-500 active:bg-emerald-700"
             >
               Generate Report
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={onClear}
               className="h-9 rounded bg-white/10 px-3 text-xs font-medium text-emerald-200 transition hover:bg-white/20 hover:text-white"
             >
               Clear Filter
-            </button>
+            </Button>
           </div>
         </div>
       </div>

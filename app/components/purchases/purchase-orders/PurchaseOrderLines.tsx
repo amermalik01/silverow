@@ -27,6 +27,7 @@ import WarehouseLookupModal, {
 import PO_StockAllocationModal, {
   PO_StockAllocationRecord,
 } from "@/app/components/shared/modals/PO_StockAllocationModal";
+import { Button } from "@/components/ui/button";
 
 type VatPostingOption = {
   id: string;
@@ -277,24 +278,24 @@ export default function PurchaseOrderLines({
 
         <div className="flex items-center gap-2">
           {!isReadonly && purchaseOrder.id && (
-            <button
+            <Button
               type="button"
               onClick={() => setIsMigrationModalOpen(true)}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
             >
               <span>⇧</span>
               Import Items
-            </button>
+            </Button>
           )}
 
           {!isReadonly && (
-            <button
+            <Button
               type="button"
               onClick={addLine}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
             >
               Add Line
-            </button>
+            </Button>
           )}
 
           {/* {!isReadonly && purchaseOrder.id && (

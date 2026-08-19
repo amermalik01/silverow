@@ -353,20 +353,20 @@ export default function PartyList({ title, roleFlag, basePath }: Props) {
                 {totalRecords} total index references tracked)
               </span>
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   disabled={page === 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   className="px-3 py-1.5 border rounded-lg bg-white dark:bg-slate-800 disabled:opacity-40 font-medium text-slate-700 dark:text-slate-200 transition-opacity"
                 >
                   Previous
-                </button>
-                <button
+                </Button>
+                <Button
                   disabled={page === totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   className="px-3 py-1.5 border rounded-lg bg-white dark:bg-slate-800 disabled:opacity-40 font-medium text-slate-700 dark:text-slate-200 transition-opacity"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
           )}

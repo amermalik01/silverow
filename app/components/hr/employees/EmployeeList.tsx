@@ -311,14 +311,14 @@ export default function EmployeeList() {
               rows)
             </span>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1 || loading}
                 className="px-3 py-1.5 border rounded-lg bg-white dark:bg-slate-800 disabled:opacity-40 font-medium text-slate-700 dark:text-slate-200 transition-opacity"
               >
                 Previous
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() =>
                   setPage((p) => Math.min(pagination.totalPages, p + 1))
                 }
@@ -326,7 +326,7 @@ export default function EmployeeList() {
                 className="px-3 py-1.5 border rounded-lg bg-white dark:bg-slate-800 disabled:opacity-40 font-medium text-slate-700 dark:text-slate-200 transition-opacity"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         </div>

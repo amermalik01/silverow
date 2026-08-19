@@ -421,20 +421,20 @@ export default function SalesOrderList({ slug }: Props) {
               total orders)
             </span>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 border rounded bg-white dark:bg-slate-800 disabled:opacity-50 font-medium"
               >
                 Previous
-              </button>
-              <button
+              </Button>
+              <Button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 className="px-3 py-1.5 border rounded bg-white dark:bg-slate-800 disabled:opacity-50 font-medium"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         )}

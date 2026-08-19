@@ -14,6 +14,7 @@ import StockAllocationModal, {
   StockAllocationRecord,
 } from "../../shared/modals/StockAllocationModal";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface Account {
   id: string;
@@ -536,31 +537,31 @@ export default function ItemJournalForm({
         <div className="flex items-center gap-2">
           {!isPosted ? (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || isPosting}
                 className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
               >
                 {loading ? "Saving..." : "Save Draft"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handlePostJournal}
                 disabled={loading || isPosting || !journalId}
                 className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isPosting ? "Posting..." : "Post Journal"}
-              </button>
+              </Button>
             </>
           ) : (
-            <button
+            <Button
               type="button"
               onClick={() => router.push(redirectPath)}
               className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded bg-white dark:bg-slate-800 hover:bg-slate-50 shadow-sm"
             >
               Back to Catalog
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -711,7 +712,7 @@ export default function ItemJournalForm({
                           className="w-full bg-transparent p-1.5 text-xs font-mono text-slate-900 dark:text-white border-none outline-none truncate"
                         />
                         {!isPosted && (
-                          <button
+                          <Button
                             type="button"
                             onClick={() => {
                               setActiveItemRowKey(line.local_key);
@@ -720,7 +721,7 @@ export default function ItemJournalForm({
                             className="mr-1 px-1.5 py-0.5 text-[10px] bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600 dark:text-slate-400 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
                           >
                             Find
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -866,7 +867,7 @@ export default function ItemJournalForm({
                     {/* DESTRUCTIVE MUTATOR ACTION ICONS */}
                     <td className="p-1 text-center align-middle">
                       <div className="flex items-center justify-center gap-1.5">
-                        <button
+                        <Button
                           type="button"
                           disabled={!line.item_id || !line.warehouse_id}
                           onClick={() => {
@@ -879,9 +880,9 @@ export default function ItemJournalForm({
                           <span
                             className={`inline-block w-2 h-2 rounded-full ${line.is_allocated ? "bg-emerald-500" : "bg-rose-500"}`}
                           />
-                        </button>
+                        </Button>
                         {!isPosted && (
-                          <button
+                          <Button
                             type="button"
                             onClick={() => removeLineRow(line.local_key)}
                             disabled={lines.length <= 1}
@@ -890,7 +891,7 @@ export default function ItemJournalForm({
                           >
                             <Icon icon="lucide:x" className="w-4 h-4" />
                             {/* ✕ */}
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -902,23 +903,23 @@ export default function ItemJournalForm({
         </div>
 
         {/* 
-<button
+<Button
               type="button"
               onClick={addLineRow}
               className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
               + Add Voucher Entry Line
-            </button> */}
+            </Button> */}
         {/* BOTTOM MATRIX CONTROLS ACTION RIBBON */}
         <div className="p-2 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
           {!isPosted ? (
-            <button
+            <Button
               type="button"
               onClick={addLineRow}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
             >
               Add Line
-            </button>
+            </Button>
           ) : (
             <span className="text-xs text-slate-400 dark:text-slate-500 font-medium px-2">
               Voucher ledger entries locked.
@@ -1018,31 +1019,31 @@ return (
         <div className="flex items-center gap-2">
           {!isPosted ? (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || isPosting}
                 className="rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition disabled:opacity-40"
               >
                 {loading ? "Saving..." : "Save Draft"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handlePostJournal}
                 disabled={loading || isPosting || !journalId}
                 className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isPosting ? "Posting..." : "Post Transaction"}
-              </button>
+              </Button>
             </>
           ) : (
-            <button
+            <Button
               type="button"
               onClick={() => router.push(redirectPath)}
               className="rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200 shadow-sm hover:bg-zinc-50"
             >
               Back to List Index
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -1179,7 +1180,7 @@ return (
                             value={line.item_code}
                             className="border p-2 rounded-lg w-full bg-zinc-50 dark:bg-zinc-800 text-xs font-mono font-bold border-zinc-200 dark:border-zinc-700"
                           />
-                          <button
+                          <Button
                             type="button"
                             disabled={isPosted}
                             onClick={() => {
@@ -1189,7 +1190,7 @@ return (
                             className="bg-zinc-100 hover:bg-zinc-200 border px-2.5 rounded-lg text-xs font-medium text-zinc-600"
                           >
                             Find
-                          </button>
+                          </Button>
                         </div>
                       </td>
 
@@ -1336,7 +1337,7 @@ return (
   
                       <td className="p-2 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <button
+                          <Button
                             type="button"
                             disabled={!line.item_id || !line.warehouse_id}
                             onClick={() => {
@@ -1349,17 +1350,17 @@ return (
                             <span
                               className={`inline-block w-2.5 h-2.5 rounded-full mr-1 ${line.is_allocated ? "bg-green-500" : "bg-red-500"}`}
                             />
-                          </button>
+                          </Button>
 
                           {!isPosted && (
-                            <button
+                            <Button
                               type="button"
                               onClick={() => removeLineRow(line.local_key)}
                               disabled={lines.length <= 1}
                               className="text-zinc-400 hover:text-red-500 disabled:opacity-20 text-xs px-1"
                             >
                               ✕
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </td>
@@ -1375,13 +1376,13 @@ return (
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-zinc-50 dark:bg-zinc-800/40 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
         {!isPosted ? (
-          <button
+          <Button
             type="button"
             onClick={addLineRow}
             className="text-xs bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white dark:text-zinc-200 px-4 py-2 rounded-lg font-medium transition shadow-sm"
           >
             + Add Adjustment Row
-          </button>
+          </Button>
         ) : (
           <div className="text-xs text-zinc-400 italic">Layout immutable</div>
         )}

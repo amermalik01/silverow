@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 type TabRenderProps<T> = {
@@ -79,12 +80,12 @@ export default function FormEngine<T>({
 
       {!readonly && onSave && (
         <div className="flex justify-end pt-4 border-t">
-          <button
+          <Button
             onClick={onSave}
             className="bg-blue-600 text-white px-6 py-2 rounded"
           >
             Save
-          </button>
+          </Button>
         </div>
       )}
     </div>

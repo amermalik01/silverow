@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
 
 type Props = {
@@ -80,13 +81,13 @@ export default function NotesWidget({ module, recordId }: Props) {
         className="border p-2 rounded w-full text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
         rows={3}
       />
-      <button
+      <Button
         onClick={addNote}
         disabled={loading || !noteText.trim()}
         className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2 rounded transition disabled:opacity-50"
       >
         {loading ? "Saving..." : "Add Note"}
-      </button>
+      </Button>
 
       <div className="space-y-2 max-h-72 overflow-y-auto pt-2">
         {notes.length === 0 ? (
@@ -107,12 +108,12 @@ export default function NotesWidget({ module, recordId }: Props) {
                   {new Date(n.created_at).toLocaleString()}
                 </p>
               </div>
-              <button
+              <Button
                 onClick={() => deleteNote(n.id)}
                 className="text-xs text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
               >
                 Delete
-              </button>
+              </Button>
             </div>
           ))
         )}
@@ -196,13 +197,13 @@ export default function NotesWidget({ module, recordId }: Props) {
         className="border p-2 rounded w-full"
       />
 
-      <button
+      <Button
         onClick={addNote}
         disabled={loading}
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         {loading ? "Saving..." : "Add Note"}
-      </button>
+      </Button>
 
       <div className="space-y-2">
         {notes.map((n) => (

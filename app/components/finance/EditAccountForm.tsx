@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 /* ---------------- EXPLICIT TYPING INTERFACES ---------------- */
 interface LookupAccount {
@@ -372,20 +373,20 @@ export default function EditAccountForm({ slug, id }: Props) {
 
         {/* Action Panel */}
         <div className="col-span-2 border-t pt-4 flex justify-end gap-3">
-          <button
+          <Button
             type="button"
             onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
             className="px-4 py-1.5 border rounded hover:bg-gray-50 tracking-wide font-medium"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             disabled={loading}
             className="px-5 py-1.5 bg-blue-700 text-white rounded shadow hover:bg-blue-800 tracking-wide font-semibold disabled:opacity-50"
           >
             {loading ? "Updating..." : "Update Account"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

@@ -496,12 +496,12 @@ export default function CompanySetupForm() {
                     Company Logo
                   </label>
                   <div className="col-span-2 space-y-3">
-                    <button
+                    <Button
                       type="button"
                       className="border border-gray-300 px-3 py-1.5 rounded bg-gray-50 hover:bg-gray-100 font-medium text-gray-700"
                     >
                       Change File
-                    </button>
+                    </Button>
 
 
                     <div className="p-3 border rounded bg-white w-48 h-20 flex items-center justify-center border-dashed">

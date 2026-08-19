@@ -211,13 +211,13 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
             <option value="POSTED">Posted Only</option>
           </select>
         </div>
-        <button
+        <Button
           onClick={() => updateFilters(search, status, 1)}
           disabled={loading || isPending}
           className="bg-gray-100 border text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-md text-xs font-medium transition"
         >
           Filter
-        </button>
+        </Button>
       </div>
 
 
@@ -317,17 +317,17 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
                 matching forms
               </div>
               <div className="flex items-center space-x-2">
-                <button
+                <Button
                   disabled={currentPage <= 1 || loading}
                   onClick={() => updateFilters(search, status, currentPage - 1)}
                   className="px-3 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50"
                 >
                   Previous
-                </button>
+                </Button>
                 <span className="text-xs font-medium">
                   Page {currentPage} of {data.pagination.totalPages}
                 </span>
-                <button
+                <Button
                   disabled={
                     currentPage >= data.pagination.totalPages || loading
                   }
@@ -335,7 +335,7 @@ export default function SalesInvoiceList({ slug }: { slug: string }) {
                   className="px-3 py-1 border rounded bg-white text-xs font-medium disabled:opacity-40 hover:bg-gray-50"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
           )}

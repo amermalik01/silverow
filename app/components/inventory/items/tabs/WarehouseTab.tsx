@@ -11,6 +11,7 @@ import type {
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   warehouses?: ItemWarehouseDraft[]; // Made optional to prevent runtime crashes
@@ -157,7 +158,7 @@ export default function WarehouseTab({
         </div> */}
 
         {!isReadonly && (
-          <button
+          <Button
             type="button"
             onClick={addWarehouseRow}
             disabled={loadingLookups}
@@ -165,7 +166,7 @@ export default function WarehouseTab({
             // className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm disabled:opacity-50"
           >
             Add Warehouse
-          </button>
+          </Button>
         )}
       </div>
 

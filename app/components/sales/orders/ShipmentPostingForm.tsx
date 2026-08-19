@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   slug: string;
@@ -228,14 +229,14 @@ export default function ShipmentPostingForm({ slug, orderId }: Props) {
       </div>
 
       <div className="flex justify-end">
-        <button
+        <Button
           type="button"
           disabled={posting || lines.length === 0}
           onClick={postShipment}
           className="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 rounded shadow transition-colors disabled:opacity-50"
         >
           {posting ? "Posting Shipment..." : "Post Shipment"}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -411,14 +412,14 @@ export default function ShipmentPostingForm({ slug, orderId }: Props) {
       </div>
 
       <div className="flex justify-end">
-        <button
+        <Button
           type="button"
           disabled={posting || lines.length === 0}
           onClick={postShipment}
           className="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 rounded shadow transition-colors disabled:opacity-50"
         >
           {posting ? "Posting..." : "Post Shipment"}
-        </button>
+        </Button>
       </div>
     </div>
   );

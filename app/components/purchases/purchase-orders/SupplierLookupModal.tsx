@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 export type SupplierLookupItem = {
@@ -119,13 +120,16 @@ export default function SupplierLookupModal({
 
       const params = new URLSearchParams();
 
-      if (filters.supplier_code) params.append("supplier_code", filters.supplier_code);
+      if (filters.supplier_code)
+        params.append("supplier_code", filters.supplier_code);
       if (filters.name) params.append("name", filters.name);
       if (filters.city) params.append("city", filters.city);
       if (filters.postcode) params.append("postcode", filters.postcode);
       if (filters.email) params.append("email", filters.email);
 
-      const res = await fetch(`/api/purchase-orders/suppliers?${params.toString()}`);
+      const res = await fetch(
+        `/api/purchase-orders/suppliers?${params.toString()}`,
+      );
 
       if (!res.ok) {
         throw new Error("Failed to load suppliers");
@@ -181,7 +185,9 @@ export default function SupplierLookupModal({
           <input
             placeholder="Postcode"
             value={filters.postcode}
-            onChange={(e) => setFilters({ ...filters, postcode: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, postcode: e.target.value })
+            }
             className="border rounded px-3 py-2 text-sm"
           />
           <input
@@ -194,13 +200,13 @@ export default function SupplierLookupModal({
 
         {/* ACTIONS */}
         <div className="flex justify-end gap-2 p-4 border-b">
-          <button
+          <Button
             onClick={fetchSuppliers}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
           >
             Search
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => {
               setFilters({
                 supplier_code: "",
@@ -213,7 +219,7 @@ export default function SupplierLookupModal({
             className="border hover:bg-gray-50 px-4 py-2 rounded text-sm"
           >
             Reset
-          </button>
+          </Button>
         </div>
 
         {/* TABLE */}
@@ -265,7 +271,7 @@ export default function SupplierLookupModal({
                   <td className="border p-2">{supplier.postcode || "—"}</td>
                   <td className="border p-2">{supplier.country || "—"}</td>
                   <td className="border p-2 text-center">
-                    <button
+                    <Button
                       onClick={() => {
                         onSelect(supplier);
                         onClose();
@@ -273,7 +279,7 @@ export default function SupplierLookupModal({
                       className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded transition"
                     >
                       Select
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

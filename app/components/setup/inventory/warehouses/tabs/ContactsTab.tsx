@@ -5,6 +5,7 @@
 import { WarehouseContact } from "@/types/warehouse";
 import { useState } from "react";
 import ContactForm from "./ContactForm";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   warehouseId: string;
@@ -59,7 +60,7 @@ export default function ContactsTab({
         />
 
         {!isReadOnly && (
-          <button
+          <Button
             onClick={() => {
               setShowForm(true);
               setSelectedContact(null);
@@ -68,7 +69,7 @@ export default function ContactsTab({
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
             Add Contact
-          </button>
+          </Button>
         )}
       </div>
 
@@ -140,7 +141,7 @@ export default function ContactsTab({
                   </td>
                   <td className="px-4 py-3 text-blue-600">{c.email || "—"}</td>
                   <td className="px-4 py-3 text-right space-x-2 font-medium text-xs">
-                    <button
+                    <Button
                       onClick={() => {
                         setSelectedContact(c);
                         setShowForm(false);
@@ -148,14 +149,14 @@ export default function ContactsTab({
                       className="text-blue-600 hover:underline"
                     >
                       {isReadOnly ? "View" : "Edit"}
-                    </button>
+                    </Button>
                     {!isReadOnly && (
-                      <button
+                      <Button
                         onClick={() => handleDelete(c.id)}
                         className="text-rose-600 hover:underline"
                       >
                         Delete
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>
@@ -207,7 +208,7 @@ export default function ContactsTab({
   return (
     <div className="space-y-4">
 
-      <button
+      <Button
         onClick={() => {
           setShowForm(true);
           setEditContact(null);
@@ -215,7 +216,7 @@ export default function ContactsTab({
         className="bg-blue-600 text-white px-3 py-1 rounded"
       >
         + Add Contact
-      </button>
+      </Button>
 
 
       {(showForm || editContact) && (
@@ -249,7 +250,7 @@ export default function ContactsTab({
             </div>
 
             <div className="flex gap-2 text-xs">
-              <button
+              <Button
                 onClick={() => {
                   setEditContact(c);
                   setShowForm(false);
@@ -257,14 +258,14 @@ export default function ContactsTab({
                 className="text-green-600"
               >
                 ✏ Edit
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={() => handleDelete(c.id)}
                 className="text-red-600"
               >
                 🗑 Delete
-              </button>
+              </Button>
             </div>
           </div>
         ))}

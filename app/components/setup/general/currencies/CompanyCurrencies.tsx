@@ -8,6 +8,7 @@ import { CompanyCurrency } from "@/types/currency";
 import CurrencyForm from "./CurrencyForm";
 import { formatCurrency } from "@/lib/utils/currency";
 import RateHistoryModal from "./RateHistoryModal";
+import { Button } from "@/components/ui/button";
 
 export default function CompanyCurrencies() {
   const [data, setData] = useState<CompanyCurrency[]>([]);
@@ -69,15 +70,15 @@ export default function CompanyCurrencies() {
                 </td>
 
                 <td className="p-3 flex gap-2">
-                  <button
+                  <Button
                     onClick={() => setSelectedCurrency(c)}
                     className="text-indigo-600 text-xs"
                   >
                     History
-                  </button>
+                  </Button>
 
                   {!c.is_base && (
-                    <button
+                    <Button
                       onClick={async () => {
                         await fetch(
                           "/api/setup/general/company/currencies/set-base",
@@ -91,7 +92,7 @@ export default function CompanyCurrencies() {
                       className="text-blue-600 text-xs"
                     >
                       Set Base
-                    </button>
+                    </Button>
                   )}
                 </td>
               </tr>

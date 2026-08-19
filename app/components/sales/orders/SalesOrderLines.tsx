@@ -17,6 +17,7 @@ import GLAccountLookupModal, {
 import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   lines: SalesOrderLineUI[];
@@ -170,13 +171,13 @@ export default function SalesOrderLines({
           Sales Order Lines
         </h3>
         {!isReadonly && (
-          <button
+          <Button
             type="button"
             onClick={addLine}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
             Add Line
-          </button>
+          </Button>
         )}
       </div>
 

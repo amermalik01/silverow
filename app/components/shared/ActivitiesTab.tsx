@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
 
 export type Activity = {
@@ -197,13 +198,13 @@ export default function ActivitiesTab({
             </div>
           </div>
           <div className="flex justify-end pt-2">
-            <button
+            <Button
               onClick={handleSave}
               disabled={saving || !form.title?.trim()}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-5 py-2 rounded shadow-sm disabled:opacity-50 transition"
             >
               {saving ? "Saving..." : "Save Activity"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -259,7 +260,7 @@ export default function ActivitiesTab({
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
+                  <Button
                     onClick={() => toggleStatus(item)}
                     className={`text-xs px-2 py-1 rounded font-medium border transition ${
                       item.status === "completed"
@@ -268,13 +269,13 @@ export default function ActivitiesTab({
                     }`}
                   >
                     {item.status === "completed" ? "Completed" : "Mark Done"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => item.id && removeActivity(item.id)}
                     className="text-xs text-gray-300 hover:text-red-500 font-medium opacity-0 group-hover:opacity-100 transition"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -487,13 +488,13 @@ export default function ActivitiesTab({
           </div>
 
           <div className="flex justify-end">
-            <button
+            <Button
               onClick={handleSave}
               disabled={saving}
               className="bg-blue-600 text-white px-4 py-2 rounded"
             >
               {saving ? "Saving..." : "Save Activity"}
-            </button>
+            </Button>
           </div>
         </div>
       )}

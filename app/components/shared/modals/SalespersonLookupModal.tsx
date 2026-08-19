@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Search, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export interface Employee {
   id: string;
@@ -32,7 +33,7 @@ export default function SalespersonLookupModal({
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployees, setSelectedEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   // Local Filtering Controls Hooks
   const [searchName, setSearchName] = useState("");
   const [searchEmail, setSearchEmail] = useState("");
@@ -47,8 +48,9 @@ export default function SalespersonLookupModal({
       }).toString();
 
       const res = await fetch(`/api/lookups/salespersons?${query}`);
-      if (!res.ok) throw new Error("Failed fetching salesperson entities matrix");
-      
+      if (!res.ok)
+        throw new Error("Failed fetching salesperson entities matrix");
+
       const json = await res.json();
       // Handle array extracting whether server wraps payload data explicitly
       setEmployees(Array.isArray(json) ? json : json.data || []);
@@ -76,9 +78,13 @@ export default function SalespersonLookupModal({
   };
 
   const handleSelectAll = () => {
-    const isAllSelected = employees.length > 0 && employees.every((e) => selectedEmployees.some((s) => s.id === e.id));
+    const isAllSelected =
+      employees.length > 0 &&
+      employees.every((e) => selectedEmployees.some((s) => s.id === e.id));
     if (isAllSelected) {
-      setSelectedEmployees((prev) => prev.filter((s) => !employees.some((e) => e.id === s.id)));
+      setSelectedEmployees((prev) =>
+        prev.filter((s) => !employees.some((e) => e.id === s.id)),
+      );
     } else {
       setSelectedEmployees((prev) => {
         const novel = employees.filter((e) => !prev.some((s) => s.id === e.id));
@@ -97,11 +103,17 @@ export default function SalespersonLookupModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-4">
       <div className="bg-white text-slate-800 rounded-lg shadow-2xl w-full max-w-4xl flex flex-col max-h-[85vh] border border-slate-200 overflow-hidden font-sans">
-        
         {/* Modal Window Top Header Line */}
         <div className="flex justify-between items-center px-5 py-3 border-b border-slate-200 bg-slate-50">
-          <h3 className="margin-0 text-xs font-bold text-slate-900">Select Salesperson(s) Reference</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition text-lg bg-none border-none cursor-pointer">×</button>
+          <h3 className="margin-0 text-xs font-bold text-slate-900">
+            Select Salesperson(s) Reference
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 transition text-lg bg-none border-none cursor-pointer"
+          >
+            ×
+          </button>
         </div>
 
         {/* Modal Control Board Filtering Elements */}
@@ -121,12 +133,21 @@ export default function SalespersonLookupModal({
             className="w-full border border-slate-200 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white"
           />
           <div className="flex gap-2 justify-end">
-            <button onClick={fetchEmployees} className="bg-[#093009] text-white px-3 py-1.5 rounded font-bold shadow-sm flex items-center gap-1 transition-colors hover:bg-emerald-900">
+            <Button
+              onClick={fetchEmployees}
+              className="bg-[#093009] text-white px-3 py-1.5 rounded font-bold shadow-sm flex items-center gap-1 transition-colors hover:bg-emerald-900"
+            >
               <Search className="h-3 w-3" /> Search
-            </button>
-            <button onClick={() => { setSearchName(""); setSearchEmail(""); }} className="border border-slate-200 bg-white text-slate-600 px-2.5 py-1.5 rounded flex items-center gap-1 hover:bg-slate-50">
+            </Button>
+            <Button
+              onClick={() => {
+                setSearchName("");
+                setSearchEmail("");
+              }}
+              className="border border-slate-200 bg-white text-slate-600 px-2.5 py-1.5 rounded flex items-center gap-1 hover:bg-slate-50"
+            >
               <RotateCcw className="h-3 w-3" /> Reset
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -139,7 +160,12 @@ export default function SalespersonLookupModal({
                   {multiple && (
                     <input
                       type="checkbox"
-                      checked={employees.length > 0 && employees.every((e) => selectedEmployees.some((s) => s.id === e.id))}
+                      checked={
+                        employees.length > 0 &&
+                        employees.every((e) =>
+                          selectedEmployees.some((s) => s.id === e.id),
+                        )
+                      }
                       onChange={handleSelectAll}
                       className="cursor-pointer rounded border-slate-300 text-emerald-700"
                     />
@@ -150,32 +176,45 @@ export default function SalespersonLookupModal({
                 <th className="p-2.5">Email</th>
                 <th className="p-2.5">Job Title</th>
                 <th className="p-2.5">Employment Type</th>
-                {!multiple && <th className="p-2.5 text-center w-24">Action</th>}
+                {!multiple && (
+                  <th className="p-2.5 text-center w-24">Action</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-[11px] font-mono text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={multiple ? 6 : 7} className="p-10 text-center font-sans font-normal text-slate-400 italic">
+                  <td
+                    colSpan={multiple ? 6 : 7}
+                    className="p-10 text-center font-sans font-normal text-slate-400 italic"
+                  >
                     Retrieving structural system arrays...
                   </td>
                 </tr>
               ) : employees.length === 0 ? (
                 <tr>
-                  <td colSpan={multiple ? 6 : 7} className="p-10 text-center font-sans font-normal text-slate-400 italic">
+                  <td
+                    colSpan={multiple ? 6 : 7}
+                    className="p-10 text-center font-sans font-normal text-slate-400 italic"
+                  >
                     No matching records found.
                   </td>
                 </tr>
               ) : (
                 employees.map((emp) => {
-                  const isChecked = selectedEmployees.some((s) => s.id === emp.id);
+                  const isChecked = selectedEmployees.some(
+                    (s) => s.id === emp.id,
+                  );
                   return (
-                    <tr 
-                      key={emp.id} 
+                    <tr
+                      key={emp.id}
                       onClick={() => multiple && handleToggleRow(emp)}
                       className={`hover:bg-slate-50 transition-colors cursor-pointer ${isChecked ? "bg-emerald-50/60" : ""}`}
                     >
-                      <td className="p-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td
+                        className="p-2.5 text-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <input
                           type="checkbox"
                           checked={multiple ? isChecked : false}
@@ -184,14 +223,27 @@ export default function SalespersonLookupModal({
                           className="disabled:opacity-0 cursor-pointer rounded border-slate-300 text-emerald-700"
                         />
                       </td>
-                      <td className="p-2.5 text-slate-500 font-bold">{emp.employee_code}</td>
-                      <td className="p-2.5 font-sans font-semibold text-slate-900">{emp.display_name}</td>
-                      <td className="p-2.5 text-blue-600 font-sans">{emp.email}</td>
-                      <td className="p-2.5 font-sans text-slate-600">{emp.designation || "-"}</td>
-                      <td className="p-2.5 font-sans text-slate-500">{emp.employment_type || "-"}</td>
+                      <td className="p-2.5 text-slate-500 font-bold">
+                        {emp.employee_code}
+                      </td>
+                      <td className="p-2.5 font-sans font-semibold text-slate-900">
+                        {emp.display_name}
+                      </td>
+                      <td className="p-2.5 text-blue-600 font-sans">
+                        {emp.email}
+                      </td>
+                      <td className="p-2.5 font-sans text-slate-600">
+                        {emp.designation || "-"}
+                      </td>
+                      <td className="p-2.5 font-sans text-slate-500">
+                        {emp.employment_type || "-"}
+                      </td>
                       {!multiple && (
-                        <td className="p-2.5 text-center" onClick={(e) => e.stopPropagation()}>
-                          <button
+                        <td
+                          className="p-2.5 text-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Button
                             onClick={() => {
                               if (onSelect) onSelect(emp);
                               onClose();
@@ -199,7 +251,7 @@ export default function SalespersonLookupModal({
                             className="bg-emerald-700 text-white font-bold px-2 py-0.5 rounded text-[10px] shadow-sm hover:bg-emerald-800"
                           >
                             Select
-                          </button>
+                          </Button>
                         </td>
                       )}
                     </tr>
@@ -220,20 +272,22 @@ export default function SalespersonLookupModal({
           </div>
           <div className="flex gap-1.5">
             {multiple && (
-              <button
+              <Button
                 onClick={handleSubmitBatch}
                 disabled={selectedEmployees.length === 0}
                 className="bg-[#093009] text-white font-bold px-4 py-1.5 rounded shadow-sm disabled:opacity-40 disabled:cursor-not-allowed text-xs transition"
               >
                 Add Selection
-              </button>
+              </Button>
             )}
-            <button onClick={onClose} className="border border-slate-200 bg-white text-slate-700 font-semibold px-3 py-1.5 rounded text-xs hover:bg-slate-50">
+            <Button
+              onClick={onClose}
+              className="border border-slate-200 bg-white text-slate-700 font-semibold px-3 py-1.5 rounded text-xs hover:bg-slate-50"
+            >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
-
       </div>
     </div>
   );

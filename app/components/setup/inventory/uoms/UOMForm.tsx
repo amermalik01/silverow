@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UOMFormData } from "@/types/inventory";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   id?: string;
@@ -136,13 +137,13 @@ export default function UOMForm({ id }: Props) {
         />
       </div>
 
-      <button
+      <Button
         type="submit"
         disabled={loading}
         className="bg-blue-600 text-white px-6 py-2 rounded"
       >
         {loading ? "Saving..." : id ? "Update UOM" : "Create UOM"}
-      </button>
+      </Button>
     </form>
   );
 }

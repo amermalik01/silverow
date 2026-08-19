@@ -192,13 +192,13 @@ export default function SalesReturnList({ slug }: { slug: string }) {
           </select>
 
           {/* Explicit Multi-Search Action Button Trigger */}
-          <button
+          <Button
             onClick={() => updateFilters(search, status, 1, limit)}
             disabled={loading || isPending}
             className="bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-400 px-4 py-2 rounded-md text-xs font-medium transition"
           >
             Search
-          </button>
+          </Button>
         </div>
       </div>
 

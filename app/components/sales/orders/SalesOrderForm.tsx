@@ -19,6 +19,7 @@ import { OrderFormTabs } from "./OrderFormTabs";
 import CustomerLookupModal, { CustomerLookupItem } from "./CustomerLookupModal";
 import { useLoader } from "@/app/context/LoaderContext";
 import CustomerDeliveryLocationModal from "./CustomerDeliveryLocationModal";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   slug: string;
@@ -597,22 +598,22 @@ export default function SalesOrderForm({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
               onClick={save}
               disabled={saving}
               className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
             >
               Edit / Save
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
               onClick={() => router.push(`/${slug}/sales/orders`)}
               className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -648,19 +649,19 @@ export default function SalesOrderForm({
 }
 {
   /* <div className="flex justify-between items-center border-t dark:border-slate-800 pt-4">
-        <button
+        <Button
           type="button"
           onClick={() => router.push(`/${slug}/sales/orders`)}
           className="text-xs font-medium text-gray-600 dark:text-gray-400 hover:underline"
         >
           Cancel and Return
-        </button>
+        </Button>
 
         <div className="flex gap-3">
           {id &&
             order.invoice_status !== "INVOICED" &&
             order.status !== "CANCELLED" && (
-              <button
+              <Button
                 type="button"
                 disabled={saving}
                 onClick={async () => {
@@ -695,17 +696,17 @@ export default function SalesOrderForm({
                 className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition disabled:opacity-50"
               >
                 Convert To Invoice
-              </button>
+              </Button>
             )}
 
-          <button
+          <Button
             type="button"
             disabled={saving}
             onClick={save}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-xs font-medium transition shadow disabled:opacity-50"
           >
             {saving ? "Processing..." : "Save Order"}
-          </button>
+          </Button>
         </div>
       </div> */
 }

@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { WarehouseContact } from "@/types/warehouse";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   warehouseId: string;
@@ -233,19 +234,19 @@ export default function ContactForm({
       </div>
 
       <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button
+        <Button
           onClick={onClose}
           className="px-4 py-1.5 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md font-medium"
         >
           Cancel
-        </button>
+        </Button>
         {!isReadOnly && (
-          <button
+          <Button
             onClick={handleSubmit}
             className="px-4 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-md font-medium shadow-sm"
           >
             {existing?.id ? "Update Contact" : "Save Contact"}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -383,12 +384,12 @@ export default function ContactForm({
         <option value={0}>Inactive</option>
       </select>
 
-      <button
+      <Button
         onClick={handleSubmit}
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         {existing ? "Update" : "Create"}
-      </button>
+      </Button>
     </div>
   );
 } */

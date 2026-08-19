@@ -20,6 +20,7 @@ import { OrderFormTabs } from "./OrderFormTabs";
 import { StockReceiveConfirmModal } from "@/app/components/shared/modals/StockReceiveConfirmModal";
 import SupplierLookupModal, { SupplierLookupItem } from "./SupplierLookupModal";
 import SupplierShippingLocationsModal from "./SupplierShippingLocationsModal";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   slug: string;
@@ -365,7 +366,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         setIsEditMode(false);
       } else {
         // Redirect to list page on initial creation
-        router.push(`/${slug}/purchases/purchase-orders`);
+        // router.push(`/${slug}/purchases/purchase-orders`);
+        router.replace(`/${slug}/purchases/purchase-orders/${id}/edit`);
       }
     } catch (err) {
       if (err instanceof Error) setValidationErrors([err.message]);
@@ -865,16 +867,16 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           <div className="flex items-center gap-2">
             {isUpdateMode && (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowInvoiceModal(true)}
                   disabled={isPosting || isCompleted}
                   className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   Post Invoice
-                </button>
+                </Button>
 
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowReceiveModal(true)}
                   disabled={isPosting || isFullyReceived || isCompleted}
@@ -885,40 +887,40 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                   }`}
                 >
                   Receive Stock
-                </button>
+                </Button>
               </>
             )}
 
             {!isCompleted && (
               <>
                 {!isEditMode ? (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setIsEditMode(true)}
                     className="px-3.5 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     Edit
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
                     type="button"
                     onClick={handleSave}
                     disabled={saving}
                     className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
                   >
                     {saving ? "Saving..." : "Save"}
-                  </button>
+                  </Button>
                 )}
               </>
             )}
 
-            <button
+            <Button
               type="button"
               onClick={() => router.push(`/${slug}/purchases/purchase-orders`)}
               className="px-3.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </div>

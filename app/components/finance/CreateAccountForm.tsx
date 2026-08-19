@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 interface LookupAccount {
   id: string;
@@ -286,20 +287,20 @@ export default function CreateAccountForm({ slug }: { slug: string }) {
 
         {/* Submission Panel */}
         <div className="col-span-2 border-t pt-4 flex justify-end gap-3">
-          <button
+          <Button
             type="button"
             onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
             className="px-4 py-1.5 border rounded hover:bg-gray-50 tracking-wide font-medium"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             disabled={loading}
             className="px-5 py-1.5 bg-green-700 text-white rounded shadow hover:bg-green-800 tracking-wide font-semibold disabled:opacity-50"
           >
             {loading ? "Processing..." : "Save"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

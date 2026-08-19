@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 type Sequence = {
@@ -120,13 +121,13 @@ export default function SequenceList() {
 
               <td className="p-2 text-center">
                 {editingId === row.id ? (
-                  <button onClick={update} className="text-green-600">
+                  <Button onClick={update} className="text-green-600">
                     Save
-                  </button>
+                  </Button>
                 ) : (
-                  <button onClick={() => edit(row)} className="text-blue-600">
+                  <Button onClick={() => edit(row)} className="text-blue-600">
                     Edit
-                  </button>
+                  </Button>
                 )}
               </td>
             </tr>

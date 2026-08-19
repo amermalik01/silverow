@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import type { Party } from "@/types/erp";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   party: Partial<Party>;
@@ -126,7 +127,7 @@ export default function PartyDetailHeader({ party, onPartyUpdated }: Props) {
           <div className="flex items-center gap-2 self-start sm:self-auto">
             {/* Convert to Customer */}
             {party.is_crm_lead && !party.is_customer && (
-              <button
+              <Button
                 type="button"
                 onClick={() => openConfirmModal("to_customer")}
                 disabled={loading !== null}
@@ -146,12 +147,12 @@ export default function PartyDetailHeader({ party, onPartyUpdated }: Props) {
                     <span>Convert to Customer</span>
                   </>
                 )}
-              </button>
+              </Button>
             )}
 
             {/* Convert to Supplier */}
             {party.is_srm_vendor && !party.is_supplier && (
-              <button
+              <Button
                 type="button"
                 onClick={() => openConfirmModal("to_supplier")}
                 disabled={loading !== null}
@@ -171,7 +172,7 @@ export default function PartyDetailHeader({ party, onPartyUpdated }: Props) {
                     <span>Convert to Supplier</span>
                   </>
                 )}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -247,7 +248,7 @@ export default function PartyDetailHeader({ party, onPartyUpdated }: Props) {
 
             {/* Modal Footer Actions */}
             <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
+              <Button
                 type="button"
                 onClick={() =>
                   setConfirmModal({ isOpen: false, targetType: null })
@@ -255,9 +256,9 @@ export default function PartyDetailHeader({ party, onPartyUpdated }: Props) {
                 className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
               >
                 Cancel
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 onClick={handleExecuteConvert}
                 className={`px-4 py-2 text-xs font-semibold text-white rounded-lg shadow-sm transition-colors flex items-center gap-1.5 ${
@@ -268,7 +269,7 @@ export default function PartyDetailHeader({ party, onPartyUpdated }: Props) {
               >
                 <Icon icon="lucide:check-circle-2" className="w-3.5 h-3.5" />
                 Confirm Conversion
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -16,6 +16,7 @@ import CustomerLookupModal, {
   CustomerLookupItem,
 } from "../../shared/modals/CustomerLookupModal";
 import SalesQuoteLines from "./SalesQuoteLines";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   slug: string;
@@ -394,14 +395,14 @@ export default function SalesQuoteForm({
 
       {!isReadonly && (
         <div className="flex justify-end mt-4">
-          <button
+          <Button
             type="button"
             disabled={saving || !quote.customer_id || lines.length === 0}
             onClick={save}
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium px-6 py-2 rounded transition-colors"
           >
-            {saving ? "Saving Quote..." : "Save Quote"}
-          </button>
+            {saving ? "Saving Quote..." : "Save"}
+          </Button>
         </div>
       )}
 

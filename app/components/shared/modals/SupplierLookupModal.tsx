@@ -12,6 +12,7 @@ import {
   ChevronsRight,
   X,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type SupplierLookupItem = {
   id: string;
@@ -261,18 +262,18 @@ export default function SupplierLookupModal({
 
         {/* Action Controls */}
         <div className="flex justify-end gap-2 px-4 py-2 bg-slate-100/60 border-b border-slate-200">
-          <button
+          <Button
             onClick={handleSearch}
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-4 py-1.5 rounded flex items-center gap-1 shadow-sm transition"
           >
             <Search className="h-3 w-3" /> Search
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleReset}
             className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1 transition"
           >
             <RotateCcw className="h-3 w-3" /> Reset
-          </button>
+          </Button>
         </div>
 
         {/* Table View */}
@@ -372,7 +373,7 @@ export default function SupplierLookupModal({
                           className="p-3 text-center"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
+                          <Button
                             onClick={() => {
                               onSelect(supplier);
                               onClose();
@@ -380,7 +381,7 @@ export default function SupplierLookupModal({
                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[10px] font-bold rounded shadow-sm transition"
                           >
                             Select
-                          </button>
+                          </Button>
                         </td>
                       )}
                     </tr>
@@ -468,13 +469,13 @@ export default function SupplierLookupModal({
 
             {multiple && (
               <div className="flex gap-2 ml-2">
-                <button
+                <Button
                   onClick={handleSubmitBatch}
                   disabled={selectedSuppliers.length === 0}
                   className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-1.5 rounded shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
                   Add Selection
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -567,14 +568,14 @@ export default function SupplierLookupModal({
    
 
         <div className="flex justify-end gap-2 p-4 border-b">
-          <button
+          <Button
             onClick={fetchSuppliers}
             className="bg-blue-600 text-white px-4 py-2 rounded"
           >
             Search
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => {
               setFilters({
                 supplier_code: "",
@@ -587,7 +588,7 @@ export default function SupplierLookupModal({
             className="border px-4 py-2 rounded"
           >
             Reset
-          </button>
+          </Button>
         </div>
 
     
@@ -648,7 +649,7 @@ export default function SupplierLookupModal({
                   <td className="border p-2">{supplier.country}</td>
 
                   <td className="border p-2 text-center">
-                    <button
+                    <Button
                       onClick={() => {
                         onSelect(supplier);
 
@@ -657,7 +658,7 @@ export default function SupplierLookupModal({
                       className="bg-green-600 text-white px-3 py-1 rounded"
                     >
                       Select
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

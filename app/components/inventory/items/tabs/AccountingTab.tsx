@@ -205,7 +205,7 @@ export default function AccountingTab({
       {/* 3. Modal-driven Specific Overrides */}
       {!isReadonly && (
         <div className="pt-2">
-          <button
+          <Button
             type="button"
             onClick={() => setShowOverrides(!showOverrides)}
             className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1"
@@ -213,7 +213,7 @@ export default function AccountingTab({
             {showOverrides
               ? "Hide Specific GL Overrides"
               : "Configure Custom GL Overrides"}
-          </button>
+          </Button>
 
           {showOverrides && (
             <div className="mt-3 p-4 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl space-y-4">

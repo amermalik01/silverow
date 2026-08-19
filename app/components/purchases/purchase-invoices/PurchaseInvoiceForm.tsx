@@ -19,6 +19,7 @@ import {
 import PurchaseOrderLines from "../purchase-orders/PurchaseOrderLines";
 import { OrderFormTabs } from "../purchase-orders/OrderFormTabs";
 import { PostedTransactionsModal } from "./PostedTransactionsModal";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   slug: string;
@@ -344,16 +345,16 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           <div className="flex items-center gap-2">
             {/* Navigate Button (Opens Legacy Modal) */}
             {isUpdateMode && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setShowNavigateModal(true)}
                 className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
               >
                 Navigate
-              </button>
+              </Button>
             )}
 
-            <button
+            <Button
               type="button"
               onClick={() =>
                 router.push(`/${slug}/purchases/purchase-invoices`)
@@ -361,7 +362,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
               className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </div>

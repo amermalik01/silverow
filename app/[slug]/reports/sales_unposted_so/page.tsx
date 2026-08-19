@@ -13,6 +13,7 @@ import CustomerLookupModal, {
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type ReportLineItem = {
   id: string;
@@ -203,18 +204,18 @@ export default function UnpostedSalesOrdersReport() {
 
           {/* Top Actions Block */}
           <div className="flex gap-2 justify-end pt-4">
-            <button
+            <Button
               onClick={handleGenerateReport}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-1.5 rounded flex items-center gap-1.5 transition text-xs shadow"
             >
               <Search className="h-3.5 w-3.5" /> Generate Report
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleClearFilters}
               className="bg-zinc-500 hover:bg-zinc-600 text-white font-medium px-3 py-1.5 rounded flex items-center gap-1.5 transition text-xs shadow"
             >
               <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -316,9 +317,9 @@ export default function UnpostedSalesOrdersReport() {
               to <span className="font-semibold">{formatDate(toDate)}</span>
             </p>
           </div>
-          <button className="border border-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded text-xs bg-white hover:bg-slate-50 flex items-center gap-1.5 transition shadow-sm">
+          <Button className="border border-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded text-xs bg-white hover:bg-slate-50 flex items-center gap-1.5 transition shadow-sm">
             <Download className="h-3.5 w-3.5" /> Export As ▾
-          </button>
+          </Button>
         </div>
 
         {/* Ledger Presentation Table */}

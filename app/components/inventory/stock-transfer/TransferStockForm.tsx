@@ -11,6 +11,7 @@ import ItemLookupModal, {
 import StockAllocationModal from "./StockAllocationModal";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 export interface AllocationPayload {
   production_date: string;
@@ -603,7 +604,7 @@ export default function TransferStockForm({
           <h3 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             Material Allocation Lines
           </h3>
-          <button
+          <Button
             type="button"
             disabled={isPosted || !warehouseFrom || !warehouseTo}
             onClick={handleAddLine}
@@ -611,7 +612,7 @@ export default function TransferStockForm({
             // className="px-3 py-1 bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900 rounded-lg text-xs font-medium hover:opacity-90 disabled:opacity-40 transition"
           >
             Add Line
-          </button>
+          </Button>
         </div>
 
         <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl">
@@ -654,7 +655,7 @@ export default function TransferStockForm({
                           value={line.item_code}
                           className="border p-2 rounded-lg w-full bg-zinc-50 dark:bg-zinc-800 text-xs font-mono font-bold border-zinc-200 dark:border-zinc-700"
                         />
-                        <button
+                        <Button
                           type="button"
                           disabled={isPosted}
                           onClick={() => {
@@ -664,7 +665,7 @@ export default function TransferStockForm({
                           className="bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:border-zinc-700 px-2.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-300 transition"
                         >
                           Find
-                        </button>
+                        </Button>
                       </div>
                     </td>
 
@@ -781,30 +782,30 @@ export default function TransferStockForm({
       {/* Bottom Actions Form */}
       <div className="flex justify-end space-x-3 mt-6">
         {mode !== "create" && (
-          <button
+          <Button
             disabled={isLoading}
             className="border px-4 py-2 rounded text-xs font-medium bg-white shadow-sm hover:bg-gray-50 disabled:opacity-50"
           >
             Print/View Transfer
-          </button>
+          </Button>
         )}
 
         {!isPosted && mode !== "view" && (
           <>
-            <button
+            <Button
               onClick={handleSaveDraft}
               disabled={isLoading}
               className="border px-4 py-2 rounded text-xs font-medium bg-white text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
             >
               {isLoading ? "Saving..." : "Save Draft"}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handlePostTransfer}
               disabled={isLoading}
               className="bg-emerald-600 text-white px-4 py-2 rounded text-xs font-medium shadow-sm hover:bg-emerald-700 disabled:opacity-50"
             >
               {isLoading ? "Processing..." : "Post Transfer"}
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -1072,12 +1073,12 @@ export default function TransferStockForm({
           </tbody>
         </table>
         {!isFormDisabled && (
-          <button
+          <Button
             onClick={handleAddLine}
             className="mt-4 flex items-center text-xs font-medium text-emerald-600 hover:text-emerald-700"
           >
             <span className="mr-1 text-lg">+</span> Add Line Item
-          </button>
+          </Button>
         )}
       </div>
 

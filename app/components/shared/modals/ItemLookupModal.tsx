@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { Search, RotateCcw, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type ItemLookupRecord = {
   id: string;
@@ -292,19 +293,19 @@ export default function ItemLookupModal({
           </select>
 
           <div className="flex gap-1.5">
-            <button
+            <Button
               onClick={() => loadItems(1, filters)}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs rounded-lg transition flex items-center justify-center gap-1 shadow-xs cursor-pointer"
             >
               <Search className="h-3.5 w-3.5" /> Search
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleResetFilters}
               className="px-2.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-lg transition flex items-center justify-center bg-white cursor-pointer"
               title="Reset Filters"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -424,7 +425,7 @@ export default function ItemLookupModal({
                           className="p-3 text-center"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
+                          <Button
                             onClick={() => {
                               onSelect(item);
                               onClose();
@@ -432,7 +433,7 @@ export default function ItemLookupModal({
                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-[11px] font-semibold rounded-md shadow-xs transition cursor-pointer"
                           >
                             Select
-                          </button>
+                          </Button>
                         </td>
                       )}
                     </tr>
@@ -462,40 +463,40 @@ export default function ItemLookupModal({
           <div className="flex items-center gap-3">
             {multiple && (
               <div className="flex gap-1.5 border-r pr-3 border-slate-200">
-                <button
+                <Button
                   onClick={handleSubmitBatch}
                   disabled={selectedRecords.length === 0}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   Add Selected
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={onClose}
                   className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs px-3 py-1.5 rounded-lg transition cursor-pointer"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             )}
 
             <div className="flex gap-1">
-              <button
+              <Button
                 onClick={() => changePage(pagination.page - 1)}
                 disabled={pagination.page <= 1 || loading}
                 className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold px-2.5 py-1 rounded-lg text-xs disabled:opacity-40 transition cursor-pointer"
               >
                 ‹ Prev
-              </button>
+              </Button>
               <div className="border border-slate-200 bg-white font-mono px-3 py-1 rounded-lg text-xs text-slate-700 flex items-center font-bold">
                 {pagination.page} / {pagination.totalPages || 1}
               </div>
-              <button
+              <Button
                 onClick={() => changePage(pagination.page + 1)}
                 disabled={pagination.page >= pagination.totalPages || loading}
                 className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold px-2.5 py-1 rounded-lg text-xs disabled:opacity-40 transition cursor-pointer"
               >
                 Next ›
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -572,13 +573,13 @@ export default function ItemLookupModal({
           </select>
 
           <div className="flex gap-1.5">
-            <button
+            <Button
               onClick={() => loadItems(1)}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs rounded-lg transition flex items-center justify-center gap-1 shadow-xs"
             >
               <Search className="h-3.5 w-3.5" /> Search
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 setFilters({
                   search: "",
@@ -593,7 +594,7 @@ export default function ItemLookupModal({
               title="Reset Filters"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -712,7 +713,7 @@ export default function ItemLookupModal({
                           className="p-3 text-center"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
+                          <Button
                             onClick={() => {
                               onSelect(item);
                               onClose();
@@ -720,7 +721,7 @@ export default function ItemLookupModal({
                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-[11px] font-semibold rounded-md shadow-xs transition"
                           >
                             Select
-                          </button>
+                          </Button>
                         </td>
                       )}
                     </tr>
@@ -750,40 +751,40 @@ export default function ItemLookupModal({
           <div className="flex items-center gap-3">
             {multiple && (
               <div className="flex gap-1.5 border-r pr-3 border-slate-200">
-                <button
+                <Button
                   onClick={handleSubmitBatch}
                   disabled={selectedRecords.length === 0}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Add Selected
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={onClose}
                   className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs px-3 py-1.5 rounded-lg transition"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             )}
 
             <div className="flex gap-1">
-              <button
+              <Button
                 onClick={() => changePage(pagination.page - 1)}
                 disabled={pagination.page <= 1 || loading}
                 className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold px-2.5 py-1 rounded-lg text-xs disabled:opacity-40 transition"
               >
                 ‹ Prev
-              </button>
+              </Button>
               <div className="border border-slate-200 bg-white font-mono px-3 py-1 rounded-lg text-xs text-slate-700 flex items-center font-bold">
                 {pagination.page} / {pagination.totalPages || 1}
               </div>
-              <button
+              <Button
                 onClick={() => changePage(pagination.page + 1)}
                 disabled={pagination.page >= pagination.totalPages || loading}
                 className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold px-2.5 py-1 rounded-lg text-xs disabled:opacity-40 transition"
               >
                 Next ›
-              </button>
+              </Button>
             </div>
           </div>
         </div>

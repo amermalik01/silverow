@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { AllocationPayload } from "./TransferStockForm";
+import { Button } from "@/components/ui/button";
 
 interface StockBatchRow {
   production_date: string;
@@ -147,9 +148,9 @@ const StockAllocationModal: React.FC<ModalProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="border p-1.5 rounded text-xs w-64"
           />
-          <button className="border px-3 py-1.5 rounded text-xs bg-white hover:bg-gray-50 text-gray-600">
+          <Button className="border px-3 py-1.5 rounded text-xs bg-white hover:bg-gray-50 text-gray-600">
             Clear Filter
-          </button>
+          </Button>
         </div>
 
         {/* Batches Sub-ledger Listing */}
@@ -210,18 +211,18 @@ const StockAllocationModal: React.FC<ModalProps> = ({
 
         {/* Confirmation Footer */}
         <div className="bg-gray-50 p-3 border-t flex justify-end space-x-2">
-          <button
+          <Button
             onClick={handleConfirmSave}
             className="bg-emerald-600 text-white text-xs px-4 py-1.5 rounded font-medium shadow hover:bg-emerald-700"
           >
             Save Allocations
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onClose}
             className="border bg-white text-xs px-4 py-1.5 rounded font-medium text-gray-700 hover:bg-gray-50"
           >
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </div>

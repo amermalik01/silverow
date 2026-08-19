@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 
 export interface PasswordSettingsData {
@@ -143,36 +144,36 @@ export default function PasswordSettingsTab({
       <div className="flex justify-end space-x-2 pt-6 border-t border-gray-100">
         {isEditing ? (
           <>
-            <button
+            <Button
               type="submit"
               className="px-4 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-xs font-medium transition-colors"
             >
               Save
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleCancel}
               className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
             >
               Cancel
-            </button>
+            </Button>
           </>
         ) : (
           <>
-            <button
+            <Button
               type="button"
               onClick={() => setIsEditing(true)}
               className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
             >
               Edit
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleCancel}
               className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
             >
               Cancel
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -319,36 +320,36 @@ export default function PasswordSettingsTab({
       <div className="flex justify-end space-x-2 pt-6 border-t border-gray-100">
         {isEditing ? (
           <>
-            <button
+            <Button
               type="submit"
               className="px-4 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-xs font-medium transition-colors"
             >
               Save
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleCancel}
               className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
             >
               Cancel
-            </button>
+            </Button>
           </>
         ) : (
           <>
-            <button
+            <Button
               type="button"
               onClick={() => setIsEditing(true)}
               className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
             >
               Edit
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={onCancel}
               className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
             >
               Cancel
-            </button>
+            </Button>
           </>
         )}
       </div>

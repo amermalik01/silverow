@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import { SupportTicket } from "./SupportTicketFormView";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   slug: string;
@@ -163,13 +164,13 @@ export default function SupportTicketListView({ slug }: Props) {
           <span className="text-xs font-bold bg-emerald-600 text-white px-2 py-0.5 rounded capitalize">Support Tickets</span>
         </div>
         
-        <button
+        <Button
           type="button"
           onClick={() => router.push(`/${slug}/sales/support-ticket/new`)}
           className="bg-emerald-800 text-white hover:bg-emerald-900 text-xs font-bold px-4 py-1.5 rounded transition shadow-sm"
         >
           Add
-        </button>
+        </Button>
       </div>
 
       {/* Ribbon Toolbar Quick Configuration Icons */}

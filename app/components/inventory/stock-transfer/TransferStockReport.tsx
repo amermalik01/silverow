@@ -2,6 +2,7 @@
 
 import React from "react";
 import { AllocationPayload } from './TransferStockForm';
+import { Button } from "@/components/ui/button";
 
 export interface DocumentHeaderDetails {
   transferNo: string;
@@ -38,18 +39,18 @@ const TransferStockReport: React.FC<ReportProps> = ({
     <div className="bg-white p-8 max-w-4xl mx-auto my-6 border shadow-sm rounded font-sans text-xs text-gray-800">
       {/* Printable Sheet Window Controller Actions */}
       <div className="no-print flex justify-end space-x-2 mb-6 border-b pb-3">
-        <button
+        <Button
           onClick={() => window.print()}
           className="bg-gray-800 text-white px-3 py-1 rounded shadow text-xs"
         >
           🖨️ Print Layout
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onClose}
           className="border px-3 py-1 rounded text-xs bg-white text-gray-600"
         >
           Cancel
-        </button>
+        </Button>
       </div>
 
       {/* Header Corporate Identity Block */}

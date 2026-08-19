@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 
 import { Designation } from "@/types/hr/designation";
+import { Button } from "@/components/ui/button";
 
 export default function DesignationList() {
   const [data, setData] = useState<Designation[]>([]);
@@ -129,9 +130,9 @@ export default function DesignationList() {
           <option value="inactive">Inactive</option>
         </select>
 
-        <button onClick={save} className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 rounded px-4">
+        <Button onClick={save} className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 rounded px-4">
           {editingId ? "Update" : "Create"}
-        </button>
+        </Button>
       </div>
 
       {/* TABLE */}
@@ -163,16 +164,16 @@ export default function DesignationList() {
               <td className="p-2">{row.status}</td>
 
               <td className="p-2 text-center space-x-2">
-                <button onClick={() => edit(row)} className="text-blue-600">
+                <Button onClick={() => edit(row)} className="text-blue-600">
                   Edit
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={() => remove(row.id!)}
                   className="text-red-600"
                 >
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

@@ -149,6 +149,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   className={`${inputStyle} font-mono`}
                   value={order.customer_no || "Click Select..."}
                 />
+                
                 <button
                   type="button"
                   onClick={() => setCustomerModalOpen(true)}

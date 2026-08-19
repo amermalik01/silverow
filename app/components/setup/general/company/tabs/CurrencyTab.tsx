@@ -8,6 +8,7 @@ import { CompanyCurrency } from "@/types/currency";
 
 import { format } from "date-fns";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Button } from "@/components/ui/button";
 
 interface RateHistoryItem {
   id: string;
@@ -132,7 +133,7 @@ export default function CurrencyTab() {
               />
               <span className="absolute right-2.5 top-2 text-gray-400">🔍</span>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setSelectedCurrency(null);
@@ -144,7 +145,7 @@ export default function CurrencyTab() {
               className="bg-emerald-900 hover:bg-emerald-950 text-white px-5 py-1.5 rounded font-medium shadow-sm"
             >
               Add
-            </button>
+            </Button>
           </div>
 
           <div className="border rounded overflow-hidden">
@@ -299,28 +300,28 @@ export default function CurrencyTab() {
           {/* Form Actions matching legacy screenshot */}
           <div className="flex justify-end gap-2 pt-6 border-t">
             {selectedCurrency && (
-              <button
+              <Button
                 type="button"
                 onClick={openConversionHistory}
                 className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-1.5 rounded transition-colors"
               >
                 Conversion History
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="submit"
               disabled={saving}
               className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-5 py-1.5 rounded transition-colors"
             >
               {saving ? "Saving..." : "Edit"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => setMode("list")}
               className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-5 py-1.5 rounded transition-colors"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}

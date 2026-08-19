@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 export type Opportunity = {
   id: string;
@@ -229,14 +230,14 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
           </div>
 
           {!readonly && (
-            <button
+            <Button
               type="button"
               onClick={handleAddNew}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-sm"
             >
               <Icon icon="lucide:plus" className="w-3.5 h-3.5" />
               <span>Add</span>
-            </button>
+            </Button>
           )}
         </div>
 
@@ -670,18 +671,18 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
       {/* 3. Bottom Action Buttons Bar */}
       <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
         {!readonly && (
-          <button
+          <Button
             type="button"
             onClick={handleCompleteStage}
             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 transition-colors"
           >
             <Icon icon="lucide:check" className="w-3.5 h-3.5" />
             <span>Complete Stage</span>
-          </button>
+          </Button>
         )}
 
         {isFormMode ? (
-          <button
+          <Button
             type="button"
             disabled={saving}
             onClick={handleSave}
@@ -689,26 +690,26 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
           >
             {saving && <Icon icon="lucide:loader-2" className="w-3 h-3 animate-spin" />}
             <span>Save</span>
-          </button>
+          </Button>
         ) : (
           !readonly && (
-            <button
+            <Button
               type="button"
               onClick={handleEdit}
               className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
             >
               Edit
-            </button>
+            </Button>
           )
         )}
 
-        <button
+        <Button
           type="button"
           onClick={() => setViewMode("list")}
           className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );

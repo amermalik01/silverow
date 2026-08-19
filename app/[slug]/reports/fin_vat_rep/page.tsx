@@ -7,6 +7,7 @@ import { ReportHeader } from "@/app/components/reports/ReportHeader";
 
 import { ReportFilters } from "@/app/components/reports/ReportFilters";
 import { Loader2, Eye, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface VATSummaryRow {
   rowNo: number;
@@ -146,22 +147,22 @@ export default function VatReportComponent() {
           </label>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => handleSpecialAction("detailed")}
               className="inline-flex items-center space-x-1 bg-white/10 hover:bg-white/20 text-white font-medium text-xs py-1 px-2.5 rounded transition border border-white/10"
             >
               <Eye className="h-3 w-3 text-emerald-400" />
               <span>Detailed VAT Report</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => handleSpecialAction("open_before")}
               className="inline-flex items-center space-x-1 bg-white/10 hover:bg-white/20 text-white font-medium text-xs py-1 px-2.5 rounded transition border border-white/10"
             >
               <FileText className="h-3 w-3 text-emerald-400" />
               <span>Open Entries Before Date From</span>
-            </button>
+            </Button>
 
             <div className="flex items-center space-x-2 ml-auto">
               <span className="text-xs font-medium text-emerald-300">

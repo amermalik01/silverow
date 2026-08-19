@@ -6,6 +6,7 @@ import { Attendance } from "@/types/hr/attendance";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO, startOfDay } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type EmployeeOption = {
   id: string;
@@ -189,12 +190,12 @@ export default function AttendanceForm() {
       />
 
       <div className="flex justify-end">
-        <button
+        <Button
           onClick={handleSubmit}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           Save
-        </button>
+        </Button>
       </div>
     </div>
   );

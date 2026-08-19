@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 
 import { ItemUOM, UOMForm, UOMOption } from "@/types/inventory";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   itemId: string;
@@ -164,7 +165,7 @@ export default function UOMTab({ itemId }: Props) {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">UOM Conversions</h2>
 
-        <button
+        <Button
           type="button"
           onClick={() => {
             setEditingId(null);
@@ -176,7 +177,7 @@ export default function UOMTab({ itemId }: Props) {
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 px-4 py-2 rounded"
         >
           + Create
-        </button>
+        </Button>
       </div>
 
       {/* TABLE */}
@@ -226,21 +227,21 @@ export default function UOMTab({ itemId }: Props) {
 
                 <td className="p-3">
                   <div className="flex items-center gap-3">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleEdit(row)}
                       className="text-blue-600"
                     >
                       Edit
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleDelete(row.id)}
                       className="text-red-600"
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -360,22 +361,22 @@ export default function UOMTab({ itemId }: Props) {
             </label>
 
             <div className="flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={handleCloseModal}
                 className="border px-4 py-2 rounded"
               >
                 Cancel
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 disabled={saving}
                 onClick={handleSubmit}
                 className="bg-blue-600 text-white px-4 py-2 rounded"
               >
                 {saving ? "Saving..." : editingId ? "Update" : "Save"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -488,13 +489,13 @@ export default function UOMTab({ itemId }: Props) {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">UOM Conversions</h2>
 
-        <button
+        <Button
           type="button"
           onClick={() => setShowModal(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           + Add UOM
-        </button>
+        </Button>
       </div>
 
 
@@ -543,13 +544,13 @@ export default function UOMTab({ itemId }: Props) {
                 <td className="p-3">{row.volume}</td>
 
                 <td className="p-3">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => handleDelete(row.id)}
                     className="text-red-600"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -664,22 +665,22 @@ export default function UOMTab({ itemId }: Props) {
             </label>
 
             <div className="flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={() => setShowModal(false)}
                 className="border px-4 py-2 rounded"
               >
                 Cancel
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 disabled={saving}
                 onClick={handleSubmit}
                 className="bg-blue-600 text-white px-4 py-2 rounded"
               >
                 {saving ? "Saving..." : "Save"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

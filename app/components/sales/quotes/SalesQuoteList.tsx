@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SalesQuote } from "@/types/sales-quote";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   slug: string;
@@ -175,12 +176,12 @@ export default function SalesQuoteList({ slug }: Props) {
           </select>
         </div>
 
-        <button
+        <Button
           type="submit"
           className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-1.5 rounded transition-colors"
         >
           Apply Filters
-        </button>
+        </Button>
       </form>
 
       {/* EXTENDED VIEWS TABLE CONTAINER */}

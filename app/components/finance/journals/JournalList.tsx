@@ -214,12 +214,12 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
                   </td>
                   <td className="p-3 text-center">
                     {!row.is_posted ? (
-                      <button
+                      <Button
                         onClick={() => handlePost(row.id)}
                         className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline text-xs bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-800/40"
                       >
                         Post
-                      </button>
+                      </Button>
                     ) : (
                       <span className="text-xs text-zinc-400 italic">
                         Locked
@@ -233,23 +233,23 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
 
           {/* PAGINATION CONTROLS */}
           <div className="flex justify-between items-center p-4 border-t border-zinc-200 dark:border-zinc-800 text-xs">
-            <button
+            <Button
               disabled={page <= 1 || loading}
               onClick={() => setPage((p) => p - 1)}
               className="px-3 py-1.5 border rounded disabled:opacity-40 text-xs font-medium bg-zinc-50 dark:bg-zinc-800"
             >
               ← Previous
-            </button>
+            </Button>
             <span className="text-xs text-zinc-500">
               Page {page} of {totalPages}
             </span>
-            <button
+            <Button
               disabled={page >= totalPages || loading}
               onClick={() => setPage((p) => p + 1)}
               className="px-3 py-1.5 border rounded disabled:opacity-40 text-xs font-medium bg-zinc-50 dark:bg-zinc-800"
             >
               Next →
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -464,12 +464,12 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
                   </td>
                   <td className="p-3 text-center">
                     {!row.is_posted ? (
-                      <button
+                      <Button
                         onClick={() => handlePost(row.id)}
                         className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline text-xs bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-800/40"
                       >
                         Post Book
-                      </button>
+                      </Button>
                     ) : (
                       <span className="text-xs text-zinc-400 italic">
                         Locked
@@ -482,23 +482,23 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
           </table>
 
           <div className="flex justify-between items-center pt-4 border-t border-zinc-200 dark:border-zinc-800 text-xs">
-            <button
+            <Button
               disabled={page <= 1 || loading}
               onClick={() => setPage((p) => p - 1)}
               className="px-3 py-1.5 border rounded disabled:opacity-40 text-xs font-medium bg-zinc-50 dark:bg-zinc-800"
             >
               ← Previous
-            </button>
+            </Button>
             <span className="text-xs text-zinc-500">
               Page {page} of {totalPages}
             </span>
-            <button
+            <Button
               disabled={page >= totalPages || loading}
               onClick={() => setPage((p) => p + 1)}
               className="px-3 py-1.5 border rounded disabled:opacity-40 text-xs font-medium bg-zinc-50 dark:bg-zinc-800"
             >
               Next →
-            </button>
+            </Button>
           </div>
         </div>
       )}

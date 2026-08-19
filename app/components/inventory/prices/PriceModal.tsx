@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   itemId: string;
@@ -146,15 +147,15 @@ export default function PriceModal({
         /> */}
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose}>Cancel</button>
+          <Button onClick={onClose}>Cancel</Button>
 
-          <button
+          <Button
             onClick={submit}
             disabled={loading}
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 text-white px-4 py-2"
           >
             Save
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -321,17 +322,17 @@ export default function PriceModal({ itemId, type, onClose, onSaved }: Props) {
         </label>
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 border">
+          <Button onClick={onClose} className="px-4 py-2 border">
             Cancel
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleSubmit}
             disabled={loading}
             className="px-4 py-2 bg-blue-600 text-white"
           >
             Save
-          </button>
+          </Button>
         </div>
       </div>
     </div>

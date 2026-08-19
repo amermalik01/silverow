@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 type Journal = {
   id: string;
@@ -88,12 +89,12 @@ export default function GeneralJournalList({ slug }: { slug: string }) {
                   Edit
                 </Link>
 
-                <button
+                <Button
                   onClick={() => handlePost(j.id)}
                   className="text-green-600"
                 >
                   Post
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

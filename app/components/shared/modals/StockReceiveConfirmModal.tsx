@@ -3,6 +3,7 @@
 
 import React from "react";
 import { Icon } from "@iconify/react";
+import { Button } from "@/components/ui/button";
 
 interface StockReceiveConfirmModalProps {
   isOpen: boolean;
@@ -42,22 +43,22 @@ export const StockReceiveConfirmModal: React.FC<
         </div>
 
         <div className="flex justify-center gap-2 pt-2">
-          <button
+          <Button
             type="button"
             onClick={onConfirm}
             disabled={loading}
             className="px-5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded transition shadow-xs disabled:opacity-50"
           >
             {loading ? "Processing..." : "Confirm"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onCancel}
             disabled={loading}
             className="px-5 py-1.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded transition"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     </div>

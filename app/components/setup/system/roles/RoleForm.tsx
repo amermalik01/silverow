@@ -1,6 +1,7 @@
 // app/components/setup/system/roles/RoleForm.tsx
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 type Props = {
@@ -77,13 +78,13 @@ export default function RoleForm({ onCreated }: Props) {
         className="border rounded p-2 w-full"
       />
 
-      <button
+      <Button
         onClick={submit}
         disabled={loading}
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         {loading ? "Saving..." : "Create Role"}
-      </button>
+      </Button>
     </div>
   );
 }

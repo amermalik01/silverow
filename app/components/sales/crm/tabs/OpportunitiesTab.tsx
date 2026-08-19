@@ -1,12 +1,18 @@
 // app/components/sales/crm/tabs/OpportunitiesTab.tsx
 "use client";
 
-export default function OpportunitiesTab({ partyId }: { partyId: string | undefined }) {
+import { Button } from "@/components/ui/button";
+
+export default function OpportunitiesTab({
+  partyId,
+}: {
+  partyId: string | undefined;
+}) {
   return (
     <div className="space-y-4">
-      <button className="bg-green-600 text-white px-3 py-1 rounded">
+      <Button className="bg-green-600 text-white px-3 py-1 rounded">
         + New Opportunity
-      </button>
+      </Button>
 
       <div className="border rounded p-4">
         <p className="text-gray-500">Opportunities will appear here</p>

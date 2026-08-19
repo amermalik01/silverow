@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { PurchaseReceipt, PurchaseReceiptLine } from "@/types/purchase-receipt";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   slug: string;
@@ -347,22 +348,22 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
         >
           Add Line
         </button> */}
-        <button
+        <Button
           type="button"
           onClick={addLine}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
         >
           Add Line
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           disabled={saving}
           onClick={save}
           className="bg-blue-600 text-white px-6 py-2 rounded"
         >
           Save Receipt
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import MasterDropdown from "@/app/components/common/MasterDropdown";
 import CurrencyDropdown from "@/app/components/common/CurrencyDropdown";
+import { Button } from "@/components/ui/button";
 
 interface BankAccount {
   id?: string;
@@ -119,7 +120,7 @@ export default function BankAccountsTab() {
               onChange={(e) => setSearch(e.target.value)}
               className="border px-3 py-1.5 rounded w-64 focus:outline-none focus:ring-1 focus:ring-emerald-600 text-xs"
             />
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setCurrent({
@@ -130,7 +131,7 @@ export default function BankAccountsTab() {
               className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded font-medium text-xs"
             >
               Add
-            </button>
+            </Button>
           </div>
 
           <div className="border rounded overflow-hidden">
@@ -171,7 +172,7 @@ export default function BankAccountsTab() {
                       <td className="p-2.5">{bank.sort_code || "-"}</td>
                       <td className="p-2.5">{bank.account_no}</td>
                       <td className="p-2.5 text-right space-x-2">
-                        <button
+                        <Button
                           type="button"
                           onClick={() => {
                             setCurrent(bank);
@@ -180,14 +181,14 @@ export default function BankAccountsTab() {
                           className="text-emerald-700 hover:underline text-xs font-medium"
                         >
                           Edit
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
                           onClick={() => bank.id && handleDelete(bank.id)}
                           className="text-red-600 hover:underline text-xs font-medium"
                         >
                           Delete
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))
@@ -451,19 +452,19 @@ export default function BankAccountsTab() {
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <button
+            <Button
               type="submit"
               className="border border-emerald-700 text-emerald-800 hover:bg-emerald-50 px-5 py-1.5 rounded font-medium"
             >
               Save
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => setMode("list")}
               className="border border-gray-300 hover:bg-gray-50 px-5 py-1.5 rounded font-medium"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}

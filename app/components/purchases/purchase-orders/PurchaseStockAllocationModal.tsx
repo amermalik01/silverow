@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { StockAllocationRecord } from "@/app/components/shared/modals/StockAllocationModal";
+import { Button } from "@/components/ui/button";
 
 interface StockBatchRow {
   prod_date: string;       // Aligned to StockAllocationRecord schema
@@ -220,12 +221,12 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="border dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 rounded text-xs w-64"
           />
-          <button
+          <Button
             onClick={() => setSearchQuery("")}
             className="border dark:border-slate-700 px-3 py-1.5 rounded text-xs bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700"
           >
             Clear Filter
-          </button>
+          </Button>
         </div>
 
         {/* Listing */}
@@ -293,18 +294,18 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
 
         {/* Footer */}
         <div className="bg-gray-50 dark:bg-slate-800 p-3 border-t dark:border-slate-700 flex justify-end space-x-2">
-          <button
+          <Button
             onClick={handleConfirmSave}
             className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-1.5 rounded font-medium shadow"
           >
             Save Allocations
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onClose}
             className="border dark:border-slate-700 bg-white dark:bg-slate-800 text-xs px-4 py-1.5 rounded font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
           >
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </div>

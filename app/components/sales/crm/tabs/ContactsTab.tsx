@@ -1,6 +1,7 @@
 // app/components/sales/crm/tabs/ContactsTab.tsx
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { CRMContact } from "@/types/crm";
 
 export default function ContactsTab({
@@ -23,13 +24,13 @@ export default function ContactsTab({
   return (
     <div className="space-y-4">
 
-      <button
+      <Button
         onClick={addContact}
         // className="bg-blue-600 text-white px-3 py-1 rounded"
         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
       >
         Add Contact
-      </button>
+      </Button>
 
       {contacts.map((c, i) => (
         <div key={i} className="border p-3 rounded grid grid-cols-2 gap-2">

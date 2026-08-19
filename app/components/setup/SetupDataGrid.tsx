@@ -3,6 +3,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 export type Field = {
@@ -289,13 +290,13 @@ export default function SetupDataGrid({
         )}
       </div>
 
-      <button
+      <Button
         onClick={createOrUpdate}
         disabled={submitting || loading}
         className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition disabled:opacity-50"
       >
         {submitting ? "Processing..." : "Add Record"}
-      </button>
+      </Button>
 
       {/* Data Layout Grid Elements presentation */}
       {loading && rows.length === 0 ? (
@@ -419,37 +420,37 @@ export default function SetupDataGrid({
                     <td className="p-3 text-center space-x-3 whitespace-nowrap">
                       {editingId === r.id ? (
                         <>
-                          <button
+                          <Button
                             onClick={updateRow}
                             disabled={submitting}
                             className="text-green-600 hover:text-green-800 font-medium"
                           >
                             Save
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={cancelEdit}
                             disabled={submitting}
                             className="text-gray-500 hover:text-gray-700"
                           >
                             Cancel
-                          </button>
+                          </Button>
                         </>
                       ) : (
                         <>
-                          <button
+                          <Button
                             onClick={() => startEdit(r)}
                             disabled={submitting}
                             className="text-blue-600 hover:text-blue-800 font-medium"
                           >
                             Edit
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => remove(r.id!)}
                             disabled={submitting}
                             className="text-red-600 hover:text-red-800 font-medium"
                           >
                             Delete
-                          </button>
+                          </Button>
                         </>
                       )}
                     </td>
@@ -463,21 +464,21 @@ export default function SetupDataGrid({
 
       {/* Pagination Controls Footer Block */}
       <div className="flex justify-between items-center mt-4 text-xs text-gray-600 dark:text-gray-400">
-        <button
+        <Button
           onClick={() => setPage((p) => Math.max(p - 1, 1))}
           disabled={page === 1 || loading}
           className="border px-4 py-1.5 rounded bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:border-slate-700 disabled:opacity-40 transition"
         >
           Previous
-        </button>
+        </Button>
         <span className="font-medium">Page {page}</span>
-        <button
+        <Button
           onClick={() => setPage((p) => p + 1)}
           disabled={rows.length < limit || loading}
           className="border px-4 py-1.5 rounded bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:border-slate-700 disabled:opacity-40 transition"
         >
           Next
-        </button>
+        </Button>
       </div>
     </div>
   );

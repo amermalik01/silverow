@@ -12,6 +12,7 @@ import {
   ChevronsRight,
   X,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type CustomerLookupItem = {
   id: string;
@@ -298,18 +299,18 @@ export default function CustomerLookupModal({
 
         {/* Action Controls */}
         <div className="flex justify-end gap-2 px-4 py-2 bg-slate-100/60 border-b border-slate-200">
-          <button
+          <Button
             onClick={handleSearch}
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-4 py-1.5 rounded flex items-center gap-1 shadow-sm transition"
           >
             <Search className="h-3 w-3" /> Search
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleReset}
             className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1 transition"
           >
             <RotateCcw className="h-3 w-3" /> Reset
-          </button>
+          </Button>
         </div>
 
         {/* Table View */}
@@ -413,7 +414,7 @@ export default function CustomerLookupModal({
                           className="p-3 text-center"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
+                          <Button
                             onClick={() => {
                               onSelect(customer);
                               onClose();
@@ -421,7 +422,7 @@ export default function CustomerLookupModal({
                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[10px] font-bold rounded shadow-sm transition"
                           >
                             Select
-                          </button>
+                          </Button>
                         </td>
                       )}
                     </tr>
@@ -439,13 +440,13 @@ export default function CustomerLookupModal({
               <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">
                 {selectedCustomers.length} selected
               </span>
-              <button
+              <Button
                 onClick={handleSubmitBatch}
                 disabled={selectedCustomers.length === 0}
                 className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-[11px] font-bold px-3 py-1 rounded shadow-sm transition"
               >
                 Confirm Selection
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="text-slate-500 font-medium text-[11px]">

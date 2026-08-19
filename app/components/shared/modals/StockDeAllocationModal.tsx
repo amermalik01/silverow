@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import { useLoader } from "@/app/context/LoaderContext";
+import { Button } from "@/components/ui/button";
 
 export interface StockDeAllocationRecord {
   id: string;
@@ -830,15 +831,15 @@ export default function StockDeAllocationModal({
         {/* ========================================================= */}
 
         <div className="bg-slate-50 dark:bg-slate-800/40 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             className="border border-slate-200 dark:border-slate-700 px-4 py-2 rounded text-xs hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors"
           >
             Close
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={handleCommitSave}
             disabled={loading || allocations.length === 0 || !isValidAllocation}
@@ -849,7 +850,7 @@ export default function StockDeAllocationModal({
             } disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             Return Stock
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1294,22 +1295,22 @@ export default function StockDeAllocationModal({
 
 
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={onClose}
               className="px-3 py-1.5 text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded text-slate-800 dark:text-slate-200"
             >
               Cancel
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
               disabled={loading || allocations.length === 0}
               onClick={handleSave}
               className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Save Allocation
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -1643,20 +1644,20 @@ export default function StockDeAllocationModal({
             </span>
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={onClose}
               className="px-3 py-1.5 text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded text-slate-800 dark:text-slate-200"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleSave}
               className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded font-medium"
             >
               Save Allocation
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -1792,14 +1793,14 @@ export default function StockDeAllocationModal({
             <strong>{cleanRequiredQty}</strong>.
           </p>
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
               onClick={onClose}
               className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-xs font-medium text-slate-700 dark:text-slate-300"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleSave}
               disabled={!isValidAllocation || allocations.length === 0}
@@ -1810,7 +1811,7 @@ export default function StockDeAllocationModal({
               }`}
             >
               Confirm De-Allocation
-            </button>
+            </Button>
           </div>
         </div> */
 }
@@ -1908,21 +1909,21 @@ export default function StockDeAllocationModal({
 
 
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2 bg-slate-50 dark:bg-slate-900">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             className="px-4 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={handleSave}
             disabled={allocations.length === 0}
             className="px-4 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50 transition"
           >
             Confirm De-Allocation
-          </button>
+          </Button>
         </div>
       </div>
     </div>

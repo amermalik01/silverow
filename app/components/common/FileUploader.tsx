@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
 
 type Props = {
@@ -119,12 +120,12 @@ export default function FileUploader({ module, recordId }: Props) {
                 >
                   View
                 </a>
-                <button
+                <Button
                   onClick={() => handleDelete(f.id)}
                   className="text-red-500 hover:text-red-700 font-medium text-xs"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
           ))

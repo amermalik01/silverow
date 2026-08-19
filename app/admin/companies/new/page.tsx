@@ -100,13 +100,13 @@ export default function NewCompanyPage() {
           <div className="flex justify-between">
             <Label htmlFor="slug">Subdomain Slug</Label>
             {!isAutoSlug && (
-              <button
+              <Button
                 type="button"
                 className="text-xs text-blue-600 hover:underline"
                 onClick={() => setIsAutoSlug(true)}
               >
                 Reset to automatic
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex gap-2 items-center">

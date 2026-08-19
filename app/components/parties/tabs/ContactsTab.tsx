@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import type { PartyContactDraft } from "@/types/erp";
 
 type Props = {
@@ -66,14 +67,14 @@ export default function ContactsTab({
           Contact(s)
         </h3>
         {!isReadonly && (
-          <button
+          <Button
             type="button"
             onClick={addContactRow}
             // className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm"
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
             Add Contact
-          </button>
+          </Button>
         )}
       </div>
 

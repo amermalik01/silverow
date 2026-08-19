@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 type CRMAccount = {
   id: string;
@@ -165,7 +166,8 @@ export default function CRMList() {
                 <td className="p-2">
                   <Link href={`./crm/${row.id}`} className="text-blue-600">
                     View
-                  </Link>&nbsp;|&nbsp;
+                  </Link>
+                  &nbsp;|&nbsp;
                   <Link
                     href={`./crm/${row.id}/edit`}
                     className="text-green-600 hover:underline"
@@ -182,25 +184,25 @@ export default function CRMList() {
       {/* Pagination */}
 
       <div className="flex gap-2">
-        <button
+        <Button
           disabled={page === 1}
           onClick={() => setPage(page - 1)}
           className="border px-3 py-1"
         >
           Prev
-        </button>
+        </Button>
 
         <span>
           Page {page} / {totalPages}
         </span>
 
-        <button
+        <Button
           disabled={page === totalPages}
           onClick={() => setPage(page + 1)}
           className="border px-3 py-1"
         >
           Next
-        </button>
+        </Button>
       </div>
     </div>
   );

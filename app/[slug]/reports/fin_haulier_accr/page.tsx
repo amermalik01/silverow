@@ -9,6 +9,7 @@ import { Loader2, Search, X } from "lucide-react";
 import GLAccountLookupModal, {
   GLAccountLookupRecord,
 } from "@/app/components/shared/modals/GLAccountLookupModal";
+import { Button } from "@/components/ui/button";
 
 interface AccrualLine {
   id: string;

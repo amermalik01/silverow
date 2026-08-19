@@ -20,6 +20,7 @@ import WarehouseLookupModal, {
 import StockDeAllocationModal, {
   StockDeAllocationRecord,
 } from "../../shared/modals/StockDeAllocationModal";
+import { Button } from "@/components/ui/button";
 
 export type DebitNoteLineUI = DebitNoteLine & {
   item_code?: string;
@@ -256,13 +257,13 @@ export default function DebitNoteLines({
         <h3 className="text-lg font-semibold">Debit Note Lines</h3>
 
         {!isReadonly && (
-          <button
+          <Button
             type="button"
             onClick={addLine}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
             Add Line
-          </button>
+          </Button>
         )}
       </div>
 

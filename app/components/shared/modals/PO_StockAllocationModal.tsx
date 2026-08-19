@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 export type PO_StockAllocationRecord = {
   location_id: string;
@@ -473,21 +474,21 @@ export default function PO_StockAllocationModal({
         </div>
 
         <div className="bg-slate-50 dark:bg-slate-800/40 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="border border-slate-200 dark:border-slate-700 px-4 py-2 rounded text-xs hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors"
-          >
-            Close
-          </button>
-          <button
+          <Button
             type="button"
             onClick={handleCommitSave}
             disabled={qtyToAllocate !== 0}
             className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2 rounded text-xs disabled:opacity-40 font-medium transition-opacity"
           >
             Save Allocation
-          </button>
+          </Button>
+          <Button
+            type="button"
+            onClick={onClose}
+            className="border border-slate-200 dark:border-slate-700 px-4 py-2 rounded text-xs hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors"
+          >
+            Close
+          </Button>
         </div>
       </div>
     </div>

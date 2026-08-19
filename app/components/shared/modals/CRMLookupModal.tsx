@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { Search, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type CRMLookupItem = {
   id: string;
@@ -177,13 +178,13 @@ export default function CRMLookupModal({
 
         {/* Action Board */}
         <div className="flex justify-end gap-2 px-4 py-2 bg-slate-100/60 border-b border-slate-200">
-          <button
+          <Button
             onClick={fetchCRMs}
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-4 py-1.5 rounded flex items-center gap-1 shadow-sm transition"
           >
             <Search className="h-3 w-3" /> Search
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => {
               setFilters({
                 crm_code: "",
@@ -197,7 +198,7 @@ export default function CRMLookupModal({
             className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1 transition"
           >
             <RotateCcw className="h-3 w-3" /> Reset
-          </button>
+          </Button>
         </div>
 
         {/* Matrix Ledger view panel */}
@@ -291,7 +292,7 @@ export default function CRMLookupModal({
                           className="p-3 text-center"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
+                          <Button
                             onClick={() => {
                               onSelect(crm);
                               onClose();
@@ -299,7 +300,7 @@ export default function CRMLookupModal({
                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[10px] font-bold rounded shadow-sm transition"
                           >
                             Select
-                          </button>
+                          </Button>
                         </td>
                       )}
                     </tr>
@@ -320,19 +321,19 @@ export default function CRMLookupModal({
               across target report payload array profiles
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={handleSubmitBatch}
                 disabled={selectedCRMs.length === 0}
                 className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-1.5 rounded shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Add Selection
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={onClose}
                 className="border border-slate-200 bg-white hover:bg-slate-50 font-medium text-xs px-3 py-1.5 rounded transition"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}

@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 export type WarehouseLookupRecord = {
@@ -165,12 +166,12 @@ export default function WarehouseLookupModal({
             Warehouse Lookup
           </h2>
 
-          <button
+          <Button
             onClick={onClose}
             className="border px-3 py-1 rounded"
           >
             Close
-          </button>
+          </Button>
         </div>
 
         {/* FILTERS */}
@@ -247,14 +248,14 @@ export default function WarehouseLookupModal({
         {/* ACTIONS */}
 
         <div className="flex gap-2 mb-4">
-          <button
+          <Button
             onClick={() => loadWarehouses(1)}
             className="bg-blue-600 text-white px-4 py-2 rounded"
           >
             Search
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => {
               setFilters({
                 search: "",
@@ -270,7 +271,7 @@ export default function WarehouseLookupModal({
             className="border px-4 py-2 rounded"
           >
             Reset
-          </button>
+          </Button>
         </div>
 
         {/* TABLE */}
@@ -349,7 +350,7 @@ export default function WarehouseLookupModal({
                     </td>
 
                     <td className="p-2 text-center">
-                      <button
+                      <Button
                         onClick={() => {
                           onSelect(wh);
 
@@ -358,7 +359,7 @@ export default function WarehouseLookupModal({
                         className="bg-blue-600 text-white px-3 py-1 rounded"
                       >
                         Select
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -374,7 +375,7 @@ export default function WarehouseLookupModal({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
               disabled={pagination.page <= 1}
               onClick={() =>
                 loadWarehouses(
@@ -384,14 +385,14 @@ export default function WarehouseLookupModal({
               className="border px-3 py-1 rounded disabled:opacity-50"
             >
               Prev
-            </button>
+            </Button>
 
             <span className="text-xs">
               Page {pagination.page} of{" "}
               {pagination.totalPages}
             </span>
 
-            <button
+            <Button
               disabled={
                 pagination.page >=
                 pagination.totalPages
@@ -404,7 +405,7 @@ export default function WarehouseLookupModal({
               className="border px-3 py-1 rounded disabled:opacity-50"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -482,9 +483,9 @@ export default function WarehouseLookupModal({
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">Warehouse Lookup</h2>
 
-          <button onClick={onClose} className="border px-3 py-1 rounded">
+          <Button onClick={onClose} className="border px-3 py-1 rounded">
             Close
-          </button>
+          </Button>
         </div>
 
 
@@ -527,12 +528,12 @@ export default function WarehouseLookupModal({
         </div>
 
         <div className="mb-4">
-          <button
+          <Button
             onClick={loadWarehouses}
             className="bg-blue-600 text-white px-4 py-2 rounded"
           >
             Search
-          </button>
+          </Button>
         </div>
 
 
@@ -569,7 +570,7 @@ export default function WarehouseLookupModal({
                   <td className="p-2">{wh.type}</td>
 
                   <td className="p-2 text-center">
-                    <button
+                    <Button
                       onClick={() => {
                         onSelect(wh);
                         onClose();
@@ -577,7 +578,7 @@ export default function WarehouseLookupModal({
                       className="bg-blue-600 text-white px-3 py-1 rounded"
                     >
                       Select
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

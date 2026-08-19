@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useLoader } from "@/app/context/LoaderContext";
+import { Button } from "@/components/ui/button";
 
 export interface PostedLedgerEntry {
   entry_no: number | string;
@@ -196,13 +197,13 @@ export const PostedTransactionsModal: React.FC<
         </div>
 
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex justify-end bg-slate-50 dark:bg-slate-900">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             className="px-4 py-1.5 border border-slate-300 dark:border-slate-700 text-xs font-semibold rounded hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </div>

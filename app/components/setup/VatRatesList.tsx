@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 type VatRate = {
@@ -177,7 +178,7 @@ export default function VatRatesList() {
           <span className="absolute right-2.5 text-gray-500 text-xs">%</span>
         </div>
 
-        <button
+        <Button
           type="submit"
           disabled={submitting}
           className={`px-5 py-2 text-white rounded font-medium transition disabled:opacity-50 ${
@@ -187,17 +188,17 @@ export default function VatRatesList() {
           }`}
         >
           {submitting ? "Processing..." : editingId ? "Update" : "Add Rate"}
-        </button>
+        </Button>
 
         {editingId && (
-          <button
+          <Button
             type="button"
             onClick={cancelEdit}
             disabled={submitting}
             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </form>
 
@@ -234,20 +235,20 @@ export default function VatRatesList() {
                       {r.rate}%
                     </td>
                     <td className="p-3 text-center space-x-4">
-                      <button
+                      <Button
                         onClick={() => startEdit(r)}
                         disabled={submitting}
                         className="text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50"
                       >
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => deleteRate(r.id)}
                         disabled={submitting}
                         className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50"
                       >
                         Delete
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -368,21 +369,21 @@ export default function VatRatesList() {
 
         {editingId ? (
 
-          <button
+          <Button
             onClick={updateRate}
             className="bg-green-600 text-white px-4 py-2 rounded"
           >
             Update
-          </button>
+          </Button>
 
         ) : (
 
-          <button
+          <Button
             onClick={createRate}
             className="bg-blue-600 text-white px-4 py-2 rounded"
           >
             Add
-          </button>
+          </Button>
 
         )}
 
@@ -406,19 +407,19 @@ export default function VatRatesList() {
 
               <td className="p-2 text-center space-x-3">
 
-                <button
+                <Button
                   onClick={()=>editRate(r)}
                   className="text-blue-600"
                 >
                   Edit
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={()=>deleteRate(r.id)}
                   className="text-red-600"
                 >
                   Delete
-                </button>
+                </Button>
 
               </td>
             </tr>

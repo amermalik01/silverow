@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
+import { Button } from "@/components/ui/button";
 
 export interface PurchaseInvoiceLookupItem {
   id: string;
@@ -172,13 +173,13 @@ export const PurchaseInvoiceLookupModal: React.FC<Props> = ({
 
         {/* Modal Actions */}
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex justify-end bg-slate-50 dark:bg-slate-900">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             className="px-4 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -370,13 +371,13 @@ export const PurchaseInvoiceLookupModal: React.FC<Props> = ({
 
 
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex justify-end bg-slate-50 dark:bg-slate-900">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             className="px-4 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     </div>

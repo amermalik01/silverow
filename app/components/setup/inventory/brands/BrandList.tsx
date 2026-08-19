@@ -118,12 +118,12 @@ export default function BrandList() {
                     Edit
                   </Link>
 
-                  <button
+                  <Button
                     onClick={() => handleDelete(row.id)}
                     className="text-red-600"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}

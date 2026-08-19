@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 export interface FinancialSettingsData {
   business_type: string;
@@ -460,21 +461,21 @@ export default function FinancialSettingsTab({
       </div>
 
       <div className="flex justify-end space-x-2 pt-6 border-t border-gray-100">
-        <button
+        <Button
           type="submit"
           disabled={saving}
           className="px-4 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:bg-emerald-400 text-xs font-medium transition-colors"
         >
           {saving ? "Saving..." : "Save"}
-        </button>
+        </Button>
         {onCancel && (
-          <button
+          <Button
             type="button"
             onClick={onCancel}
             className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </form>
@@ -627,19 +628,19 @@ export default function FinancialSettingsTab({
       </div>
 
       <div className="flex justify-end space-x-2 pt-6 border-t border-gray-100">
-        <button
+        <Button
           type="submit"
           className="px-4 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-xs font-medium transition-colors"
         >
           Save
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onCancel}
           className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { EmployeeAddress } from "@/types/hr/employee";
 
 type Props = {
@@ -48,13 +49,13 @@ export default function EmployeeAddressesTab({
             Manage payroll taxation locations and active physical addresses.
           </p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={addRow}
           className="bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs px-4 py-2 rounded-lg transition-colors"
         >
           + Append Address Index
-        </button>
+        </Button>
       </div>
 
       {addresses.length === 0 ? (
@@ -119,13 +120,13 @@ export default function EmployeeAddressesTab({
                   />
                   Mark as Headquarter/Primary Domicile
                 </label>
-                <button
+                <Button
                   type="button"
                   onClick={() => removeRow(index)}
                   className="text-xs font-medium text-rose-600 hover:text-rose-700 flex items-center gap-1 bg-rose-50 hover:bg-rose-100/70 px-2.5 py-1.5 rounded-md transition-colors"
                 >
                   🗑️ Purge Entry
-                </button>
+                </Button>
               </div>
             </div>
           ))}

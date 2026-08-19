@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { warehouseSchema } from "@/lib/validations/warehouse.schema";
 import { getZodErrorMessages } from "@/lib/utils/zodError";
+import { Button } from "@/components/ui/button";
 
 type WarehouseFormType = {
   name: string;
@@ -136,20 +137,20 @@ export default function WarehouseForm({ id }: { id?: string }) {
         </div>
 
         <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
-          >
-            Cancel
-          </button>
-          <button
+          <Button
             type="submit"
             disabled={loading}
             className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors disabled:opacity-50"
           >
             {loading ? "Saving..." : id ? "Update Warehouse" : "Create Warehouse"}
-          </button>
+          </Button>
+          <Button
+            type="button"
+            onClick={() => router.back()}
+            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+          >
+            Cancel
+          </Button>
         </div>
       </form>
     </div>

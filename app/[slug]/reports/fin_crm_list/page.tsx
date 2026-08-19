@@ -10,6 +10,7 @@ import CRMLookupModal, {
 } from "@/app/components/shared/modals/CRMLookupModal";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 interface AddressPayload {
   id: string;
@@ -217,15 +218,15 @@ export default function LegacyCRMListing() {
 
         {/* Dynamic Parameter Trigger Actions Footer Block */}
         <div className="mt-5 pt-4 border-t border-white/10 flex justify-end items-center space-x-2">
-          <button
+          <Button
             onClick={handleGenerateReport}
             disabled={isLoading}
             className="bg-[#218838] hover:bg-[#1e7e34] font-medium text-xs px-4 py-1.5 rounded transition shadow-sm flex items-center space-x-1"
           >
             {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
             <span>Generate Report</span>
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => {
               setRecords([]);
               setSelectedCRMs([]);
@@ -234,8 +235,8 @@ export default function LegacyCRMListing() {
             className="bg-[#6c757d] hover:bg-[#5a6268] font-medium text-xs px-3 py-1.5 rounded transition"
           >
             Clear Filter
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handlePrintPDF}
             disabled={records.length === 0 || isPrinting}
             className="bg-[#17a2b8] hover:bg-[#138496] font-medium text-xs px-3 py-1.5 rounded transition flex items-center space-x-1 disabled:opacity-40"
@@ -246,7 +247,7 @@ export default function LegacyCRMListing() {
               <Printer className="h-3 w-3" />
             )}
             <span>Print Preview</span>
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 // app/components/hr/departments/DepartmentList.tsx
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 type Department = {
@@ -85,9 +86,9 @@ export default function DepartmentList() {
           className="border p-2 rounded"
         />
 
-        <button onClick={save} className="bg-blue-600 text-white rounded px-4">
+        <Button onClick={save} className="bg-blue-600 text-white rounded px-4">
           Save
-        </button>
+        </Button>
       </div>
 
       <table className="w-full border text-xs">
@@ -107,12 +108,12 @@ export default function DepartmentList() {
               <td className="p-2">{row.name}</td>
               <td className="p-2">{row.description}</td>
               <td className="p-2 text-center">
-                <button
+                <Button
                   onClick={() => remove(row.id!)}
                   className="text-red-600"
                 >
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

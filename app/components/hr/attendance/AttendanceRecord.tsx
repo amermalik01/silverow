@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Attendance } from "@/types/hr/attendance";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO, startOfDay } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   id: string;
@@ -96,12 +97,12 @@ export default function AttendanceRecord({ id }: Props) {
       </div>
 
       <div className="flex justify-end">
-        <button
+        <Button
           onClick={handleSave}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           Update
-        </button>
+        </Button>
       </div>
     </div>
   );

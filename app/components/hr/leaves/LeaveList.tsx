@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { LeaveRequest } from "@/types/hr/leave";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO, startOfDay } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type EmployeeOption = {
   id: string;
@@ -246,12 +247,12 @@ export default function LeaveList() {
           className="border p-2 rounded"
         />
 
-        <button
+        <Button
           onClick={save}
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 rounded px-4 py-2"
         >
           {editingId ? "Update" : "Create"}
-        </button>
+        </Button>
       </div>
 
       <table className="w-full border text-xs">
@@ -280,16 +281,16 @@ export default function LeaveList() {
               <td className="p-2">{row.status}</td>
 
               <td className="p-2 text-center space-x-2">
-                <button onClick={() => edit(row)} className="text-blue-600">
+                <Button onClick={() => edit(row)} className="text-blue-600">
                   Edit
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={() => remove(row.id!)}
                   className="text-red-600"
                 >
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

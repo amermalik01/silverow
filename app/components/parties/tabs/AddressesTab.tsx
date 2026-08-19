@@ -4,6 +4,7 @@
 
 import type { PartyAddressDraft } from "@/types/erp";
 import MasterDropdown from "@/app/components/common/MasterDropdown";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   addresses: PartyAddressDraft[];
@@ -76,14 +77,14 @@ export default function AddressesTab({
         </h3>
 
         {!isReadonly && (
-          <button
+          <Button
             type="button"
             onClick={addAddressRow}
             // className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm"
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
             Add Location
-          </button>
+          </Button>
         )}
       </div>
 

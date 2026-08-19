@@ -1,6 +1,7 @@
 // app/components/sales/crm/tabs/NotesTab.tsx
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 export default function NotesTab({
@@ -21,9 +22,9 @@ export default function NotesTab({
         className="border p-2 rounded w-full"
       />
 
-      <button className="bg-blue-600 text-white px-4 py-2 rounded">
+      <Button className="bg-blue-600 text-white px-4 py-2 rounded">
         Save Note
-      </button>
+      </Button>
     </div>
   );
 }

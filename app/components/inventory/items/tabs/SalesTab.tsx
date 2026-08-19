@@ -143,12 +143,12 @@ export default function SalesTab({ itemId }: { itemId: string }) {
       <div className="flex justify-between">
         <h2 className="text-lg font-semibold">Sales Setup</h2>
 
-        <button
+        <Button
           onClick={() => setShowModal(true)}
           className="bg-blue-600 text-white px-3 py-1"
         >
           + Add Price
-        </button>
+        </Button>
       </div>
 
  

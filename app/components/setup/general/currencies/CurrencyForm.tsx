@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import CurrencyDropdown from "@/app/components/common/CurrencyDropdown";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   onSuccess: () => void; // for auto refresh
@@ -68,13 +69,13 @@ export default function CurrencyForm({ onSuccess }: Props) {
         Base Currency
       </label>
 
-      <button
+      <Button
         onClick={handleSubmit}
         className="bg-blue-600 text-white px-4 py-2 mt-3 rounded"
         disabled={loading}
       >
         {loading ? "Saving..." : "Save"}
-      </button>
+      </Button>
     </div>
   );
 }

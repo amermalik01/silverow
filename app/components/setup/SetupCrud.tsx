@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 type Field = {
@@ -128,12 +129,12 @@ export default function SetupCrud({ title, api, fields, columns }: Props) {
         })}
       </div>
 
-      <button
+      <Button
         onClick={create}
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         Add
-      </button>
+      </Button>
 
 
       <table className="w-full border text-xs">
@@ -159,12 +160,12 @@ export default function SetupCrud({ title, api, fields, columns }: Props) {
               ))}
 
               <td className="p-2 text-center">
-                <button
+                <Button
                   onClick={() => remove(String(r.id))}
                   className="text-red-600"
                 >
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}
@@ -285,12 +286,12 @@ export default function SetupCrud({ title, api, fields, columns }: Props) {
         })}
       </div>
 
-      <button
+      <Button
         onClick={create}
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         Add
-      </button>
+      </Button>
 
 
 
@@ -317,9 +318,9 @@ export default function SetupCrud({ title, api, fields, columns }: Props) {
               ))}
 
               <td className="p-2 text-center">
-                <button onClick={() => remove(r.id)} className="text-red-600">
+                <Button onClick={() => remove(r.id)} className="text-red-600">
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

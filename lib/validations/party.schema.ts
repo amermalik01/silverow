@@ -213,4 +213,22 @@ export const PartySchema = z.object({
   bank_iban: looseString,
   bank_name: looseString,
   bank_address: looseString,
+}).superRefine((data, ctx) => {
+  if (data.is_customer) {
+    if (!data.sales_posting_group_id || data.sales_posting_group_id.trim() === "") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Business Posting Group is required",
+        path: ["sales_posting_group_id"],
+      });
+    }
+  } else {
+    if (!data.purchase_posting_group_id || data.purchase_posting_group_id.trim() === "") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Business Posting Group is required",
+        path: ["purchase_posting_group_id"],
+      });
+    }
+  }
 });

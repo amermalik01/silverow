@@ -13,6 +13,7 @@ import ItemLookupModal, {
 import GLAccountLookupModal, {
   GLAccountLookupRecord,
 } from "@/app/components/shared/modals/GLAccountLookupModal";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   lines: SalesQuoteLineUI[];
@@ -192,13 +193,13 @@ export default function SalesQuoteLines({
           Sales Quote Lines Ledger
         </h3>
         {!isReadonly && (
-          <button
+          <Button
             type="button"
             onClick={addLine}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
             Add Line
-          </button>
+          </Button>
         )}
       </div>
 

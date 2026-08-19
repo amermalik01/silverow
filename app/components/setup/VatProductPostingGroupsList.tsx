@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 type Group = {
@@ -113,22 +114,22 @@ export default function VatProductPostingGroupsList() {
           className="border p-2 rounded flex-1 dark:bg-slate-800 dark:border-slate-700 disabled:opacity-50"
         />
 
-        <button
+        <Button
           type="submit"
           disabled={submitting}
           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition disabled:opacity-50"
         >
           {submitting ? "Saving..." : editingId ? "Update" : "Add"}
-        </button>
+        </Button>
 
         {editingId && (
-          <button
+          <Button
             type="button"
             onClick={cancelEdit}
             className="bg-gray-500 text-white px-4 py-2 rounded"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </form>
 
@@ -153,18 +154,18 @@ export default function VatProductPostingGroupsList() {
                   <tr key={g.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition">
                     <td className="p-3 font-medium">{g.name}</td>
                     <td className="p-3 text-center space-x-3">
-                      <button
+                      <Button
                         onClick={() => editGroup(g)}
                         className="text-blue-600 hover:text-blue-800 font-medium"
                       >
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => deleteGroup(g.id)}
                         className="text-red-600 hover:text-red-800 font-medium"
                       >
                         Delete
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -258,12 +259,12 @@ export default function VatProductPostingGroupsList() {
           className="border p-2 rounded flex-1"
         />
 
-        <button
+        <Button
           onClick={createOrUpdate}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           {editingId ? "Update" : "Add"}
-        </button>
+        </Button>
       </div>
 
       <table className="w-full border text-xs">
@@ -280,16 +281,16 @@ export default function VatProductPostingGroupsList() {
               <td className="p-2">{g.name}</td>
 
               <td className="p-2 text-center space-x-3">
-                <button className="text-blue-600" onClick={() => editGroup(g)}>
+                <Button className="text-blue-600" onClick={() => editGroup(g)}>
                   Edit
-                </button>
+                </Button>
 
-                <button
+                <Button
                   className="text-red-600"
                   onClick={() => deleteGroup(g.id)}
                 >
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

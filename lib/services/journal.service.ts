@@ -871,16 +871,6 @@ export class JournalService {
       }
 
       // 2. Fetch draft lines
-      // const linesResult = await client.query(
-      //   `
-      //   SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate, reference_id
-      //   FROM journal_entry_lines
-      //   WHERE journal_id = $1 AND company_id = $2
-      //   `,
-      //   [id, companyId],
-      // );
-
-      // 2. Fetch draft lines
       const linesResult = await client.query(
         `
         SELECT id AS journal_line_id, account_id, party_type, party_id, document_type, description, debit, credit, exchange_rate, reference_id
@@ -919,28 +909,69 @@ export class JournalService {
           );
         }
 
-        // Resolve main G/L Account if it's missing but a sub-ledger party is present
-        let mainAccountId = line.account_id;
-        if (!mainAccountId && line.party_id) {
-          if (
-            line.party_type === "supplier" ||
-            journal.source === "SUPPLIER_JOURNAL"
-          ) {
-            const ppg = await client.query(
-              `SELECT payable_account_id FROM purchase_posting_groups WHERE company_id = $1 LIMIT 1`,
-              [companyId],
+        let mainAccountId: string | null = null;
+
+        const isSupplier =
+          line.party_type === "supplier" ||
+          journal.source === "SUPPLIER_JOURNAL";
+        const isCustomer =
+          line.party_type === "customer" ||
+          journal.source === "CUSTOMER_JOURNAL";
+
+        if (line.party_id && (isSupplier || isCustomer)) {
+          if (isSupplier) {
+            const partyRes = await client.query(
+              `SELECT 
+                  p.gl_account_payable,
+                  ppg.payable_account_id AS group_account_id
+                FROM parties p
+                LEFT JOIN purchase_posting_groups ppg 
+                  ON p.purchase_posting_group_id = ppg.id
+                WHERE p.id = $1 AND p.company_id = $2`,
+              [line.party_id, companyId],
             );
-            mainAccountId = ppg.rows[0]?.payable_account_id;
-          } else if (
-            line.party_type === "customer" ||
-            journal.source === "CUSTOMER_JOURNAL"
-          ) {
-            const spg = await client.query(
-              `SELECT receivable_account_id FROM sales_posting_groups WHERE company_id = $1 LIMIT 1`,
-              [companyId],
+
+            const party = partyRes.rows[0];
+            mainAccountId =
+              party?.gl_account_payable || party?.group_account_id || null;
+
+            if (!mainAccountId) {
+              const fallbackPpg = await client.query(
+                `SELECT payable_account_id FROM purchase_posting_groups WHERE company_id = $1 LIMIT 1`,
+                [companyId],
+              );
+              mainAccountId = fallbackPpg.rows[0]?.payable_account_id || null;
+            }
+          } else if (isCustomer) {
+            const partyRes = await client.query(
+              `SELECT 
+                  p.gl_account_receivable,
+                  spg.receivable_account_id AS group_account_id
+                FROM parties p
+                LEFT JOIN sales_posting_groups spg 
+                  ON p.sales_posting_group_id = spg.id
+                WHERE p.id = $1 AND p.company_id = $2`,
+              [line.party_id, companyId],
             );
-            mainAccountId = spg.rows[0]?.receivable_account_id;
+
+            const party = partyRes.rows[0];
+            mainAccountId =
+              party?.gl_account_receivable || party?.group_account_id || null;
+
+            if (!mainAccountId) {
+              const fallbackSpg = await client.query(
+                `SELECT receivable_account_id FROM sales_posting_groups WHERE company_id = $1 LIMIT 1`,
+                [companyId],
+              );
+              mainAccountId =
+                fallbackSpg.rows[0]?.receivable_account_id || null;
+            }
           }
+        }
+
+        // Fallback to explicit line account_id if no party resolution occurred
+        if (!mainAccountId) {
+          mainAccountId = line.account_id || null;
         }
 
         if (!mainAccountId) {

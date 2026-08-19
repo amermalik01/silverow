@@ -10,6 +10,7 @@ import SalesTab from "./tabs/SalesTab";
 import PurchaseTab from "./tabs/PurchaseTab";
 import WarehouseTab from "./tabs/WarehouseTab";
 import UOMTab from "./tabs/UOMTab";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   id: string;
@@ -203,12 +204,12 @@ function AttributeTab({ itemId }: { itemId: string }) {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Dynamic Attributes</h2>
 
-        <button
+        <Button
           type="button"
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           + Add Attribute
-        </button>
+        </Button>
       </div>
 
       <div className="border rounded overflow-auto">

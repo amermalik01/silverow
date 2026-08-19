@@ -6,6 +6,7 @@ import { useState } from "react";
 import { WarehouseLocation } from "@/types/warehouse";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   warehouseId: string;
@@ -203,20 +204,20 @@ export default function LocationForm({
       </div>
 
       <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button
-          onClick={onClose}
-          className="px-4 py-1.5 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md font-medium"
-        >
-          Cancel
-        </button>
         {!isReadOnly && (
-          <button
+          <Button
             onClick={handleSubmit}
             className="px-4 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-md font-medium shadow-sm"
           >
             {existing?.id ? "Update Location" : "Save Location"}
-          </button>
+          </Button>
         )}
+        <Button
+          onClick={onClose}
+          className="px-4 py-1.5 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md font-medium"
+        >
+          Cancel
+        </Button>
       </div>
     </div>
   );
@@ -330,12 +331,12 @@ export default function LocationForm({
         className="border p-2 w-full"
       />
 
-      <button
+      <Button
         onClick={handleSubmit}
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         {existing ? "Update" : "Create"}
-      </button>
+      </Button>
     </div>
   );
 } */

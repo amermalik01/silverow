@@ -17,6 +17,7 @@ import SalespersonLookupModal, {
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 // --- Type System Definitions ---
 type DocumentTypeFilter = "sales invoices" | "posted credit notes" | "both";
@@ -265,31 +266,31 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
 
             {/* Processing Execution Control Interface */}
             <div className="flex items-center gap-2 justify-end mt-2">
-              <button
+              <Button
                 onClick={handleGenerateReport}
                 disabled={loading}
                 className="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded shadow flex items-center gap-1.5 transition cursor-pointer"
               >
                 <Search className="h-3.5 w-3.5" />{" "}
                 {loading ? "Processing..." : "Generate Report"}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleClearFilters}
                 className="bg-slate-600 hover:bg-slate-500 active:bg-slate-700 text-white font-bold px-3 py-2 rounded shadow flex items-center gap-1.5 transition cursor-pointer"
               >
                 <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
-              </button>
+              </Button>
               <div className="relative group">
-                <button className="border border-emerald-700 bg-emerald-900/50 hover:bg-emerald-900 text-emerald-200 font-semibold px-3 py-2 rounded shadow flex items-center gap-1 transition">
+                <Button className="border border-emerald-700 bg-emerald-900/50 hover:bg-emerald-900 text-emerald-200 font-semibold px-3 py-2 rounded shadow flex items-center gap-1 transition">
                   <Download className="h-3.5 w-3.5" /> Export As ▾
-                </button>
+                </Button>
                 <div className="absolute right-0 mt-1 w-32 bg-white rounded shadow-xl border border-slate-200 hidden group-hover:block z-30 text-slate-700">
-                  <button className="w-full text-left px-3 py-2 hover:bg-slate-100 text-xs font-medium">
+                  <Button className="w-full text-left px-3 py-2 hover:bg-slate-100 text-xs font-medium">
                     Excel (.xlsx)
-                  </button>
-                  <button className="w-full text-left px-3 py-2 hover:bg-slate-100 text-xs font-medium">
+                  </Button>
+                  <Button className="w-full text-left px-3 py-2 hover:bg-slate-100 text-xs font-medium">
                     CSV (.csv)
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

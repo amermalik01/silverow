@@ -1,6 +1,7 @@
 // app/components/setup/inventory/warehouses/storage-types/StorageTypes.tsx
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 type StorageType = {
@@ -115,15 +116,15 @@ export default function StorageTypes() {
         </div>
 
         <div className="flex gap-2 mt-3">
-          <button
+          <Button
             onClick={save}
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-2 rounded"
           >
             {editingId ? "Update" : "Create"}
-          </button>
+          </Button>
 
           {editingId && (
-            <button
+            <Button
               onClick={() => {
                 setEditingId(null);
                 setForm({ code: "", name: "", description: "" });
@@ -131,7 +132,7 @@ export default function StorageTypes() {
               className="text-gray-600"
             >
               Cancel
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -191,20 +192,20 @@ export default function StorageTypes() {
                 </td>
 
                 <td className="p-3 flex gap-3">
-                  <button
+                  <Button
                     onClick={() => startEdit(item)}
                     className="text-indigo-600 text-xs"
                   >
                     Edit
-                  </button>
+                  </Button>
 
                   {/* Prevent deleting global if needed */}
-                  <button
+                  <Button
                     onClick={() => remove(item.id)}
                     className="text-red-600 text-xs"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}

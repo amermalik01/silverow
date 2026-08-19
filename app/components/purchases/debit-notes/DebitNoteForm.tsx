@@ -30,6 +30,7 @@ import {
 
 import SupplierShippingLocationsModal from "../purchase-orders/SupplierShippingLocationsModal";
 import { StockReceiveConfirmModal } from "../../shared/modals/StockReceiveConfirmModal";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   slug: string;
@@ -885,7 +886,7 @@ export const DebitNoteForm: React.FC<Props> = ({
           <div className="flex items-center gap-2">
             {isUpdateMode && (
               <>
-                <button
+                <Button
                   type="button"
                   // onClick={handlePostInvoice}
                   onClick={() => setShowInvoiceModal(true)}
@@ -893,9 +894,9 @@ export const DebitNoteForm: React.FC<Props> = ({
                   className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   Post Invoice
-                </button>
+                </Button>
 
-                <button
+                <Button
                   type="button"
                   // onClick={handleDispatchStock}
                   onClick={() => setShowDispatchModal(true)}
@@ -907,40 +908,40 @@ export const DebitNoteForm: React.FC<Props> = ({
                   }`}
                 >
                   Dispatch Stock
-                </button>
+                </Button>
               </>
             )}
 
             {!isCompleted && (
               <>
                 {!isEditMode ? (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setIsEditMode(true)}
                     className="px-3.5 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     Edit
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
                     type="button"
                     onClick={handleSave}
                     disabled={saving}
                     className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
                   >
                     {saving ? "Saving..." : "Save"}
-                  </button>
+                  </Button>
                 )}
               </>
             )}
 
-            <button
+            <Button
               type="button"
               onClick={() => router.push(`/${slug}/purchases/debit-notes`)}
               className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -1048,36 +1049,36 @@ export const DebitNoteForm: React.FC<Props> = ({
 {
   /* <div className="flex items-center gap-2">
               {!note.is_dispatched && (
-                <button
+                <Button
                   type="button"
                   onClick={handleDispatchStock}
                   className="px-3 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1"
                 >
                   <Icon icon="tabler:truck-delivery" className="w-4 h-4" />
                   Dispatch Stock
-                </button>
+                </Button>
               )}
 
               {!note.is_posted && (
-                <button
+                <Button
                   type="button"
                   onClick={handlePostInvoice}
                   className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded flex items-center gap-1"
                 >
                   <Icon icon="tabler:file-check" className="w-4 h-4" />
                   Post Invoice
-                </button>
+                </Button>
               )}
             </div> */
 }
 
 {
-  /* <button
+  /* <Button
               type="button"
               onClick={handleSave}
               disabled={saving}
               className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
             >
               Edit / Save
-            </button> */
+            </Button> */
 }

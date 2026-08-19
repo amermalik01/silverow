@@ -4,6 +4,7 @@
 
 import React, { useState } from "react";
 import { Star, FileText, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // 1. Define strict TypeScript interfaces for our reports metadata
 interface ReportItem {

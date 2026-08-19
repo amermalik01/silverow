@@ -19,6 +19,7 @@ import SupplierLookupModal, {
 } from "@/app/components/shared/modals/SupplierLookupModal";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 export type TicketStage =
   | "Open"
@@ -324,12 +325,12 @@ export default function SupportTicketFormView({ slug, id }: Props) {
       {/* Top Section Nav & Chevron Pipeline Workflow Selector Component */}
       <div className="flex border-b border-slate-200 dark:border-slate-800 justify-between items-center pb-2 flex-wrap gap-2">
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
             className="px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 border-emerald-600 text-emerald-600 bg-white dark:bg-slate-900"
           >
             General
-          </button>
+          </Button>
         </div>
 
         {/* 1. Status Chevron Flow Container Component Block */}
@@ -889,13 +890,13 @@ export default function SupportTicketFormView({ slug, id }: Props) {
                     value={newNoteContent}
                     onChange={(e) => setNewNoteContent(e.target.value)}
                   />
-                  <button
+                  <Button
                     type="button"
                     onClick={handleAddNote}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 rounded-md font-semibold transition self-end h-8"
                   >
                     Add
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -932,24 +933,24 @@ export default function SupportTicketFormView({ slug, id }: Props) {
       {/* Footer System Control Commands Navigation Center */}
       <div className="flex justify-between items-center border-t border-slate-200 dark:border-slate-800 pt-4 flex-wrap gap-3">
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
             className="border px-4 py-1.5 rounded text-xs bg-white text-slate-700 shadow-sm font-medium hover:bg-slate-50"
           >
             Docs. Attachment
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className="border px-4 py-1.5 rounded text-xs bg-white text-slate-700 shadow-sm font-medium hover:bg-slate-50"
           >
             History
-          </button>
+          </Button>
         </div>
 
         <div className="flex gap-2 items-center">
           {isUpdateMode && ticket.status !== "Closed" && (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   if (
@@ -965,33 +966,33 @@ export default function SupportTicketFormView({ slug, id }: Props) {
                 className="border border-emerald-600 text-emerald-600 font-semibold px-4 py-1.5 rounded text-xs hover:bg-emerald-50 transition"
               >
                 Convert into Credit Note
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => handleStageClick("Closed")}
                 className="border border-red-600 text-red-600 font-semibold px-4 py-1.5 rounded text-xs hover:bg-red-50 transition"
               >
                 Close Ticket
-              </button>
+              </Button>
             </>
           )}
 
-          <button
+          <Button
             type="button"
             disabled={saving}
             onClick={save}
             className="bg-blue-600 hover:bg-blue-700 font-semibold text-white px-5 py-1.5 rounded text-xs transition shadow disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save"}
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={() => router.push(`/${slug}/sales/tickets`)}
             className="border px-4 py-1.5 rounded text-xs bg-white text-slate-600 shadow-sm font-medium hover:bg-slate-50"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
 

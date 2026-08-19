@@ -9,6 +9,7 @@ import { JournalLine } from "@/types/finance";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO, startOfDay } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   slug: string;
@@ -336,7 +337,7 @@ export default function JournalEntryForm({
 
               {/* Remove */}
               <td className="p-2 text-center">
-                <button
+                <Button
                   type="button"
                   onClick={() => removeLine(index)}
                   // className="text-red-500"
@@ -344,7 +345,7 @@ export default function JournalEntryForm({
                 >
                   <Icon icon="lucide:x" className="w-4 h-4" />
                   {/* ✕ */}
-                </button>
+                </Button>
               </td>
             </tr>
           ))}
@@ -353,20 +354,20 @@ export default function JournalEntryForm({
 
       {/* ADD LINE */}
 
-      {/* <button
+      {/* <Button
         type="button"
         onClick={addLine}
         className="bg-gray-200 px-3 py-1 rounded"
       >
         + Add Line
-      </button> */}
-      <button
+      </Button> */}
+      <Button
         type="button"
         onClick={addLine}
         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
       >
         Add Line
-      </button>
+      </Button>
 
       {/* TOTALS */}
 

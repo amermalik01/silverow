@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import MasterDropdown from "@/app/components/common/MasterDropdown";
+import { Button } from "@/components/ui/button";
 
 interface AdditionalAddress {
   id?: string;
@@ -113,7 +114,7 @@ export default function AdditionalAddressTab() {
               placeholder="Search addresses..."
               className="border px-3 py-1.5 rounded w-64 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setCurrent({});
@@ -122,7 +123,7 @@ export default function AdditionalAddressTab() {
               className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded text-xs font-medium"
             >
               Add
-            </button>
+            </Button>
           </div>
           {filteredAddresses.length === 0 ? (
             <div className="py-12 text-center text-gray-500 border rounded bg-gray-50 text-xs">
@@ -158,20 +159,20 @@ export default function AdditionalAddressTab() {
                         {addr.telephone || "-"}
                       </td>
                       <td className="p-2.5 text-right space-x-3">
-                        <button
+                        <Button
                           type="button"
                           onClick={() => handleEdit(addr)}
                           className="text-emerald-700 hover:text-emerald-900 font-medium"
                         >
                           Edit
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
                           onClick={() => addr.id && handleDelete(addr.id)}
                           className="text-red-600 hover:text-red-800 font-medium"
                         >
                           Delete
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -356,19 +357,19 @@ export default function AdditionalAddressTab() {
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <button
+            <Button
               type="submit"
               className="border border-emerald-700 text-emerald-800 hover:bg-emerald-50 px-5 py-1.5 rounded font-medium"
             >
               Save
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => setMode("list")}
               className="border border-gray-300 hover:bg-gray-50 px-5 py-1.5 rounded font-medium"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}

@@ -329,20 +329,20 @@ export default function PostedDebitNoteList({ slug }: Props) {
               total records)
             </span>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 border dark:border-slate-700 rounded bg-white dark:bg-slate-800 disabled:opacity-50 font-medium text-black dark:text-white"
               >
                 Previous
-              </button>
-              <button
+              </Button>
+              <Button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 className="px-3 py-1.5 border dark:border-slate-700 rounded bg-white dark:bg-slate-800 disabled:opacity-50 font-medium text-black dark:text-white"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         )}
