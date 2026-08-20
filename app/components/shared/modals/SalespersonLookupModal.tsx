@@ -248,7 +248,7 @@ export default function SalespersonLookupModal({
                               if (onSelect) onSelect(emp);
                               onClose();
                             }}
-                            className="bg-emerald-700 text-white font-bold px-2 py-0.5 rounded text-[10px] shadow-sm hover:bg-emerald-800"
+                            className="bg-emerald-700 text-white rounded shadow-sm hover:bg-emerald-800"
                           >
                             Select
                           </Button>

@@ -201,7 +201,7 @@ export default function CRMLookupModal({
           </Button>
         </div>
 
-        {/* Matrix Ledger view panel */}
+
         <div className="flex-1 overflow-auto px-2 pb-10">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-slate-50 text-slate-600 font-bold sticky top-0 border-b border-slate-200 z-10">
@@ -297,7 +297,7 @@ export default function CRMLookupModal({
                               onSelect(crm);
                               onClose();
                             }}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[10px] font-bold rounded shadow-sm transition"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded shadow-sm transition"
                           >
                             Select
                           </Button>
@@ -311,7 +311,7 @@ export default function CRMLookupModal({
           </table>
         </div>
 
-        {/* Multi Selection Batch Control Actions Footer */}
+    
         {multiple && (
           <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
             <div className="text-[11px] font-sans font-medium text-slate-500">
@@ -330,7 +330,7 @@ export default function CRMLookupModal({
               </Button>
               <Button
                 onClick={onClose}
-                className="border border-slate-200 bg-white hover:bg-slate-50 font-medium text-xs px-3 py-1.5 rounded transition"
+                className="bg-white hover:bg-slate-50 rounded transition"
               >
                 Cancel
               </Button>

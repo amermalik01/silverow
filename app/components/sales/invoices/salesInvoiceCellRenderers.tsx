@@ -3,12 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { SalesInvoiceListing } from "@/types/sales-invoice";
+import { format } from "date-fns";
 
 const formatDate = (dateStr?: string | Date | null): string => {
   if (!dateStr) return "-";
   try {
-    const date = new Date(dateStr);
-    return isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
+    return format(dateStr, "dd/MM/yyyy");
   } catch {
     return "-";
   }

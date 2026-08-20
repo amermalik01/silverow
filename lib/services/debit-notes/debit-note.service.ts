@@ -43,7 +43,7 @@ export class DebitNoteService {
     const SORT_FIELDS: Record<string, string> = {
       debitNoteCode: "dn.debit_note_no",
       document_date: "dn.document_date",
-      supplierCreditNoteDate: "dn.document_date",
+      supplierCreditNoteDate: "dn.invoice_date",
       supp_order_no: "dn.supp_order_no",
       previous_code: "dn.previous_code",
       current_stage: "cos.name",
@@ -102,8 +102,8 @@ export class DebitNoteService {
       if (filter.from !== undefined && filter.from !== "") {
         queryValues.push(filter.from);
         const idx = queryValues.length;
-        if (colKey === "supplierCreditNoteDate" || colKey === "document_date")
-          whereClauses.push(`dn.document_date >= $${idx}::date`);
+        if (colKey === "supplierCreditNoteDate" || colKey === "invoice_date")
+          whereClauses.push(`dn.invoice_date >= $${idx}::date`);
         if (colKey === "Amount" || colKey === "net_amount")
           whereClauses.push(`dn.net_amount >= $${idx}::numeric`);
       }
@@ -111,8 +111,8 @@ export class DebitNoteService {
       if (filter.to !== undefined && filter.to !== "") {
         queryValues.push(filter.to);
         const idx = queryValues.length;
-        if (colKey === "supplierCreditNoteDate" || colKey === "document_date")
-          whereClauses.push(`dn.document_date <= $${idx}::date`);
+        if (colKey === "supplierCreditNoteDate" || colKey === "invoice_date")
+          whereClauses.push(`dn.invoice_date <= $${idx}::date`);
         if (colKey === "Amount" || colKey === "net_amount")
           whereClauses.push(`dn.net_amount <= $${idx}::numeric`);
       }
@@ -154,7 +154,7 @@ export class DebitNoteService {
         dn.*,
         dn.debit_note_no AS "debitNoteCode",
         dn.supp_order_no AS "supplierCreditNoteNo",
-        dn.document_date AS "supplierCreditNoteDate",
+        dn.invoice_date AS "supplierCreditNoteDate",
         dn.supplier_no AS "supplierNo",
         dn.subtotal AS "Amount",
         dn.total_amount AS "Amount (incl VAT)",
@@ -193,171 +193,6 @@ export class DebitNoteService {
       totalRecords,
     };
   }
-
-  /* static async listPaginated(
-    companyId: string,
-    params: FetchParams,
-  ): Promise<FetchResponse<DebitNote>> {
-    const {
-      page = 1,
-      pageSize = 50,
-      filters = {},
-      sortBy,
-      sortOrder = "DESC",
-    } = params;
-    const offset = (page - 1) * pageSize;
-
-
-    const SORT_FIELDS: Record<string, string> = {
-      debitNoteCode: "dn.debit_note_no",
-      document_date: "dn.document_date",
-      supplierCreditNoteDate: "dn.document_date",
-      supp_order_no: "dn.supp_order_no",
-      previous_code: "dn.previous_code",
-      current_stage: "cos.name",
-      supplierNo: "dn.supplier_no",
-      supplierName: "p.name",
-      supplierCity: "dna.city",
-      purchaser: "dn.purchaser",
-      currency_code: "c.code",
-      Amount: "dn.subtotal",
-      tax_amount: "dn.tax_amount",
-      "Amount (incl VAT)": "dn.total_amount",
-      receipt_date: "dn.receipt_date",
-      deliveryDate: "dn.delivery_date",
-      shipment_method: "sm.name",
-    };
-
-    const orderByColumn =
-      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "dn.debit_note_no";
-    const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
-
-    const queryValues: (string | number)[] = [companyId];
-    const whereClauses = [
-      "dn.company_id = $1",
-      "dn.status::text != 'completed'",
-    ];
-
-    // Dynamic Filters
-    Object.entries(filters).forEach(([colKey, filter]) => {
-      if (!filter) return;
-
-      if (filter.value !== undefined && filter.value !== "") {
-        if (colKey === "currency_code" || colKey === "currency") {
-          queryValues.push(String(filter.value));
-          whereClauses.push(`c.code = $${queryValues.length}`);
-        } else if (colKey === "current_stage") {
-          queryValues.push(String(filter.value));
-          whereClauses.push(`cos.name = $${queryValues.length}`);
-        } else if (colKey === "status") {
-          queryValues.push(String(filter.value));
-          whereClauses.push(`dn.status::text = $${queryValues.length}`);
-        } else if (colKey === "debitNoteCode" || colKey === "debit_note_no") {
-          queryValues.push(`%${filter.value}%`);
-          whereClauses.push(`dn.debit_note_no ILIKE $${queryValues.length}`);
-        } else if (colKey === "supplierCreditNoteNo") {
-          queryValues.push(`%${filter.value}%`);
-          whereClauses.push(`dn.supplier_cn_no ILIKE $${queryValues.length}`);
-        } else if (colKey === "supplierName") {
-          queryValues.push(`%${filter.value}%`);
-          whereClauses.push(`p.name ILIKE $${queryValues.length}`);
-        }
-      }
-
-      if (filter.from !== undefined && filter.from !== "") {
-        queryValues.push(filter.from);
-        const idx = queryValues.length;
-        if (colKey === "supplierCreditNoteDate" || colKey === "document_date")
-          whereClauses.push(`dn.document_date >= $${idx}::date`);
-        if (colKey === "Amount" || colKey === "net_amount")
-          whereClauses.push(`dn.net_amount >= $${idx}::numeric`);
-      }
-
-      if (filter.to !== undefined && filter.to !== "") {
-        queryValues.push(filter.to);
-        const idx = queryValues.length;
-        if (colKey === "supplierCreditNoteDate" || colKey === "document_date")
-          whereClauses.push(`dn.document_date <= $${idx}::date`);
-        if (colKey === "Amount" || colKey === "net_amount")
-          whereClauses.push(`dn.net_amount <= $${idx}::numeric`);
-      }
-    });
-
-    const whereSql =
-      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
-
-    // Base Join SQL
-    const joinSql = `
-      FROM debit_notes dn
-      LEFT JOIN parties p ON p.id = dn.supplier_id
-      LEFT JOIN currencies c ON c.id = dn.currency_id
-      LEFT JOIN shipment_method sm ON sm.id = dn.shipment_method_id
-      LEFT JOIN common_order_stages cos 
-          ON cos.company_id = dn.company_id 
-          AND cos.stage_type = 'debit_note' 
-          AND cos.name ILIKE dn.status::text
-      LEFT JOIN debit_note_addresses dna 
-          ON dna.debit_note_id = dn.id 
-          AND dna.address_type = 'primary'
-      LEFT JOIN debit_note_addresses ship_a 
-          ON ship_a.debit_note_id = dn.id 
-          AND ship_a.address_type = 'shipping'
-    `;
-
-    // Count Query
-    const countQuery = `SELECT COUNT(DISTINCT dn.id) as total ${joinSql} ${whereSql}`;
-    const countResult = await pool.query(countQuery, queryValues);
-    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
-
-    // Paginated Data Query
-    const dataQueryValues = [...queryValues, pageSize, offset];
-    const limitIdx = dataQueryValues.length - 1;
-    const offsetIdx = dataQueryValues.length;
-
-    const dataQuery = `
-      SELECT DISTINCT ON (dn.id, ${orderByColumn})
-        dn.*,
-        dn.debit_note_no AS "debitNoteCode",
-        dn.supp_order_no AS "supplierCreditNoteNo",
-        dn.document_date AS "supplierCreditNoteDate",
-        dn.supplier_no AS "supplierNo",
-        dn.subtotal AS "Amount",
-        dn.total_amount AS "Amount (incl VAT)",
-        p.name AS "supplierName",
-        c.code AS currency_code,
-        cos.name AS current_stage,
-        sm.name AS shipment_method,
-        
-        -- Primary / Supplier Address
-        dna.address_1 AS "supplierAddress",
-        dna.address_2 AS "supplierAddress2",
-        dna.city AS "supplierCity",
-        dna.county AS "supplierCounty",
-        dna.postcode AS "supplierPostCode",
-        dna.country AS country,
-        dna.phone AS "supplierContactTelephone",
-        dna.email AS "supplierContactEmail",
-
-        -- Shipping Address
-        ship_a.address_1 AS "shipToSupplierLocAddress",
-        ship_a.address_2 AS "shipToSupplierLocAaddress2",
-        ship_a.city AS "shipToSupplierLocCity",
-        ship_a.county AS "shipToSupplierLocCounty",
-        ship_a.postcode AS "shipToSupplierLocPostCode"
-
-      ${joinSql}
-      ${whereSql}
-      ORDER BY ${orderByColumn} ${orderDirection}, dn.id ASC
-      LIMIT $${limitIdx} OFFSET $${offsetIdx}
-    `;
-
-    const dataResult = await pool.query(dataQuery, dataQueryValues);
-
-    return {
-      data: dataResult.rows,
-      totalRecords,
-    };
-  } */
 
   static async get(companyId: string, id: string) {
     const orderResult = await pool.query(

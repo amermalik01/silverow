@@ -3,6 +3,7 @@
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { redirect } from "next/navigation";
+import { format } from "date-fns";
 
 export default async function SecureLedgerPage({ params }: { params: Promise<{ id: string; slug: string }> }) {
   const companyId = await getCompanyId();
@@ -64,7 +65,7 @@ export default async function SecureLedgerPage({ params }: { params: Promise<{ i
               )}
               {computedRows.map((row) => (
                 <tr key={row.id} className="hover:bg-gray-50/70 transition">
-                  <td className="p-3 whitespace-nowrap text-gray-600">{new Date(row.entry_date).toLocaleDateString()}</td>
+                  <td className="p-3 whitespace-nowrap text-gray-600">{/* {new Date(row.entry_date).toLocaleDateString()} */} {format(row.entry_date, "dd/MM/yyyy")}</td>
                   <td className="p-3 font-sans font-medium">{row.reference}</td>
                   <td className="p-3 font-sans text-gray-600 max-w-xs truncate">{row.description}</td>
                   <td className="p-3 text-right text-emerald-600">{row.db > 0 ? row.db.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "—"}</td>
@@ -81,87 +82,3 @@ export default async function SecureLedgerPage({ params }: { params: Promise<{ i
     client.release();
   }
 }
-
-/* import { pool } from "@/lib/db";
-import { LedgerRow } from "@/types/finance";
-
-export default async function LedgerPage(context: {
-  params: Promise<{ slug: string; id: string }>;
-}) {
-  const { slug, id } = await context.params;
-
-  const client = await pool.connect();
-
-  try {
-    const account = await client.query(
-      `
-      SELECT name, code
-      FROM chart_of_accounts
-      WHERE id = $1
-      `,
-      [id],
-    );
-
-    const ledger = await client.query(
-      `
-      SELECT
-        l.id,
-        j.entry_date,
-        j.reference,
-        l.description,
-        l.debit,
-        l.credit
-      FROM journal_entry_lines l
-      JOIN journal_entries j
-        ON j.id = l.journal_entry_id
-      WHERE l.account_id = $1
-      ORDER BY j.entry_date
-      `,
-      [id],
-    );
-
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">
-          Ledger {account.rows[0].code}
-          {" - "}
-          {account.rows[0].name}
-        </h1>
-
-        <table className="w-full border text-xs">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2">Date</th>
-              <th className="p-2">Reference</th>
-              <th className="p-2">Description</th>
-              <th className="p-2 text-right">Debit</th>
-              <th className="p-2 text-right">Credit</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {ledger.rows.map((row: LedgerRow) => (
-              <tr key={row.id} className="border-t">
-                <td className="p-2">{row.entry_date}</td>
-
-                <td className="p-2">{row.reference}</td>
-
-                <td className="p-2">{row.description}</td>
-
-                <td className="p-2 text-right">
-                  {Number(row.debit).toFixed(2)}
-                </td>
-
-                <td className="p-2 text-right">
-                  {Number(row.credit).toFixed(2)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  } finally {
-    client.release();
-  }
-} */

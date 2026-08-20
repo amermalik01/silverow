@@ -102,16 +102,6 @@ export default function UnpostedSalesOrdersReport() {
     }
   };
 
-  // const handleClearFilters = () => {
-  //   setFromDate("");
-  //   setToDate("2026-06-14");
-  //   setReportType("By Order Date");
-  //   setSelectedCustomerIds([]);
-  //   setSelectedSalespersonIds([]);
-  //   setSelectedOrderStageIds([]);
-  //   setReportData([]);
-  // };
-
   const handleClearFilters = () => {
     setFromDate(undefined);
     setToDate(startOfDay(new Date()));
@@ -130,20 +120,14 @@ export default function UnpostedSalesOrdersReport() {
     });
   };
 
-  // const formatDate = (dateString: string | null) => {
-  //   if (!dateString) return "";
-  //   const date = new Date(dateString);
-  //   return date.toLocaleDateString("en-GB"); // Output format: DD/MM/YYYY
-  // };
-
   const formatDate = (date: Date | string | null | undefined) => {
     if (!date) return "";
 
     if (date instanceof Date) {
-      return date.toLocaleDateString("en-GB");
+      return format(date, "dd/MM/yyyy");
     }
 
-    return new Date(date).toLocaleDateString("en-GB");
+    return format(date, "dd/MM/yyyy");
   };
 
   return (

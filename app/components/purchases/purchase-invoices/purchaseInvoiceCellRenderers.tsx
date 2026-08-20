@@ -4,11 +4,12 @@ import React from "react";
 import Link from "next/link";
 import { PurchaseInvoice } from "@/types/purchase-invoice";
 import PurchaseOrderStatusBadge from "../purchase-orders/PurchaseOrderStatusBadge";
+import { format } from "date-fns";
 
 const formatDate = (dateStr?: string | null): string => {
   if (!dateStr) return "-";
   try {
-    return new Date(dateStr).toLocaleDateString();
+    return format(dateStr, "dd/MM/yyyy");
   } catch {
     return "-";
   }

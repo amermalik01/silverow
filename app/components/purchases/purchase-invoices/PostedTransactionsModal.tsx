@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
 export interface PostedLedgerEntry {
@@ -154,8 +155,8 @@ export const PostedTransactionsModal: React.FC<
                       >
                         <td className="p-2.5 whitespace-nowrap">
                           {row.posting_date
-                            ? new Date(row.posting_date).toLocaleDateString()
-                            : "-"}
+                            ? format(row.posting_date, "dd/MM/yyyy")
+                            : "—"}
                         </td>
                         <td className="p-2.5">
                           {row.document_type || "Purchase Invoice"}

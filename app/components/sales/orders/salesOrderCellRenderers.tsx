@@ -3,12 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { SalesOrderListing } from "@/types/sales-order";
+import { format } from "date-fns";
 
 const formatDate = (dateStr?: string | Date | null): string => {
   if (!dateStr) return "-";
   try {
-    const date = new Date(dateStr);
-    return isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
+    return format(dateStr, "dd/MM/yyyy");
   } catch {
     return "-";
   }
@@ -110,14 +110,14 @@ export function getSalesOrderCellRenderers(slug: string) {
         row.finance_charges_exists ??
           (row.finance_charges !== undefined
             ? Number(row.finance_charges) > 0
-            : false)
+            : false),
       ),
     insurance_charges_exists: (row: SalesOrderListing) =>
       formatBoolean(
         row.insurance_charges_exists ??
           (row.insurance_charges !== undefined
             ? Number(row.insurance_charges) > 0
-            : false)
+            : false),
       ),
     proof_of_delivery: (row: SalesOrderListing) => (
       <span

@@ -2,13 +2,14 @@
 
 import React from "react";
 import Link from "next/link";
+import { format } from "date-fns";
 import { DebitNote } from "@/types/debit-note";
 import DebitNoteStatusBadge from "../debit-notes/DebitNoteStatusBadge";
 
 const formatDate = (dateStr?: string | null): string => {
   if (!dateStr) return "-";
   try {
-    return new Date(dateStr).toLocaleDateString();
+    return format(dateStr, "dd/MM/yyyy");
   } catch {
     return "-";
   }

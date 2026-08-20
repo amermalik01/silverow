@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
+import { format } from "date-fns";
 
 interface ReturnListItem {
   id: string;
@@ -256,7 +257,9 @@ export default function SalesReturnList({ slug }: { slug: string }) {
                       )}
                     </td>
                     <td className="p-3 text-gray-500">
-                      {new Date(item.return_date).toLocaleDateString()}
+                      {item.return_date
+                      ? format(item.return_date, "dd/MM/yyyy")
+                      : "—"}
                     </td>
                     <td className="p-3">
                       <span

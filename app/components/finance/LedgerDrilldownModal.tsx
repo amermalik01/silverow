@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useLoader } from "@/app/context/LoaderContext";
+import { format } from "date-fns";
 
 interface LedgerRow {
   id: string;
@@ -189,9 +190,7 @@ export default function LedgerDrilldownModal({
                         className="hover:bg-slate-50 dark:hover:bg-slate-800/40 font-mono"
                       >
                         <td className="p-2 border-r dark:border-slate-800 whitespace-nowrap">
-                          {new Date(row.posting_date).toLocaleDateString(
-                            "en-GB",
-                          )}
+                          {format(row.posting_date, "dd/MM/yyyy")}
                         </td>
                         <td className="p-2 border-r dark:border-slate-800">
                           {row.document_type}
@@ -300,158 +299,4 @@ export default function LedgerDrilldownModal({
       </div>
     </div>
   );
-}
-{
-  /* {loading ? (
-            <div className="h-full flex items-center justify-center text-xs text-slate-400 animate-pulse">
-              Parsing database ledger lines...
-            </div>
-          ) : ( */
-}
-{
-  /* <table className="w-full text-left border-collapse text-[11px] min-w-[1400px]">
-                <thead>
-                  <tr className="bg-emerald-800 text-white font-medium">
-                    <th colSpan={14} className="p-2 pl-3">
-                      <div className="flex gap-2 text-xs">
-                        <button className="hover:opacity-80">⚙️</button>
-                        <button className="hover:opacity-80">⏳</button>
-                        <button className="hover:opacity-80">📂</button>
-                      </div>
-                    </th>
-                  </tr>
-                  <tr className="bg-emerald-800 text-white font-bold tracking-wide border-b border-emerald-700">
-                    <th className="p-2 border-r border-emerald-700">
-                      Posting Date
-                    </th>
-                    <th className="p-2 border-r border-emerald-700">
-                      Document Type
-                    </th>
-                    <th className="p-2 border-r border-emerald-700">
-                      Document No.
-                    </th>
-                    <th className="p-2 border-r border-emerald-700">G/L No.</th>
-                    <th className="p-2 border-r border-emerald-700">
-                      Source No.
-                    </th>
-                    <th className="p-2 border-r border-emerald-700">Name</th>
-                    <th className="p-2 border-r border-emerald-700">
-                      Posting Group
-                    </th>
-                    <th className="p-2 border-r border-emerald-700 text-right">
-                      Debit
-                    </th>
-                    <th className="p-2 border-r border-emerald-700 text-right">
-                      Credit
-                    </th>
-                    <th className="p-2 border-r border-emerald-700 text-right">
-                      Amount
-                    </th>
-                    <th className="p-2 border-r border-emerald-700">
-                      Balancing Account Type
-                    </th>
-                    <th className="p-2 border-r border-emerald-700">
-                      Balancing Account No.
-                    </th>
-                    <th className="p-2 border-r border-emerald-700">
-                      Balancing Account Name
-                    </th>
-                    <th className="p-2">Posted By</th>
-                  </tr>
-
-                  <tr className="bg-emerald-900 border-b border-emerald-800">
-                    {Object.keys(filters).map((col) => (
-                      <td key={col} className="p-1 border-r border-emerald-800">
-                        <input
-                          type="text"
-                          placeholder="From..To"
-                          onChange={(e) =>
-                            handleFilterChange(col, e.target.value)
-                          }
-                          className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded px-1.5 py-0.5 text-[10px] focus:outline-none"
-                        />
-                      </td>
-                    ))}
-                    <td colSpan={4} className="bg-emerald-900"></td>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                  {filteredData.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={14}
-                        className="p-6 text-center text-slate-400 italic"
-                      >
-                        No historical records matching criteria found.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredData.map((row) => (
-                      <tr
-                        key={row.id}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40 font-mono"
-                      >
-                        <td className="p-2 border-r dark:border-slate-800 whitespace-nowrap">
-                          {new Date(row.posting_date).toLocaleDateString(
-                            "en-GB",
-                          )}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800">
-                          {row.document_type}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800 font-medium text-slate-900 dark:text-slate-100">
-                          {row.document_no}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800">
-                          {row.gl_no}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800">
-                          {row.source_no || "-"}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800 truncate max-w-[200px]">
-                          {row.name || "-"}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800">
-                          {row.posting_group || "-"}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800 text-right text-blue-600 dark:text-blue-400">
-                          {Number(row.debit) > 0
-                            ? Number(row.debit).toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                              })
-                            : ""}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800 text-right text-red-600 dark:text-red-400">
-                          {Number(row.credit) > 0
-                            ? Number(row.credit).toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                              })
-                            : ""}
-                        </td>
-                        <td
-                          className={`p-2 border-r dark:border-slate-800 text-right font-semibold ${Number(row.amount) >= 0 ? "text-slate-800 dark:text-slate-200" : "text-red-500"}`}
-                        >
-                          (
-                          {Number(row.amount).toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                          })}
-                          )
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800">
-                          {row.balancing_account_type || "-"}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800">
-                          {row.balancing_account_no || "-"}
-                        </td>
-                        <td className="p-2 border-r dark:border-slate-800 text-slate-400">
-                          {row.balancing_account_name || "-"}
-                        </td>
-                        <td className="p-2 whitespace-nowrap">
-                          {row.posted_by}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table> */
 }

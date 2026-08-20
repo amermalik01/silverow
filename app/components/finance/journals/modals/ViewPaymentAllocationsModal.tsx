@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface AllocationDetail {
   id: string;
@@ -41,7 +42,7 @@ export default function ViewPaymentAllocationsModal({
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/parties/${partyId}/ledger/${entryId}/allocations?type=${partyType}`
+        `/api/parties/${partyId}/ledger/${entryId}/allocations?type=${partyType}`,
       );
       if (!res.ok) throw new Error("Failed to fetch allocations.");
       const data = await res.json();
@@ -71,7 +72,8 @@ export default function ViewPaymentAllocationsModal({
               Allocated Entries
             </h3>
             <p className="text-xs text-slate-500">
-              Document Ref: <span className="font-mono font-semibold">{documentNo}</span>
+              Document Ref:{" "}
+              <span className="font-mono font-semibold">{documentNo}</span>
             </p>
           </div>
           <button
@@ -104,11 +106,14 @@ export default function ViewPaymentAllocationsModal({
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {allocations.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                  <tr
+                    key={item.id}
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+                  >
                     <td className="p-2 text-slate-600">
                       {item.allocation_date
-                        ? new Date(item.allocation_date).toLocaleDateString()
-                        : "-"}
+                        ? format(item.allocation_date, "dd/MM/yyyy")
+                        : "—"}
                     </td>
                     <td className="p-2 font-semibold text-slate-800 dark:text-slate-200">
                       {item.allocated_doc_no}

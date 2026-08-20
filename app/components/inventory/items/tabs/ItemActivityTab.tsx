@@ -2,9 +2,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useLoader } from "@/app/context/LoaderContext";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
-import { useLoader } from "@/app/context/LoaderContext";
+import { format } from "date-fns";
 
 interface WarehouseStock {
   id: string;
@@ -278,8 +279,8 @@ export default function ItemActivityTab({ itemId }: Props) {
                     </td>
                     <td className="p-2.5 text-center font-sans text-slate-500">
                       {row.expiry_date
-                        ? new Date(row.expiry_date).toLocaleDateString()
-                        : "-"}
+                        ? format(row.expiry_date, "dd/MM/yyyy")
+                        : "—"}
                     </td>
                   </tr>
                 ))
@@ -327,8 +328,8 @@ export default function ItemActivityTab({ itemId }: Props) {
                     >
                       <td className="p-2.5 font-sans text-slate-600">
                         {tx.posting_date
-                          ? new Date(tx.posting_date).toLocaleDateString()
-                          : "-"}
+                          ? format(tx.posting_date, "dd/MM/yyyy")
+                          : "—"}
                       </td>
                       <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">
                         {tx.transaction_no}
@@ -401,8 +402,8 @@ export default function ItemActivityTab({ itemId }: Props) {
                   >
                     <td className="p-2.5 font-sans text-slate-600">
                       {alloc.created_at
-                        ? new Date(alloc.created_at).toLocaleDateString()
-                        : "-"}
+                        ? format(alloc.created_at, "dd/MM/yyyy")
+                        : "—"}
                     </td>
                     <td className="p-2.5 font-sans text-slate-800 dark:text-slate-200">
                       {alloc.warehouse_name}

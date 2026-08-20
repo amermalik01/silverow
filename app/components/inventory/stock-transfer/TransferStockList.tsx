@@ -7,6 +7,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
+import { format } from "date-fns";
 
 export interface StockTransferListItem {
   id: string;
@@ -113,8 +114,8 @@ export default function StockTransferList({
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={createPath}>
-            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
-            Create
+            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}
+            + Create
           </Link>
         </Button>
       </div>
@@ -179,7 +180,9 @@ export default function StockTransferList({
                     </Link>
                   </td>
                   <td className="p-3 text-zinc-600 dark:text-zinc-400">
-                    {new Date(row.transfer_date).toLocaleDateString()}
+                    {row.transfer_date
+                      ? format(row.transfer_date, "dd/MM/yyyy")
+                      : "—"}
                   </td>
                   <td className="p-3 text-zinc-700 dark:text-zinc-300 font-medium">
                     {row.warehouse_from_id}

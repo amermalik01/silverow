@@ -201,11 +201,9 @@ export default function PostingDateRangeSetup() {
                   className="border-b hover:bg-gray-50 transition-colors"
                 >
                   <td className="p-3 font-mono">
-                    {/* {new Date(period.start_date).toLocaleDateString()} */}
                     {format(parseISO(period.start_date), "dd/MM/yyyy")}
                   </td>
                   <td className="p-3 font-mono">
-                    {/* {new Date(period.end_date).toLocaleDateString()} */}
                     {format(parseISO(period.end_date), "dd/MM/yyyy")}
                   </td>
                   <td className="p-3">

@@ -5,6 +5,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/app/context/LoaderContext";
+import { format } from "date-fns";
 
 export interface LineAllocationItem {
   invoice_ledger_id: string;
@@ -383,9 +384,10 @@ export default function AllocateJournalPaymentModal({
                         />
                       </td>
                       <td className="p-2">
+
                         {doc.posting_date
-                          ? new Date(doc.posting_date).toLocaleDateString()
-                          : "-"}
+                          ? format(doc.posting_date, "dd/MM/yyyy")
+                          : "—"}
                       </td>
                       <td className="p-2 font-bold">{doc.document_no}</td>
                       <td className="p-2 text-zinc-500">{doc.document_type}</td>
