@@ -47,7 +47,8 @@ export default function LocationsTab({
               setShowForm(true);
               setSelectedLocation(null);
             }}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-sm px-4 py-1.5 rounded-md transition-colors"
+            variant="add_line"
+            // className="bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-sm px-4 py-1.5 rounded-md transition-colors"
           >
             + Add
           </Button>

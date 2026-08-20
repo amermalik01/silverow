@@ -71,7 +71,7 @@ export default function CurrencyForm({ onSuccess }: Props) {
 
       <Button
         onClick={handleSubmit}
-        className="bg-blue-600 text-white px-4 py-2 mt-3 rounded"
+        variant="save"
         disabled={loading}
       >
         {loading ? "Saving..." : "Save"}

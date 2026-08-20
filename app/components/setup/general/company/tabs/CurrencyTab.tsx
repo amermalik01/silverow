@@ -142,7 +142,8 @@ export default function CurrencyTab() {
                 setRate(1.0);
                 setMode("form");
               }}
-              className="bg-emerald-900 hover:bg-emerald-950 text-white px-5 py-1.5 rounded font-medium shadow-sm"
+              variant="add_line"
+              // className="bg-emerald-900 hover:bg-emerald-950 text-white px-5 py-1.5 rounded font-medium shadow-sm"
             >
               Add
             </Button>
@@ -318,7 +319,7 @@ export default function CurrencyTab() {
             <Button
               type="button"
               onClick={() => setMode("list")}
-              className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-5 py-1.5 rounded transition-colors"
+              variant="cancel"
             >
               Cancel
             </Button>

@@ -376,7 +376,7 @@ export default function EditAccountForm({ slug, id }: Props) {
           <Button
             type="button"
             onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
-            className=" text-white rounded hover:bg-gray-50 tracking-wide "
+            variant="cancel"
           >
             Cancel
           </Button>

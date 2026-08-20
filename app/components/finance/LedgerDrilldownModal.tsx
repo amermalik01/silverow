@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { useLoader } from "@/app/context/LoaderContext";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 interface LedgerRow {
   id: string;
@@ -289,12 +290,13 @@ export default function LedgerDrilldownModal({
               </span>
             </div>
           </div>
-          <button
+          <Button
             onClick={onClose}
-            className="bg-slate-200 dark:bg-slate-800 hover:opacity-80 px-4 py-1 rounded font-sans text-[11px] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+            variant="cancel"
+            // className="bg-slate-200 dark:bg-slate-800 hover:opacity-80 px-4 py-1 rounded font-sans text-[11px] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     </div>

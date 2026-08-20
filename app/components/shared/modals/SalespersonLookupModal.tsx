@@ -275,14 +275,15 @@ export default function SalespersonLookupModal({
               <Button
                 onClick={handleSubmitBatch}
                 disabled={selectedEmployees.length === 0}
-                className="bg-[#093009] text-white font-bold px-4 py-1.5 rounded shadow-sm disabled:opacity-40 disabled:cursor-not-allowed text-xs transition"
+                variant="save"
+                // className="bg-[#093009] text-white font-bold px-4 py-1.5 rounded shadow-sm disabled:opacity-40 disabled:cursor-not-allowed text-xs transition"
               >
                 Add Selection
               </Button>
             )}
             <Button
               onClick={onClose}
-              className="border border-slate-200 bg-white text-slate-700 font-semibold px-3 py-1.5 rounded text-xs hover:bg-slate-50"
+              variant="cancel"
             >
               Cancel
             </Button>

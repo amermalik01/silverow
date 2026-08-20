@@ -224,7 +224,8 @@ export default function SalesOrderLines({
             <Button
               type="button"
               onClick={addLine}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded"
+              // className="bg-blue-600 hover:bg-blue-700 text-white rounded"
+              variant="add_line"
             >
               Add Line
             </Button>

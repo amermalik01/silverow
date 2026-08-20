@@ -55,7 +55,7 @@ export const StockReceiveConfirmModal: React.FC<
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="px-5 py-1.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded transition"
+            variant="cancel"
           >
             Cancel
           </Button>

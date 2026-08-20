@@ -22,8 +22,8 @@ export default function NotesTab({
         className="border p-2 rounded w-full"
       />
 
-      <Button className="bg-blue-600 text-white px-4 py-2 rounded">
-        Save Note
+      <Button variant="save">
+        Save
       </Button>
     </div>
   );

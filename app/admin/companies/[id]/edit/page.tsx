@@ -119,10 +119,7 @@ export default function EditCompanyPage() {
           </select>
         </div>
 
-        {/* <div className="flex gap-4 pt-4">
-          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
-          <Button variant="ghost" onClick={() => router.back()}>Cancel</Button>
-        </div> */}
+
 
         <div className="flex gap-2 pt-4">
           {" "}
@@ -130,15 +127,15 @@ export default function EditCompanyPage() {
           <Button
             type="submit"
             disabled={saving}
-            className=" text-white rounded bg-emerald-700 hover:bg-emerald-800 shadow-sm"
+            variant="save"
           >
             {saving ? "Saving..." : "Save"}
           </Button>
           <Button
-            type="button" // Always good practice to explicitly define type="button" to prevent accidental submits
-            variant="outline" // Swapped from "ghost" to "outline" to perfectly match the "Cancel" action look from your other screens
+            type="button"
+            variant="cancel"
             onClick={() => router.back()}
-            className=" text-white rounded text-zinc-700 hover:bg-zinc-50 "
+            // className=" text-white rounded text-zinc-700 hover:bg-zinc-50 "
           >
             Cancel
           </Button>

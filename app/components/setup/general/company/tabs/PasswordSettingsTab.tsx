@@ -146,14 +146,14 @@ export default function PasswordSettingsTab({
           <>
             <Button
               type="submit"
-              className="px-4 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-xs font-medium transition-colors"
+              variant="save"
             >
               Save
             </Button>
             <Button
               type="button"
               onClick={handleCancel}
-              className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
+              variant="cancel"
             >
               Cancel
             </Button>
@@ -163,14 +163,14 @@ export default function PasswordSettingsTab({
             <Button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
+              variant="edit"
             >
               Edit
             </Button>
             <Button
               type="button"
               onClick={handleCancel}
-              className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
+              variant="cancel"
             >
               Cancel
             </Button>

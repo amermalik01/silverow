@@ -149,7 +149,7 @@ export default function CustomerJournalForm({
 
       <Button
         type="submit"
-        className="bg-emerald-700 hover:bg-emerald-800  text-white rounded"
+        variant="save"
       >
         Save
       </Button>

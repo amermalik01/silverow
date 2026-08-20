@@ -147,7 +147,7 @@ export default function WarehouseForm({ id }: { id?: string }) {
           <Button
             type="button"
             onClick={() => router.back()}
-            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+            variant="cancel"
           >
             Cancel
           </Button>

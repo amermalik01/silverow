@@ -110,7 +110,7 @@ export default function RateHistoryModal({
 
           <Button
             onClick={saveRate}
-            className="bg-blue-600 text-white px-4 rounded"
+            variant="save"
             disabled={loading}
           >
             {loading ? "Saving..." : "Add"}

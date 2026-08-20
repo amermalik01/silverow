@@ -1014,9 +1014,10 @@ export default function JournalForm({
           <div className="flex justify-start">
             <Button
               type="button"
-              variant="outline"
+              // variant="outline"
               onClick={addLineRow}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+              // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+              variant="add_line"
             >
               Add Line
             </Button>
@@ -1066,7 +1067,7 @@ export default function JournalForm({
                   type="button"
                   onClick={() => setIsEditing(true)}
                   disabled={isPosted}
-                  className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  variant="edit"
                 >
                   Edit
                 </Button>
@@ -1090,7 +1091,7 @@ export default function JournalForm({
                     (!isBalanced && lines.every((l) => !l.balancing_account_id))
                   }
                   onClick={() => handlePersistAction(true)}
-                  className="px-5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm disabled:opacity-40"
+                  variant="post"
                 >
                   {loading ? "Posting..." : "Post Journal"}
                 </Button>
@@ -1099,17 +1100,16 @@ export default function JournalForm({
                   type="button"
                   onClick={() => handlePersistAction(false)}
                   disabled={loading}
-                  className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm flex items-center gap-2"
+                  variant="save"
                 >
                   {loading ? "Saving..." : "Save"}
                 </Button>
 
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="cancel"
                   onClick={journalId ? handleCancelEdit : () => router.back()}
                   disabled={loading}
-                  className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white dark:bg-slate-800 dark:text-zinc-200"
                 >
                   Cancel
                 </Button>
@@ -1296,13 +1296,6 @@ export default function JournalForm({
           </Button>
         )}
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.push(redirectPath)}
-          className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white"
-        >
-          {isPosted ? "Back" : "Cancel"}
-        </Button>
+
       </div> */
 }

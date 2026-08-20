@@ -130,7 +130,7 @@ export default function DesignationList() {
           <option value="inactive">Inactive</option>
         </select>
 
-        <Button onClick={save} className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 rounded px-4">
+        <Button onClick={save} variant="save">
           {editingId ? "Update" : "Create"}
         </Button>
       </div>
@@ -164,7 +164,7 @@ export default function DesignationList() {
               <td className="p-2">{row.status}</td>
 
               <td className="p-2 text-center space-x-2">
-                <Button onClick={() => edit(row)} className="text-blue-600">
+                <Button onClick={() => edit(row)} variant="edit">
                   Edit
                 </Button>
 

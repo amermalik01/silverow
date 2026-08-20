@@ -99,7 +99,7 @@ export default function AttendanceRecord({ id }: Props) {
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          variant="save"
         >
           Update
         </Button>

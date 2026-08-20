@@ -65,8 +65,8 @@ export default function ContactsTab({
               setShowForm(true);
               setSelectedContact(null);
             }}
-            // className="bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs px-4 py-1.5 rounded-md transition-colors"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            variant="add_line"
+            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
             Add Contact
           </Button>
@@ -146,7 +146,7 @@ export default function ContactsTab({
                         setSelectedContact(c);
                         setShowForm(false);
                       }}
-                      className="text-blue-600 hover:underline"
+                      variant="edit"
                     >
                       {isReadOnly ? "View" : "Edit"}
                     </Button>

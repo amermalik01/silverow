@@ -608,7 +608,8 @@ export default function TransferStockForm({
             type="button"
             disabled={isPosted || !warehouseFrom || !warehouseTo}
             onClick={handleAddLine}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            variant="add_line"
+            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
             // className="px-3 py-1 bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900 rounded-lg text-xs font-medium hover:opacity-90 disabled:opacity-40 transition"
           >
             Add Line
@@ -795,14 +796,14 @@ export default function TransferStockForm({
             <Button
               onClick={handleSaveDraft}
               disabled={isLoading}
-              className="border px-4 py-2 rounded text-xs font-medium bg-white text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+              variant="save"
             >
-              {isLoading ? "Saving..." : "Save Draft"}
+              {isLoading ? "Saving..." : "Save"}
             </Button>
             <Button
               onClick={handlePostTransfer}
               disabled={isLoading}
-              className="bg-emerald-600 text-white px-4 py-2 rounded text-xs font-medium shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+              variant="post"
             >
               {isLoading ? "Processing..." : "Post Transfer"}
             </Button>

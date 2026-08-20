@@ -281,7 +281,8 @@ export default function PurchaseOrderLines({
             <Button
               type="button"
               onClick={() => setIsMigrationModalOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded"
+              // className="bg-emerald-600 hover:bg-emerald-700 text-white rounded"
+              variant="save"
             >
               <span>⇧</span>
               Import Items
@@ -292,7 +293,8 @@ export default function PurchaseOrderLines({
             <Button
               type="button"
               onClick={addLine}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded"
+              // className="bg-blue-600 hover:bg-blue-700 text-white rounded"
+              variant="add_line"
             >
               Add Line
             </Button>

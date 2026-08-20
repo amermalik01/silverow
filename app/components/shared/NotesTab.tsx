@@ -84,7 +84,7 @@ export default function NotesTab({
           <Button
             onClick={handleSave}
             disabled={saving || !note.trim()}
-            className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-xs font-medium py-2 rounded-lg transition-all disabled:opacity-40"
+            variant="post"
           >
             {saving ? "Posting..." : "Append Note Entry"}
           </Button>

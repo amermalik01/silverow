@@ -193,9 +193,9 @@ export default function ItemForm({ id }: Props) {
         <Button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded"
+          variant="save"
         >
-          {loading ? "Saving..." : "Save Item"}
+          {loading ? "Saving..." : "Save"}
         </Button>
       </div>
 

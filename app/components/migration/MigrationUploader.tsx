@@ -159,7 +159,7 @@ export default function MigrationUploader({
           href="/api/migration/templates"
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-800 inline-block"
+          className="rounded bg-slate-700 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800 inline-block"
         >
           Download Template
         </a>

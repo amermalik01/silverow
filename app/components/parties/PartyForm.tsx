@@ -311,14 +311,14 @@ export default function PartyForm({
           type="button"
           onClick={handleSubmit}
           disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium px-5 py-2 rounded-lg text-xs transition-colors shadow-sm"
+          variant="save"
         >
-          {loading ? "Processing Ledger..." : "Save"}
+          {loading ? "Saving..." : "Save"}
         </Button>
         <Button
           type="button"
           onClick={() => router.push(redirectPath)}
-          className="px-4 py-2 text-xs border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-white dark:text-slate-300 font-medium"
+          variant="cancel"
         >
           Cancel
         </Button>

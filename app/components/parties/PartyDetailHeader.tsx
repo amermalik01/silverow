@@ -253,7 +253,8 @@ export default function PartyDetailHeader({ party, onPartyUpdated }: Props) {
                 onClick={() =>
                   setConfirmModal({ isOpen: false, targetType: null })
                 }
-                className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
+                variant="cancel"
+                // className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
               >
                 Cancel
               </Button>

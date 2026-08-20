@@ -305,13 +305,13 @@ export default function GeneralTab({
         <Button
           type="submit"
           disabled={saving}
-          className="bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 text-white font-medium px-5 py-1.5 rounded transition-colors"
+          variant="save"
         >
           {saving ? "Saving..." : "Edit / Save"}
         </Button>
         <Button
           type="button"
-          className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-5 py-1.5 rounded transition-colors"
+          variant="cancel"
         >
           Cancel
         </Button>

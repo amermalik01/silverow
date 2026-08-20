@@ -293,7 +293,8 @@ export default function SetupDataGrid({
       <Button
         onClick={createOrUpdate}
         disabled={submitting || loading}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition disabled:opacity-50"
+        variant="add_line"
+        // className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition disabled:opacity-50"
       >
         {submitting ? "Processing..." : "Add Record"}
       </Button>
@@ -423,14 +424,14 @@ export default function SetupDataGrid({
                           <Button
                             onClick={updateRow}
                             disabled={submitting}
-                            className="text-green-600 hover:text-green-800 font-medium"
+                            variant="save"
                           >
                             Save
                           </Button>
                           <Button
                             onClick={cancelEdit}
                             disabled={submitting}
-                            className="text-gray-500 hover:text-gray-700"
+                            variant="cancel"
                           >
                             Cancel
                           </Button>
@@ -440,14 +441,14 @@ export default function SetupDataGrid({
                           <Button
                             onClick={() => startEdit(r)}
                             disabled={submitting}
-                            className="text-blue-600 hover:text-blue-800 font-medium"
+                            variant="edit"
                           >
                             Edit
                           </Button>
                           <Button
                             onClick={() => remove(r.id!)}
                             disabled={submitting}
-                            className="text-red-600 hover:text-red-800 font-medium"
+                            variant="cancel"
                           >
                             Delete
                           </Button>

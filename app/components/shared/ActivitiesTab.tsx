@@ -201,9 +201,9 @@ export default function ActivitiesTab({
             <Button
               onClick={handleSave}
               disabled={saving || !form.title?.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-5 py-2 rounded shadow-sm disabled:opacity-50 transition"
+              variant="save"
             >
-              {saving ? "Saving..." : "Save Activity"}
+              {saving ? "Saving..." : "Save"}
             </Button>
           </div>
         </div>
@@ -491,7 +491,7 @@ export default function ActivitiesTab({
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded"
+              variant="save"
             >
               {saving ? "Saving..." : "Save Activity"}
             </Button>

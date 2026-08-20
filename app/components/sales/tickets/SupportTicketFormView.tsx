@@ -893,7 +893,8 @@ export default function SupportTicketFormView({ slug, id }: Props) {
                   <Button
                     type="button"
                     onClick={handleAddNote}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 rounded-md font-semibold transition self-end h-8"
+                    variant="add_line"
+                    // className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 rounded-md font-semibold transition self-end h-8"
                   >
                     Add
                   </Button>
@@ -981,7 +982,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
             type="button"
             disabled={saving}
             onClick={save}
-            className="bg-blue-600 hover:bg-blue-700 font-semibold text-white px-5 py-1.5 rounded text-xs transition shadow disabled:opacity-50"
+            variant="save"
           >
             {saving ? "Saving..." : "Save"}
           </Button>
@@ -989,7 +990,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
           <Button
             type="button"
             onClick={() => router.push(`/${slug}/sales/tickets`)}
-            className="border px-4 py-1.5 rounded text-xs bg-white text-slate-600 shadow-sm font-medium hover:bg-slate-50"
+            variant="cancel"
           >
             Cancel
           </Button>

@@ -86,7 +86,7 @@ export default function DepartmentList() {
           className="border p-2 rounded"
         />
 
-        <Button onClick={save} className="bg-blue-600 text-white rounded px-4">
+        <Button onClick={save} variant="save">
           Save
         </Button>
       </div>

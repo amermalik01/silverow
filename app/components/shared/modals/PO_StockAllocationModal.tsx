@@ -478,7 +478,8 @@ export default function PO_StockAllocationModal({
             type="button"
             onClick={handleCommitSave}
             disabled={qtyToAllocate !== 0}
-            className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2 rounded text-xs disabled:opacity-40 font-medium transition-opacity"
+            variant="save"
+            // className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2 rounded text-xs disabled:opacity-40 font-medium transition-opacity"
           >
             Save Allocation
           </Button>

@@ -181,11 +181,12 @@ export default function VatRatesList() {
         <Button
           type="submit"
           disabled={submitting}
-          className={`px-5 py-2 text-white rounded font-medium transition disabled:opacity-50 ${
-            editingId
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
+          variant="save"
+          // className={`px-5 py-2 text-white rounded font-medium transition disabled:opacity-50 ${
+          //   editingId
+          //     ? "bg-green-600 hover:bg-green-700"
+          //     : "bg-blue-600 hover:bg-blue-700"
+          // }`}
         >
           {submitting ? "Processing..." : editingId ? "Update" : "Add Rate"}
         </Button>
@@ -195,7 +196,7 @@ export default function VatRatesList() {
             type="button"
             onClick={cancelEdit}
             disabled={submitting}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition"
+            variant="cancel"
           >
             Cancel
           </Button>
@@ -238,7 +239,7 @@ export default function VatRatesList() {
                       <Button
                         onClick={() => startEdit(r)}
                         disabled={submitting}
-                        className="text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50"
+                        variant="edit"
                       >
                         Edit
                       </Button>

@@ -84,9 +84,9 @@ export default function PermissionMatrix({
         <Button
           onClick={save}
           disabled={saving}
-          className="bg-green-600 text-white px-4 py-2 rounded"
+          variant="save"
         >
-          {saving ? "Saving..." : "Save Permissions"}
+          {saving ? "Saving..." : "Save"}
         </Button>
       </div>
 

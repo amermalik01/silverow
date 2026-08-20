@@ -128,7 +128,8 @@ export default function BankAccountsTab() {
                 });
                 setMode("form");
               }}
-              className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded font-medium text-xs"
+              variant="add_line"
+              // className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded font-medium text-xs"
             >
               Add
             </Button>
@@ -178,7 +179,7 @@ export default function BankAccountsTab() {
                             setCurrent(bank);
                             setMode("form");
                           }}
-                          className="text-emerald-700 hover:underline text-xs font-medium"
+                          variant="edit"
                         >
                           Edit
                         </Button>
@@ -454,14 +455,14 @@ export default function BankAccountsTab() {
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button
               type="submit"
-              className="border border-emerald-700 text-emerald-800 hover:bg-emerald-50 px-5 py-1.5 rounded font-medium"
+              variant="save"
             >
               Save
             </Button>
             <Button
               type="button"
               onClick={() => setMode("list")}
-              className="border border-gray-300 hover:bg-gray-50 px-5 py-1.5 rounded font-medium"
+              variant="cancel"
             >
               Cancel
             </Button>

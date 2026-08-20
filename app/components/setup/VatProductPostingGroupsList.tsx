@@ -117,7 +117,8 @@ export default function VatProductPostingGroupsList() {
         <Button
           type="submit"
           disabled={submitting}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition disabled:opacity-50"
+          variant="save"
+          // className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition disabled:opacity-50"
         >
           {submitting ? "Saving..." : editingId ? "Update" : "Add"}
         </Button>
@@ -126,7 +127,7 @@ export default function VatProductPostingGroupsList() {
           <Button
             type="button"
             onClick={cancelEdit}
-            className="bg-gray-500 text-white px-4 py-2 rounded"
+            variant="cancel"
           >
             Cancel
           </Button>
@@ -156,7 +157,7 @@ export default function VatProductPostingGroupsList() {
                     <td className="p-3 text-center space-x-3">
                       <Button
                         onClick={() => editGroup(g)}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        variant="edit"
                       >
                         Edit
                       </Button>

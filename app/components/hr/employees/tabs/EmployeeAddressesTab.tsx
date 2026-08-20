@@ -52,7 +52,8 @@ export default function EmployeeAddressesTab({
         <Button
           type="button"
           onClick={addRow}
-          className="bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs px-4 py-2 rounded-lg transition-colors"
+          // className="bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs px-4 py-2 rounded-lg transition-colors"
+          variant="add_line"
         >
           + Append Address Index
         </Button>

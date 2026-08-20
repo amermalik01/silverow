@@ -296,15 +296,15 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
         <div className="bg-gray-50 dark:bg-slate-800 p-3 border-t dark:border-slate-700 flex justify-end space-x-2">
           <Button
             onClick={handleConfirmSave}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-1.5 rounded font-medium shadow"
+            variant="save"
           >
             Save Allocations
           </Button>
           <Button
             onClick={onClose}
-            className="border dark:border-slate-700 bg-white dark:bg-slate-800 text-xs px-4 py-1.5 rounded font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
+            variant="cancel"
           >
-            Close
+            Cancel
           </Button>
         </div>
       </div>

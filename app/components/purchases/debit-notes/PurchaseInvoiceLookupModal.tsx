@@ -190,7 +190,8 @@ export const PurchaseInvoiceLookupModal: React.FC<Props> = ({
           <Button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+            variant="cancel"
+            // className="px-4 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
           >
             Cancel
           </Button>

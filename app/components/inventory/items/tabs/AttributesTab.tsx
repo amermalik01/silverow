@@ -17,7 +17,8 @@ export default function AttributesTab({ itemId, isReadonly = false }: Props) {
           <Button
             type="button"
             size="sm"
-            className="bg-blue-600 text-white text-xs"
+            // className="bg-blue-600 text-white text-xs"
+            variant="add_line"
           >
             + Add Attribute
           </Button>

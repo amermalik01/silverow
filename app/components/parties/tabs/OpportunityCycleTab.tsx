@@ -233,7 +233,8 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
             <Button
               type="button"
               onClick={handleAddNew}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-sm"
+              variant="add_line"
+              // className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-sm"
             >
               <Icon icon="lucide:plus" className="w-3.5 h-3.5" />
               <span>Add</span>
@@ -674,7 +675,7 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
           <Button
             type="button"
             onClick={handleCompleteStage}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 transition-colors"
+            variant="default"
           >
             <Icon icon="lucide:check" className="w-3.5 h-3.5" />
             <span>Complete Stage</span>
@@ -686,7 +687,7 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
             type="button"
             disabled={saving}
             onClick={handleSave}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm disabled:opacity-50"
+            variant="save"
           >
             {saving && <Icon icon="lucide:loader-2" className="w-3 h-3 animate-spin" />}
             <span>Save</span>
@@ -696,7 +697,8 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
             <Button
               type="button"
               onClick={handleEdit}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
+              variant="edit"
+              // className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
             >
               Edit
             </Button>
@@ -706,7 +708,8 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
         <Button
           type="button"
           onClick={() => setViewMode("list")}
-          className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          variant="cancel"
+          // className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
         >
           Cancel
         </Button>

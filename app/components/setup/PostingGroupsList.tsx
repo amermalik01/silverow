@@ -79,7 +79,8 @@ export default function PostingGroupsList() {
         />
         <Button
           onClick={createOrUpdate}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          // className="bg-blue-600 text-white px-4 py-2 rounded"
+          variant="add_line"
         >
           {editingId ? "Update" : "Add"}
         </Button>
@@ -99,7 +100,7 @@ export default function PostingGroupsList() {
               <td className="p-2">{g.name}</td>
               <td className="p-2 text-center space-x-3">
                 <Button
-                  className="text-blue-600"
+                  variant="edit"
                   onClick={() => editGroup(g)}
                 >
                   Edit

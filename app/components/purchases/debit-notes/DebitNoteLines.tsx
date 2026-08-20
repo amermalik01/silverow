@@ -260,7 +260,8 @@ export default function DebitNoteLines({
           <Button
             type="button"
             onClick={addLine}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            variant="add_line"
+            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
             Add Line
           </Button>

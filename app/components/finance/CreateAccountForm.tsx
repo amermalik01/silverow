@@ -290,14 +290,14 @@ export default function CreateAccountForm({ slug }: { slug: string }) {
           <Button
             type="button"
             onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
-            className="px-4 py-1.5 border rounded hover:bg-gray-50 tracking-wide font-medium"
+            variant="cancel"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading}
-            className=" text-white rounded bg-green-700  shadow hover:bg-green-800 tracking-wide disabled:opacity-50"
+            variant="save"
           >
             {loading ? "Processing..." : "Save"}
           </Button>

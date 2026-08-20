@@ -413,7 +413,8 @@ export default function PartyRecord({
                 <Button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2"
+                  variant="edit"
+                  // className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2"
                 >
                   {/* <Icon icon="tabler:edit" className="w-4 h-4" /> */}
                   Edit
@@ -435,7 +436,7 @@ export default function PartyRecord({
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm flex items-center gap-2"
+                  variant="save"
                 >
                   {saving ? (
                     <>
@@ -448,10 +449,9 @@ export default function PartyRecord({
 
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="cancel"
                   onClick={handleCancelEdit}
                   disabled={saving}
-                  className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white dark:bg-slate-800 dark:text-zinc-200"
                 >
                   Cancel
                 </Button>

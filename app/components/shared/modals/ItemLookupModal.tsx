@@ -424,13 +424,14 @@ export default function ItemLookupModal({
                 <Button
                   onClick={handleSubmitBatch}
                   disabled={selectedRecords.length === 0}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  variant="save"
+                  // className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   Add Selected
                 </Button>
                 <Button
                   onClick={onClose}
-                  className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs px-3 py-1.5 rounded-lg transition cursor-pointer"
+                  variant="cancel"
                 >
                   Cancel
                 </Button>

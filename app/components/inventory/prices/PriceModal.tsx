@@ -147,12 +147,12 @@ export default function PriceModal({
         /> */}
 
         <div className="flex justify-end gap-2">
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose} variant="cancel">Cancel</Button>
 
           <Button
             onClick={submit}
             disabled={loading}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 text-white px-4 py-2"
+            variant="save"
           >
             Save
           </Button>

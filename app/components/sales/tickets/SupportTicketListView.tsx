@@ -167,7 +167,8 @@ export default function SupportTicketListView({ slug }: Props) {
         <Button
           type="button"
           onClick={() => router.push(`/${slug}/sales/support-ticket/new`)}
-          className="bg-emerald-800 text-white hover:bg-emerald-900 text-xs font-bold px-4 py-1.5 rounded transition shadow-sm"
+          variant="add_line"
+          // className="bg-emerald-800 text-white hover:bg-emerald-900 text-xs font-bold px-4 py-1.5 rounded transition shadow-sm"
         >
           Add
         </Button>

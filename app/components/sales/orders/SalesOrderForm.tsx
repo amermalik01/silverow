@@ -966,22 +966,24 @@ export default function SalesOrderForm({
               <>
                 <Button
                   type="button"
+                  variant="post"
                   onClick={() => setShowInvoiceModal(true)}
                   disabled={isPosting || isCompleted}
-                  className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
+                  // className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   Post Invoice
                 </Button>
 
                 <Button
                   type="button"
+                  variant="dispatch"
                   onClick={() => setShowShipModal(true)}
                   disabled={isPosting || isFullyDispatched || isCompleted}
-                  className={`px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded transition-colors ${
-                    isFullyDispatched || isCompleted
-                      ? "text-amber-500 dark:text-amber-400 opacity-60 cursor-not-allowed"
-                      : "text-amber-600 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700"
-                  }`}
+                  // className={`px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded transition-colors ${
+                  //   isFullyDispatched || isCompleted
+                  //     ? "text-amber-500 dark:text-amber-400 opacity-60 cursor-not-allowed"
+                  //     : "text-amber-600 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700"
+                  // }`}
                 >
                   Ship Items
                 </Button>
@@ -1003,17 +1005,19 @@ export default function SalesOrderForm({
                 {!isEditMode ? (
                   <Button
                     type="button"
+                    variant="edit"
                     onClick={() => setIsEditMode(true)}
-                    className="px-3.5 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700"
+                    // className="px-3.5 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     Edit
                   </Button>
                 ) : (
                   <Button
                     type="button"
+                    variant="save"
                     onClick={handleSave}
                     disabled={saving}
-                    className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+                    // className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
                   >
                     {saving ? "Saving..." : "Save"}
                   </Button>
@@ -1035,7 +1039,7 @@ export default function SalesOrderForm({
             <Button
               type="button"
               onClick={() => router.push(`/${slug}/sales/orders`)}
-              className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+              variant="cancel"
             >
               Cancel
             </Button>
@@ -1056,7 +1060,7 @@ export default function SalesOrderForm({
             <Button
               type="button"
               onClick={() => router.push(`/${slug}/sales/orders`)}
-              className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+              variant="cancel"
             >
               Cancel
             </Button>

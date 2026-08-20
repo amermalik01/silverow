@@ -541,7 +541,8 @@ export default function ItemJournalForm({
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || isPosting}
-                className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
+                variant="save"
+                // className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
               >
                 {loading ? "Saving..." : "Save Draft"}
               </Button>
@@ -549,7 +550,8 @@ export default function ItemJournalForm({
                 type="button"
                 onClick={handlePostJournal}
                 disabled={loading || isPosting || !journalId}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
+                variant="post"
+                // className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isPosting ? "Posting..." : "Post Journal"}
               </Button>
@@ -558,7 +560,7 @@ export default function ItemJournalForm({
             <Button
               type="button"
               onClick={() => router.push(redirectPath)}
-              className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded bg-white dark:bg-slate-800 hover:bg-slate-50 shadow-sm"
+              variant="cancel"
             >
               Back to Catalog
             </Button>
@@ -916,7 +918,8 @@ export default function ItemJournalForm({
             <Button
               type="button"
               onClick={addLineRow}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+              variant="add_line"
+              // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
             >
               Add Line
             </Button>

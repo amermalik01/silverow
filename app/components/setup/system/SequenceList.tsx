@@ -121,11 +121,11 @@ export default function SequenceList() {
 
               <td className="p-2 text-center">
                 {editingId === row.id ? (
-                  <Button onClick={update} className="text-green-600">
+                  <Button onClick={update} variant="save">
                     Save
                   </Button>
                 ) : (
-                  <Button onClick={() => edit(row)} className="text-blue-600">
+                  <Button onClick={() => edit(row)} variant="edit">
                     Edit
                   </Button>
                 )}

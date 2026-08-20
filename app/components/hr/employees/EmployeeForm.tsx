@@ -123,7 +123,7 @@ export default function EmployeeForm() {
           type="button" // Change to type="submit" if nested inside a native HTML <form> element
           onClick={save}
           disabled={loading}
-          className="px-6 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm min-w-[140px] justify-center"
+          variant="save"
         >
           {loading ? "Saving..." : "Save Employee"}
         </Button>

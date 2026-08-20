@@ -196,7 +196,8 @@ export default function SalesQuoteLines({
           <Button
             type="button"
             onClick={addLine}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            variant="add_line"
           >
             Add Line
           </Button>

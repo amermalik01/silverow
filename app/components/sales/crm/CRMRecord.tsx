@@ -158,7 +158,7 @@ export default function CRMRecord({ id, isReadonly = false }: Props) {
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="bg-blue-600 text-white px-6 py-2 rounded"
+            variant="save"
           >
             {saving ? "Saving..." : "Update CRM"}
           </Button>

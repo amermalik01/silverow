@@ -463,7 +463,7 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
               onClick={() =>
                 router.push(`/${slug}/purchases/posted-debit-notes`)
               }
-              className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+              variant="cancel"
             >
               Cancel
             </Button>

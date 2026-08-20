@@ -102,10 +102,6 @@ export default function UOMTab({ itemId }: Props) {
     }
   };
 
-  /*
-    EDIT
-  */
-
   const handleEdit = (row: ItemUOM) => {
     setEditingId(row.id);
 
@@ -230,7 +226,7 @@ export default function UOMTab({ itemId }: Props) {
                     <Button
                       type="button"
                       onClick={() => handleEdit(row)}
-                      className="text-blue-600"
+                      variant="edit"
                     >
                       Edit
                     </Button>
@@ -364,7 +360,7 @@ export default function UOMTab({ itemId }: Props) {
               <Button
                 type="button"
                 onClick={handleCloseModal}
-                className="border px-4 py-2 rounded"
+                variant="cancel"
               >
                 Cancel
               </Button>
@@ -373,7 +369,7 @@ export default function UOMTab({ itemId }: Props) {
                 type="button"
                 disabled={saving}
                 onClick={handleSubmit}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
+                variant="save"
               >
                 {saving ? "Saving..." : editingId ? "Update" : "Save"}
               </Button>

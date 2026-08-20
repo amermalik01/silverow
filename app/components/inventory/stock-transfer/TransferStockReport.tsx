@@ -47,7 +47,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
         </Button>
         <Button
           onClick={onClose}
-          className="border px-3 py-1 rounded text-xs bg-white text-gray-600"
+          variant="cancel"
         >
           Cancel
         </Button>

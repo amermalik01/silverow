@@ -433,16 +433,15 @@ export default function AccountForm({ slug, id }: Props) {
         <div className="col-span-2 border-t border-border pt-4 flex justify-end gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="cancel"
             onClick={() => router.push(`/${slug}/finance/chart-of-accounts`)}
-            className=" text-white rounded hover:bg-zinc-50 bg-white"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading}
-            className=" text-white rounded bg-emerald-700 hover:bg-emerald-800 shadow-sm justify-center"
+            variant="save"
           >
             {loading
               ? "Processing..."

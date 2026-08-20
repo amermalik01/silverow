@@ -407,7 +407,7 @@ export default function PartyLedgerActivityTab({
               >
                 Close
               </Button>
-              <Button size="sm" onClick={handleUpdateHoldStatus}>
+              <Button size="sm" variant="save" onClick={handleUpdateHoldStatus}>
                 Save
               </Button>
             </div>

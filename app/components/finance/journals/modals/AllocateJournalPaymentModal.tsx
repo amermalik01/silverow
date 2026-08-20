@@ -457,7 +457,7 @@ export default function AllocateJournalPaymentModal({
 
         {/* Buttons */}
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="cancel" onClick={onClose}>
             Cancel
           </Button>
           <Button
@@ -465,6 +465,7 @@ export default function AllocateJournalPaymentModal({
             disabled={
               totalAllocated <= 0 || isOverAllocated || documents.length === 0
             }
+            variant="save"
           >
             Confirm Allocation
           </Button>

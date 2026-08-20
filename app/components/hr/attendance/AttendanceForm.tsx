@@ -192,7 +192,7 @@ export default function AttendanceForm() {
       <div className="flex justify-end">
         <Button
           onClick={handleSubmit}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          variant="save"
         >
           Save
         </Button>

@@ -324,13 +324,14 @@ export default function CRMLookupModal({
               <Button
                 onClick={handleSubmitBatch}
                 disabled={selectedCRMs.length === 0}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-1.5 rounded shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition"
+                variant="save"
+                // className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-1.5 rounded shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Add Selection
               </Button>
               <Button
                 onClick={onClose}
-                className="bg-white hover:bg-slate-50 rounded transition"
+                variant="cancel"
               >
                 Cancel
               </Button>

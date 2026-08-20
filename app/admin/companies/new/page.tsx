@@ -183,7 +183,7 @@ export default function NewCompanyPage() {
           <Button type="submit" disabled={loading}>
             {loading ? "Creating..." : "Create Company"}
           </Button>
-          <Button variant="ghost" asChild>
+          <Button variant="cancel" asChild>
             <Link href="/admin/companies">Cancel</Link>
           </Button>
         </div>

@@ -207,14 +207,14 @@ export default function LocationForm({
         {!isReadOnly && (
           <Button
             onClick={handleSubmit}
-            className="px-4 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-md font-medium shadow-sm"
+            variant="save"
           >
             {existing?.id ? "Update Location" : "Save Location"}
           </Button>
         )}
         <Button
           onClick={onClose}
-          className="px-4 py-1.5 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md font-medium"
+          variant="cancel"
         >
           Cancel
         </Button>

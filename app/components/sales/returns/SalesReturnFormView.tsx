@@ -608,7 +608,7 @@ export default function SalesReturnFormView({
               type="button"
               onClick={save}
               disabled={saving}
-              className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
+              variant="edit"
             >
               Edit / Save
             </Button>
@@ -616,7 +616,7 @@ export default function SalesReturnFormView({
             <Button
               type="button"
               onClick={() => router.push(`/${slug}/sales/orders`)}
-              className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+              variant="cancel"
             >
               Cancel
             </Button>
@@ -659,7 +659,7 @@ export default function SalesReturnFormView({
         <Button
           type="button"
           onClick={() => router.push(`/${slug}/sales/returns`)}
-          className="text-xs font-medium text-gray-600 dark:text-gray-400 hover:underline"
+          variant="cancel"
         >
           Cancel and Return
         </Button>

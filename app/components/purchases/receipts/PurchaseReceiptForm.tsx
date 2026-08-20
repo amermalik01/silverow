@@ -351,7 +351,8 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
         <Button
           type="button"
           onClick={addLine}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          variant="add_line"
         >
           Add Line
         </Button>
@@ -360,9 +361,9 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
           type="button"
           disabled={saving}
           onClick={save}
-          className="bg-blue-600 text-white px-6 py-2 rounded"
+          variant="save"
         >
-          Save Receipt
+          Save
         </Button>
       </div>
     </div>

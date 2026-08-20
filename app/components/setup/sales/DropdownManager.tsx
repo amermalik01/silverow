@@ -110,7 +110,8 @@ export default function DropdownManager({
         />
         <Button
           onClick={createItem}
-          className="px-4 py-2 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
+          variant="add_line"
+          // className="px-4 py-2 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
         >
           Add Item
         </Button>
@@ -131,13 +132,13 @@ export default function DropdownManager({
                 />
                 <Button
                   onClick={() => updateItem(item.id)}
-                  className="text-xs text-emerald-600 font-semibold"
+                  variant="save"
                 >
                   Save
                 </Button>
                 <Button
                   onClick={() => setEditingId(null)}
-                  className="text-xs text-slate-500"
+                  variant="cancel"
                 >
                   Cancel
                 </Button>
@@ -153,13 +154,13 @@ export default function DropdownManager({
                       setEditingId(item.id);
                       setEditValue(item.name);
                     }}
-                    className="text-xs text-blue-600 hover:underline"
+                    variant="edit"
                   >
                     Edit
                   </Button>
                   <Button
                     onClick={() => deleteItem(item.id)}
-                    className="text-xs text-red-500 hover:underline"
+                    variant="cancel"
                   >
                     Delete
                   </Button>
@@ -293,7 +294,7 @@ export default function DropdownManager({
 
                 <Button onClick={() => updateItem(item.id)}>Save</Button>
 
-                <Button onClick={cancelEdit}>Cancel</Button>
+                <Button onClick={cancelEdit} variant="cancel">Cancel</Button>
               </>
             ) : (
               <>

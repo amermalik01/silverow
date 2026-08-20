@@ -359,7 +359,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
               onClick={() =>
                 router.push(`/${slug}/purchases/purchase-invoices`)
               }
-              className="px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+              variant="cancel"
             >
               Cancel
             </Button>

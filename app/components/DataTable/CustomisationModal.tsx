@@ -231,20 +231,20 @@ export const CustomisationModal: React.FC<Props> = ({
         <div className="flex items-center justify-between border-t pt-4 px-6 pb-6 dark:border-slate-800">
           <Button
             onClick={onResetDefault}
-            className=" text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            variant="ghostprimary"
           >
             Reset to Default
           </Button>
           <div className="flex gap-2">
             <Button
               onClick={onClose}
-              className=" text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              variant="cancel"
             >
               Cancel
             </Button>
             <Button
               onClick={() => onSave(cols)}
-              className=" text-white rounded bg-emerald-800 hover:bg-emerald-900 shadow-sm transition-colors"
+              variant="save"
             >
               Save Custom Layout
             </Button>
@@ -254,149 +254,3 @@ export const CustomisationModal: React.FC<Props> = ({
     </div>
   );
 };
-
-/* export const CustomisationModal: React.FC<Props> = ({
-  isOpen,
-  onClose,
-  columns,
-  onSave,
-  onResetDefault,
-}) => {
-  const [cols, setCols] = useState<ColumnConfig[]>(
-    [...columns].sort((a, b) => a.columnOrder - b.columnOrder)
-  );
-
-  if (!isOpen) return null;
-
-  const handleToggleVisible = (index: number) => {
-    const updated = [...cols];
-    updated[index].isVisible = !updated[index].isVisible;
-    setCols(updated);
-  };
-
-  const handleTogglePinned = (index: number) => {
-    const updated = [...cols];
-    updated[index].isPinned = !updated[index].isPinned;
-    setCols(updated);
-  };
-
-  const handleColorChange = (index: number, color: string) => {
-    const updated = [...cols];
-    updated[index].headerColor = updated[index].headerColor === color ? undefined : color;
-    setCols(updated);
-  };
-
-  const handleWidthChange = (index: number, width: number) => {
-    const updated = [...cols];
-    updated[index].columnWidth = width;
-    setCols(updated);
-  };
-
-  const moveRow = (dragIndex: number, hoverIndex: number) => {
-    const updated = [...cols];
-    const [dragged] = updated.splice(dragIndex, 1);
-    updated.splice(hoverIndex, 0, dragged);
-    setCols(updated.map((col, idx) => ({ ...col, columnOrder: idx + 1 })));
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b pb-3">
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-            Table Customisation
-          </h3>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-700">✕</button>
-        </div>
-
-        <div className="max-h-[60vh] overflow-y-auto py-4">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b text-xs text-slate-500 uppercase">
-                <th className="p-2">Name</th>
-                <th className="p-2 text-center">Visible</th>
-                <th className="p-2 text-center">Pinned</th>
-                <th className="p-2 text-center">Colour</th>
-                <th className="p-2 text-center">Width</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cols.map((col, idx) => (
-                <tr key={col.columnKey} className="border-b hover:bg-slate-50 dark:hover:bg-slate-800">
-                  <td className="p-2 font-medium flex items-center gap-2">
-                    <span className="cursor-grab text-slate-400">⋮⋮</span>
-                    {col.label}
-                  </td>
-                  <td className="p-2 text-center">
-                    <input
-                      type="checkbox"
-                      checked={col.isVisible}
-                      onChange={() => handleToggleVisible(idx)}
-                      className="h-4 w-4 rounded accent-emerald-600"
-                    />
-                  </td>
-                  <td className="p-2 text-center">
-                    <input
-                      type="radio"
-                      checked={col.isPinned}
-                      onChange={() => handleTogglePinned(idx)}
-                      className="h-4 w-4 accent-emerald-600"
-                    />
-                  </td>
-                  <td className="p-2 text-center">
-                    <div className="flex justify-center gap-1">
-                      {COLOR_OPTIONS.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleColorChange(idx, color)}
-                          className={`h-4 w-4 rounded border ${
-                            col.headerColor === color ? 'ring-2 ring-emerald-500' : ''
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </td>
-                  <td className="p-2 text-center">
-                    <input
-                      type="range"
-                      min="80"
-                      max="300"
-                      value={col.columnWidth || 150}
-                      onChange={(e) => handleWidthChange(idx, Number(e.target.value))}
-                      className="w-24 accent-emerald-600"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex items-center justify-between border-t pt-4">
-          <button
-            onClick={onResetDefault}
-            className="rounded border border-slate-300 px-4 py-1.5 text-sm font-medium hover:bg-slate-100"
-          >
-            Default
-          </button>
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="rounded border border-slate-300 px-4 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => onSave(cols)}
-              className="rounded bg-emerald-700 px-4 py-1.5 text-sm text-white hover:bg-emerald-800"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}; */

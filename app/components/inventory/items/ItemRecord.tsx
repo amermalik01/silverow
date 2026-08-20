@@ -382,7 +382,7 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-5 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm flex items-center gap-2 min-w-[140px] justify-center"
+            variant="save"
           >
             {saving ? (
               <>
@@ -393,14 +393,14 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
                 <span>Saving...</span>
               </>
             ) : (
-              "Save Item"
+              "Save"
             )}
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="cancel"
             onClick={() => router.back()}
-            className="px-5 font-semibold text-zinc-700 bg-white"
+            
           >
             Cancel
           </Button>

@@ -464,7 +464,7 @@ export default function FinancialSettingsTab({
         <Button
           type="submit"
           disabled={saving}
-          className="px-4 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:bg-emerald-400 text-xs font-medium transition-colors"
+          variant="save"
         >
           {saving ? "Saving..." : "Save"}
         </Button>
@@ -472,7 +472,7 @@ export default function FinancialSettingsTab({
           <Button
             type="button"
             onClick={onCancel}
-            className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-xs font-medium transition-colors"
+            variant="cancel"
           >
             Cancel
           </Button>

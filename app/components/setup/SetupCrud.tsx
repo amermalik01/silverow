@@ -131,7 +131,8 @@ export default function SetupCrud({ title, api, fields, columns }: Props) {
 
       <Button
         onClick={create}
-        className="bg-blue-600 text-white px-4 py-2 rounded"
+        variant="add_line"
+        // className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         Add
       </Button>

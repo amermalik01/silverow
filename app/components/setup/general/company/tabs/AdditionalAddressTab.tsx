@@ -120,7 +120,8 @@ export default function AdditionalAddressTab() {
                 setCurrent({});
                 setMode("form");
               }}
-              className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded text-xs font-medium"
+              variant="add_line"
+              // className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded text-xs font-medium"
             >
               Add
             </Button>
@@ -162,7 +163,7 @@ export default function AdditionalAddressTab() {
                         <Button
                           type="button"
                           onClick={() => handleEdit(addr)}
-                          className="text-emerald-700 hover:text-emerald-900 font-medium"
+                          variant="edit"
                         >
                           Edit
                         </Button>
@@ -359,14 +360,14 @@ export default function AdditionalAddressTab() {
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button
               type="submit"
-              className="border border-emerald-700 text-emerald-800 hover:bg-emerald-50 px-5 py-1.5 rounded font-medium"
+              variant="save"
             >
               Save
             </Button>
             <Button
               type="button"
               onClick={() => setMode("list")}
-              className="border border-gray-300 hover:bg-gray-50 px-5 py-1.5 rounded font-medium"
+              variant="cancel"
             >
               Cancel
             </Button>
