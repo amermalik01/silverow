@@ -1,7 +1,5 @@
 // lib/validations/debit-note.schema.ts
 
-// lib/validations/debit-note.schema.ts
-
 import { z } from "zod";
 
 const looseString = z.preprocess((val) => {
@@ -78,16 +76,16 @@ export const DebitNoteLineSchema = z
     purchase_invoice_line_id: looseUuid,
     line_no: z.coerce.number().optional(),
     line_type: z.enum(["ITEM", "GL_ACCOUNT", "COMMENT"]),
-    item_id: z.string().uuid().optional().nullable(),
+    item_id: looseUuid.nullable(),
     item_code: z.string().optional().nullable(),
     item_name: z.string().optional().nullable(),
-    gl_account_id: z.string().uuid().optional().nullable(),
+    gl_account_id: looseUuid.nullable(),
     account_code: z.string().optional().nullable(),
     account_name: z.string().optional().nullable(),
     description: z.string().max(500).optional().nullable(),
-    warehouse_id: z.string().uuid().optional().nullable(),
-    warehouse_location_id: z.string().uuid().optional().nullable(),
-    uom_id: z.string().uuid().optional().nullable(),
+    warehouse_id: looseUuid.nullable(),
+    warehouse_location_id: looseUuid.nullable(),
+    uom_id: looseUuid.nullable(),
     quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
     unit_cost: looseNumber,
     discount_type: z.enum(["PERCENT", "FIXED"]).optional().nullable(),
@@ -349,18 +347,14 @@ export const DebitNoteLineSchema = z
   });
 
 export const DebitNoteSchema = z.object({
-  id: looseUuid,
-  company_id: looseUuid,
-  debit_note_no: looseString,
   supplier_id: z.string().uuid("Supplier selection is required"),
+
   supplier_no: looseString,
 
-  warehouse_id: looseUuid,
   purchaser: looseString,
   consignment_no: looseString,
   supp_order_no: looseString,
   link_to_so_no: looseString,
-  anonymous_supplier: z.boolean().optional(),
 
   currency_id: looseUuid,
   exchange_rate: z.coerce.number().optional().default(1),
@@ -384,6 +378,10 @@ export const DebitNoteSchema = z.object({
   payment_method: looseString,
   payment_method_id: looseUuid,
 
+  supplier_posting_group_id: looseUuid,
+  purchase_posting_group_id: looseUuid,
+  vat_business_posting_group_id: looseUuid,
+
   previous_code: looseString,
 
   contact: looseString,
@@ -396,10 +394,9 @@ export const DebitNoteSchema = z.object({
 
   shipping_agent: looseString,
   shipment_ref_no: looseString,
+  warehouse_ref_no: looseString,
   warehouse_booking_ref_no: looseString,
   supplier_booking_ref_no: looseString,
-
-  // shipment_po_not_req: z.boolean().optional(),
 
   reason: looseString,
   linked_po: looseString,
@@ -436,3 +433,4 @@ export type DebitNoteInput = z.infer<typeof DebitNoteSchema>;
 export type DebitNoteAddressInput = z.infer<typeof DebitNoteAddressSchema>;
 export type DebitNoteLineInput = z.infer<typeof DebitNoteLineSchema>;
 export type DebitNotePayloadInput = z.infer<typeof DebitNotePayloadSchema>; */
+
