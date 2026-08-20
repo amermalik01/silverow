@@ -94,8 +94,8 @@ export class AllocationService {
          RETURNING id`,
         [
           companyId,
-          paymentLedgerId,        // Correct source payment entry ID
-          invLedger.id,           // Correct target invoice entry ID
+          paymentLedgerId, // Correct source payment entry ID
+          invLedger.id, // Correct target invoice entry ID
           roundedAllocAmount,
           payLedger.exchange_rate,
           fx.realizedGainLoss,
@@ -106,7 +106,10 @@ export class AllocationService {
       const allocationId = allocInsertRes.rows[0].id;
 
       // 5. Update Invoice Remaining Balance safely
-      const newInvRemaining = Math.max(0, Number((invRemaining - roundedAllocAmount).toFixed(2)));
+      const newInvRemaining = Math.max(
+        0,
+        Number((invRemaining - roundedAllocAmount).toFixed(2)),
+      );
       await client.query(
         `UPDATE vendor_ledger_entries 
          SET remaining_amount = $1, is_open = $2 
@@ -115,7 +118,10 @@ export class AllocationService {
       );
 
       // 6. Update Payment Remaining Balance locally & in DB
-      payRemaining = Math.max(0, Number((payRemaining - roundedAllocAmount).toFixed(2)));
+      payRemaining = Math.max(
+        0,
+        Number((payRemaining - roundedAllocAmount).toFixed(2)),
+      );
       await client.query(
         `UPDATE vendor_ledger_entries 
          SET remaining_amount = $1, is_open = $2 
@@ -139,7 +145,6 @@ export class AllocationService {
       }
     }
   }
-  
 
   /**
    * Apply AR (Customer) Allocations
@@ -374,7 +379,9 @@ export class AllocationService {
 
     if (partyType === "supplier") {
       const partyRes = await client.query(
-        `SELECT p.gl_account_payable, ppg.payable_account_id AS group_account_id
+        `SELECT 
+            p.gl_account_payable, 
+            ppg.payable_account_id AS group_account_id
          FROM parties p
          LEFT JOIN purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
          WHERE p.id = $1 AND p.company_id = $2`,
@@ -382,8 +389,9 @@ export class AllocationService {
       );
 
       const party = partyRes.rows[0];
+
       controlGlAccountId =
-        party?.gl_account_payable || party?.group_account_id || null;
+        party?.group_account_id || party?.gl_account_payable || null;
 
       if (!controlGlAccountId) {
         const fallback = await client.query(
@@ -394,7 +402,9 @@ export class AllocationService {
       }
     } else {
       const partyRes = await client.query(
-        `SELECT p.gl_account_receivable, spg.receivable_account_id AS group_account_id
+        `SELECT 
+            p.gl_account_receivable, 
+            spg.receivable_account_id AS group_account_id
          FROM parties p
          LEFT JOIN sales_posting_groups spg ON p.sales_posting_group_id = spg.id
          WHERE p.id = $1 AND p.company_id = $2`,
@@ -402,8 +412,9 @@ export class AllocationService {
       );
 
       const party = partyRes.rows[0];
+
       controlGlAccountId =
-        party?.gl_account_receivable || party?.group_account_id || null;
+        party?.group_account_id || party?.gl_account_receivable || null;
 
       if (!controlGlAccountId) {
         const fallback = await client.query(

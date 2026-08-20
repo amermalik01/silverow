@@ -20,6 +20,7 @@ import { StockReceiveConfirmModal } from "../../shared/modals/StockReceiveConfir
 import { Button } from "@/components/ui/button";
 import DebitNoteLines from "../debit-notes/DebitNoteLines";
 import { OrderFormTabs } from "../debit-notes/OrderFormTabs";
+import { PostedTransactionsModal } from "./PostedTransactionsModal";
 
 interface Props {
   slug: string;
@@ -39,6 +40,8 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
 
   const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
   const [activeTab, setActiveTab] = useState<TabType>("general");
+  const [showNavigateModal, setShowNavigateModal] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
@@ -446,6 +449,15 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {isUpdateMode && (
+              <Button
+                type="button"
+                onClick={() => setShowNavigateModal(true)}
+                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Navigate
+              </Button>
+            )}
             <Button
               type="button"
               onClick={() =>
@@ -458,6 +470,16 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
           </div>
         </div>
       </div>
+
+      {/* General Ledger Posted Transactions Modal */}
+      {id && (
+        <PostedTransactionsModal
+          isOpen={showNavigateModal}
+          onClose={() => setShowNavigateModal(false)}
+          debitNoteId={id}
+          debitNoteNo={note.debit_note_no}
+        />
+      )}
     </div>
   );
 };
