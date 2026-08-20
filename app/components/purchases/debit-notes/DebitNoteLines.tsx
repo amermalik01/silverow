@@ -271,20 +271,21 @@ export default function DebitNoteLines({
         <table className="w-full text-left text-xs border-collapse min-w-[1300px]">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
-              <th className="p-2 w-[110px]">Type</th>
-              <th className="p-2 w-[130px]">No.</th>
-              <th className="p-2 w-[200px]">Description</th>
-              <th className="p-2 text-right w-[80px]">Qty</th>
-              <th className="p-2 w-[70px]">UOM</th>
-              <th className="p-2 w-[160px]">Warehouse</th>
-              <th className="p-2 text-right w-[95px]">Unit Cost</th>
-              <th className="p-2 w-[85px]">Disc Type</th>
-              <th className="p-2 text-right w-[85px]">Discount</th>
-              <th className="p-2 text-right w-[75px]">VAT %</th>
+              <th className="p-2 w-[100px]">Type</th>
+              <th className="p-2 w-[120px]">No.</th>
+              <th className="p-2 w-[180px]">Description</th>
+              <th className="p-2 text-right w-[70px]">Qty</th>
+              <th className="p-2 w-[60px]">UOM</th>
+              <th className="p-2 w-[150px]">Warehouse</th>
+              <th className="p-2 text-right w-[90px]">Unit Cost</th>
+              <th className="p-2 w-[80px]">Disc Type</th>
+              <th className="p-2 text-right w-[80px]">Disc Val</th>
+              <th className="p-2 text-right w-[95px]">Disc Amt</th>
+              <th className="p-2 text-right w-[90px]">VAT %</th>
               <th className="p-2 text-right w-[95px]">Net</th>
               <th className="p-2 text-right w-[100px]">Gross</th>
               {!isReadonly && (
-                <th className="p-2 text-center w-[110px]">Action</th>
+                <th className="p-2 text-center w-[90px]">Action</th>
               )}
             </tr>
           </thead>
@@ -302,6 +303,7 @@ export default function DebitNoteLines({
               const displayQty = Number(line.quantity || 0);
               const displayUnitCost = Number(line.unit_cost || 0);
               const displayDiscountValue = Number(line.discount_value || 0);
+              const displayDiscountAmount = Number(line.discount_amount || 0);
               const displayVatPercent = Number(line.vat_percent || 0);
               const displayAvailableStock =
                 line.available_stock !== undefined
@@ -485,6 +487,10 @@ export default function DebitNoteLines({
                     />
                   </td>
 
+                  <td className="p-2 text-right font-medium text-amber-600 dark:text-amber-400">
+                    {displayDiscountAmount.toFixed(2)}
+                  </td>
+
                   <td className="p-2">
                     <input
                       type="number"
@@ -559,11 +565,15 @@ export default function DebitNoteLines({
           <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
             <tr>
               <td
-                colSpan={10}
+                colSpan={9}
                 className="p-2.5 text-right capitalize tracking-wider text-xs"
               >
                 Totals
               </td>
+              <td className="p-2.5 text-right font-mono text-amber-600 dark:text-amber-400">
+                {totals.discount.toFixed(2)}
+              </td>
+              <td className="p-2.5" />
               <td className="p-2.5 text-right font-mono">
                 {totals.net.toFixed(2)}
               </td>

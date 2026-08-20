@@ -39,7 +39,7 @@ export class PostedDebitNoteService {
       pageSize = 50,
       filters = {},
       sortBy,
-      sortOrder = "asc",
+      sortOrder = "DESC",
     } = params;
     const offset = (page - 1) * pageSize;
 
@@ -71,7 +71,7 @@ export class PostedDebitNoteService {
     };
 
     const orderByColumn =
-      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "dn.created_at";
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "dn.debit_note_no";
     const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     const queryValues: (string | number)[] = [companyId];

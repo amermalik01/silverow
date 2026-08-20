@@ -17,6 +17,10 @@ export type SalesOrder = {
   payment_method?: string;
   payment_method_id?: string;
 
+  sales_posting_group_id?: string;
+  customer_posting_group_id?: string;
+  vat_business_posting_group_id?: string;
+
   order_date: string;
   posting_date?: string;
   dispatch_date?: string;
@@ -110,32 +114,61 @@ export interface SalesOrderLine {
   account_name?: string;
 
   description?: string;
+
   warehouse_id?: string;
   warehouse_code?: string;
   warehouse_name?: string;
-  warehouse_location_id?: string | null;
+  // warehouse_location_id?: string | null;
+  is_allocated?: boolean;
 
   uom_id?: string;
   uom_name?: string;
 
   quantity: number;
+
   quantity_reserved?: number;
   quantity_shipped?: number;
   quantity_invoiced?: number;
+
+  is_deleted?: boolean;
 
   unit_price: number;
   discount_type?: "PERCENT" | "FIXED";
   discount_value?: number;
   discount_amount?: number;
+  original_amount?: string | number;
+
+  vat_business_posting_group_id?: string;
+  vat_product_posting_group_id?: string;
 
   vat_percent?: number;
   vat_amount?: number;
   net_amount?: number;
   gross_amount?: number;
   line_amount?: number;
+  line_total?: number;
+  
+  purchase_gl_id?: string;
+  sales_gl_id?: string;
+  inventory_gl_id?: string;
 
-  original_amount?: number;
+  deleted_at?: string;
+  deleted_by?: string;
+  updated_at?: string;
 }
+
+// export type SalesOrderLineUI = SalesOrderLine & {
+//   item_code?: string;
+//   item_name?: string;
+//   account_code?: string;
+//   account_name?: string;
+//   warehouse_code?: string;
+//   warehouse_name?: string;
+//   uom_name?: string;
+//   line_total?: number;
+//   gl_account_id?: string;
+//   available_stock?: number;
+// };
 
 export type SalesOrderPayload = {
   order: SalesOrder;
@@ -175,18 +208,23 @@ export interface SalesOrderMasterData {
   shipmentMethods: LookupItem[];
 }
 
-export type SalesOrderLineUI = SalesOrderLine & {
-  item_code?: string;
-  item_name?: string;
-  account_code?: string;
-  account_name?: string;
-  warehouse_code?: string;
-  warehouse_name?: string;
-  uom_name?: string;
-  line_total?: number;
-  gl_account_id?: string;
-  available_stock?: number;
-};
+
+
+export interface SalesOrderLineUI extends SalesOrderLine {
+  reserved_quantity?: string | number;
+  available_stock?: string | number;
+  is_allocated?: boolean;
+
+  allocations?: Array<{
+    quantity: number;
+    [key: string]: unknown;
+  }>;
+
+  initialAllocations?: Array<{
+    quantity: number;
+    [key: string]: unknown;
+  }>;
+}
 
 export type SalesOrderListing = {
   id?: string;

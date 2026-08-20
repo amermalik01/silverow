@@ -73,7 +73,7 @@ export default function SalesOrderList({ slug }: Props) {
           size="sm"
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
-          <Link href={`/${slug}/sales/orders/create`}>
+          <Link href={`/${slug}/sales/orders/new`}>
             + Create
           </Link>
         </Button>

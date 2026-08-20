@@ -72,6 +72,8 @@ interface OrderFormTabsProps {
   setLocationModalOpen: (open: boolean) => void;
   labelStyle?: string;
   inputStyle?: string;
+  inputDateStyle?: string;
+  isReadOnly?: boolean;
 }
 
 export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
@@ -91,6 +93,8 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   setLocationModalOpen,
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
   inputStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
+  inputDateStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
+  isReadOnly = false,
 }) => {
   const inputcolumnDivStyle =
     "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200";

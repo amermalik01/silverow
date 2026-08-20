@@ -309,19 +309,20 @@ export default function PurchaseOrderLines({
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
               <th className="p-2 w-[110px]">Type</th>
-              <th className="p-2 w-[130px]">No.</th>
-              <th className="p-2 w-[200px]">Description</th>
-              <th className="p-2 text-right w-[80px]">Qty</th>
-              <th className="p-2 w-[70px]">UOM</th>
-              <th className="p-2 w-[160px]">Warehouse</th>
-              <th className="p-2 text-right w-[95px]">Unit Cost</th>
-              <th className="p-2 w-[85px]">Disc Type</th>
-              <th className="p-2 text-right w-[85px]">Discount</th>
-              <th className="p-2 text-right w-[75px]">VAT %</th>
+              <th className="p-2 w-[120px]">No.</th>
+              <th className="p-2 w-[180px]">Description</th>
+              <th className="p-2 text-right w-[70px]">Qty</th>
+              <th className="p-2 w-[60px]">UOM</th>
+              <th className="p-2 w-[150px] overflow-hidden">Warehouse</th>
+              <th className="p-2 text-right w-[90px]">Unit Cost</th>
+              <th className="p-2 w-[80px]">Disc. Type</th>
+              <th className="p-2 text-right w-[80px]">Disc. Val</th>
+              <th className="p-2 text-right w-[95px]">Disc. Amt</th>
+              <th className="p-2 text-right w-[90px]">VAT %</th>
               <th className="p-2 text-right w-[95px]">Net</th>
               <th className="p-2 text-right w-[100px]">Gross</th>
               {!isReadonly && (
-                <th className="p-2 text-center w-[110px]">Action</th>
+                <th className="p-2 text-center w-[90px]">Action</th>
               )}
             </tr>
           </thead>
@@ -347,6 +348,7 @@ export default function PurchaseOrderLines({
 
               const displayUnitCost = Number(line.unit_cost || 0);
               const displayDiscountValue = Number(line.discount_value || 0);
+              const displayDiscountAmount = Number(line.discount_amount || 0);
               const displayVatPercent = Number(line.vat_percent || 0);
               const displayAvailableStock =
                 line.available_stock !== undefined
@@ -394,12 +396,6 @@ export default function PurchaseOrderLines({
                         >
                           {line.item_code || "Select Item"}
                         </button>
-
-                        {/* {line.item_name && (
-                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
-                            {line.item_name}
-                          </div>
-                        )} */}
                       </div>
                     )}
 
@@ -414,12 +410,6 @@ export default function PurchaseOrderLines({
                         >
                           {line.account_code || "Select GL"}
                         </button>
-
-                        {/* {line.account_name && (
-                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
-                            {line.account_name}
-                          </div>
-                        )} */}
                       </div>
                     )}
                   </td>
@@ -548,17 +538,9 @@ export default function PurchaseOrderLines({
                     />
                   </td>
 
-                  {/* <td className="p-2">
-                    <input
-                      type="number"
-                      value={displayVatPercent}
-                      disabled={isLineDisabled}
-                      onChange={(e) =>
-                        updateLine(index, "vat_percent", Number(e.target.value))
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
-                    />
-                  </td> */}
+                  <td className="p-2 text-right font-medium text-amber-600 dark:text-amber-400">
+                    {displayDiscountAmount.toFixed(2)}
+                  </td>
 
                   <td className="p-2">
                     <select
@@ -604,15 +586,15 @@ export default function PurchaseOrderLines({
                               setIsAllocationModalOpen(true);
                             }}
                             className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                                // 🟡 YELLOW / AMBER = Stock Received
-                                isStockReceived
-                                  ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
-                                  : // 🟢 GREEN = Allocated Stock (Fully allocated)
-                                    line.is_allocated
-                                    ? "text-emerald-500"
-                                    : // 🔴 RED = Partially Allocated (Not fully allocated yet)
-                                      "text-rose-500"
-                              }`}
+                              // 🟡 YELLOW / AMBER = Stock Received
+                              isStockReceived
+                                ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
+                                : // 🟢 GREEN = Allocated Stock (Fully allocated)
+                                  line.is_allocated
+                                  ? "text-emerald-500"
+                                  : // 🔴 RED = Partially Allocated (Not fully allocated yet)
+                                    "text-rose-500"
+                            }`}
                             title={
                               isStockReceived
                                 ? `Stock Received (${receivedQty}/${displayQty}).`
@@ -628,7 +610,7 @@ export default function PurchaseOrderLines({
                             //       : "Open Allocation Matrix"
                             // }
                           >
-                           {/*  <span
+                            {/*  <span
                               className={`inline-block w-3 h-3 rounded-full transition-all ${
                                 // 🟡 YELLOW / AMBER = Stock Received
                                 isStockReceived
@@ -640,10 +622,7 @@ export default function PurchaseOrderLines({
                                       "bg-rose-500"
                               }`}
                             /> */}
-                            <Icon
-                              icon="tabler:box-seam"
-                              className="w-4 h-4"
-                            />
+                            <Icon icon="tabler:box-seam" className="w-4 h-4" />
                           </button>
                         ) : (
                           <div className="w-4 h-4" />
@@ -700,11 +679,15 @@ export default function PurchaseOrderLines({
           <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
             <tr>
               <td
-                colSpan={10}
+                colSpan={9}
                 className="p-2.5 text-right capitalize tracking-wider text-xs"
               >
                 Totals
               </td>
+              <td className="p-2.5 text-right font-mono text-amber-600 dark:text-amber-400">
+                {totals.discount.toFixed(2)}
+              </td>
+              <td className="p-2.5" />
               <td className="p-2.5 text-right font-mono">
                 {totals.net.toFixed(2)}
               </td>
@@ -910,12 +893,3 @@ export default function PurchaseOrderLines({
     </div>
   );
 }
-/* 
-
-          // const warehouseResponse = await fetch(
-          //   `/api/lookups/default-warehouse?item_id=${item.id}`,
-          // );
-
-          // const warehouseData = await warehouseResponse.json();
-
-          // const defaultWarehouse = warehouseData.data; */

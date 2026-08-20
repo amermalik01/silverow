@@ -185,7 +185,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     );
   }, [currencyConfig.currency_id, masterData]);
 
-  const financials = useMemo(() => {
+  /* const financials = useMemo(() => {
     const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
     const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
     const amountInclVat = amount + vat;
@@ -200,6 +200,36 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     const amountInclVatLCY = Number(amountInclVat) * rate;
 
     return { amount, vat, amountInclVat, amountInclVatLCY };
+  }, [lines, currencyConfig.exchange_rate]); */
+
+  const financials = useMemo(() => {
+    const originalAmount = lines.reduce(
+      (sum, l) => sum + Number(l.original_amount || 0),
+      0,
+    );
+    const totalDiscount = lines.reduce(
+      (sum, l) => sum + Number(l.discount_amount || 0),
+      0,
+    );
+    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
+    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
+    const amountInclVat = amount + vat;
+
+    const rate =
+      Number(currencyConfig.exchange_rate) > 0
+        ? Number(currencyConfig.exchange_rate)
+        : 1;
+
+    const amountInclVatLCY = Number(amountInclVat) * rate;
+
+    return {
+      originalAmount,
+      totalDiscount,
+      amount,
+      vat,
+      amountInclVat,
+      amountInclVatLCY,
+    };
   }, [lines, currencyConfig.exchange_rate]);
 
   const handleSupplierSelect = (supplier: SupplierLookupItem) => {
@@ -821,8 +851,32 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           </div>
 
           <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
+            {financials.totalDiscount > 0 && (
+              <>
+                <div className="flex justify-between pb-1 text-slate-600 dark:text-slate-400">
+                  <span className="font-semibold">Subtotal</span>
+                  <span>
+                    {financials.originalAmount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}{" "}
+                    {selectedCurrency?.code || ""}
+                  </span>
+                </div>
+                <div className="flex justify-between pb-1 text-amber-600 dark:text-amber-400">
+                  <span className="font-semibold">Total Discount</span>
+                  <span>
+                    -
+                    {financials.totalDiscount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}{" "}
+                    {selectedCurrency?.code || ""}
+                  </span>
+                </div>
+              </>
+            )}
+
             <div className="flex justify-between pb-1">
-              <span className="font-semibold">Amount</span>
+              <span className="font-semibold">Net Amount</span>
               <span>
                 {financials.amount.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
