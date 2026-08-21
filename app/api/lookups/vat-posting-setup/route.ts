@@ -24,8 +24,7 @@ export async function GET(req: NextRequest) {
         id,
         vat_business_group_id,
         vat_product_group_id,
-        vat_rate,
-        vat_percent
+        vat_rate
       FROM vat_posting_setup
       WHERE company_id = $1
         AND vat_business_group_id = $2

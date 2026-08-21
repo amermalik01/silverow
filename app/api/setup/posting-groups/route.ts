@@ -4,7 +4,7 @@ import { pool } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function GET() {
+/* export async function GET() {
   const session = await getServerSession(authOptions);
   const client = await pool.connect();
   try {
@@ -31,4 +31,4 @@ export async function POST(req: Request) {
   } finally {
     client.release();
   }
-}
+} */

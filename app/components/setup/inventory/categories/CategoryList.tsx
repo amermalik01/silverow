@@ -127,7 +127,7 @@ export default function CategoryList() {
 
                   <Button
                     onClick={() => handleDelete(row.id)}
-                    className="text-red-600"
+                    variant="cancel"
                   >
                     Delete
                   </Button>

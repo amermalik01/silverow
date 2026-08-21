@@ -122,7 +122,7 @@ export default function FileUploader({ module, recordId }: Props) {
                 </a>
                 <Button
                   onClick={() => handleDelete(f.id)}
-                  className="text-red-500 hover:text-red-700 font-medium text-xs"
+                  variant="cancel"
                 >
                   Delete
                 </Button>

@@ -234,7 +234,7 @@ export default function UOMTab({ itemId }: Props) {
                     <Button
                       type="button"
                       onClick={() => handleDelete(row.id)}
-                      className="text-red-600"
+                      variant="cancel"
                     >
                       Delete
                     </Button>

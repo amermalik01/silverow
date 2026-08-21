@@ -17,7 +17,7 @@ export default function DeleteCompanyButton({ id }: { id: string }) {
   };
 
   return (
-    <Button variant="destructive" size="sm" onClick={onDelete}>
+    <Button variant="cancel" size="sm" onClick={onDelete}>
       Delete
     </Button>
   );

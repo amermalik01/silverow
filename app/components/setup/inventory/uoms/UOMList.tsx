@@ -143,7 +143,7 @@ export default function UOMList() {
 
                   <Button
                     onClick={() => handleDelete(row.id)}
-                    className="text-red-600"
+                    variant="cancel"
                   >
                     Delete
                   </Button>

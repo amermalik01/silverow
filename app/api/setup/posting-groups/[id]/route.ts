@@ -4,7 +4,7 @@ import { pool } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function PUT(
+/* export async function PUT(
   req: Request,
   context: { params: Promise<{ id: string }> },
 ) {
@@ -44,4 +44,4 @@ export async function DELETE(
   } finally {
     client.release();
   }
-}
+} */

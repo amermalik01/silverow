@@ -9,7 +9,7 @@ export default function PostingGroupsPage() {
         <h1 className="text-2xl font-bold mb-4">Posting Groups</h1>
       </div>
 
-      <PostingGroupsList />
+      {/* <PostingGroupsList /> */}
     </div>
   );
 }

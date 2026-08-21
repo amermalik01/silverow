@@ -148,14 +148,12 @@ export default function VatRatesList() {
 
   return (
     <div className="p-6 bg-white dark:bg-slate-900 rounded-lg shadow space-y-4">
-      {/* Dynamic Error Messaging Banner */}
       {errorMessage && (
         <div className="p-3 bg-red-100 text-red-700 border border-red-300 rounded text-xs font-medium">
           {errorMessage}
         </div>
       )}
 
-      {/* Input Action Panel Form */}
       <form onSubmit={handleSave} className="flex flex-wrap gap-3 items-center">
         <input
           placeholder="Tax Option Description (e.g. Standard VAT)"
@@ -178,16 +176,7 @@ export default function VatRatesList() {
           <span className="absolute right-2.5 text-gray-500 text-xs">%</span>
         </div>
 
-        <Button
-          type="submit"
-          disabled={submitting}
-          variant="save"
-          // className={`px-5 py-2 text-white rounded font-medium transition disabled:opacity-50 ${
-          //   editingId
-          //     ? "bg-green-600 hover:bg-green-700"
-          //     : "bg-blue-600 hover:bg-blue-700"
-          // }`}
-        >
+        <Button type="submit" disabled={submitting} variant="save">
           {submitting ? "Processing..." : editingId ? "Update" : "Add Rate"}
         </Button>
 
@@ -203,7 +192,6 @@ export default function VatRatesList() {
         )}
       </form>
 
-      {/* Structured Ledger Layout Representation Data Table */}
       {loading ? (
         <div className="text-center py-4 text-gray-500">
           Retrieving system ledger profiles...
@@ -246,7 +234,7 @@ export default function VatRatesList() {
                       <Button
                         onClick={() => deleteRate(r.id)}
                         disabled={submitting}
-                        className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50"
+                        variant="cancel"
                       >
                         Delete
                       </Button>
@@ -261,172 +249,3 @@ export default function VatRatesList() {
     </div>
   );
 }
-/* "use client";
-
-import { useEffect, useState } from "react";
-
-type VatRate = {
-  id: string;
-  name: string;
-  rate: number;
-};
-
-export default function VatRatesList() {
-  const [rates, setRates] = useState<VatRate[]>([]);
-  const [name, setName] = useState("");
-  const [rate, setRate] = useState("");
-
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchRates = async () => {
-      try {
-        const res = await fetch("/api/setup/vat-rates");
-        const data = await res.json();
-        setRates(data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetchRates();
-  }, []);
-
-  const loadRates = async () => {
-    const res = await fetch("/api/setup/vat-rates");
-    const data = await res.json();
-    setRates(data);
-  };
-
-  const createRate = async () => {
-    await fetch("/api/setup/vat-rates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        rate: Number(rate),
-      }),
-    });
-
-    setName("");
-    setRate("");
-    loadRates();
-  };
-
-  const updateRate = async () => {
-
-    await fetch(`/api/setup/vat-rates/${editingId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        rate: Number(rate),
-      }),
-    });
-
-    setEditingId(null);
-    setName("");
-    setRate("");
-
-    loadRates();
-  };
-
-  const deleteRate = async (id: string) => {
-
-    if (!confirm("Delete VAT rate?")) return;
-
-    await fetch(`/api/setup/vat-rates/${id}`, {
-      method: "DELETE",
-    });
-
-    loadRates();
-  };
-
-  const editRate = (rate: VatRate) => {
-
-    setEditingId(rate.id);
-    setName(rate.name);
-    setRate(String(rate.rate));
-
-  };
-
-  return (
-    <div className=" p-6 rounded shadow dark:shadow-white">
-      <div className="flex gap-2 mb-4">
-
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={(e)=>setName(e.target.value)}
-          className="border p-2 rounded"
-        />
-
-        <input
-          placeholder="Rate %"
-          value={rate}
-          onChange={(e)=>setRate(e.target.value)}
-          className="border p-2 rounded"
-        />
-
-        {editingId ? (
-
-          <Button
-            onClick={updateRate}
-            className="bg-green-600 text-white px-4 py-2 rounded"
-          >
-            Update
-          </Button>
-
-        ) : (
-
-          <Button
-            onClick={createRate}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Add
-          </Button>
-
-        )}
-
-      </div>
-
-      <table className="w-full border text-xs">
-        <thead className="">
-          <tr>
-            <th className="p-2 text-left">Name</th>
-            <th className="p-2 text-left">Rate</th>
-            <th className="p-2 text-center">Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {rates.map((r) => (
-            <tr key={r.id} className="border-t">
-              <td className="p-2">{r.name}</td>
-
-              <td className="p-2">{r.rate}%</td>
-
-              <td className="p-2 text-center space-x-3">
-
-                <Button
-                  onClick={()=>editRate(r)}
-                  className="text-blue-600"
-                >
-                  Edit
-                </Button>
-
-                <Button
-                  onClick={()=>deleteRate(r.id)}
-                  className="text-red-600"
-                >
-                  Delete
-                </Button>
-
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-} */

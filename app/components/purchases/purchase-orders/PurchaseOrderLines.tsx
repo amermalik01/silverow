@@ -59,6 +59,8 @@ export default function PurchaseOrderLines({
 
   const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
 
+  console.log('purchaseOrder === ',purchaseOrder);
+
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
   const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
@@ -265,16 +267,14 @@ export default function PurchaseOrderLines({
             </Button>
           )}
 
-          
-            <Button
-              type="button"
-              onClick={addLine}
-              variant="add_line"
-              disabled={isReadonly}
-            >
-              Add Line
-            </Button>
-          
+          <Button
+            type="button"
+            onClick={addLine}
+            variant="add_line"
+            disabled={isReadonly}
+          >
+            Add Line
+          </Button>
         </div>
       </div>
 
@@ -622,8 +622,8 @@ export default function PurchaseOrderLines({
 
           // 2. Resolve VAT Business Posting Group from Supplier / Purchase Order
           const vatBusinessGroupId =
-            purchaseOrder.purchase_posting_group_id ||
             purchaseOrder.vat_business_posting_group_id ||
+            purchaseOrder.purchase_posting_group_id ||
             "";
 
           // 3. Resolve Product Posting Group from Item lookup (using vat_product_group_id from ItemLookupRecord)

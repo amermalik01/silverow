@@ -110,7 +110,7 @@ export default function NotesWidget({ module, recordId }: Props) {
               </div>
               <Button
                 onClick={() => deleteNote(n.id)}
-                className=" text-white rounded hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                variant="cancel"
               >
                 Delete
               </Button>

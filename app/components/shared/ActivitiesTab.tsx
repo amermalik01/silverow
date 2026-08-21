@@ -272,7 +272,7 @@ export default function ActivitiesTab({
                   </Button>
                   <Button
                     onClick={() => item.id && removeActivity(item.id)}
-                    className="text-xs text-gray-300 hover:text-red-500 font-medium opacity-0 group-hover:opacity-100 transition"
+                    variant="cancel"
                   >
                     Delete
                   </Button>

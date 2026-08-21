@@ -186,7 +186,7 @@ export default function BankAccountsTab() {
                         <Button
                           type="button"
                           onClick={() => bank.id && handleDelete(bank.id)}
-                          className="text-red-600 hover:underline text-xs font-medium"
+                          variant="cancel"
                         >
                           Delete
                         </Button>

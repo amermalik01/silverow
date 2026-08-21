@@ -163,7 +163,7 @@ export default function SetupCrud({ title, api, fields, columns }: Props) {
               <td className="p-2 text-center">
                 <Button
                   onClick={() => remove(String(r.id))}
-                  className="text-red-600"
+                  variant="cancel"
                 >
                   Delete
                 </Button>

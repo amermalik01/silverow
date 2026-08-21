@@ -293,7 +293,8 @@ export default function SetupDataGrid({
       <Button
         onClick={createOrUpdate}
         disabled={submitting || loading}
-        variant="add_line"
+        // variant="add_line"
+        variant="save"
         // className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition disabled:opacity-50"
       >
         {submitting ? "Processing..." : "Add Record"}

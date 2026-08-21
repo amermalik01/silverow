@@ -10,7 +10,9 @@ type PostingGroup = {
 };
 
 export default function PostingGroupsList() {
-  const [groups, setGroups] = useState<PostingGroup[]>([]);
+
+  return (<></>);
+  /* const [groups, setGroups] = useState<PostingGroup[]>([]);
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -69,7 +71,7 @@ export default function PostingGroupsList() {
 
   return (
     <div className=" rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm container mx-auto p-4 space-y-4">
-      {/* Form */}
+
       <div className="flex gap-2">
         <input
           value={name}
@@ -86,7 +88,7 @@ export default function PostingGroupsList() {
         </Button>
       </div>
 
-      {/* Table */}
+
       <table className="w-full border text-xs">
         <thead className="">
           <tr>
@@ -106,7 +108,7 @@ export default function PostingGroupsList() {
                   Edit
                 </Button>
                 <Button
-                  className="text-red-600"
+                  variant="cancel"
                   onClick={() => deleteGroup(g.id)}
                 >
                   Delete
@@ -117,5 +119,5 @@ export default function PostingGroupsList() {
         </tbody>
       </table>
     </div>
-  );
-}
+  );*/
+} 

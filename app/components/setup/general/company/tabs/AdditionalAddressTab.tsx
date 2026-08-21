@@ -170,7 +170,7 @@ export default function AdditionalAddressTab() {
                         <Button
                           type="button"
                           onClick={() => addr.id && handleDelete(addr.id)}
-                          className="text-red-600 hover:text-red-800 font-medium"
+                          variant="cancel"
                         >
                           Delete
                         </Button>

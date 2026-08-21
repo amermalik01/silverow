@@ -311,7 +311,7 @@ export default function ItemList() {
                       <span className="text-slate-300 dark:text-slate-700">|</span>
                       <Button
                         onClick={() => handleDelete(row.id)}
-                        className="text-red-600 dark:text-red-400 hover:underline font-medium"
+                        variant="cancel"
                       >
                         Delete
                       </Button>

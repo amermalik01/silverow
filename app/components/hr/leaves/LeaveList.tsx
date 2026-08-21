@@ -287,7 +287,7 @@ export default function LeaveList() {
 
                 <Button
                   onClick={() => remove(row.id!)}
-                  className="text-red-600"
+                  variant="cancel"
                 >
                   Delete
                 </Button>

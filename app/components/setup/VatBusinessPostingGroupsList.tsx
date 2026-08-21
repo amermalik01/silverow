@@ -151,11 +151,7 @@ export default function VatBusinessPostingGroupsList() {
           {submitting ? "Saving..." : editingId ? "Update" : "Add Group"}
         </Button>
         {editingId && (
-          <Button
-            type="button"
-            onClick={clearForm}
-            variant="cancel"
-          >
+          <Button type="button" onClick={clearForm} variant="cancel">
             Cancel
           </Button>
         )}
@@ -189,15 +185,13 @@ export default function VatBusinessPostingGroupsList() {
                   >
                     <td className="p-3 font-medium">{g.name}</td>
                     <td className="p-3 text-center space-x-4">
-                      <Button
-                        onClick={() => startEdit(g)}
-                        variant="edit"
-                      >
+                      <Button onClick={() => startEdit(g)} variant="edit">
                         Edit
                       </Button>
                       <Button
                         onClick={() => deleteGroup(g.id)}
-                        className="text-red-600 hover:text-red-800 font-medium"
+                        // className="text-red-600 hover:text-red-800 font-medium"
+                        variant="cancel"
                       >
                         Delete
                       </Button>
@@ -212,129 +206,3 @@ export default function VatBusinessPostingGroupsList() {
     </div>
   );
 }
-
-/* "use client";
-
-import { useEffect, useState } from "react";
-
-type Group = {
-  id: string;
-  name: string;
-};
-
-export default function VatBusinessPostingGroupsList() {
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [name, setName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  // Load groups properly inside useEffect
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        const res = await fetch("/api/setup/vat-business-posting-groups");
-        const data = await res.json();
-        setGroups(data);
-      } catch (err) {
-        console.error("Failed to load posting groups", err);
-      }
-    };
-
-    fetchGroups();
-  }, []);
-
-  const createOrUpdate = async () => {
-    if (!name.trim()) return;
-
-    if (editingId) {
-      await fetch(`/api/setup/vat-business-posting-groups/${editingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      setEditingId(null);
-    } else {
-      await fetch("/api/setup/vat-business-posting-groups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-    }
-
-    setName("");
-
-    // reload groups after create/update
-    const res = await fetch("/api/setup/vat-business-posting-groups");
-    const data = await res.json();
-    setGroups(data);
-  };
-
-  const editGroup = (g: Group) => {
-    setEditingId(g.id);
-    setName(g.name);
-  };
-
-  const deleteGroup = async (id: string) => {
-    if (!confirm("Delete group?")) return;
-
-    await fetch(`/api/setup/vat-business-posting-groups/${id}`, {
-      method: "DELETE",
-    });
-
-    const res = await fetch("/api/setup/vat-business-posting-groups");
-    const data = await res.json();
-    setGroups(data);
-  };
-
-  return (
-    <div className="p-6 rounded shadow dark:shadow-white space-y-4">
-      <div className="flex gap-2">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Group Name"
-          className="border p-2 rounded flex-1"
-        />
-
-        <Button
-          onClick={createOrUpdate}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          {editingId ? "Update" : "Add"}
-        </Button>
-      </div>
-
-      <table className="w-full border text-xs">
-        <thead>
-          <tr>
-            <th className="p-2 text-left">Name</th>
-            <th className="p-2 text-center">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {groups.map((g) => (
-            <tr key={g.id} className="border-t">
-              <td className="p-2">{g.name}</td>
-
-              <td className="p-2 text-center space-x-3">
-                <Button
-                  className="text-blue-600"
-                  onClick={() => editGroup(g)}
-                >
-                  Edit
-                </Button>
-
-                <Button
-                  className="text-red-600"
-                  onClick={() => deleteGroup(g.id)}
-                >
-                  Delete
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-} */

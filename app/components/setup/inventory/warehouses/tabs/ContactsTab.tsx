@@ -153,7 +153,7 @@ export default function ContactsTab({
                     {!isReadOnly && (
                       <Button
                         onClick={() => handleDelete(c.id)}
-                        className="text-rose-600 hover:underline"
+                        variant="cancel"
                       >
                         Delete
                       </Button>
@@ -262,7 +262,7 @@ export default function ContactsTab({
 
               <Button
                 onClick={() => handleDelete(c.id)}
-                className="text-red-600"
+                variant="cancel"
               >
                 🗑 Delete
               </Button>

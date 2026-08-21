@@ -202,7 +202,7 @@ export default function StorageTypes() {
                   {/* Prevent deleting global if needed */}
                   <Button
                     onClick={() => remove(item.id)}
-                    className="text-red-600 text-xs"
+                    variant="cancel"
                   >
                     Delete
                   </Button>

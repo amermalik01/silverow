@@ -110,7 +110,7 @@ export default function DepartmentList() {
               <td className="p-2 text-center">
                 <Button
                   onClick={() => remove(row.id!)}
-                  className="text-red-600"
+                  variant="cancel"
                 >
                   Delete
                 </Button>

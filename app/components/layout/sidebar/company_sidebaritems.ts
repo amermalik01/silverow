@@ -426,31 +426,21 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             id: "Finance",
             name: "Finance",
             children: [
-              {
-                id: "VAT Rates",
-                name: "VAT Rates",
-                url: `/${slug}/setup/finance/vat-rates`,
-              },
               // {
-              //   id: uniqueId(),
-              //   name: "Posting Groups",
-              //   url: `/${slug}/setup/finance/posting-groups`,
+              //   id: "VAT Rates",
+              //   name: "VAT Rates",
+              //   url: `/${slug}/setup/finance/vat-rates`,
               // },
               // {
-              //   id: uniqueId(),
-              //   name: "VAT Posting Setup",
-              //   url: `/${slug}/setup/finance/posting-groups`,
+              //   id: "VAT Business Posting Groups",
+              //   name: "VAT Business Posting Groups",
+              //   url: `/${slug}/setup/finance/vat-business-posting-groups`,
               // },
-              {
-                id: "VAT Business Posting Groups",
-                name: "VAT Business Posting Groups",
-                url: `/${slug}/setup/finance/vat-business-posting-groups`,
-              },
-              {
-                id: "VAT Product Posting Groups",
-                name: "VAT Product Posting Groups",
-                url: `/${slug}/setup/finance/vat-product-posting-groups`,
-              },
+              // {
+              //   id: "VAT Product Posting Groups",
+              //   name: "VAT Product Posting Groups",
+              //   url: `/${slug}/setup/finance/vat-product-posting-groups`,
+              // },
               {
                 id: "VAT Posting Setup",
                 name: "VAT Posting Setup",
@@ -472,15 +462,10 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 url: `/${slug}/setup/finance/posting-date-range`,
               },
               // {
-              //   id: uniqueId(),
-              //   name: "Unit of Measure for G/L",
+              //   id: "G/L Account(s) Setup for Opening Balances",
+              //   name: "G/L Account(s) Setup for Opening Balances",
               //   url: `/${slug}/setup/finance/posting-groups`,
               // },
-              {
-                id: "G/L Account(s) Setup for Opening Balances",
-                name: "G/L Account(s) Setup for Opening Balances",
-                url: `/${slug}/setup/finance/posting-groups`,
-              },
               // {
               //   id: "G/L Account for Goods Received Not Invoiced",
               //   name: "G/L Account for Goods Received Not Invoiced",
