@@ -184,7 +184,7 @@ export default function SalesReturnLines({
 
       <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse min-w-[1400px]">
+          <table className="w-full text-left text-xs border-collapse table-fixed min-w-[1300px]">
             <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 capitalize font-semibold text-slate-600 dark:text-slate-400">
               <tr>
                 <th className="p-2 w-28">Type</th>

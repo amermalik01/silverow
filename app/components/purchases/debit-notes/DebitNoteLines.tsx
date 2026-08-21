@@ -256,20 +256,36 @@ export default function DebitNoteLines({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Debit Note Lines</h3>
 
-        {!isReadonly && (
-          <Button
-            type="button"
-            onClick={addLine}
-            variant="add_line"
-            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            Add Line
-          </Button>
-        )}
+        <Button
+          type="button"
+          onClick={addLine}
+          variant="add_line"
+          disabled={isReadonly}
+          // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+        >
+          Add Line
+        </Button>
       </div>
 
       <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
-        <table className="w-full text-left text-xs border-collapse min-w-[1300px]">
+        <table className="w-full text-left text-xs border-collapse table-fixed min-w-[1300px]">
+          <colgroup>
+            <col className="w-[100px]" />
+            <col className="w-[120px]" />
+            <col className="w-[180px]" />
+            <col className="w-[70px]" />
+            <col className="w-[60px]" />
+            <col className="w-[150px]" />
+            <col className="w-[90px]" />
+            <col className="w-[80px]" />
+            <col className="w-[80px]" />
+            <col className="w-[95px]" />
+            <col className="w-[90px]" />
+            <col className="w-[95px]" />
+            <col className="w-[100px]" />
+            <col className="w-[90px]" />
+            {/* {!isReadonly && <col className="w-[90px]" />} */}
+          </colgroup>
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
               <th className="p-2 w-[100px]">Type</th>
@@ -285,9 +301,9 @@ export default function DebitNoteLines({
               <th className="p-2 text-right w-[90px]">VAT %</th>
               <th className="p-2 text-right w-[95px]">Net</th>
               <th className="p-2 text-right w-[100px]">Gross</th>
-              {!isReadonly && (
-                <th className="p-2 text-center w-[90px]">Action</th>
-              )}
+              {/* {!isReadonly && ( */}
+              <th className="p-2 text-center w-[90px]">Action</th>
+              {/* )} */}
             </tr>
           </thead>
 
@@ -419,24 +435,26 @@ export default function DebitNoteLines({
                           <span className="truncate text-left">
                             {line.warehouse_code || "Select Warehouse"}
                             {line.warehouse_name && ` - ${line.warehouse_name}`}
+                            {line.reserved_quantity &&
+                              ` - (${Number(line.reserved_quantity)})`}
                           </span>
 
-                          <div className="flex items-center gap-3 shrink-0">
-                            {/* ✅ RESERVED STOCK INDICATOR */}
+                          {/* <div className="flex items-center gap-3 shrink-0">
+                            // ✅ RESERVED STOCK INDICATOR
                             {line.reserved_quantity && (
                               <span className="text-blue-600 whitespace-nowrap">
                                 Reserved: {Number(line.reserved_quantity)}
                               </span>
                             )}
 
-                            {/* ❗ STOCK WARNING */}
+                            // ❗ STOCK WARNING
                             {displayAvailableStock !== undefined &&
                               displayQty > displayAvailableStock && (
                                 <span className="text-red-600 font-medium whitespace-nowrap">
                                   Insufficient stock
                                 </span>
                               )}
-                          </div>
+                          </div> */}
                         </button>
                       </div>
                     )}
@@ -488,7 +506,7 @@ export default function DebitNoteLines({
                     />
                   </td>
 
-                  <td className="p-2 text-right font-medium text-amber-600 dark:text-amber-400">
+                  <td className="p-2 text-right font-medium ">
                     {displayDiscountAmount.toFixed(2)}
                   </td>
 
@@ -512,7 +530,7 @@ export default function DebitNoteLines({
                     {Number(line.gross_amount || 0).toFixed(2)}
                   </td>
 
-                  {!isReadonly && (
+                  {/* {!isReadonly && ( */}
                     <td className="p-2 text-center">
                       <div className="flex items-center justify-center gap-2">
                         {line.line_type === "ITEM" ? (
@@ -523,7 +541,7 @@ export default function DebitNoteLines({
                                 ? "De-Allocated"
                                 : "Alloc Batches"
                             }
-                            disabled={!line.item_id || !line.warehouse_id}
+                            disabled={!line.item_id || !line.warehouse_id || isReadonly}
                             onClick={() => {
                               setActiveDeAllocRowKey(String(index));
                               setIsDeAllocModalOpen(true);
@@ -551,19 +569,21 @@ export default function DebitNoteLines({
                         <button
                           type="button"
                           onClick={() => removeLine(index)}
+                          disabled={isReadonly}
                           className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                          
                         >
                           <Icon icon="lucide:x" className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
-                  )}
+                  {/* )} */}
                 </tr>
               );
             })}
           </tbody>
 
-          <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
+          {/* <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
             <tr>
               <td
                 colSpan={9}
@@ -583,7 +603,7 @@ export default function DebitNoteLines({
               </td>
               {!isReadonly && <td />}
             </tr>
-          </tfoot>
+          </tfoot> */}
         </table>
       </div>
 

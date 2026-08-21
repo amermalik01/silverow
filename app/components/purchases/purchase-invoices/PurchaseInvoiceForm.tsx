@@ -231,17 +231,16 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
         />
       </div>
 
-      {/* Read-Only Purchase Lines */}
-      <PurchaseOrderLines
-        lines={lines}
-        setLines={noop}
-        isReadonly={true}
-        purchaseOrder={invoice}
-        refreshLines={asyncNoop}
-      />
+      <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <PurchaseOrderLines
+          lines={lines}
+          setLines={noop}
+          isReadonly={true}
+          purchaseOrder={invoice}
+          refreshLines={asyncNoop}
+        />
 
-      <div className="  bg-white  border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 pl-4 pr-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 px-2">
           <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
             <div>
               <textarea
@@ -326,7 +325,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-4 bg-slate-50 dark:bg-slate-900/60 pl-4 pr-4 pb-4 rounded-lg">
+        <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/60 rounded-lg">
           {/* Legend Indicators */}
           <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
             <span className="flex items-center gap-1.5">

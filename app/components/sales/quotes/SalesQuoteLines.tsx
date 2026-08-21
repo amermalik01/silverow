@@ -205,7 +205,7 @@ export default function SalesQuoteLines({
       </div>
 
       <div className="border rounded overflow-auto bg-white dark:bg-slate-900">
-        <table className="w-full text-xs min-w-[1100px]">
+        <table className="w-full text-xs min-w-[1300px] border-collapse table-fixed">
           <thead className="bg-gray-50 dark:bg-slate-800 text-black dark:text-white text-left text-xs capitalize font-semibold">
             <tr>
               <th className="p-2 w-28">Type</th>

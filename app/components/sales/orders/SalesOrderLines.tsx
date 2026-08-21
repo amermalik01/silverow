@@ -1,7 +1,5 @@
 // /app/components/sales/orders/SalesOrderLines.tsx
 
-// app/components/sales/orders/SalesOrderLines.tsx
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -215,7 +213,7 @@ export default function SalesOrderLines({
   return (
     <div className="space-y-2 w-full text-slate-900 dark:text-slate-100">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 px-4">
           Sales Order Lines
         </h3>
 
@@ -234,7 +232,7 @@ export default function SalesOrderLines({
       </div>
 
       <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
-        <table className="w-full text-left text-xs border-collapse min-w-[1400px] p-2">
+        <table className="w-full text-left text-xs border-collapse table-fixed min-w-[1300px] p-2">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
               <th className="p-2 w-[100px]">Type</th>
@@ -428,7 +426,7 @@ export default function SalesOrderLines({
                     />
                   </td>
 
-                  <td className="p-2 text-right font-medium text-amber-600 dark:text-amber-400">
+                  <td className="p-2 text-right font-medium ">
                     {displayDiscountAmount.toFixed(2)}
                   </td>
 
@@ -482,7 +480,7 @@ export default function SalesOrderLines({
             })}
           </tbody>
 
-          <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
+          {/* <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
             <tr>
               <td
                 colSpan={9}
@@ -502,7 +500,7 @@ export default function SalesOrderLines({
               </td>
               {!isReadonly && <td />}
             </tr>
-          </tfoot>
+          </tfoot> */}
         </table>
       </div>
 

@@ -57,7 +57,6 @@ export default function PurchaseOrderLines({
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
 
-  // ... inside PurchaseOrderLines component:
   const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
 
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
@@ -93,12 +92,9 @@ export default function PurchaseOrderLines({
     ]);
   };
 
-  // Fetch available VAT options
-
   useEffect(() => {
     async function loadVatOptions() {
       try {
-        // Pass header.vat_business_posting_group_id (or vendor's group ID) if available
         const busGroupParam = purchaseOrder?.vat_business_posting_group_id
           ? `?vat_business_group_id=${purchaseOrder.vat_business_posting_group_id}`
           : "";
@@ -245,26 +241,6 @@ export default function PurchaseOrderLines({
     setActiveAllocationRowKey(null);
   };
 
-  const totals = useMemo(() => {
-    return lines.reduce(
-      (acc, line) => {
-        acc.original += Number(line.original_amount || 0);
-        acc.discount += Number(line.discount_amount || 0);
-        acc.net += Number(line.net_amount || 0);
-        acc.vat += Number(line.vat_amount || 0);
-        acc.gross += Number(line.gross_amount || 0);
-        return acc;
-      },
-      {
-        original: 0,
-        discount: 0,
-        net: 0,
-        vat: 0,
-        gross: 0,
-      },
-    );
-  }, [lines]);
-
   const handleDiscountTypeChange = (index: number, value: string) => {
     updateLine(index, "discount_type", value as "PERCENT" | "FIXED");
   };
@@ -272,42 +248,55 @@ export default function PurchaseOrderLines({
   return (
     <div className="space-y-2 w-full text-slate-900 dark:text-slate-100">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 px-4">
           Purchase Order Lines
         </h3>
 
         <div className="flex items-center gap-2">
-          {!isReadonly && purchaseOrder.id && (
+          {purchaseOrder.id && (
             <Button
               type="button"
               onClick={() => setIsMigrationModalOpen(true)}
-              // className="bg-emerald-600 hover:bg-emerald-700 text-white rounded"
               variant="save"
+              disabled={isReadonly}
             >
               <span>⇧</span>
               Import Items
             </Button>
           )}
 
-          {!isReadonly && (
+          
             <Button
               type="button"
               onClick={addLine}
-              // className="bg-blue-600 hover:bg-blue-700 text-white rounded"
               variant="add_line"
+              disabled={isReadonly}
             >
               Add Line
             </Button>
-          )}
-
-          {/* {!isReadonly && purchaseOrder.id && (
-            <MigrationUploader purchaseOrder={purchaseOrder} />
-          )} */}
+          
         </div>
       </div>
 
       <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm ">
-        <table className="w-full text-left text-xs border-collapse min-w-[1300px] p-2">
+        <table className="w-full table-fixed text-left text-xs border-collapse min-w-[1300px] p-2">
+          <colgroup>
+            <col className="w-[110px]" />
+            <col className="w-[120px]" />
+            <col className="w-[180px]" />
+            <col className="w-[70px]" />
+            <col className="w-[60px]" />
+            <col className="w-[150px]" />
+            <col className="w-[90px]" />
+            <col className="w-[80px]" />
+            <col className="w-[80px]" />
+            <col className="w-[95px]" />
+            <col className="w-[90px]" />
+            <col className="w-[95px]" />
+            <col className="w-[100px]" />
+            <col className="w-[90px]" />
+            {/* {!isReadonly && <col className="w-[90px]" />} */}
+          </colgroup>
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
               <th className="p-2 w-[110px]">Type</th>
@@ -323,9 +312,9 @@ export default function PurchaseOrderLines({
               <th className="p-2 text-right w-[90px]">VAT %</th>
               <th className="p-2 text-right w-[95px]">Net</th>
               <th className="p-2 text-right w-[100px]">Gross</th>
-              {!isReadonly && (
-                <th className="p-2 text-center w-[90px]">Action</th>
-              )}
+              {/* {!isReadonly && ( */}
+              <th className="p-2 text-center w-[90px]">Action</th>
+              {/* )} */}
             </tr>
           </thead>
 
@@ -345,7 +334,6 @@ export default function PurchaseOrderLines({
               const isFullyReceived =
                 receivedQty >= displayQty && displayQty > 0;
 
-              // Line locking rule: if global isReadonly OR line has received stock
               const isLineDisabled = isReadonly || isStockReceived;
 
               const displayUnitCost = Number(line.unit_cost || 0);
@@ -367,7 +355,6 @@ export default function PurchaseOrderLines({
                       ? "bg-slate-50/70 dark:bg-slate-800/30"
                       : "bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
                   }`}
-                  // className="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
                 >
                   <td className="p-2">
                     <select
@@ -438,19 +425,6 @@ export default function PurchaseOrderLines({
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
                     />
-
-                    {/* RECEIVED STOCK INDICATOR BADGE */}
-                    {/* {isStockReceived && (
-                      <div
-                        className={`text-[10px] font-medium px-1.5 py-0.5 rounded text-center whitespace-nowrap ${
-                          isFullyReceived
-                            ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800"
-                            : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800"
-                        }`}
-                      >
-                        Rcvd: {receivedQty} / {displayQty}
-                      </div>
-                    )} */}
                   </td>
 
                   <td className="p-2">
@@ -471,24 +445,9 @@ export default function PurchaseOrderLines({
                           <span className="truncate text-left">
                             {line.warehouse_code || "Select Warehouse"}
                             {line.warehouse_name && ` - ${line.warehouse_name}`}
+                            {line.reserved_quantity &&
+                              ` - (${Number(line.reserved_quantity)})`}
                           </span>
-
-                          <div className="flex items-center gap-3 shrink-0">
-                            {/* ✅ RESERVED STOCK INDICATOR */}
-                            {line.reserved_quantity && (
-                              <span className="text-blue-600 whitespace-nowrap">
-                                Reserved: {Number(line.reserved_quantity)}
-                              </span>
-                            )}
-
-                            {/* ❗ STOCK WARNING */}
-                            {displayAvailableStock !== undefined &&
-                              displayQty > displayAvailableStock && (
-                                <span className="text-red-600 font-medium whitespace-nowrap">
-                                  Insufficient stock
-                                </span>
-                              )}
-                          </div>
                         </button>
                       </div>
                     )}
@@ -540,7 +499,7 @@ export default function PurchaseOrderLines({
                     />
                   </td>
 
-                  <td className="p-2 text-right font-medium text-amber-600 dark:text-amber-400">
+                  <td className="p-2 text-right font-medium">
                     {displayDiscountAmount.toFixed(2)}
                   </td>
 
@@ -576,129 +535,63 @@ export default function PurchaseOrderLines({
                     {Number(line.gross_amount || 0).toFixed(2)}
                   </td>
 
-                  {!isReadonly && (
-                    <td className="p-2 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {line.line_type === "ITEM" ? (
-                          <button
-                            type="button"
-                            disabled={isAllocationDisabled}
-                            onClick={() => {
-                              setActiveAllocationRowKey(index.toString());
-                              setIsAllocationModalOpen(true);
-                            }}
-                            className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                              // 🟡 YELLOW / AMBER = Stock Received
-                              isStockReceived
-                                ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
-                                : // 🟢 GREEN = Allocated Stock (Fully allocated)
-                                  line.is_allocated
-                                  ? "text-emerald-500"
-                                  : // 🔴 RED = Partially Allocated (Not fully allocated yet)
-                                    "text-rose-500"
-                            }`}
-                            title={
-                              isStockReceived
-                                ? `Stock Received (${receivedQty}/${displayQty}).`
-                                : line.is_allocated
-                                  ? "Allocated Stock"
-                                  : "Partially Allocated"
-                            }
-                            // title={
-                            //   isStockReceived
-                            //     ? `Stock Received (${receivedQty}/${displayQty}). Allocation locked.`
-                            //     : isAllocationDisabled
-                            //       ? "Requires item and warehouse assignment first"
-                            //       : "Open Allocation Matrix"
-                            // }
-                          >
-                            {/*  <span
-                              className={`inline-block w-3 h-3 rounded-full transition-all ${
-                                // 🟡 YELLOW / AMBER = Stock Received
-                                isStockReceived
-                                  ? "bg-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
-                                  : // 🟢 GREEN = Allocated Stock (Fully allocated)
-                                    line.is_allocated
-                                    ? "bg-emerald-500"
-                                    : // 🔴 RED = Partially Allocated (Not fully allocated yet)
-                                      "bg-rose-500"
-                              }`}
-                            /> */}
-                            <Icon icon="tabler:box-seam" className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <div className="w-4 h-4" />
-                        )}
-
-                        {/* <button
-                            type="button"
-                            disabled={isAllocationDisabled}
-                            onClick={() => {
-                              setActiveAllocationRowKey(index.toString());
-                              setIsAllocationModalOpen(true);
-                            }}
-                            className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={
-                              isAllocationDisabled
-                                ? "Requires item and warehouse assignment first"
-                                : "Open Allocation Matrix"
-                            }
-                          >
-                            <span
-                              className={`inline-block w-2.5 h-2.5 rounded-full ${
+                  <td className="p-2 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      {!isReadonly && line.line_type === "ITEM" ? (
+                        <button
+                          type="button"
+                          disabled={isAllocationDisabled}
+                          onClick={() => {
+                            setActiveAllocationRowKey(index.toString());
+                            setIsAllocationModalOpen(true);
+                          }}
+                          className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                            // 🟡 YELLOW / AMBER = Stock Received
+                            isStockReceived
+                              ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
+                              : // 🟢 GREEN = Allocated Stock (Fully allocated)
                                 line.is_allocated
-                                  ? "bg-emerald-500"
-                                  : "bg-rose-500"
-                              }`}
-                            />
-                          </button> */}
-                        {/* REMOVE BUTTON: Hidden or Disabled once stock is received */}
-                        {!isStockReceived ? (
-                          <button
-                            type="button"
-                            onClick={() => removeLine(index)}
-                            // className="text-red-600 hover:text-red-800 font-medium text-xs"
-                            className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
-                          >
-                            <Icon icon="lucide:x" className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <span
-                            className="text-[10px] text-slate-400 italic cursor-help"
-                            title="Line locked because stock has been received against it."
-                          >
-                            -{/* Locked */}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  )}
+                                ? "text-emerald-500"
+                                : // 🔴 RED = Partially Allocated (Not fully allocated yet)
+                                  "text-rose-500"
+                          }`}
+                          title={
+                            isStockReceived
+                              ? `Stock Received (${receivedQty}/${displayQty}).`
+                              : line.is_allocated
+                                ? "Allocated Stock"
+                                : "Partially Allocated"
+                          }
+                        >
+                          <Icon icon="tabler:box-seam" className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <div className="w-4 h-4" />
+                      )}
+
+                      {!isStockReceived ? (
+                        <button
+                          type="button"
+                          disabled={isReadonly}
+                          onClick={() => removeLine(index)}
+                          className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                        >
+                          <Icon icon="lucide:x" className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <span
+                          className="text-[10px] text-slate-400 italic cursor-help"
+                          title="Line locked because stock has been received against it."
+                        >
+                          -
+                        </span>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
-
-          <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
-            <tr>
-              <td
-                colSpan={9}
-                className="p-2.5 text-right capitalize tracking-wider text-xs"
-              >
-                Totals
-              </td>
-              <td className="p-2.5 text-right font-mono text-amber-600 dark:text-amber-400">
-                {totals.discount.toFixed(2)}
-              </td>
-              <td className="p-2.5" />
-              <td className="p-2.5 text-right font-mono">
-                {totals.net.toFixed(2)}
-              </td>
-              <td className="p-2.5 text-right font-mono">
-                {totals.gross.toFixed(2)}
-              </td>
-              {!isReadonly && <td />}
-            </tr>
-          </tfoot>
         </table>
       </div>
 
@@ -895,3 +788,151 @@ export default function PurchaseOrderLines({
     </div>
   );
 }
+
+/* 
+  const totals = useMemo(() => {
+    return lines.reduce(
+      (acc, line) => {
+        acc.original += Number(line.original_amount || 0);
+        acc.discount += Number(line.discount_amount || 0);
+        acc.net += Number(line.net_amount || 0);
+        acc.vat += Number(line.vat_amount || 0);
+        acc.gross += Number(line.gross_amount || 0);
+        return acc;
+      },
+      {
+        original: 0,
+        discount: 0,
+        net: 0,
+        vat: 0,
+        gross: 0,
+      },
+    );
+  }, [lines]);
+*/
+{
+  /* RECEIVED STOCK INDICATOR BADGE */
+}
+{
+  /* {isStockReceived && (
+  <div
+    className={`text-[10px] font-medium px-1.5 py-0.5 rounded text-center whitespace-nowrap ${
+      isFullyReceived
+        ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800"
+        : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800"
+    }`}
+  >
+    Rcvd: {receivedQty} / {displayQty}
+  </div>
+)} */
+}
+{
+  /* 
+<tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
+  <tr>
+    <td
+      colSpan={9}
+      className="p-2.5 text-right capitalize tracking-wider text-xs"
+    >
+      Totals
+    </td>
+    <td className="p-2.5 text-right font-mono text-amber-600 dark:text-amber-400">
+      {totals.discount.toFixed(2)}
+    </td>
+    <td className="p-2.5" />
+    <td className="p-2.5 text-right font-mono">
+      {totals.net.toFixed(2)}
+    </td>
+    <td className="p-2.5 text-right font-mono">
+      {totals.gross.toFixed(2)}
+    </td>
+    {!isReadonly && <td />}
+  </tr>
+</tfoot> 
+*/
+}
+
+{
+  /* <div className="flex items-center gap-3 shrink-0">
+        // ✅ RESERVED STOCK INDICATOR
+        {line.reserved_quantity && (
+          <span className="text-blue-600 whitespace-nowrap">
+            Reserved: {Number(line.reserved_quantity)}
+          </span>
+        )}
+
+        // ❗ STOCK WARNING 
+        {displayAvailableStock !== undefined &&
+          displayQty > displayAvailableStock && (
+            <span className="text-red-600 font-medium whitespace-nowrap">
+              Insufficient stock
+            </span>
+          )}
+      </div> */
+}
+/* 
+{!isReadonly && (
+  <td className="p-2 text-center">
+    <div className="flex items-center justify-center gap-2">
+      {line.line_type === "ITEM" ? (
+        <button
+          type="button"
+          disabled={isAllocationDisabled}
+          onClick={() => {
+            setActiveAllocationRowKey(index.toString());
+            setIsAllocationModalOpen(true);
+          }}
+          className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+            // 🟡 YELLOW / AMBER = Stock Received
+            isStockReceived
+              ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
+              : // 🟢 GREEN = Allocated Stock (Fully allocated)
+                line.is_allocated
+                ? "text-emerald-500"
+                : // 🔴 RED = Partially Allocated (Not fully allocated yet)
+                  "text-rose-500"
+          }`}
+          title={
+            isStockReceived
+              ? `Stock Received (${receivedQty}/${displayQty}).`
+              : line.is_allocated
+                ? "Allocated Stock"
+                : "Partially Allocated"
+          }
+          // title={
+          //   isStockReceived
+          //     ? `Stock Received (${receivedQty}/${displayQty}). Allocation locked.`
+          //     : isAllocationDisabled
+          //       ? "Requires item and warehouse assignment first"
+          //       : "Open Allocation Matrix"
+          // }
+        >
+
+          <Icon icon="tabler:box-seam" className="w-4 h-4" />
+        </button>
+      ) : (
+        <div className="w-4 h-4" />
+      )}
+
+
+      {!isStockReceived ? (
+        <button
+          type="button"
+          onClick={() => removeLine(index)}
+          // className="text-red-600 hover:text-red-800 font-medium text-xs"
+          className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+        >
+          <Icon icon="lucide:x" className="w-4 h-4" />
+        </button>
+      ) : (
+        <span
+          className="text-[10px] text-slate-400 italic cursor-help"
+          title="Line locked because stock has been received against it."
+        >
+          -
+        </span>
+      )}
+    </div>
+  </td>
+)}
+*/
