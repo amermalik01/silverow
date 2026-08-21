@@ -72,7 +72,8 @@ export default function CompanyCurrencies() {
                 <td className="p-3 flex gap-2">
                   <Button
                     onClick={() => setSelectedCurrency(c)}
-                    className="text-indigo-600 text-xs"
+                    // className="text-indigo-600 text-xs"
+                    variant="cancel"
                   >
                     History
                   </Button>
@@ -89,7 +90,8 @@ export default function CompanyCurrencies() {
                         );
                         fetchData();
                       }}
-                      className="text-blue-600 text-xs"
+                      // className="text-blue-600 text-xs"
+                      variant="save"
                     >
                       Set Base
                     </Button>

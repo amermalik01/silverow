@@ -327,7 +327,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
         <div className="flex gap-2">
           <Button
             type="button"
-            className="px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 border-emerald-600 text-emerald-600 bg-white dark:bg-slate-900"
+            variant="cancel"
           >
             General
           </Button>
@@ -936,13 +936,15 @@ export default function SupportTicketFormView({ slug, id }: Props) {
         <div className="flex gap-2">
           <Button
             type="button"
-            className="border px-4 py-1.5 rounded text-xs bg-white text-slate-700 shadow-sm font-medium hover:bg-slate-50"
+            variant="save"
+            // className="border px-4 py-1.5 rounded text-xs bg-white text-slate-700 shadow-sm font-medium hover:bg-slate-50"
           >
             Docs. Attachment
           </Button>
           <Button
             type="button"
-            className="border px-4 py-1.5 rounded text-xs bg-white text-slate-700 shadow-sm font-medium hover:bg-slate-50"
+            variant="cancel"
+            // className="border px-4 py-1.5 rounded text-xs bg-white text-slate-700 shadow-sm font-medium hover:bg-slate-50"
           >
             History
           </Button>
@@ -964,14 +966,16 @@ export default function SupportTicketFormView({ slug, id }: Props) {
                     );
                   }
                 }}
-                className="border border-emerald-600 text-emerald-600 font-semibold px-4 py-1.5 rounded text-xs hover:bg-emerald-50 transition"
+                variant="cancel"
+                // className="border border-emerald-600 text-emerald-600 font-semibold px-4 py-1.5 rounded text-xs hover:bg-emerald-50 transition"
               >
                 Convert into Credit Note
               </Button>
               <Button
                 type="button"
                 onClick={() => handleStageClick("Closed")}
-                className="border border-red-600 text-red-600 font-semibold px-4 py-1.5 rounded text-xs hover:bg-red-50 transition"
+                variant="cancel"
+                // className="border border-red-600 text-red-600 font-semibold px-4 py-1.5 rounded text-xs hover:bg-red-50 transition"
               >
                 Close Ticket
               </Button>

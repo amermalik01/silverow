@@ -410,16 +410,16 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 name: "Module Codes",
                 url: `/${slug}/setup/system/sequences`,
               },
-              {
-                id: "Widget Roles",
-                name: "Widget Roles",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
-              },
-              {
-                id: "Reports Roles",
-                name: "Reports Roles",
-                url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
-              },
+              // {
+              //   id: "Widget Roles",
+              //   name: "Widget Roles",
+              //   url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+              // },
+              // {
+              //   id: "Reports Roles",
+              //   name: "Reports Roles",
+              //   url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
+              // },
             ],
           },
           {
