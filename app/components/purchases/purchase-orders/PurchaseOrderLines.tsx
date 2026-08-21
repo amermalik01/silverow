@@ -28,6 +28,7 @@ import PO_StockAllocationModal, {
   PO_StockAllocationRecord,
 } from "@/app/components/shared/modals/PO_StockAllocationModal";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type VatPostingOption = {
   id: string;
@@ -416,7 +417,7 @@ export default function PurchaseOrderLines({
                   </td>
 
                   <td className="p-2">
-                    <input
+                    {/* <input
                       type="number"
                       value={displayQty}
                       disabled={isLineDisabled || line.line_type === "COMMENT"}
@@ -424,6 +425,13 @@ export default function PurchaseOrderLines({
                         updateLine(index, "quantity", Number(e.target.value))
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
+                    /> */}
+                    <NumericTextInput
+                      value={displayQty}
+                      allowDecimals={false}
+                      disabled={isLineDisabled || line.line_type === "COMMENT"}
+                      onChange={(val) => updateLine(index, "quantity", val)}
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </td>
 
@@ -458,7 +466,7 @@ export default function PurchaseOrderLines({
                     )}
                   </td>
                   <td className="p-2">
-                    <input
+                    {/* <input
                       type="number"
                       value={displayUnitCost}
                       disabled={isLineDisabled}
@@ -466,6 +474,14 @@ export default function PurchaseOrderLines({
                         updateLine(index, "unit_cost", Number(e.target.value))
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
+                    /> */}
+                    <NumericTextInput
+                      value={displayUnitCost}
+                      allowDecimals={true}
+                      decimalScale={2}
+                      disabled={isLineDisabled}
+                      onChange={(val) => updateLine(index, "unit_cost", val)}
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </td>
 
@@ -484,7 +500,17 @@ export default function PurchaseOrderLines({
                   </td>
 
                   <td className="p-2">
-                    <input
+                    <NumericTextInput
+                      value={displayDiscountValue}
+                      allowDecimals={true}
+                      decimalScale={2}
+                      disabled={isLineDisabled}
+                      onChange={(val) =>
+                        updateLine(index, "discount_value", val)
+                      }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    {/* <input
                       type="number"
                       value={displayDiscountValue}
                       disabled={isLineDisabled}
@@ -496,7 +522,7 @@ export default function PurchaseOrderLines({
                         )
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
-                    />
+                    /> */}
                   </td>
 
                   <td className="p-2 text-right font-medium">

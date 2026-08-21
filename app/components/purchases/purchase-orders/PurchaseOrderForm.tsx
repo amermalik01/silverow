@@ -21,6 +21,7 @@ import { StockReceiveConfirmModal } from "@/app/components/shared/modals/StockRe
 import SupplierLookupModal, { SupplierLookupItem } from "./SupplierLookupModal";
 import SupplierShippingLocationsModal from "./SupplierShippingLocationsModal";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface Props {
   slug: string;
@@ -821,7 +822,20 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                 </span>
               </div>
               <div>
-                <input
+                <NumericTextInput
+                  value={Number(currencyConfig.exchange_rate) || 1}
+                  allowDecimals={true}
+                  decimalScale={2}
+                  disabled={isFormDisabled}
+                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                  onChange={(val) =>
+                    setCurrencyConfig({
+                      ...currencyConfig,
+                      exchange_rate: val,
+                    })
+                  }
+                />
+                {/* <input
                   type="number"
                   step="0.01"
                   disabled={isFormDisabled}
@@ -833,7 +847,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                       exchange_rate: parseFloat(e.target.value) || 1,
                     })
                   }
-                />
+                /> */}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 items-center">

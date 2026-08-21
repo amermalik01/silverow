@@ -32,6 +32,10 @@ export interface DebitNote {
   payment_method_id?: string;
   previous_code?: string;
 
+  purchase_posting_group_id?: string;
+  supplier_posting_group_id?: string;
+  vat_business_posting_group_id?: string;
+
   contact?: string;
   book_in_phone?: string;
   book_in_contact?: string;

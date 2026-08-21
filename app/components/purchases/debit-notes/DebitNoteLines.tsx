@@ -2,9 +2,9 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
-import { DebitNote, DebitNoteLine } from "@/types/debit-note";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
+import { DebitNote, DebitNoteLine } from "@/types/debit-note";
 
 import ItemLookupModal, {
   ItemLookupRecord,
@@ -21,6 +21,7 @@ import StockDeAllocationModal, {
   StockDeAllocationRecord,
 } from "../../shared/modals/StockDeAllocationModal";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 export type DebitNoteLineUI = DebitNoteLine & {
   item_code?: string;
@@ -36,6 +37,14 @@ export type DebitNoteLineUI = DebitNoteLine & {
   purchase_order_line_id?: string;
   purchase_invoice_line_id?: string;
   allocations?: StockDeAllocationRecord[];
+};
+
+type VatPostingOption = {
+  id: string;
+  code: string;
+  description?: string;
+  vat_percent: number;
+  vat_product_group_id?: string;
 };
 
 type Props = {
@@ -62,6 +71,7 @@ export default function DebitNoteLines({
   const [itemIndex, setItemIndex] = useState<number | null>(null);
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
+  const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
 
   const [isDeAllocModalOpen, setIsDeAllocModalOpen] = useState(false);
   const [activeDeAllocRowKey, setActiveDeAllocRowKey] = useState<string | null>(
@@ -107,6 +117,46 @@ export default function DebitNoteLines({
     setLines(lines.filter((_, i) => i !== index));
   };
 
+  useEffect(() => {
+    async function loadVatOptions() {
+      try {
+        const busGroupParam = debitNote?.supplier_posting_group_id
+          ? `?vat_business_group_id=${debitNote.supplier_posting_group_id}`
+          : "";
+
+        const res = await fetch(`/api/lookups/vat-rates${busGroupParam}`);
+        if (res.ok) {
+          const json = await res.json();
+          setVatOptions(json.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to load VAT options:", err);
+      }
+    }
+
+    loadVatOptions();
+  }, [debitNote?.supplier_posting_group_id]);
+
+  const handleVatChange = (index: number, selectedVatOptionId: string) => {
+    const selectedOption = vatOptions.find(
+      (opt) => opt.id === selectedVatOptionId,
+    );
+    const updated = [...lines];
+
+    const vatPercent = selectedOption
+      ? Number(selectedOption.vat_percent || 0)
+      : 0;
+    const vatProductGroupId =
+      selectedOption?.vat_product_group_id || selectedOption?.id || "";
+
+    updated[index] = calculateLine({
+      ...updated[index],
+      vat_percent: vatPercent,
+      vat_product_posting_group_id: vatProductGroupId,
+    });
+
+    setLines(updated);
+  };
   /**
    * =====================================================
    * CALCULATE LINE
@@ -406,13 +456,21 @@ export default function DebitNoteLines({
                   </td>
 
                   <td className="p-2">
-                    <input
+                    {/* <input
                       type="number"
                       value={displayQty}
                       disabled={isReadonly || line.line_type === "COMMENT"}
                       onChange={(e) =>
                         updateLine(index, "quantity", Number(e.target.value))
                       }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                    /> */}
+
+                    <NumericTextInput
+                      value={displayQty}
+                      allowDecimals={false}
+                      disabled={isReadonly || line.line_type === "COMMENT"}
+                      onChange={(val) => updateLine(index, "quantity", val)}
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
                     />
                   </td>
@@ -465,7 +523,15 @@ export default function DebitNoteLines({
                     )}
                   </td>
                   <td className="p-2">
-                    <input
+                    <NumericTextInput
+                      value={displayUnitCost}
+                      allowDecimals={true}
+                      decimalScale={2}
+                      disabled={isReadonly}
+                      onChange={(val) => updateLine(index, "unit_cost", val)}
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                    />
+                    {/* <input
                       type="number"
                       value={displayUnitCost}
                       disabled={isReadonly}
@@ -473,7 +539,7 @@ export default function DebitNoteLines({
                         updateLine(index, "unit_cost", Number(e.target.value))
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
-                    />
+                    /> */}
                   </td>
 
                   <td className="p-2">
@@ -491,7 +557,17 @@ export default function DebitNoteLines({
                   </td>
 
                   <td className="p-2">
-                    <input
+                    <NumericTextInput
+                      value={displayDiscountValue}
+                      allowDecimals={true}
+                      decimalScale={2}
+                      disabled={isReadonly}
+                      onChange={(val) =>
+                        updateLine(index, "discount_value", val)
+                      }
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
+                    />
+                    {/* <input
                       type="number"
                       value={displayDiscountValue}
                       disabled={isReadonly}
@@ -503,7 +579,7 @@ export default function DebitNoteLines({
                         )
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
-                    />
+                    /> */}
                   </td>
 
                   <td className="p-2 text-right font-medium ">
@@ -511,7 +587,7 @@ export default function DebitNoteLines({
                   </td>
 
                   <td className="p-2">
-                    <input
+                    {/* <input
                       type="number"
                       value={displayVatPercent}
                       disabled={isReadonly}
@@ -519,7 +595,28 @@ export default function DebitNoteLines({
                         updateLine(index, "vat_percent", Number(e.target.value))
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
-                    />
+                    /> */}
+                    <select
+                      value={
+                        vatOptions.find(
+                          (opt) =>
+                            opt.vat_product_group_id ===
+                              line.vat_product_posting_group_id ||
+                            opt.id === line.vat_product_posting_group_id ||
+                            opt.vat_percent === displayVatPercent,
+                        )?.id || ""
+                      }
+                      disabled={isReadonly || line.line_type === "COMMENT"}
+                      onChange={(e) => handleVatChange(index, e.target.value)}
+                      className="border dark:border-slate-700 dark:bg-slate-800 text-xs rounded p-1.5 w-full bg-white dark:text-slate-100 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="">0% (Exempt/Zero)</option>
+                      {vatOptions.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.code} ({opt.vat_percent}%)
+                        </option>
+                      ))}
+                    </select>
                   </td>
 
                   <td className="p-2 text-right font-medium">
@@ -531,52 +628,51 @@ export default function DebitNoteLines({
                   </td>
 
                   {/* {!isReadonly && ( */}
-                    <td className="p-2 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {line.line_type === "ITEM" ? (
-                          <button
-                            type="button"
-                            title={
-                              line.is_allocated
-                                ? "De-Allocated"
-                                : "Alloc Batches"
-                            }
-                            disabled={!line.item_id || !line.warehouse_id || isReadonly}
-                            onClick={() => {
-                              setActiveDeAllocRowKey(String(index));
-                              setIsDeAllocModalOpen(true);
-                            }}
-                            className={`p-1 rounded text-xs flex items-center gap-1 ${
-                              line.is_allocated
-                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                                : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
-                            }`}
-                          >
-                            <Icon
-                              icon="tabler:box-seam"
-                              className="w-3.5 h-3.5"
-                            />
-                            {/* <span>
+                  <td className="p-2 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      {line.line_type === "ITEM" ? (
+                        <button
+                          type="button"
+                          title={
+                            line.is_allocated ? "De-Allocated" : "Alloc Batches"
+                          }
+                          disabled={
+                            !line.item_id || !line.warehouse_id || isReadonly
+                          }
+                          onClick={() => {
+                            setActiveDeAllocRowKey(String(index));
+                            setIsDeAllocModalOpen(true);
+                          }}
+                          className={`p-1 rounded text-xs flex items-center gap-1 ${
+                            line.is_allocated
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                          }`}
+                        >
+                          <Icon
+                            icon="tabler:box-seam"
+                            className="w-3.5 h-3.5"
+                          />
+                          {/* <span>
                               {line.is_allocated
                                 ? "De-Allocated"
                                 : "Alloc Batches"}
                             </span> */}
-                          </button>
-                        ) : (
-                          <div className="w-4 h-4" />
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => removeLine(index)}
-                          disabled={isReadonly}
-                          className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
-                          
-                        >
-                          <Icon icon="lucide:x" className="w-4 h-4" />
                         </button>
-                      </div>
-                    </td>
+                      ) : (
+                        <div className="w-4 h-4" />
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => removeLine(index)}
+                        disabled={isReadonly}
+                        className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                      >
+                        <Icon icon="lucide:x" className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                   {/* )} */}
                 </tr>
               );

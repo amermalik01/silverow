@@ -199,7 +199,8 @@ export const PostedTransactionsModal: React.FC<
           {/* Posting Stamp Footer */}
           {postedInfo && (
             <div className="mt-3 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-              Posted By {postedInfo.user} On {postedInfo.date}
+              Posted By {postedInfo.user} On{" "}
+              {postedInfo.date ? format(postedInfo.date, "dd/MM/yyyy") : ""}
             </div>
           )}
         </div>
@@ -209,7 +210,7 @@ export const PostedTransactionsModal: React.FC<
           <Button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 border border-slate-300 dark:border-slate-700 text-xs font-semibold rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+            variant="cancel"
           >
             Close
           </Button>
