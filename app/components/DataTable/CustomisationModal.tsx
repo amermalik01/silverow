@@ -229,24 +229,15 @@ export const CustomisationModal: React.FC<Props> = ({
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between border-t pt-4 px-6 pb-6 dark:border-slate-800">
-          <Button
-            onClick={onResetDefault}
-            variant="ghostprimary"
-          >
+          <Button onClick={onResetDefault} variant="cancel">
             Reset to Default
           </Button>
           <div className="flex gap-2">
-            <Button
-              onClick={onClose}
-              variant="cancel"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => onSave(cols)}
-              variant="save"
-            >
+            <Button onClick={() => onSave(cols)} variant="save">
               Save Custom Layout
+            </Button>
+            <Button onClick={onClose} variant="cancel">
+              Cancel
             </Button>
           </div>
         </div>

@@ -97,8 +97,8 @@ export default function PurchaseOrderLines({
   useEffect(() => {
     async function loadVatOptions() {
       try {
-        const busGroupParam = purchaseOrder?.vat_business_posting_group_id
-          ? `?vat_business_group_id=${purchaseOrder.vat_business_posting_group_id}`
+        const busGroupParam = purchaseOrder?.supplier_posting_group_id
+          ? `?vat_business_group_id=${purchaseOrder.supplier_posting_group_id}`
           : "";
 
         const res = await fetch(`/api/lookups/vat-rates${busGroupParam}`);
@@ -112,7 +112,7 @@ export default function PurchaseOrderLines({
     }
 
     loadVatOptions();
-  }, [purchaseOrder?.vat_business_posting_group_id]);
+  }, [purchaseOrder?.supplier_posting_group_id]);
 
   const handleVatChange = (index: number, selectedVatOptionId: string) => {
     const selectedOption = vatOptions.find(
@@ -622,7 +622,7 @@ export default function PurchaseOrderLines({
 
           // 2. Resolve VAT Business Posting Group from Supplier / Purchase Order
           const vatBusinessGroupId =
-            purchaseOrder.vat_business_posting_group_id ||
+            purchaseOrder.supplier_posting_group_id ||
             purchaseOrder.purchase_posting_group_id ||
             "";
 

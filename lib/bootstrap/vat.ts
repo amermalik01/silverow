@@ -75,16 +75,12 @@ export async function initializeVat(
       coa_sales.id AS sales_vat_account_id,
       coa_purch.id AS purchase_vat_account_id
     FROM default_vat_posting_setup d
-    -- Resolve the company's Business Group UUID
     JOIN vat_business_posting_groups vbg 
       ON vbg.company_id = $1 AND vbg.name = d.vat_business_group_name
-    -- Resolve the company's Product Group UUID
     JOIN vat_product_posting_groups vpg 
       ON vpg.company_id = $1 AND vpg.name = d.vat_product_group_name
-    -- Resolve the Chart of Accounts ID matching the sales_account_code template (e.g., '2705')
     LEFT JOIN chart_of_accounts coa_sales 
       ON coa_sales.company_id = $1 AND coa_sales.code = d.sales_account_code
-    -- Resolve the Chart of Accounts ID matching the purchase_account_code template (e.g., '2710')
     LEFT JOIN chart_of_accounts coa_purch 
       ON coa_purch.company_id = $1 AND coa_purch.code = d.purchase_account_code
     ON CONFLICT (company_id, vat_business_group_id, vat_product_group_id) DO NOTHING

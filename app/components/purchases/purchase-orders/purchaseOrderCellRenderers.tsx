@@ -44,9 +44,9 @@ export function getPurchaseOrderCellRenderers(slug: string) {
     // Status / Stage Badges
     current_stage: (row: PurchaseOrder & { current_stage?: string }) => (
       <PurchaseOrderStatusBadge
-        status={row.current_stage || row.status || "Open"}
+        status={row.current_stage ||  "Open"}
       />
-    ),
+    ),//row.status ||
 
     // Text Details
     supplier_name: (row: PurchaseOrder) => row.supplier_name || "-",
