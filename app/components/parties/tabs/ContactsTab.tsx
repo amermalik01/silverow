@@ -67,12 +67,7 @@ export default function ContactsTab({
           Contact(s)
         </h3>
         {!isReadonly && (
-          <Button
-            type="button"
-            onClick={addContactRow}
-            variant="add_line"
-            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
+          <Button type="button" onClick={addContactRow} variant="add_line">
             Add Contact
           </Button>
         )}
@@ -83,7 +78,6 @@ export default function ContactsTab({
           No personnel assignments appended yet.
         </div>
       )}
-      {/*  bg-slate-50/50 dark:bg-slate-800/20 rounded-xl */}
       {contacts.map((c, idx) => (
         <div
           key={idx}
@@ -124,12 +118,6 @@ export default function ContactsTab({
                 disabled={isReadonly}
                 onChange={(e) => updateContactRow(idx, "name", e.target.value)}
                 className={getInputClass(`contacts.${idx}.name`)}
-                // className={`col-span-2 p-2 rounded text-xs border ${
-                //   errors[`contacts.${idx}.name`]
-                //     ? "border-red-500"
-                //     : "border-slate-300 dark:border-slate-700"
-                // } dark:bg-slate-900`}
-                // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`contacts.${idx}.name`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`contacts.${idx}.name`] && (
                 <p className="text-red-500 text-[11px] mt-0.5">
@@ -149,9 +137,10 @@ export default function ContactsTab({
                   updateContactRow(idx, "job_title", e.target.value)
                 }
                 disabled={isReadonly}
-                className={getInputClass(`contacts.${idx}.job_title`, "col-span-2")}
-                // className="col-span-2 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                // className="w-full border p-2 rounded text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                className={getInputClass(
+                  `contacts.${idx}.job_title`,
+                  "col-span-2",
+                )}
               />
             </div>
 
@@ -165,8 +154,6 @@ export default function ContactsTab({
                 disabled={isReadonly}
                 onChange={(e) => updateContactRow(idx, "email", e.target.value)}
                 className={getInputClass(`contacts.${idx}.email`)}
-                // className="col-span-2 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                // className={`w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 ${errors[`contacts.${idx}.email`] ? "border-red-500" : "border-slate-300 dark:border-slate-700"}`}
               />
               {errors[`contacts.${idx}.email`] && (
                 <p className="text-red-500 text-[11px] mt-0.5">
@@ -185,8 +172,6 @@ export default function ContactsTab({
                 disabled={isReadonly}
                 onChange={(e) => updateContactRow(idx, "phone", e.target.value)}
                 className={getInputClass(`contacts.${idx}.phone`, "col-span-2")}
-                // className="col-span-2 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                // className="w-full border p-2 rounded text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
               />
             </div>
 
@@ -201,9 +186,10 @@ export default function ContactsTab({
                   updateContactRow(idx, "mobile", e.target.value)
                 }
                 disabled={isReadonly}
-                className={getInputClass(`contacts.${idx}.mobile`, "col-span-2")}
-                // className="col-span-2 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                // className="w-full border p-2 rounded text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                className={getInputClass(
+                  `contacts.${idx}.mobile`,
+                  "col-span-2",
+                )}
               />
             </div>
 
@@ -226,7 +212,9 @@ export default function ContactsTab({
                       )
                     }
                     className={`w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 ${
-                      isReadonly ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                      isReadonly
+                        ? "cursor-not-allowed opacity-60"
+                        : "cursor-pointer"
                     }`}
                   />
                 </div>
@@ -244,7 +232,6 @@ export default function ContactsTab({
                 value={c.notes || ""}
                 onChange={(e) => updateContactRow(idx, "notes", e.target.value)}
                 className={getInputClass(`contacts.${idx}.notes`, "col-span-5")}
-                // className="col-span-5 p-2 rounded text-xs border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
               />
             </div>
           </div>

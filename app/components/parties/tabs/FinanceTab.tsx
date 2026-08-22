@@ -95,14 +95,6 @@ export default function FinanceTab({
     ? "gl_account_receivable"
     : "gl_account_payable";
 
-  /* 
-  const getInputClass = (errorKey: string) =>
-    `w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white ${
-      errors[errorKey]
-        ? "border-red-500 bg-red-50/10"
-        : "border-slate-300 dark:border-slate-700"
-    }`; */
-
   const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
     const baseClasses =
       "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
@@ -131,41 +123,30 @@ export default function FinanceTab({
 
   const getGlDisplayLabel = () => {
     if (isCustomer) {
-      // 1. If newly selected via modal in current session
       if (selectedReceivableGL) {
         return `${selectedReceivableGL.code} - ${selectedReceivableGL.name}`;
       }
-      // 2. If loaded from database with joined columns
+
       if (
         account.gl_account_receivable_code &&
         account.gl_account_receivable_name
       ) {
         return `${account.gl_account_receivable_code} - ${account.gl_account_receivable_name}`;
       }
-      // 3. Fallback
+
       return account.gl_account_receivable || "";
     } else {
-      // 1. If newly selected via modal in current session
       if (selectedPayableGL) {
         return `${selectedPayableGL.code} - ${selectedPayableGL.name}`;
       }
-      // 2. If loaded from database with joined columns
+
       if (account.gl_account_payable_code && account.gl_account_payable_name) {
         return `${account.gl_account_payable_code} - ${account.gl_account_payable_name}`;
       }
-      // 3. Fallback
+
       return account.gl_account_payable || "";
     }
   };
-
-  // 2. Compute display value safely
-  // const currentGlDisplay = isCustomer
-  //   ? selectedReceivableGL
-  //     ? `${selectedReceivableGL.code} - ${selectedReceivableGL.name}`
-  //     : account.gl_account_receivable || ""
-  //   : selectedPayableGL
-  //     ? `${selectedPayableGL.code} - ${selectedPayableGL.name}`
-  //     : account.gl_account_payable || "";
 
   return (
     <div className="space-y-8">
@@ -318,7 +299,6 @@ export default function FinanceTab({
             </>
           )}
 
-          {/* E-Generate Options */}
           <div className="grid grid-cols-3 gap-2 items-center pt-2">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               E-Generate
@@ -407,7 +387,6 @@ export default function FinanceTab({
           </div>
         </div>
 
-        {/* Right Column: Ledger / Banking Configuration */}
         <div className="space-y-3">
           {!isCustomer && (
             <>
@@ -480,7 +459,6 @@ export default function FinanceTab({
                   type="text"
                   readOnly
                   placeholder="Choose G/L..."
-                  // value={account[activeGlField] || ""}
                   value={getGlDisplayLabel()}
                   disabled={isReadonly}
                   className={`${getInputClass(`finance.${activeGlField}`)} font-mono cursor-pointer`}
@@ -496,39 +474,6 @@ export default function FinanceTab({
                   <Icon icon="tabler:external-link" className="w-4 h-4" />
                 </button>
               </div>
-              {/* <div className="flex gap-1">
-                <input
-                  type="text"
-                  value={
-                    isCustomer
-                      ? account.gl_account_receivable || ""
-                      : account.gl_account_payable || ""
-                  }
-                  onChange={(e) =>
-                    updateField(
-                      isCustomer
-                        ? "gl_account_receivable"
-                        : "gl_account_payable",
-                      e.target.value,
-                    )
-                  }
-                  disabled={isReadonly}
-                  className={getInputClass(
-                    isCustomer
-                      ? "finance.gl_account_receivable"
-                      : "finance.gl_account_payable",
-                  )}
-                />
-
-                <button
-                  type="button"
-                  disabled={isReadonly}
-                  onClick={() => setIsModalOpen(true)}
-                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-                >
-                  <Icon icon="tabler:external-link" className="w-4 h-4" />
-                </button>
-              </div> */}
             </div>
           </div>
 
@@ -683,7 +628,6 @@ export default function FinanceTab({
         </div>
       </div>
 
-      {/* Lower Section: Bank Account Details */}
       <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <div>
           <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">

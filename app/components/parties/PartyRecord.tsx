@@ -243,18 +243,7 @@ export default function PartyRecord({
     tabs.push("finance");
   }
 
-  // Standard shared tabs
   tabs.push("contacts", "locations");
-
-  // const tabs = [
-  //   "general",
-  //   "finance",
-  //   "contacts",
-  //   "locations",
-  //   "activities",
-  //   "notes",
-  //   "attachments",
-  // ];
 
   const isCrmOrCustomer =
     module === "crm" ||
@@ -270,18 +259,13 @@ export default function PartyRecord({
 
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
-      {/* 1. Header with Conversion Buttons */}
       <PartyDetailHeader
         party={account}
         onPartyUpdated={(updatedAccount) => {
           setAccount((prev) => ({ ...prev, ...updatedAccount }));
           setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
         }}
-        // onPartyUpdated={(updatedAccount) =>
-        //   setAccount((prev) => ({ ...prev, ...updatedAccount }))
-        // }
       />
-      {/* Validation Errors display */}
       {Object.keys(formErrors).length > 0 && (
         <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
           <p className="font-semibold mb-1">
@@ -296,7 +280,7 @@ export default function PartyRecord({
                   {/* <span className="capitalize font-medium">
                     {key.replace(".", " ")}
                   </span>
-                  : */} 
+                  : */}
                   {message}
                 </li>
               ))}
@@ -304,7 +288,6 @@ export default function PartyRecord({
         </div>
       )}
 
-      {/* 2. Tab Navigation Menu */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
         {tabs.map((tab) => {
           const hasErrorInTab = Object.keys(formErrors).some((k) =>
@@ -329,7 +312,6 @@ export default function PartyRecord({
         })}
       </div>
 
-      {/* 3. Tab Viewport Panels */}
       <div className="py-2">
         {activeTab === "general" && (
           <GeneralTab
@@ -403,28 +385,23 @@ export default function PartyRecord({
         )}
       </div>
 
-      {/* Persistent Bottom Action Drawer */}
       <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
         {!isReadonlyProp && (
           <>
             {!isEditing ? (
-              /* VIEW MODE BUTTONS */
               <>
                 <Button
                   type="button"
                   onClick={() => setIsEditing(true)}
                   variant="edit"
-                  // className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2"
                 >
-                  {/* <Icon icon="tabler:edit" className="w-4 h-4" /> */}
                   Edit
                 </Button>
 
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="cancel"
                   onClick={() => router.back()}
-                  className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white dark:bg-slate-800 dark:text-zinc-200"
                 >
                   Close
                 </Button>

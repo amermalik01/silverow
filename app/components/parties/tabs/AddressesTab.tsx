@@ -77,13 +77,7 @@ export default function AddressesTab({
         </h3>
 
         {!isReadonly && (
-          <Button
-            type="button"
-            onClick={addAddressRow}
-            // className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm"
-            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-            variant="add_line"
-          >
+          <Button type="button" onClick={addAddressRow} variant="add_line">
             Add Location
           </Button>
         )}
@@ -100,7 +94,6 @@ export default function AddressesTab({
           key={idx}
           className="relative rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden"
         >
-          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-xs">Location {idx + 1}</span>
@@ -143,9 +136,7 @@ export default function AddressesTab({
             )}
           </div>
 
-          {/* Body */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-4">
-            {/* Left */}
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium">
@@ -160,7 +151,6 @@ export default function AddressesTab({
                       updateAddressRow(idx, "label", e.target.value)
                     }
                     className={getInputClass(`addresses.${idx}.label`)}
-                    // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                   />
                   {errors[`addresses.${idx}.label`] && (
                     <p className="text-red-500 text-[11px] mt-0.5">
@@ -181,7 +171,6 @@ export default function AddressesTab({
                       updateAddressRow(idx, "address_1", e.target.value)
                     }
                     className={getInputClass(`addresses.${idx}.address_1`)}
-                    // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                   />
                   {errors[`addresses.${idx}.address_1`] && (
                     <p className="text-red-500 text-[11px] mt-0.5">
@@ -218,7 +207,6 @@ export default function AddressesTab({
                       updateAddressRow(idx, "city", e.target.value)
                     }
                     disabled={isReadonly}
-                    // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                     className={getInputClass(`addresses.${idx}.city`)}
                   />
                   {errors[`addresses.${idx}.city`] && (
@@ -243,13 +231,10 @@ export default function AddressesTab({
                       `addresses.${idx}.state`,
                       "col-span-2",
                     )}
-                    // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                   />
                 </div>
               </div>
             </div>
-
-            {/* Right */}
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium">Postcode</label>
@@ -278,21 +263,11 @@ export default function AddressesTab({
                 </label>
 
                 <div className="col-span-2">
-                  {/* <MasterDropdown
-                    type="country"
-                    value={a.country || "United Kingdom"}
-                    onChange={(val) =>
-                      updateAddressRow(idx, "country", val ?? "")
-                    }
-                    disabled={isReadonly}
-                    defaultFilter={(item) => item.country_id === 225}
-                  /> */}
-
                   <MasterDropdown
                     type="country"
                     value={a.country || "UK"}
-                    displayFormat="name" // Displays "United Kingdom"
-                    valueKey="code" // Saves "GB" to a.country
+                    displayFormat="name"
+                    valueKey="code"
                     onChange={(val) =>
                       updateAddressRow(idx, "country", val ?? "")
                     }
@@ -323,7 +298,6 @@ export default function AddressesTab({
                     `addresses.${idx}.phone`,
                     "col-span-2",
                   )}
-                  // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                 />
               </div>
 
@@ -338,7 +312,6 @@ export default function AddressesTab({
                   }
                   disabled={isReadonly}
                   className={getInputClass(`addresses.${idx}.email`)}
-                  // className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                 />
 
                 {errors[`addresses.${idx}.email`] && (
@@ -434,73 +407,4 @@ export default function AddressesTab({
       ))}
     </div>
   );
-}
-
-{
-  /* <div className="grid grid-cols-3 gap-2 items-center">
-        <label className="text-xs font-medium">Country</label>
-
-        <input
-          type="text"
-          value={a.country || ""}
-          onChange={(e) =>
-            updateAddressRow(idx, "country", e.target.value)
-          }
-          className="col-span-2 p-2 border rounded text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-        />
-      </div> */
-}
-{
-  /* <div className="border rounded-md border-slate-200 dark:border-slate-700 p-3 mt-3">
-        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-3">
-          Location Type
-        </p>
-
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-xs">
-            <input
-              type="checkbox"
-              checked={!!a.is_primary}
-              onChange={(e) =>
-                updateAddressRow(idx, "is_primary", e.target.checked)
-              }
-            />
-            Primary Address
-          </label>
-
-          <label className="flex items-center gap-2 text-xs">
-            <input
-              type="checkbox"
-              checked={!!a.is_billing}
-              onChange={(e) =>
-                updateAddressRow(idx, "is_billing", e.target.checked)
-              }
-            />
-            Billing Address
-          </label>
-
-          <label className="flex items-center gap-2 text-xs">
-            <input
-              type="checkbox"
-              checked={!!a.is_shipping}
-              onChange={(e) =>
-                updateAddressRow(idx, "is_shipping", e.target.checked)
-              }
-            />
-            Shipping Address
-          </label>
-
-          <label className="flex items-center gap-2 text-xs">
-            <input
-              type="checkbox"
-              checked={!!a.is_collection}
-              onChange={(e) =>
-                updateAddressRow(idx, "is_collection", e.target.checked)
-              }
-            />
-            Collection Address
-          </label>
-
-        </div>
-      </div> */
 }

@@ -259,6 +259,10 @@ export const DebitNoteForm: React.FC<Props> = ({
       supplier_no: supplier.supplier_code,
       supplier_name: supplier.name,
 
+      // 💥 FIX: Capture the VAT Business / Purchase Posting Group from supplier
+      purchase_posting_group_id: supplier.posting_group || "", // supplier.purchase_posting_group_id ||
+      vat_business_posting_group_id: supplier.posting_group || "", //  supplier.purchase_posting_group_id ||
+
       anonymous_supplier: supplier.anonymous_supplier ?? false,
       purchaser_code: supplier.purchaser_code || "",
       payable_bank: supplier.payable_bank || "",
@@ -411,6 +415,16 @@ export const DebitNoteForm: React.FC<Props> = ({
   const validateForm = (): boolean => {
     const errors: string[] = [];
     if (!note.supplier_id) errors.push("Supplier selection is required.");
+
+    if (
+      !note.purchase_posting_group_id &&
+      !note.vat_business_posting_group_id
+    ) {
+      errors.push(
+        "Selected supplier does not have a valid Purchase/VAT Posting Group assigned.",
+      );
+    }
+
     if (!note.linked_po && !note.linked_po)
       errors.push("Apply to Purchase Invoice (PI) selection is required.");
     if (!currencyConfig.currency_id)
@@ -888,7 +902,7 @@ export const DebitNoteForm: React.FC<Props> = ({
           <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
             {financials.totalDiscount > 0 && (
               <>
-                <div className="flex justify-between pb-1 text-slate-600 dark:text-slate-400">
+                {/* <div className="flex justify-between pb-1 text-slate-600 dark:text-slate-400">
                   <span className="font-semibold">Subtotal</span>
                   <span>
                     {financials.originalAmount.toLocaleString(undefined, {
@@ -896,9 +910,9 @@ export const DebitNoteForm: React.FC<Props> = ({
                     })}{" "}
                     {selectedCurrency?.code || ""}
                   </span>
-                </div>
+                </div> */}
                 <div className="flex justify-between pb-1 text-amber-600 dark:text-amber-400">
-                  <span className="font-semibold">Total Discount</span>
+                  <span className="font-semibold">Discount</span>
                   <span>
                     -
                     {financials.totalDiscount.toLocaleString(undefined, {

@@ -213,7 +213,9 @@ export const PartySchema = z.object({
   bank_iban: looseString,
   bank_name: looseString,
   bank_address: looseString,
-}).superRefine((data, ctx) => {
+});
+
+/* .superRefine((data, ctx) => {
   if (data.is_customer) {
     if (!data.sales_posting_group_id || data.sales_posting_group_id.trim() === "") {
       ctx.addIssue({
@@ -231,4 +233,4 @@ export const PartySchema = z.object({
       });
     }
   }
-});
+}) */

@@ -23,7 +23,7 @@ import StockDeAllocationModal, {
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 
-export type DebitNoteLineUI = DebitNoteLine & {
+/* export type DebitNoteLineUI = DebitNoteLine & {
   item_code?: string;
   item_name?: string;
   account_code?: string;
@@ -37,7 +37,19 @@ export type DebitNoteLineUI = DebitNoteLine & {
   purchase_order_line_id?: string;
   purchase_invoice_line_id?: string;
   allocations?: StockDeAllocationRecord[];
-};
+}; */
+export interface DebitNoteLineUI extends DebitNoteLine {
+  reserved_quantity?: string | number;
+  available_stock?: string | number;
+  is_allocated?: boolean;
+
+  allocations?: StockDeAllocationRecord[];
+
+  initialAllocations?: Array<{
+    quantity: number;
+    [key: string]: unknown;
+  }>;
+}
 
 type VatPostingOption = {
   id: string;
@@ -120,8 +132,8 @@ export default function DebitNoteLines({
   useEffect(() => {
     async function loadVatOptions() {
       try {
-        const busGroupParam = debitNote?.supplier_posting_group_id
-          ? `?vat_business_group_id=${debitNote.supplier_posting_group_id}`
+        const busGroupParam = debitNote?.purchase_posting_group_id
+          ? `?vat_business_group_id=${debitNote.purchase_posting_group_id}`
           : "";
 
         const res = await fetch(`/api/lookups/vat-rates${busGroupParam}`);
@@ -135,7 +147,7 @@ export default function DebitNoteLines({
     }
 
     loadVatOptions();
-  }, [debitNote?.supplier_posting_group_id]);
+  }, [debitNote?.purchase_posting_group_id]);
 
   const handleVatChange = (index: number, selectedVatOptionId: string) => {
     const selectedOption = vatOptions.find(
@@ -587,15 +599,6 @@ export default function DebitNoteLines({
                   </td>
 
                   <td className="p-2">
-                    {/* <input
-                      type="number"
-                      value={displayVatPercent}
-                      disabled={isReadonly}
-                      onChange={(e) =>
-                        updateLine(index, "vat_percent", Number(e.target.value))
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
-                    /> */}
                     <select
                       value={
                         vatOptions.find(
@@ -704,7 +707,7 @@ export default function DebitNoteLines({
       </div>
 
       {/* MODALS */}
-      <ItemLookupModal
+      {/* <ItemLookupModal
         open={itemIndex !== null}
         onClose={() => setItemIndex(null)}
         onSelect={(item: ItemLookupRecord) => {
@@ -723,6 +726,98 @@ export default function DebitNoteLines({
             purchase_gl_id: item.purchase_gl_id,
             sales_gl_id: item.sales_gl_id,
             inventory_gl_id: item.inventory_gl_id,
+          });
+
+          setLines(updated);
+          setItemIndex(null);
+        }}
+      /> */}
+
+      <ItemLookupModal
+        open={itemIndex !== null}
+        onClose={() => setItemIndex(null)}
+        onSelect={async (item: ItemLookupRecord) => {
+          if (itemIndex === null) return;
+          const updated = [...lines];
+
+          // 1. Fetch Default Warehouse for the Item
+          let defaultWarehouse: {
+            id?: string;
+            code?: string;
+            name?: string;
+          } | null = null;
+          try {
+            const warehouseResponse = await fetch(
+              `/api/lookups/default-warehouse?item_id=${item.id}`,
+            );
+            if (warehouseResponse.ok) {
+              const warehouseData = await warehouseResponse.json();
+              defaultWarehouse = warehouseData.data;
+            }
+          } catch (err) {
+            console.error("Failed to fetch default warehouse:", err);
+          }
+
+          // 2. Resolve VAT Business Posting Group from Supplier / Purchase Order
+          const vatBusinessGroupId = debitNote.purchase_posting_group_id || "";
+          // debitNote.supplier_posting_group_id ||
+
+          // 3. Resolve Product Posting Group from Item lookup (using vat_product_group_id from ItemLookupRecord)
+          const vatProductGroupId = item.vat_product_group_id || "";
+
+          // 4. Query VAT Posting Setup matrix to get the exact VAT percentage
+          let calculatedVatPercent = 0;
+
+          if (vatBusinessGroupId && vatProductGroupId) {
+            try {
+              const vatParams = new URLSearchParams({
+                vat_business_group_id: vatBusinessGroupId,
+                vat_product_group_id: vatProductGroupId,
+              });
+
+              const vatResponse = await fetch(
+                `/api/lookups/vat-posting-setup?${vatParams.toString()}`,
+              );
+
+              if (vatResponse.ok) {
+                const vatData = await vatResponse.json();
+                // Expecting vat_rate or vat_percent from the lookup API result
+                calculatedVatPercent = Number(
+                  vatData.data?.vat_rate ?? vatData.data?.vat_percent ?? 0,
+                );
+              }
+            } catch (err) {
+              console.error("Error resolving VAT posting setup rate:", err);
+            }
+          }
+
+          updated[itemIndex] = calculateLine({
+            ...updated[itemIndex],
+
+            line_type: "ITEM",
+
+            item_id: item.id,
+            item_code: item.item_code,
+            item_name: item.name,
+
+            description: item.description || item.name,
+
+            unit_cost: Number(item.standard_cost || 0),
+
+            uom_id: item.base_uom_id,
+            uom_name: item.base_uom_name || updated[itemIndex].uom_name,
+
+            vat_percent: calculatedVatPercent,
+            vat_business_posting_group_id: vatBusinessGroupId,
+            vat_product_posting_group_id: vatProductGroupId,
+
+            warehouse_id: defaultWarehouse?.id,
+            warehouse_code: defaultWarehouse?.code,
+            warehouse_name: defaultWarehouse?.name,
+
+            allocations: undefined,
+            initialAllocations: undefined,
+            is_allocated: false,
           });
 
           setLines(updated);

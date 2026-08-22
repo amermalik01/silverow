@@ -4,14 +4,11 @@
 
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
-// import type { Party } from "@/types/erp";
 import type { Party, PartyContactDraft, PartyAddressDraft } from "@/types/erp";
 import MasterDropdown from "../../common/MasterDropdown";
 import SalespersonLookupModal, {
   Employee,
 } from "@/app/components/shared/modals/SalespersonLookupModal";
-import { DatePicker } from "@/components/ui/date-picker";
-import { format } from "date-fns";
 
 interface PostingGroupItem {
   id: string;
@@ -55,8 +52,6 @@ export default function GeneralTab({
   errors,
   currencies = [],
 }: Props) {
-  // const [date_of_inc, setdate_of_inc] = useState("2026-06-14");
-
   const [segments, setSegments] = useState<SetupDropdownItem[]>([]);
   const [territories, setTerritories] = useState<SetupDropdownItem[]>([]);
   const [buyingGroups, setBuyingGroups] = useState<SetupDropdownItem[]>([]);
@@ -67,21 +62,16 @@ export default function GeneralTab({
   const [classification, setClassification] = useState<SetupDropdownItem[]>([]);
   const [sourceOfCRM, setSourceOfCRM] = useState<SetupDropdownItem[]>([]);
 
-  // Existing state variables...
   const [salesPostingGroups, setSalesPostingGroups] = useState<
     PostingGroupItem[]
   >([]);
   const [purchasePostingGroups, setPurchasePostingGroups] = useState<
     PostingGroupItem[]
   >([]);
-  // const [vatBusinessGroups, setVatBusinessGroups] = useState<
-  //   { id: string; name: string }[]
-  // >([]);
 
   const [salespersonModalOpen, setSalespersonModalOpen] =
     useState<boolean>(false);
 
-  // Extract primary address or default blank
   const primaryAddress = addresses.find((a) => a.is_primary) ||
     addresses[0] || {
       label: "Main Address",
@@ -97,7 +87,6 @@ export default function GeneralTab({
       is_collection: false,
     };
 
-  // Extract primary contact or default blank
   const primaryContact = contacts.find((c) => c.is_primary) ||
     contacts[0] || {
       name: "",
@@ -121,7 +110,6 @@ export default function GeneralTab({
     setAccount((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Synchronize Primary Address Changes
   const updatePrimaryAddress = (
     field: keyof PartyAddressDraft,
     value: unknown,
@@ -146,7 +134,6 @@ export default function GeneralTab({
     });
   };
 
-  // Synchronize Primary Contact Changes
   const updatePrimaryContact = (
     field: keyof PartyContactDraft,
     value: unknown,
@@ -170,14 +157,6 @@ export default function GeneralTab({
       }
     });
   };
-
-  /* 
-  const getInputClass = (errorKey: string) =>
-    `w-full border p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white ${
-      errors[errorKey]
-        ? "border-red-500 bg-red-50/10"
-        : "border-slate-300 dark:border-slate-700"
-    }`; */
 
   const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
     const baseClasses =
@@ -210,10 +189,8 @@ export default function GeneralTab({
           tpRes,
           statusRes,
           sourcesRes,
-          // NEW API FETCH CALLS
           salesGroupRes,
           purchaseGroupRes,
-          // vatGroupRes,
         ] = await Promise.all([
           fetch(`/api/setup/sales/segments?module=${activeModule}`),
           fetch(`/api/setup/sales/territories?module=${activeModule}`),
@@ -224,10 +201,9 @@ export default function GeneralTab({
           fetch("/api/setup/sales/type"),
           fetch("/api/setup/sales/status"),
           fetch("/api/setup/sales/sources"),
-          // Fetch Posting Groups
+
           fetch("/api/setup/finance/sales-posting-groups"),
           fetch("/api/setup/finance/purchase-posting-groups"),
-          // fetch("/api/setup/finance/vat-business-posting-groups"),
         ]);
 
         if (segRes.ok) setSegments(await segRes.json());
@@ -241,11 +217,9 @@ export default function GeneralTab({
         if (statusRes.ok) setStatus(await statusRes.json());
         if (sourcesRes.ok) setSourceOfCRM(await sourcesRes.json());
 
-        // Set state for Posting Groups
         if (salesGroupRes.ok) setSalesPostingGroups(await salesGroupRes.json());
         if (purchaseGroupRes.ok)
           setPurchasePostingGroups(await purchaseGroupRes.json());
-        // if (vatGroupRes.ok) setVatBusinessGroups(await vatGroupRes.json());
       } catch (err) {
         console.error("Error populating ledger configuration setups:", err);
       }
@@ -304,11 +278,9 @@ export default function GeneralTab({
             </div>
           </div>
 
-          {/* PRIMARY LOCATION / ADDRESS SECTION */}
           <div className="grid grid-cols-3 gap-2 items-start">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300 pt-1">
               Address Lines
-              {/* Primary Location */}
             </label>
             <div className="col-span-2 space-y-2">
               <input
@@ -379,44 +351,6 @@ export default function GeneralTab({
                     item.code === "UK" || item.country_id === 225
                   }
                 />
-
-                {/* <input
-                type="text"
-                placeholder="Address Line 1"
-                className={getInputClass("general.address_1")}
-              />
-              <input
-                type="text"
-                placeholder="Address Line 2 (Optional)"
-                className={getInputClass("general.address_2")}
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  placeholder="City"
-                  className={getInputClass("general.city")}
-                />
-                <input
-                  type="text"
-                  placeholder="County / State"
-                  className={getInputClass("general.state")}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  placeholder="Postcode"
-                  className={getInputClass("general.postcode")}
-                />
-
-                <MasterDropdown
-                  type="country"
-                  value={account.country ?? null}
-                  onChange={(val) => updateField("country", val)}
-                  className={getInputClass("general.country")}
-                  disabled={isReadonly}
-                  defaultFilter={(item) => item.country_id === 225}
-                /> */}
               </div>
             </div>
           </div>
@@ -502,16 +436,6 @@ export default function GeneralTab({
                 onChange={(e) =>
                   updateField("status", e.target.value as Party["status"])
                 }
-                // onChange={(e) =>
-                //   updateField(
-                //     "status",
-                //     e.target.value as
-                //       | "active"
-                //       | "inactive"
-                //       | "prospect"
-                //       | "suspended",
-                //   )
-                // }
                 className={getInputClass("general.status")}
               >
                 <option value="active">Active</option>
@@ -540,7 +464,7 @@ export default function GeneralTab({
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Segment {/* <span className="text-red-500">*</span> */}
+              Segment
             </label>
             <div className="col-span-2">
               <select
@@ -634,51 +558,6 @@ export default function GeneralTab({
               </div>
             </div>
           </div>
-          {/* <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-lg">
-            <span className="block text-xs font-bold capitalize tracking-wider text-slate-500 mb-2">
-              Location Type
-            </span>
-            <div className="flex flex-wrap gap-4 text-xs font-medium">
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={!!primaryAddress.is_billing}
-                  onChange={(e) =>
-                    updatePrimaryAddress("is_billing", e.target.checked)
-                  }
-                  disabled={isReadonly}
-                  className="rounded text-blue-600 focus:ring-blue-500"
-                />{" "}
-                Billing
-              </label>
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={!!primaryAddress.is_shipping}
-                  onChange={(e) =>
-                    updatePrimaryAddress("is_shipping", e.target.checked)
-                  }
-                  disabled={isReadonly}
-                  className="rounded text-blue-600 focus:ring-blue-500"
-                />{" "}
-                Shipping
-              </label>
-              {account.is_supplier && (
-                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={!!primaryAddress.is_collection}
-                    onChange={(e) =>
-                      updatePrimaryAddress("is_collection", e.target.checked)
-                    }
-                    disabled={isReadonly}
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />{" "}
-                  Collection
-                </label>
-              )}
-            </div>
-          </div> */}
 
           {(account.is_customer || account.is_crm_lead) && (
             <div className="grid grid-cols-3 gap-2 items-center">
@@ -704,7 +583,7 @@ export default function GeneralTab({
               </div>
             </div>
           )}
-          {account.is_customer && ( // || account.is_crm_lead
+          {account.is_customer && (
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Credit Limit
@@ -947,7 +826,7 @@ export default function GeneralTab({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 items-center">
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Business Posting Group <span className="text-red-500">*</span>
             </label>
@@ -967,7 +846,6 @@ export default function GeneralTab({
                     updateField("purchase_posting_group_id", val);
                   }
                 }}
-                // className={getInputClass("general.posting_group_id")}
                 className={
                   getInputClass(
                     account.is_customer
@@ -990,7 +868,6 @@ export default function GeneralTab({
                     ))}
               </select>
 
-              {/* Error display for Customer posting group */}
               {account.is_customer &&
                 errors?.["general.sales_posting_group_id"] && (
                   <span className="text-xs text-red-500 mt-1 block">
@@ -998,40 +875,12 @@ export default function GeneralTab({
                   </span>
                 )}
 
-              {/* Error display for Supplier posting group */}
               {!account.is_customer &&
                 errors?.["general.purchase_posting_group_id"] && (
                   <span className="text-xs text-red-500 mt-1 block">
                     {errors["general.purchase_posting_group_id"]}
                   </span>
                 )}
-            </div>
-          </div>
-
-          {/* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Posting Group
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={isReadonly}
-                value={
-                  (account.is_customer
-                    ? account.sales_posting_group_id
-                    : account.purchase_posting_group_id) || ""
-                }
-                onChange={(e) =>
-                  updateField(
-                    account.is_customer
-                      ? "sales_posting_group_id"
-                      : "purchase_posting_group_id",
-                    e.target.value,
-                  )
-                }
-                className={getInputClass("general.posting_group_id")}
-              >
-                <option value="">Select Ledger Control Profile...</option>
-              </select>
             </div>
           </div> */}
 
@@ -1116,15 +965,13 @@ export default function GeneralTab({
                 Contact Name
               </label>
               <div className="col-span-2">
-              <input
-                type="text"
-                disabled={isReadonly}
-                value={primaryContact.name || ""}
-                onChange={(e) => updatePrimaryContact("name", e.target.value)}
-                className={getInputClass("primaryContact.name")}
-                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // placeholder="John Doe"
-              />
+                <input
+                  type="text"
+                  disabled={isReadonly}
+                  value={primaryContact.name || ""}
+                  onChange={(e) => updatePrimaryContact("name", e.target.value)}
+                  className={getInputClass("primaryContact.name")}
+                />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
@@ -1132,17 +979,15 @@ export default function GeneralTab({
                 Job Title
               </label>
               <div className="col-span-2">
-              <input
-                type="text"
-                disabled={isReadonly}
-                value={primaryContact.job_title || ""}
-                onChange={(e) =>
-                  updatePrimaryContact("job_title", e.target.value)
-                }
-                className={getInputClass("primaryContact.job_title")}
-                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // placeholder="Procurement Manager"
-              />
+                <input
+                  type="text"
+                  disabled={isReadonly}
+                  value={primaryContact.job_title || ""}
+                  onChange={(e) =>
+                    updatePrimaryContact("job_title", e.target.value)
+                  }
+                  className={getInputClass("primaryContact.job_title")}
+                />
               </div>
             </div>
           </div>
@@ -1152,14 +997,15 @@ export default function GeneralTab({
                 Email
               </label>
               <div className="col-span-2">
-              <input
-                type="text"
-                disabled={isReadonly}
-                value={primaryContact.email || ""}
-                onChange={(e) => updatePrimaryContact("email", e.target.value)}
-                className={getInputClass("primaryContact.email")}
-                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-              />
+                <input
+                  type="text"
+                  disabled={isReadonly}
+                  value={primaryContact.email || ""}
+                  onChange={(e) =>
+                    updatePrimaryContact("email", e.target.value)
+                  }
+                  className={getInputClass("primaryContact.email")}
+                />
               </div>
             </div>
 
@@ -1168,15 +1014,15 @@ export default function GeneralTab({
                 Direct Line
               </label>
               <div className="col-span-2">
-              <input
-                type="text"
-                disabled={isReadonly}
-                value={primaryContact.phone || ""}
-                onChange={(e) => updatePrimaryContact("phone", e.target.value)}
-                className={getInputClass("primaryContact.phone")}
-                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // placeholder="01326 564564"
-              />
+                <input
+                  type="text"
+                  disabled={isReadonly}
+                  value={primaryContact.phone || ""}
+                  onChange={(e) =>
+                    updatePrimaryContact("phone", e.target.value)
+                  }
+                  className={getInputClass("primaryContact.phone")}
+                />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
@@ -1184,15 +1030,15 @@ export default function GeneralTab({
                 Mobile
               </label>
               <div className="col-span-2">
-              <input
-                type="text"
-                disabled={isReadonly}
-                value={primaryContact.mobile || ""}
-                onChange={(e) => updatePrimaryContact("mobile", e.target.value)}
-                className={getInputClass("primaryContact.mobile")}
-                // className="col-span-2 p-2 border border-slate-300 dark:border-slate-700 rounded text-xs dark:bg-slate-900"
-                // placeholder="07xxx xxxxxx"
-              />
+                <input
+                  type="text"
+                  disabled={isReadonly}
+                  value={primaryContact.mobile || ""}
+                  onChange={(e) =>
+                    updatePrimaryContact("mobile", e.target.value)
+                  }
+                  className={getInputClass("primaryContact.mobile")}
+                />
               </div>
             </div>
           </div>

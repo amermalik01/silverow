@@ -204,6 +204,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   }, [lines, currencyConfig.exchange_rate]); */
 
   const financials = useMemo(() => {
+    
     const originalAmount = lines.reduce(
       (sum, l) => sum + Number(l.original_amount || 0),
       0,
@@ -241,10 +242,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       supplier_name: supplier.name,
 
       // 💥 FIX: Capture the VAT Business / Purchase Posting Group from supplier
-      purchase_posting_group_id:
-        supplier.purchase_posting_group_id || supplier.posting_group || "",
-      vat_business_posting_group_id:
-        supplier.purchase_posting_group_id || supplier.posting_group || "",
+      purchase_posting_group_id: supplier.posting_group || "", // supplier.purchase_posting_group_id ||
+      vat_business_posting_group_id: supplier.posting_group || "", //  supplier.purchase_posting_group_id ||
 
       // Supplier Settings & Financial defaults
       anonymous_supplier: supplier.anonymous_supplier ?? false,
@@ -866,7 +865,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
             {financials.totalDiscount > 0 && (
               <>
-                <div className="flex justify-between pb-1 text-slate-600 dark:text-slate-400">
+                {/* <div className="flex justify-between pb-1 text-slate-600 dark:text-slate-400">
                   <span className="font-semibold">Subtotal</span>
                   <span>
                     {financials.originalAmount.toLocaleString(undefined, {
@@ -874,9 +873,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                     })}{" "}
                     {selectedCurrency?.code || ""}
                   </span>
-                </div>
+                </div> */}
                 <div className="flex justify-between pb-1 text-amber-600 dark:text-amber-400">
-                  <span className="font-semibold">Total Discount</span>
+                  <span className="font-semibold">Discount</span>
                   <span>
                     -
                     {financials.totalDiscount.toLocaleString(undefined, {
@@ -889,7 +888,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             )}
 
             <div className="flex justify-between pb-1">
-              <span className="font-semibold">Net Amount</span>
+              <span className="font-semibold">Amount</span>
               <span>
                 {financials.amount.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
