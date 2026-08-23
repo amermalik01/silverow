@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ItemFormData, ItemLookupOption } from "@/types/inventory";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Props = {
   id?: string;
@@ -190,11 +191,7 @@ export default function ItemForm({ id }: Props) {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Create Item</h1>
 
-        <Button
-          type="submit"
-          disabled={loading}
-          variant="save"
-        >
+        <Button type="submit" disabled={loading} variant="save">
           {loading ? "Saving..." : "Save"}
         </Button>
       </div>
@@ -412,7 +409,21 @@ export default function ItemForm({ id }: Props) {
           <div>
             <label className="block mb-1">Reorder Qty</label>
 
-            <input
+            <NumericTextInput
+              placeholder="0"
+              min="0"
+              allowDecimals={false}
+              value={Number(form.reorder_qty)}
+              onChange={(val) =>
+                setForm({
+                  ...form,
+                  reorder_qty: String(val),
+                })
+              }
+              className="border p-2 w-full"
+            />
+
+            {/* <input
               type="number"
               value={form.reorder_qty}
               onChange={(e) =>
@@ -422,19 +433,32 @@ export default function ItemForm({ id }: Props) {
                 })
               }
               className="border p-2 w-full"
-            />
+            /> */}
           </div>
 
           <div>
             <label className="block mb-1">Standard Cost</label>
 
-            <input
+            {/* <input
               type="number"
               value={form.standard_cost}
               onChange={(e) =>
                 setForm({
                   ...form,
                   standard_cost: e.target.value,
+                })
+              }
+              className="border p-2 w-full"
+            /> */}
+
+            <NumericTextInput
+              allowDecimals
+              decimalScale={2}
+              value={Number(form.standard_cost)}
+              onChange={(val) =>
+                setForm({
+                  ...form,
+                  standard_cost: String(val),
                 })
               }
               className="border p-2 w-full"
@@ -472,13 +496,25 @@ export default function ItemForm({ id }: Props) {
           <div>
             <label className="block mb-1">Sales Price</label>
 
-            <input
+            {/* <input
               type="number"
               value={form.standard_sales_price}
               onChange={(e) =>
                 setForm({
                   ...form,
                   standard_sales_price: e.target.value,
+                })
+              }
+              className="border p-2 w-full"
+            /> */}
+            <NumericTextInput
+              allowDecimals
+              decimalScale={2}
+              value={Number(form.standard_sales_price)}
+              onChange={(val) =>
+                setForm({
+                  ...form,
+                  standard_sales_price: String(val),
                 })
               }
               className="border p-2 w-full"

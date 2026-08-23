@@ -6,6 +6,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/app/context/LoaderContext";
 import { format } from "date-fns";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 export interface LineAllocationItem {
   invoice_ledger_id: string;
@@ -384,7 +385,6 @@ export default function AllocateJournalPaymentModal({
                         />
                       </td>
                       <td className="p-2">
-
                         {doc.posting_date
                           ? format(doc.posting_date, "dd/MM/yyyy")
                           : "—"}
@@ -398,7 +398,7 @@ export default function AllocateJournalPaymentModal({
                         {formatCurrency(Number(doc.remaining_amount))}
                       </td>
                       <td className="p-2">
-                        <input
+                        {/* <input
                           type="number"
                           step="0.01"
                           min="0"
@@ -416,6 +416,26 @@ export default function AllocateJournalPaymentModal({
                               doc.remaining_amount,
                             )
                           }
+                        /> */}
+
+                        <NumericTextInput
+                          value={allocations[doc.id] ?? ""}
+                          min="0"
+                          max={doc.remaining_amount}
+                          allowDecimals
+                          decimalScale={2}
+                          onChange={(val) =>
+                            handleAmountChange(
+                              doc.id,
+                              Number(val),
+                              doc.remaining_amount,
+                            )
+                          }
+                          className={`w-full border p-1 rounded text-right bg-white ${
+                            currentAlloc > doc.remaining_amount
+                              ? "border-red-500 text-red-600 focus:ring-red-500"
+                              : "border-zinc-300"
+                          }`}
                         />
                       </td>
                     </tr>

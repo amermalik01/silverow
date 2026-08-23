@@ -10,6 +10,8 @@ type NumericTextInputProps = {
   onChange: (val: number) => void;
   allowDecimals?: boolean;
   decimalScale?: number;
+  min?: number | string;
+  max?: number | string;
   disabled?: boolean;
   className?: string;
   placeholder?: string;
@@ -20,6 +22,8 @@ export default function NumericTextInput({
   onChange,
   allowDecimals = true,
   decimalScale = 2,
+  min,
+  max,
   disabled = false,
   className = "",
   placeholder = "0",
@@ -36,6 +40,18 @@ export default function NumericTextInput({
     setLocalVal(value !== undefined && value !== null ? String(value) : "");
   }
 
+   const clampValue = (numValue: number) => {
+    if (min !== undefined && numValue < Number(min)) {
+      return Number(min);
+    }
+
+    if (max !== undefined && numValue > Number(max)) {
+      return Number(max);
+    }
+
+    return numValue;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     const sanitized = sanitizeNumericInput(
@@ -51,12 +67,17 @@ export default function NumericTextInput({
   };
 
   const handleBlur = () => {
-    const numValue = localVal === "" || localVal === "." ? 0 : Number(localVal);
-    if (allowDecimals && localVal !== "") {
-      setLocalVal(numValue.toString());
-    } else {
-      setLocalVal(String(numValue));
-    }
+    let numValue = localVal === "" || localVal === "." ? 0 : Number(localVal);
+
+    numValue = clampValue(numValue);
+
+    // if (allowDecimals && localVal !== "") {
+    //   setLocalVal(numValue.toString());
+    // } else {
+    //   setLocalVal(String(numValue));
+    // }
+
+    setLocalVal(numValue.toString());
     onChange(numValue);
   };
 

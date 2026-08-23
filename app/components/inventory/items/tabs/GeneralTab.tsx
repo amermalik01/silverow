@@ -2,6 +2,7 @@
 
 "use client";
 
+import NumericTextInput from "@/components/ui/NumericTextInput";
 import { ItemFormData, ItemLookupOption } from "@/types/inventory";
 
 type Props = {
@@ -200,12 +201,23 @@ export default function GeneralTab({
           <label className="block mb-1 font-medium text-slate-700 dark:text-slate-300">
             Reorder Point Quantity
           </label>
-          <input
+          {/* <input
             type="number"
             disabled={isReadonly}
             value={item.reorder_qty}
             onChange={(e) =>
               setItem((prev) => ({ ...prev, reorder_qty: e.target.value }))
+            }
+            className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
+          /> */}
+
+          <NumericTextInput
+            placeholder="0"
+            min="0"
+            disabled={isReadonly}
+            value={Number(item.reorder_qty)}
+            onChange={(val) =>
+              setItem((prev) => ({ ...prev, reorder_qty: String(val) }))
             }
             className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
           />

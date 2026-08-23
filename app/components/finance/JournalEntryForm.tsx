@@ -10,6 +10,7 @@ import { JournalLine } from "@/types/finance";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Props = {
   slug: string;
@@ -306,20 +307,34 @@ export default function JournalEntryForm({
 
               {/* Debit */}
               <td className="p-2">
-                <input
+                {/* <input
                   type="number"
                   value={line.debit}
                   onChange={(e) => updateLine(index, "debit", e.target.value)}
+                  className="border p-2 w-full"
+                /> */}
+                <NumericTextInput
+                  value={Number(line.debit)}
+                  allowDecimals
+                  decimalScale={2}
+                  onChange={(val) => updateLine(index, "debit", String(val))}
                   className="border p-2 w-full"
                 />
               </td>
 
               {/* Credit */}
               <td className="p-2">
-                <input
+                {/* <input
                   type="number"
                   value={line.credit}
                   onChange={(e) => updateLine(index, "credit", e.target.value)}
+                  className="border p-2 w-full"
+                /> */}
+                <NumericTextInput
+                  value={Number(line.credit)}
+                  allowDecimals
+                  decimalScale={2}
+                  onChange={(val) => updateLine(index, "credit", String(val))}
                   className="border p-2 w-full"
                 />
               </td>

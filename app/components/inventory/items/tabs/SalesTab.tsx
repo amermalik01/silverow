@@ -2,6 +2,7 @@
 
 "use client";
 
+import NumericTextInput from "@/components/ui/NumericTextInput";
 import { ItemFormData, ItemLookupOption } from "@/types/inventory";
 
 type Props = {
@@ -51,7 +52,7 @@ export default function SalesTab({
                 </select>
               </td>
               <td className="p-3">
-                <input
+                {/* <input
                   type="number"
                   disabled={isReadonly}
                   value={item.standard_sales_price}
@@ -62,13 +63,41 @@ export default function SalesTab({
                     }))
                   }
                   className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                /> */}
+
+                <NumericTextInput
+                  allowDecimals
+                  decimalScale={2}
+                  disabled={isReadonly}
+                  value={Number(item.standard_sales_price)}
+                  onChange={(val) =>
+                    setItem((prev) => ({
+                      ...prev,
+                      standard_sales_price: String(val),
+                    }))
+                  }
+                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
                 />
               </td>
               <td className="p-3">
-                <input
+                {/* <input
                   type="number"
                   disabled={isReadonly}
                   defaultValue={item.standard_sales_price}
+                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                /> */}
+
+                <NumericTextInput
+                  allowDecimals
+                  decimalScale={2}
+                  disabled={isReadonly}
+                  value={Number(item.standard_sales_price)}
+                  onChange={(val) =>
+                    setItem((prev) => ({
+                      ...prev,
+                      standard_sales_price: String(val),
+                    }))
+                  }
                   className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
                 />
               </td>

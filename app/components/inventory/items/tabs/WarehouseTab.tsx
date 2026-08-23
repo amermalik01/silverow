@@ -12,6 +12,7 @@ import type {
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Props = {
   warehouses?: ItemWarehouseDraft[]; // Made optional to prevent runtime crashes
@@ -369,7 +370,18 @@ export default function WarehouseTab({
                       }
                       className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900 capitalize"
                     />
-                    <input
+
+                    <NumericTextInput
+                      allowDecimals
+                      decimalScale={2}
+                      disabled={isReadonly}
+                      value={Number(w.cost)}
+                      onChange={(val) =>
+                        updateWarehouseRow(idx, "cost", String(val))
+                      }
+                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                    />
+                    {/* <input
                       type="number"
                       step="0.0001"
                       disabled={isReadonly}
@@ -379,7 +391,7 @@ export default function WarehouseTab({
                         updateWarehouseRow(idx, "cost", e.target.value)
                       }
                       className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                    />
+                    /> */}
                   </div>
                 </div>
 

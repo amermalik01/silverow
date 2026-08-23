@@ -6,6 +6,7 @@ import React from "react";
 import { ColumnConfig, FilterValue } from "@/types/table";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface Props {
   column: ColumnConfig;
@@ -76,7 +77,30 @@ export const ColumnHeaderFilter: React.FC<Props> = ({
   if (column.dataType === "number") {
     return (
       <div className="flex flex-col gap-1 w-full min-w-[100px]">
-        <input
+        <NumericTextInput
+          placeholder="From"
+          value={Number(currentFilter.from) || 0}
+          onChange={(value) =>
+            onFilterChange(column.columnKey, {
+              ...currentFilter,
+              from: value,
+            })
+          }
+          className="w-full rounded border border-emerald-800/80 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-100 placeholder-emerald-400/60 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+        />
+
+        <NumericTextInput
+          placeholder="To"
+          value={Number(currentFilter.to) || 0}
+          onChange={(value) =>
+            onFilterChange(column.columnKey, {
+              ...currentFilter,
+              to: value,
+            })
+          }
+          className="w-full rounded border border-emerald-800/80 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-100 placeholder-emerald-400/60 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+        />
+        {/* <input
           type="number"
           placeholder="From"
           value={currentFilter.from || ""}
@@ -88,6 +112,8 @@ export const ColumnHeaderFilter: React.FC<Props> = ({
           }
           className="w-full rounded border border-emerald-800/80 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-100 placeholder-emerald-400/60 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
         />
+
+        
         <input
           type="number"
           placeholder="To"
@@ -99,7 +125,7 @@ export const ColumnHeaderFilter: React.FC<Props> = ({
             })
           }
           className="w-full rounded border border-emerald-800/80 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-100 placeholder-emerald-400/60 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-        />
+        /> */}
       </div>
     );
   }

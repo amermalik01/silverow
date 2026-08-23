@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface LedgerEntry {
   id: string;
@@ -197,7 +198,7 @@ export default function PartyActivitySettlement({
                       ${inv.remaining_amount.toFixed(2)}
                     </td>
                     <td className="p-2">
-                      <input
+                      {/* <input
                         type="number"
                         disabled={!selectedPaymentId}
                         step="0.01"
@@ -206,6 +207,22 @@ export default function PartyActivitySettlement({
                           handleAmountChange(
                             inv.id,
                             parseFloat(e.target.value) || 0,
+                            inv.remaining_amount,
+                          )
+                        }
+                        className="w-full border p-1 rounded text-right bg-white font-mono"
+                        placeholder="0.00"
+                      /> */}
+
+                      <NumericTextInput
+                        allowDecimals
+                        decimalScale={2}
+                        disabled={!selectedPaymentId}
+                        value={allocationAmounts[inv.id]}
+                        onChange={(val) =>
+                          handleAmountChange(
+                            inv.id,
+                            Number(val) || 0,
                             inv.remaining_amount,
                           )
                         }

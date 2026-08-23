@@ -2,6 +2,7 @@
 
 "use client";
 
+import NumericTextInput from "@/components/ui/NumericTextInput";
 import { ItemFormData, ItemLookupOption } from "@/types/inventory";
 
 type Props = {
@@ -45,7 +46,18 @@ export default function PurchaseTab({
           <label className="block mb-1 font-medium text-slate-700 dark:text-slate-300">
             Standard Cost
           </label>
-          <input
+
+          <NumericTextInput
+            allowDecimals
+            decimalScale={2}
+            disabled={isReadonly}
+            value={Number(item.standard_cost)}
+            onChange={(val) =>
+              setItem((prev) => ({ ...prev, standard_cost: String(val) }))
+            }
+            className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
+          />
+          {/* <input
             type="number"
             disabled={isReadonly}
             value={item.standard_cost}
@@ -53,7 +65,7 @@ export default function PurchaseTab({
               setItem((prev) => ({ ...prev, standard_cost: e.target.value }))
             }
             className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
-          />
+          /> */}
         </div>
       </div>
 
@@ -95,7 +107,7 @@ export default function PurchaseTab({
                   </select>
                 </td>
                 <td className="p-3 border-t border-slate-100 dark:border-slate-800/40">
-                  <input
+                  {/* <input
                     type="number"
                     disabled={isReadonly}
                     value={item.standard_cost}
@@ -103,6 +115,20 @@ export default function PurchaseTab({
                       setItem((prev) => ({
                         ...prev,
                         standard_cost: e.target.value,
+                      }))
+                    }
+                    className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                  /> */}
+
+                  <NumericTextInput
+                    allowDecimals
+                    decimalScale={2}
+                    disabled={isReadonly}
+                    value={Number(item.standard_cost)}
+                    onChange={(val) =>
+                      setItem((prev) => ({
+                        ...prev,
+                        standard_cost: String(val),
                       }))
                     }
                     className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"

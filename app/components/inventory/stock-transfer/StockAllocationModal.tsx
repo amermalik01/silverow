@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { AllocationPayload } from "./TransferStockForm";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface StockBatchRow {
   production_date: string;
@@ -194,11 +195,20 @@ const StockAllocationModal: React.FC<ModalProps> = ({
                   <td className="p-2">{batch.allocated_qty}</td>
                   <td className="p-2 font-bold">{batch.available_qty}</td>
                   <td className="p-2 text-center">
-                    <input
+                    {/* <input
                       type="number"
                       value={batch.current_allocation || ""}
                       onChange={(e) =>
                         handleAllocationInputChange(idx, Number(e.target.value))
+                      }
+                      className="w-16 text-center border border-emerald-400 rounded p-0.5 text-xs font-semibold text-emerald-700 bg-emerald-50/50"
+                    /> */}
+
+                    <NumericTextInput
+                      allowDecimals={false}
+                      value={Number(batch.current_allocation) || 0}
+                      onChange={(val) =>
+                        handleAllocationInputChange(idx, Number(val))
                       }
                       className="w-16 text-center border border-emerald-400 rounded p-0.5 text-xs font-semibold text-emerald-700 bg-emerald-50/50"
                     />
@@ -211,10 +221,7 @@ const StockAllocationModal: React.FC<ModalProps> = ({
 
         {/* Confirmation Footer */}
         <div className="bg-gray-50 p-3 border-t flex justify-end space-x-2">
-          <Button
-            onClick={handleConfirmSave}
-            variant="save"
-          >
+          <Button onClick={handleConfirmSave} variant="save">
             Save Allocations
           </Button>
           <Button

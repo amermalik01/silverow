@@ -15,6 +15,7 @@ import StockAllocationModal, {
 } from "../../shared/modals/StockAllocationModal";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface Account {
   id: string;
@@ -793,7 +794,7 @@ export default function ItemJournalForm({
 
                     {/* PIECE QUANTITY INPUT MATRIX */}
                     <td className="p-1">
-                      <input
+                      {/* <input
                         type="number"
                         min="0"
                         disabled={isPosted}
@@ -807,6 +808,17 @@ export default function ItemJournalForm({
                         }
                         placeholder="0"
                         className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
+                      /> */}
+
+                      <NumericTextInput
+                        placeholder="0"
+                        min="0"
+                        value={Number(line.quantity)}
+                        allowDecimals={false}
+                        onChange={(val) =>
+                          handleLineChange(line.local_key, "quantity", val)
+                        }
+                        className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
                       />
                     </td>
 
@@ -817,7 +829,19 @@ export default function ItemJournalForm({
 
                     {/* COST VALUATION MODIFIER */}
                     <td className="p-1">
-                      <input
+                      <NumericTextInput
+                        placeholder="0"
+                        min="0"
+                        allowDecimals
+                        decimalScale={2}
+                        disabled={isPosted}
+                        value={Number(line.cost_per_unit)}
+                        onChange={(val) =>
+                          handleLineChange(line.local_key, "cost_per_unit", val)
+                        }
+                        className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
+                      />
+                      {/* <input
                         type="number"
                         min="0"
                         step="0.01"
@@ -832,7 +856,7 @@ export default function ItemJournalForm({
                         }
                         placeholder="0.00"
                         className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
-                      />
+                      /> */}
                     </td>
 
                     {/* SUM TOTAL MATRIX RECALCULATION DISPLAY ROW */}

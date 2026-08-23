@@ -25,6 +25,7 @@ import AllocateJournalPaymentModal from "./modals/AllocateJournalPaymentModal";
 import { useLoader } from "@/app/context/LoaderContext";
 import { PostedTransactionsModal } from "./modals/PostedTransactionsModal";
 import { JournalPayload2, JournalSource } from "@/types/journal";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Currency = {
   id: string;
@@ -880,7 +881,7 @@ export default function JournalForm({
                   </td>
 
                   <td className="p-1.5">
-                    <input
+                    {/* <input
                       type="number"
                       step="0.01"
                       disabled={debitDisabled}
@@ -897,10 +898,24 @@ export default function JournalForm({
                           ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
                           : "bg-white"
                       }`}
+                    /> */}
+                    <NumericTextInput
+                      value={Number(line.debit)}
+                      allowDecimals
+                      decimalScale={2}
+                      disabled={debitDisabled}
+                      onChange={(val) =>
+                        handleLineChange(index, "debit", String(val))
+                      }
+                      className={`w-full border p-1 rounded text-right font-mono ${
+                        debitDisabled
+                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                          : "bg-white"
+                      }`}
                     />
                   </td>
                   <td className="p-1.5">
-                    <input
+                    {/* <input
                       type="number"
                       step="0.01"
                       disabled={creditDisabled}
@@ -917,11 +932,26 @@ export default function JournalForm({
                           ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
                           : "bg-white"
                       }`}
+                    /> */}
+
+                    <NumericTextInput
+                      value={Number(line.credit)}
+                      allowDecimals
+                      decimalScale={2}
+                      disabled={creditDisabled}
+                      onChange={(val) =>
+                        handleLineChange(index, "credit", String(val))
+                      }
+                      className={`w-full border p-1 rounded text-right font-mono ${
+                        creditDisabled
+                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                          : "bg-white"
+                      }`}
                     />
                   </td>
 
                   <td className="p-1.5">
-                    <input
+                    {/* <input
                       type="number"
                       step="0.01"
                       disabled={!line.currency_id || formDisabled}
@@ -934,6 +964,21 @@ export default function JournalForm({
                         )
                       }
                       className="w-full border p-1 rounded text-center bg-zinc-50 font-mono"
+                    /> */}
+
+                    <NumericTextInput
+                      value={Number(line.currency_id ? line.exchange_rate : 1)}
+                      allowDecimals
+                      decimalScale={2}
+                      disabled={!line.currency_id || formDisabled}
+                      onChange={(val) =>
+                        handleLineChange(index, "exchange_rate", String(val))
+                      }
+                      className={`w-full border p-1 rounded text-right font-mono ${
+                        creditDisabled
+                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                          : "bg-white"
+                      }`}
                     />
                   </td>
 

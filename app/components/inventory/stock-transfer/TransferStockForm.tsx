@@ -12,6 +12,7 @@ import StockAllocationModal from "./StockAllocationModal";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 export interface AllocationPayload {
   production_date: string;
@@ -196,7 +197,9 @@ export default function TransferStockForm({
     }
 
     if (warehouseFrom === warehouseTo) {
-      alert("Validation Error: Origin and Destination warehouses cannot be identical.");
+      alert(
+        "Validation Error: Origin and Destination warehouses cannot be identical.",
+      );
       return;
     }
 
@@ -440,7 +443,7 @@ export default function TransferStockForm({
           item_id: selectedItem.id,
           item_code: selectedItem.item_code,
           item_description: selectedItem.name,
-            uom: selectedItem.base_uom_id || "Pcs",
+          uom: selectedItem.base_uom_id || "Pcs",
         };
       }),
     );
@@ -585,11 +588,21 @@ export default function TransferStockForm({
           <label className="block text-xs font-medium text-zinc-500 mb-1">
             Freight / Shipping Cost
           </label>
-          <input
+          {/* <input
             type="number"
             value={shippingCharge}
             onChange={(e) => setShippingCharge(Number(e.target.value))}
             disabled={isPosted || isFormDisabled || isLoading}
+            className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
+          /> */}
+
+          <NumericTextInput
+            min="0"
+            allowDecimals
+            decimalScale={2}
+            disabled={isPosted || isFormDisabled || isLoading}
+            value={Number(shippingCharge)}
+            onChange={(val) => setShippingCharge(Number(val))}
             className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
           />
         </div>
@@ -723,7 +736,7 @@ export default function TransferStockForm({
                     </td>
 
                     <td className="p-2">
-                      <input
+                      {/* <input
                         type="number"
                         min={1}
                         value={line.qty}
@@ -734,6 +747,17 @@ export default function TransferStockForm({
                             "qty",
                             Number(e.target.value),
                           )
+                        }
+                        className="w-full border p-2 rounded-lg font-mono bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                      /> */}
+
+                      <NumericTextInput
+                        min="1"
+                        allowDecimals={false}
+                        disabled={isPosted}
+                        value={line.qty}
+                        onChange={(val) =>
+                          updateLineField(line.local_key, "qty", Number(val))
                         }
                         className="w-full border p-2 rounded-lg font-mono bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                       />

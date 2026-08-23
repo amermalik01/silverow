@@ -9,6 +9,7 @@ import { CustomerJournal, CustomerJournalLine } from "@/types/finance";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Customer = { id: string; name: string };
 type Account = { id: string; code: string; name: string };
@@ -133,10 +134,17 @@ export default function CustomerJournalForm({
         ))}
       </select>
 
-      <input
+      {/* <input
         type="number"
         value={form.amount}
         onChange={(e) => setForm({ ...form, amount: e.target.value })}
+      /> */}
+
+      <NumericTextInput
+        value={Number(form.amount)}
+        allowDecimals
+        decimalScale={2}
+        onChange={(val) => setForm({ ...form, amount: String(val) })}
       />
 
       <select
@@ -147,10 +155,7 @@ export default function CustomerJournalForm({
         <option value="PAYMENT">Payment</option>
       </select>
 
-      <Button
-        type="submit"
-        variant="save"
-      >
+      <Button type="submit" variant="save">
         Save
       </Button>
     </form>
