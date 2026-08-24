@@ -50,7 +50,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       // 2. Fetch journal entries for all related source documents
       const result = await client.query(
         `SELECT 
-          jel.id AS entry_no,
+          jel.entry_no AS entry_no,
           je.entry_date AS posting_date,
           CASE 
             WHEN je.journal_type = 'PURCHASE_RECEIPT' THEN 'Purchase Receipt'

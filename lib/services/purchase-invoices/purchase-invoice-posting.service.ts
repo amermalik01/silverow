@@ -337,17 +337,6 @@ export class PurchaseInvoicePostingService {
         journalEntryId: journal.id,
       });
 
-      // 3. Optional: If payments/prepayments were pre-selected during invoice posting, call AllocationService
-      // if (allocations && allocations.length > 0) {
-      //   await AllocationService.applyAP(
-      //     client,
-      //     companyId,
-      //     paymentLedgerId,
-      //     po.supplier_id,
-      //     allocations,
-      //     userId,
-      //   );
-      // }
 
       // 10. Mark Purchase Order completed
       await client.query(

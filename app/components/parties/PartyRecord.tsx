@@ -367,6 +367,7 @@ export default function PartyRecord({
                 : "customer"
             }
             currencyCode={activeCurrencyCode}
+            sourceDocType=""
           />
         )}
         {activeTab === "notes" && (

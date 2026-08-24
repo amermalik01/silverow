@@ -22,8 +22,11 @@ interface LedgerEntry {
   posting_date: string;
   due_date?: string;
   description?: string;
+  currency_code: string;
   original_amount: number;
   remaining_amount: number;
+  original_amount_fcy: number;
+  remaining_amount_fcy: number;
   amount_lcy: number;
   remaining_amount_lcy: number;
   total_allocated?: number;
@@ -33,8 +36,10 @@ interface LedgerEntry {
 }
 
 interface Summary {
-  totalOriginal: number;
-  totalRemaining: number;
+  totalOriginalFCY: number;
+  totalRemainingFCY: number;
+  totalOriginalLCY: number;
+  totalRemainingLCY: number;
   openCount: number;
 }
 
@@ -42,18 +47,22 @@ interface Props {
   partyId: string;
   partyType: "supplier" | "customer";
   currencyCode?: string;
+  sourceDocType?: string;
 }
 
 export default function PartyLedgerActivityTab({
   partyId,
   partyType,
   currencyCode = "GBP",
+  sourceDocType = "",
 }: Props) {
   const { show, hide } = useLoader();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [summary, setSummary] = useState<Summary>({
-    totalOriginal: 0,
-    totalRemaining: 0,
+    totalOriginalFCY: 0,
+    totalRemainingFCY: 0,
+    totalOriginalLCY: 0,
+    totalRemainingLCY: 0,
     openCount: 0,
   });
   const [filter, setFilter] = useState<"ALL" | "OPEN" | "CLOSED">("ALL");
@@ -81,14 +90,29 @@ export default function PartyLedgerActivityTab({
     });
   }, [currencyCode]);
 
+  // LCY Formatter (Base reporting currency, e.g., GBP)
   const lcyFormatter = useMemo(() => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-GB", {
       style: "currency",
       currency: "GBP",
-      currencyDisplay: "code",
+      currencyDisplay: "narrowSymbol",
       minimumFractionDigits: 2,
     });
   }, []);
+
+  // Dynamic helper to format any row's FCY amount
+  const formatFCY = (val: number, currCode?: string) => {
+    const code =
+      currCode && currCode.trim().length === 3
+        ? currCode.trim().toUpperCase()
+        : "GBP";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: code,
+      currencyDisplay: "narrowSymbol",
+      minimumFractionDigits: 2,
+    }).format(val || 0);
+  };
 
   const formatAmount = (val: number, isLcy = false) => {
     return isLcy
@@ -99,22 +123,33 @@ export default function PartyLedgerActivityTab({
   const fetchLedger = useCallback(async () => {
     show("Loading Ledger Activity...");
     try {
-      const res = await fetch(
-        `/api/parties/${partyId}/ledger?type=${partyType}`,
-      );
+      const url = sourceDocType
+        ? `/api/parties/${partyId}/ledger?type=${partyType}&docType=${sourceDocType}`
+        : `/api/parties/${partyId}/ledger?type=${partyType}`;
+
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch ledger activity.");
+
       const data = await res.json();
+
       setEntries(data.entries || []);
       setSummary(
-        data.summary || { totalOriginal: 0, totalRemaining: 0, openCount: 0 },
+        data.summary || {
+          totalOriginalFCY: 0,
+          totalRemainingFCY: 0,
+          totalOriginalLCY: 0,
+          totalRemainingLCY: 0,
+          openCount: 0,
+        },
       );
     } catch (err) {
       console.error(err);
       toast.error("Error loading party ledger entries.");
+      setEntries([]);
     } finally {
       hide();
     }
-  }, [partyId, partyType, show, hide]);
+  }, [partyId, partyType, sourceDocType, show, hide]);
 
   useEffect(() => {
     if (partyId) {
@@ -210,7 +245,10 @@ export default function PartyLedgerActivityTab({
             Open Outstanding Balance
           </span>
           <div className="text-lg font-bold font-mono text-amber-800 dark:text-amber-300">
-            {formatAmount(summary.totalRemaining)}
+            {formatFCY(summary.totalRemainingFCY, currencyCode)}
+          </div>
+          <div className="text-xs font-mono text-amber-600/80 dark:text-amber-400/70">
+            LCY: {lcyFormatter.format(summary.totalRemainingLCY || 0)}
           </div>
         </div>
 
@@ -275,9 +313,10 @@ export default function PartyLedgerActivityTab({
               <th className="p-2.5">Date</th>
               <th className="p-2.5">Document No</th>
               <th className="p-2.5">Type</th>
+              <th className="p-2.5 text-center">Curr</th>
+              <th className="p-2.5 text-right">Amount (FCY)</th>
               <th className="p-2.5 text-right">Amount (LCY)</th>
-              <th className="p-2.5 text-right">Amount</th>
-              <th className="p-2.5 text-right">Remaining</th>
+              <th className="p-2.5 text-right">Remaining (FCY)</th>
               <th className="p-2.5 text-center">Allocations</th>
               <th className="p-2.5 text-center">On Hold</th>
               <th className="p-2.5 text-center">Action</th>
@@ -300,7 +339,26 @@ export default function PartyLedgerActivityTab({
                 <td className="p-2.5 uppercase text-[10px]">
                   {row.document_type.replace(/_/g, " ")}
                 </td>
+
+                <td className="p-2.5 text-center">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 font-medium">
+                    {row.currency_code}
+                  </span>
+                </td>
+
+                {/* FCY Original Amount */}
+                <td className="p-2.5 text-right font-medium text-slate-800 dark:text-slate-200">
+                  {formatFCY(row.original_amount_fcy, row.currency_code)}
+                </td>
+                {/* LCY Original Amount */}
                 <td className="p-2.5 text-right font-medium text-slate-500">
+                  {lcyFormatter.format(row.amount_lcy || 0)}
+                </td>
+                {/* Remaining FCY Amount */}
+                <td className="p-2.5 text-right font-bold text-amber-600">
+                  {formatFCY(row.remaining_amount_fcy, row.currency_code)}
+                </td>
+                {/* <td className="p-2.5 text-right font-medium text-slate-500">
                   {formatAmount(row.amount_lcy, true)}
                 </td>
                 <td className="p-2.5 text-right font-medium">
@@ -308,7 +366,7 @@ export default function PartyLedgerActivityTab({
                 </td>
                 <td className="p-2.5 text-right font-bold text-amber-600">
                   {formatAmount(row.remaining_amount)}
-                </td>
+                </td> */}
                 <td className="p-2.5 text-center">
                   <button
                     onClick={() => setViewAllocationsEntry(row)}
@@ -418,11 +476,28 @@ export default function PartyLedgerActivityTab({
           partyId={partyId}
           partyType={partyType}
           documentType={selectedPayment.document_type}
+          paymentEntryId={selectedPayment.id}
+          paymentAmount={Math.abs(
+            selectedPayment.remaining_amount_fcy ??
+              selectedPayment.remaining_amount,
+          )}
+          currencyIsoCode={selectedPayment.currency_code || currencyCode}
+          onApplyAllocations={handleApplyAllocations}
+        />
+      )}
+
+      {/* {selectedPayment && (
+        <AllocateJournalPaymentModal
+          isOpen={true}
+          onClose={() => setSelectedPayment(null)}
+          partyId={partyId}
+          partyType={partyType}
+          documentType={selectedPayment.document_type}
           paymentAmount={selectedPayment.remaining_amount}
           currencyIsoCode={currencyCode}
           onApplyAllocations={handleApplyAllocations}
         />
-      )}
+      )} */}
     </div>
   );
 }

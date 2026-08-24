@@ -1165,6 +1165,13 @@ export class JournalService {
 
           const netAmount = leg.debit > 0 ? leg.debit : leg.credit;
 
+          // 🎯 Fix 1: Compute correct signs for Sub-Ledger Balances
+          // Vendor (AP): Credit increases debt (+), Debit reduces debt (-)
+          // Customer (AR): Debit increases balance (+), Credit reduces balance (-)
+          const originalAmount = isSupplier
+            ? leg.credit - leg.debit
+            : leg.debit - leg.credit;
+
           const insertedSubLedger = await client.query(
             `
             INSERT INTO ${subLedgerTable} (
@@ -1179,9 +1186,10 @@ export class JournalService {
               remaining_amount,
               is_open,
               journal_entry_id,
+              journal_line_id,
               created_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, true, $9, NOW())
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, true, $9, $10, NOW())
             RETURNING id
             `,
             [
@@ -1192,8 +1200,9 @@ export class JournalService {
               journal.entry_no,
               formattedDate,
               leg.description,
-              netAmount,
+              originalAmount, //netAmount,
               journal.id,
+              leg.journal_line_id
             ],
           );
 
@@ -1202,20 +1211,40 @@ export class JournalService {
 
         // Update allocations for primary sub-ledger legs
         if (!leg.is_balancing && leg.journal_line_id) {
-          await client.query(
+          
+          const targetSubEntryId = subLedgerEntryId || glLedgerEntryId;
+
+          const allocationsRes = await client.query(
             `
             UPDATE ledger_allocations
             SET payment_entry_id = $1
             WHERE journal_line_id = $2
               AND company_id = $3
               AND is_unapplied = false
+            RETURNING ledger_entry_id, allocated_amount, allocation_type
             `,
             [
-              subLedgerEntryId || glLedgerEntryId,
+              targetSubEntryId,
               leg.journal_line_id,
               companyId,
             ],
           );
+
+          // Apply allocated payment amounts directly against open invoice balances
+          for (const alloc of allocationsRes.rows) {
+            const subTable = alloc.allocation_type === "AP" ? "vendor_ledger_entries" : "customer_ledger_entries";
+
+            await client.query(
+              `
+              UPDATE ${subTable}
+              SET 
+                remaining_amount = remaining_amount - $1,
+                is_open = CASE WHEN (remaining_amount - $1) = 0 THEN false ELSE true END
+              WHERE id = $2 AND company_id = $3
+              `,
+              [alloc.allocated_amount, alloc.ledger_entry_id, companyId],
+            );
+          }
         }
       }
 

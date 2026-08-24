@@ -192,8 +192,8 @@ export const PostedTransactionsModal: React.FC<
 
           {postedInfo && (
             <div className="mt-3 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-              Posted By {postedInfo.user} On{" "}
-              {postedInfo.date ? format(postedInfo.date, "dd/MM/yyyy") : ""}
+              Posted By {postedInfo.user} On{" "} {postedInfo.date}
+              {/* {postedInfo.date ? format(postedInfo.date, "dd/MM/yyyy") : ""} */}
             </div>
           )}
         </div>

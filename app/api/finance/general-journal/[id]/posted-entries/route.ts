@@ -18,7 +18,7 @@ export async function GET(
 
     const query = `
       SELECT 
-        gle.entry_no,
+        gle.transaction_id AS entry_no,
         gle.posting_date,
         gle.source_type AS document_type,
         COALESCE(gle.document_no, gle.entry_no) AS document_number,

@@ -36,11 +36,17 @@ export class AllocationService {
     }
 
     const payLedger = paymentRes.rows[0];
-    let payRemaining = Number(payLedger.remaining_amount);
+    const payRate = Number(payLedger.exchange_rate || 1.0);
+    
+    // Convert payment LCY remaining balance to FCY for comparison
+    let payRemainingLCY = Number(payLedger.remaining_amount);
+    let payRemainingFCY = payRate !== 0 ? payRemainingLCY / payRate : payRemainingLCY;
+
+    // let payRemaining = Number(payLedger.remaining_amount);
 
     for (const alloc of allocations) {
-      const roundedAllocAmount = Number(alloc.amount.toFixed(2));
-      if (roundedAllocAmount <= 0) continue;
+      const roundedAllocAmountFCY = Number(alloc.amount.toFixed(2));
+      if (roundedAllocAmountFCY <= 0) continue;
 
       // GUARDRAIL 1: Self-allocation check
       if (alloc.invoice_ledger_id === paymentLedgerId) {
@@ -48,9 +54,9 @@ export class AllocationService {
       }
 
       // GUARDRAIL 2: Check running payment remaining balance
-      if (roundedAllocAmount > payRemaining + 0.001) {
+      if (roundedAllocAmountFCY > payRemainingFCY + 0.001) {
         throw new Error(
-          `Allocation amount (${roundedAllocAmount}) exceeds unallocated payment balance (${payRemaining.toFixed(2)}).`,
+          `Allocation amount (${roundedAllocAmountFCY}) exceeds unallocated payment balance (${payRemainingFCY.toFixed(2)}).`,
         );
       }
 
@@ -68,21 +74,27 @@ export class AllocationService {
       }
 
       const invLedger = invoiceRes.rows[0];
-      const invRemaining = Number(invLedger.remaining_amount);
+      const invRate = Number(invLedger.exchange_rate || 1.0);
+      const invRemainingLCY = Number(invLedger.remaining_amount);
+      const invRemainingFCY = invRate !== 0 ? invRemainingLCY / invRate : invRemainingLCY;
 
-      if (roundedAllocAmount > invRemaining + 0.001) {
+      if (roundedAllocAmountFCY > invRemainingFCY + 0.01) {
         throw new Error(
-          `Allocation amount (${roundedAllocAmount}) exceeds open invoice balance (${invRemaining.toFixed(2)}).`,
+          `Allocation amount (${roundedAllocAmountFCY}) exceeds open invoice balance (${invRemainingFCY.toFixed(2)}).`,
         );
       }
 
-      // 3. Calculate Realized FX Variance
+      // 3. Convert FCY Allocation Amount to LCY for each side
+      const allocAmountInvoiceLCY = Number((roundedAllocAmountFCY * invRate).toFixed(2));
+      const allocAmountPaymentLCY = Number((roundedAllocAmountFCY * payRate).toFixed(2));
+
+      // 4. Calculate Realized FX Variance
       const fx = await FxVarianceService.calculateVariance(client, {
         companyId,
         allocationType: "AP",
-        invoiceExchangeRate: Number(invLedger.exchange_rate || 1.0),
-        paymentExchangeRate: Number(payLedger.exchange_rate || 1.0),
-        allocatedAmountFCY: roundedAllocAmount,
+        invoiceExchangeRate: invRate,
+        paymentExchangeRate: payRate,
+        allocatedAmountFCY: roundedAllocAmountFCY,
       });
 
       // 4. Record Allocation Line with FX Variance
@@ -96,7 +108,7 @@ export class AllocationService {
           companyId,
           paymentLedgerId, // Correct source payment entry ID
           invLedger.id, // Correct target invoice entry ID
-          roundedAllocAmount,
+          roundedAllocAmountFCY,
           payLedger.exchange_rate,
           fx.realizedGainLoss,
           userId || null,
@@ -106,27 +118,30 @@ export class AllocationService {
       const allocationId = allocInsertRes.rows[0].id;
 
       // 5. Update Invoice Remaining Balance safely
-      const newInvRemaining = Math.max(
+      const newInvRemainingLCY = Math.max(
         0,
-        Number((invRemaining - roundedAllocAmount).toFixed(2)),
+        Number((invRemainingLCY - allocAmountInvoiceLCY).toFixed(2)),
       );
       await client.query(
         `UPDATE vendor_ledger_entries 
          SET remaining_amount = $1, is_open = $2 
          WHERE id = $3`,
-        [newInvRemaining, newInvRemaining > 0.001, invLedger.id],
+        [newInvRemainingLCY, newInvRemainingLCY > 0.001, invLedger.id],
       );
 
       // 6. Update Payment Remaining Balance locally & in DB
-      payRemaining = Math.max(
+      payRemainingLCY = Math.max(
         0,
-        Number((payRemaining - roundedAllocAmount).toFixed(2)),
+        Number((payRemainingLCY - allocAmountPaymentLCY).toFixed(2)),
       );
+
+      payRemainingFCY = payRate !== 0 ? payRemainingLCY / payRate : payRemainingLCY;
+
       await client.query(
         `UPDATE vendor_ledger_entries 
          SET remaining_amount = $1, is_open = $2 
          WHERE id = $3`,
-        [payRemaining, payRemaining > 0.001, payLedger.id],
+        [payRemainingLCY, payRemainingLCY > 0.001, payLedger.id],
       );
 
       // 7. Post GL Entries if FX Variance exists
