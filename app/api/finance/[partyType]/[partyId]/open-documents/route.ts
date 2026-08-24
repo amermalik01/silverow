@@ -16,7 +16,8 @@ export async function GET(
 
     const { partyType, partyId } = await params;
     const { searchParams } = new URL(req.url);
-    const docType = (searchParams.get("docType") || "INVOICE").toUpperCase();
+    const rawDocType = (searchParams.get("docType") || "INVOICE").toUpperCase();
+    // const docType = (searchParams.get("docType") || "INVOICE").toUpperCase();
 
     const isSupplier =
       partyType.toLowerCase() === "supplier" ||
@@ -28,27 +29,87 @@ export async function GET(
 
     let targetDocTypes: string[] = [];
 
+    console.log('rawDocType === ',rawDocType);
+
     if (isSupplier) {
-      if (docType === "PAYMENT") {
-        targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
-      } else if (docType === "REFUND") {
-        targetDocTypes = ["DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
-      } else if (docType === "PURCHASE_INVOICE" || docType === "INVOICE") {
-        targetDocTypes = ["PAYMENT", "DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
-      } else {
-        targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
+      switch (rawDocType) {
+        // When applying a Payment (Debit entry to Vendor), allocate against open Invoices (Credits)
+        case "PAYMENT":
+          targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
+          break;
+
+        // When applying a Vendor Refund (Credit entry from Vendor), allocate against open Debit Notes (Debits)
+        case "REFUND":
+          targetDocTypes = ["DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
+          break;
+
+        // When allocating from a Purchase Invoice / Bill side
+        case "PURCHASE_INVOICE":
+        case "INVOICE":
+          targetDocTypes = ["PAYMENT", "DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
+          break;
+
+        // When allocating from a Debit Note side
+        case "DEBIT_NOTE":
+        case "PURCHASE_DEBIT_NOTE":
+          targetDocTypes = ["REFUND", "PURCHASE_INVOICE", "INVOICE"];
+          break;
+
+        default:
+          targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
+          break;
       }
     } else {
-      if (docType === "PAYMENT") {
-        targetDocTypes = ["SALES_INVOICE", "INVOICE"];
-      } else if (docType === "REFUND") {
-        targetDocTypes = ["CREDIT_NOTE", "SALES_CREDIT_NOTE"];
-      } else if (docType === "SALES_INVOICE" || docType === "INVOICE") {
-        targetDocTypes = ["PAYMENT", "CREDIT_NOTE", "SALES_CREDIT_NOTE"];
-      } else {
-        targetDocTypes = ["SALES_INVOICE", "INVOICE"];
+      switch (rawDocType) {
+        // When applying a Customer Payment (Credit entry to Customer), allocate against open Sales Invoices (Debits)
+        case "PAYMENT":
+          targetDocTypes = ["SALES_INVOICE", "INVOICE"];
+          break;
+
+        // When applying a Customer Refund (Debit entry to Customer), allocate against open Credit Notes (Credits)
+        case "REFUND":
+          targetDocTypes = ["CREDIT_NOTE", "SALES_CREDIT_NOTE"];
+          break;
+
+        // When allocating from a Sales Invoice side
+        case "SALES_INVOICE":
+        case "INVOICE":
+          targetDocTypes = ["PAYMENT", "CREDIT_NOTE", "SALES_CREDIT_NOTE"];
+          break;
+
+        // When allocating from a Credit Note side
+        case "CREDIT_NOTE":
+        case "SALES_CREDIT_NOTE":
+          targetDocTypes = ["REFUND", "SALES_INVOICE", "INVOICE"];
+          break;
+
+        default:
+          targetDocTypes = ["SALES_INVOICE", "INVOICE"];
+          break;
       }
     }
+
+    // if (isSupplier) {
+    //   if (docType === "PAYMENT") {
+    //     targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
+    //   } else if (docType === "REFUND") {
+    //     targetDocTypes = ["DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
+    //   } else if (docType === "PURCHASE_INVOICE" || docType === "INVOICE") {
+    //     targetDocTypes = ["PAYMENT", "DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
+    //   } else {
+    //     targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
+    //   }
+    // } else {
+    //   if (docType === "PAYMENT") {
+    //     targetDocTypes = ["SALES_INVOICE", "INVOICE"];
+    //   } else if (docType === "REFUND") {
+    //     targetDocTypes = ["CREDIT_NOTE", "SALES_CREDIT_NOTE"];
+    //   } else if (docType === "SALES_INVOICE" || docType === "INVOICE") {
+    //     targetDocTypes = ["PAYMENT", "CREDIT_NOTE", "SALES_CREDIT_NOTE"];
+    //   } else {
+    //     targetDocTypes = ["SALES_INVOICE", "INVOICE"];
+    //   }
+    // }
 
     const query = `
       SELECT 

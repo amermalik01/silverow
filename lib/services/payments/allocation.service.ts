@@ -37,10 +37,15 @@ export class AllocationService {
 
     const payLedger = paymentRes.rows[0];
     const payRate = Number(payLedger.exchange_rate || 1.0);
-    
-    // Convert payment LCY remaining balance to FCY for comparison
-    let payRemainingLCY = Number(payLedger.remaining_amount);
-    let payRemainingFCY = payRate !== 0 ? payRemainingLCY / payRate : payRemainingLCY;
+
+    const originalPaySign = Math.sign(Number(payLedger.remaining_amount)) || 1;
+    let payRemainingLCYAbs = Math.abs(Number(payLedger.remaining_amount));
+    let payRemainingFCY =
+      payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
+
+    // // Convert payment LCY remaining balance to FCY for comparison
+    // let payRemainingLCY = Number(payLedger.remaining_amount);
+    // let payRemainingFCY = payRate !== 0 ? payRemainingLCY / payRate : payRemainingLCY;
 
     // let payRemaining = Number(payLedger.remaining_amount);
 
@@ -75,8 +80,14 @@ export class AllocationService {
 
       const invLedger = invoiceRes.rows[0];
       const invRate = Number(invLedger.exchange_rate || 1.0);
-      const invRemainingLCY = Number(invLedger.remaining_amount);
-      const invRemainingFCY = invRate !== 0 ? invRemainingLCY / invRate : invRemainingLCY;
+      // const invRemainingLCY = Number(invLedger.remaining_amount);
+      // const invRemainingFCY = invRate !== 0 ? invRemainingLCY / invRate : invRemainingLCY;
+
+      const originalInvSign =
+        Math.sign(Number(invLedger.remaining_amount)) || 1;
+      const invRemainingLCYAbs = Math.abs(Number(invLedger.remaining_amount));
+      const invRemainingFCY =
+        invRate !== 0 ? invRemainingLCYAbs / invRate : invRemainingLCYAbs;
 
       if (roundedAllocAmountFCY > invRemainingFCY + 0.01) {
         throw new Error(
@@ -84,9 +95,13 @@ export class AllocationService {
         );
       }
 
-      // 3. Convert FCY Allocation Amount to LCY for each side
-      const allocAmountInvoiceLCY = Number((roundedAllocAmountFCY * invRate).toFixed(2));
-      const allocAmountPaymentLCY = Number((roundedAllocAmountFCY * payRate).toFixed(2));
+      // 3. Convert FCY Allocation Amount to LCY
+      const allocAmountInvoiceLCY = Number(
+        (roundedAllocAmountFCY * invRate).toFixed(2),
+      );
+      const allocAmountPaymentLCY = Number(
+        (roundedAllocAmountFCY * payRate).toFixed(2),
+      );
 
       // 4. Calculate Realized FX Variance
       const fx = await FxVarianceService.calculateVariance(client, {
@@ -118,30 +133,32 @@ export class AllocationService {
       const allocationId = allocInsertRes.rows[0].id;
 
       // 5. Update Invoice Remaining Balance safely
-      const newInvRemainingLCY = Math.max(
+      const newInvRemainingLCYAbs = Math.max(
         0,
-        Number((invRemainingLCY - allocAmountInvoiceLCY).toFixed(2)),
+        Number((invRemainingLCYAbs - allocAmountInvoiceLCY).toFixed(2)),
       );
+      const finalInvRemaining = newInvRemainingLCYAbs * originalInvSign;
       await client.query(
         `UPDATE vendor_ledger_entries 
          SET remaining_amount = $1, is_open = $2 
          WHERE id = $3`,
-        [newInvRemainingLCY, newInvRemainingLCY > 0.001, invLedger.id],
+        [finalInvRemaining, newInvRemainingLCYAbs > 0.001, invLedger.id],
       );
 
       // 6. Update Payment Remaining Balance locally & in DB
-      payRemainingLCY = Math.max(
+      payRemainingLCYAbs = Math.max(
         0,
-        Number((payRemainingLCY - allocAmountPaymentLCY).toFixed(2)),
+        Number((payRemainingLCYAbs - allocAmountPaymentLCY).toFixed(2)),
       );
-
-      payRemainingFCY = payRate !== 0 ? payRemainingLCY / payRate : payRemainingLCY;
+      payRemainingFCY =
+        payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
+      const finalPayRemaining = payRemainingLCYAbs * originalPaySign;
 
       await client.query(
         `UPDATE vendor_ledger_entries 
          SET remaining_amount = $1, is_open = $2 
          WHERE id = $3`,
-        [payRemainingLCY, payRemainingLCY > 0.001, payLedger.id],
+        [finalPayRemaining, payRemainingLCYAbs > 0.001, payLedger.id],
       );
 
       // 7. Post GL Entries if FX Variance exists

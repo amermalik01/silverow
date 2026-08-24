@@ -57,12 +57,16 @@ export default function AllocateJournalPaymentModal({
   const isRefund = documentType?.toLowerCase() === "refund";
 
   // Compute targeted target document type for API payload query
+  // const targetDocType = useMemo(() => {
+  //   if (isRefund) {
+  //     return isSupplier ? "DEBIT_NOTE" : "CREDIT_NOTE";
+  //   }
+  //   return "INVOICE";
+  // }, [isRefund, isSupplier]);
+
   const targetDocType = useMemo(() => {
-    if (isRefund) {
-      return isSupplier ? "DEBIT_NOTE" : "CREDIT_NOTE";
-    }
-    return "INVOICE";
-  }, [isRefund, isSupplier]);
+    return isRefund ? "REFUND" : "PAYMENT";
+  }, [isRefund]);
 
   // Dynamic UI label
   const targetDocLabel = isSupplier
