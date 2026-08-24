@@ -9,6 +9,7 @@ import { CompanyCurrency } from "@/types/currency";
 import { format } from "date-fns";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface RateHistoryItem {
   id: string;
@@ -249,7 +250,7 @@ export default function CurrencyTab() {
               <label className="font-medium text-gray-700">
                 Exchange Rate <span className="text-red-500">*</span>
               </label>
-              <input
+              {/* <input
                 type="number"
                 step="0.00001"
                 required
@@ -259,6 +260,13 @@ export default function CurrencyTab() {
                     e.target.value === "" ? "" : parseFloat(e.target.value),
                   )
                 }
+                className="col-span-2 border px-2.5 py-1.5 rounded focus:outline-none focus:ring-1 focus:ring-emerald-600 font-mono"
+              /> */}
+              <NumericTextInput
+                allowDecimals
+                decimalScale={2}
+                value={Number(rate)}
+                onChange={(val) => setRate(val === 0 ? "" : Number(val))}
                 className="col-span-2 border px-2.5 py-1.5 rounded focus:outline-none focus:ring-1 focus:ring-emerald-600 font-mono"
               />
             </div>

@@ -5,13 +5,14 @@
 import React, { useState, useEffect } from "react";
 import { StockAllocationRecord } from "@/app/components/shared/modals/StockAllocationModal";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface StockBatchRow {
-  prod_date: string;       // Aligned to StockAllocationRecord schema
-  expiry_date: string;     // Aligned to StockAllocationRecord schema
+  prod_date: string; // Aligned to StockAllocationRecord schema
+  expiry_date: string; // Aligned to StockAllocationRecord schema
   date_received: string;
   storage_location: string;
-  batch_no: string;        // Aligned to StockAllocationRecord schema
+  batch_no: string; // Aligned to StockAllocationRecord schema
   serial_no: string;
   total_qty: number;
   sold_qty: number;
@@ -126,27 +127,27 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
     onSave(activePayload);
   };
 
-//   const handleConfirmSave = () => {
-//     const activePayload: StockAllocationRecord[] = batches
-//       .filter((b) => b.current_allocation > 0)
-//       .map((b) => ({
-//         production_date: b.production_date,
-//         use_by_date: b.use_by_date,
-//         date_received: b.date_received,
-//         storage_location: b.storage_location,
-//         cons_no: b.cons_no,
-//         ref_no: b.ref_no,
-//         serial_no: b.serial_no,
-//         quantity: b.current_allocation,
-//       }));
-//     onSave(activePayload);
-//   };
+  //   const handleConfirmSave = () => {
+  //     const activePayload: StockAllocationRecord[] = batches
+  //       .filter((b) => b.current_allocation > 0)
+  //       .map((b) => ({
+  //         production_date: b.production_date,
+  //         use_by_date: b.use_by_date,
+  //         date_received: b.date_received,
+  //         storage_location: b.storage_location,
+  //         cons_no: b.cons_no,
+  //         ref_no: b.ref_no,
+  //         serial_no: b.serial_no,
+  //         quantity: b.current_allocation,
+  //       }));
+  //     onSave(activePayload);
+  //   };
 
-//   const filteredBatches = batches.filter(
-//     (b) =>
-//       b.serial_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//       b.ref_no.toLowerCase().includes(searchQuery.toLowerCase()),
-//   );
+  //   const filteredBatches = batches.filter(
+  //     (b) =>
+  //       b.serial_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       b.ref_no.toLowerCase().includes(searchQuery.toLowerCase()),
+  //   );
 
   const filteredBatches = batches.filter(
     (b) =>
@@ -272,7 +273,7 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
                       </td>
                       <td className="p-2 font-bold">{batch.available_qty}</td>
                       <td className="p-2 text-center">
-                        <input
+                        {/* <input
                           type="number"
                           value={batch.current_allocation || ""}
                           onChange={(e) =>
@@ -282,6 +283,15 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
                             )
                           }
                           className="w-16 text-center border border-emerald-400 rounded p-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30"
+                        /> */}
+
+                        <NumericTextInput
+                          value={batch.current_allocation}
+                          allowDecimals={false}
+                          className="w-16 text-center border border-emerald-400 rounded p-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30"
+                          onChange={(val) =>
+                            handleAllocationInputChange(idx, Number(val))
+                          }
                         />
                       </td>
                     </tr>
@@ -294,16 +304,10 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
 
         {/* Footer */}
         <div className="bg-gray-50 dark:bg-slate-800 p-3 border-t dark:border-slate-700 flex justify-end space-x-2">
-          <Button
-            onClick={handleConfirmSave}
-            variant="save"
-          >
+          <Button onClick={handleConfirmSave} variant="save">
             Save Allocations
           </Button>
-          <Button
-            onClick={onClose}
-            variant="cancel"
-          >
+          <Button onClick={onClose} variant="cancel">
             Cancel
           </Button>
         </div>

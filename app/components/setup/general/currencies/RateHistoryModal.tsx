@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Rate = {
   id: string;
@@ -84,21 +85,22 @@ export default function RateHistoryModal({
 
         {/* Add Rate */}
         <div className="flex gap-2 mb-4">
-          <input
+          {/* <input
             type="number"
             step="0.0001"
             placeholder="Rate"
             value={rate}
             onChange={(e) => setRate(e.target.value)}
             className="border p-2 rounded w-1/3"
-          />
-
-          {/* <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="border p-2 rounded"
           /> */}
+          <NumericTextInput
+            placeholder="Rate"
+            allowDecimals
+            decimalScale={2}
+            value={Number(rate)}
+            onChange={(val) => setRate(String(val))}
+            className="border p-2 rounded w-1/3"
+          />
 
           <DatePicker
             value={date ? parseISO(date) : undefined}
@@ -108,11 +110,7 @@ export default function RateHistoryModal({
             className="border p-2 rounded"
           />
 
-          <Button
-            onClick={saveRate}
-            variant="save"
-            disabled={loading}
-          >
+          <Button onClick={saveRate} variant="save" disabled={loading}>
             {loading ? "Saving..." : "Add"}
           </Button>
         </div>

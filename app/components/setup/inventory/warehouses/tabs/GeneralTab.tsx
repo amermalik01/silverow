@@ -8,6 +8,7 @@ import { format, parseISO } from "date-fns";
 
 import MasterDropdown from "@/app/components/common/MasterDropdown";
 import { Warehouse, WarehouseLocation } from "@/types/warehouse";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type StorageType = {
   id: string;
@@ -466,11 +467,20 @@ export default function GeneralTab({
                   />
 
                   <label className={`${labelClass} text-center`}>Cost</label>
-                  <input
+                  {/* <input
                     type="number"
                     step="0.01"
                     value={warehouse.cost || ""}
                     onChange={(e) => updateField("cost", e.target.value)}
+                    disabled={isReadOnly}
+                    className={inputcolumnDivStyle}
+                  /> */}
+
+                  <NumericTextInput
+                    allowDecimals
+                    decimalScale={2}
+                    value={Number(warehouse.cost) || 0}
+                    onChange={(val) => updateField("cost", String(val))}
                     disabled={isReadOnly}
                     className={inputcolumnDivStyle}
                   />

@@ -20,6 +20,7 @@ import PurchaseOrderLines from "../purchase-orders/PurchaseOrderLines";
 import { OrderFormTabs } from "../purchase-orders/OrderFormTabs";
 import { PostedTransactionsModal } from "./PostedTransactionsModal";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface Props {
   slug: string;
@@ -270,7 +271,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
                 </span>
               </div>
               <div>
-                <input
+                {/* <input
                   type="number"
                   disabled
                   readOnly
@@ -278,6 +279,15 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
                   value={
                     Number(currencyConfig.exchange_rate).toFixed(2) ?? "1.00"
                   }
+                /> */}
+
+                <NumericTextInput
+                  value={Number(currencyConfig.exchange_rate) ?? "1.00"}
+                  allowDecimals={true}
+                  decimalScale={2}
+                  disabled
+                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                  onChange={noop}
                 />
               </div>
             </div>

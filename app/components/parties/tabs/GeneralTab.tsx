@@ -9,6 +9,7 @@ import MasterDropdown from "../../common/MasterDropdown";
 import SalespersonLookupModal, {
   Employee,
 } from "@/app/components/shared/modals/SalespersonLookupModal";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface PostingGroupItem {
   id: string;
@@ -589,13 +590,22 @@ export default function GeneralTab({
                 Credit Limit
               </label>
               <div className="col-span-2">
-                <input
+                {/* <input
                   type="number"
                   disabled={isReadonly}
                   value={account.credit_limit ?? 0}
                   onChange={(e) =>
                     updateField("credit_limit", Number(e.target.value))
                   }
+                  className={getInputClass("general.credit_limit")}
+                /> */}
+
+                <NumericTextInput
+                  allowDecimals
+                  decimalScale={2}
+                  value={Number(account.credit_limit) || 0}
+                  onChange={(val) => updateField("credit_limit", Number(val))}
+                  disabled={isReadonly}
                   className={getInputClass("general.credit_limit")}
                 />
               </div>

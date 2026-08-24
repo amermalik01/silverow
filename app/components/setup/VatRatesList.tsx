@@ -3,6 +3,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 import { useEffect, useState } from "react";
 
 type VatRate = {
@@ -164,12 +165,20 @@ export default function VatRatesList() {
         />
 
         <div className="relative flex items-center">
-          <input
+          {/* <input
             placeholder="Rate"
             type="number"
             step="0.01"
             value={rate}
             onChange={(e) => setRate(e.target.value)}
+            disabled={submitting}
+            className="border p-2 pr-6 rounded w-28 dark:bg-slate-800 dark:border-slate-700 disabled:opacity-50"
+          /> */}
+          <NumericTextInput
+            allowDecimals
+            decimalScale={2}
+            value={Number(rate)}
+            onChange={(val) => setRate(String(val))}
             disabled={submitting}
             className="border p-2 pr-6 rounded w-28 dark:bg-slate-800 dark:border-slate-700 disabled:opacity-50"
           />

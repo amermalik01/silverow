@@ -5,6 +5,7 @@
 import { useState } from "react";
 import CurrencyDropdown from "@/app/components/common/CurrencyDropdown";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Props = {
   onSuccess: () => void; // for auto refresh
@@ -51,11 +52,19 @@ export default function CurrencyForm({ onSuccess }: Props) {
         onChange={(val) => setCurrencyId(val || "")}
       />
 
-      <input
+      {/* <input
         type="number"
         step="0.0001"
         value={rate}
         onChange={(e) => setRate(parseFloat(e.target.value))}
+        className="border p-2 w-full mt-2"
+        placeholder="Exchange Rate"
+      /> */}
+      <NumericTextInput
+        allowDecimals
+        decimalScale={2}
+        value={Number(rate)}
+        onChange={(val) => setRate(val)}
         className="border p-2 w-full mt-2"
         placeholder="Exchange Rate"
       />
@@ -69,11 +78,7 @@ export default function CurrencyForm({ onSuccess }: Props) {
         Base Currency
       </label>
 
-      <Button
-        onClick={handleSubmit}
-        variant="save"
-        disabled={loading}
-      >
+      <Button onClick={handleSubmit} variant="save" disabled={loading}>
         {loading ? "Saving..." : "Save"}
       </Button>
     </div>

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Employee } from "@/types/hr/employee";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO, startOfDay } from "date-fns";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Option = { id: string; name: string };
 type EmployeeOption = {
@@ -188,11 +189,22 @@ export default function EmployeeGeneralTab({ employee, setEmployee }: Props) {
 
       <div>
         <label className={labelClass}>Base Payroll Compensation</label>
-        <input
+        {/* <input
           type="number"
           value={employee.basic_salary || ""}
           onChange={(e) =>
             setEmployee({ ...employee, basic_salary: Number(e.target.value) })
+          }
+          className={inputClass}
+          placeholder="0.00"
+        /> */}
+
+        <NumericTextInput
+          allowDecimals
+          decimalScale={2}
+          value={Number(employee.basic_salary) || 0}
+          onChange={(val) =>
+            setEmployee({ ...employee, basic_salary: Number(val) })
           }
           className={inputClass}
           placeholder="0.00"

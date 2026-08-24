@@ -7,6 +7,7 @@ import { WarehouseLocation } from "@/types/warehouse";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Props = {
   warehouseId: string;
@@ -179,11 +180,24 @@ export default function LocationForm({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelClass}>Cost</label>
-              <input
+              {/* <input
                 type="number"
                 step="0.01"
                 value={form.cost}
                 onChange={(e) => setForm({ ...form, cost: e.target.value })}
+                disabled={isReadOnly}
+                className={inputClass}
+              /> */}
+              <NumericTextInput
+                allowDecimals
+                decimalScale={2}
+                value={Number(form.cost)}
+                onChange={(val) =>
+                  setForm({
+                    ...form,
+                    cost: String(val),
+                  })
+                }
                 disabled={isReadOnly}
                 className={inputClass}
               />
@@ -205,17 +219,11 @@ export default function LocationForm({
 
       <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
         {!isReadOnly && (
-          <Button
-            onClick={handleSubmit}
-            variant="save"
-          >
+          <Button onClick={handleSubmit} variant="save">
             {existing?.id ? "Update Location" : "Save Location"}
           </Button>
         )}
-        <Button
-          onClick={onClose}
-          variant="cancel"
-        >
+        <Button onClick={onClose} variant="cancel">
           Cancel
         </Button>
       </div>

@@ -12,6 +12,7 @@ import MasterDropdown from "../../common/MasterDropdown";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface Address {
   name?: string;
@@ -980,14 +981,22 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Freight Charges</label>
-              <input
+
+              <NumericTextInput
+                value={note.freight_charges ?? 0}
+                allowDecimals
+                decimalScale={2}
+                onChange={(val) => updateField("freight_charges", Number(val))}
+                className={inputStyle}
+              />
+              {/* <input
                 type="number"
                 className={inputStyle}
                 value={note.freight_charges ?? 0}
                 onChange={(e) =>
                   updateField("freight_charges", Number(e.target.value))
                 }
-              />
+              /> */}
             </div>
 
             <div className="grid grid-cols-12 items-center gap-2">

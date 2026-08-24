@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import DebitNoteLines from "../debit-notes/DebitNoteLines";
 import { OrderFormTabs } from "../debit-notes/OrderFormTabs";
 import { PostedTransactionsModal } from "./PostedTransactionsModal";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface Props {
   slug: string;
@@ -59,6 +60,8 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
   const [isPosting, setIsPosting] = useState(false);
 
   const { show, hide } = useLoader();
+
+  const noop = () => {};
 
   const [masterData, setMasterData] = useState<DebitNoteMasterData | null>(
     null,
@@ -373,7 +376,7 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
                 </span>
               </div>
               <div>
-                <input
+                {/* <input
                   type="number"
                   step="0.01"
                   disabled={isFormDisabled}
@@ -385,6 +388,15 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
                       exchange_rate: parseFloat(e.target.value) || 1,
                     })
                   }
+                /> */}
+
+                <NumericTextInput
+                  value={Number(currencyConfig.exchange_rate) ?? ""}
+                  allowDecimals={true}
+                  decimalScale={2}
+                  disabled={isFormDisabled}
+                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                  onChange={noop}
                 />
               </div>
             </div>

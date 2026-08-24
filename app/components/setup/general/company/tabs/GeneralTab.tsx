@@ -8,6 +8,7 @@ import CurrencyDropdown from "@/app/components/common/CurrencyDropdown";
 
 import { CompanyProfile } from "../CompanySetupForm";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface GeneralTabProps {
   initialProfile: CompanyProfile | null;
@@ -23,6 +24,8 @@ export default function GeneralTab({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const noop = () => {};
 
   useEffect(() => {
     if (!initialProfile) {
@@ -258,11 +261,18 @@ export default function GeneralTab({
 
           <div className="grid grid-cols-3 items-center gap-2">
             <label className="font-medium text-gray-700">Number of Users</label>
-            <input
+            {/* <input
               type="number"
               disabled
               className="col-span-2 border px-2.5 py-1.5 rounded bg-gray-50 text-gray-500 cursor-not-allowed"
               value={profile?.number_of_users || 100}
+            /> */}
+            <NumericTextInput
+              allowDecimals={false}
+              value={Number(profile?.number_of_users) || 100}
+              disabled
+              onChange={noop}
+              className="col-span-2 border px-2.5 py-1.5 rounded bg-gray-50 text-gray-500 cursor-not-allowed"
             />
           </div>
 
@@ -302,17 +312,10 @@ export default function GeneralTab({
       </div>
 
       <div className="flex justify-end gap-2 pt-4 border-t">
-        <Button
-          type="submit"
-          disabled={saving}
-          variant="save"
-        >
+        <Button type="submit" disabled={saving} variant="save">
           {saving ? "Saving..." : "Edit / Save"}
         </Button>
-        <Button
-          type="button"
-          variant="cancel"
-        >
+        <Button type="button" variant="cancel">
           Cancel
         </Button>
       </div>

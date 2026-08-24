@@ -2,6 +2,7 @@
 
 "use client";
 
+import NumericTextInput from "@/components/ui/NumericTextInput";
 import { CRMAccount } from "@/types/crm";
 
 type Props = {
@@ -15,7 +16,6 @@ export default function GeneralTab({
   setAccount,
   isReadonly = false,
 }: Props) {
-
   const isEditMode = !!account.id;
 
   const updateField = (key: keyof CRMAccount, value: unknown) => {
@@ -61,7 +61,9 @@ export default function GeneralTab({
 
           {/* NAME */}
           <div className="col-span-2">
-            <label className="text-xs font-medium">Name <span className="text-red-500">*</span></label>
+            <label className="text-xs font-medium">
+              Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={account.name || ""}
@@ -114,7 +116,9 @@ export default function GeneralTab({
 
       {/* SECTION: Address (Primary) */}
       <div className=" p-6 rounded shadow dark:shadow-white space-y-4">
-        <h2 className="text-lg font-semibold border-b  pb-2">Primary Address</h2>
+        <h2 className="text-lg font-semibold border-b  pb-2">
+          Primary Address
+        </h2>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
@@ -216,10 +220,19 @@ export default function GeneralTab({
           {/* CREDIT LIMIT */}
           <div>
             <label className="text-xs font-medium">Credit Limit</label>
-            <input
+            {/* <input
               type="number"
               value={account.credit_limit || ""}
               onChange={(e) => updateField("credit_limit", e.target.value)}
+              disabled={isReadonly}
+              className="border p-2 rounded w-full"
+            /> */}
+
+            <NumericTextInput
+              allowDecimals
+              decimalScale={2}
+              value={Number(account.credit_limit) || 0}
+              onChange={(val) => updateField("credit_limit", val)}
               disabled={isReadonly}
               className="border p-2 rounded w-full"
             />

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 export type StockAllocationRecord = {
   date_received: string;
@@ -354,7 +355,7 @@ export default function StockAllocationModal({
                   />
                 </td>
                 <td className="p-2">
-                  <input
+                  {/* <input
                     type="number"
                     step="any"
                     min="0"
@@ -370,6 +371,25 @@ export default function StockAllocationModal({
                       })
                     }
                     className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full text-right bg-white dark:bg-slate-900 font-semibold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-green-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500"
+                  /> */}
+
+                  <NumericTextInput
+                    value={
+                      qtyToAllocate <= 0 ? 0 : Number(newRowInput.quantity)
+                    }
+                    allowDecimals={false}
+                    min="0"
+                    disabled={qtyToAllocate <= 0}
+                    className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full text-right bg-white dark:bg-slate-900 font-semibold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-green-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500"
+                    onChange={(val) =>
+                      setNewRowInput({
+                        ...newRowInput,
+                        quantity: String(val),
+                      })
+                    }
+                    placeholder={
+                      derivedDefaultQty > 0 ? derivedDefaultQty.toString() : "0"
+                    }
                   />
                 </td>
                 <td className="p-2 text-center">

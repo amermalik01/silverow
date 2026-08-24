@@ -6,6 +6,7 @@ import { Icon } from "@iconify/react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 export type Opportunity = {
   id: string;
@@ -30,7 +31,12 @@ export type Opportunity = {
   salesperson?: string;
   support_staff?: string;
   notes?: string;
-  stage: "Early Contact" | "Meeting/Present" | "Proposal" | "Account Setup" | "Win/Loss";
+  stage:
+    | "Early Contact"
+    | "Meeting/Present"
+    | "Proposal"
+    | "Account Setup"
+    | "Win/Loss";
   status: "active" | "completed" | "missed";
   created_at: string;
 };
@@ -54,7 +60,10 @@ const formatDateForInput = (dateStr?: string) => {
   return dateStr.split("T")[0];
 };
 
-export default function OpportunityCycleTab({ partyId, readonly = false }: Props) {
+export default function OpportunityCycleTab({
+  partyId,
+  readonly = false,
+}: Props) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -89,7 +98,7 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
   const filteredOpps = opportunities.filter(
     (o) =>
       o.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.opp_no.toLowerCase().includes(searchTerm.toLowerCase())
+      o.opp_no.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Open Form for New Opportunity
@@ -115,7 +124,9 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
     setFormData({
       ...opp,
       stage_start_date: formatDateForInput(opp.stage_start_date),
-      estimated_stage_end_date: formatDateForInput(opp.estimated_stage_end_date),
+      estimated_stage_end_date: formatDateForInput(
+        opp.estimated_stage_end_date,
+      ),
       expected_close_date: formatDateForInput(opp.expected_close_date),
     });
     setViewMode("detail");
@@ -147,7 +158,9 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
         const updatedRecord = await res.json();
 
         setOpportunities((prev) =>
-          prev.map((item) => (item.id === selectedOpp.id ? updatedRecord : item))
+          prev.map((item) =>
+            item.id === selectedOpp.id ? updatedRecord : item,
+          ),
         );
       } else {
         // POST /api/parties/[partyId]/opportunities
@@ -200,7 +213,9 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
           const updatedRecord = await res.json();
           setSelectedOpp(updatedRecord);
           setOpportunities((prev) =>
-            prev.map((item) => (item.id === selectedOpp.id ? updatedRecord : item))
+            prev.map((item) =>
+              item.id === selectedOpp.id ? updatedRecord : item,
+            ),
           );
         }
       } catch (err) {
@@ -260,7 +275,10 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-400">
-                    <Icon icon="lucide:loader-2" className="w-5 h-5 animate-spin inline-block mr-2" />
+                    <Icon
+                      icon="lucide:loader-2"
+                      className="w-5 h-5 animate-spin inline-block mr-2"
+                    />
                     Loading opportunities...
                   </td>
                 </tr>
@@ -288,7 +306,9 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
                         minimumFractionDigits: 2,
                       })}
                     </td>
-                    <td className="py-3 px-4 text-center">{opp.probability}%</td>
+                    <td className="py-3 px-4 text-center">
+                      {opp.probability}%
+                    </td>
                     <td className="py-3 px-4 text-slate-500">
                       {formatDateForInput(opp.expected_close_date) || "-"}
                     </td>
@@ -319,13 +339,16 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
       <div className="space-y-2">
         <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Active
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>{" "}
+            Active
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Completed
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>{" "}
+            Completed
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Missed
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>{" "}
+            Missed
           </span>
         </div>
 
@@ -333,21 +356,25 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
         <div className="grid grid-cols-5 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800">
           {PIPELINE_STAGES.map((stg, idx) => {
             const isActive = formData.stage === stg;
-            const currentIdx = PIPELINE_STAGES.indexOf(formData.stage || "Early Contact");
+            const currentIdx = PIPELINE_STAGES.indexOf(
+              formData.stage || "Early Contact",
+            );
             const isPassed = idx < currentIdx;
 
             return (
               <div
                 key={stg}
-                onClick={() => isFormMode && setFormData((prev) => ({ ...prev, stage: stg }))}
+                onClick={() =>
+                  isFormMode && setFormData((prev) => ({ ...prev, stage: stg }))
+                }
                 className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs font-semibold rounded-lg transition-all ${
                   isFormMode ? "cursor-pointer" : ""
                 } ${
                   isActive
                     ? "bg-blue-600 text-white shadow-sm"
                     : isPassed
-                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                    : "bg-white dark:bg-slate-900 text-slate-500 border border-slate-200 dark:border-slate-800"
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                      : "bg-white dark:bg-slate-900 text-slate-500 border border-slate-200 dark:border-slate-800"
                 }`}
               >
                 <span
@@ -355,8 +382,8 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
                     isActive
                       ? "bg-white text-blue-600 font-bold"
                       : isPassed
-                      ? "bg-emerald-600 text-white"
-                      : "bg-slate-200 dark:bg-slate-800 text-slate-600"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-200 dark:bg-slate-800 text-slate-600"
                   }`}
                 >
                   {idx + 1}
@@ -374,7 +401,9 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
         <div className="space-y-3">
           {/* Opp. No. */}
           <div className="grid grid-cols-3 items-center gap-2">
-            <label className="text-slate-500 dark:text-slate-400 font-medium">Opp. No.</label>
+            <label className="text-slate-500 dark:text-slate-400 font-medium">
+              Opp. No.
+            </label>
             <input
               type="text"
               readOnly
@@ -392,7 +421,9 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
               type="text"
               disabled={!isFormMode}
               value={formData.name || ""}
-              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="e.g. 04th Feb Visit"
               className="col-span-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800 text-slate-900 dark:text-slate-100"
             />
@@ -400,11 +431,18 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
 
           {/* Opp. Approval Process */}
           <div className="grid grid-cols-3 items-center gap-2">
-            <label className="text-slate-500 font-medium">Opp. Approval Process</label>
+            <label className="text-slate-500 font-medium">
+              Opp. Approval Process
+            </label>
             <select
               disabled={!isFormMode}
               value={formData.approval_process || ""}
-              onChange={(e) => setFormData((prev) => ({ ...prev, approval_process: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  approval_process: e.target.value,
+                }))
+              }
               className="col-span-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
             >
               <option value="">Select Opp. Approval Process</option>
@@ -415,20 +453,29 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
 
           {/* Contact Person 1 */}
           <div className="grid grid-cols-3 items-center gap-2">
-            <label className="text-slate-500 font-medium">Contact Person 1</label>
+            <label className="text-slate-500 font-medium">
+              Contact Person 1
+            </label>
             <div className="col-span-2 grid grid-cols-2 gap-2">
               <input
                 type="text"
                 disabled={!isFormMode}
                 value={formData.contact_person_1 || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, contact_person_1: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contact_person_1: e.target.value,
+                  }))
+                }
                 placeholder="Contact Person 1"
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
               />
               <select
                 disabled={!isFormMode}
                 value={formData.role_1 || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, role_1: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, role_1: e.target.value }))
+                }
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
               >
                 <option value="">Select Role 1</option>
@@ -440,20 +487,29 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
 
           {/* Contact Person 2 */}
           <div className="grid grid-cols-3 items-center gap-2">
-            <label className="text-slate-500 font-medium">Contact Person 2</label>
+            <label className="text-slate-500 font-medium">
+              Contact Person 2
+            </label>
             <div className="col-span-2 grid grid-cols-2 gap-2">
               <input
                 type="text"
                 disabled={!isFormMode}
                 value={formData.contact_person_2 || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, contact_person_2: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contact_person_2: e.target.value,
+                  }))
+                }
                 placeholder="Contact Person 2"
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
               />
               <select
                 disabled={!isFormMode}
                 value={formData.role_2 || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, role_2: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, role_2: e.target.value }))
+                }
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
               >
                 <option value="">Select Role 2</option>
@@ -465,20 +521,29 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
 
           {/* Contact Person 3 */}
           <div className="grid grid-cols-3 items-center gap-2">
-            <label className="text-slate-500 font-medium">Contact Person 3</label>
+            <label className="text-slate-500 font-medium">
+              Contact Person 3
+            </label>
             <div className="col-span-2 grid grid-cols-2 gap-2">
               <input
                 type="text"
                 disabled={!isFormMode}
                 value={formData.contact_person_3 || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, contact_person_3: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contact_person_3: e.target.value,
+                  }))
+                }
                 placeholder="Contact Person 3"
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
               />
               <select
                 disabled={!isFormMode}
                 value={formData.role_3 || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, role_3: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, role_3: e.target.value }))
+                }
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
               >
                 <option value="">Select Role 3</option>
@@ -493,7 +558,7 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
               Forecast Amount <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2 grid grid-cols-2 gap-2">
-              <input
+              {/* <input
                 type="number"
                 disabled={!isFormMode}
                 value={formData.forecast_amount || 0}
@@ -505,11 +570,28 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
                   }))
                 }
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800 font-mono"
+              /> */}
+
+              <NumericTextInput
+                allowDecimals
+                decimalScale={2}
+                disabled={!isFormMode}
+                value={Number(formData.forecast_amount) || 0}
+                onChange={(val) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    forecast_amount: Number(val) || 0,
+                    converted_amount: Number(val) || 0,
+                  }))
+                }
+                className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800 font-mono"
               />
               <select
                 disabled={!isFormMode}
                 value={formData.currency || "GBP"}
-                onChange={(e) => setFormData((prev) => ({ ...prev, currency: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, currency: e.target.value }))
+                }
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
               >
                 <option value="GBP">GBP</option>
@@ -522,17 +604,24 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
 
           {/* Converted Amount */}
           <div className="grid grid-cols-3 items-center gap-2">
-            <label className="text-slate-500 font-medium">Converted Amount</label>
+            <label className="text-slate-500 font-medium">
+              Converted Amount
+            </label>
             <div className="col-span-2 flex items-center gap-2">
               <input
                 type="text"
                 readOnly
-                value={Number(formData.converted_amount || 0).toLocaleString("en-GB", {
-                  minimumFractionDigits: 2,
-                })}
+                value={Number(formData.converted_amount || 0).toLocaleString(
+                  "en-GB",
+                  {
+                    minimumFractionDigits: 2,
+                  },
+                )}
                 className="flex-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-slate-700 dark:text-slate-300"
               />
-              <span className="text-xs text-slate-400 font-semibold">{formData.currency || "GBP"}</span>
+              <span className="text-xs text-slate-400 font-semibold">
+                {formData.currency || "GBP"}
+              </span>
             </div>
           </div>
 
@@ -542,7 +631,9 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
             <select
               disabled={!isFormMode}
               value={formData.frequency || "Monthly"}
-              onChange={(e) => setFormData((prev) => ({ ...prev, frequency: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, frequency: e.target.value }))
+              }
               className="col-span-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
             >
               <option value="One-Time">One-Time</option>
@@ -572,7 +663,7 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
               Probability <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2 flex items-center gap-2">
-              <input
+              {/* <input
                 type="number"
                 disabled={!isFormMode}
                 value={formData.probability || 10}
@@ -583,6 +674,20 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
                   }))
                 }
                 className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
+              /> */}
+
+              <NumericTextInput
+                allowDecimals
+                decimalScale={2}
+                disabled={!isFormMode}
+                value={Number(formData.probability) || 10}
+                onChange={(val) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    probability: Number(val) || 0,
+                  }))
+                }
+                className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
               />
               <span className="text-slate-500">%</span>
             </div>
@@ -590,25 +695,37 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
 
           {/* Stage Start Date */}
           <div className="grid grid-cols-3 items-center gap-2">
-            <label className="text-slate-500 font-medium">Stage Start Date</label>
+            <label className="text-slate-500 font-medium">
+              Stage Start Date
+            </label>
             <input
               type="date"
               disabled={!isFormMode}
               value={formData.stage_start_date || ""}
-              onChange={(e) => setFormData((prev) => ({ ...prev, stage_start_date: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  stage_start_date: e.target.value,
+                }))
+              }
               className="col-span-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
             />
           </div>
 
           {/* Estimated Stage End Date */}
           <div className="grid grid-cols-3 items-center gap-2">
-            <label className="text-slate-500 font-medium">Estimated Stage End Date</label>
+            <label className="text-slate-500 font-medium">
+              Estimated Stage End Date
+            </label>
             <input
               type="date"
               disabled={!isFormMode}
               value={formData.estimated_stage_end_date || ""}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, estimated_stage_end_date: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  estimated_stage_end_date: e.target.value,
+                }))
               }
               className="col-span-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
             />
@@ -616,13 +733,18 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
 
           {/* Expected Deal Close Date */}
           <div className="grid grid-cols-3 items-center gap-2">
-            <label className="text-slate-500 font-medium">Expected Deal Close Date</label>
+            <label className="text-slate-500 font-medium">
+              Expected Deal Close Date
+            </label>
             <input
               type="date"
               disabled={!isFormMode}
               value={formData.expected_close_date || ""}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, expected_close_date: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  expected_close_date: e.target.value,
+                }))
               }
               className="col-span-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
             />
@@ -635,7 +757,12 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
               type="text"
               disabled={!isFormMode}
               value={formData.salesperson || ""}
-              onChange={(e) => setFormData((prev) => ({ ...prev, salesperson: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  salesperson: e.target.value,
+                }))
+              }
               placeholder="Assign Salesperson"
               className="col-span-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
             />
@@ -648,7 +775,12 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
               type="text"
               disabled={!isFormMode}
               value={formData.support_staff || ""}
-              onChange={(e) => setFormData((prev) => ({ ...prev, support_staff: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  support_staff: e.target.value,
+                }))
+              }
               placeholder="Assign Support Staff"
               className="col-span-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
             />
@@ -656,12 +788,16 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
 
           {/* Opportunity Notes */}
           <div className="grid grid-cols-3 items-start gap-2">
-            <label className="text-slate-500 font-medium pt-1.5">Opportunity Notes</label>
+            <label className="text-slate-500 font-medium pt-1.5">
+              Opportunity Notes
+            </label>
             <textarea
               rows={3}
               disabled={!isFormMode}
               value={formData.notes || ""}
-              onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, notes: e.target.value }))
+              }
               placeholder="Enter notes..."
               className="col-span-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg disabled:bg-slate-50 dark:disabled:bg-slate-800"
             />
@@ -672,11 +808,7 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
       {/* 3. Bottom Action Buttons Bar */}
       <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
         {!readonly && (
-          <Button
-            type="button"
-            onClick={handleCompleteStage}
-            variant="default"
-          >
+          <Button type="button" onClick={handleCompleteStage} variant="default">
             <Icon icon="lucide:check" className="w-3.5 h-3.5" />
             <span>Complete Stage</span>
           </Button>
@@ -689,7 +821,9 @@ export default function OpportunityCycleTab({ partyId, readonly = false }: Props
             onClick={handleSave}
             variant="save"
           >
-            {saving && <Icon icon="lucide:loader-2" className="w-3 h-3 animate-spin" />}
+            {saving && (
+              <Icon icon="lucide:loader-2" className="w-3 h-3 animate-spin" />
+            )}
             <span>Save</span>
           </Button>
         ) : (
