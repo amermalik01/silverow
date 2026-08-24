@@ -11,6 +11,10 @@ export interface DebitNote {
   supplier_name?: string;
   warehouse_id?: string;
 
+  stage_id?: string;
+  stage_name?: string;
+  current_stage?: string;
+
   purchaser?: string;
   consignment_no?: string;
   supp_order_no?: string;

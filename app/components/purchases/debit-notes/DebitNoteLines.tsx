@@ -23,21 +23,6 @@ import StockDeAllocationModal, {
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 
-/* export type DebitNoteLineUI = DebitNoteLine & {
-  item_code?: string;
-  item_name?: string;
-  account_code?: string;
-  account_name?: string;
-  warehouse_code?: string;
-  warehouse_name?: string;
-  uom_name?: string;
-  reserved_quantity?: number;
-  available_stock?: number;
-  is_allocated?: boolean;
-  purchase_order_line_id?: string;
-  purchase_invoice_line_id?: string;
-  allocations?: StockDeAllocationRecord[];
-}; */
 export interface DebitNoteLineUI extends DebitNoteLine {
   reserved_quantity?: string | number;
   available_stock?: string | number;
@@ -75,11 +60,6 @@ export default function DebitNoteLines({
   debitNote,
   refreshLines,
 }: Props) {
-  /**
-   * =====================================================
-   * LOOKUP INDEXES
-   * =====================================================
-   */
   const [itemIndex, setItemIndex] = useState<number | null>(null);
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
@@ -96,11 +76,6 @@ export default function DebitNoteLines({
     return lines[idx] || null;
   }, [activeDeAllocRowKey, lines]);
 
-  /**
-   * =====================================================
-   * ADD LINE
-   * =====================================================
-   */
   const addLine = () => {
     setLines([
       ...lines,
@@ -120,11 +95,6 @@ export default function DebitNoteLines({
     ]);
   };
 
-  /**
-   * =====================================================
-   * REMOVE LINE
-   * =====================================================
-   */
   const removeLine = (index: number) => {
     setLines(lines.filter((_, i) => i !== index));
   };
@@ -284,31 +254,6 @@ export default function DebitNoteLines({
     setActiveDeAllocRowKey(null);
   };
 
-  /**
-   * =====================================================
-   * TOTALS
-   * =====================================================
-   */
-  const totals = useMemo(() => {
-    return lines.reduce(
-      (acc, line) => {
-        acc.original += Number(line.original_amount || 0);
-        acc.discount += Number(line.discount_amount || 0);
-        acc.net += Number(line.net_amount || 0);
-        acc.vat += Number(line.vat_amount || 0);
-        acc.gross += Number(line.gross_amount || 0);
-        return acc;
-      },
-      {
-        original: 0,
-        discount: 0,
-        net: 0,
-        vat: 0,
-        gross: 0,
-      },
-    );
-  }, [lines]);
-
   const handleDiscountTypeChange = (index: number, value: string) => {
     updateLine(index, "discount_type", value as "PERCENT" | "FIXED");
   };
@@ -323,7 +268,6 @@ export default function DebitNoteLines({
           onClick={addLine}
           variant="add_line"
           disabled={isReadonly}
-          // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
         >
           Add Line
         </Button>
@@ -346,7 +290,6 @@ export default function DebitNoteLines({
             <col className="w-[95px]" />
             <col className="w-[100px]" />
             <col className="w-[90px]" />
-            {/* {!isReadonly && <col className="w-[90px]" />} */}
           </colgroup>
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
@@ -363,9 +306,7 @@ export default function DebitNoteLines({
               <th className="p-2 text-right w-[90px]">VAT %</th>
               <th className="p-2 text-right w-[95px]">Net</th>
               <th className="p-2 text-right w-[100px]">Gross</th>
-              {/* {!isReadonly && ( */}
               <th className="p-2 text-center w-[90px]">Action</th>
-              {/* )} */}
             </tr>
           </thead>
 
@@ -425,12 +366,6 @@ export default function DebitNoteLines({
                         >
                           {line.item_code || "Select Item"}
                         </button>
-
-                        {/* {line.item_name && (
-                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
-                            {line.item_name}
-                          </div>
-                        )} */}
                       </div>
                     )}
 
@@ -445,12 +380,6 @@ export default function DebitNoteLines({
                         >
                           {line.account_code || "Select GL"}
                         </button>
-
-                        {/* {line.account_name && (
-                          <div className="text-[10px] text-gray-500 max-w-[120px] truncate text-center">
-                            {line.account_name}
-                          </div>
-                        )} */}
                       </div>
                     )}
                   </td>
@@ -502,35 +431,22 @@ export default function DebitNoteLines({
                           onClick={() => setWarehouseIndex(index)}
                           className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-xs bg-white dark:bg-slate-800 flex items-center justify-between gap-3"
                         >
-                          <span className="truncate text-left">
-                            {line.warehouse_code || "Select Warehouse"}
-                            {line.warehouse_name && ` - ${line.warehouse_name}`}
-                            {line.reserved_quantity &&
-                              ` - (${Number(line.reserved_quantity)})`}
-                          </span>
+                          {!line.warehouse_id && (
+                            <span className="text-red-500 text-xs">
+                              Warehouse required
+                            </span>
+                          )}
 
-                          {/* <div className="flex items-center gap-3 shrink-0">
-                            // ✅ RESERVED STOCK INDICATOR
-                            {line.reserved_quantity && (
-                              <span className="text-blue-600 whitespace-nowrap">
-                                Reserved: {Number(line.reserved_quantity)}
-                              </span>
-                            )}
-
-                            // ❗ STOCK WARNING
-                            {displayAvailableStock !== undefined &&
-                              displayQty > displayAvailableStock && (
-                                <span className="text-red-600 font-medium whitespace-nowrap">
-                                  Insufficient stock
-                                </span>
-                              )}
-                          </div> */}
+                          {line.warehouse_id && (
+                            <span className="truncate text-left">
+                              {line.warehouse_code || ""}
+                              {line.warehouse_name &&
+                                ` - ${line.warehouse_name}`}
+                              {line.reserved_quantity &&
+                                ` - (${Number(line.reserved_quantity)})`}
+                            </span>
+                          )}
                         </button>
-                      </div>
-                    )}
-                    {!line.warehouse_id && line.line_type === "ITEM" && (
-                      <div className="text-red-500 text-xs">
-                        Warehouse required
                       </div>
                     )}
                   </td>
@@ -543,15 +459,6 @@ export default function DebitNoteLines({
                       onChange={(val) => updateLine(index, "unit_cost", val)}
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
                     />
-                    {/* <input
-                      type="number"
-                      value={displayUnitCost}
-                      disabled={isReadonly}
-                      onChange={(e) =>
-                        updateLine(index, "unit_cost", Number(e.target.value))
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
-                    /> */}
                   </td>
 
                   <td className="p-2">
@@ -579,19 +486,6 @@ export default function DebitNoteLines({
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
                     />
-                    {/* <input
-                      type="number"
-                      value={displayDiscountValue}
-                      disabled={isReadonly}
-                      onChange={(e) =>
-                        updateLine(
-                          index,
-                          "discount_value",
-                          Number(e.target.value),
-                        )
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right"
-                    /> */}
                   </td>
 
                   <td className="p-2 text-right font-medium ">
@@ -630,7 +524,6 @@ export default function DebitNoteLines({
                     {Number(line.gross_amount || 0).toFixed(2)}
                   </td>
 
-                  {/* {!isReadonly && ( */}
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">
                       {line.line_type === "ITEM" ? (
@@ -676,62 +569,14 @@ export default function DebitNoteLines({
                       </button>
                     </div>
                   </td>
-                  {/* )} */}
                 </tr>
               );
             })}
           </tbody>
-
-          {/* <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
-            <tr>
-              <td
-                colSpan={9}
-                className="p-2.5 text-right capitalize tracking-wider text-xs"
-              >
-                Totals
-              </td>
-              <td className="p-2.5 text-right font-mono text-amber-600 dark:text-amber-400">
-                {totals.discount.toFixed(2)}
-              </td>
-              <td className="p-2.5" />
-              <td className="p-2.5 text-right font-mono">
-                {totals.net.toFixed(2)}
-              </td>
-              <td className="p-2.5 text-right font-mono">
-                {totals.gross.toFixed(2)}
-              </td>
-              {!isReadonly && <td />}
-            </tr>
-          </tfoot> */}
         </table>
       </div>
 
       {/* MODALS */}
-      {/* <ItemLookupModal
-        open={itemIndex !== null}
-        onClose={() => setItemIndex(null)}
-        onSelect={(item: ItemLookupRecord) => {
-          if (itemIndex === null) return;
-          const updated = [...lines];
-
-          updated[itemIndex] = calculateLine({
-            ...updated[itemIndex],
-            line_type: "ITEM",
-            item_id: item.id,
-            item_code: item.item_code,
-            item_name: item.name,
-            description: item.description || item.name,
-            unit_cost: Number(item.standard_cost || 0),
-            uom_id: item.base_uom_id,
-            purchase_gl_id: item.purchase_gl_id,
-            sales_gl_id: item.sales_gl_id,
-            inventory_gl_id: item.inventory_gl_id,
-          });
-
-          setLines(updated);
-          setItemIndex(null);
-        }}
-      /> */}
 
       <ItemLookupModal
         open={itemIndex !== null}
@@ -869,7 +714,6 @@ export default function DebitNoteLines({
         activeDeAllocRowKey !== null &&
         activeDeAllocLine && (
           <StockDeAllocationModal
-            // key={activeDeAllocLine?.id || "dealloc-modal"}
             open={isDeAllocModalOpen}
             onClose={() => {
               setIsDeAllocModalOpen(false);
@@ -890,6 +734,116 @@ export default function DebitNoteLines({
   );
 }
 
+{
+  /* <div className="flex items-center gap-3 shrink-0">
+        // ✅ RESERVED STOCK INDICATOR
+        {line.reserved_quantity && (
+          <span className="text-blue-600 whitespace-nowrap">
+            Reserved: {Number(line.reserved_quantity)}
+          </span>
+        )}
+
+        // ❗ STOCK WARNING
+        {displayAvailableStock !== undefined &&
+          displayQty > displayAvailableStock && (
+            <span className="text-red-600 font-medium whitespace-nowrap">
+              Insufficient stock
+            </span>
+          )}
+      </div> */
+}
+
+/**
+ * =====================================================
+ * TOTALS
+ * =====================================================
+ */
+/* const totals = useMemo(() => {
+    return lines.reduce(
+      (acc, line) => {
+        acc.original += Number(line.original_amount || 0);
+        acc.discount += Number(line.discount_amount || 0);
+        acc.net += Number(line.net_amount || 0);
+        acc.vat += Number(line.vat_amount || 0);
+        acc.gross += Number(line.gross_amount || 0);
+        return acc;
+      },
+      {
+        original: 0,
+        discount: 0,
+        net: 0,
+        vat: 0,
+        gross: 0,
+      },
+    );
+  }, [lines]); */
+
+{
+  /* <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
+        <tr>
+          <td
+            colSpan={9}
+            className="p-2.5 text-right capitalize tracking-wider text-xs"
+          >
+            Totals
+          </td>
+          <td className="p-2.5 text-right font-mono text-amber-600 dark:text-amber-400">
+            {totals.discount.toFixed(2)}
+          </td>
+          <td className="p-2.5" />
+          <td className="p-2.5 text-right font-mono">
+            {totals.net.toFixed(2)}
+          </td>
+          <td className="p-2.5 text-right font-mono">
+            {totals.gross.toFixed(2)}
+          </td>
+          {!isReadonly && <td />}
+        </tr>
+      </tfoot> */
+}
+
+/* export type DebitNoteLineUI = DebitNoteLine & {
+  item_code?: string;
+  item_name?: string;
+  account_code?: string;
+  account_name?: string;
+  warehouse_code?: string;
+  warehouse_name?: string;
+  uom_name?: string;
+  reserved_quantity?: number;
+  available_stock?: number;
+  is_allocated?: boolean;
+  purchase_order_line_id?: string;
+  purchase_invoice_line_id?: string;
+  allocations?: StockDeAllocationRecord[];
+}; */
+{
+  /* <ItemLookupModal
+  open={itemIndex !== null}
+  onClose={() => setItemIndex(null)}
+  onSelect={(item: ItemLookupRecord) => {
+    if (itemIndex === null) return;
+    const updated = [...lines];
+
+    updated[itemIndex] = calculateLine({
+      ...updated[itemIndex],
+      line_type: "ITEM",
+      item_id: item.id,
+      item_code: item.item_code,
+      item_name: item.name,
+      description: item.description || item.name,
+      unit_cost: Number(item.standard_cost || 0),
+      uom_id: item.base_uom_id,
+      purchase_gl_id: item.purchase_gl_id,
+      sales_gl_id: item.sales_gl_id,
+      inventory_gl_id: item.inventory_gl_id,
+    });
+
+    setLines(updated);
+    setItemIndex(null);
+  }}
+/> */
+}
 {
   /* {isAllocationModalOpen &&
         activeAllocationRowKey !== null &&

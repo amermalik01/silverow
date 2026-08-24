@@ -43,6 +43,9 @@ export interface PurchaseInvoice {
   crcode?: string; // Currency code string
   currency_code?: string;
   exchange_rate?: number;
+
+  stage_id?: string;
+  stage_name?: string;
   current_stage?: string;
 
   // Amounts

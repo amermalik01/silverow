@@ -189,7 +189,7 @@ export const DebitNoteForm: React.FC<Props> = ({
   useEffect(() => {
     async function loadMasterData() {
       try {
-        const res = await fetch("/api/purchase-orders/master-data");
+        const res = await fetch("/api/debit-notes/master-data");
         if (!res.ok) throw new Error();
 
         const data = await res.json();
@@ -209,18 +209,6 @@ export const DebitNoteForm: React.FC<Props> = ({
       null
     );
   }, [currencyConfig.currency_id, masterData]);
-
-  /* const financials = useMemo(() => {
-    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
-    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
-    const amountInclVat = amount + vat;
-
-    const rate = Number(currencyConfig.exchange_rate || 1);
-    // const amountInclVatLCY = amountInclVat / rate;
-    const amountInclVatLCY = Number(amountInclVat) * rate;
-
-    return { amount, vat, amountInclVat, amountInclVatLCY };
-  }, [lines, currencyConfig.exchange_rate]); */
 
   const financials = useMemo(() => {
     const originalAmount = lines.reduce(
@@ -502,99 +490,31 @@ export const DebitNoteForm: React.FC<Props> = ({
     }
   };
 
-  const handleStageClick = async (stageName: string) => {
-    const standardizedStatus = stageName.toLowerCase();
-
-    if (
-      !id ||
-      isUpdatingStatus ||
-      note.status?.toLowerCase() === standardizedStatus
-    )
-      return;
+  const handleStageClick = async (targetStage: {
+    id: string;
+    name: string;
+  }) => {
+    if (!id || isUpdatingStatus || note.stage_id === targetStage.id) return;
 
     setIsUpdatingStatus(true);
     try {
-      if (standardizedStatus === "posted") {
-        const confirmPosting = confirm(
-          "Are you sure you want to mark this Debit Note as Posted? This transaction will commit structural changes back to the general ledger and re-balance physical inventory lines permanently.",
-        );
-        if (!confirmPosting) {
-          setIsUpdatingStatus(false);
-          return;
-        }
-
-        toast.loading(
-          "Executing inventory reversing dispatch lines & G/L journals ledger allocations...",
-          {
-            id: "posting-toast",
-          },
-        );
-      }
-
-      const response = await fetch(`/api/debit-notes/${id}`, {
-        method: "PUT",
+      const response = await fetch(`/api/debit-notes/${id}/stage`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          debitNote: {
-            ...note,
-            ...currencyConfig,
-            supplier_id: note.supplier_id || "",
-            document_date:
-              note.document_date || new Date().toISOString().split("T")[0],
-            status: standardizedStatus,
-            subtotal: financials.amount,
-            tax_amount: financials.vat,
-            total_amount: financials.amountInclVat,
-          },
-          primary_address: {
-            address_type: "primary",
-            address_1: primaryAddress.address_1 || "",
-            address_2: primaryAddress.address_2 || "",
-            city: primaryAddress.city || "",
-            county: primaryAddress.county || "",
-            postcode: primaryAddress.postcode || "",
-            country: primaryAddress.country || "",
-          },
-          billing_address: {
-            address_type: "billing",
-            address_1: billingAddress.address_1 || "",
-            address_2: billingAddress.address_2 || "",
-            city: billingAddress.city || "",
-            county: billingAddress.county || "",
-            postcode: billingAddress.postcode || "",
-            country: billingAddress.country || "",
-          },
-          shipping_address: {
-            address_type: "shipping",
-            name: shippingAddress.name || "",
-            address_1: shippingAddress.address_1 || "",
-            address_2: shippingAddress.address_2 || "",
-            city: shippingAddress.city || "",
-            county: shippingAddress.county || "",
-            country: shippingAddress.country || "",
-          },
-          lines: lines,
-        }),
+        body: JSON.stringify({ stage_id: targetStage.id }),
       });
 
-      if (response.ok) {
-        setNote((prev) => ({ ...prev, status: standardizedStatus }));
-        toast.success(`Stage updated successfully to: ${stageName}`, {
-          id: "posting-toast",
-        });
-        router.refresh();
-      } else {
-        const errData = await response.json();
-        toast.error(
-          `Failed to update step stage: ${errData.error || "Unknown error"}`,
-          { id: "posting-toast" },
-        );
-      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to update stage");
+
+      setNote((prev) => ({ ...prev, stage_id: targetStage.id }));
+      toast.success(`Moved to stage: ${targetStage.name}`);
+      router.refresh();
     } catch (error) {
-      console.error("Error patching sequence document status:", error);
-      toast.error("Network error updating status pipeline adjustments.", {
-        id: "posting-toast",
-      });
+      console.error("Error updating stage:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Error updating stage",
+      );
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -760,41 +680,77 @@ export const DebitNoteForm: React.FC<Props> = ({
             ))}
           </div>
 
-          {isUpdateMode && !isLoadingStages && stages.length > 0 && (
-            <div className="flex justify-end ml-auto overflow-x-auto">
-              <div
-                className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
-              >
-                {stages.map((stage, index) => {
-                  const isLast = index === stages.length - 1;
-                  const isActive =
-                    note.status?.toLowerCase() === stage.name.toLowerCase();
+          {isUpdateMode &&
+            !isLoadingStages &&
+            stages.length > 0 &&
+            (() => {
+              // Find current stage index in the sorted stages array
+              const currentStageIndex = stages.findIndex(
+                (s) => s.id === note.stage_id,
+              );
 
-                  let activeBg = "bg-blue-600 text-white";
-                  if (index === 1) activeBg = "bg-amber-500 text-white";
-                  if (index === 2) activeBg = "bg-indigo-600 text-white";
-                  if (index >= 3) activeBg = "bg-emerald-600 text-white";
+              return (
+                <div className="flex justify-end ml-auto overflow-x-auto">
+                  <div
+                    className={`flex items-center min-w-max text-xs font-bold select-none ${
+                      isUpdatingStatus ? "opacity-60 pointer-events-none" : ""
+                    }`}
+                  >
+                    {stages.map((stage, index) => {
+                      const isFirst = index === 0;
+                      const isLast = index === stages.length - 1;
+                      const isActive = index === currentStageIndex;
+                      const isPassed =
+                        currentStageIndex !== -1 && index < currentStageIndex;
 
-                  return (
-                    <button
-                      type="button"
-                      key={stage.id}
-                      onClick={() => handleStageClick(stage.name)}
-                      className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95 ${index === 0 ? "rounded-l-md" : ""} ${isLast ? "rounded-r-md" : ""} ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
-                    >
-                      {stage.name}
-                      {!isLast && (
-                        <Icon
-                          icon="tabler:chevron-right"
-                          className="w-3 h-3 text-slate-400"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+                      // Determine button styling based on state
+                      let buttonStyles =
+                        "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300";
+
+                      if (isActive) {
+                        // Highlight color for the current active stage
+                        buttonStyles =
+                          "bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/20";
+                      } else if (isPassed) {
+                        // Blue color indicating completed/cleared previous stages
+                        buttonStyles =
+                          "bg-blue-600 text-white hover:bg-blue-700";
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          key={stage.id}
+                          onClick={() => handleStageClick(stage)}
+                          className={`px-3.5 py-1.5 flex items-center gap-1.5 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95
+                                      ${isFirst ? "rounded-l-md" : ""} 
+                                      ${isLast ? "rounded-r-md" : ""} 
+                                      ${buttonStyles}`}
+                        >
+                          {isPassed && (
+                            <Icon
+                              icon="tabler:check"
+                              className="w-3.5 h-3.5 text-blue-100"
+                            />
+                          )}
+                          <span>{stage.name}</span>
+                          {!isLast && (
+                            <Icon
+                              icon="tabler:chevron-right"
+                              className={`w-3.5 h-3.5 ml-1 ${
+                                isPassed || isActive
+                                  ? "text-white/70"
+                                  : "text-slate-400 dark:text-slate-500"
+                              }`}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
         </div>
 
         <OrderFormTabs
@@ -957,8 +913,8 @@ export const DebitNoteForm: React.FC<Props> = ({
         <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 p-2 rounded-lg">
           <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
-              Partially Allocated
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />{" "}
+              {/* Partially Allocated */}Pending Allocation
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
@@ -1135,37 +1091,171 @@ export const DebitNoteForm: React.FC<Props> = ({
     */
 {
   /* <div className="flex items-center gap-2">
-              {!note.is_dispatched && (
-                <Button
-                  type="button"
-                  onClick={handleDispatchStock}
-                  className="px-3 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1"
-                >
-                  <Icon icon="tabler:truck-delivery" className="w-4 h-4" />
-                  Dispatch Stock
-                </Button>
-              )}
+        {!note.is_dispatched && (
+          <Button
+            type="button"
+            onClick={handleDispatchStock}
+            className="px-3 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1"
+          >
+            <Icon icon="tabler:truck-delivery" className="w-4 h-4" />
+            Dispatch Stock
+          </Button>
+        )}
 
-              {!note.is_posted && (
-                <Button
-                  type="button"
-                  onClick={handlePostInvoice}
-                  className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded flex items-center gap-1"
-                >
-                  <Icon icon="tabler:file-check" className="w-4 h-4" />
-                  Post Invoice
-                </Button>
-              )}
-            </div> */
+        {!note.is_posted && (
+          <Button
+            type="button"
+            onClick={handlePostInvoice}
+            className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded flex items-center gap-1"
+          >
+            <Icon icon="tabler:file-check" className="w-4 h-4" />
+            Post Invoice
+          </Button>
+        )}
+      </div> */
 }
 
 {
   /* <Button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
-            >
-              Edit / Save
-            </Button> */
+        type="button"
+        onClick={handleSave}
+        disabled={saving}
+        className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
+      >
+        Edit / Save
+      </Button> */
+}
+/* const handleStageClick = async (stageName: string) => {
+    const standardizedStatus = stageName.toLowerCase();
+
+    if (
+      !id ||
+      isUpdatingStatus ||
+      note.status?.toLowerCase() === standardizedStatus
+    )
+      return;
+
+    setIsUpdatingStatus(true);
+    try {
+      if (standardizedStatus === "posted") {
+        const confirmPosting = confirm(
+          "Are you sure you want to mark this Debit Note as Posted? This transaction will commit structural changes back to the general ledger and re-balance physical inventory lines permanently.",
+        );
+        if (!confirmPosting) {
+          setIsUpdatingStatus(false);
+          return;
+        }
+
+        toast.loading(
+          "Executing inventory reversing dispatch lines & G/L journals ledger allocations...",
+          {
+            id: "posting-toast",
+          },
+        );
+      }
+
+      const response = await fetch(`/api/debit-notes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          debitNote: {
+            ...note,
+            ...currencyConfig,
+            supplier_id: note.supplier_id || "",
+            document_date:
+              note.document_date || new Date().toISOString().split("T")[0],
+            status: standardizedStatus,
+            subtotal: financials.amount,
+            tax_amount: financials.vat,
+            total_amount: financials.amountInclVat,
+          },
+          primary_address: {
+            address_type: "primary",
+            address_1: primaryAddress.address_1 || "",
+            address_2: primaryAddress.address_2 || "",
+            city: primaryAddress.city || "",
+            county: primaryAddress.county || "",
+            postcode: primaryAddress.postcode || "",
+            country: primaryAddress.country || "",
+          },
+          billing_address: {
+            address_type: "billing",
+            address_1: billingAddress.address_1 || "",
+            address_2: billingAddress.address_2 || "",
+            city: billingAddress.city || "",
+            county: billingAddress.county || "",
+            postcode: billingAddress.postcode || "",
+            country: billingAddress.country || "",
+          },
+          shipping_address: {
+            address_type: "shipping",
+            name: shippingAddress.name || "",
+            address_1: shippingAddress.address_1 || "",
+            address_2: shippingAddress.address_2 || "",
+            city: shippingAddress.city || "",
+            county: shippingAddress.county || "",
+            country: shippingAddress.country || "",
+          },
+          lines: lines,
+        }),
+      });
+
+      if (response.ok) {
+        setNote((prev) => ({ ...prev, status: standardizedStatus }));
+        toast.success(`Stage updated successfully to: ${stageName}`, {
+          id: "posting-toast",
+        });
+        router.refresh();
+      } else {
+        const errData = await response.json();
+        toast.error(
+          `Failed to update step stage: ${errData.error || "Unknown error"}`,
+          { id: "posting-toast" },
+        );
+      }
+    } catch (error) {
+      console.error("Error patching sequence document status:", error);
+      toast.error("Network error updating status pipeline adjustments.", {
+        id: "posting-toast",
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  }; */
+{
+  /* {isUpdateMode && !isLoadingStages && stages.length > 0 && (
+  <div className="flex justify-end ml-auto overflow-x-auto">
+    <div
+      className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
+    >
+      {stages.map((stage, index) => {
+        const isLast = index === stages.length - 1;
+        const isActive =
+          note.status?.toLowerCase() === stage.name.toLowerCase();
+
+        let activeBg = "bg-blue-600 text-white";
+        if (index === 1) activeBg = "bg-amber-500 text-white";
+        if (index === 2) activeBg = "bg-indigo-600 text-white";
+        if (index >= 3) activeBg = "bg-emerald-600 text-white";
+
+        return (
+          <button
+            type="button"
+            key={stage.id}
+            onClick={() => handleStageClick(stage.name)}
+            className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95 ${index === 0 ? "rounded-l-md" : ""} ${isLast ? "rounded-r-md" : ""} ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
+          >
+            {stage.name}
+            {!isLast && (
+              <Icon
+                icon="tabler:chevron-right"
+                className="w-3 h-3 text-slate-400"
+              />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+)} */
 }

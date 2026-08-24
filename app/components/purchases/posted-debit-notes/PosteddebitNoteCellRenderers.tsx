@@ -49,11 +49,19 @@ export function getPostedDebitNoteCellRenderers(slug: string) {
     ) => row.debitNoteCode || row.debit_note_no || "-",
 
     // Status / Stage Badges
-    current_stage: (
+    /* current_stage: (
       row: DebitNote & { current_stage?: string; status?: string },
     ) => (
       <DebitNoteStatusBadge
         status={row.current_stage || row.status || "COMPLETED"}
+      />
+    ), */
+
+    current_stage: (
+      row: DebitNote & { stage_name?: string; current_stage?: string },
+    ) => (
+      <DebitNoteStatusBadge
+        status={row.stage_name || row.current_stage || ""}
       />
     ),
 

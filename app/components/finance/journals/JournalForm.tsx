@@ -1099,8 +1099,8 @@ export default function JournalForm({
               <Button
                 type="button"
                 onClick={() => setShowNavigateModal(true)}
-                className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2 disabled:opacity-50"
-                // className="px-5 font-semibold flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                variant="add_line"
+                // className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2 disabled:opacity-50"
               >
                 Navigate
               </Button>

@@ -41,12 +41,13 @@ export function getPurchaseOrderCellRenderers(slug: string) {
       </Link>
     ),
 
-    // Status / Stage Badges
-    current_stage: (row: PurchaseOrder & { current_stage?: string }) => (
+    current_stage: (
+      row: PurchaseOrder & { stage_name?: string; current_stage?: string },
+    ) => (
       <PurchaseOrderStatusBadge
-        status={row.current_stage ||  "Open"}
+        status={row.stage_name || row.current_stage || ""}
       />
-    ),//row.status ||
+    ),
 
     // Text Details
     supplier_name: (row: PurchaseOrder) => row.supplier_name || "-",
@@ -117,15 +118,18 @@ export function getPurchaseOrderCellRenderers(slug: string) {
         >
           Edit
         </Link>
-        {/* {row.status?.toLowerCase() === "open" && (
-          <Link
-            href={`/${slug}/purchases/receipts/create?po=${row.id}`}
-            className="rounded border border-emerald-600 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
-          >
-            Receive
-          </Link>
-        )} */}
       </div>
     ),
   };
+}
+
+{
+  /* {row.status?.toLowerCase() === "open" && (
+  <Link
+    href={`/${slug}/purchases/receipts/create?po=${row.id}`}
+    className="rounded border border-emerald-600 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+  >
+    Receive
+  </Link>
+)} */
 }

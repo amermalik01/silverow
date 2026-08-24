@@ -32,7 +32,9 @@ const formatAmount = (val?: string | number | null): React.ReactNode => {
 export function getDebitNoteCellRenderers(slug: string) {
   return {
     // Primary Key Navigation Link
-    debitNoteCode: (row: DebitNote & { debitNoteCode?: string; debit_note_no?: string }) => (
+    debitNoteCode: (
+      row: DebitNote & { debitNoteCode?: string; debit_note_no?: string },
+    ) => (
       <Link
         href={`/${slug}/purchases/debit-notes/${row.id}`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
@@ -42,31 +44,47 @@ export function getDebitNoteCellRenderers(slug: string) {
     ),
 
     // Status / Stage Badges
-    current_stage: (row: DebitNote & { current_stage?: string; status?: string }) => (
+    /* current_stage: (row: DebitNote & { current_stage?: string; status?: string }) => (
       <DebitNoteStatusBadge status={row.current_stage || row.status || "OPEN"} />
+    ), */
+    current_stage: (
+      row: DebitNote & { stage_name?: string; current_stage?: string },
+    ) => (
+      <DebitNoteStatusBadge
+        status={row.stage_name || row.current_stage || ""}
+      />
     ),
 
     // Supplier Info
-    supplierNo: (row: DebitNote & { supplierNo?: string; supplier_no?: string }) =>
-      row.supplierNo || row.supplier_no || "-",
-    supplierName: (row: DebitNote & { supplierName?: string; supplier_name?: string }) =>
-      row.supplierName || row.supplier_name || "-",
-    supplierCreditNoteNo: (row: DebitNote & { supplierCreditNoteNo?: string }) =>
-      row.supplierCreditNoteNo || "-",
-    prev_code: (row: DebitNote & { prev_code?: string }) => row.prev_code || "-",
-    purchaser: (row: DebitNote & { purchaser?: string }) => row.purchaser || "-",
-    posting_grp: (row: DebitNote & { posting_grp?: string }) => row.posting_grp || "-",
+    supplierNo: (
+      row: DebitNote & { supplierNo?: string; supplier_no?: string },
+    ) => row.supplierNo || row.supplier_no || "-",
+    supplierName: (
+      row: DebitNote & { supplierName?: string; supplier_name?: string },
+    ) => row.supplierName || row.supplier_name || "-",
+    supplierCreditNoteNo: (
+      row: DebitNote & { supplierCreditNoteNo?: string },
+    ) => row.supplierCreditNoteNo || "-",
+    prev_code: (row: DebitNote & { prev_code?: string }) =>
+      row.prev_code || "-",
+    purchaser: (row: DebitNote & { purchaser?: string }) =>
+      row.purchaser || "-",
+    posting_grp: (row: DebitNote & { posting_grp?: string }) =>
+      row.posting_grp || "-",
     segment: (row: DebitNote & { segment?: string }) => row.segment || "-",
-    currency_code: (row: DebitNote & { currency_code?: string; currency?: string }) =>
-      row.currency_code || row.currency || "-",
+    currency_code: (
+      row: DebitNote & { currency_code?: string; currency?: string },
+    ) => row.currency_code || row.currency || "-",
 
     // Contact Person Details
     supplierContactName: (row: DebitNote & { supplierContactName?: string }) =>
       row.supplierContactName || "-",
-    supplierContactTelephone: (row: DebitNote & { supplierContactTelephone?: string }) =>
-      row.supplierContactTelephone || "-",
-    supplierContactEmail: (row: DebitNote & { supplierContactEmail?: string }) =>
-      row.supplierContactEmail || "-",
+    supplierContactTelephone: (
+      row: DebitNote & { supplierContactTelephone?: string },
+    ) => row.supplierContactTelephone || "-",
+    supplierContactEmail: (
+      row: DebitNote & { supplierContactEmail?: string },
+    ) => row.supplierContactEmail || "-",
 
     // Supplier Address
     supplierAddress: (row: DebitNote & { supplierAddress?: string }) =>
@@ -87,32 +105,36 @@ export function getDebitNoteCellRenderers(slug: string) {
     shipment_method: (row: DebitNote & { shipment_method?: string }) =>
       row.shipment_method || "-",
     shipToSupplierLocAddress: (
-      row: DebitNote & { shipToSupplierLocAddress?: string }
+      row: DebitNote & { shipToSupplierLocAddress?: string },
     ) => row.shipToSupplierLocAddress || "-",
     shipToSupplierLocAaddress2: (
-      row: DebitNote & { shipToSupplierLocAaddress2?: string }
+      row: DebitNote & { shipToSupplierLocAaddress2?: string },
     ) => row.shipToSupplierLocAaddress2 || "-",
-    shipToSupplierLocCity: (row: DebitNote & { shipToSupplierLocCity?: string }) =>
-      row.shipToSupplierLocCity || "-",
+    shipToSupplierLocCity: (
+      row: DebitNote & { shipToSupplierLocCity?: string },
+    ) => row.shipToSupplierLocCity || "-",
     shipToSupplierLocCounty: (
-      row: DebitNote & { shipToSupplierLocCounty?: string }
+      row: DebitNote & { shipToSupplierLocCounty?: string },
     ) => row.shipToSupplierLocCounty || "-",
     shipToSupplierLocPostCode: (
-      row: DebitNote & { shipToSupplierLocPostCode?: string }
+      row: DebitNote & { shipToSupplierLocPostCode?: string },
     ) => row.shipToSupplierLocPostCode || "-",
 
     // Logistics & Refs
     book_in_contact: (row: DebitNote & { book_in_contact?: string }) =>
       row.book_in_contact || "-",
-    book_in_tel: (row: DebitNote & { book_in_tel?: string }) => row.book_in_tel || "-",
+    book_in_tel: (row: DebitNote & { book_in_tel?: string }) =>
+      row.book_in_tel || "-",
     book_in_email: (row: DebitNote & { book_in_email?: string }) =>
       row.book_in_email || "-",
     shippingAgentRefNo: (row: DebitNote & { shippingAgentRefNo?: string }) =>
       row.shippingAgentRefNo || "-",
-    warehouse_booking_ref: (row: DebitNote & { warehouse_booking_ref?: string }) =>
-      row.warehouse_booking_ref || "-",
-    customer_warehouse_ref: (row: DebitNote & { customer_warehouse_ref?: string }) =>
-      row.customer_warehouse_ref || "-",
+    warehouse_booking_ref: (
+      row: DebitNote & { warehouse_booking_ref?: string },
+    ) => row.warehouse_booking_ref || "-",
+    customer_warehouse_ref: (
+      row: DebitNote & { customer_warehouse_ref?: string },
+    ) => row.customer_warehouse_ref || "-",
     purchaseInvoice: (row: DebitNote & { purchaseInvoice?: string }) =>
       row.purchaseInvoice || "-",
     purchaseOrderCode: (row: DebitNote & { purchaseOrderCode?: string }) =>
@@ -120,7 +142,10 @@ export function getDebitNoteCellRenderers(slug: string) {
 
     // Dates
     supplierCreditNoteDate: (
-      row: DebitNote & { supplierCreditNoteDate?: string; document_date?: string }
+      row: DebitNote & {
+        supplierCreditNoteDate?: string;
+        document_date?: string;
+      },
     ) => formatDate(row.supplierCreditNoteDate || row.document_date),
     receipt_date: (row: DebitNote & { receipt_date?: string }) =>
       formatDate(row.receipt_date),
@@ -135,7 +160,7 @@ export function getDebitNoteCellRenderers(slug: string) {
     tax_amount: (row: DebitNote & { tax_amount?: number }) =>
       formatAmount(row.tax_amount),
     "Amount (incl VAT)": (
-      row: DebitNote & { "Amount (incl VAT)"?: number; total_amount?: number }
+      row: DebitNote & { "Amount (incl VAT)"?: number; total_amount?: number },
     ) => formatAmount(row["Amount (incl VAT)"] ?? row.total_amount),
 
     // Numeric Counts
@@ -145,9 +170,7 @@ export function getDebitNoteCellRenderers(slug: string) {
       </span>
     ),
     emailCount: (row: DebitNote & { emailCount?: number }) => (
-      <span className="font-mono text-right block">
-        {row.emailCount ?? 0}
-      </span>
+      <span className="font-mono text-right block">{row.emailCount ?? 0}</span>
     ),
 
     // Actions

@@ -15,7 +15,7 @@ export class ItemsService {
   ): Promise<FetchResponse<ItemListing>> {
     const {
       page = 1,
-      pageSize = 50,
+      pageSize = 20,
       filters = {},
       sortBy,
       sortOrder = "asc",

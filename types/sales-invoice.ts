@@ -41,6 +41,10 @@ export type SalesInvoice = {
   link_to_po?: string;
   sq_no?: string;
 
+  stage_id?: string;
+  stage_name?: string;
+  current_stage?: string;
+
   internal_notes?: string;
   notes?: string;
   remarks?: string;

@@ -19,7 +19,7 @@ export class SalesOrderService {
   ): Promise<FetchResponse<SalesOrder>> {
     const {
       page = 1,
-      pageSize = 50,
+      pageSize = 20,
       filters = {},
       sortBy,
       sortOrder = "asc",

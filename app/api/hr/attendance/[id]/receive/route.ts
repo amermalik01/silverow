@@ -1,4 +1,4 @@
-// app/api/purchase-orders/[id]/receive/route.ts
+// app/api/hr/attendance/[id]/receive/route.ts
 
 import { NextResponse } from "next/server";
 

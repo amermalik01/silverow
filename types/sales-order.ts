@@ -9,6 +9,10 @@ export type SalesOrder = {
   customer_name?: string;
   reference?: string;
 
+  stage_id?: string;
+  stage_name?: string;
+  current_stage?: string;
+
   payable_bank?: string;
   payable_bank_id?: string;
   due_date?: string;

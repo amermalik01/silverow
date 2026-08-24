@@ -10,6 +10,10 @@ export interface PurchaseOrder {
   supplier_no?: string;
   supplier_name?: string;
 
+  stage_id?: string;
+  stage_name?: string;
+  current_stage?: string;
+
   purchaser?: string;
   consignment_no?: string;
   supp_order_no?: string;
@@ -231,11 +235,3 @@ export interface PurchaseOrderMasterData {
   paymentMethods: LookupItem[];
   shipmentMethods: LookupItem[];
 }
-
-// export type PurchaseOrderStatus =
-//   | "draft"
-//   | "open"
-//   | "partial_received"
-//   | "received"
-//   | "closed"
-//   | "cancelled";

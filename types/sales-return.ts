@@ -10,6 +10,10 @@ export type SalesReturn = {
   sales_invoice_id?: string;
   original_invoice_no?: string;
 
+  stage_id?: string;
+  stage_name?: string;
+  current_stage?: string;
+
   reference?: string;
   return_date: string;
   posting_date?: string;

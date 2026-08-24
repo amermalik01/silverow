@@ -40,8 +40,15 @@ export function getPurchaseInvoiceCellRenderers(slug: string) {
       </Link>
     ),
 
-    current_stage: (row: PurchaseInvoice) => (
+    /* current_stage: (row: PurchaseInvoice) => (
       <PurchaseOrderStatusBadge status={row.current_stage || row.status || "Draft"} />
+    ), */
+    current_stage: (
+      row: PurchaseInvoice & { stage_name?: string; current_stage?: string },
+    ) => (
+      <PurchaseOrderStatusBadge
+        status={row.stage_name || row.current_stage || ""}
+      />
     ),
 
     order_code: (row: PurchaseInvoice) => row.order_code || "-",
@@ -72,7 +79,8 @@ export function getPurchaseInvoiceCellRenderers(slug: string) {
     invoice_date: (row: PurchaseInvoice) => formatDate(row.invoice_date),
     order_date: (row: PurchaseInvoice) => formatDate(row.order_date),
     due_date: (row: PurchaseInvoice) => formatDate(row.due_date),
-    requested_delivery_date: (row: PurchaseInvoice) => formatDate(row.requested_delivery_date),
+    requested_delivery_date: (row: PurchaseInvoice) =>
+      formatDate(row.requested_delivery_date),
     receiptDate: (row: PurchaseInvoice) => formatDate(row.receiptDate),
 
     // Shipping & Booking
@@ -86,7 +94,8 @@ export function getPurchaseInvoiceCellRenderers(slug: string) {
     book_in_contact: (row: PurchaseInvoice) => row.book_in_contact || "-",
     book_in_tel: (row: PurchaseInvoice) => row.book_in_tel || "-",
     book_in_email: (row: PurchaseInvoice) => row.book_in_email || "-",
-    warehouse_booking_ref: (row: PurchaseInvoice) => row.warehouse_booking_ref || "-",
+    warehouse_booking_ref: (row: PurchaseInvoice) =>
+      row.warehouse_booking_ref || "-",
     consignmentNo: (row: PurchaseInvoice) => row.consignmentNo || "-",
     vatPosted: (row: PurchaseInvoice) => row.vatPosted || "-",
     LinkToSo: (row: PurchaseInvoice) => row.LinkToSo || "-",

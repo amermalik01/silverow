@@ -131,8 +131,8 @@ export const PurchaseOrderLineSchema = z
 
 export const PurchaseOrderSchema = z.object({
   supplier_id: z.string().uuid(),
-
   supplier_no: looseString,
+  stage_id: looseUuid,
 
   purchaser: looseString,
   consignment_no: looseString,

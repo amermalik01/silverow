@@ -12,7 +12,7 @@ export class PurchaseInvoiceService {
   ): Promise<FetchResponse<PurchaseInvoice>> {
     const {
       page = 1,
-      pageSize = 50,
+      pageSize = 20,
       filters = {},
       sortBy,
       sortOrder = "DESC",
@@ -391,7 +391,7 @@ export class PurchaseInvoiceService {
   ): Promise<FetchResponse<PurchaseInvoice>> {
     const {
       page = 1,
-      pageSize = 50,
+      pageSize = 20,
       filters = {},
       sortBy,
       sortOrder = "asc",

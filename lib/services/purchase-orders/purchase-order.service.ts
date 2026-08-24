@@ -36,7 +36,7 @@ export class PurchaseOrderService {
   ): Promise<FetchResponse<PurchaseOrder>> {
     const {
       page = 1,
-      pageSize = 50,
+      pageSize = 20,
       filters = {},
       sortBy,
       sortOrder = "DESC",
@@ -86,9 +86,9 @@ export class PurchaseOrderService {
         if (colKey === "currency") {
           queryValues.push(String(filter.value));
           whereClauses.push(`c.code = $${queryValues.length}`);
-        } else if (colKey === "current_stage") {
+        } else if (colKey === "current_stage" || colKey === "stage_name") {
           queryValues.push(String(filter.value));
-          whereClauses.push(`cos.name = $${queryValues.length}`);
+          whereClauses.push(`cos.name ILIKE $${queryValues.length}`);
         } else if (colKey === "status") {
           // 2. FIX: Cast po.status to text when filtering by status
           queryValues.push(String(filter.value));
@@ -124,7 +124,6 @@ export class PurchaseOrderService {
           whereClauses.push(`po.net_amount <= $${idx}::numeric`);
       }
     });
-    
 
     const whereSql =
       whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
@@ -135,10 +134,7 @@ export class PurchaseOrderService {
       LEFT JOIN parties p ON p.id = po.supplier_id
       LEFT JOIN currencies c ON c.id = po.currency_id
       LEFT JOIN shipment_method sm ON sm.id = po.shipment_method_id
-      LEFT JOIN common_order_stages cos 
-          ON cos.company_id = po.company_id 
-          AND cos.stage_type = 'purchase_order' 
-          AND cos.name ILIKE po.status::text
+      LEFT JOIN common_order_stages cos ON cos.id = po.stage_id      
       LEFT JOIN purchase_order_addresses poa 
           ON poa.purchase_order_id = po.id 
           AND poa.address_type = 'primary'
@@ -146,7 +142,10 @@ export class PurchaseOrderService {
           ON ship_a.purchase_order_id = po.id 
           AND ship_a.address_type = 'shipping'
     `;
-
+    /* LEFT JOIN common_order_stages cos 
+          ON cos.company_id = po.company_id 
+          AND cos.stage_type = 'purchase_order' 
+          AND cos.name ILIKE po.status::text */
     // Count Query
     const countQuery = `SELECT COUNT(DISTINCT po.id) as total ${joinSql} ${whereSql}`;
     const countResult = await pool.query(countQuery, queryValues);
@@ -1290,7 +1289,7 @@ export class PurchaseOrderService {
     // const { page = 1, pageSize = 50, filters = {} } = params;
     const {
       page = 1,
-      pageSize = 50,
+      pageSize = 20,
       filters = {},
       sortBy,
       sortOrder = "asc",

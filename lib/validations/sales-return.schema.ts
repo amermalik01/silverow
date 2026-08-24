@@ -25,6 +25,8 @@ const looseUuid = z.preprocess((val) => {
 export const SalesReturnAddressSchema = z.object({
   id: looseUuid,
   sales_return_id: looseUuid,
+  stage_id: looseUuid,
+  
   address_type: z.enum(["primary", "billing", "shipping"]),
 
   contact_name: looseString.superRefine((val, ctx) => {

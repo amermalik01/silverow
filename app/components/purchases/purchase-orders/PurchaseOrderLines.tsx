@@ -294,7 +294,6 @@ export default function PurchaseOrderLines({
             <col className="w-[95px]" />
             <col className="w-[100px]" />
             <col className="w-[90px]" />
-            {/* {!isReadonly && <col className="w-[90px]" />} */}
           </colgroup>
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
@@ -311,9 +310,9 @@ export default function PurchaseOrderLines({
               <th className="p-2 text-right w-[90px]">VAT %</th>
               <th className="p-2 text-right w-[95px]">Net</th>
               <th className="p-2 text-right w-[100px]">Gross</th>
-              {/* {!isReadonly && ( */}
+   
               <th className="p-2 text-center w-[90px]">Action</th>
-              {/* )} */}
+
             </tr>
           </thead>
 
@@ -448,18 +447,22 @@ export default function PurchaseOrderLines({
                           onClick={() => setWarehouseIndex(index)}
                           className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-xs bg-white dark:bg-slate-800 flex items-center justify-between gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                          <span className="truncate text-left">
-                            {line.warehouse_code || "Select Warehouse"}
-                            {line.warehouse_name && ` - ${line.warehouse_name}`}
-                            {line.reserved_quantity &&
-                              ` - (${Number(line.reserved_quantity)})`}
-                          </span>
+                          {!line.warehouse_id && (
+                            <span className="text-red-500 text-xs">
+                              Warehouse required
+                            </span>
+                          )}
+
+                          {line.warehouse_id && (
+                            <span className="truncate text-left">
+                              {line.warehouse_code || ""}
+                              {line.warehouse_name &&
+                                ` - ${line.warehouse_name}`}
+                              {line.reserved_quantity &&
+                                ` - (${Number(line.reserved_quantity)})`}
+                            </span>
+                          )}
                         </button>
-                      </div>
-                    )}
-                    {!line.warehouse_id && line.line_type === "ITEM" && (
-                      <div className="text-red-500 text-xs">
-                        Warehouse required
                       </div>
                     )}
                   </td>
@@ -577,7 +580,7 @@ export default function PurchaseOrderLines({
                                 line.is_allocated
                                 ? "text-emerald-500"
                                 : // 🔴 RED = Partially Allocated (Not fully allocated yet)
-                                  "text-rose-500"
+                                  "text-indigo-500"
                           }`}
                           title={
                             isStockReceived

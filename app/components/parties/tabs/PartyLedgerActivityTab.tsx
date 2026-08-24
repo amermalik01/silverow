@@ -68,13 +68,6 @@ export default function PartyLedgerActivityTab({
   const [holdComment, setHoldComment] = useState("");
   const [holdStatus, setHoldStatus] = useState<boolean>(true);
 
-  // const [selectedPayment, setSelectedPayment] = useState<LedgerEntry | null>(
-  //   null,
-  // );
-  // const [onHoldEntry, setOnHoldEntry] = useState<LedgerEntry | null>(null);
-  // const [holdComment, setHoldComment] = useState("");
-  // const [holdStatus, setHoldStatus] = useState<boolean>(true);
-
   const currencyFormatter = useMemo(() => {
     const safeCurrency =
       currencyCode && currencyCode.trim().length === 3
@@ -231,7 +224,6 @@ export default function PartyLedgerActivityTab({
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
           <button
@@ -287,7 +279,6 @@ export default function PartyLedgerActivityTab({
               <th className="p-2.5 text-right">Amount</th>
               <th className="p-2.5 text-right">Remaining</th>
               <th className="p-2.5 text-center">Allocations</th>
-              {/* <th className="p-2.5 text-center">Allocations</th> */}
               <th className="p-2.5 text-center">On Hold</th>
               <th className="p-2.5 text-center">Action</th>
             </tr>
@@ -327,14 +318,6 @@ export default function PartyLedgerActivityTab({
                     <Icon icon="tabler:eye" className="w-4 h-4 inline" />
                   </button>
                 </td>
-                {/* <td className="p-2.5 text-center">
-                  <button
-                    onClick={() => setSelectedPayment(row)}
-                    className="p-1 hover:text-blue-600 text-slate-500"
-                  >
-                    <Icon icon="tabler:eye" className="w-4 h-4 inline" />
-                  </button>
-                </td> */}
                 <td className="p-2.5 text-center">
                   <button
                     onClick={() => {

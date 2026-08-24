@@ -183,7 +183,7 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
   useEffect(() => {
     async function loadMasterData() {
       try {
-        const res = await fetch("/api/purchase-orders/master-data");
+        const res = await fetch("/api/debit-notes/master-data");
         if (!res.ok) throw new Error();
 
         const data = await res.json();
@@ -278,7 +278,78 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
             ))}
           </div>
 
-          {isUpdateMode && !isLoadingStages && stages.length > 0 && (
+          {isUpdateMode &&
+            !isLoadingStages &&
+            stages.length > 0 &&
+            (() => {
+              // Find current stage index in the sorted stages array
+              const currentStageIndex = stages.findIndex(
+                (s) => s.id === note.stage_id,
+              );
+
+              return (
+                <div className="flex justify-end ml-auto overflow-x-auto">
+                  <div
+                    className={`flex items-center min-w-max text-xs font-bold select-none ${
+                      isUpdatingStatus ? "opacity-60 pointer-events-none" : ""
+                    }`}
+                  >
+                    {stages.map((stage, index) => {
+                      const isFirst = index === 0;
+                      const isLast = index === stages.length - 1;
+                      const isActive = index === currentStageIndex;
+                      const isPassed =
+                        currentStageIndex !== -1 && index < currentStageIndex;
+
+                      // Determine button styling based on state
+                      let buttonStyles =
+                        "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300";
+
+                      if (isActive) {
+                        // Highlight color for the current active stage
+                        buttonStyles =
+                          "bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/20";
+                      } else if (isPassed) {
+                        // Blue color indicating completed/cleared previous stages
+                        buttonStyles =
+                          "bg-blue-600 text-white hover:bg-blue-700";
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          key={stage.id}
+                          className={`px-3.5 py-1.5 flex items-center gap-1.5 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95
+                                                ${isFirst ? "rounded-l-md" : ""} 
+                                                ${isLast ? "rounded-r-md" : ""} 
+                                                ${buttonStyles}`}
+                        >
+                          {isPassed && (
+                            <Icon
+                              icon="tabler:check"
+                              className="w-3.5 h-3.5 text-blue-100"
+                            />
+                          )}
+                          <span>{stage.name}</span>
+                          {!isLast && (
+                            <Icon
+                              icon="tabler:chevron-right"
+                              className={`w-3.5 h-3.5 ml-1 ${
+                                isPassed || isActive
+                                  ? "text-white/70"
+                                  : "text-slate-400 dark:text-slate-500"
+                              }`}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* {isUpdateMode && !isLoadingStages && stages.length > 0 && (
             <div className="flex justify-end ml-auto overflow-x-auto">
               <div
                 className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
@@ -312,7 +383,7 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
                 })}
               </div>
             </div>
-          )}
+          )} */}
         </div>
 
         <OrderFormTabs
@@ -447,8 +518,8 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
         <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 p-2 rounded-lg">
           <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
-              Partially Allocated
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />{" "}
+              {/* Partially Allocated */}Pending Allocation
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
@@ -465,7 +536,8 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
               <Button
                 type="button"
                 onClick={() => setShowNavigateModal(true)}
-                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+                // className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+                variant="add_line"
               >
                 Navigate
               </Button>

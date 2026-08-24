@@ -36,7 +36,7 @@ export class PostedDebitNoteService {
   ): Promise<FetchResponse<DebitNote>> {
     const {
       page = 1,
-      pageSize = 50,
+      pageSize = 20,
       filters = {},
       sortBy,
       sortOrder = "DESC",
