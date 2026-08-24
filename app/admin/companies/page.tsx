@@ -73,7 +73,7 @@ export default function CompaniesPage() {
       </div> */}
 
       <div className="border rounded-md">
-        <table className="w-full text-xs">
+        <table className="w-full table-fixed text-xs">
           <thead className=" border-b">
             <tr>
               <th className="p-4 text-left">Name</th>

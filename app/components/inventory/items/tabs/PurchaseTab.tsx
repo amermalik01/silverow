@@ -75,7 +75,7 @@ export default function PurchaseTab({
           Purchase Pricing Configuration
         </h3>
         <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-          <table className="w-full text-left">
+          <table className="w-full table-fixed text-left">
             <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="p-3">U.O.M</th>

@@ -113,7 +113,7 @@ export const CustomisationModal: React.FC<Props> = ({
 
         {/* Content Table */}
         <div className="max-h-[60vh] overflow-y-auto my-4 px-6 border rounded-lg border-slate-200 dark:border-slate-800">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left table-fixed text-xs border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 sticky top-0 border-b border-slate-200 dark:border-slate-800">
               <tr className="text-slate-600 dark:text-slate-300 font-semibold uppercase tracking-wider">
                 <th className="p-3 w-12 text-center">Order</th>

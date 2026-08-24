@@ -212,7 +212,7 @@ export default function SalesReturnList({ slug }: { slug: string }) {
             </div>
           )}
 
-          <table className="w-full text-xs">
+          <table className="w-full table-fixed text-xs">
             <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
               <tr>
                 <th className="p-3 text-left whitespace-nowrap">

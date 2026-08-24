@@ -207,7 +207,7 @@ export default function VatRatesList() {
         </div>
       ) : (
         <div className="overflow-x-auto border rounded-lg dark:border-slate-700">
-          <table className="w-full text-xs text-left">
+          <table className="w-full text-xs table-fixed text-left">
             <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 capitalize text-xs tracking-wider">
               <tr>
                 <th className="p-3">VAT</th>

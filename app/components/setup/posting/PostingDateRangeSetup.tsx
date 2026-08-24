@@ -175,7 +175,7 @@ export default function PostingDateRangeSetup() {
 
       {/* Periods Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="w-full text-left text-xs border-collapse table-fixed">
           <thead>
             <tr className="border-b bg-gray-100 text-gray-600 font-medium">
               <th className="p-3">Start Date</th>

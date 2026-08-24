@@ -101,7 +101,7 @@ export default function SupplierShippingLocationsModal({
 
         {/* TABLE */}
         <div className="overflow-auto max-h-[450px] my-2">
-          <table className="w-full text-xs border-collapse">
+          <table className="w-full text-xs table-fixed border-collapse">
             <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0 border-b">
               <tr>
                 <th className="border p-2 text-left">Code</th>

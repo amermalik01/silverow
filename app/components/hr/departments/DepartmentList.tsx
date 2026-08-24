@@ -91,7 +91,7 @@ export default function DepartmentList() {
         </Button>
       </div>
 
-      <table className="w-full border text-xs">
+      <table className="w-full border table-fixed text-xs">
         <thead>
           <tr>
             <th className="p-2 text-left">Code</th>

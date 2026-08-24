@@ -7,7 +7,7 @@ export default async function EditSRMPage({
 }: {
   params: Promise<{ slug: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { id,slug } = await params;
 
   return (
     <div className="space-y-6 container mx-auto p-4">
@@ -15,7 +15,7 @@ export default async function EditSRMPage({
         <h1 className="text-xl font-semibold">Edit SRM</h1>
       </div>
 
-      <PartyRecord id={id} module="srm" />
+      <PartyRecord id={id} module="srm" slug={slug} />
     </div>
   );
 }

@@ -222,7 +222,7 @@ export default function ItemActivityTab({ itemId }: Props) {
       {/* 1. Warehouse Stock Distribution */}
       {activeSubView === "stock" && (
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-xs table-fixed border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="p-2.5">Warehouse</th>
@@ -293,7 +293,7 @@ export default function ItemActivityTab({ itemId }: Props) {
       {/* 2. Movement Transactions */}
       {activeSubView === "transactions" && (
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left table-fixed text-xs border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="p-2.5">Date</th>
@@ -372,7 +372,7 @@ export default function ItemActivityTab({ itemId }: Props) {
       {/* 3. Allocations View */}
       {activeSubView === "allocations" && (
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left table-fixed text-xs border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="p-2.5">Created Date</th>

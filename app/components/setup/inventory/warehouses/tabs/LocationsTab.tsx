@@ -78,7 +78,7 @@ export default function LocationsTab({
 
       {/* Storage Locations List Table */}
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left text-xs table-fixed">
           <thead>
             <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold text-xs capitalize tracking-wider">
               <th className="px-4 py-3">Storage Location</th>

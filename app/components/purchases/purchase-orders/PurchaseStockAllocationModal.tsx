@@ -237,7 +237,7 @@ const PurchaseStockAllocationModal: React.FC<ModalProps> = ({
               Loading live batch balances...
             </div>
           ) : (
-            <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
+            <table className="w-full text-left table-fixed border-collapse text-xs whitespace-nowrap">
               <thead>
                 <tr className="bg-emerald-800 text-white font-medium capitalize tracking-wider">
                   <th className="p-2">Production Date</th>

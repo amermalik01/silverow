@@ -138,7 +138,7 @@ export default function SetupCrud({ title, api, fields, columns }: Props) {
       </Button>
 
 
-      <table className="w-full border text-xs">
+      <table className="w-full table-fixed border text-xs">
         <thead>
           <tr>
             {columns.map((c) => (

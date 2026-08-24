@@ -152,7 +152,7 @@ export default function StockTransferList({
         </div>
       ) : (
         <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left table-fixed border-collapse text-xs">
             <thead>
               <tr className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">
                 <th className="p-3 w-32">Transfer No</th>

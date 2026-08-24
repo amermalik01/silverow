@@ -139,7 +139,7 @@ export default function StorageTypes() {
 
       {/* ================= TABLE ================= */}
       <div className="border rounded-lg overflow-hidden bg-white">
-        <table className="w-full text-xs">
+        <table className="w-full text-xs table-fixed">
           <thead className="bg-gray-100">
             <tr>
               <th className="p-3 text-left">Code</th>

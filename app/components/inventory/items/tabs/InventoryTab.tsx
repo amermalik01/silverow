@@ -117,7 +117,7 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
           </Button>
         </div>
 
-        <table className="w-full border">
+        <table className="w-full table-fixed border">
           <thead>
             <tr className="bg-gray-50">
               <th className="p-2 text-left">Warehouse</th>

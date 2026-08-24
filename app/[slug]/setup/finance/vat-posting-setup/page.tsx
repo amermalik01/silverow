@@ -17,7 +17,7 @@ export default function VatPostingSetupPage() {
     { id: "matrix", label: "Posting Setup Matrix" },
     { id: "business", label: "Business Groups" },
     { id: "product", label: "Product Groups" },
-    { id: "rates", label: "VAT Rates Master" },
+    { id: "rates", label: "VAT Rates" },
   ];
 
   return (

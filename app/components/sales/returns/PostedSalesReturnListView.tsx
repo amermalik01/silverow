@@ -154,7 +154,7 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
+            <table className="w-full text-xs text-left table-fixed border-collapse">
               <thead className="bg-gray-50 dark:bg-slate-800/60 border-b dark:border-slate-800 text-xs font-bold text-gray-500 tracking-wider capitalize select-none">
                 <tr>
                   <th className="p-4 w-40">Credit Note No</th>

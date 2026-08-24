@@ -703,7 +703,7 @@ export default function JournalForm({
 
       {/* MATRIX LAYOUT */}
       <div className="overflow-x-auto bg-white text-zinc-600 rounded border border-zinc-200 shadow-sm">
-        <table className="w-full border-collapse text-left min-w-[1250px]">
+        <table className="w-full border-collapse table-fixed text-left min-w-[1250px]">
           <thead>
             <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-600 font-semibold select-none">
               <th className="p-2 w-28">Posting Date</th>

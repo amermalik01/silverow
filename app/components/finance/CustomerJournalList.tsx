@@ -37,7 +37,7 @@ export default function CustomerJournalList({ slug }: { slug: string }) {
         </Link>
       </div>
 
-      <table className="w-full border text-xs">
+      <table className="w-full table-fixed border text-xs">
         <thead>
           <tr>
             <th>No</th>

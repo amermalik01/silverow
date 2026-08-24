@@ -278,7 +278,7 @@ export default function SupplierLookupModal({
 
         {/* Table View */}
         <div className="flex-1 overflow-auto px-2">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-xs table-fixed">
             <thead className="bg-slate-50 text-slate-600 font-bold sticky top-0 border-b border-slate-200 z-10">
               <tr>
                 {multiple && (

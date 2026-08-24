@@ -19,7 +19,7 @@ export default function PostedJournalList({ slug }: { slug: string }) {
     <div className="p-6 rounded shadow dark:shadow-white">
       <h2 className="text-lg font-semibold mb-4">Posted Journals</h2>
 
-      <table className="w-full border text-xs">
+      <table className="w-full border table-fixed text-xs">
         <thead>
           <tr>
             <th className="p-2">No</th>

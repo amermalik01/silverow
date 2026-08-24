@@ -134,7 +134,7 @@ export default function CRMList() {
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <table className="w-full border text-left">
+        <table className="w-full border table-fixed text-left">
           <thead>
             <tr className="">
               <th className="p-2">CRM Code</th>

@@ -270,7 +270,7 @@ export default function ItemLookupModal({
         </div>
 
         <div className="flex-1 overflow-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-xs table-fixed">
             <thead className="bg-slate-100/80 text-slate-600 font-semibold sticky top-0 border-b border-slate-200 z-10 backdrop-blur-xs">
               <tr>
                 {multiple && (

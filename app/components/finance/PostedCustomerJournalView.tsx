@@ -21,7 +21,7 @@ export default function PostedCustomerJournalView({ id }: { id: string }) {
     <div>
       <h2>Journal #{data.entry_no}</h2>
 
-      <table className="w-full border">
+      <table className="w-full table-fixed border">
         <tbody>
           {data.lines.map((l) => (
             <tr key={l.id}>

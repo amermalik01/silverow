@@ -112,7 +112,7 @@ export const PurchaseInvoiceLookupModal: React.FC<Props> = ({
               No posted purchase invoices found for this supplier.
             </div>
           ) : (
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs table-fixed border-collapse">
               <thead>
                 <tr className="bg-emerald-800 text-white font-semibold">
                   <th className="p-2 border border-emerald-700">

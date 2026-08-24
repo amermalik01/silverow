@@ -46,7 +46,7 @@ export default async function SecureLedgerPage({ params }: { params: Promise<{ i
         </div>
 
         <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white overflow-hidden shadow-sm">
-          <table className="w-full text-xs">
+          <table className="w-full table-fixed text-xs">
             <thead className="bg-gray-50 border-b">
               <tr className="text-gray-600 font-medium">
                 <th className="p-3 text-left">Date</th>

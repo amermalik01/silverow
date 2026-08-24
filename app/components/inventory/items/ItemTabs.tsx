@@ -214,7 +214,7 @@ function AttributeTab({ itemId }: { itemId: string }) {
       </div>
 
       <div className="border rounded overflow-auto">
-        <table className="w-full text-xs">
+        <table className="w-full table-fixed text-xs">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">Attribute</th>

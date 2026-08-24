@@ -307,7 +307,13 @@ export default function SetupDataGrid({
         </div>
       ) : (
         <div className="overflow-x-auto border rounded-lg dark:border-slate-700">
-          <table className="w-full text-xs text-left">
+          <table className="w-full table-fixed text-xs text-left">
+            <colgroup>
+    {columns.map((c) => (
+      <col key={c.name} style={{ width: "180px" }} />
+    ))}
+    <col style={{ width: "220px" }} />
+  </colgroup>
             <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 capitalize text-xs tracking-wider">
               <tr>
                 {columns.map((c) => (
@@ -369,7 +375,7 @@ export default function SetupDataGrid({
                       const inputName = fieldConfig?.name || c.name;
 
                       return (
-                        <td key={c.name} className="p-3">
+                        <td key={c.name} className="p-3 overflow-hidden whitespace-nowrap text-ellipsis">
                           {editingId === r.id ? (
                             fieldConfig?.type === "select" ? (
                               <select

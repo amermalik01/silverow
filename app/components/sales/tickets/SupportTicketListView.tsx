@@ -196,7 +196,7 @@ export default function SupportTicketListView({ slug }: Props) {
       {/* Main Table Grid Canvas Matrix Frame Container */}
       <div className="border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-xs min-w-[1800px]">
+          <table className="w-full border-collapse text-left table-fixed text-xs min-w-[1800px]">
             {/* Header Matrix Configuration Layer Row */}
             <thead className="bg-emerald-800 dark:bg-emerald-950 text-white select-none font-bold text-[11px]">
               <tr>

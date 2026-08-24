@@ -139,7 +139,7 @@ export default function SalesInvoiceDetail({
 
       {/* Line Items Functional Matrix Table */}
       <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-        <table className="w-full text-xs text-left">
+        <table className="w-full text-xs table-fixed text-left">
           <thead className="bg-gray-50 border-b font-medium text-gray-600">
             <tr>
               <th className="p-3 w-12 text-center">#</th>

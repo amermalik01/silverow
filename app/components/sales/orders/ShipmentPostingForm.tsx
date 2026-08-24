@@ -148,7 +148,7 @@ export default function ShipmentPostingForm({ slug, orderId }: Props) {
   return (
     <div className="space-y-6 container mx-auto p-4">
       <div className="border rounded-xl bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm overflow-hidden">
-        <table className="w-full text-xs">
+        <table className="w-full table-fixed text-xs">
           <thead className="bg-gray-50 dark:bg-slate-800 border-b text-black dark:text-white">
             <tr>
               <th className="p-3 text-left">Item Name</th>

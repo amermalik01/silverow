@@ -136,7 +136,7 @@ export default function BankAccountsTab() {
           </div>
 
           <div className="border rounded overflow-hidden">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left table-fixed border-collapse text-xs">
               <thead className="bg-gray-100 border-b">
                 <tr>
                   <th className="p-2.5 font-semibold">Preferred Name</th>

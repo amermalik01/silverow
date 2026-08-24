@@ -218,7 +218,7 @@ export default function PurchaseReceiptForm({ slug, purchaseOrderId }: Props) {
       </div>
 
       <div className="border rounded overflow-auto">
-        <table className="w-full text-xs">
+        <table className="w-full table-fixed text-xs">
           <thead className="bg-gray-100">
             <tr>
               <th className="p-2">Item</th>

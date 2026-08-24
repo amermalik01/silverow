@@ -51,7 +51,19 @@ export default function AllocateJournalPaymentModal({
   const { show, hide } = useLoader();
   const [documents, setDocuments] = useState<OpenDocument[]>([]);
   const [allocations, setAllocations] = useState<Record<string, number>>({});
-  const [autoAllocateChecked, setAutoAllocateChecked] = useState(false);
+  // const [autoAllocateChecked, setAutoAllocateChecked] = useState(false);
+
+  const totalAllocated = Object.values(allocations).reduce(
+    (sum, v) => sum + (v || 0),
+    0,
+  );
+
+  const remainingToAllocate = paymentAmount - totalAllocated;
+
+  const isOverAllocated = totalAllocated > paymentAmount + 0.001;
+
+  const autoAllocateChecked =
+    paymentAmount > 0 && Math.abs(totalAllocated - paymentAmount) < 0.01;
 
   const isSupplier = partyType === "supplier";
   const isRefund = documentType?.toLowerCase() === "refund";
@@ -141,27 +153,30 @@ export default function AllocateJournalPaymentModal({
     // hide,
   ]);
 
-  const totalAllocated = useMemo(() => {
-    return Object.values(allocations).reduce((sum, v) => sum + (v || 0), 0);
-  }, [allocations]);
+  // const totalAllocated = useMemo(() => {
+  //   return Object.values(allocations).reduce((sum, v) => sum + (v || 0), 0);
+  // }, [allocations]);
 
-  const remainingToAllocate = useMemo(
-    () => paymentAmount - totalAllocated,
-    [paymentAmount, totalAllocated],
-  );
+  // const autoAllocateChecked =
+  //   paymentAmount > 0 && Math.abs(totalAllocated - paymentAmount) < 0.01;
 
-  const isOverAllocated = totalAllocated > paymentAmount + 0.001;
+  // const remainingToAllocate = useMemo(
+  //   () => paymentAmount - totalAllocated,
+  //   [paymentAmount, totalAllocated],
+  // );
 
-  useEffect(() => {
-    if (paymentAmount > 0 && Math.abs(totalAllocated - paymentAmount) < 0.01) {
-      setAutoAllocateChecked(true);
-    } else {
-      setAutoAllocateChecked(false);
-    }
-  }, [totalAllocated, paymentAmount]);
+  // const isOverAllocated = totalAllocated > paymentAmount + 0.001;
+
+  // useEffect(() => {
+  //   if (paymentAmount > 0 && Math.abs(totalAllocated - paymentAmount) < 0.01) {
+  //     setAutoAllocateChecked(true);
+  //   } else {
+  //     setAutoAllocateChecked(false);
+  //   }
+  // }, [totalAllocated, paymentAmount]);
 
   const handleAutoAllocateToggle = (shouldAllocateFull: boolean) => {
-    setAutoAllocateChecked(shouldAllocateFull);
+    // setAutoAllocateChecked(shouldAllocateFull);
 
     if (!shouldAllocateFull) {
       setAllocations({});
@@ -226,7 +241,7 @@ export default function AllocateJournalPaymentModal({
 
   const handleClearAll = () => {
     setAllocations({});
-    setAutoAllocateChecked(false);
+    // setAutoAllocateChecked(false);
   };
 
   const handleSave = () => {
@@ -306,7 +321,7 @@ export default function AllocateJournalPaymentModal({
 
         {/* Document Grid */}
         <div className="overflow-x-auto max-h-72 border rounded">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left table-fixed border-collapse">
             <thead className="bg-zinc-100 font-semibold text-zinc-600 sticky top-0 border-b">
               <tr>
                 <th className="p-2 w-10 text-center">

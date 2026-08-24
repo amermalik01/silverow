@@ -224,7 +224,7 @@ export default function SupplierLookupModal({
 
         {/* TABLE */}
         <div className="overflow-auto max-h-[550px] my-2">
-          <table className="w-full text-xs border-collapse">
+          <table className="w-full text-xs table-fixed border-collapse">
             <thead className="bg-gray-100 sticky top-0 border-b">
               <tr>
                 <th className="border p-2 text-left">Code</th>

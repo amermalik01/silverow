@@ -134,7 +134,7 @@ export default function AdditionalAddressTab() {
             </div>
           ) : (
             <div className="border rounded overflow-hidden">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left table-fixed text-xs border-collapse">
                 <thead className="bg-gray-100 border-b text-gray-700">
                   <tr>
                     <th className="p-2.5 font-semibold">Name</th>

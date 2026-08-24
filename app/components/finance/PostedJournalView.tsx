@@ -80,7 +80,7 @@ export default function PostedJournalView({ id }: { id: string }) {
       {/* LINES */}
 
       <div className="overflow-x-auto">
-        <table className="w-full border text-xs">
+        <table className="w-full border table-fixed text-xs">
           <thead>
             <tr className="">
               <th className="p-2 text-left">Account</th>

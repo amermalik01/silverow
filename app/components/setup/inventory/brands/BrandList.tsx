@@ -79,7 +79,7 @@ export default function BrandList() {
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <table className="w-full border text-left">
+        <table className="w-full border text-left table-fixed">
           <thead>
             <tr>
               <th className="p-2">Code</th>

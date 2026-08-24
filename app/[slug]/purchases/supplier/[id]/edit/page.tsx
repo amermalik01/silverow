@@ -7,7 +7,7 @@ export default async function EditSupplierPage({
 }: {
   params: Promise<{ slug: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { id,slug } = await params;
 
   return (
     <div className="space-y-6 container mx-auto p-4">
@@ -15,7 +15,7 @@ export default async function EditSupplierPage({
         <h1 className="text-xl font-semibold">Edit Supplier</h1>
       </div>
 
-      <PartyRecord id={id} module="supplier" />
+      <PartyRecord id={id} module="supplier" slug={slug} />
     </div>
   );
 }

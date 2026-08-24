@@ -156,7 +156,7 @@ const StockAllocationModal: React.FC<ModalProps> = ({
 
         {/* Batches Sub-ledger Listing */}
         <div className="overflow-y-auto flex-1 p-4">
-          <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
+          <table className="w-full text-left border-collapse table-fixed text-xs whitespace-nowrap">
             <thead>
               <tr className="bg-emerald-800 text-white font-medium capitalize tracking-wider">
                 <th className="p-2">Production Date</th>

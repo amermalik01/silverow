@@ -176,7 +176,7 @@ export default function PartyActivitySettlement({
           </div>
 
           <div className="overflow-x-auto border rounded">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left table-fixed border-collapse">
               <thead className="bg-zinc-50 border-b text-zinc-600 font-semibold">
                 <tr>
                   <th className="p-2">Doc No.</th>

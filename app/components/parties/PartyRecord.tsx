@@ -39,12 +39,14 @@ import type {
 type Props = {
   id: string;
   module: PartyModule | "customer" | "supplier" | "finance";
+  slug: string;
   isReadonly?: boolean;
 };
 
 export default function PartyRecord({
   id,
   module,
+  slug,
   isReadonly: isReadonlyProp = false,
 }: Props) {
   const router = useRouter();
@@ -367,6 +369,7 @@ export default function PartyRecord({
                 : "customer"
             }
             currencyCode={activeCurrencyCode}
+            slug={slug}
             sourceDocType=""
           />
         )}

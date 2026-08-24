@@ -11,7 +11,7 @@ export default function MarginAnalysisTab({ itemId }: Props) {
         Additional Cost Adjustments
       </h3>
       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-        <table className="w-full text-left">
+        <table className="w-full table-fixed text-left">
           <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-b">
             <tr>
               <th className="p-3">Cost Component</th>

@@ -163,7 +163,7 @@ export default function VatBusinessPostingGroupsList() {
         </div>
       ) : (
         <div className="overflow-x-auto border rounded-lg dark:border-slate-700">
-          <table className="w-full text-xs text-left">
+          <table className="w-full text-xs table-fixed text-left">
             <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700">
               <tr>
                 <th className="p-3">Posting Classification Group Name</th>

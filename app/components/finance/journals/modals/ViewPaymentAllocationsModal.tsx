@@ -95,7 +95,7 @@ export default function ViewPaymentAllocationsModal({
           </div>
         ) : (
           <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg">
-            <table className="w-full text-left text-xs border-collapse font-mono">
+            <table className="w-full text-left text-xs table-fixed border-collapse font-mono">
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="p-2">Date</th>

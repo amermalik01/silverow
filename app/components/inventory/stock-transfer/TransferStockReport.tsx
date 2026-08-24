@@ -117,7 +117,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
       </div>
 
       {/* Structured Serial Ledger Details Grid */}
-      <table className="w-full text-left border-collapse">
+      <table className="w-full text-left table-fixed border-collapse">
         <thead>
           <tr className="bg-emerald-900 text-white font-semibold capitalize tracking-wider text-[10px]">
             <th className="p-2 w-16">No.</th>

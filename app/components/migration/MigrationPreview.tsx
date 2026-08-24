@@ -17,7 +17,7 @@ export default function MigrationPreview({ rows, errors }: Props) {
         Preview ({rows.length} rows)
       </h3>
 
-      <table className="min-w-full text-xs">
+      <table className="min-w-full table-fixed text-xs">
         <thead>
           <tr>
             <th className="p-2 border-b w-16">Row</th>

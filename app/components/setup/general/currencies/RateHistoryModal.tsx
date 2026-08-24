@@ -117,7 +117,7 @@ export default function RateHistoryModal({
 
         {/* Table */}
         <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs table-fixed">
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-3 text-left">Effective Date</th>

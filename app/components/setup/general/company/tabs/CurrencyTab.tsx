@@ -151,7 +151,7 @@ export default function CurrencyTab() {
           </div>
 
           <div className="border rounded overflow-hidden">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left table-fixed border-collapse">
               <thead className="bg-gray-100 border-b text-gray-800">
                 <tr>
                   <th className="p-2.5 font-semibold">Code</th>
@@ -353,7 +353,7 @@ export default function CurrencyTab() {
 
             <div className="p-5 space-y-4">
               <div className="border rounded overflow-hidden">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left table-fixed border-collapse">
                   <thead className="bg-gray-50 border-b text-gray-700 font-semibold">
                     <tr>
                       <th className="p-2.5">Start Date</th>

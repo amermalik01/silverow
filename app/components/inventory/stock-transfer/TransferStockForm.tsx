@@ -630,7 +630,7 @@ export default function TransferStockForm({
         </div>
 
         <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left table-fixed border-collapse text-xs">
             <thead>
               <tr className="bg-zinc-50 dark:bg-zinc-900 text-zinc-500 border-b border-zinc-200 dark:border-zinc-800 font-medium">
                 <th className="p-3 w-56">Item Code Lookup</th>

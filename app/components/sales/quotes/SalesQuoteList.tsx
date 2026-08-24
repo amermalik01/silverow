@@ -195,7 +195,7 @@ export default function SalesQuoteList({ slug }: Props) {
             No sales quotes found matching current filter context.
           </div>
         ) : (
-          <table className="w-full text-xs min-w-[900px]">
+          <table className="w-full text-xs min-w-[900px] table-fixed">
             <thead className="bg-gray-100 dark:bg-slate-800 text-black dark:text-white">
               <tr>
                 <th className="p-3 text-left">Quote No</th>

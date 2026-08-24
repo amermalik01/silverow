@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+
+import Link from "next/link";
+
 import AllocateJournalPaymentModal, {
   LineAllocationItem,
 } from "@/app/components/finance/journals/modals/AllocateJournalPaymentModal";
@@ -47,6 +50,7 @@ interface Props {
   partyId: string;
   partyType: "supplier" | "customer";
   currencyCode?: string;
+  slug?: string;
   sourceDocType?: string;
 }
 
@@ -54,8 +58,10 @@ export default function PartyLedgerActivityTab({
   partyId,
   partyType,
   currencyCode = "GBP",
+  slug,
   sourceDocType = "",
 }: Props) {
+  // const { slug } = useParams() as { slug: string };
   const { show, hide } = useLoader();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [summary, setSummary] = useState<Summary>({
@@ -112,6 +118,61 @@ export default function PartyLedgerActivityTab({
       currencyDisplay: "narrowSymbol",
       minimumFractionDigits: 2,
     }).format(val || 0);
+  };
+
+  // Helper function to resolve dynamic routes based on document type and party type
+  const getDocumentUrl = (    
+    documentType: string,
+    documentId?: string,
+    documentNo?: string,
+    partyType?: string,
+    slug?: string,
+  ) => {
+    const targetId = documentId || documentNo;
+    if (!targetId || !slug) return "#";
+
+    const type = documentType?.toLowerCase().replace(/\s+/g, "_");
+
+    switch (type) {
+      // Posted & Unposted Invoices
+      case "sales_invoice":
+      case "invoice":
+        return partyType === "customer"
+          ? `/${slug}/sales/sales-invoices/${targetId}`
+          : `/${slug}/purchases/purchase-invoices/${targetId}`;
+
+      case "purchase_invoice":
+        return `/${slug}/purchases/purchase-invoices/${targetId}`;
+
+      // Orders
+      case "sales_order":
+        return `/${slug}/sales/sales-orders/${targetId}`;
+
+      case "purchase_order":
+        return `/${slug}/purchases/purchase-orders/${targetId}`;
+
+      // Credit / Debit Memos (Posted Debit Notes / Credit Notes)
+      case "credit_memo":
+      case "debit_note":
+      case "posted_debit_note":
+      case "posted_credit_note":
+        return partyType === "customer"
+          ? `/${slug}/sales/posted-credit-notes/${targetId}`
+          : `/${slug}/purchases/posted-debit-notes/${targetId}`;
+
+      // Payments & Receipts
+      case "payment":
+      case "receipt":
+      case "refund":
+      case "vendor_payment":
+      case "customer_payment":
+        return partyType === "customer"
+          ? `/${slug}/finance/customer-journal/${targetId}`
+          : `/${slug}/finance/supplier-journal/${targetId}`;
+
+      default:
+        return "#";
+    }
   };
 
   const formatAmount = (val: number, isLcy = false) => {
@@ -307,7 +368,7 @@ export default function PartyLedgerActivityTab({
 
       {/* Sub-Ledger Table */}
       <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="w-full text-left text-xs table-fixed border-collapse">
           <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
             <tr>
               <th className="p-2.5">Date</th>
@@ -333,9 +394,31 @@ export default function PartyLedgerActivityTab({
                     ? format(row.posting_date, "dd/MM/yyyy")
                     : "—"}
                 </td>
-                <td className="p-2.5 font-semibold text-slate-800">
-                  {row.document_no}
+
+                <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                  {(() => {
+                    const targetUrl = getDocumentUrl(                      
+                      row.document_type,
+                      row.document_id || row.document_no,
+                      row.document_no,
+                      partyType,
+                      slug,
+                    );
+
+                    return targetUrl !== "#" ? (
+                      <Link
+                        href={targetUrl}
+                        target="_blank"
+                        className="text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-1"
+                      >
+                        {row.document_no}
+                      </Link>
+                    ) : (
+                      <span>{row.document_no}</span>
+                    );
+                  })()}
                 </td>
+
                 <td className="p-2.5 uppercase text-[10px]">
                   {row.document_type.replace(/_/g, " ")}
                 </td>

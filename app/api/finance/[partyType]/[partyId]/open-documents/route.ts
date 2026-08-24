@@ -29,7 +29,7 @@ export async function GET(
 
     let targetDocTypes: string[] = [];
 
-    console.log('rawDocType === ',rawDocType);
+    // console.log('rawDocType === ',rawDocType);
 
     if (isSupplier) {
       switch (rawDocType) {

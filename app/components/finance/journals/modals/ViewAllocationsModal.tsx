@@ -48,7 +48,7 @@ export default function ViewAllocationsModal({
           <button onClick={onClose}>✕</button>
         </div>
 
-        <table className="w-full text-left border-collapse border">
+        <table className="w-full text-left table-fixed border-collapse border">
           <thead className="bg-zinc-100 font-semibold">
             <tr>
               <th className="p-2">Date</th>

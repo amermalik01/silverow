@@ -7,7 +7,7 @@ export default async function ViewSupplierPage({
 }: {
   params: Promise<{ slug: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { id,slug } = await params;
 
   return (
     <div className="space-y-6 container mx-auto p-4">
@@ -15,7 +15,7 @@ export default async function ViewSupplierPage({
         <h1 className="text-xl font-semibold">View Supplier</h1>
       </div>
 
-      <PartyRecord id={id} module="supplier" isReadonly={true} />
+      <PartyRecord id={id} module="supplier" slug={slug} isReadonly={true} />
     </div>
   );
 }

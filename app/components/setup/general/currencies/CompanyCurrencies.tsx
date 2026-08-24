@@ -35,7 +35,7 @@ export default function CompanyCurrencies() {
       <CurrencyForm onSuccess={fetchData} />
 
       <div className="border rounded-lg overflow-hidden">
-        <table className="w-full text-xs">
+        <table className="w-full text-xs table-fixed">
           <thead className="bg-gray-100 text-black">
             <tr>
               <th className="p-3 text-left">Currency</th>

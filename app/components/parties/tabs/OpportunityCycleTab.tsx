@@ -259,7 +259,7 @@ export default function OpportunityCycleTab({
 
         {/* Opportunity Table */}
         <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left table-fixed text-xs">
             <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-semibold">
               <tr>
                 <th className="py-3 px-4">Opp. No.</th>

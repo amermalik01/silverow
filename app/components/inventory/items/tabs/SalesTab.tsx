@@ -21,7 +21,7 @@ export default function SalesTab({
   return (
     <div className="space-y-4 text-xs">
       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-        <table className="w-full text-left">
+        <table className="w-full table-fixed text-left">
           <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-b border-slate-200 dark:border-slate-800">
             <tr>
               <th className="p-3">Sales U.O.M</th>

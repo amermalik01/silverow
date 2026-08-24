@@ -258,7 +258,7 @@ export function DataTable<T extends object>({
 
       {/* Main Table Scroll Container */}
       <div className="relative overflow-x-auto bg-white dark:bg-slate-900">
-        <table className="w-full border-collapse text-left text-xs">
+        <table className="w-full border-collapse table-fixed text-left text-xs">
           <thead>
             {/* Header Row 1: Titles & Sorting */}
             <tr className="bg-emerald-900 font-semibold text-emerald-50">

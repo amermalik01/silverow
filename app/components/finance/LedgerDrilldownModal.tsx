@@ -119,7 +119,7 @@ export default function LedgerDrilldownModal({
         <div className="flex-1 overflow-auto p-4">
           <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg">
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg">
-              <table className="w-full text-left border-collapse text-[11px] min-w-[1400px]">
+              <table className="w-full text-left table-fixed border-collapse text-[11px] min-w-[1400px]">
                 <thead>
                   <tr className="bg-emerald-800 text-white font-bold tracking-wide border-b border-emerald-700">
                     <th className="p-2 border-r border-emerald-700">

@@ -7,7 +7,7 @@ export default async function ViewSRMPage({
 }: {
   params: Promise<{ slug: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { id,slug } = await params;
 
   return (
     <div className="space-y-6 container mx-auto p-4">
@@ -17,7 +17,7 @@ export default async function ViewSRMPage({
         </h1>
       </div>
 
-      <PartyRecord id={id} module="srm" isReadonly={true} />
+      <PartyRecord id={id} module="srm" slug={slug} isReadonly={true} />
     </div>
   );
 }

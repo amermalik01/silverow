@@ -114,7 +114,7 @@ export const PostedTransactionsModal: React.FC<
 
         <div className="p-4 overflow-y-auto flex-1">
           <div className="border border-slate-200 dark:border-slate-800 rounded overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
+            <table className="w-full text-xs text-left table-fixed border-collapse">
               <thead className="bg-[#1b431c] text-white text-[11px] capitalize tracking-wider">
                 <tr>
                   <th className="p-2.5 font-semibold">Posting Date</th>

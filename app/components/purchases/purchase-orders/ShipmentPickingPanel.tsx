@@ -153,7 +153,7 @@ export default function ShipmentPickingPanel({
         Shipment Picking (FIFO / FEFO Engine)
       </h2>
 
-      <table className="w-full border text-xs">
+      <table className="w-full table-fixed border text-xs">
         <thead>
           <tr className="bg-gray-100">
             <th className="p-2">Item</th>
@@ -247,7 +247,7 @@ export default function ShipmentPickingPanel({
           <div key={index} className="border p-3 rounded">
             <h4 className="font-semibold">Line #{index} Allocation</h4>
 
-            <table className="w-full text-xs mt-2">
+            <table className="w-full table-fixed text-xs mt-2">
               <thead>
                 <tr>
                   <th>Batch</th>

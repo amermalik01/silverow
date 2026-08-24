@@ -249,7 +249,7 @@ export default function PO_StockAllocationModal({
 
         {/* INPUT GRID BARS */}
         <div className="p-5 overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-xs border-collapse table-fixed">
             <thead>
               <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 capitalize font-semibold border-b border-slate-200 dark:border-slate-800">
                 <th className="p-3 w-40">Date Received</th>
