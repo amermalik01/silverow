@@ -73,14 +73,6 @@ export default function AllocateJournalPaymentModal({
   const isSupplier = partyType === "supplier";
   const isRefund = documentType?.toLowerCase() === "refund";
 
-  // Compute targeted target document type for API payload query
-  // const targetDocType = useMemo(() => {
-  //   if (isRefund) {
-  //     return isSupplier ? "DEBIT_NOTE" : "CREDIT_NOTE";
-  //   }
-  //   return "INVOICE";
-  // }, [isRefund, isSupplier]);
-
   const targetDocType = useMemo(() => {
     return isRefund ? "REFUND" : "PAYMENT";
   }, [isRefund]);
@@ -157,28 +149,6 @@ export default function AllocateJournalPaymentModal({
     // show,
     // hide,
   ]);
-
-  // const totalAllocated = useMemo(() => {
-  //   return Object.values(allocations).reduce((sum, v) => sum + (v || 0), 0);
-  // }, [allocations]);
-
-  // const autoAllocateChecked =
-  //   paymentAmount > 0 && Math.abs(totalAllocated - paymentAmount) < 0.01;
-
-  // const remainingToAllocate = useMemo(
-  //   () => paymentAmount - totalAllocated,
-  //   [paymentAmount, totalAllocated],
-  // );
-
-  // const isOverAllocated = totalAllocated > paymentAmount + 0.001;
-
-  // useEffect(() => {
-  //   if (paymentAmount > 0 && Math.abs(totalAllocated - paymentAmount) < 0.01) {
-  //     setAutoAllocateChecked(true);
-  //   } else {
-  //     setAutoAllocateChecked(false);
-  //   }
-  // }, [totalAllocated, paymentAmount]);
 
   const handleAutoAllocateToggle = (shouldAllocateFull: boolean) => {
     // setAutoAllocateChecked(shouldAllocateFull);
@@ -468,6 +438,36 @@ export default function AllocateJournalPaymentModal({
   );
 }
 
+
+  // Compute targeted target document type for API payload query
+  // const targetDocType = useMemo(() => {
+  //   if (isRefund) {
+  //     return isSupplier ? "DEBIT_NOTE" : "CREDIT_NOTE";
+  //   }
+  //   return "INVOICE";
+  // }, [isRefund, isSupplier]);
+
+  // const totalAllocated = useMemo(() => {
+  //   return Object.values(allocations).reduce((sum, v) => sum + (v || 0), 0);
+  // }, [allocations]);
+
+  // const autoAllocateChecked =
+  //   paymentAmount > 0 && Math.abs(totalAllocated - paymentAmount) < 0.01;
+
+  // const remainingToAllocate = useMemo(
+  //   () => paymentAmount - totalAllocated,
+  //   [paymentAmount, totalAllocated],
+  // );
+
+  // const isOverAllocated = totalAllocated > paymentAmount + 0.001;
+
+  // useEffect(() => {
+  //   if (paymentAmount > 0 && Math.abs(totalAllocated - paymentAmount) < 0.01) {
+  //     setAutoAllocateChecked(true);
+  //   } else {
+  //     setAutoAllocateChecked(false);
+  //   }
+  // }, [totalAllocated, paymentAmount]);
 /* export default function AllocateJournalPaymentModal({
   isOpen,
   onClose,

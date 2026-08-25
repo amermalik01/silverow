@@ -25,6 +25,7 @@ export async function GET(
     const tableName = isSupplier
       ? "vendor_ledger_entries"
       : "customer_ledger_entries";
+
     const partyColumn = isSupplier ? "vendor_id" : "customer_id";
 
     let targetDocTypes: string[] = [];
@@ -89,29 +90,89 @@ export async function GET(
       }
     }
 
-    // if (isSupplier) {
-    //   if (docType === "PAYMENT") {
-    //     targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
-    //   } else if (docType === "REFUND") {
-    //     targetDocTypes = ["DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
-    //   } else if (docType === "PURCHASE_INVOICE" || docType === "INVOICE") {
-    //     targetDocTypes = ["PAYMENT", "DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
-    //   } else {
-    //     targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
-    //   }
-    // } else {
-    //   if (docType === "PAYMENT") {
-    //     targetDocTypes = ["SALES_INVOICE", "INVOICE"];
-    //   } else if (docType === "REFUND") {
-    //     targetDocTypes = ["CREDIT_NOTE", "SALES_CREDIT_NOTE"];
-    //   } else if (docType === "SALES_INVOICE" || docType === "INVOICE") {
-    //     targetDocTypes = ["PAYMENT", "CREDIT_NOTE", "SALES_CREDIT_NOTE"];
-    //   } else {
-    //     targetDocTypes = ["SALES_INVOICE", "INVOICE"];
-    //   }
-    // }
-
     const query = `
+      SELECT 
+        e.id,
+        e.document_no,
+        e.document_type,
+        e.posting_date,
+        e.due_date,
+        COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) AS exchange_rate,
+        COALESCE(jc.code, c.code, 'GBP') AS currency_code,
+        
+        -- Normalize FCY Amount
+        CASE 
+          WHEN GREATEST(jel.debit, jel.credit) IS NOT NULL AND GREATEST(jel.debit, jel.credit) > 0 
+            THEN GREATEST(jel.debit, jel.credit)
+          WHEN UPPER(e.document_type) IN ('PURCHASE_INVOICE', 'SALES_INVOICE', 'INVOICE') 
+            THEN e.original_amount
+          ELSE 
+            CASE 
+              WHEN COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) <> 0 
+              THEN e.original_amount / COALESCE(jel.exchange_rate, e.exchange_rate, 1.0)
+              ELSE e.original_amount 
+            END
+        END AS derived_fcy_original,
+
+        e.remaining_amount AS raw_remaining_lcy
+      FROM ${tableName} e
+      LEFT JOIN journal_entry_lines jel ON jel.id = e.journal_line_id
+      LEFT JOIN currencies c ON c.id = e.currency_id
+      LEFT JOIN currencies jc ON jc.id = jel.currency_id
+      WHERE e.company_id = $1 
+        AND e.${partyColumn} = $2 
+        AND e.is_open = true 
+        AND ABS(e.remaining_amount) > 0
+        AND UPPER(e.document_type) = ANY($3::text[])
+      ORDER BY e.posting_date ASC, e.created_at ASC
+    `;
+
+    // console.log('query === ',query);
+    // console.log('companyId === ',companyId);
+    // console.log('partyId === ',partyId);
+    // console.log('targetDocTypes === ',targetDocTypes.map((t) => t.toUpperCase()));
+
+    const result = await pool.query(query, [
+      companyId,
+      partyId,
+      targetDocTypes.map((t) => t.toUpperCase()),
+    ]);
+
+    const formattedRows = result.rows.map((row) => {
+      const rate = Number(row.exchange_rate) || 1.0;
+      const currencyCode = (row.currency_code || "GBP").toUpperCase();
+      const isForeign = currencyCode !== "GBP";
+
+      const origFCY = Number(row.derived_fcy_original) || 0;
+      const remLCY = Math.abs(Number(row.raw_remaining_lcy) || 0);
+      const remFCY = isForeign && rate !== 0 ? remLCY / rate : remLCY;
+
+      return {
+        id: row.id,
+        document_no: row.document_no,
+        document_type: row.document_type,
+        posting_date: row.posting_date,
+        due_date: row.due_date,
+        currency_code: currencyCode,
+        exchange_rate: rate,
+        original_amount: origFCY,
+        remaining_amount: remFCY,
+        remaining_amount_lcy: remLCY,
+      };
+    });
+
+    // console.log('formattedRows === ',formattedRows);
+
+    return NextResponse.json(formattedRows);
+  } catch (err) {
+    const dbError = err as { message?: string };
+    return NextResponse.json(
+      { error: dbError.message || "Failed to load open documents" },
+      { status: 500 },
+    );
+  }
+}
+/* const query = `
       SELECT 
         e.id,
         e.document_no,
@@ -133,19 +194,12 @@ export async function GET(
         AND ABS(e.remaining_amount) > 0
         AND UPPER(e.document_type) = ANY($3::text[])
       ORDER BY e.posting_date ASC, e.created_at ASC
-    `;
-
-    const result = await pool.query(query, [
-      companyId,
-      partyId,
-      targetDocTypes.map((t) => t.toUpperCase()),
-    ]);
-
-    const formattedRows = result.rows.map((row) => {
+    `; */
+/* const formattedRows = result.rows.map((row) => {
       const rate = Number(row.exchange_rate) || 1.0;
-      const origFCY = Number(row.raw_fcy_amount) || Number(row.amount_lcy) || 0;
+      const origFCY = Number(row.raw_fcy_amount) || 0; // Number(row.amount_lcy) || 
       const remLCY = Number(row.remaining_lcy) || 0;
-      const remFCY = rate !== 0 ? remLCY / rate : remLCY;
+      const remFCY = rate !== 0 ? remLCY * rate : remLCY;
 
       return {
         id: row.id,
@@ -162,16 +216,31 @@ export async function GET(
       };
     });
 
-    return NextResponse.json(formattedRows);
-  } catch (err) {
-    const dbError = err as { message?: string };
-    return NextResponse.json(
-      { error: dbError.message || "Failed to load open documents" },
-      { status: 500 },
-    );
-  }
-}
+    // console.log('formattedRows === ',formattedRows);
 
+    return NextResponse.json(formattedRows); */
+
+// if (isSupplier) {
+//   if (docType === "PAYMENT") {
+//     targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
+//   } else if (docType === "REFUND") {
+//     targetDocTypes = ["DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
+//   } else if (docType === "PURCHASE_INVOICE" || docType === "INVOICE") {
+//     targetDocTypes = ["PAYMENT", "DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
+//   } else {
+//     targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
+//   }
+// } else {
+//   if (docType === "PAYMENT") {
+//     targetDocTypes = ["SALES_INVOICE", "INVOICE"];
+//   } else if (docType === "REFUND") {
+//     targetDocTypes = ["CREDIT_NOTE", "SALES_CREDIT_NOTE"];
+//   } else if (docType === "SALES_INVOICE" || docType === "INVOICE") {
+//     targetDocTypes = ["PAYMENT", "CREDIT_NOTE", "SALES_CREDIT_NOTE"];
+//   } else {
+//     targetDocTypes = ["SALES_INVOICE", "INVOICE"];
+//   }
+// }
 /* import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { pool } from "@/lib/db";

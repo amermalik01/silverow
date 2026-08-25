@@ -73,6 +73,42 @@ export async function GET(
     //   });
     // }
 
+    // const query = `
+    //   SELECT 
+    //     e.id,
+    //     e.document_type,
+    //     e.document_id,
+    //     e.document_no,
+    //     e.posting_date,
+    //     e.due_date,
+    //     e.description,
+    //     e.original_amount,
+    //     e.remaining_amount,
+    //     COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) AS exchange_rate,
+    //     e.is_open,
+    //     e.on_hold,
+    //     e.on_hold_reason,
+    //     e.journal_entry_id,
+    //     e.journal_line_id,
+    //     e.created_at,
+    //     COALESCE(jc.code, c.code, 'GBP') AS currency_code,
+    //     COALESCE(jel.debit, 0) AS fcy_debit,
+    //     COALESCE(jel.credit, 0) AS fcy_credit,
+    //     COALESCE(GREATEST(jel.debit, jel.credit), e.original_amount) AS fcy_amount,
+    //     COALESCE(SUM(la.allocated_amount), 0) AS total_allocated
+    //   FROM ${tableName} e
+    //   LEFT JOIN journal_entry_lines jel ON jel.id = e.journal_line_id
+    //   LEFT JOIN journal_entries je ON je.id = e.journal_entry_id
+    //   LEFT JOIN currencies c ON c.id = e.currency_id
+    //   LEFT JOIN currencies jc ON jc.id = jel.currency_id
+    //   LEFT JOIN ledger_allocations la 
+    //     ON (la.payment_entry_id = e.id OR la.ledger_entry_id = e.id)
+    //     AND la.is_unapplied = false
+    //   WHERE e.company_id = $1 AND e.${partyColumn} = $2
+    //   GROUP BY e.id, c.code, jc.code, jel.debit, jel.credit, jel.exchange_rate
+    //   ORDER BY e.posting_date DESC, e.created_at DESC
+    // `;
+
     const query = `
       SELECT 
         e.id,
@@ -82,9 +118,6 @@ export async function GET(
         e.posting_date,
         e.due_date,
         e.description,
-        e.original_amount,
-        e.remaining_amount,
-        COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) AS exchange_rate,
         e.is_open,
         e.on_hold,
         e.on_hold_reason,
@@ -92,9 +125,32 @@ export async function GET(
         e.journal_line_id,
         e.created_at,
         COALESCE(jc.code, c.code, 'GBP') AS currency_code,
-        COALESCE(jel.debit, 0) AS fcy_debit,
-        COALESCE(jel.credit, 0) AS fcy_credit,
-        COALESCE(GREATEST(jel.debit, jel.credit), e.original_amount) AS fcy_amount,
+        COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) AS exchange_rate,
+
+        -- 1. Determine FCY Original Amount
+        CASE 
+          WHEN GREATEST(jel.debit, jel.credit) IS NOT NULL AND GREATEST(jel.debit, jel.credit) > 0 
+            THEN GREATEST(jel.debit, jel.credit)
+          WHEN UPPER(e.document_type) IN ('PURCHASE_INVOICE', 'SALES_INVOICE', 'INVOICE') 
+            THEN e.original_amount
+          ELSE 
+            CASE 
+              WHEN COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) <> 0 
+              THEN e.original_amount / COALESCE(jel.exchange_rate, e.exchange_rate, 1.0)
+              ELSE e.original_amount 
+            END
+        END AS derived_fcy_original,
+
+        -- 2. Determine LCY Original Amount
+        CASE 
+          WHEN UPPER(e.document_type) IN ('PURCHASE_INVOICE', 'SALES_INVOICE', 'INVOICE') AND COALESCE(jc.code, c.code, 'GBP') <> 'GBP'
+            THEN e.original_amount * COALESCE(jel.exchange_rate, e.exchange_rate, 1.0)
+          ELSE e.original_amount
+        END AS derived_lcy_original,
+
+        -- 3. Determine LCY Remaining Amount (DB always tracks remaining balance against base LCY)
+        e.remaining_amount AS raw_remaining_lcy,
+
         COALESCE(SUM(la.allocated_amount), 0) AS total_allocated
       FROM ${tableName} e
       LEFT JOIN journal_entry_lines jel ON jel.id = e.journal_line_id
@@ -109,7 +165,7 @@ export async function GET(
       ORDER BY e.posting_date DESC, e.created_at DESC
     `;
 
-    // console.log('query === ',query);
+    console.log("query === ", query);
 
     const result = await pool.query(query, [companyId, partyId]);
 
@@ -121,37 +177,19 @@ export async function GET(
     const rows = result.rows.map((row) => {
       const currencyCode = row.currency_code || "GBP";
       const rate = Number(row.exchange_rate) || 1.0;
+      const isForeign = currencyCode.toUpperCase() !== "GBP";
 
-      // 1. Raw Foreign Currency Amount (from Journal Line)
-      const rawFCY = Number(row.fcy_amount) || Number(row.original_amount) || 0;
+      const rawFCY = Number(row.derived_fcy_original) || 0;
+      const rawLCY = Number(row.derived_lcy_original) || 0;
+      const rawRemLCY = Number(row.raw_remaining_lcy) || 0;
 
-      // 2. Base Local Currency Amount (FCY * rate or stored LCY)
-      const rawLCY = Number(row.original_amount) || rawFCY * rate;
+      // FCY Remaining: Convert LCY remaining back to FCY (LCY / Rate)
+      const rawRemFCY = isForeign && rate !== 0 ? rawRemLCY / rate : rawRemLCY;
 
-      // 3. Calculate remaining FCY based on remaining LCY / rate
-      const rawRemLCY = Number(row.remaining_amount) || 0;
-      const rawRemFCY = rate !== 0 ? rawRemLCY / rate : rawRemLCY;
-
-      const signedOrigFCY = getSignedAmount(
-        row.document_type,
-        rawFCY,
-        isSupplier,
-      );
-      const signedRemFCY = getSignedAmount(
-        row.document_type,
-        rawRemFCY,
-        isSupplier,
-      );
-      const signedOrigLCY = getSignedAmount(
-        row.document_type,
-        rawLCY,
-        isSupplier,
-      );
-      const signedRemLCY = getSignedAmount(
-        row.document_type,
-        rawRemLCY,
-        isSupplier,
-      );
+      const signedOrigFCY = getSignedAmount(row.document_type, rawFCY, isSupplier);
+      const signedRemFCY = getSignedAmount(row.document_type, rawRemFCY, isSupplier);
+      const signedOrigLCY = getSignedAmount(row.document_type, rawLCY, isSupplier);
+      const signedRemLCY = getSignedAmount(row.document_type, rawRemLCY, isSupplier);
 
       totalOriginalFCY += signedOrigFCY;
       totalRemainingFCY += signedRemFCY;
@@ -162,8 +200,6 @@ export async function GET(
         ...row,
         currency_code: currencyCode,
         exchange_rate: rate,
-        fcy_debit: Number(row.fcy_debit) || 0,
-        fcy_credit: Number(row.fcy_credit) || 0,
         original_amount_fcy: signedOrigFCY,
         remaining_amount_fcy: signedRemFCY,
         amount_lcy: signedOrigLCY,
@@ -173,6 +209,74 @@ export async function GET(
         on_hold_reason: row.on_hold_reason || "",
       };
     });
+
+    // const rows = result.rows.map((row) => {
+    //   const currencyCode = row.currency_code || "GBP";
+    //   const rate = Number(row.exchange_rate) || 1.0;
+    //   const isForeign = currencyCode.toUpperCase() !== "GBP";
+
+    //   // 1. Raw Foreign Currency Amount (from Journal Line)
+    //   const rawFCY = Number(row.fcy_amount) || Number(row.original_amount) || 0;
+
+    //   // 2. Base Local Amount (LCY) in GBP. If rate > 1 and doc is in FCY, LCY = FCY * rate.
+    //   // If stored original_amount is ALREADY LCY, use it directly.
+    //   const rawLCY = isForeign
+    //     ? Number(row.original_amount) || rawFCY * rate
+    //     : Number(row.original_amount) || rawFCY;
+
+    //   // // 2. Base Local Currency Amount (FCY * rate or stored LCY)
+    //   // const rawLCY = Number(row.original_amount) || rawFCY * rate;
+
+    //   // 3. Calculate remaining FCY based on remaining LCY / rate
+    //   const rawRemLCY = Number(row.remaining_amount) || 0;
+    //   // const rawRemFCY = rate !== 0 ? rawRemLCY / rate : rawRemLCY;
+    //   const rawRemFCY = isForeign && rate !== 0 ? rawRemLCY / rate : rawRemLCY;
+
+    //   // Optional safeguard: If remaining balance is full/unallocated, pin rawRemFCY directly to rawFCY to avoid float precision loss
+    //   const finalRemFCY =
+    //     Math.abs(rawRemLCY) === Math.abs(rawLCY) ? rawFCY : rawRemFCY;
+
+    //   const signedOrigFCY = getSignedAmount(
+    //     row.document_type,
+    //     rawFCY,
+    //     isSupplier,
+    //   );
+    //   const signedRemFCY = getSignedAmount(
+    //     row.document_type,
+    //     finalRemFCY,
+    //     isSupplier,
+    //   );
+    //   const signedOrigLCY = getSignedAmount(
+    //     row.document_type,
+    //     rawLCY,
+    //     isSupplier,
+    //   );
+    //   const signedRemLCY = getSignedAmount(
+    //     row.document_type,
+    //     rawRemLCY,
+    //     isSupplier,
+    //   );
+
+    //   totalOriginalFCY += signedOrigFCY;
+    //   totalRemainingFCY += signedRemFCY;
+    //   totalOriginalLCY += signedOrigLCY;
+    //   totalRemainingLCY += signedRemLCY;
+
+    //   return {
+    //     ...row,
+    //     currency_code: currencyCode,
+    //     exchange_rate: rate,
+    //     fcy_debit: Number(row.fcy_debit) || 0,
+    //     fcy_credit: Number(row.fcy_credit) || 0,
+    //     original_amount_fcy: signedOrigFCY,
+    //     remaining_amount_fcy: signedRemFCY,
+    //     amount_lcy: signedOrigLCY,
+    //     remaining_amount_lcy: signedRemLCY,
+    //     total_allocated: Number(row.total_allocated) || 0,
+    //     on_hold: Boolean(row.on_hold),
+    //     on_hold_reason: row.on_hold_reason || "",
+    //   };
+    // });
 
     return NextResponse.json({
       entries: rows,

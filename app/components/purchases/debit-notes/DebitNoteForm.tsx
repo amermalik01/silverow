@@ -714,7 +714,7 @@ export const DebitNoteForm: React.FC<Props> = ({
                       } else if (isPassed) {
                         // Blue color indicating completed/cleared previous stages
                         buttonStyles =
-                          "bg-blue-600 text-white hover:bg-blue-700";
+                          "bg-blue-400 text-white hover:bg-blue-600";
                       }
 
                       return (

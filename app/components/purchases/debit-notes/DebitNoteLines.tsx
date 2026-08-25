@@ -279,17 +279,17 @@ export default function DebitNoteLines({
             <col className="w-[80px]" />
             <col className="w-[120px]" />
             <col className="w-[180px]" />
-            <col className="w-[60px]" />
+            <col className="w-[65px]" />
             <col className="w-[60px]" />
             <col className="w-[150px]" />
-            <col className="w-[70px]" />
+            <col className="w-[90px]" />
+            <col className="w-[90px]" />
+            <col className="w-[90px]" />
+            <col className="w-[120px]" />
+            <col className="w-[90px]" />
             <col className="w-[80px]" />
-            <col className="w-[70px]" />
-            <col className="w-[100px]" />
-            <col className="w-[75px]" />
-            <col className="w-[75px]" />
-            <col className="w-[75px]" />
-            <col className="w-[75px]" />
+            <col className="w-[90px]" />
+            <col className="w-[80px]" />
             <col className="w-[80px]" />
           </colgroup>
           <thead>
@@ -297,17 +297,23 @@ export default function DebitNoteLines({
               <th className="p-2 w-[80px]">Type</th>
               <th className="p-2 w-[120px]">No.</th>
               <th className="p-2 w-[180px]">Description</th>
-              <th className="p-2 text-right w-[60px]">Qty</th>
+              <th className="p-2 text-right w-[65px]">Qty</th>
               <th className="p-2 w-[60px]">U.O.M</th>
               <th className="p-2 w-[150px]">Warehouse</th>
-              <th className="p-2 text-right w-[70px]">Unit Price</th>
-              <th className="p-2 w-[80px]">Disc Type</th>
-              <th className="p-2 text-right w-[70px]">Discount</th>
-              <th className="p-2 text-left w-[100px]">VAT Rate</th>
-              <th className="p-2 text-right w-[75px] wrap-break-word">Original Amount</th>
-              <th className="p-2 text-right w-[75px] wrap-break-word">Discount Amount</th>
-              <th className="p-2 text-right w-[75px] wrap-break-word">Total Amount</th>
-              <th className="p-2 text-right w-[75px] wrap-break-word">VAT</th>
+              <th className="p-2 text-right w-[90px]">Unit Price</th>
+              <th className="p-2 w-[90px]">Disc Type</th>
+              <th className="p-2 text-right w-[90px]">Discount</th>
+              <th className="p-2 text-left w-[120px]">VAT Rate</th>
+              <th className="p-2 text-right w-[90px] wrap-break-word">
+                Original Amount
+              </th>
+              <th className="p-2 text-right w-[80px] wrap-break-word">
+                Discount Amount
+              </th>
+              <th className="p-2 text-right w-[90px] wrap-break-word">
+                Total Amount
+              </th>
+              <th className="p-2 text-right w-[80px] wrap-break-word">VAT</th>
               <th className="p-2 text-center w-[80px]">Action</th>
             </tr>
           </thead>

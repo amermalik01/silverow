@@ -292,14 +292,6 @@ export default function PartyLedgerActivityTab({
     <div className="space-y-4">
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {/* <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
-          <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-            Total Ledger Value ({currencyCode})
-          </span>
-          <div className="text-lg font-bold font-mono text-slate-800 dark:text-slate-100">
-            {formatAmount(summary.totalOriginal)}
-          </div>
-        </div> */}
 
         <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
           <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">
@@ -384,7 +376,17 @@ export default function PartyLedgerActivityTab({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
-            {filteredEntries.map((row) => (
+            {filteredEntries.map((row) => {
+
+              const remBalance = Math.abs(
+                row.remaining_amount_fcy ??
+                  row.remaining_amount_lcy ??
+                  row.remaining_amount ??
+                  0,
+              );
+              const canAllocate = row.is_open && remBalance > 0;
+
+              return (
               <tr
                 key={row.id}
                 className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
@@ -466,7 +468,8 @@ export default function PartyLedgerActivityTab({
                   </button>
                 </td>
                 <td className="p-2.5 text-center">
-                  {row.is_open && Math.abs(row.remaining_amount) > 0 ? (
+                  {/* {row.is_open && Math.abs(row.remaining_amount) > 0 ? ( */}
+                  {canAllocate ? (
                     <Button
                       size="sm"
                       variant="outline"
@@ -479,7 +482,8 @@ export default function PartyLedgerActivityTab({
                   )}
                 </td>
               </tr>
-            ))}
+            )}
+            )}
           </tbody>
         </table>
       </div>
@@ -539,7 +543,10 @@ export default function PartyLedgerActivityTab({
           partyId={partyId}
           partyType={partyType}
           documentNo={viewAllocationsEntry.document_no}
-          currencyFormatter={(val) => formatAmount(val)}
+          currencyFormatter={(val) =>
+            formatFCY(val, viewAllocationsEntry.currency_code)
+          }
+          // currencyFormatter={(val) => formatAmount(val)}
         />
       )}
 
@@ -553,25 +560,18 @@ export default function PartyLedgerActivityTab({
           paymentEntryId={selectedPayment.id}
           paymentAmount={Math.abs(
             selectedPayment.remaining_amount_fcy ??
-              selectedPayment.remaining_amount,
+              selectedPayment.remaining_amount_lcy ??
+              selectedPayment.remaining_amount ??
+              0,
           )}
+          // paymentAmount={Math.abs(
+          //   selectedPayment.remaining_amount_fcy ??
+          //     selectedPayment.remaining_amount,
+          // )}
           currencyIsoCode={selectedPayment.currency_code || currencyCode}
           onApplyAllocations={handleApplyAllocations}
         />
       )}
-
-      {/* {selectedPayment && (
-        <AllocateJournalPaymentModal
-          isOpen={true}
-          onClose={() => setSelectedPayment(null)}
-          partyId={partyId}
-          partyType={partyType}
-          documentType={selectedPayment.document_type}
-          paymentAmount={selectedPayment.remaining_amount}
-          currencyIsoCode={currencyCode}
-          onApplyAllocations={handleApplyAllocations}
-        />
-      )} */}
     </div>
   );
 }
