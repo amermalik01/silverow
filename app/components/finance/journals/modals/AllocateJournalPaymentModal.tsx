@@ -58,9 +58,14 @@ export default function AllocateJournalPaymentModal({
     0,
   );
 
+  console.log('paymentAmount ====',paymentAmount);
+  console.log('totalAllocated ====',totalAllocated);
+
   const remainingToAllocate = paymentAmount - totalAllocated;
+  console.log('remainingToAllocate ====',remainingToAllocate);
 
   const isOverAllocated = totalAllocated > paymentAmount + 0.001;
+  console.log('isOverAllocated ====',isOverAllocated);
 
   const autoAllocateChecked =
     paymentAmount > 0 && Math.abs(totalAllocated - paymentAmount) < 0.01;

@@ -239,13 +239,14 @@ export default function SalesOrderLines({
               <th className="p-2 w-[120px]">No.</th>
               <th className="p-2 w-[180px]">Description</th>
               <th className="p-2 text-right w-[70px]">Qty</th>
-              <th className="p-2 w-[60px]">UOM</th>
+              <th className="p-2 w-[60px]">U.O.M</th>
               <th className="p-2 w-[150px]">Warehouse</th>
               <th className="p-2 text-right w-[90px]">Unit Price</th>
               <th className="p-2 w-[80px]">Disc Type</th>
-              <th className="p-2 text-right w-[80px]">Disc Val</th>
+              <th className="p-2 text-right w-[80px]">Discount</th>
+              <th className="p-2 text-right w-[90px]">VAT Rate</th>
+              <th className="p-2 text-right w-[95px]">Original Amt</th>
               <th className="p-2 text-right w-[95px]">Disc Amt</th>
-              <th className="p-2 text-right w-[90px]">VAT %</th>
               <th className="p-2 text-right w-[95px]">Net</th>
               <th className="p-2 text-right w-[100px]">Gross</th>
               {!isReadonly && (
@@ -293,7 +294,7 @@ export default function SalesOrderLines({
                           e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
                         )
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-full disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-full  disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <option value="ITEM">Item</option>
                       <option value="GL_ACCOUNT">G/L</option>
@@ -426,10 +427,6 @@ export default function SalesOrderLines({
                     />
                   </td>
 
-                  <td className="p-2 text-right font-medium ">
-                    {displayDiscountAmount.toFixed(2)}
-                  </td>
-
                   <td className="p-2">
                     <select
                       value={
@@ -452,6 +449,10 @@ export default function SalesOrderLines({
                         </option>
                       ))}
                     </select>
+                  </td>
+
+                  <td className="p-2 text-right font-medium ">
+                    {displayDiscountAmount.toFixed(2)}
                   </td>
 
                   <td className="p-2 text-right font-medium">

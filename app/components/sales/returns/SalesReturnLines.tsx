@@ -194,8 +194,9 @@ export default function SalesReturnLines({
                 <th className="p-2 w-20 text-right">Qty</th>
                 <th className="p-2 w-28 text-right">Unit Price</th>
                 <th className="p-2 w-24">Disc Type</th>
+                <th className="p-2 w-20 text-right">VAT Rate</th>
+                <th className="p-2 text-right w-[95px]">Original Amt</th>
                 <th className="p-2 w-24 text-right">Discount</th>
-                <th className="p-2 w-20 text-right">Tax %</th>
                 <th className="p-2 w-28 text-right">Total</th>
                 {!isReadonly && (
                   <th className="p-2 w-20 text-center">Action</th>

@@ -441,15 +441,6 @@ export default function PartyLedgerActivityTab({
                 <td className="p-2.5 text-right font-bold text-amber-600">
                   {formatFCY(row.remaining_amount_fcy, row.currency_code)}
                 </td>
-                {/* <td className="p-2.5 text-right font-medium text-slate-500">
-                  {formatAmount(row.amount_lcy, true)}
-                </td>
-                <td className="p-2.5 text-right font-medium">
-                  {formatAmount(row.original_amount)}
-                </td>
-                <td className="p-2.5 text-right font-bold text-amber-600">
-                  {formatAmount(row.remaining_amount)}
-                </td> */}
                 <td className="p-2.5 text-center">
                   <button
                     onClick={() => setViewAllocationsEntry(row)}

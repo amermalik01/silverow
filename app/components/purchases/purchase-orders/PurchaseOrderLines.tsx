@@ -280,39 +280,39 @@ export default function PurchaseOrderLines({
       <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm ">
         <table className="w-full table-fixed text-left text-xs border-collapse min-w-[1300px] p-2">
           <colgroup>
-            <col className="w-[110px]" />
+            <col className="w-[80px]" />
             <col className="w-[120px]" />
             <col className="w-[180px]" />
-            <col className="w-[70px]" />
+            <col className="w-[60px]" />
             <col className="w-[60px]" />
             <col className="w-[150px]" />
-            <col className="w-[90px]" />
+            <col className="w-[70px]" />
             <col className="w-[80px]" />
-            <col className="w-[80px]" />
-            <col className="w-[95px]" />
-            <col className="w-[90px]" />
-            <col className="w-[95px]" />
+            <col className="w-[70px]" />
             <col className="w-[100px]" />
-            <col className="w-[90px]" />
+            <col className="w-[75px]" />
+            <col className="w-[75px]" />
+            <col className="w-[75px]" />
+            <col className="w-[75px]" />
+            <col className="w-[80px]" />
           </colgroup>
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
-              <th className="p-2 w-[110px]">Type</th>
+              <th className="p-2 w-[80px]">Type</th>
               <th className="p-2 w-[120px]">No.</th>
               <th className="p-2 w-[180px]">Description</th>
-              <th className="p-2 text-right w-[70px]">Qty</th>
-              <th className="p-2 w-[60px]">UOM</th>
+              <th className="p-2 text-right w-[60px]">Qty.</th>
+              <th className="p-2 w-[60px]">U.O.M</th>
               <th className="p-2 w-[150px] overflow-hidden">Warehouse</th>
-              <th className="p-2 text-right w-[90px]">Unit Cost</th>
+              <th className="p-2 text-right w-[70px]">Unit Price</th>
               <th className="p-2 w-[80px]">Disc. Type</th>
-              <th className="p-2 text-right w-[80px]">Disc. Val</th>
-              <th className="p-2 text-right w-[95px]">Disc. Amt</th>
-              <th className="p-2 text-right w-[90px]">VAT %</th>
-              <th className="p-2 text-right w-[95px]">Net</th>
-              <th className="p-2 text-right w-[100px]">Gross</th>
-   
-              <th className="p-2 text-center w-[90px]">Action</th>
-
+              <th className="p-2 text-right w-[70px]">Discount</th>
+              <th className="p-2 text-left w-[100px]">VAT Rate</th>
+              <th className="p-2 text-right w-[75px] wrap-break-word">Original Amount</th>
+              <th className="p-2 text-right w-[75px] wrap-break-word">Discount Amount</th>
+              <th className="p-2 text-right w-[75px] wrap-break-word">Total Amount</th>
+              <th className="p-2 text-right w-[75px] wrap-break-word">VAT</th>
+              <th className="p-2 text-center w-[80px]">Action</th>
             </tr>
           </thead>
 
@@ -335,8 +335,10 @@ export default function PurchaseOrderLines({
               const isLineDisabled = isReadonly || isStockReceived;
 
               const displayUnitCost = Number(line.unit_cost || 0);
+              const displayOriginalAmount = displayUnitCost * displayQty;
               const displayDiscountValue = Number(line.discount_value || 0);
               const displayDiscountAmount = Number(line.discount_amount || 0);
+              const displayVATAmount = Number(line.vat_amount || 0);
               const displayVatPercent = Number(line.vat_percent || 0);
               const displayAvailableStock =
                 line.available_stock !== undefined
@@ -364,7 +366,7 @@ export default function PurchaseOrderLines({
                           e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
                         )
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-[100px] disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 text-[11px] w-full disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <option value="ITEM">Item</option>
                       <option value="GL_ACCOUNT">G/L</option>
@@ -379,7 +381,7 @@ export default function PurchaseOrderLines({
                           disabled={isLineDisabled}
                           title={line.item_name}
                           onClick={() => setItemIndex(index)}
-                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] text-[11px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {line.item_code || "Select Item"}
                         </button>
@@ -393,7 +395,7 @@ export default function PurchaseOrderLines({
                           title={line.account_name}
                           disabled={isLineDisabled}
                           onClick={() => setGlIndex(index)}
-                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] text-[11px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {line.account_code || "Select GL"}
                         </button>
@@ -408,7 +410,7 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         updateLine(index, "description", e.target.value)
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-xs disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-[11px] disabled:opacity-60 disabled:cursor-not-allowed"
                       rows={1}
                     />
                   </td>
@@ -428,7 +430,7 @@ export default function PurchaseOrderLines({
                       allowDecimals={false}
                       disabled={isLineDisabled || line.line_type === "COMMENT"}
                       onChange={(val) => updateLine(index, "quantity", val)}
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-[11px] text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </td>
 
@@ -445,16 +447,16 @@ export default function PurchaseOrderLines({
                           type="button"
                           disabled={isLineDisabled}
                           onClick={() => setWarehouseIndex(index)}
-                          className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-xs bg-white dark:bg-slate-800 flex items-center justify-between gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-[11px] bg-white dark:bg-slate-800 flex items-center justify-between gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {!line.warehouse_id && (
-                            <span className="text-red-500 text-xs">
+                            <span className="text-red-500 text-[11px]">
                               Warehouse required
                             </span>
                           )}
 
                           {line.warehouse_id && (
-                            <span className="truncate text-left">
+                            <span className="truncate text-left text-[11px]">
                               {line.warehouse_code || ""}
                               {line.warehouse_name &&
                                 ` - ${line.warehouse_name}`}
@@ -482,7 +484,7 @@ export default function PurchaseOrderLines({
                       decimalScale={2}
                       disabled={isLineDisabled}
                       onChange={(val) => updateLine(index, "unit_cost", val)}
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right text-[11px] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </td>
 
@@ -493,7 +495,7 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         handleDiscountTypeChange(index, e.target.value)
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 text-[11px] w-full disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <option value="PERCENT">%</option>
                       <option value="FIXED">Fixed</option>
@@ -509,7 +511,7 @@ export default function PurchaseOrderLines({
                       onChange={(val) =>
                         updateLine(index, "discount_value", val)
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-[11px] text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                     {/* <input
                       type="number"
@@ -526,10 +528,6 @@ export default function PurchaseOrderLines({
                     /> */}
                   </td>
 
-                  <td className="p-2 text-right font-medium">
-                    {displayDiscountAmount.toFixed(2)}
-                  </td>
-
                   <td className="p-2">
                     <select
                       value={
@@ -543,7 +541,7 @@ export default function PurchaseOrderLines({
                       }
                       disabled={isLineDisabled || line.line_type === "COMMENT"}
                       onChange={(e) => handleVatChange(index, e.target.value)}
-                      className="border dark:border-slate-700 dark:bg-slate-800 text-xs rounded p-1.5 w-full bg-white dark:text-slate-100 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="border dark:border-slate-700 dark:bg-slate-800 text-[11px] rounded p-1.5 w-full bg-white dark:text-slate-100 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     >
                       <option value="">0% (Exempt/Zero)</option>
                       {vatOptions.map((opt) => (
@@ -554,12 +552,20 @@ export default function PurchaseOrderLines({
                     </select>
                   </td>
 
-                  <td className="p-2 text-right font-medium">
+                  <td className="p-2 text-right font-medium text-[11px]">
+                    {displayOriginalAmount.toFixed(2)}
+                  </td>
+
+                  <td className="p-2 text-right font-medium text-[11px]">
+                    {displayDiscountAmount.toFixed(2)}
+                  </td>
+
+                  <td className="p-2 text-right font-medium text-[11px]">
                     {Number(line.net_amount || 0).toFixed(2)}
                   </td>
 
-                  <td className="p-2 text-right font-semibold">
-                    {Number(line.gross_amount || 0).toFixed(2)}
+                  <td className="p-2 text-right font-semibold text-[11px]">
+                    {Number(displayVATAmount|| 0).toFixed(2)}
                   </td>
 
                   <td className="p-2 text-center">
@@ -572,7 +578,7 @@ export default function PurchaseOrderLines({
                             setActiveAllocationRowKey(index.toString());
                             setIsAllocationModalOpen(true);
                           }}
-                          className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                          className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                             // 🟡 YELLOW / AMBER = Stock Received
                             isStockReceived
                               ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
