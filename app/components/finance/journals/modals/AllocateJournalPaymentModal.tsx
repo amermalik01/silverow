@@ -73,9 +73,14 @@ export default function AllocateJournalPaymentModal({
   const isSupplier = partyType === "supplier";
   const isRefund = documentType?.toLowerCase() === "refund";
 
-  const targetDocType = useMemo(() => {
-    return isRefund ? "REFUND" : "PAYMENT";
-  }, [isRefund]);
+  console.log('partyType ====',partyType);
+  console.log('documentType ====',documentType);
+
+  // const targetDocType = useMemo(() => {
+  //   return isRefund ? "REFUND" : "PAYMENT";
+  // }, [isRefund]);
+
+  const targetDocType = documentType;
 
   // Dynamic UI label
   const targetDocLabel = isSupplier

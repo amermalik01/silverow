@@ -17,7 +17,6 @@ export async function GET(
     const { partyType, partyId } = await params;
     const { searchParams } = new URL(req.url);
     const rawDocType = (searchParams.get("docType") || "INVOICE").toUpperCase();
-    // const docType = (searchParams.get("docType") || "INVOICE").toUpperCase();
 
     const isSupplier =
       partyType.toLowerCase() === "supplier" ||
@@ -36,6 +35,7 @@ export async function GET(
       switch (rawDocType) {
         // When applying a Payment (Debit entry to Vendor), allocate against open Invoices (Credits)
         case "PAYMENT":
+        case "VENDOR_PAYMENT":
           targetDocTypes = ["PURCHASE_INVOICE", "INVOICE"];
           break;
 
@@ -47,7 +47,7 @@ export async function GET(
         // When allocating from a Purchase Invoice / Bill side
         case "PURCHASE_INVOICE":
         case "INVOICE":
-          targetDocTypes = ["PAYMENT", "DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
+          targetDocTypes = ["PAYMENT", "VENDOR_PAYMENT", "DEBIT_NOTE", "PURCHASE_DEBIT_NOTE"];
           break;
 
         // When allocating from a Debit Note side
@@ -64,6 +64,7 @@ export async function GET(
       switch (rawDocType) {
         // When applying a Customer Payment (Credit entry to Customer), allocate against open Sales Invoices (Debits)
         case "PAYMENT":
+        case "CUSTOMER_PAYMENT":
           targetDocTypes = ["SALES_INVOICE", "INVOICE"];
           break;
 
@@ -75,7 +76,7 @@ export async function GET(
         // When allocating from a Sales Invoice side
         case "SALES_INVOICE":
         case "INVOICE":
-          targetDocTypes = ["PAYMENT", "CREDIT_NOTE", "SALES_CREDIT_NOTE"];
+          targetDocTypes = ["PAYMENT", "CUSTOMER_PAYMENT", "CREDIT_NOTE", "SALES_CREDIT_NOTE"];
           break;
 
         // When allocating from a Credit Note side
@@ -114,7 +115,7 @@ export async function GET(
             END
         END AS derived_fcy_original,
 
-        e.remaining_amount AS raw_remaining_lcy
+        e.remaining_amount AS raw_remaining_fcy
       FROM ${tableName} e
       LEFT JOIN journal_entry_lines jel ON jel.id = e.journal_line_id
       LEFT JOIN currencies c ON c.id = e.currency_id
@@ -144,8 +145,11 @@ export async function GET(
       const isForeign = currencyCode !== "GBP";
 
       const origFCY = Number(row.derived_fcy_original) || 0;
-      const remLCY = Math.abs(Number(row.raw_remaining_lcy) || 0);
-      const remFCY = isForeign && rate !== 0 ? remLCY / rate : remLCY;
+      
+      // Parse raw FCY remaining balance
+      const remFCY = Math.abs(Number(row.raw_remaining_fcy) || 0);
+      // Calculate LCY remaining balance (FCY * Rate)
+      const remLCY = isForeign ? remFCY * rate : remFCY;
 
       return {
         id: row.id,

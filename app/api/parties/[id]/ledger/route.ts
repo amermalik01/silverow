@@ -17,8 +17,8 @@ export async function GET(
     const { id: partyId } = await params;
     const { searchParams } = new URL(req.url);
     const partyType = searchParams.get("type") || "supplier"; // "supplier" | "customer"
-    const sourceDocType = (searchParams.get("docType") || "").toUpperCase();
-    const sourceEntryId = searchParams.get("entryId");
+    // const sourceDocType = (searchParams.get("docType") || "").toUpperCase();
+    // const sourceEntryId = searchParams.get("entryId");
 
     const isSupplier = partyType.toLowerCase() === "supplier";
 
@@ -29,36 +29,36 @@ export async function GET(
     const partyColumn = isSupplier ? "vendor_id" : "customer_id";
 
     // Define allowed target document types according to business rules
-    let allowedTypes: string[] = [];
+    // let allowedTypes: string[] = [];
 
-    if (isSupplier) {
-      if (sourceDocType.includes("PAYMENT")) {
-        allowedTypes = ["PURCHASE_INVOICE", "INVOICE"];
-      } else if (sourceDocType.includes("REFUND")) {
-        allowedTypes = ["DEBIT_NOTE"];
-      } else if (sourceDocType.includes("DEBIT_NOTE")) {
-        allowedTypes = ["PURCHASE_INVOICE", "INVOICE"];
-      } else if (
-        sourceDocType.includes("INVOICE") ||
-        sourceDocType.includes("PURCHASE_INVOICE")
-      ) {
-        allowedTypes = ["DEBIT_NOTE", "PAYMENT"];
-      }
-    } else {
-      // Customer Rules
-      if (sourceDocType.includes("PAYMENT")) {
-        allowedTypes = ["SALES_INVOICE", "INVOICE"];
-      } else if (sourceDocType.includes("REFUND")) {
-        allowedTypes = ["CREDIT_NOTE"];
-      } else if (sourceDocType.includes("CREDIT_NOTE")) {
-        allowedTypes = ["SALES_INVOICE", "INVOICE"];
-      } else if (
-        sourceDocType.includes("INVOICE") ||
-        sourceDocType.includes("SALES_INVOICE")
-      ) {
-        allowedTypes = ["CREDIT_NOTE", "PAYMENT"];
-      }
-    }
+    // if (isSupplier) {
+    //   if (sourceDocType.includes("PAYMENT")) {
+    //     allowedTypes = ["PURCHASE_INVOICE", "INVOICE"];
+    //   } else if (sourceDocType.includes("REFUND")) {
+    //     allowedTypes = ["DEBIT_NOTE"];
+    //   } else if (sourceDocType.includes("DEBIT_NOTE")) {
+    //     allowedTypes = ["PURCHASE_INVOICE", "INVOICE"];
+    //   } else if (
+    //     sourceDocType.includes("INVOICE") ||
+    //     sourceDocType.includes("PURCHASE_INVOICE")
+    //   ) {
+    //     allowedTypes = ["DEBIT_NOTE", "PAYMENT"];
+    //   }
+    // } else {
+    //   // Customer Rules
+    //   if (sourceDocType.includes("PAYMENT")) {
+    //     allowedTypes = ["SALES_INVOICE", "INVOICE"];
+    //   } else if (sourceDocType.includes("REFUND")) {
+    //     allowedTypes = ["CREDIT_NOTE"];
+    //   } else if (sourceDocType.includes("CREDIT_NOTE")) {
+    //     allowedTypes = ["SALES_INVOICE", "INVOICE"];
+    //   } else if (
+    //     sourceDocType.includes("INVOICE") ||
+    //     sourceDocType.includes("SALES_INVOICE")
+    //   ) {
+    //     allowedTypes = ["CREDIT_NOTE", "PAYMENT"];
+    //   }
+    // }
 
     // if (allowedTypes.length === 0) {
     //   return NextResponse.json({
@@ -73,41 +73,6 @@ export async function GET(
     //   });
     // }
 
-    // const query = `
-    //   SELECT 
-    //     e.id,
-    //     e.document_type,
-    //     e.document_id,
-    //     e.document_no,
-    //     e.posting_date,
-    //     e.due_date,
-    //     e.description,
-    //     e.original_amount,
-    //     e.remaining_amount,
-    //     COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) AS exchange_rate,
-    //     e.is_open,
-    //     e.on_hold,
-    //     e.on_hold_reason,
-    //     e.journal_entry_id,
-    //     e.journal_line_id,
-    //     e.created_at,
-    //     COALESCE(jc.code, c.code, 'GBP') AS currency_code,
-    //     COALESCE(jel.debit, 0) AS fcy_debit,
-    //     COALESCE(jel.credit, 0) AS fcy_credit,
-    //     COALESCE(GREATEST(jel.debit, jel.credit), e.original_amount) AS fcy_amount,
-    //     COALESCE(SUM(la.allocated_amount), 0) AS total_allocated
-    //   FROM ${tableName} e
-    //   LEFT JOIN journal_entry_lines jel ON jel.id = e.journal_line_id
-    //   LEFT JOIN journal_entries je ON je.id = e.journal_entry_id
-    //   LEFT JOIN currencies c ON c.id = e.currency_id
-    //   LEFT JOIN currencies jc ON jc.id = jel.currency_id
-    //   LEFT JOIN ledger_allocations la 
-    //     ON (la.payment_entry_id = e.id OR la.ledger_entry_id = e.id)
-    //     AND la.is_unapplied = false
-    //   WHERE e.company_id = $1 AND e.${partyColumn} = $2
-    //   GROUP BY e.id, c.code, jc.code, jel.debit, jel.credit, jel.exchange_rate
-    //   ORDER BY e.posting_date DESC, e.created_at DESC
-    // `;
 
     const query = `
       SELECT 
@@ -149,7 +114,7 @@ export async function GET(
         END AS derived_lcy_original,
 
         -- 3. Determine LCY Remaining Amount (DB always tracks remaining balance against base LCY)
-        e.remaining_amount AS raw_remaining_lcy,
+        e.remaining_amount AS raw_remaining_fcy,
 
         COALESCE(SUM(la.allocated_amount), 0) AS total_allocated
       FROM ${tableName} e
@@ -175,16 +140,22 @@ export async function GET(
     let totalRemainingLCY = 0;
 
     const rows = result.rows.map((row) => {
-      const currencyCode = row.currency_code || "GBP";
+      const currencyCode = (row.currency_code || "GBP").toUpperCase();
       const rate = Number(row.exchange_rate) || 1.0;
-      const isForeign = currencyCode.toUpperCase() !== "GBP";
+      const isForeign = currencyCode !== "GBP";
 
       const rawFCY = Number(row.derived_fcy_original) || 0;
       const rawLCY = Number(row.derived_lcy_original) || 0;
-      const rawRemLCY = Number(row.raw_remaining_lcy) || 0;
 
-      // FCY Remaining: Convert LCY remaining back to FCY (LCY / Rate)
-      const rawRemFCY = isForeign && rate !== 0 ? rawRemLCY / rate : rawRemLCY;
+      // remaining_amount is FCY
+      const rawRemFCY = Number(row.raw_remaining_fcy) || 0;
+      // Convert FCY remaining to LCY (FCY * Rate)
+      const rawRemLCY = isForeign ? rawRemFCY * rate : rawRemFCY;
+
+      // const rawRemLCY = Number(row.raw_remaining_lcy) || 0;
+
+      // // FCY Remaining: Convert LCY remaining back to FCY (LCY / Rate)
+      // const rawRemFCY = isForeign && rate !== 0 ? rawRemLCY / rate : rawRemLCY;
 
       const signedOrigFCY = getSignedAmount(row.document_type, rawFCY, isSupplier);
       const signedRemFCY = getSignedAmount(row.document_type, rawRemFCY, isSupplier);
@@ -210,6 +181,139 @@ export async function GET(
       };
     });
 
+
+
+    return NextResponse.json({
+      entries: rows,
+      summary: {
+        totalOriginalFCY,
+        totalRemainingFCY,
+        totalOriginalLCY,
+        totalRemainingLCY,
+        openCount: rows.filter(
+          (r) => r.is_open && Math.abs(r.remaining_amount_fcy) > 0,
+        ).length,
+      },
+    });
+  } catch (err) {
+    const dbError = err as { message?: string };
+    return NextResponse.json(
+      { error: dbError.message || "Failed to load ledger activity" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const companyId = await getCompanyId();
+    if (!companyId)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = await req.json();
+    const { entryId, partyType, onHold, reason } = body;
+
+    const isSupplier = partyType.toLowerCase() === "supplier";
+    const tableName = isSupplier
+      ? "vendor_ledger_entries"
+      : "customer_ledger_entries";
+
+    await pool.query(
+      `UPDATE ${tableName} SET on_hold = $1, on_hold_reason = $2 WHERE id = $3 AND company_id = $4`,
+      [onHold, reason, entryId, companyId],
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const dbError = err as { message?: string };
+    return NextResponse.json(
+      { error: dbError.message || "Update failed" },
+      { status: 500 },
+    );
+  }
+}
+
+// Helper to determine document sign signifiers based on party context
+
+function getSignedAmount(docType: string, amount: number, isSupplier: boolean): number {
+  const type = docType.toUpperCase();
+  const absAmount = Math.abs(amount);
+
+  if (isSupplier) {
+    // Supplier: Invoices are positive payables, Payments/Debit Notes reduce payable (negative)
+    if (type.includes("PAYMENT") || type.includes("VENDOR_PAYMENT") || type.includes("DEBIT_NOTE") || type.includes("REFUND")) {
+      return -absAmount;
+    }
+    return absAmount;
+  } else {
+    // Customer: Invoices are positive receivables, Payments/Credit Notes reduce receivable (negative)
+    if (type.includes("PAYMENT") || type.includes("CUSTOMER_PAYMENT") || type.includes("CREDIT_NOTE") || type.includes("REFUND")) {
+      return -absAmount;
+    }
+    return absAmount;
+  }
+}
+/* function getSignedAmount(
+  docType: string,
+  amount: number,
+  isSupplier: boolean,
+): number {
+  const dt = docType ? docType.toUpperCase() : "";
+  const abs = Math.abs(amount);
+
+  const isCreditType =
+    dt.includes("PAYMENT") || dt.includes("CREDIT") || dt.includes("REFUND");
+
+  if (isSupplier) {
+    // Supplier: Payments / Refunds / Credit Memos reduce vendor liability (-)
+    // Invoices / Debit Notes increase vendor liability (+)
+    return isCreditType ? -abs : abs;
+  } else {
+    // Customer: Invoices / Debit Notes increase customer balance (+)
+    // Payments / Refunds / Credit Memos reduce customer balance (-)
+    return isCreditType ? -abs : abs;
+  }
+} */
+
+
+    // const query = `
+    //   SELECT 
+    //     e.id,
+    //     e.document_type,
+    //     e.document_id,
+    //     e.document_no,
+    //     e.posting_date,
+    //     e.due_date,
+    //     e.description,
+    //     e.original_amount,
+    //     e.remaining_amount,
+    //     COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) AS exchange_rate,
+    //     e.is_open,
+    //     e.on_hold,
+    //     e.on_hold_reason,
+    //     e.journal_entry_id,
+    //     e.journal_line_id,
+    //     e.created_at,
+    //     COALESCE(jc.code, c.code, 'GBP') AS currency_code,
+    //     COALESCE(jel.debit, 0) AS fcy_debit,
+    //     COALESCE(jel.credit, 0) AS fcy_credit,
+    //     COALESCE(GREATEST(jel.debit, jel.credit), e.original_amount) AS fcy_amount,
+    //     COALESCE(SUM(la.allocated_amount), 0) AS total_allocated
+    //   FROM ${tableName} e
+    //   LEFT JOIN journal_entry_lines jel ON jel.id = e.journal_line_id
+    //   LEFT JOIN journal_entries je ON je.id = e.journal_entry_id
+    //   LEFT JOIN currencies c ON c.id = e.currency_id
+    //   LEFT JOIN currencies jc ON jc.id = jel.currency_id
+    //   LEFT JOIN ledger_allocations la 
+    //     ON (la.payment_entry_id = e.id OR la.ledger_entry_id = e.id)
+    //     AND la.is_unapplied = false
+    //   WHERE e.company_id = $1 AND e.${partyColumn} = $2
+    //   GROUP BY e.id, c.code, jc.code, jel.debit, jel.credit, jel.exchange_rate
+    //   ORDER BY e.posting_date DESC, e.created_at DESC
+    // `;
     // const rows = result.rows.map((row) => {
     //   const currencyCode = row.currency_code || "GBP";
     //   const rate = Number(row.exchange_rate) || 1.0;
@@ -277,83 +381,6 @@ export async function GET(
     //     on_hold_reason: row.on_hold_reason || "",
     //   };
     // });
-
-    return NextResponse.json({
-      entries: rows,
-      summary: {
-        totalOriginalFCY,
-        totalRemainingFCY,
-        totalOriginalLCY,
-        totalRemainingLCY,
-        openCount: rows.filter(
-          (r) => r.is_open && Math.abs(r.remaining_amount_fcy) > 0,
-        ).length,
-      },
-    });
-  } catch (err) {
-    const dbError = err as { message?: string };
-    return NextResponse.json(
-      { error: dbError.message || "Failed to load ledger activity" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const companyId = await getCompanyId();
-    if (!companyId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const body = await req.json();
-    const { entryId, partyType, onHold, reason } = body;
-
-    const isSupplier = partyType.toLowerCase() === "supplier";
-    const tableName = isSupplier
-      ? "vendor_ledger_entries"
-      : "customer_ledger_entries";
-
-    await pool.query(
-      `UPDATE ${tableName} SET on_hold = $1, on_hold_reason = $2 WHERE id = $3 AND company_id = $4`,
-      [onHold, reason, entryId, companyId],
-    );
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    const dbError = err as { message?: string };
-    return NextResponse.json(
-      { error: dbError.message || "Update failed" },
-      { status: 500 },
-    );
-  }
-}
-
-// Helper to determine document sign signifiers based on party context
-function getSignedAmount(
-  docType: string,
-  amount: number,
-  isSupplier: boolean,
-): number {
-  const dt = docType ? docType.toUpperCase() : "";
-  const abs = Math.abs(amount);
-
-  const isCreditType =
-    dt.includes("PAYMENT") || dt.includes("CREDIT") || dt.includes("REFUND");
-
-  if (isSupplier) {
-    // Supplier: Payments / Refunds / Credit Memos reduce vendor liability (-)
-    // Invoices / Debit Notes increase vendor liability (+)
-    return isCreditType ? -abs : abs;
-  } else {
-    // Customer: Invoices / Debit Notes increase customer balance (+)
-    // Payments / Refunds / Credit Memos reduce customer balance (-)
-    return isCreditType ? -abs : abs;
-  }
-}
-
 /* const query = `
       SELECT 
         e.id,
