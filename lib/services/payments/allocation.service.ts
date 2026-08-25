@@ -39,10 +39,15 @@ export class AllocationService {
     const payLedger = paymentRes.rows[0];
     const payRate = Number(payLedger.exchange_rate || 1.0);
 
+    // const originalPaySign = Math.sign(Number(payLedger.remaining_amount)) || 1;
+    // let payRemainingLCYAbs = Math.abs(Number(payLedger.remaining_amount));
+
+    // let payRemainingFCY =
+    //   payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
+
     const originalPaySign = Math.sign(Number(payLedger.remaining_amount)) || 1;
-    let payRemainingLCYAbs = Math.abs(Number(payLedger.remaining_amount));
-    let payRemainingFCY =
-      payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
+    // remaining_amount is already FCY
+    let payRemainingFCYAbs = Math.abs(Number(payLedger.remaining_amount));
 
     // // Convert payment LCY remaining balance to FCY for comparison
     // let payRemainingLCY = Number(payLedger.remaining_amount);
@@ -60,9 +65,9 @@ export class AllocationService {
       }
 
       // GUARDRAIL 2: Check running payment remaining balance
-      if (roundedAllocAmountFCY > payRemainingFCY + 0.001) {
+      if (roundedAllocAmountFCY > payRemainingFCYAbs + 0.001) {
         throw new Error(
-          `Allocation amount (${roundedAllocAmountFCY}) exceeds unallocated payment balance (${payRemainingFCY.toFixed(2)}).`,
+          `Allocation amount (${roundedAllocAmountFCY}) exceeds unallocated payment balance (${payRemainingFCYAbs.toFixed(2)}).`,
         );
       }
 
@@ -84,15 +89,20 @@ export class AllocationService {
       // const invRemainingLCY = Number(invLedger.remaining_amount);
       // const invRemainingFCY = invRate !== 0 ? invRemainingLCY / invRate : invRemainingLCY;
 
+      // const originalInvSign =
+      //   Math.sign(Number(invLedger.remaining_amount)) || 1;
+      // const invRemainingLCYAbs = Math.abs(Number(invLedger.remaining_amount));
+      // const invRemainingFCY =
+      //   invRate !== 0 ? invRemainingLCYAbs / invRate : invRemainingLCYAbs;
+
       const originalInvSign =
         Math.sign(Number(invLedger.remaining_amount)) || 1;
-      const invRemainingLCYAbs = Math.abs(Number(invLedger.remaining_amount));
-      const invRemainingFCY =
-        invRate !== 0 ? invRemainingLCYAbs / invRate : invRemainingLCYAbs;
+      // remaining_amount is already FCY
+      const invRemainingFCYAbs = Math.abs(Number(invLedger.remaining_amount));
 
-      if (roundedAllocAmountFCY > invRemainingFCY + 0.01) {
+      if (roundedAllocAmountFCY > invRemainingFCYAbs + 0.01) {
         throw new Error(
-          `Allocation amount (${roundedAllocAmountFCY}) exceeds open invoice balance (${invRemainingFCY.toFixed(2)}).`,
+          `Allocation amount (${roundedAllocAmountFCY}) exceeds open invoice balance (${invRemainingFCYAbs.toFixed(2)}).`,
         );
       }
 
@@ -113,7 +123,7 @@ export class AllocationService {
         allocatedAmountFCY: roundedAllocAmountFCY,
       });
 
-      // 4. Record Allocation Line with FX Variance
+      // 5. Record Allocation Line with FX Variance
       const allocInsertRes = await client.query(
         `INSERT INTO ledger_allocations (
           company_id, allocation_type, payment_entry_id, ledger_entry_id, 
@@ -134,35 +144,51 @@ export class AllocationService {
       const allocationId = allocInsertRes.rows[0].id;
 
       // 5. Update Invoice Remaining Balance safely
-      const newInvRemainingLCYAbs = Math.max(
+      // const newInvRemainingLCYAbs = Math.max(
+      //   0,
+      //   Number((invRemainingLCYAbs - allocAmountInvoiceLCY).toFixed(2)),
+      // );
+      // const finalInvRemaining = newInvRemainingLCYAbs * originalInvSign;
+
+      // 6. Update Invoice Remaining Balance safely in FCY
+      const newInvRemainingFCYAbs = Math.max(
         0,
-        Number((invRemainingLCYAbs - allocAmountInvoiceLCY).toFixed(2)),
+        Number((invRemainingFCYAbs - roundedAllocAmountFCY).toFixed(2)),
       );
-      const finalInvRemaining = newInvRemainingLCYAbs * originalInvSign;
+      const finalInvRemaining = newInvRemainingFCYAbs * originalInvSign;
+
+
       await client.query(
         `UPDATE vendor_ledger_entries 
          SET remaining_amount = $1, is_open = $2 
          WHERE id = $3`,
-        [finalInvRemaining, newInvRemainingLCYAbs > 0.001, invLedger.id],
+        [finalInvRemaining, newInvRemainingFCYAbs > 0.001, invLedger.id],
       );
 
       // 6. Update Payment Remaining Balance locally & in DB
-      payRemainingLCYAbs = Math.max(
+      // payRemainingLCYAbs = Math.max(
+      //   0,
+      //   Number((payRemainingLCYAbs - allocAmountPaymentLCY).toFixed(2)),
+      // );
+      // payRemainingFCY =
+      //   payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
+      // const finalPayRemaining = payRemainingLCYAbs * originalPaySign;
+
+      // 7. Update Payment Remaining Balance safely in FCY
+      payRemainingFCYAbs = Math.max(
         0,
-        Number((payRemainingLCYAbs - allocAmountPaymentLCY).toFixed(2)),
+        Number((payRemainingFCYAbs - roundedAllocAmountFCY).toFixed(2)),
       );
-      payRemainingFCY =
-        payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
-      const finalPayRemaining = payRemainingLCYAbs * originalPaySign;
+      const finalPayRemaining = payRemainingFCYAbs * originalPaySign;
 
       await client.query(
         `UPDATE vendor_ledger_entries 
          SET remaining_amount = $1, is_open = $2 
          WHERE id = $3`,
-        [finalPayRemaining, payRemainingLCYAbs > 0.001, payLedger.id],
+        [finalPayRemaining, payRemainingFCYAbs > 0.001, payLedger.id],
       );
 
-      // 7. Post GL Entries if FX Variance exists
+      // 8. Post GL Entries if FX Variance exists
       if (Math.abs(fx.realizedGainLoss) > 0.0001) {
         await this.postFxGlEntries(client, {
           companyId,
@@ -209,10 +235,14 @@ export class AllocationService {
     const payLedger = paymentRes.rows[0];
     const payRate = Number(payLedger.exchange_rate || 1.0);
 
+    // const originalPaySign = Math.sign(Number(payLedger.remaining_amount)) || 1;
+    // let payRemainingLCYAbs = Math.abs(Number(payLedger.remaining_amount));
+    // let payRemainingFCY =
+    //   payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
+
     const originalPaySign = Math.sign(Number(payLedger.remaining_amount)) || 1;
-    let payRemainingLCYAbs = Math.abs(Number(payLedger.remaining_amount));
-    let payRemainingFCY =
-      payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
+    // remaining_amount is already FCY
+    let payRemainingFCYAbs = Math.abs(Number(payLedger.remaining_amount));
 
     for (const alloc of allocations) {
       const roundedAllocAmountFCY = Number(alloc.amount.toFixed(2));
@@ -224,9 +254,9 @@ export class AllocationService {
       }
 
       // GUARDRAIL 2: Check running payment remaining balance
-      if (roundedAllocAmountFCY > payRemainingFCY + 0.001) {
+      if (roundedAllocAmountFCY > payRemainingFCYAbs + 0.001) {
         throw new Error(
-          `Allocation amount (${roundedAllocAmountFCY}) exceeds unallocated payment balance (${payRemainingFCY.toFixed(2)}).`,
+          `Allocation amount (${roundedAllocAmountFCY}) exceeds unallocated payment balance (${payRemainingFCYAbs.toFixed(2)}).`,
         );
       }
 
@@ -248,13 +278,16 @@ export class AllocationService {
 
       const originalInvSign =
         Math.sign(Number(invLedger.remaining_amount)) || 1;
-      const invRemainingLCYAbs = Math.abs(Number(invLedger.remaining_amount));
-      const invRemainingFCY =
-        invRate !== 0 ? invRemainingLCYAbs / invRate : invRemainingLCYAbs;
+      // const invRemainingLCYAbs = Math.abs(Number(invLedger.remaining_amount));
+      // const invRemainingFCY =
+      //   invRate !== 0 ? invRemainingLCYAbs / invRate : invRemainingLCYAbs;
 
-      if (roundedAllocAmountFCY > invRemainingFCY + 0.01) {
+      // remaining_amount is already FCY
+      const invRemainingFCYAbs = Math.abs(Number(invLedger.remaining_amount));
+
+      if (roundedAllocAmountFCY > invRemainingFCYAbs + 0.01) {
         throw new Error(
-          `Allocation amount (${roundedAllocAmountFCY}) exceeds open invoice balance (${invRemainingFCY.toFixed(2)}).`,
+          `Allocation amount (${roundedAllocAmountFCY}) exceeds open invoice balance (${invRemainingFCYAbs.toFixed(2)}).`,
         );
       }
 
@@ -296,33 +329,36 @@ export class AllocationService {
       const allocationId = allocInsertRes.rows[0].id;
 
       // 6. Update Invoice Remaining Balance safely (preserving sign)
-      const newInvRemainingLCYAbs = Math.max(
+      const newInvRemainingFCYAbs = Math.max(
         0,
-        Number((invRemainingLCYAbs - allocAmountInvoiceLCY).toFixed(2)),
+        Number((invRemainingFCYAbs - roundedAllocAmountFCY).toFixed(2)),
       );
-      const finalInvRemaining = newInvRemainingLCYAbs * originalInvSign;
+      const finalInvRemaining = newInvRemainingFCYAbs * originalInvSign;
 
       await client.query(
         `UPDATE customer_ledger_entries 
          SET remaining_amount = $1, is_open = $2, updated_at = NOW() 
          WHERE id = $3`,
-        [finalInvRemaining, newInvRemainingLCYAbs > 0.001, invLedger.id],
+        [finalInvRemaining, newInvRemainingFCYAbs > 0.001, invLedger.id],
       );
 
       // 7. Update Payment Remaining Balance locally & in DB (preserving sign)
-      payRemainingLCYAbs = Math.max(
+      payRemainingFCYAbs = Math.max(
         0,
-        Number((payRemainingLCYAbs - allocAmountPaymentLCY).toFixed(2)),
+        Number((payRemainingFCYAbs - roundedAllocAmountFCY).toFixed(2)),
       );
-      payRemainingFCY =
-        payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
-      const finalPayRemaining = payRemainingLCYAbs * originalPaySign;
+
+      const finalPayRemaining = payRemainingFCYAbs * originalPaySign;
+
+      // payRemainingFCY =
+      //   payRate !== 0 ? payRemainingLCYAbs / payRate : payRemainingLCYAbs;
+      // const finalPayRemaining = payRemainingLCYAbs * originalPaySign;
 
       await client.query(
         `UPDATE customer_ledger_entries 
          SET remaining_amount = $1, is_open = $2, updated_at = NOW() 
          WHERE id = $3`,
-        [finalPayRemaining, payRemainingLCYAbs > 0.001, payLedger.id],
+        [finalPayRemaining, payRemainingFCYAbs > 0.001, payLedger.id],
       );
 
       // 8. Post GL Entries if FX Variance exists
@@ -345,6 +381,7 @@ export class AllocationService {
   /**
    * Unapply / Reverse an Allocation
    */
+
   static async unapplyAllocation(
     client: PoolClient,
     companyId: string,
@@ -358,24 +395,34 @@ export class AllocationService {
     if (!allocRes.rows.length) throw new Error("Active allocation not found.");
 
     const alloc = allocRes.rows[0];
-    const amount = Number(alloc.allocated_amount);
+    const amountFCY = Number(alloc.allocated_amount); // FCY Amount
     const isAP = alloc.allocation_type === "AP";
     const table = isAP ? "vendor_ledger_entries" : "customer_ledger_entries";
 
-    // 1. Revert Invoice Sub-Ledger Entry
+    // 1. Revert Invoice Sub-Ledger Entry in FCY (preserving negative/positive direction)
     await client.query(
       `UPDATE ${table} 
-       SET remaining_amount = remaining_amount + $1, is_open = true, updated_at = NOW() 
+       SET remaining_amount = CASE 
+         WHEN remaining_amount < 0 THEN remaining_amount - $1 
+         ELSE remaining_amount + $1 
+       END, 
+       is_open = true, 
+       updated_at = NOW() 
        WHERE id = $2`,
-      [amount, alloc.ledger_entry_id],
+      [amountFCY, alloc.ledger_entry_id],
     );
 
-    // 2. Revert Payment Sub-Ledger Entry
+    // 2. Revert Payment Sub-Ledger Entry in FCY
     await client.query(
       `UPDATE ${table} 
-       SET remaining_amount = remaining_amount + $1, is_open = true, updated_at = NOW()
+       SET remaining_amount = CASE 
+         WHEN remaining_amount < 0 THEN remaining_amount - $1 
+         ELSE remaining_amount + $1 
+       END, 
+       is_open = true, 
+       updated_at = NOW()
        WHERE id = $2`,
-      [amount, alloc.payment_entry_id],
+      [amountFCY, alloc.payment_entry_id],
     );
 
     // 3. Reverse FX GL Ledger Entries if they were posted
@@ -419,6 +466,7 @@ export class AllocationService {
       [allocationId],
     );
   }
+  
 
   /**
    * Dedicated Helper to Resolving Control Accounts and Inserting FX GL Ledger Entries
@@ -824,5 +872,80 @@ static async applyAP(
         });
       }
     }
+  }
+
+  static async unapplyAllocation(
+    client: PoolClient,
+    companyId: string,
+    allocationId: string,
+  ) {
+    const allocRes = await client.query(
+      `SELECT * FROM ledger_allocations WHERE id = $1 AND company_id = $2 AND is_unapplied = false FOR UPDATE`,
+      [allocationId, companyId],
+    );
+
+    if (!allocRes.rows.length) throw new Error("Active allocation not found.");
+
+    const alloc = allocRes.rows[0];
+    const amount = Number(alloc.allocated_amount);
+    const isAP = alloc.allocation_type === "AP";
+    const table = isAP ? "vendor_ledger_entries" : "customer_ledger_entries";
+
+    // 1. Revert Invoice Sub-Ledger Entry
+    await client.query(
+      `UPDATE ${table} 
+       SET remaining_amount = remaining_amount + $1, is_open = true, updated_at = NOW() 
+       WHERE id = $2`,
+      [amount, alloc.ledger_entry_id],
+    );
+
+    // 2. Revert Payment Sub-Ledger Entry
+    await client.query(
+      `UPDATE ${table} 
+       SET remaining_amount = remaining_amount + $1, is_open = true, updated_at = NOW()
+       WHERE id = $2`,
+      [amount, alloc.payment_entry_id],
+    );
+
+    // 3. Reverse FX GL Ledger Entries if they were posted
+    const fxEntries = await client.query(
+      `SELECT * FROM gl_ledger_entries WHERE reference = $1 AND company_id = $2`,
+      [`ALLOC_FX_${allocationId}`, companyId],
+    );
+
+    if (fxEntries.rows.length > 0) {
+      const txKeyResult = await client.query(
+        "SELECT nextval('gl_transaction_id_seq') AS tx_id",
+      );
+      const revTxId = parseInt(txKeyResult.rows[0].tx_id, 10);
+
+      for (const entry of fxEntries.rows) {
+        await client.query(
+          `INSERT INTO gl_ledger_entries (
+            company_id, account_id, transaction_id, entry_no, posting_date,
+            source_type, reference, description, debit, credit, party_type, party_id, posted_at
+          ) VALUES ($1, $2, $3, $4, CURRENT_DATE, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+          [
+            companyId,
+            entry.account_id,
+            revTxId,
+            `${entry.entry_no}-REV`,
+            "FX_REVERSAL",
+            `UNAPPLY_FX_${allocationId}`,
+            `Reversal: ${entry.description}`,
+            entry.credit, // Invert Debit/Credit
+            entry.debit,
+            entry.party_type,
+            entry.party_id,
+          ],
+        );
+      }
+    }
+
+    // 4. Mark allocation as unapplied
+    await client.query(
+      `UPDATE ledger_allocations SET is_unapplied = true, unapplied_at = NOW() WHERE id = $1`,
+      [allocationId],
+    );
   }
 */
