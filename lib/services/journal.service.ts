@@ -901,7 +901,7 @@ export class JournalService {
       // 2. Fetch draft lines
       const linesResult = await client.query(
         `
-        SELECT id AS journal_line_id, account_id, party_type, party_id, document_type, description, debit, credit, exchange_rate, reference_id
+        SELECT id AS journal_line_id, account_id, party_type, party_id, document_type, document_no, description, debit, credit, currency_id, exchange_rate, reference_id
         FROM journal_entry_lines
         WHERE journal_id = $1 AND company_id = $2
         `,
@@ -919,9 +919,14 @@ export class JournalService {
         party_type: string | null;
         party_id: string | null;
         document_type: string | null;
+        document_no?: string | null;
         description: string | null;
+        currency_id?: string | null;
+        exchange_rate?: number;
         debit: number;
         credit: number;
+        debit_lcy: number;
+        credit_lcy: number;
         is_balancing: boolean;
       }> = [];
 
@@ -1018,11 +1023,27 @@ export class JournalService {
           party_type: line.party_type || null,
           party_id: line.party_id || null,
           document_type: line.document_type || null,
+          document_no: line.document_no || journal.entry_no,
           description: line.description || journal.description || null,
-          debit: debitLCY,
-          credit: creditLCY,
+          currency_id: line.currency_id || null,
+          exchange_rate: rate,
+          debit: line.debit || 0,
+          credit: line.credit || 0,
+          debit_lcy: debitLCY,
+          credit_lcy: creditLCY,
           is_balancing: false,
         });
+        // expandedLegs.push({
+        //   journal_line_id: line.journal_line_id,
+        //   account_id: mainAccountId,
+        //   party_type: line.party_type || null,
+        //   party_id: line.party_id || null,
+        //   document_type: line.document_type || null,
+        //   description: line.description || journal.description || null,
+        //   debit: debitLCY,
+        //   credit: creditLCY,
+        //   is_balancing: false,
+        // });
 
         // Add Offsetting Balancing Leg if inline reference_id exists
         if (line.reference_id) {
@@ -1034,13 +1055,32 @@ export class JournalService {
             party_type: null,
             party_id: null,
             document_type: line.document_type || null,
+            document_no: line.document_no || journal.entry_no,
             description: line.description
               ? `Balancing: ${line.description}`
               : journal.description || null,
-            debit: creditLCY,
-            credit: debitLCY,
+            currency_id: line.currency_id || null,
+            exchange_rate: rate,
+            debit: line.credit || 0,
+            credit: line.debit || 0,
+            debit_lcy: creditLCY,
+            credit_lcy: debitLCY,
             is_balancing: true,
           });
+
+          // expandedLegs.push({
+          //   journal_line_id: line.journal_line_id,
+          //   account_id: line.reference_id,
+          //   party_type: null,
+          //   party_id: null,
+          //   document_type: line.document_type || null,
+          //   description: line.description
+          //     ? `Balancing: ${line.description}`
+          //     : journal.description || null,
+          //   debit: creditLCY,
+          //   credit: debitLCY,
+          //   is_balancing: true,
+          // });
         }
       }
 
@@ -1146,7 +1186,8 @@ export class JournalService {
               docType = isSupplier ? "CREDIT_MEMO" : "CREDIT_NOTE";
             } else if (
               rawType === "INVOICE" ||
-              rawType === "PURCHASE_INVOICE"
+              rawType === "PURCHASE_INVOICE" ||
+              rawType === "SALES_INVOICE"
             ) {
               docType = isSupplier ? "PURCHASE_INVOICE" : "SALES_INVOICE";
             } else if (rawType === "PAYMENT" || rawType === "VENDOR_PAYMENT") {
@@ -1163,14 +1204,23 @@ export class JournalService {
             }
           }
 
-          const netAmount = leg.debit > 0 ? leg.debit : leg.credit;
-
-          // 🎯 Fix 1: Compute correct signs for Sub-Ledger Balances
-          // Vendor (AP): Credit increases debt (+), Debit reduces debt (-)
-          // Customer (AR): Debit increases balance (+), Credit reduces balance (-)
-          const originalAmount = isSupplier
+          // Calculate FCY and LCY signed amounts
+          const originalAmountFCY = isSupplier
             ? leg.credit - leg.debit
             : leg.debit - leg.credit;
+
+          const originalAmountLCY = isSupplier
+            ? leg.credit_lcy - leg.debit_lcy
+            : leg.debit_lcy - leg.credit_lcy;
+
+          // const netAmount = leg.debit > 0 ? leg.debit : leg.credit;
+
+          // // 🎯 Fix 1: Compute correct signs for Sub-Ledger Balances
+          // // Vendor (AP): Credit increases debt (+), Debit reduces debt (-)
+          // // Customer (AR): Debit increases balance (+), Credit reduces balance (-)
+          // const originalAmount = isSupplier
+          //   ? leg.credit - leg.debit
+          //   : leg.debit - leg.credit;
 
           const insertedSubLedger = await client.query(
             `
@@ -1182,14 +1232,22 @@ export class JournalService {
               document_no,
               posting_date,
               description,
+              currency_id,
+              exchange_rate,
               original_amount_fcy,
               remaining_amount_fcy,
+              original_amount_lcy,
+              remaining_amount_lcy,
               is_open,
               journal_entry_id,
               journal_line_id,
-              created_at
+              created_at,
+              updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, true, $9, $10, NOW())
+            VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, 
+              $10, $10, $11, $11, true, $12, $13, NOW(), NOW()
+            )
             RETURNING id
             `,
             [
@@ -1197,12 +1255,15 @@ export class JournalService {
               leg.party_id,
               docType,
               journal.id,
-              journal.entry_no,
+              leg.document_no || journal.entry_no,
               formattedDate,
               leg.description,
-              originalAmount, //netAmount,
+              leg.currency_id,
+              leg.exchange_rate,
+              originalAmountFCY,
+              originalAmountLCY,
               journal.id,
-              leg.journal_line_id
+              leg.journal_line_id,
             ],
           );
 
@@ -1211,7 +1272,6 @@ export class JournalService {
 
         // Update allocations for primary sub-ledger legs
         if (!leg.is_balancing && leg.journal_line_id) {
-          
           const targetSubEntryId = subLedgerEntryId || glLedgerEntryId;
 
           const allocationsRes = await client.query(
@@ -1223,23 +1283,24 @@ export class JournalService {
               AND is_unapplied = false
             RETURNING ledger_entry_id, allocated_amount_fcy, allocation_type
             `,
-            [
-              targetSubEntryId,
-              leg.journal_line_id,
-              companyId,
-            ],
+            [targetSubEntryId, leg.journal_line_id, companyId],
           );
 
           // Apply allocated payment amounts directly against open invoice balances
           for (const alloc of allocationsRes.rows) {
-            const subTable = alloc.allocation_type === "AP" ? "vendor_ledger_entries" : "customer_ledger_entries";
+            const subTable =
+              alloc.allocation_type === "AP"
+                ? "vendor_ledger_entries"
+                : "customer_ledger_entries";
 
             await client.query(
               `
               UPDATE ${subTable}
               SET 
                 remaining_amount_fcy = remaining_amount_fcy - $1,
-                is_open = CASE WHEN (remaining_amount_fcy - $1) = 0 THEN false ELSE true END
+                remaining_amount_lcy = remaining_amount_lcy - ($1 * exchange_rate),
+                is_open = CASE WHEN (remaining_amount_fcy - $1) = 0 THEN false ELSE true END,
+                updated_at = NOW()
               WHERE id = $2 AND company_id = $3
               `,
               [alloc.allocated_amount, alloc.ledger_entry_id, companyId],

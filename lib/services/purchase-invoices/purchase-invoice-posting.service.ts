@@ -5,6 +5,7 @@ import { AccountResolutionService } from "@/lib/services/gl/account-resolution.s
 import {
   GLPostingService,
   GLLineInput,
+  PostedJournalLine,
 } from "@/lib/services/gl/gl-posting.service";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 import { VendorLedgerService } from "../ledger/vendor-ledger.service";
@@ -321,6 +322,11 @@ export class PurchaseInvoicePostingService {
         lines: glLines,
       });
 
+      // Locate the posted AP journal line to link with vendor sub-ledger
+      const apLine = journal.lines.find(
+        (line: PostedJournalLine) => line.account_id === fallbackApAccountId,
+      );
+
       // 10. Post Vendor Sub-Ledger Entry
       const vendorLedgerEntry = await VendorLedgerService.createEntry(client, {
         companyId,
@@ -335,8 +341,8 @@ export class PurchaseInvoicePostingService {
         currencyId,
         exchangeRate,
         journalEntryId: journal.id,
+        journalLineId: apLine?.id || null,
       });
-
 
       // 10. Mark Purchase Order completed
       await client.query(

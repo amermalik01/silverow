@@ -4,6 +4,7 @@ import { pool } from "@/lib/db";
 import {
   GLPostingService,
   GLLineInput,
+  PostedJournalLine,
 } from "@/lib/services/gl/gl-posting.service";
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
@@ -233,6 +234,10 @@ export class DebitNotePostingService {
         lines: glLines,
       });
 
+      const apLine = journal.lines.find(
+        (line: PostedJournalLine) => line.account_id === fallbackApAccountId,
+      );
+
       // 8. Post Vendor Sub-Ledger Entry (Positive magnitude // Negative amount reduces vendor balance/liability)
       await VendorLedgerService.createEntry(client, {
         companyId,
@@ -247,6 +252,7 @@ export class DebitNotePostingService {
         currencyId,
         exchangeRate,
         journalEntryId: journal.id,
+        journalLineId: apLine?.id || null,
       });
 
       // 9. Update Debit Note status

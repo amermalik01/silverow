@@ -1,18 +1,15 @@
-// lib/services/ledger/vendor-ledger.service.ts
+// lib/services/ledger/customer-ledger.service.ts
 
 import { PoolClient } from "pg";
 
-export interface CreateVendorLedgerEntryInput {
+export interface CreateCustomerLedgerEntryInput {
   companyId: string;
-  vendorId: string;
+  customerId: string;
   documentType:
-    | "PURCHASE_INVOICE"
+    | "SALES_INVOICE"
     | "PAYMENT"
-    | "VENDOR_PAYMENT"
     | "CREDIT_MEMO"
-    | "CREDIT_NOTE"
-    | "REFUND"
-    | "DEBIT_NOTE";
+    | "REFUND";
   documentId: string;
   documentNo: string;
   postingDate: string;
@@ -22,17 +19,13 @@ export interface CreateVendorLedgerEntryInput {
   currencyId?: string;
   exchangeRate?: number;
   journalEntryId?: string;
-  journalLineId?: string | null;
+  journalLineId?: string;
 }
 
-export class VendorLedgerService {
-  /**
-   * Creates an initial open vendor ledger entry upon document posting.
-   * Aligned with vendor_ledger_entries schema.
-   */
+export class CustomerLedgerService {
   static async createEntry(
     client: PoolClient,
-    input: CreateVendorLedgerEntryInput,
+    input: CreateCustomerLedgerEntryInput,
   ) {
     const exchangeRate = input.exchangeRate ?? 1;
     const originalAmountFCY = input.originalAmount;
@@ -40,9 +33,9 @@ export class VendorLedgerService {
 
     const res = await client.query(
       `
-      INSERT INTO vendor_ledger_entries (
+      INSERT INTO customer_ledger_entries (
         company_id,
-        vendor_id,
+        customer_id,
         document_type,
         document_id,
         document_no,
@@ -69,7 +62,7 @@ export class VendorLedgerService {
       `,
       [
         input.companyId,
-        input.vendorId,
+        input.customerId,
         input.documentType,
         input.documentId,
         input.documentNo,
