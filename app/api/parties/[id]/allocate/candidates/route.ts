@@ -68,8 +68,8 @@ export async function GET(
         e.document_no,
         e.document_type,
         e.posting_date,
-        e.original_amount,
-        e.remaining_amount,
+        e.original_amount_fcy,
+        e.remaining_amount_fcy,
         e.exchange_rate,
         e.is_open
       FROM ${tableName} e
@@ -78,7 +78,7 @@ export async function GET(
         AND e.is_open = true
         AND e.id != $3
         AND UPPER(e.document_type) = ANY($4)
-        AND ABS(e.remaining_amount) > 0
+        AND ABS(e.remaining_amount_fcy) > 0
       ORDER BY e.posting_date ASC
     `;
 

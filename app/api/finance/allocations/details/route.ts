@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       SELECT 
         la.id,
         la.allocation_date,
-        la.allocated_amount,
+        la.allocated_amount_fcy,
         la.realized_gain_loss,
         CASE 
           WHEN la.payment_entry_id = $2 THEN target_vle.document_type

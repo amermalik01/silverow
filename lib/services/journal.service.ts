@@ -89,36 +89,36 @@ export class JournalService {
 
     const linesResult = await pool.query(
       `
-    SELECT 
-      l.*,
-      l.party_type::text AS raw_party_type,
-      a.code AS account_code,
-      a.name AS account_name, 
-      p.name AS party_name,
-      p.customer_code,
-      p.supplier_code, 
-      bal.code AS balancing_account_code,
-      bal.name AS balancing_account_name,
-      COALESCE(
-        JSON_AGG(
-          JSON_BUILD_OBJECT(
-            'invoice_ledger_id', alloc.ledger_entry_id,
-            'amount', alloc.allocated_amount,
-            'allocated_amount', alloc.allocated_amount,
-            'allocation_type', alloc.allocation_type
-          )
-        ) FILTER (WHERE alloc.id IS NOT NULL),
-        '[]'
-      ) AS allocations
-    FROM journal_entry_lines l
-    LEFT JOIN chart_of_accounts a ON l.account_id = a.id
-    LEFT JOIN public.parties p ON l.party_id = p.id
-    LEFT JOIN chart_of_accounts bal ON l.reference_id = bal.id AND l.reference_type = 'G/L Account'
-    LEFT JOIN ledger_allocations alloc ON l.id = alloc.journal_line_id
-    WHERE l.journal_id = $1
-    GROUP BY l.id, a.code, a.name, p.name, p.customer_code, p.supplier_code, bal.code, bal.name
-    ORDER BY l.line_no ASC, l.created_at ASC
-    `,
+      SELECT 
+        l.*,
+        l.party_type::text AS raw_party_type,
+        a.code AS account_code,
+        a.name AS account_name, 
+        p.name AS party_name,
+        p.customer_code,
+        p.supplier_code, 
+        bal.code AS balancing_account_code,
+        bal.name AS balancing_account_name,
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'invoice_ledger_id', alloc.ledger_entry_id,
+              'amount', alloc.allocated_amount_fcy,
+              'allocated_amount', alloc.allocated_amount_fcy,
+              'allocation_type', alloc.allocation_type
+            )
+          ) FILTER (WHERE alloc.id IS NOT NULL),
+          '[]'
+        ) AS allocations
+      FROM journal_entry_lines l
+      LEFT JOIN chart_of_accounts a ON l.account_id = a.id
+      LEFT JOIN public.parties p ON l.party_id = p.id
+      LEFT JOIN chart_of_accounts bal ON l.reference_id = bal.id AND l.reference_type = 'G/L Account'
+      LEFT JOIN ledger_allocations alloc ON l.id = alloc.journal_line_id
+      WHERE l.journal_id = $1
+      GROUP BY l.id, a.code, a.name, p.name, p.customer_code, p.supplier_code, bal.code, bal.name
+      ORDER BY l.line_no ASC, l.created_at ASC
+      `,
       [id],
     );
 
@@ -577,7 +577,7 @@ export class JournalService {
               payment_entry_id,
               journal_line_id,
               ledger_entry_id,
-              allocated_amount,
+              allocated_amount_fcy,
               exchange_rate,
               allocation_date,
               realized_gain_loss,
@@ -1182,8 +1182,8 @@ export class JournalService {
               document_no,
               posting_date,
               description,
-              original_amount,
-              remaining_amount,
+              original_amount_fcy,
+              remaining_amount_fcy,
               is_open,
               journal_entry_id,
               journal_line_id,
@@ -1221,7 +1221,7 @@ export class JournalService {
             WHERE journal_line_id = $2
               AND company_id = $3
               AND is_unapplied = false
-            RETURNING ledger_entry_id, allocated_amount, allocation_type
+            RETURNING ledger_entry_id, allocated_amount_fcy, allocation_type
             `,
             [
               targetSubEntryId,
@@ -1238,8 +1238,8 @@ export class JournalService {
               `
               UPDATE ${subTable}
               SET 
-                remaining_amount = remaining_amount - $1,
-                is_open = CASE WHEN (remaining_amount - $1) = 0 THEN false ELSE true END
+                remaining_amount_fcy = remaining_amount_fcy - $1,
+                is_open = CASE WHEN (remaining_amount_fcy - $1) = 0 THEN false ELSE true END
               WHERE id = $2 AND company_id = $3
               `,
               [alloc.allocated_amount, alloc.ledger_entry_id, companyId],

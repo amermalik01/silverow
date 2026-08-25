@@ -25,7 +25,7 @@ export async function GET(
       SELECT 
         la.id,
         la.created_at AS allocation_date,
-        la.allocated_amount,
+        la.allocated_amount_fcy,
         CASE 
           WHEN la.payment_entry_id = $1 THEN target_entry.document_no
           WHEN la.ledger_entry_id = $1 THEN source_entry.document_no

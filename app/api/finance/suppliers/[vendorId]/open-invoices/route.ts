@@ -23,8 +23,8 @@ export async function GET(
         vle.document_type,
         vle.posting_date,
         vle.due_date,
-        vle.original_amount,
-        vle.remaining_amount,
+        vle.original_amount_fcy,
+        vle.remaining_amount_fcy,
         vle.currency_id,
         pi.purchase_order_id,
         po.order_no
@@ -34,7 +34,7 @@ export async function GET(
       WHERE vle.company_id = $1 
         AND vle.vendor_id = $2 
         AND vle.is_open = true 
-        AND vle.remaining_amount > 0
+        AND vle.remaining_amount_fcy > 0
       ORDER BY vle.posting_date ASC, vle.created_at ASC
       `,
       [companyId, vendorId],
