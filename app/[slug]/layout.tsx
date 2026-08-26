@@ -45,7 +45,7 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
           <CompanySidebar />
         </aside>
         <main className="flex-1 min-w-0 overflow-x-auto px-4">
-          <div className="container mx-auto py-6">{children}</div>
+          <div className="container mx-auto py-2">{children}</div>{/* py-6 */}
         </main>
       </div>
     </div>

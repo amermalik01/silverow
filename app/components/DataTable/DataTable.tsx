@@ -1,7 +1,5 @@
 // app/components/DataTable/DataTable.tsx
 
-// app/components/DataTable/DataTable.tsx
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -197,9 +195,9 @@ export function DataTable<T extends object>({
     <div className="w-full font-sans text-slate-800 dark:text-slate-100 rounded-xl overflow-hidden shadow-lg border border-emerald-900/30">
       {/* Top Toolbar */}
       <div className="flex flex-col sm:flex-row items-center justify-between bg-emerald-950 px-3 py-2 text-emerald-100 border-b border-emerald-900 gap-2">
-        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 w-full">
           {/* Main Search Bar for Existing Paginated Data */}
-          <div className="relative flex-1 sm:w-64">
+          <div className="relative w-full max-w-md">
             <input
               type="text"
               placeholder="Search current page data..."

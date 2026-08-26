@@ -459,7 +459,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           isOpen={showNavigateModal}
           onClose={() => setShowNavigateModal(false)}
           invoiceId={id}
-          invoiceNo={invoice.order_no}
+          invoiceNo={invoice.invoice_no}
         />
       )}
     </div>

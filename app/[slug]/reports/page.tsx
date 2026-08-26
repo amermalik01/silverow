@@ -30,6 +30,8 @@ export default function ReportsPage() {
     "FIN_HAULIER_ACCR",
     "SALES_UNPOSTED_SO",
     "SALES_POSTED_INV",
+    "PUR_SUPP_ACT",
+    "PUR_SUPP_AGEING",
     
   ]);
 
