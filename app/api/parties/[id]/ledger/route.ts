@@ -31,52 +31,30 @@ export async function GET(
         e.posting_date,
         e.due_date,
         e.description,
+        e.original_amount_fcy,
+        e.remaining_amount_fcy,
+        e.original_amount_lcy,
+        e.remaining_amount_lcy,
+        e.exchange_rate,
         e.is_open,
         e.on_hold,
         e.on_hold_reason,
         e.journal_entry_id,
         e.journal_line_id,
         e.created_at,
-        COALESCE(jc.code, c.code, 'GBP') AS currency_code,
-        COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) AS exchange_rate,
-
-        -- 1. Determine FCY Original Amount
-        CASE 
-          WHEN GREATEST(jel.debit, jel.credit) IS NOT NULL AND GREATEST(jel.debit, jel.credit) > 0 
-            THEN GREATEST(jel.debit, jel.credit)
-          WHEN UPPER(e.document_type) IN ('PURCHASE_INVOICE', 'SALES_INVOICE', 'INVOICE') 
-            THEN e.original_amount_fcy
-          ELSE 
-            CASE 
-              WHEN COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) <> 0 
-              THEN e.original_amount_fcy / COALESCE(jel.exchange_rate, e.exchange_rate, 1.0)
-              ELSE e.original_amount_fcy 
-            END
-        END AS derived_fcy_original,
-
-        -- 2. Determine LCY Original Amount
-        CASE 
-          WHEN UPPER(e.document_type) IN ('PURCHASE_INVOICE', 'SALES_INVOICE', 'INVOICE') AND COALESCE(jc.code, c.code, 'GBP') <> 'GBP'
-            THEN e.original_amount_fcy * COALESCE(jel.exchange_rate, e.exchange_rate, 1.0)
-          ELSE e.original_amount_fcy
-        END AS derived_lcy_original,
-
-        -- 3. Raw Remaining FCY Amount from Sub-ledger Table
-        e.remaining_amount_fcy AS raw_remaining_fcy,
-
+        COALESCE(c.code, 'GBP') AS currency_code,
         COALESCE(SUM(la.allocated_amount_fcy), 0) AS total_allocated
       FROM ${tableName} e
-      LEFT JOIN journal_entry_lines jel ON jel.id = e.journal_line_id
-      LEFT JOIN journal_entries je ON je.id = e.journal_entry_id
       LEFT JOIN currencies c ON c.id = e.currency_id
-      LEFT JOIN currencies jc ON jc.id = jel.currency_id
       LEFT JOIN ledger_allocations la 
         ON (la.payment_entry_id = e.id OR la.ledger_entry_id = e.id)
         AND la.is_unapplied = false
       WHERE e.company_id = $1 AND e.${partyColumn} = $2
-      GROUP BY e.id, c.code, jc.code, jel.debit, jel.credit, jel.exchange_rate
+      GROUP BY e.id, c.code
       ORDER BY e.posting_date DESC, e.created_at DESC
     `;
+
+    // console.log("query === ", query);
 
     const result = await pool.query(query, [companyId, partyId]);
 
@@ -88,13 +66,11 @@ export async function GET(
     const rows = result.rows.map((row) => {
       const currencyCode = (row.currency_code || "GBP").toUpperCase();
       const rate = Number(row.exchange_rate) || 1.0;
-      const isForeign = currencyCode !== "GBP";
 
-      const rawFCY = Number(row.derived_fcy_original) || 0;
-      const rawLCY = Number(row.derived_lcy_original) || 0;
-
-      const rawRemFCY = Number(row.raw_remaining_fcy) || 0;
-      const rawRemLCY = isForeign ? rawRemFCY * rate : rawRemFCY;
+      const rawFCY = Number(row.original_amount_fcy) || 0;
+      const rawRemFCY = Number(row.remaining_amount_fcy) || 0;
+      const rawLCY = Number(row.original_amount_lcy) || 0;
+      const rawRemLCY = Number(row.remaining_amount_lcy) || 0;
 
       const signedOrigFCY = getSignedAmount(row.document_type, rawFCY, isSupplier);
       const signedRemFCY = getSignedAmount(row.document_type, rawRemFCY, isSupplier);

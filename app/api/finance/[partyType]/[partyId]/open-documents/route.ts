@@ -92,21 +92,11 @@ export async function GET(
         COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) AS exchange_rate,
         COALESCE(jc.code, c.code, 'GBP') AS currency_code,
         
-        -- Normalize FCY Amount
-        CASE 
-          WHEN GREATEST(jel.debit, jel.credit) IS NOT NULL AND GREATEST(jel.debit, jel.credit) > 0 
-            THEN GREATEST(jel.debit, jel.credit)
-          WHEN UPPER(e.document_type) IN ('PURCHASE_INVOICE', 'SALES_INVOICE', 'INVOICE') 
-            THEN e.original_amount_fcy
-          ELSE 
-            CASE 
-              WHEN COALESCE(jel.exchange_rate, e.exchange_rate, 1.0) <> 0 
-              THEN e.original_amount_fcy / COALESCE(jel.exchange_rate, e.exchange_rate, 1.0)
-              ELSE e.original_amount_fcy 
-            END
-        END AS derived_fcy_original,
+        e.original_amount_fcy,
+        e.remaining_amount_fcy,
+        e.original_amount_lcy,
+        e.remaining_amount_lcy
 
-        e.remaining_amount_fcy AS raw_remaining_fcy
       FROM ${tableName} e
       LEFT JOIN journal_entry_lines jel ON jel.id = e.journal_line_id
       LEFT JOIN currencies c ON c.id = e.currency_id
@@ -128,11 +118,11 @@ export async function GET(
     const formattedRows = result.rows.map((row) => {
       const rate = Number(row.exchange_rate) || 1.0;
       const currencyCode = (row.currency_code || "GBP").toUpperCase();
-      const isForeign = currencyCode !== "GBP";
 
-      const origFCY = Number(row.derived_fcy_original) || 0;
-      const remFCY = Math.abs(Number(row.raw_remaining_fcy) || 0);
-      const remLCY = isForeign ? remFCY * rate : remFCY;
+      const origFCY = Math.abs(Number(row.original_amount_fcy) || 0);
+      const remFCY = Math.abs(Number(row.remaining_amount_fcy) || 0);
+      const origLCY = Math.abs(Number(row.original_amount_lcy) || 0);
+      const remLCY = Math.abs(Number(row.remaining_amount_lcy) || 0);
 
       return {
         id: row.id,
@@ -142,8 +132,9 @@ export async function GET(
         due_date: row.due_date,
         currency_code: currencyCode,
         exchange_rate: rate,
-        original_amount: origFCY,
-        remaining_amount: remFCY,
+        original_amount_fcy: origFCY,
+        remaining_amount_fcy: remFCY,
+        original_amount_lcy: origLCY,
         remaining_amount_lcy: remLCY,
       };
     });

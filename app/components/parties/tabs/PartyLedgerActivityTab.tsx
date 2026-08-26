@@ -26,11 +26,12 @@ interface LedgerEntry {
   due_date?: string;
   description?: string;
   currency_code: string;
-  original_amount: number;
-  remaining_amount: number;
+  exchange_rate: number;
+  // original_amount: number;
+  // remaining_amount: number;
   original_amount_fcy: number;
   remaining_amount_fcy: number;
-  amount_lcy: number;
+  original_amount_lcy: number;
   remaining_amount_lcy: number;
   total_allocated?: number;
   is_open: boolean;
@@ -83,18 +84,18 @@ export default function PartyLedgerActivityTab({
   const [holdComment, setHoldComment] = useState("");
   const [holdStatus, setHoldStatus] = useState<boolean>(true);
 
-  const currencyFormatter = useMemo(() => {
-    const safeCurrency =
-      currencyCode && currencyCode.trim().length === 3
-        ? currencyCode.trim().toUpperCase()
-        : "GBP";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: safeCurrency,
-      currencyDisplay: "code",
-      minimumFractionDigits: 2,
-    });
-  }, [currencyCode]);
+  // const currencyFormatter = useMemo(() => {
+  //   const safeCurrency =
+  //     currencyCode && currencyCode.trim().length === 3
+  //       ? currencyCode.trim().toUpperCase()
+  //       : "GBP";
+  //   return new Intl.NumberFormat("en-US", {
+  //     style: "currency",
+  //     currency: safeCurrency,
+  //     currencyDisplay: "code",
+  //     minimumFractionDigits: 2,
+  //   });
+  // }, [currencyCode]);
 
   // LCY Formatter (Base reporting currency, e.g., GBP)
   const lcyFormatter = useMemo(() => {
@@ -175,11 +176,11 @@ export default function PartyLedgerActivityTab({
     }
   };
 
-  const formatAmount = (val: number, isLcy = false) => {
-    return isLcy
-      ? lcyFormatter.format(val || 0)
-      : currencyFormatter.format(val || 0);
-  };
+  // const formatAmount = (val: number, isLcy = false) => {
+  //   return isLcy
+  //     ? lcyFormatter.format(val || 0)
+  //     : currencyFormatter.format(val || 0);
+  // };
 
   const fetchLedger = useCallback(async () => {
     show("Loading Ledger Activity...");
@@ -378,12 +379,13 @@ export default function PartyLedgerActivityTab({
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
             {filteredEntries.map((row) => {
 
-              const remBalance = Math.abs(
-                row.remaining_amount_fcy ??
-                  row.remaining_amount_lcy ??
-                  row.remaining_amount ??
-                  0,
-              );
+              // const remBalance = Math.abs(
+              //   row.remaining_amount_fcy ??
+              //     row.remaining_amount_lcy ??
+              //     row.remaining_amount ??
+              //     0,
+              // );
+              const remBalance = Math.abs(row.remaining_amount_fcy || 0);
               const canAllocate = row.is_open && remBalance > 0;
 
               return (
@@ -437,7 +439,7 @@ export default function PartyLedgerActivityTab({
                 </td>
                 {/* LCY Original Amount */}
                 <td className="p-2.5 text-right font-medium text-slate-500">
-                  {lcyFormatter.format(row.amount_lcy || 0)}
+                  {lcyFormatter.format(row.original_amount_lcy || 0)}
                 </td>
                 {/* Remaining FCY Amount */}
                 <td className="p-2.5 text-right font-bold text-amber-600">
@@ -546,7 +548,6 @@ export default function PartyLedgerActivityTab({
           currencyFormatter={(val) =>
             formatFCY(val, viewAllocationsEntry.currency_code)
           }
-          // currencyFormatter={(val) => formatAmount(val)}
         />
       )}
 
@@ -558,16 +559,13 @@ export default function PartyLedgerActivityTab({
           partyType={partyType}
           documentType={selectedPayment.document_type}
           paymentEntryId={selectedPayment.id}
-          paymentAmount={Math.abs(
-            selectedPayment.remaining_amount_fcy ??
-              selectedPayment.remaining_amount_lcy ??
-              selectedPayment.remaining_amount ??
-              0,
-          )}
           // paymentAmount={Math.abs(
           //   selectedPayment.remaining_amount_fcy ??
-          //     selectedPayment.remaining_amount,
+          //     selectedPayment.remaining_amount_lcy ??
+          //     selectedPayment.remaining_amount ??
+          //     0,
           // )}
+          paymentAmount={Math.abs(selectedPayment.remaining_amount_fcy || 0)}
           currencyIsoCode={selectedPayment.currency_code || currencyCode}
           onApplyAllocations={handleApplyAllocations}
         />
