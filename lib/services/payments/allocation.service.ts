@@ -42,6 +42,7 @@ export class AllocationService {
     const originalPaySign =
       Math.sign(Number(payLedger.remaining_amount_fcy)) || 1;
     let payRemainingFCYAbs = Math.abs(Number(payLedger.remaining_amount_fcy));
+    let payRemainingLCYAbs = Math.abs(Number(payLedger.remaining_amount_lcy));
 
     for (const alloc of allocations) {
       const roundedAllocAmountFCY = Number(alloc.amount.toFixed(2));
@@ -61,7 +62,7 @@ export class AllocationService {
 
       // 2. Fetch & Lock Target Invoice Ledger Entry
       const invoiceRes = await client.query(
-        `SELECT id, remaining_amount_fcy, is_open, currency_id, exchange_rate, document_no
+        `SELECT id, remaining_amount_fcy, remaining_amount_lcy, is_open, currency_id, exchange_rate, document_no
          FROM vendor_ledger_entries 
          WHERE id = $1 AND company_id = $2 AND vendor_id = $3 AND is_open = true 
          FOR UPDATE`,
@@ -80,6 +81,9 @@ export class AllocationService {
       const invRemainingFCYAbs = Math.abs(
         Number(invLedger.remaining_amount_fcy),
       );
+      const invRemainingLCYAbs = Math.abs(
+        Number(invLedger.remaining_amount_lcy),
+      );
 
       if (roundedAllocAmountFCY > invRemainingFCYAbs + 0.01) {
         throw new Error(
@@ -88,14 +92,14 @@ export class AllocationService {
       }
 
       // 3. Convert FCY Allocation Amount to LCY
-      // const allocAmountInvoiceLCY = Number(
-      //   (roundedAllocAmountFCY * invRate).toFixed(2),
-      // );
-      // const allocAmountPaymentLCY = Number(
-      //   (roundedAllocAmountFCY * payRate).toFixed(2),
-      // );
+      const roundedAllocAmountLCY = Number(
+        (roundedAllocAmountFCY * payRate).toFixed(2),
+      );
+      const invAllocAmountLCY = Number(
+        (roundedAllocAmountFCY * invRate).toFixed(2),
+      );
 
-      // 3. Calculate Realized FX Variance
+      // 4. Calculate Realized FX Variance
       const fx = await FxVarianceService.calculateVariance(client, {
         companyId,
         allocationType: "AP",
@@ -104,19 +108,20 @@ export class AllocationService {
         allocatedAmountFCY: roundedAllocAmountFCY,
       });
 
-      // 4. Record Allocation Line with FX Variance
+      // 5. Record Allocation Line with FX Variance
       const allocInsertRes = await client.query(
         `INSERT INTO ledger_allocations (
           company_id, allocation_type, payment_entry_id, ledger_entry_id, 
-          allocated_amount_fcy, exchange_rate, allocation_date, realized_gain_loss, created_by
-        ) VALUES ($1, 'AP', $2, $3, $4, $5, CURRENT_DATE, $6, $7)
+          allocated_amount_fcy, allocated_amount_lcy, exchange_rate, allocation_date, realized_gain_loss, created_by
+        ) VALUES ($1, 'AP', $2, $3, $4, $5, CURRENT_DATE, $6, $7, $8)
          RETURNING id`,
         [
           companyId,
           paymentLedgerId, // Correct source payment entry ID
           invLedger.id, // Correct target invoice entry ID
           roundedAllocAmountFCY,
-          payLedger.exchange_rate,
+          roundedAllocAmountLCY,
+          payRate,
           fx.realizedGainLoss,
           userId || null,
         ],
@@ -124,35 +129,63 @@ export class AllocationService {
 
       const allocationId = allocInsertRes.rows[0].id;
 
-      // 5. Update Invoice Remaining Balance safely in FCY
+      // 6. Update Invoice Remaining Balance in vendor_ledger_entries (FCY + LCY)
       const newInvRemainingFCYAbs = Math.max(
         0,
         Number((invRemainingFCYAbs - roundedAllocAmountFCY).toFixed(2)),
       );
-      const finalInvRemaining = newInvRemainingFCYAbs * originalInvSign;
+      const newInvRemainingLCYAbs = Math.max(
+        0,
+        Number((invRemainingLCYAbs - invAllocAmountLCY).toFixed(2)),
+      );
+
+      const finalInvRemainingFCY = newInvRemainingFCYAbs * originalInvSign;
+      const finalInvRemainingLCY = newInvRemainingLCYAbs * originalInvSign;
 
       await client.query(
         `UPDATE vendor_ledger_entries 
-         SET remaining_amount_fcy = $1, is_open = $2, updated_at = NOW()
-         WHERE id = $3`,
-        [finalInvRemaining, newInvRemainingFCYAbs > 0.001, invLedger.id],
+         SET remaining_amount_fcy = $1, 
+             remaining_amount_lcy = $2, 
+             is_open = $3, 
+             updated_at = NOW()
+         WHERE id = $4`,
+        [
+          finalInvRemainingFCY,
+          finalInvRemainingLCY,
+          newInvRemainingFCYAbs > 0.001,
+          invLedger.id,
+        ],
       );
 
-      // 6. Update Remaining Balance in vendor_ledger_entries
+      // 7. Update Payment Remaining Balance in vendor_ledger_entries (FCY + LCY)
       payRemainingFCYAbs = Math.max(
         0,
         Number((payRemainingFCYAbs - roundedAllocAmountFCY).toFixed(2)),
       );
-      const finalPayRemaining = payRemainingFCYAbs * originalPaySign;
+      payRemainingLCYAbs = Math.max(
+        0,
+        Number((payRemainingLCYAbs - roundedAllocAmountLCY).toFixed(2)),
+      );
+
+      const finalPayRemainingFCY = payRemainingFCYAbs * originalPaySign;
+      const finalPayRemainingLCY = payRemainingLCYAbs * originalPaySign;
 
       await client.query(
         `UPDATE vendor_ledger_entries 
-         SET remaining_amount_fcy = $1, is_open = $2, updated_at = NOW()
-         WHERE id = $3`,
-        [finalPayRemaining, payRemainingFCYAbs > 0.001, payLedger.id],
+         SET remaining_amount_fcy = $1, 
+             remaining_amount_lcy = $2, 
+             is_open = $3, 
+             updated_at = NOW()
+         WHERE id = $4`,
+        [
+          finalPayRemainingFCY,
+          finalPayRemainingLCY,
+          payRemainingFCYAbs > 0.001,
+          payLedger.id,
+        ],
       );
 
-      // 7. Post GL Entries if FX Variance exists
+      // 8. Post GL Entries if FX Variance exists
       if (Math.abs(fx.realizedGainLoss) > 0.0001) {
         await this.postFxGlEntries(client, {
           companyId,
@@ -183,7 +216,7 @@ export class AllocationService {
   ) {
     // 1. Fetch and Lock Source Payment/Credit Ledger Entry
     const paymentRes = await client.query(
-      `SELECT id, remaining_amount_fcy, is_open, currency_id, exchange_rate, document_no
+      `SELECT id, remaining_amount_fcy, remaining_amount_lcy, is_open, currency_id, exchange_rate, document_no
        FROM customer_ledger_entries 
        WHERE id = $1 AND company_id = $2 AND customer_id = $3 AND is_open = true 
        FOR UPDATE`,
@@ -202,6 +235,7 @@ export class AllocationService {
     const originalPaySign =
       Math.sign(Number(payLedger.remaining_amount_fcy)) || 1;
     let payRemainingFCYAbs = Math.abs(Number(payLedger.remaining_amount_fcy));
+    let payRemainingLCYAbs = Math.abs(Number(payLedger.remaining_amount_lcy));
 
     for (const alloc of allocations) {
       const roundedAllocAmountFCY = Number(alloc.amount.toFixed(2));
@@ -221,7 +255,7 @@ export class AllocationService {
 
       // 2. Fetch & Lock Target Invoice Ledger Entry
       const invoiceRes = await client.query(
-        `SELECT id, remaining_amount_fcy, is_open, currency_id, exchange_rate, document_no
+        `SELECT id, remaining_amount_fcy, remaining_amount_lcy, is_open, currency_id, exchange_rate, document_no
          FROM customer_ledger_entries 
          WHERE id = $1 AND company_id = $2 AND customer_id = $3 AND is_open = true 
          FOR UPDATE`,
@@ -240,12 +274,23 @@ export class AllocationService {
       const invRemainingFCYAbs = Math.abs(
         Number(invLedger.remaining_amount_fcy),
       );
+      const invRemainingLCYAbs = Math.abs(
+        Number(invLedger.remaining_amount_lcy),
+      );
 
       if (roundedAllocAmountFCY > invRemainingFCYAbs + 0.01) {
         throw new Error(
           `Allocation amount (${roundedAllocAmountFCY}) exceeds open invoice balance (${invRemainingFCYAbs.toFixed(2)}).`,
         );
       }
+
+      // 3. Convert FCY Allocation Amount to LCY
+      const roundedAllocAmountLCY = Number(
+        (roundedAllocAmountFCY * payRate).toFixed(2),
+      );
+      const invAllocAmountLCY = Number(
+        (roundedAllocAmountFCY * invRate).toFixed(2),
+      );
 
       // 3. Calculate Realized FX Variance
       const fx = await FxVarianceService.calculateVariance(client, {
@@ -256,19 +301,21 @@ export class AllocationService {
         allocatedAmountFCY: roundedAllocAmountFCY,
       });
 
-      // 4. Record Allocation Line with FX Variance
+      // 5. Record Allocation Line with FCY & LCY amounts
       const allocInsertRes = await client.query(
         `INSERT INTO ledger_allocations (
           company_id, allocation_type, payment_entry_id, ledger_entry_id, 
-          allocated_amount_fcy, exchange_rate, allocation_date, realized_gain_loss, created_by
-        ) VALUES ($1, 'AR', $2, $3, $4, $5, CURRENT_DATE, $6, $7)
+          allocated_amount_fcy, allocated_amount_lcy, exchange_rate, allocation_date, 
+          realized_gain_loss, created_by
+        ) VALUES ($1, 'AR', $2, $3, $4, $5, $6, CURRENT_DATE, $7, $8)
          RETURNING id`,
         [
           companyId,
           paymentLedgerId,
           invLedger.id,
           roundedAllocAmountFCY,
-          payLedger.exchange_rate,
+          roundedAllocAmountLCY,
+          payRate,
           fx.realizedGainLoss,
           userId || null,
         ],
@@ -276,33 +323,60 @@ export class AllocationService {
 
       const allocationId = allocInsertRes.rows[0].id;
 
-      // 5. Update Invoice Remaining Balance in customer_ledger_entries
+      // 6. Update Invoice Remaining Balance in customer_ledger_entries (FCY + LCY)
       const newInvRemainingFCYAbs = Math.max(
         0,
         Number((invRemainingFCYAbs - roundedAllocAmountFCY).toFixed(2)),
       );
-      const finalInvRemaining = newInvRemainingFCYAbs * originalInvSign;
+      const newInvRemainingLCYAbs = Math.max(
+        0,
+        Number((invRemainingLCYAbs - invAllocAmountLCY).toFixed(2)),
+      );
+
+      const finalInvRemainingFCY = newInvRemainingFCYAbs * originalInvSign;
+      const finalInvRemainingLCY = newInvRemainingLCYAbs * originalInvSign;
 
       await client.query(
         `UPDATE customer_ledger_entries 
-         SET remaining_amount_fcy = $1, is_open = $2, updated_at = NOW() 
-         WHERE id = $3`,
-        [finalInvRemaining, newInvRemainingFCYAbs > 0.001, invLedger.id],
+         SET remaining_amount_fcy = $1, 
+             remaining_amount_lcy = $2, 
+             is_open = $3, 
+             updated_at = NOW() 
+         WHERE id = $4`,
+        [
+          finalInvRemainingFCY,
+          finalInvRemainingLCY,
+          newInvRemainingFCYAbs > 0.001,
+          invLedger.id,
+        ],
       );
 
-      // 6. Update Payment Remaining Balance in customer_ledger_entries
+      // 7. Update Payment Remaining Balance in customer_ledger_entries (FCY + LCY)
       payRemainingFCYAbs = Math.max(
         0,
         Number((payRemainingFCYAbs - roundedAllocAmountFCY).toFixed(2)),
       );
+      payRemainingLCYAbs = Math.max(
+        0,
+        Number((payRemainingLCYAbs - roundedAllocAmountLCY).toFixed(2)),
+      );
 
-      const finalPayRemaining = payRemainingFCYAbs * originalPaySign;
+      const finalPayRemainingFCY = payRemainingFCYAbs * originalPaySign;
+      const finalPayRemainingLCY = payRemainingLCYAbs * originalPaySign;
 
       await client.query(
         `UPDATE customer_ledger_entries 
-         SET remaining_amount_fcy = $1, is_open = $2, updated_at = NOW() 
-         WHERE id = $3`,
-        [finalPayRemaining, payRemainingFCYAbs > 0.001, payLedger.id],
+         SET remaining_amount_fcy = $1, 
+             remaining_amount_lcy = $2, 
+             is_open = $3, 
+             updated_at = NOW() 
+         WHERE id = $4`,
+        [
+          finalPayRemainingFCY,
+          finalPayRemainingLCY,
+          payRemainingFCYAbs > 0.001,
+          payLedger.id,
+        ],
       );
 
       // 7. Post GL Entries if FX Variance exists
@@ -339,35 +413,45 @@ export class AllocationService {
     if (!allocRes.rows.length) throw new Error("Active allocation not found.");
 
     const alloc = allocRes.rows[0];
-    const amountFCY = Number(alloc.allocated_amount); // FCY Amount
+    const amountFCY = Number(alloc.allocated_amount_fcy);
+    const amountLCY = Number(alloc.allocated_amount_lcy);
     const isAP = alloc.allocation_type === "AP";
     const table = isAP ? "vendor_ledger_entries" : "customer_ledger_entries";
 
-    // 1. Revert Invoice Sub-Ledger Entry in FCY (preserving negative/positive direction)
+    // 1. Revert Invoice Sub-Ledger Entry in FCY & LCY
     await client.query(
       `UPDATE ${table} 
        SET 
-          remaining_amount_fcy = CASE 
-            WHEN remaining_amount_fcy < 0 THEN remaining_amount_fcy - $1 
-            ELSE remaining_amount_fcy + $1 
-          END, 
-          is_open = true, 
-          updated_at = NOW() 
-       WHERE id = $2`,
-      [amountFCY, alloc.ledger_entry_id],
+         remaining_amount_fcy = CASE 
+           WHEN remaining_amount_fcy < 0 THEN remaining_amount_fcy - $1 
+           ELSE remaining_amount_fcy + $1 
+         END,
+         remaining_amount_lcy = CASE 
+           WHEN remaining_amount_lcy < 0 THEN remaining_amount_lcy - $2 
+           ELSE remaining_amount_lcy + $2 
+         END, 
+         is_open = true, 
+         updated_at = NOW() 
+       WHERE id = $3`,
+      [amountFCY, amountLCY, alloc.ledger_entry_id],
     );
 
-    // 2. Revert Payment Sub-Ledger Entry in FCY
+    // 2. Revert Payment Sub-Ledger Entry in FCY & LCY
     await client.query(
       `UPDATE ${table} 
-       SET remaining_amount_fcy = CASE 
-         WHEN remaining_amount_fcy < 0 THEN remaining_amount_fcy - $1 
-         ELSE remaining_amount_fcy + $1 
-       END, 
-       is_open = true, 
-       updated_at = NOW()
-       WHERE id = $2`,
-      [amountFCY, alloc.payment_entry_id],
+       SET 
+         remaining_amount_fcy = CASE 
+           WHEN remaining_amount_fcy < 0 THEN remaining_amount_fcy - $1 
+           ELSE remaining_amount_fcy + $1 
+         END,
+         remaining_amount_lcy = CASE 
+           WHEN remaining_amount_lcy < 0 THEN remaining_amount_lcy - $2 
+           ELSE remaining_amount_lcy + $2 
+         END, 
+         is_open = true, 
+         updated_at = NOW()
+       WHERE id = $3`,
+      [amountFCY, amountLCY, alloc.payment_entry_id],
     );
 
     // 3. Reverse FX GL Ledger Entries if they were posted
@@ -377,11 +461,6 @@ export class AllocationService {
     );
 
     if (fxEntries.rows.length > 0) {
-      // const txKeyResult = await client.query(
-      //   "SELECT nextval('gl_transaction_id_seq') AS tx_id",
-      // );
-      // const revTxId = parseInt(txKeyResult.rows[0].tx_id, 10); transaction_id,
-
       for (const entry of fxEntries.rows) {
         await client.query(
           `INSERT INTO gl_ledger_entries (
@@ -391,7 +470,6 @@ export class AllocationService {
           [
             companyId,
             entry.account_id,
-            // revTxId,
             `${entry.entry_no}-REV`,
             "FX_REVERSAL",
             `UNAPPLY_FX_${allocationId}`,
