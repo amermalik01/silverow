@@ -57,28 +57,30 @@ export const postedLedgerEntriesConfig: ColumnConfig[] = [
     isPinned: false,
     dataType: "text",
   },
-  {
-    columnKey: "currency_code",
-    label: "Curr.",
-    isVisible: true,
-    columnWidth: 80,
-    columnOrder: 7,
-    isPinned: false,
-    dataType: "text",
-  },
-  {
-    columnKey: "currency_factor",
-    label: "Exch. Rate",
-    isVisible: false, // Hidden by default, enableable via column picker
-    columnWidth: 100,
-    columnOrder: 8,
-    isPinned: false,
-    dataType: "text",
-  },
+//   {
+//     columnKey: "currency_code",
+//     label: "Curr.",
+//     isVisible: true,
+//     columnWidth: 80,
+//     columnOrder: 7,
+//     isPinned: false,
+//     dataType: "text",
+//   },
+//   {
+//     columnKey: "currency_factor",
+//     label: "Exch. Rate",
+//     isVisible: false, // Hidden by default, enableable via column picker
+//     columnWidth: 100,
+//     columnOrder: 8,
+//     isPinned: false,
+//     dataType: "text",
+//   },
+
+
 
   // Foreign Currency (FCY) Fields
   {
-    columnKey: "debit",
+    columnKey: "debit_fcy",
     label: "Debit (FCY)",
     isVisible: true,
     columnWidth: 130,
@@ -87,7 +89,7 @@ export const postedLedgerEntriesConfig: ColumnConfig[] = [
     dataType: "text",
   },
   {
-    columnKey: "credit",
+    columnKey: "credit_fcy",
     label: "Credit (FCY)",
     isVisible: true,
     columnWidth: 130,
@@ -96,9 +98,9 @@ export const postedLedgerEntriesConfig: ColumnConfig[] = [
     dataType: "text",
   },
   {
-    columnKey: "amount",
+    columnKey: "net_amount_fcy",
     label: "Amount (FCY)",
-    isVisible: false,
+    isVisible: true,
     columnWidth: 130,
     columnOrder: 11,
     isPinned: false,
@@ -125,7 +127,7 @@ export const postedLedgerEntriesConfig: ColumnConfig[] = [
     dataType: "text",
   },
   {
-    columnKey: "amount_lcy",
+    columnKey: "net_amount_lcy",
     label: "Amount (LCY)",
     isVisible: true,
     columnWidth: 130,
@@ -133,7 +135,6 @@ export const postedLedgerEntriesConfig: ColumnConfig[] = [
     isPinned: false,
     dataType: "text",
   },
-
   // Audit Fields
   {
     columnKey: "user_id",

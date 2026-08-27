@@ -58,9 +58,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
           coa.code AS gl_no,
           coa.name AS name,
           COALESCE(p.supplier_code, gle.reference, '') AS source_no,
-          gle.debit,
-          gle.credit,
-          gle.net_amount AS amount_lcy,
+          gle.debit AS debit_lcy,
+          gle.debit_fcy,
+          gle.credit AS credit_lcy,
+          gle.credit_fcy,
+          gle.net_amount AS net_amount_lcy,
+          gle.net_amount_fcy,
           COALESCE(u.name, 'System') AS user_id,
           gle.posted_at AS created_at
         FROM gl_ledger_entries gle
@@ -75,8 +78,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         ORDER BY gle.posting_date ASC, gle.posted_at ASC
       `;
 
-      console.log('Posted invoice entries query === ',query);
-      console.log('targetSourceIds === ',targetSourceIds);
+      // console.log('Posted invoice entries query === ',query);
+      // console.log('targetSourceIds === ',targetSourceIds);
 
       const result = await client.query(query, [targetSourceIds, companyId]);
 

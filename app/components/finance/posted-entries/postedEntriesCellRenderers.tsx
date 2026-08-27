@@ -44,23 +44,23 @@ export function getPostedEntriesCellRenderers() {
       <span className="font-sans font-medium">{row.name}</span>
     ),
     source_no: (row: PostedLedgerEntry) => row.source_no || "-",
-    currency_code: (row: PostedLedgerEntry) => (
-      <span className="uppercase text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
-        {row.currency_code || "LCY"}
-      </span>
-    ),
-    currency_factor: (row: PostedLedgerEntry) => 
-      row.currency_factor ? Number(row.currency_factor).toFixed(4) : "1.0000",
+    // currency_code: (row: PostedLedgerEntry) => (
+    //   <span className="uppercase text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+    //     {row.currency_code || "LCY"}
+    //   </span>
+    // ),
+    // currency_factor: (row: PostedLedgerEntry) => 
+    //   row.currency_factor ? Number(row.currency_factor).toFixed(4) : "1.0000",
 
     // Foreign Currency (FCY)
-    debit: (row: PostedLedgerEntry) => formatAmount(row.debit),
-    credit: (row: PostedLedgerEntry) => formatAmount(row.credit),
-    amount: (row: PostedLedgerEntry) => formatAmount(row.amount),
+    debit: (row: PostedLedgerEntry) => formatAmount(row.debit_fcy),
+    credit: (row: PostedLedgerEntry) => formatAmount(row.credit_fcy),
+    amount: (row: PostedLedgerEntry) => formatAmount(row.net_amount_fcy),
 
     // Local Currency (LCY)
     debit_lcy: (row: PostedLedgerEntry) => formatAmount(row.debit_lcy),
     credit_lcy: (row: PostedLedgerEntry) => formatAmount(row.credit_lcy),
-    amount_lcy: (row: PostedLedgerEntry) => formatAmount(row.amount_lcy),
+    amount_lcy: (row: PostedLedgerEntry) => formatAmount(row.net_amount_lcy),
 
     user_id: (row: PostedLedgerEntry) => (
       <span className="font-sans">{row.user_id || "-"}</span>
