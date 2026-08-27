@@ -23,9 +23,10 @@ import SupplierLookupModal, {
 
 import AllocateJournalPaymentModal from "./modals/AllocateJournalPaymentModal";
 import { useLoader } from "@/app/context/LoaderContext";
-import { PostedTransactionsModal } from "./modals/PostedTransactionsModal";
+// import { PostedTransactionsModal } from "./modals/PostedTransactionsModal";
 import { JournalPayload2, JournalSource } from "@/types/journal";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+import { PostedTransactionsModal } from "../posted-entries/PostedTransactionsModal";
 
 type Currency = {
   id: string;
@@ -1237,11 +1238,18 @@ export default function JournalForm({
       )}
 
       {isPosted && journalId && (
+        // <PostedTransactionsModal
+        //   isOpen={showNavigateModal}
+        //   onClose={() => setShowNavigateModal(false)}
+        //   journalId={journalId}
+        //   journalNo={metadata.entry_no}
+        // />
         <PostedTransactionsModal
           isOpen={showNavigateModal}
           onClose={() => setShowNavigateModal(false)}
-          journalId={journalId}
-          journalNo={metadata.entry_no}
+          documentNo={metadata.entry_no}
+          documentTitle="Journal"
+          fetchEndpoint={`/api/finance/general-journal/${journalId}/posted-entries`}
         />
       )}
     </div>

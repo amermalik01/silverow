@@ -8,6 +8,108 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
+export async function POST(req: NextRequest, { params }: RouteContext) {
+  try {
+    const companyId = await getCompanyId();
+    const { id: invoiceId } = await params;
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const client = await pool.connect();
+
+    try {
+      // 1. Trace related documents (Linked Purchase Order & Goods Receipts)
+      const docQuery = await client.query(
+        `SELECT pi.purchase_order_id
+         FROM purchase_invoices pi
+         WHERE pi.id = $1 AND pi.company_id = $2`,
+        [invoiceId, companyId],
+      );
+
+      const purchaseOrderId = docQuery.rows[0]?.purchase_order_id || null;
+      const targetSourceIds: string[] = [invoiceId];
+
+      if (purchaseOrderId) {
+        const receiptsRes = await client.query(
+          `SELECT id FROM purchase_receipts 
+           WHERE purchase_order_id = $1 AND company_id = $2`,
+          [purchaseOrderId, companyId],
+        );
+        receiptsRes.rows.forEach((r) => targetSourceIds.push(r.id));
+      }
+
+      // 2. Fetch all postings directly from gl_ledger_entries
+      const query = `
+        SELECT 
+          gle.transaction_id AS entry_no,
+          gle.posting_date,
+          CASE 
+            WHEN gle.source_type::text = 'PURCHASE_RECEIPT' THEN 'Purchase Receipt'
+            WHEN gle.source_type::text = 'PURCHASE_INVOICE' THEN 'Purchase Invoice'
+            WHEN gle.source_type::text = 'FX_VARIANCE' THEN 'Realized FX Variance'
+            ELSE gle.source_type::text
+          END AS document_type,
+          COALESCE(gle.document_no, gle.source_document_no, gle.entry_no) AS document_number,
+          coa.code AS gl_no,
+          coa.name AS name,
+          COALESCE(p.supplier_code, gle.reference, '') AS source_no,
+          gle.debit,
+          gle.credit,
+          gle.net_amount AS amount_lcy,
+          COALESCE(u.name, 'System') AS user_id,
+          gle.posted_at AS created_at
+        FROM gl_ledger_entries gle
+        INNER JOIN chart_of_accounts coa ON coa.id = gle.account_id
+        LEFT JOIN parties p ON p.id = gle.party_id
+        LEFT JOIN users u ON u.id = gle.posted_by
+        WHERE gle.company_id = $2
+          AND (
+            gle.source_document_id = ANY($1::uuid[])
+            OR gle.source_journal_id = ANY($1::uuid[])
+          )
+        ORDER BY gle.posting_date ASC, gle.posted_at ASC
+      `;
+
+      console.log('Posted invoice entries query === ',query);
+      console.log('targetSourceIds === ',targetSourceIds);
+
+      const result = await client.query(query, [targetSourceIds, companyId]);
+
+      const latestEntry = result.rows[result.rows.length - 1];
+
+      return NextResponse.json({
+        success: true,
+        data: result.rows,
+        posted_by: latestEntry?.user_id || "System",
+        posted_at: latestEntry?.created_at
+          ? new Date(latestEntry.created_at).toLocaleString()
+          : "",
+      });
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error("[GET_PURCHASE_INVOICE_POSTED_ENTRIES_ERROR]:", err);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch ledger entries." },
+      { status: 500 },
+    );
+  }
+}
+
+/* import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/db";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
+
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
     const companyId = await getCompanyId();
@@ -129,7 +231,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       { status: 500 },
     );
   }
-}
+} */
 
 /* export async function GET(req: NextRequest, { params }: RouteContext) {
   try {

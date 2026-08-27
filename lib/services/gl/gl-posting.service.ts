@@ -78,13 +78,17 @@ export class GLPostingService {
     client: PoolClient,
     data: PostGLTransactionInput,
   ): Promise<PostedJournalResult> {
+    const exchangeRate = Number(data.exchange_rate || 1.0);
+
     // 1. Expand input lines into concrete Debit and Credit legs
     const expandedLines: Array<{
       account_id: string;
       party_id: string | null;
       party_type: string | null;
-      debit: number;
-      credit: number;
+      debit_fcy: number;
+      credit_fcy: number;
+      debit_lcy: number;
+      credit_lcy: number;
       description: string | null;
       item_id: string | null;
       warehouse_id: string | null;
@@ -93,8 +97,16 @@ export class GLPostingService {
     }> = [];
 
     for (const line of data.lines) {
-      const debitVal = Number(line.debit || 0);
-      const creditVal = Number(line.credit || 0);
+      // const debitVal = Number(line.debit || 0);
+      // const creditVal = Number(line.credit || 0);
+
+      const debitFCY = Number(line.debit || 0);
+      const creditFCY = Number(line.credit || 0);
+
+      // Compute LCY equivalent
+      const debitLCY = Number((debitFCY * exchangeRate).toFixed(2));
+      const creditLCY = Number((creditFCY * exchangeRate).toFixed(2));
+
       const mainAccountId = line.account_id || "";
       const balancingAccountId = line.balancing_account_id;
 
@@ -104,8 +116,12 @@ export class GLPostingService {
           account_id: mainAccountId,
           party_id: line.party_id || null,
           party_type: line.party_type || null,
-          debit: debitVal,
-          credit: creditVal,
+          debit_fcy: debitFCY,
+          credit_fcy: creditFCY,
+          debit_lcy: debitLCY,
+          credit_lcy: creditLCY,
+          // debit: debitVal,
+          // credit: creditVal,
           description: line.description || data.description || null,
           item_id: line.item_id || null,
           warehouse_id: line.warehouse_id || null,
@@ -120,8 +136,12 @@ export class GLPostingService {
           account_id: balancingAccountId,
           party_id: null,
           party_type: null,
-          debit: creditVal,
-          credit: debitVal,
+          debit_fcy: creditFCY,
+          credit_fcy: debitFCY,
+          debit_lcy: creditLCY,
+          credit_lcy: debitLCY,
+          // debit: creditVal,
+          // credit: debitVal,
           description: line.description
             ? `Balancing: ${line.description}`
             : data.description || null,
@@ -134,16 +154,33 @@ export class GLPostingService {
     }
 
     // 2. Validate double-entry equality (\sum Debit = \sum Credit)
-    const totalDebit = expandedLines.reduce((sum, l) => sum + l.debit, 0);
-    const totalCredit = expandedLines.reduce((sum, l) => sum + l.credit, 0);
+    const totalDebitLCY = expandedLines.reduce(
+      (sum, l) => sum + l.debit_lcy,
+      0,
+    );
+    const totalCreditLCY = expandedLines.reduce(
+      (sum, l) => sum + l.credit_lcy,
+      0,
+    );
 
-    if (Math.abs(totalDebit - totalCredit) > 0.001) {
+    if (Math.abs(totalDebitLCY - totalCreditLCY) > 0.001) {
       throw new Error(
-        `Journal is not balanced. Total Debit (${totalDebit.toFixed(
+        `Journal is not balanced in LCY. Total Debit (${totalDebitLCY.toFixed(
           2,
-        )}) must equal Total Credit (${totalCredit.toFixed(2)}).`,
+        )}) must equal Total Credit (${totalCreditLCY.toFixed(2)}).`,
       );
     }
+
+    // const totalDebit = expandedLines.reduce((sum, l) => sum + l.debit, 0);
+    // const totalCredit = expandedLines.reduce((sum, l) => sum + l.credit, 0);
+
+    // if (Math.abs(totalDebit - totalCredit) > 0.001) {
+    //   throw new Error(
+    //     `Journal is not balanced. Total Debit (${totalDebit.toFixed(
+    //       2,
+    //     )}) must equal Total Credit (${totalCredit.toFixed(2)}).`,
+    //   );
+    // }
 
     if (expandedLines.length < 2) {
       throw new Error(
@@ -169,6 +206,20 @@ export class GLPostingService {
     );
 
     const entryNo = seqResult.rows[0].code;
+
+    // Fetch next system transaction sequences
+    const txKeyResult = await client.query(
+      "SELECT nextval('gl_transaction_id_seq') AS tx_id",
+    );
+    const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
+
+    let vatTransactionId: number | null = null;
+    if (data.source === "SALES" || data.source === "PURCHASE") {
+      const vatKeyResult = await client.query(
+        "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
+      );
+      vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
+    }
 
     // 4. Insert Header into journal_entries
     const headerResult = await client.query(
@@ -312,8 +363,10 @@ export class GLPostingService {
           leg.description,
           leg.quantity,
           leg.unit_cost,
-          leg.debit,
-          leg.credit,
+          leg.debit_fcy,
+          leg.credit_fcy,
+          // leg.debit,
+          // leg.credit,
         ],
       );
 
@@ -336,29 +389,87 @@ export class GLPostingService {
       await client.query(
         `
         INSERT INTO gl_ledger_entries (
-          company_id, account_id, source_journal_id, entry_no, posting_date,
-          source_type, reference, description, debit, credit,
-          party_type, party_id, document_no, posted_by, posted_at
+          company_id,
+          account_id,
+          transaction_id,
+          vat_transaction_id,
+          source_journal_id,
+          entry_no,
+          posting_date,
+          source_type,
+          reference,
+          description,
+          debit,
+          credit,
+          currency_id,
+          exchange_rate,
+          debit_fcy,
+          credit_fcy,
+          source_document_id,
+          source_document_no,
+          party_type,
+          party_id,
+          document_no,
+          posted_by,
+          posted_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+          $21, $22, NOW()
+        )
         `,
         [
           data.company_id,
           resolvedAccountId,
+          nextTransactionId,
+          vatTransactionId,
           journalId,
           entryNo,
           data.entry_date,
           data.source,
           data.reference || null,
           leg.description,
-          leg.debit,
-          leg.credit,
+          leg.debit_lcy,
+          leg.credit_lcy,
+          data.currency_id || null,
+          exchangeRate,
+          leg.debit_fcy,
+          leg.credit_fcy,
+          data.source_id || journalId,
+          data.reference || entryNo,
           subLedgerPartyType || null,
           leg.party_id,
           data.reference || entryNo,
           data.created_by || null,
         ],
       );
+      // await client.query(
+      //   `
+      //   INSERT INTO gl_ledger_entries (
+      //     company_id, account_id, source_journal_id, entry_no, posting_date,
+      //     source_type, reference, description, debit, credit,
+      //     party_type, party_id, document_no, posted_by, posted_at
+      //   )
+      //   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+      //   `,
+      //   [
+      //     data.company_id,
+      //     resolvedAccountId,
+      //     journalId,
+      //     entryNo,
+      //     data.entry_date,
+      //     data.source,
+      //     data.reference || null,
+      //     leg.description,
+      //     leg.debit,
+      //     leg.credit,
+      //     subLedgerPartyType || null,
+      //     leg.party_id,
+      //     data.reference || entryNo,
+      //     data.created_by || null,
+      //   ],
+      // );
 
       lineNo += 10000;
     }

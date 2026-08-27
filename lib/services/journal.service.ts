@@ -923,8 +923,8 @@ export class JournalService {
         description: string | null;
         currency_id?: string | null;
         exchange_rate?: number;
-        debit: number;
-        credit: number;
+        debit_fcy: number;
+        credit_fcy: number;
         debit_lcy: number;
         credit_lcy: number;
         is_balancing: boolean;
@@ -932,6 +932,9 @@ export class JournalService {
 
       for (const line of linesResult.rows) {
         const rate = Number(line.exchange_rate || 1.0);
+        const debitFCY = Number(line.debit || 0);
+        const creditFCY = Number(line.credit || 0);
+
         const debitLCY = Number((Number(line.debit || 0) * rate).toFixed(2));
         const creditLCY = Number((Number(line.credit || 0) * rate).toFixed(2));
 
@@ -1027,10 +1030,14 @@ export class JournalService {
           description: line.description || journal.description || null,
           currency_id: line.currency_id || null,
           exchange_rate: rate,
-          debit: line.debit || 0,
-          credit: line.credit || 0,
+          debit_fcy: debitFCY,
+          credit_fcy: creditFCY,
           debit_lcy: debitLCY,
           credit_lcy: creditLCY,
+          // debit: line.debit || 0,
+          // credit: line.credit || 0,
+          // debit_lcy: debitLCY,
+          // credit_lcy: creditLCY,
           is_balancing: false,
         });
         // expandedLegs.push({
@@ -1061,8 +1068,10 @@ export class JournalService {
               : journal.description || null,
             currency_id: line.currency_id || null,
             exchange_rate: rate,
-            debit: line.credit || 0,
-            credit: line.debit || 0,
+            // debit: line.credit || 0,
+            // credit: line.debit || 0,
+            debit_fcy: creditFCY,
+            credit_fcy: debitFCY,
             debit_lcy: creditLCY,
             credit_lcy: debitLCY,
             is_balancing: true,
@@ -1085,7 +1094,14 @@ export class JournalService {
       }
 
       // 🛡️ VALIDATION 4: Total Double-Entry Balance Check
-      GLValidationService.validateBalanced(expandedLegs);
+      // GLValidationService.validateBalanced(expandedLegs);
+      GLValidationService.validateBalanced(
+        expandedLegs.map((leg) => ({
+          ...leg,
+          debit: leg.debit_lcy,
+          credit: leg.credit_lcy,
+        })),
+      );
 
       // 4. Sequence Keys
       const txKeyResult = await client.query(
@@ -1111,46 +1127,105 @@ export class JournalService {
       for (const leg of expandedLegs) {
         // 1. Insert into gl_ledger_entries
         const insertedGlEntry = await client.query(
-          `
-          INSERT INTO gl_ledger_entries (
-            company_id,
-            account_id,
-            transaction_id,
-            vat_transaction_id,
-            vat_settlement_transaction_id,
-            source_journal_id,
-            entry_no,
-            posting_date,
-            source_type,
-            reference,
-            description,
-            debit,
-            credit,
-            party_type,
-            party_id,
-            posted_at
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
-          RETURNING id
-          `,
-          [
-            companyId,
-            leg.account_id,
-            nextTransactionId,
-            vatTransactionId,
-            vatSettlementId,
-            journal.id,
-            journal.entry_no,
-            formattedDate,
-            journal.source,
-            journal.reference || null,
-            leg.description,
-            leg.debit,
-            leg.credit,
-            leg.party_type,
-            leg.party_id,
-          ],
-        );
+        `
+        INSERT INTO gl_ledger_entries (
+          company_id,
+          account_id,
+          transaction_id,
+          vat_transaction_id,
+          vat_settlement_transaction_id,
+          source_journal_id,
+          entry_no,
+          posting_date,
+          source_type,
+          reference,
+          description,
+          debit,
+          credit,
+          currency_id,
+          exchange_rate,
+          debit_fcy,
+          credit_fcy,
+          source_document_id,
+          source_document_no,
+          party_type,
+          party_id,
+          document_no,
+          posted_at
+        )
+        VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
+          $21, $22, NOW()
+        )
+        RETURNING id
+        `,
+        [
+          companyId,
+          leg.account_id,
+          nextTransactionId,
+          vatTransactionId,
+          vatSettlementId,
+          journal.id,
+          journal.entry_no,
+          formattedDate,
+          journal.source,
+          journal.reference || null,
+          leg.description,
+          leg.debit_lcy,
+          leg.credit_lcy,
+          leg.currency_id,
+          leg.exchange_rate,
+          leg.debit_fcy,
+          leg.credit_fcy,
+          journal.id,
+          leg.document_no,
+          leg.party_type,
+          leg.party_id,
+          leg.document_no,
+        ],
+      );
+        // const insertedGlEntry = await client.query(
+        //   `
+        //   INSERT INTO gl_ledger_entries (
+        //     company_id,
+        //     account_id,
+        //     transaction_id,
+        //     vat_transaction_id,
+        //     vat_settlement_transaction_id,
+        //     source_journal_id,
+        //     entry_no,
+        //     posting_date,
+        //     source_type,
+        //     reference,
+        //     description,
+        //     debit,
+        //     credit,
+        //     party_type,
+        //     party_id,
+        //     posted_at
+        //   )
+        //   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+        //   RETURNING id
+        //   `,
+        //   [
+        //     companyId,
+        //     leg.account_id,
+        //     nextTransactionId,
+        //     vatTransactionId,
+        //     vatSettlementId,
+        //     journal.id,
+        //     journal.entry_no,
+        //     formattedDate,
+        //     journal.source,
+        //     journal.reference || null,
+        //     leg.description,
+        //     leg.debit,
+        //     leg.credit,
+        //     leg.party_type,
+        //     leg.party_id,
+        //   ],
+        // );
 
         const glLedgerEntryId = insertedGlEntry.rows[0].id;
         let subLedgerEntryId: string | null = null;
@@ -1198,16 +1273,16 @@ export class JournalService {
           } else {
             // 2. Default fallback based on debit/credit direction
             if (isSupplier) {
-              docType = leg.debit > 0 ? "PAYMENT" : "PURCHASE_INVOICE";
+              docType = leg.debit_fcy > 0 ? "PAYMENT" : "PURCHASE_INVOICE";
             } else {
-              docType = leg.credit > 0 ? "PAYMENT" : "SALES_INVOICE";
+              docType = leg.credit_fcy > 0 ? "PAYMENT" : "SALES_INVOICE";
             }
           }
 
           // Calculate FCY and LCY signed amounts
           const originalAmountFCY = isSupplier
-            ? leg.credit - leg.debit
-            : leg.debit - leg.credit;
+            ? leg.credit_fcy - leg.debit_fcy
+            : leg.debit_fcy - leg.credit_fcy;
 
           const originalAmountLCY = isSupplier
             ? leg.credit_lcy - leg.debit_lcy

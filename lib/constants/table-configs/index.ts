@@ -22,6 +22,8 @@ import { salesInvoicesConfig } from "./sales-invoices";
 import { itemColumnsConfig } from "./Items";
 import { EmployeeConfig } from "./Employee";
 
+import { postedLedgerEntriesConfig } from "./posted-ledger-entries";
+
 export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
 
   purchase_orders: purchaseOrdersConfig,
@@ -43,6 +45,8 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   inventory_items: itemColumnsConfig,
 
   hr_employees: EmployeeConfig,
+
+  posted_ledger_entries: postedLedgerEntriesConfig
   
 };
 

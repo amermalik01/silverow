@@ -20,8 +20,9 @@ import { StockReceiveConfirmModal } from "../../shared/modals/StockReceiveConfir
 import { Button } from "@/components/ui/button";
 import DebitNoteLines from "../debit-notes/DebitNoteLines";
 import { OrderFormTabs } from "../debit-notes/OrderFormTabs";
-import { PostedTransactionsModal } from "./PostedTransactionsModal";
+// import { PostedTransactionsModal } from "./PostedTransactionsModal";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+import { PostedTransactionsModal } from "../../finance/posted-entries/PostedTransactionsModal";
 
 interface Props {
   slug: string;
@@ -560,10 +561,19 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
         <PostedTransactionsModal
           isOpen={showNavigateModal}
           onClose={() => setShowNavigateModal(false)}
-          debitNoteId={id}
-          debitNoteNo={note.debit_note_no}
+          documentNo={note.debit_note_no}
+          documentTitle="Debit Note"
+          fetchEndpoint={`/api/posted-debit-notes/${id}/posted-entries`}
         />
       )}
     </div>
   );
 };
+{
+  /* <PostedTransactionsModal
+          isOpen={showNavigateModal}
+          onClose={() => setShowNavigateModal(false)}
+          debitNoteId={id}
+          debitNoteNo={note.debit_note_no}
+        /> */
+}

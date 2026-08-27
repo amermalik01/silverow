@@ -18,9 +18,10 @@ import {
 
 import PurchaseOrderLines from "../purchase-orders/PurchaseOrderLines";
 import { OrderFormTabs } from "../purchase-orders/OrderFormTabs";
-import { PostedTransactionsModal } from "./PostedTransactionsModal";
+// import { PostedTransactionsModal } from "./PostedTransactionsModal";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+import { PostedTransactionsModal } from "../../finance/posted-entries/PostedTransactionsModal";
 
 interface Props {
   slug: string;
@@ -458,10 +459,17 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
         <PostedTransactionsModal
           isOpen={showNavigateModal}
           onClose={() => setShowNavigateModal(false)}
-          invoiceId={id}
-          invoiceNo={invoice.invoice_no}
+          documentNo={invoice.invoice_no}
+          documentTitle="Purchase Invoice"
+          fetchEndpoint={`/api/purchase-invoices/${id}/posted-entries`}
         />
       )}
     </div>
   );
 };
+/* <PostedTransactionsModal
+          isOpen={showNavigateModal}
+          onClose={() => setShowNavigateModal(false)}
+          invoiceId={id}
+          invoiceNo={invoice.invoice_no}
+        /> */

@@ -46,3 +46,8 @@ export interface FetchResponse<T> {
   data: T[];
   totalRecords: number;
 }
+// export interface FetchResponse<T> {
+//   data: T[];
+//   total?: number;
+//   totalCount?: number; // Keeps backward compatibility if other components use totalCount
+// }

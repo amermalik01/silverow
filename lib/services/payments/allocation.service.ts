@@ -23,7 +23,7 @@ export class AllocationService {
   ) {
     // 1. Fetch and Lock Payment Ledger Entry first
     const paymentRes = await client.query(
-      `SELECT id, remaining_amount_fcy, is_open, currency_id, exchange_rate, document_no
+      `SELECT id, remaining_amount_fcy, remaining_amount_lcy, is_open, currency_id, exchange_rate, document_no
        FROM vendor_ledger_entries 
        WHERE id = $1 AND company_id = $2 AND vendor_id = $3 AND is_open = true 
        FOR UPDATE`,
@@ -197,7 +197,20 @@ export class AllocationService {
           fxGlAccountId: fx.glAccountId,
           isGain: fx.isGain,
           documentNo: invLedger.document_no || invLedger.id,
+          currencyId: invLedger.currency_id || null,
+          userId,
         });
+        // await this.postFxGlEntries(client, {
+        //   companyId,
+        //   allocationId,
+        //   allocationType: "AP",
+        //   partyType: "supplier",
+        //   partyId: vendorId,
+        //   varianceLCY: Math.abs(fx.realizedGainLoss),
+        //   fxGlAccountId: fx.glAccountId,
+        //   isGain: fx.isGain,
+        //   documentNo: invLedger.document_no || invLedger.id,
+        // });
       }
     }
   }
@@ -391,7 +404,20 @@ export class AllocationService {
           fxGlAccountId: fx.glAccountId,
           isGain: fx.isGain,
           documentNo: invLedger.document_no || invLedger.id,
+          currencyId: invLedger.currency_id || null,
+          userId,
         });
+        // await this.postFxGlEntries(client, {
+        //   companyId,
+        //   allocationId,
+        //   allocationType: "AR",
+        //   partyType: "customer",
+        //   partyId: customerId,
+        //   varianceLCY: Math.abs(fx.realizedGainLoss),
+        //   fxGlAccountId: fx.glAccountId,
+        //   isGain: fx.isGain,
+        //   documentNo: invLedger.document_no || invLedger.id,
+        // });
       }
     }
   }
@@ -404,6 +430,7 @@ export class AllocationService {
     client: PoolClient,
     companyId: string,
     allocationId: string,
+    userId?: string,
   ) {
     const allocRes = await client.query(
       `SELECT * FROM ledger_allocations WHERE id = $1 AND company_id = $2 AND is_unapplied = false FOR UPDATE`,
@@ -461,28 +488,90 @@ export class AllocationService {
     );
 
     if (fxEntries.rows.length > 0) {
+      const txKeyResult = await client.query(
+        "SELECT nextval('gl_transaction_id_seq') AS tx_id",
+      );
+      const transactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
+
       for (const entry of fxEntries.rows) {
         await client.query(
           `INSERT INTO gl_ledger_entries (
-            company_id, account_id, entry_no, posting_date,
-            source_type, reference, description, debit, credit, party_type, party_id, document_no, posted_at
-          ) VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+            company_id,
+            account_id,
+            transaction_id,
+            source_journal_id,
+            entry_no,
+            posting_date,
+            source_type,
+            reference,
+            description,
+            debit,
+            credit,
+            currency_id,
+            exchange_rate,
+            debit_fcy,
+            credit_fcy,
+            source_document_id,
+            source_document_no,
+            party_type,
+            party_id,
+            document_no,
+            posted_by,
+            posted_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, CURRENT_DATE, $6, $7, $8, $9,
+            $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
+            $20, NOW()
+          )`,
           [
             companyId,
             entry.account_id,
+            transactionId,
+            entry.source_journal_id || null,
             `${entry.entry_no}-REV`,
-            "FX_REVERSAL",
+            "FX_VARIANCE",
             `UNAPPLY_FX_${allocationId}`,
             `Reversal: ${entry.description}`,
-            entry.credit, // Invert Debit/Credit
+            entry.credit, // Invert Debit/Credit for LCY
             entry.debit,
-            entry.party_type,
-            entry.party_id,
+            entry.currency_id || null,
+            entry.exchange_rate || 1.0,
+            0.0, // FX adjustments are 0 in FCY
+            0.0,
+            alloc.id,
+            entry.source_document_no || entry.entry_no,
+            entry.party_type || null,
+            entry.party_id || null,
             entry.document_no || entry.entry_no,
+            userId || null,
           ],
         );
       }
     }
+
+    // if (fxEntries.rows.length > 0) {
+    //   for (const entry of fxEntries.rows) {
+    //     await client.query(
+    //       `INSERT INTO gl_ledger_entries (
+    //         company_id, account_id, entry_no, posting_date,
+    //         source_type, reference, description, debit, credit, party_type, party_id, document_no, posted_at
+    //       ) VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+    //       [
+    //         companyId,
+    //         entry.account_id,
+    //         `${entry.entry_no}-REV`,
+    //         "FX_REVERSAL",
+    //         `UNAPPLY_FX_${allocationId}`,
+    //         `Reversal: ${entry.description}`,
+    //         entry.credit, // Invert Debit/Credit
+    //         entry.debit,
+    //         entry.party_type,
+    //         entry.party_id,
+    //         entry.document_no || entry.entry_no,
+    //       ],
+    //     );
+    //   }
+    // }
 
     // 4. Mark allocation as unapplied
     await client.query(
@@ -506,6 +595,8 @@ export class AllocationService {
       fxGlAccountId: string;
       isGain: boolean;
       documentNo: string;
+      currencyId?: string | null;
+      userId?: string | null;
     },
   ) {
     const {
@@ -518,6 +609,8 @@ export class AllocationService {
       fxGlAccountId,
       isGain,
       documentNo,
+      currencyId,
+      userId,
     } = params;
 
     // 1. Resolve Control GL Account via the unified `parties` table (matching Journal logic)
@@ -605,55 +698,146 @@ export class AllocationService {
       }
     }
 
-    // 3. Get next transaction sequence
-    // const txKeyResult = await client.query(
-    //   "SELECT nextval('gl_transaction_id_seq') AS tx_id",
-    // );
-    // const transactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
-    // const refTag = `ALLOC_FX_${allocationId}`;
-
+    // 3. Get next system transaction sequence for grouping legs
+    const txKeyResult = await client.query(
+      "SELECT nextval('gl_transaction_id_seq') AS tx_id",
+    );
+    const transactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
     const refTag = `ALLOC_FX_${allocationId}`;
 
     // 4. Post Control Account Leg
+
     await client.query(
       `INSERT INTO gl_ledger_entries (
-        company_id, account_id, entry_no, posting_date,
-        source_type, reference, description, debit, credit, party_type, party_id, document_no, posted_at
-      ) VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+        company_id,
+        account_id,
+        transaction_id,
+        entry_no,
+        posting_date,
+        source_type,
+        reference,
+        description,
+        debit,
+        credit,
+        currency_id,
+        exchange_rate,
+        debit_fcy,
+        credit_fcy,
+        source_document_id,
+        source_document_no,
+        party_type,
+        party_id,
+        document_no,
+        posted_by,
+        posted_at
+      ) VALUES (
+        $1, $2, $3, $4, CURRENT_DATE, $5, $6, $7, $8, $9,
+        $10, 1.0, 0.0, 0.0, $11, $12, $13, $14, $15, $16,
+        NOW()
+      )`,
       [
         companyId,
         controlGlAccountId,
+        transactionId,
         documentNo,
         "FX_VARIANCE",
         refTag,
         `Realized FX ${isGain ? "Gain" : "Loss"} Allocation Adjustment`,
         controlDebit,
         controlCredit,
+        currencyId || null,
+        allocationId,
+        documentNo,
         partyType,
         partyId,
         documentNo,
+        userId || null,
       ],
     );
+    // await client.query(
+    //   `INSERT INTO gl_ledger_entries (
+    //     company_id, account_id, entry_no, posting_date,
+    //     source_type, reference, description, debit, credit, party_type, party_id, document_no, posted_at
+    //   ) VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+    //   [
+    //     companyId,
+    //     controlGlAccountId,
+    //     documentNo,
+    //     "FX_VARIANCE",
+    //     refTag,
+    //     `Realized FX ${isGain ? "Gain" : "Loss"} Allocation Adjustment`,
+    //     controlDebit,
+    //     controlCredit,
+    //     partyType,
+    //     partyId,
+    //     documentNo,
+    //   ],
+    // );
 
     // 5. Post Realized FX Gain/Loss Leg
     await client.query(
       `INSERT INTO gl_ledger_entries (
-        company_id, account_id, entry_no, posting_date,
-        source_type, reference, description, debit, credit, party_type, party_id, document_no, posted_at
-      ) VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+        company_id,
+        account_id,
+        transaction_id,
+        entry_no,
+        posting_date,
+        source_type,
+        reference,
+        description,
+        debit,
+        credit,
+        currency_id,
+        exchange_rate,
+        debit_fcy,
+        credit_fcy,
+        source_document_id,
+        source_document_no,
+        party_type,
+        party_id,
+        document_no,
+        posted_by,
+        posted_at
+      ) VALUES (
+        $1, $2, $3, $4, CURRENT_DATE, $5, $6, $7, $8, $9,
+        $10, 1.0, 0.0, 0.0, $11, $12, NULL, NULL, $13, $14,
+        NOW()
+      )`,
       [
         companyId,
         fxGlAccountId,
+        transactionId,
         documentNo,
         "FX_VARIANCE",
         refTag,
         `Realized FX ${isGain ? "Gain" : "Loss"} Line`,
         fxDebit,
         fxCredit,
-        null,
-        null,
+        currencyId || null,
+        allocationId,
         documentNo,
+        documentNo,
+        userId || null,
       ],
     );
+    // await client.query(
+    //   `INSERT INTO gl_ledger_entries (
+    //     company_id, account_id, entry_no, posting_date,
+    //     source_type, reference, description, debit, credit, party_type, party_id, document_no, posted_at
+    //   ) VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+    //   [
+    //     companyId,
+    //     fxGlAccountId,
+    //     documentNo,
+    //     "FX_VARIANCE",
+    //     refTag,
+    //     `Realized FX ${isGain ? "Gain" : "Loss"} Line`,
+    //     fxDebit,
+    //     fxCredit,
+    //     null,
+    //     null,
+    //     documentNo,
+    //   ],
+    // );
   }
 }
