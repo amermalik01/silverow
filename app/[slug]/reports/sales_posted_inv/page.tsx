@@ -266,7 +266,20 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
 
             {/* Processing Execution Control Interface */}
             <div className="flex items-center gap-2 justify-end mt-2">
-              <Button
+              <div className="flex gap-2 justify-end pt-4">
+                <Button
+                  onClick={handleGenerateReport}
+                  disabled={loading}
+                  variant="save"
+                >
+                  <Search className="h-3.5 w-3.5" />{" "}
+                  {loading ? "Generating..." : "Generate Report"}
+                </Button>
+                <Button onClick={handleClearFilters} variant="cancel">
+                  <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
+                </Button>
+              </div>
+              {/* <Button
                 onClick={handleGenerateReport}
                 disabled={loading}
                 className="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded shadow flex items-center gap-1.5 transition cursor-pointer"
@@ -279,7 +292,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
                 className="bg-slate-600 hover:bg-slate-500 active:bg-slate-700 text-white font-bold px-3 py-2 rounded shadow flex items-center gap-1.5 transition cursor-pointer"
               >
                 <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
-              </Button>
+              </Button> */}
               <div className="relative group">
                 <Button className="border border-emerald-700 bg-emerald-900/50 hover:bg-emerald-900 text-emerald-200 font-semibold px-3 py-2 rounded shadow flex items-center gap-1 transition">
                   <Download className="h-3.5 w-3.5" /> Export As ▾

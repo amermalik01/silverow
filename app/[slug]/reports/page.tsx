@@ -32,6 +32,9 @@ export default function ReportsPage() {
     "SALES_POSTED_INV",
     "PUR_SUPP_ACT",
     "PUR_SUPP_AGEING",
+    "PUR_SUPP_STMT",
+    "PUR_UNPOSTED_PO",
+    "PUR_POSTED_INV",
     
   ]);
 

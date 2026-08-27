@@ -4,7 +4,7 @@
 
 import React, { useState } from "react";
 import { ReportHeader } from "@/app/components/reports/ReportHeader";
-import { Loader2, Search, Printer, X } from "lucide-react";
+import { Loader2, Search, Printer, X, RotateCcw } from "lucide-react";
 import CRMLookupModal, {
   CRMLookupItem,
 } from "@/app/components/shared/modals/CRMLookupModal";
@@ -217,7 +217,28 @@ export default function LegacyCRMListing() {
         </div>
 
         {/* Dynamic Parameter Trigger Actions Footer Block */}
-        <div className="mt-5 pt-4 border-t border-white/10 flex justify-end items-center space-x-2">
+
+        <div className="flex gap-2 justify-end pt-4">
+          <Button
+            onClick={handleGenerateReport}
+            disabled={isLoading}
+            variant="save"
+          >
+            <Search className="h-3.5 w-3.5" />{" "}
+            {isLoading ? "Generating..." : "Generate Report"}
+          </Button>
+          <Button
+            onClick={() => {
+              setRecords([]);
+              setSelectedCRMs([]);
+              setHasGenerated(false);
+            }}
+            variant="cancel"
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
+          </Button>
+        </div>
+        {/* <div className="mt-5 pt-4 border-t border-white/10 flex justify-end items-center space-x-2">
           <Button
             onClick={handleGenerateReport}
             disabled={isLoading}
@@ -248,7 +269,7 @@ export default function LegacyCRMListing() {
             )}
             <span>Print Preview</span>
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Selected Scoped Item Badge Container */}

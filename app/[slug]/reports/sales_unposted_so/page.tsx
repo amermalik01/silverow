@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { Search, RotateCcw, FileText, Download } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 import OrderStageLookupModal from "@/app/components/shared/modals/OrderStageLookupModal";
 import SalespersonLookupModal from "@/app/components/shared/modals/SalespersonLookupModal";
@@ -187,7 +188,21 @@ export default function UnpostedSalesOrdersReport() {
           </div>
 
           {/* Top Actions Block */}
+
           <div className="flex gap-2 justify-end pt-4">
+            <Button
+              onClick={handleGenerateReport}
+              disabled={loading}
+              variant="save"
+            >
+              <Search className="h-3.5 w-3.5" />{" "}
+              {loading ? "Generating..." : "Generate Report"}
+            </Button>
+            <Button onClick={handleClearFilters} variant="cancel">
+              <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
+            </Button>
+          </div>
+          {/* <div className="flex gap-2 justify-end pt-4">
             <Button
               onClick={handleGenerateReport}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-1.5 rounded flex items-center gap-1.5 transition text-xs shadow"
@@ -200,7 +215,7 @@ export default function UnpostedSalesOrdersReport() {
             >
               <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
             </Button>
-          </div>
+          </div> */}
         </div>
 
         <hr className="border-emerald-900" />
@@ -226,9 +241,10 @@ export default function UnpostedSalesOrdersReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
+              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
-              </span>
+              </span> */}
             </div>
           </div>
 
@@ -251,9 +267,10 @@ export default function UnpostedSalesOrdersReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
+              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
-              </span>
+              </span> */}
             </div>
           </div>
 
@@ -276,9 +293,10 @@ export default function UnpostedSalesOrdersReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
+              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
-              </span>
+              </span> */}
             </div>
           </div>
         </div>

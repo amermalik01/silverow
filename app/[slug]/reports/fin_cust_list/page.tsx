@@ -4,7 +4,15 @@
 
 import React, { useState } from "react";
 import { ReportHeader } from "@/app/components/reports/ReportHeader";
-import { Loader2, Search, FileText, Printer, X, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  FileText,
+  Printer,
+  X,
+  RefreshCw,
+  RotateCcw,
+} from "lucide-react";
 import CustomerLookupModal, {
   CustomerLookupItem,
 } from "@/app/components/shared/modals/CustomerLookupModal";
@@ -252,7 +260,28 @@ export default function LegacyCustomerListing() {
         </div>
 
         {/* Filter Bar Action Footer Row Controls */}
-        <div className="mt-5 pt-4 border-t border-white/10 flex justify-end items-center space-x-2">
+
+        <div className="flex gap-2 justify-end pt-4">
+          <Button
+            onClick={handleGenerateReport}
+            disabled={isLoading}
+            variant="save"
+          >
+            <Search className="h-3.5 w-3.5" />{" "}
+            {isLoading ? "Generating..." : "Generate Report"}
+          </Button>
+          <Button
+            onClick={() => {
+              setRecords([]);
+              setSelectedCustomers([]);
+              setHasGenerated(false);
+            }}
+            variant="cancel"
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
+          </Button>
+        </div>
+        {/* <div className="mt-5 pt-4 border-t border-white/10 flex justify-end items-center space-x-2">
           <Button
             onClick={handleGenerateReport}
             disabled={isLoading}
@@ -283,7 +312,7 @@ export default function LegacyCustomerListing() {
             )}
             <span>Print Preview</span>
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Target Selected Filter Badges Panel */}
