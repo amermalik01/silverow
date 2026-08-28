@@ -100,32 +100,6 @@ export const ColumnHeaderFilter: React.FC<Props> = ({
           }
           className="w-full rounded border border-emerald-800/80 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-100 placeholder-emerald-400/60 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
         />
-        {/* <input
-          type="number"
-          placeholder="From"
-          value={currentFilter.from || ""}
-          onChange={(e) =>
-            onFilterChange(column.columnKey, {
-              ...currentFilter,
-              from: e.target.value,
-            })
-          }
-          className="w-full rounded border border-emerald-800/80 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-100 placeholder-emerald-400/60 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-        />
-
-        
-        <input
-          type="number"
-          placeholder="To"
-          value={currentFilter.to || ""}
-          onChange={(e) =>
-            onFilterChange(column.columnKey, {
-              ...currentFilter,
-              to: e.target.value,
-            })
-          }
-          className="w-full rounded border border-emerald-800/80 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-100 placeholder-emerald-400/60 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-        /> */}
       </div>
     );
   }

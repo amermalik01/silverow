@@ -105,10 +105,14 @@ export async function GET(req: NextRequest) {
         ORDER BY p.name ASC, e.posting_date ASC
       `;
 
+      console.log("detailedQuery ==== ", detailedQuery);
+      console.log("whereConditions ==== ", whereConditions);
+      console.log("queryParams ==== ", queryParams);
+
       const result = await pool.query(detailedQuery, queryParams);
 
       // Group rows by vendor and compute running balance
-    //   const groupedData: Record<string, any> = {};
+      //   const groupedData: Record<string, any> = {};
       const groupedData: Record<string, VendorGroup> = {};
 
       result.rows.forEach((row) => {
@@ -178,6 +182,10 @@ export async function GET(req: NextRequest) {
       GROUP BY p.id, p.supplier_code, p.name, c.code
       ORDER BY p.name ASC
     `;
+
+    console.log("summaryQuery ==== ", summaryQuery);
+    console.log("whereConditions ==== ", whereConditions);
+    console.log("queryParams ==== ", queryParams);
 
     const result = await pool.query(summaryQuery, queryParams);
 
