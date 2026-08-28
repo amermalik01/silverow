@@ -315,11 +315,9 @@ export class PartyService {
         LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
       `;
 
-      const totalQuery = `
-        SELECT COUNT(DISTINCT p.id)::int AS count 
+     const totalQuery = `
+        SELECT COUNT(p.id)::int AS count 
         FROM parties p
-        LEFT JOIN party_contacts pc ON pc.party_id = p.id
-        LEFT JOIN party_addresses pa ON pa.party_id = p.id
         ${whereSql}
       `;
 

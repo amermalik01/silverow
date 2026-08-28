@@ -65,23 +65,6 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
     loadData();
   }, [loadData]);
 
-  const handlePost = async (id: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to lock and post this journal entry to general ledgers?",
-      )
-    )
-      return;
-    try {
-      const res = await fetch(`${apiBase}/${id}/post`, { method: "POST" });
-      if (!res.ok) throw new Error("Posting execution failed.");
-      await loadData();
-    } catch (err) {
-      console.error(err);
-      alert("Error posting transactional item.");
-    }
-  };
-
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
       {/* HEADER SECTION */}
@@ -141,13 +124,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
                 <th className="p-3 w-28">Entry No</th>
                 <th className="p-3 w-28">Posting Date</th>
                 <th className="p-3 w-28">Entry Date</th>
-                <th className="p-3 w-32">Reference</th>
-                <th className="p-3">Description</th>
-                {/* <th className="p-3 w-20 text-center">Currency</th>
-                <th className="p-3 w-32 text-right">Debit Amount</th>
-                <th className="p-3 w-32 text-right">Credit Amount</th> */}
                 <th className="p-3 w-24 text-center">Status</th>
-                <th className="p-3 w-24 text-center">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -172,38 +149,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
                   <td className="p-3 text-zinc-600 dark:text-zinc-400">
                     {format(row.entry_date, "dd/MM/yyyy")}
                   </td>
-                  <td className="p-3 font-mono text-xs max-w-[140px] truncate">
-                    {row.reference || (
-                      <span className="text-zinc-300 dark:text-zinc-700">
-                        —
-                      </span>
-                    )}
-                  </td>
-                  <td
-                    className="p-3 max-w-xs truncate text-zinc-600 dark:text-zinc-400"
-                    title={row.description || ""}
-                  >
-                    {row.description || (
-                      <span className="text-zinc-400 italic">
-                        No description
-                      </span>
-                    )}
-                  </td>
-                  {/* <td className="p-3 text-center font-mono text-zinc-600 dark:text-zinc-400">
-                    {row.currency_code || "—"}
-                  </td>
-                  <td className="p-3 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
-                    {Number(row.total_debit || 0).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </td>
-                  <td className="p-3 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
-                    {Number(row.total_credit || 0).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </td> */}
+                  
                   <td className="p-3 text-center">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
@@ -214,20 +160,6 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
                     >
                       {row.is_posted ? "Posted" : "Draft"}
                     </span>
-                  </td>
-                  <td className="p-3 text-center">
-                    {!row.is_posted ? (
-                      <Button
-                        onClick={() => handlePost(row.id)}
-                        className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline text-xs bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-800/40"
-                      >
-                        Post
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-zinc-400 italic">
-                        Locked
-                      </span>
-                    )}
                   </td>
                 </tr>
               ))}
@@ -259,3 +191,79 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
     </div>
   );
 }
+
+/* 
+
+
+  const handlePost = async (id: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to lock and post this journal entry to general ledgers?",
+      )
+    )
+      return;
+    try {
+      const res = await fetch(`${apiBase}/${id}/post`, { method: "POST" });
+      if (!res.ok) throw new Error("Posting execution failed.");
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Error posting transactional item.");
+    }
+  };
+*/
+/* 
+
+                <th className="p-3 w-32">Reference</th>
+                <th className="p-3">Description</th>
+                <th className="p-3 w-20 text-center">Currency</th>
+                <th className="p-3 w-32 text-right">Debit Amount</th>
+                <th className="p-3 w-32 text-right">Credit Amount</th>
+                <th className="p-3 w-24 text-center">Action</th>
+*/
+                  {/* <td className="p-3 text-center font-mono text-zinc-600 dark:text-zinc-400">
+                    {row.currency_code || "—"}
+                  </td>
+                  <td className="p-3 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                    {Number(row.total_debit || 0).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                  <td className="p-3 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                    {Number(row.total_credit || 0).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td> 
+                  <td className="p-3 font-mono text-xs max-w-[140px] truncate">
+                    {row.reference || (
+                      <span className="text-zinc-300 dark:text-zinc-700">
+                        —
+                      </span>
+                    )}
+                  </td>
+                  <td
+                    className="p-3 max-w-xs truncate text-zinc-600 dark:text-zinc-400"
+                    title={row.description || ""}
+                  >
+                    {row.description || (
+                      <span className="text-zinc-400 italic">
+                        No description
+                      </span>
+                    )}
+                  </td>
+                   <td className="p-3 text-center">
+                    {!row.is_posted ? (
+                      <Button
+                        onClick={() => handlePost(row.id)}
+                        className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline text-xs bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-800/40"
+                      >
+                        Post
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-zinc-400 italic">
+                        Locked
+                      </span>
+                    )}
+                  </td> */}
