@@ -24,14 +24,6 @@ export interface FilterValue {
   };
 }
 
-// export interface FetchParams {
-//   page: number;
-//   pageSize: number;
-//   filters: FilterValue;
-//   sortBy?: string;
-//   sortOrder?: "asc" | "desc" | "ASC" | "DESC";
-// }
-
 export interface FetchParams {
   page?: number;
   pageSize?: number;
@@ -46,8 +38,3 @@ export interface FetchResponse<T> {
   data: T[];
   totalRecords: number;
 }
-// export interface FetchResponse<T> {
-//   data: T[];
-//   total?: number;
-//   totalCount?: number; // Keeps backward compatibility if other components use totalCount
-// }

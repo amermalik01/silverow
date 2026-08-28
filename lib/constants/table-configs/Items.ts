@@ -12,15 +12,6 @@ export const itemColumnsConfig: ColumnConfig[] = [
     columnOrder: 1,
     columnWidth: 140,
   },
-//   {
-//     columnKey: "barcode",
-//     label: "Barcode",
-//     dataType: "text",
-//     isVisible: true,
-//     isPinned: false,
-//     columnOrder: 2,
-//     columnWidth: 140,
-//   },
   {
     columnKey: "name",
     label: "Name",

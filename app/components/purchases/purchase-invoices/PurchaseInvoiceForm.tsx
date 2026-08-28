@@ -145,6 +145,18 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
   }, [currencyConfig.currency_id, masterData]);
 
   const financials = useMemo(() => {
+    const originalAmount = lines.reduce(
+      (sum, l) => sum + Number((Number(l.quantity || 0) * Number(l.unit_cost || 0)) || 0),
+      0,
+    );
+    // const originalAmount = lines.reduce(
+    //   (sum, l) => sum + Number(l.original_amount || 0),
+    //   0,
+    // );
+    const totalDiscount = lines.reduce(
+      (sum, l) => sum + Number(l.discount_amount || 0),
+      0,
+    );
     const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
     const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
     const amountInclVat = amount + vat;
@@ -155,7 +167,15 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
     // const amountInclVatLCY = amountInclVat / rate;
     const amountInclVatLCY = Number(amountInclVat) * rate;
 
-    return { amount, vat, amountInclVat, amountInclVatLCY };
+    // return { amount, vat, amountInclVat, amountInclVatLCY };
+    return {
+      originalAmount,
+      totalDiscount,
+      amount,
+      vat,
+      amountInclVat,
+      amountInclVatLCY,
+    };
   }, [lines, currencyConfig.exchange_rate]);
 
   const noop = () => {};
@@ -382,6 +402,60 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           </div>
 
           <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
+            {financials.totalDiscount > 0 && (
+              <>
+                <div className="flex justify-between pb-1 text-slate-600 dark:text-slate-400">
+                  <span className="font-semibold">Original Amount</span>
+                  <span>
+                    {financials.originalAmount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}{" "}
+                    {selectedCurrency?.code || ""}
+                  </span>
+                </div>
+                <div className="flex justify-between pb-1 text-amber-600 dark:text-amber-400">
+                  <span className="font-semibold">Discount</span>
+                  <span>
+                    -
+                    {financials.totalDiscount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}{" "}
+                    {selectedCurrency?.code || ""}
+                  </span>
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-between pb-1">
+              <span className="font-semibold">Amount</span>
+              <span>
+                {financials.amount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+            <div className="flex justify-between pb-1">
+              <span className="font-semibold">VAT</span>
+              <span>
+                {financials.vat.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+            <div className="flex justify-between  pt-1 text-slate-900 dark:text-white">
+              <span className="font-semibold">Amount Incl. VAT</span>
+              <span>
+                {financials.amountInclVat.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                {selectedCurrency?.code || ""}
+              </span>
+            </div>
+          </div>
+
+          {/* <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
             <div className="flex justify-between pb-1">
               <span className="font-semibold">Amount</span>
               <span>
@@ -409,7 +483,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
                 {selectedCurrency?.code || ""}
               </span>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/60 rounded-lg">

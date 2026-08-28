@@ -40,7 +40,9 @@ const columnsConfigApi = {
   },
 };
 
-export const PostedTransactionsModal: React.FC<PostedTransactionsModalProps> = ({
+export const PostedTransactionsModal: React.FC<
+  PostedTransactionsModalProps
+> = ({
   isOpen,
   onClose,
   documentNo,
@@ -52,10 +54,13 @@ export const PostedTransactionsModal: React.FC<PostedTransactionsModalProps> = (
     date: string;
   } | null>(null);
 
-  const renderRowCell = useCallback((row: PostedLedgerEntry, columnKey: string) => {
-    const renderer = postedEntriesCellRenderers[columnKey];
-    return renderer ? renderer(row) : undefined;
-  }, []);
+  const renderRowCell = useCallback(
+    (row: PostedLedgerEntry, columnKey: string) => {
+      const renderer = postedEntriesCellRenderers[columnKey];
+      return renderer ? renderer(row) : undefined;
+    },
+    [],
+  );
 
   const fetchEntries = useCallback(
     async (params: FetchParams): Promise<FetchResponse<PostedLedgerEntry>> => {
@@ -73,13 +78,24 @@ export const PostedTransactionsModal: React.FC<PostedTransactionsModalProps> = (
         });
       }
 
+      // Map DB field fallbacks to keep legacy render keys aligned
+      const normalizedData = (json.data || []).map((entry: PostedLedgerEntry) => ({
+        ...entry,
+        debit_fcy: entry.debit_fcy ?? 0,
+        credit_fcy: entry.credit_fcy ?? 0,
+        net_amount_fcy: entry.net_amount_fcy ?? (Number(entry.debit_fcy || 0) - Number(entry.credit_fcy || 0)),
+        debit_lcy: entry.debit_lcy ?? 0,
+        credit_lcy: entry.credit_lcy ?? 0,
+        net_amount_lcy: entry.net_amount_lcy ?? (Number(entry.debit_lcy || 0) - Number(entry.credit_lcy || 0)),
+      }));
+
       return {
-        data: json.data || [],
+        data: normalizedData,
         totalRecords:
           json.total || json.totalCount || (json.data ? json.data.length : 0),
       };
     },
-    [fetchEndpoint]
+    [fetchEndpoint],
   );
 
   if (!isOpen) return null;
@@ -87,7 +103,6 @@ export const PostedTransactionsModal: React.FC<PostedTransactionsModalProps> = (
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-7xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh]">
-        
         {/* Header */}
         <div className="bg-[#1b431c] text-white px-6 py-3 flex items-center justify-between shrink-0">
           <h2 className="text-sm font-bold tracking-wide text-white">

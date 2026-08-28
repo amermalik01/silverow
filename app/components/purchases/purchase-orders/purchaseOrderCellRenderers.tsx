@@ -34,7 +34,7 @@ export function getPurchaseOrderCellRenderers(slug: string) {
     // Primary Key Navigation Link
     order_no: (row: PurchaseOrder) => (
       <Link
-        href={`/${slug}/purchases/purchase-orders/${row.id}`}
+        href={`/${slug}/purchases/purchase-orders/${row.id}/edit`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
         {row.order_no || "Draft"}

@@ -211,8 +211,12 @@ export const DebitNoteForm: React.FC<Props> = ({
   }, [currencyConfig.currency_id, masterData]);
 
   const financials = useMemo(() => {
+    // const originalAmount = lines.reduce(
+    //   (sum, l) => sum + Number(l.original_amount || 0),
+    //   0,
+    // );
     const originalAmount = lines.reduce(
-      (sum, l) => sum + Number(l.original_amount || 0),
+      (sum, l) => sum + Number((Number(l.quantity || 0) * Number(l.unit_cost || 0)) || 0),
       0,
     );
     const totalDiscount = lines.reduce(
@@ -858,15 +862,15 @@ export const DebitNoteForm: React.FC<Props> = ({
           <div className="space-y-1 text-right font-mono ml-auto w-full max-w-sm">
             {financials.totalDiscount > 0 && (
               <>
-                {/* <div className="flex justify-between pb-1 text-slate-600 dark:text-slate-400">
-                  <span className="font-semibold">Subtotal</span>
+                <div className="flex justify-between pb-1 text-slate-600 dark:text-slate-400">
+                  <span className="font-semibold">Original Amount</span>
                   <span>
                     {financials.originalAmount.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                     })}{" "}
                     {selectedCurrency?.code || ""}
                   </span>
-                </div> */}
+                </div>
                 <div className="flex justify-between pb-1 text-amber-600 dark:text-amber-400">
                   <span className="font-semibold">Discount</span>
                   <span>

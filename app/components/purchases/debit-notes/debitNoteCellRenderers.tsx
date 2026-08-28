@@ -36,7 +36,7 @@ export function getDebitNoteCellRenderers(slug: string) {
       row: DebitNote & { debitNoteCode?: string; debit_note_no?: string },
     ) => (
       <Link
-        href={`/${slug}/purchases/debit-notes/${row.id}`}
+        href={`/${slug}/purchases/debit-notes/${row.id}/edit`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
         {row.debitNoteCode || row.debit_note_no || "Draft"}
