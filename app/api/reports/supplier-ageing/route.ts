@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     const queryParams: unknown[] = [companyId, asOfDate];
     const whereConditions: string[] = [
       "e.company_id = $1",
-      "e.posting_date <= $2",
+      "e.posting_date::date <= $2::date",
       "e.remaining_amount_lcy <> 0", // Only unapplied/open balances
     ];
 
@@ -105,9 +105,9 @@ export async function GET(req: NextRequest) {
         ORDER BY p.name ASC, e.posting_date ASC
       `;
 
-      console.log("detailedQuery ==== ", detailedQuery);
-      console.log("whereConditions ==== ", whereConditions);
-      console.log("queryParams ==== ", queryParams);
+      // console.log("detailedQuery ==== ", detailedQuery);
+      // console.log("whereConditions ==== ", whereConditions);
+      // console.log("queryParams ==== ", queryParams);
 
       const result = await pool.query(detailedQuery, queryParams);
 
@@ -170,11 +170,11 @@ export async function GET(req: NextRequest) {
         p.name AS vendor_name,
         COALESCE(c.code, 'GBP') AS currency_code,
         SUM(e.remaining_amount_lcy) AS total_lcy,
-        SUM(CASE WHEN ($2::date - e.posting_date) BETWEEN 0 AND 30 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_0_30,
-        SUM(CASE WHEN ($2::date - e.posting_date) BETWEEN 31 AND 60 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_31_60,
-        SUM(CASE WHEN ($2::date - e.posting_date) BETWEEN 61 AND 90 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_61_90,
-        SUM(CASE WHEN ($2::date - e.posting_date) BETWEEN 91 AND 120 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_91_120,
-        SUM(CASE WHEN ($2::date - e.posting_date) > 120 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_over_120
+        SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 0 AND 30 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_0_30,
+        SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 31 AND 60 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_31_60,
+        SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 61 AND 90 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_61_90,
+        SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 91 AND 120 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_91_120,
+        SUM(CASE WHEN ($2::date - e.posting_date::date) > 120 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_over_120
       FROM vendor_ledger_entries e
       LEFT JOIN parties p ON p.id = e.vendor_id
       LEFT JOIN currencies c ON c.id = e.currency_id
@@ -183,9 +183,9 @@ export async function GET(req: NextRequest) {
       ORDER BY p.name ASC
     `;
 
-    console.log("summaryQuery ==== ", summaryQuery);
-    console.log("whereConditions ==== ", whereConditions);
-    console.log("queryParams ==== ", queryParams);
+    // console.log("summaryQuery ==== ", summaryQuery);
+    // console.log("whereConditions ==== ", whereConditions);
+    // console.log("queryParams ==== ", queryParams);
 
     const result = await pool.query(summaryQuery, queryParams);
 

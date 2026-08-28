@@ -86,7 +86,8 @@ export async function GET(req: NextRequest) {
     const queryParams: unknown[] = [companyId, asOfDate];
     const whereConditions: string[] = [
       "e.company_id = $1",
-      "e.posting_date <= $2",
+      // "e.posting_date <= $2",
+      "e.posting_date::date <= $2::date",
       "e.remaining_amount_fcy <> 0", // Only open/outstanding balances
     ];
 
@@ -217,11 +218,11 @@ export async function GET(req: NextRequest) {
         p.id AS vendor_id,
         COALESCE(c.code, 'GBP') AS currency_code,
         SUM(e.remaining_amount_fcy) AS total,
-        SUM(CASE WHEN ($2::date - e.posting_date) BETWEEN 0 AND 30 THEN e.remaining_amount_fcy ELSE 0 END) AS b0_30,
-        SUM(CASE WHEN ($2::date - e.posting_date) BETWEEN 31 AND 60 THEN e.remaining_amount_fcy ELSE 0 END) AS b31_60,
-        SUM(CASE WHEN ($2::date - e.posting_date) BETWEEN 61 AND 90 THEN e.remaining_amount_fcy ELSE 0 END) AS b61_90,
-        SUM(CASE WHEN ($2::date - e.posting_date) BETWEEN 91 AND 120 THEN e.remaining_amount_fcy ELSE 0 END) AS b91_120,
-        SUM(CASE WHEN ($2::date - e.posting_date) > 120 THEN e.remaining_amount_fcy ELSE 0 END) AS b_over_120
+        SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 0 AND 30 THEN e.remaining_amount_fcy ELSE 0 END) AS b0_30,
+        SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 31 AND 60 THEN e.remaining_amount_fcy ELSE 0 END) AS b31_60,
+        SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 61 AND 90 THEN e.remaining_amount_fcy ELSE 0 END) AS b61_90,
+        SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 91 AND 120 THEN e.remaining_amount_fcy ELSE 0 END) AS b91_120,
+        SUM(CASE WHEN ($2::date - e.posting_date::date) > 120 THEN e.remaining_amount_fcy ELSE 0 END) AS b_over_120
       FROM vendor_ledger_entries e
       LEFT JOIN parties p ON p.id = e.vendor_id
       LEFT JOIN currencies c ON c.id = e.currency_id

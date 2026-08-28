@@ -187,7 +187,16 @@ export default function SupplierStatementReport() {
             <label className="font-semibold text-slate-200">
               Date as at <span className="text-red-400">*</span>
             </label>
+
             <DatePicker
+              value={asOfDate}
+              onChange={(d) => {
+                setAsOfDate(d);
+                if (d) setValidationError(null);
+              }}
+              className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none"
+            />
+            {/* <DatePicker
               value={asOfDate}
               onChange={(d) => {
                 setAsOfDate(d);
@@ -195,7 +204,7 @@ export default function SupplierStatementReport() {
               }}
               maxDate={new Date()}
               className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none"
-            />
+            /> */}
           </div>
 
           {/* Supplier Multi-select */}

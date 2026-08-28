@@ -228,9 +228,17 @@ export default function SupplierAgeingReport() {
                 setAsOfDate(d);
                 if (d) setValidationError(null);
               }}
-              maxDate={new Date()}
               className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none"
             />
+            {/* <DatePicker
+              value={asOfDate}
+              onChange={(d) => {
+                setAsOfDate(d);
+                if (d) setValidationError(null);
+              }}
+              maxDate={new Date()}
+              className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none"
+            /> */}
           </div>
 
           {/* Supplier Multi-select */}
@@ -252,7 +260,10 @@ export default function SupplierAgeingReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer"
               />
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
               </span> */}
@@ -261,9 +272,7 @@ export default function SupplierAgeingReport() {
 
           {/* Radio View Mode Selector */}
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">
-              Report Type
-            </label>
+            <label className="font-semibold text-slate-200">Report Type</label>
             <div className="flex items-center gap-4 pt-1 text-slate-200 font-medium">
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
@@ -298,10 +307,7 @@ export default function SupplierAgeingReport() {
               <Search className="h-3.5 w-3.5" />{" "}
               {loading ? "Generating..." : "Generate Report"}
             </Button>
-            <Button
-              onClick={handleClearFilters}
-              variant="cancel"
-            >
+            <Button onClick={handleClearFilters} variant="cancel">
               <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
             </Button>
           </div>
