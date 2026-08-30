@@ -18,6 +18,7 @@ import SalespersonLookupModal, {
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { useLoader } from "@/app/context/LoaderContext";
 
 // --- Type System Definitions ---
 type DocumentTypeFilter = "sales invoices" | "posted credit notes" | "both";
@@ -64,6 +65,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [hasGenerated, setHasGenerated] = useState<boolean>(false);
+  const { show, hide } = useLoader();
 
   // --- Primary Search Action Handler ---
   const handleGenerateReport = async () => {

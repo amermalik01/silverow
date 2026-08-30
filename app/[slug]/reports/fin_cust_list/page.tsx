@@ -19,6 +19,7 @@ import CustomerLookupModal, {
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface AddressPayload {
   id: string;
@@ -65,6 +66,7 @@ export default function LegacyCustomerListing() {
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const { show, hide } = useLoader();
 
   const handleGenerateReport = async () => {
     try {

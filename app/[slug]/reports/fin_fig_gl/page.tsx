@@ -11,6 +11,7 @@ import GLAccountLookupModal, {
   GLAccountLookupRecord,
 } from "@/app/components/shared/modals/GLAccountLookupModal";
 import { Button } from "@/components/ui/button";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface TransactionLine {
   postingDate: string;
@@ -44,6 +45,7 @@ export default function FigureByGLReport() {
   const [reportGroups, setReportGroups] = useState<GLGroupBlock[]>([]);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const { show, hide } = useLoader();
 
   const handleGenerateReport = async () => {
     if (selectedGLs.length === 0) {

@@ -17,6 +17,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
+import { useLoader } from "@/app/context/LoaderContext";
 
 // Modals
 import SupplierLookupModal, {
@@ -73,6 +74,7 @@ type ReportMeta = {
 
 export default function UnpostedPurchaseOrdersReport() {
   const [loading, setLoading] = useState(false);
+  const { show, hide } = useLoader();
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Filter Bounds

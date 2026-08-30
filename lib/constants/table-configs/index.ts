@@ -23,6 +23,9 @@ import { itemColumnsConfig } from "./Items";
 import { EmployeeConfig } from "./Employee";
 
 import { postedLedgerEntriesConfig } from "./posted-ledger-entries";
+import { journalsColumnsConfig } from "./journals";
+
+import { partyLedgerActivityColumnsConfig } from "./party-ledger-activity";
 
 export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
 
@@ -33,7 +36,11 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   posted_debit_notes: postedDebitNotesConfig,
   
   sales_orders: salesOrdersConfig,
-  sales_invoices: salesInvoicesConfig,
+  sales_invoices: salesInvoicesConfig,  
+
+  supplier_journals: journalsColumnsConfig,
+  customer_journals: journalsColumnsConfig,
+  general_journals: journalsColumnsConfig,
 
   parties: partyColumnsConfig,
 
@@ -46,7 +53,8 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
 
   hr_employees: EmployeeConfig,
 
-  posted_ledger_entries: postedLedgerEntriesConfig
+  posted_ledger_entries: postedLedgerEntriesConfig,
+  party_ledger_activity: partyLedgerActivityColumnsConfig,
   
 };
 

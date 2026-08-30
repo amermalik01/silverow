@@ -10,6 +10,7 @@ import GLAccountLookupModal, {
   GLAccountLookupRecord,
 } from "@/app/components/shared/modals/GLAccountLookupModal";
 import { Button } from "@/components/ui/button";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface AccrualLine {
   id: string;
@@ -33,6 +34,8 @@ export default function HaulierAccrualsReport() {
   const [lines, setLines] = useState<AccrualLine[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+
+  const { show, hide } = useLoader();
 
   const handleGenerate = async () => {
     if (selectedGLs.length === 0) {

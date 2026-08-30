@@ -17,6 +17,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
+import { useLoader } from "@/app/context/LoaderContext";
 
 // Modals
 import SupplierLookupModal, {
@@ -82,6 +83,8 @@ export default function UnpostedPurchaseOrdersReport() {
   );
   const [reportType, setReportType] = useState("By Order Date");
   const [viewMode, setViewMode] = useState<"summary" | "detailed">("summary");
+
+  const { show, hide } = useLoader();
 
   // Selection Arrays & Lookups
   const [selectedPurchasers, setSelectedPurchasers] = useState<Employee[]>([]);

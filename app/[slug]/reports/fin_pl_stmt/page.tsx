@@ -9,6 +9,7 @@ import {
   ReportFilters,
 } from "@/app/components/reports/ReportFilters";
 import { Loader2, Play } from "lucide-react";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface PLReportRow {
   accountCode: string | null;
@@ -44,6 +45,8 @@ export default function ProfitAndLossReport() {
     [],
   );
   const [hasGenerated, setHasGenerated] = useState(false);
+
+  const { show, hide } = useLoader();
 
   // Load dropdown options safely on mount
   useEffect(() => {

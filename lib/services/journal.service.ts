@@ -11,21 +11,32 @@ import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 import { validateLedgerPostingDate } from "@/lib/validations/postingGate";
 import { FxVarianceService } from "./fx/fx-variance.service";
 
+export interface ColumnFilter {
+  value?: string | number | boolean | null;
+  matchMode?: string;
+}
+
+export type TableColumnFilters = Record<
+  string,
+  ColumnFilter | string | number | undefined
+>;
+
+export interface JournalListFilters {
+  status?: "posted" | "unposted";
+  source: string;
+  page?: number;
+  limit?: number;
+  filters?: TableColumnFilters;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
 export class JournalService {
-  static async list(
-    companyId: string,
-    filters: {
-      status?: "posted" | "unposted";
-      source: string;
-      page?: number;
-      limit?: number;
-    },
-  ) {
+  static async list(companyId: string, filters: JournalListFilters) {
     const page = filters.page || 1;
-    const limit = filters.limit || 20;
+    const limit = filters.limit || 50;
     const offset = (page - 1) * limit;
 
-    // Use dbSource instead of filters.source for the query bindings array
     const values: (string | number)[] = [companyId, filters.source];
     let whereConditions = `WHERE j.company_id = $1 AND j.source = $2`;
 
@@ -35,32 +46,76 @@ export class JournalService {
       whereConditions += ` AND j.is_posted = false`;
     }
 
-    // Get total count for pagination controls
+    // Dynamic Column Filtering support safely typed without 'any'
+    if (filters.filters) {
+      // Allowed column whitelist to prevent SQL injection via keys
+      const allowedColumns = new Set([
+        "entry_no",
+        "entry_date",
+        "posted_at",
+        "reference",
+        "description",
+        "posted_by",
+      ]);
+
+      Object.entries(filters.filters).forEach(([colKey, filterVal]) => {
+        if (
+          !allowedColumns.has(colKey) ||
+          filterVal === undefined ||
+          filterVal === null
+        ) {
+          return;
+        }
+
+        // Handle both simple primitive values and { value: "..." } objects from PrimeReact/DataTables
+        const extractedValue =
+          typeof filterVal === "object" && "value" in filterVal
+            ? filterVal.value
+            : filterVal;
+
+        if (
+          extractedValue !== undefined &&
+          extractedValue !== null &&
+          extractedValue !== ""
+        ) {
+          values.push(`%${String(extractedValue)}%`);
+          whereConditions += ` AND j.${colKey}::text ILIKE $${values.length}`;
+        }
+      });
+    }
+
+    // Dynamic Sorting safely guarded
+    const validSortColumns: Record<string, string> = {
+      entry_no: "j.entry_no",
+      entry_date: "j.entry_date",
+      posted_at: "j.posted_at",
+    };
+    const sortColumn = validSortColumns[filters.sortBy || ""] || "j.entry_no";
+    const orderDirection =
+      filters.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    // 1. Fetch total count matching active filters
     const countQuery = `SELECT COUNT(*)::int AS total FROM journal_entries j ${whereConditions}`;
-    const countResult = await pool.query(countQuery, values);
-    const total = countResult.rows[0].total;
+    const countResult = await pool.query<{ total: number }>(countQuery, values);
+    const total = countResult.rows[0]?.total || 0;
 
-    // Append limits to parameters array safely
+    // 2. Fetch paginated data
     values.push(limit, offset);
-
     const dataQuery = `
-          SELECT 
-            j.id,
-            j.entry_no,
-            j.entry_date,
-            j.reference,
-            j.description,
-            j.is_posted,
-            COALESCE((
-              SELECT SUM(debit * COALESCE(exchange_rate, 1.0)) 
-              FROM journal_entry_lines 
-              WHERE journal_id = j.id
-            ), 0) as amount
-          FROM journal_entries j
-          ${whereConditions}
-          ORDER BY j.entry_no DESC
-          LIMIT $${values.length - 1} OFFSET $${values.length}
-        `;
+      SELECT 
+        j.id,
+        j.entry_no,
+        j.entry_date,
+        j.posted_at,
+        j.reference,
+        j.description,
+        j.is_posted,
+        j.posted_by
+      FROM journal_entries j
+      ${whereConditions}
+      ORDER BY ${sortColumn} ${orderDirection}
+      LIMIT $${values.length - 1} OFFSET $${values.length}
+    `;
 
     const result = await pool.query(dataQuery, values);
 
@@ -1127,7 +1182,7 @@ export class JournalService {
       for (const leg of expandedLegs) {
         // 1. Insert into gl_ledger_entries
         const insertedGlEntry = await client.query(
-        `
+          `
         INSERT INTO gl_ledger_entries (
           company_id,
           account_id,
@@ -1160,31 +1215,31 @@ export class JournalService {
         )
         RETURNING id
         `,
-        [
-          companyId,
-          leg.account_id,
-          nextTransactionId,
-          vatTransactionId,
-          vatSettlementId,
-          journal.id,
-          journal.entry_no,
-          formattedDate,
-          journal.source,
-          journal.reference || null,
-          leg.description,
-          leg.debit_lcy,
-          leg.credit_lcy,
-          leg.currency_id,
-          leg.exchange_rate,
-          leg.debit_fcy,
-          leg.credit_fcy,
-          journal.id,
-          leg.document_no,
-          leg.party_type,
-          leg.party_id,
-          leg.document_no,
-        ],
-      );
+          [
+            companyId,
+            leg.account_id,
+            nextTransactionId,
+            vatTransactionId,
+            vatSettlementId,
+            journal.id,
+            journal.entry_no,
+            formattedDate,
+            journal.source,
+            journal.reference || null,
+            leg.description,
+            leg.debit_lcy,
+            leg.credit_lcy,
+            leg.currency_id,
+            leg.exchange_rate,
+            leg.debit_fcy,
+            leg.credit_fcy,
+            journal.id,
+            leg.document_no,
+            leg.party_type,
+            leg.party_id,
+            leg.document_no,
+          ],
+        );
         // const insertedGlEntry = await client.query(
         //   `
         //   INSERT INTO gl_ledger_entries (
@@ -1424,6 +1479,71 @@ export class JournalService {
     }
   }
 }
+
+
+/* static async list(
+    companyId: string,
+    filters: {
+      status?: "posted" | "unposted";
+      source: string;
+      page?: number;
+      limit?: number;
+    },
+  ) {
+    const page = filters.page || 1;
+    const limit = filters.limit || 20;
+    const offset = (page - 1) * limit;
+
+    // Use dbSource instead of filters.source for the query bindings array
+    const values: (string | number)[] = [companyId, filters.source];
+    let whereConditions = `WHERE j.company_id = $1 AND j.source = $2`;
+
+    if (filters.status === "posted") {
+      whereConditions += ` AND j.is_posted = true`;
+    } else if (filters.status === "unposted") {
+      whereConditions += ` AND j.is_posted = false`;
+    }
+
+    // Get total count for pagination controls
+    const countQuery = `SELECT COUNT(*)::int AS total FROM journal_entries j ${whereConditions}`;
+    const countResult = await pool.query(countQuery, values);
+    const total = countResult.rows[0].total;
+
+    // Append limits to parameters array safely
+    values.push(limit, offset);
+
+    const dataQuery = `
+          SELECT 
+            j.id,
+            j.entry_no,
+            j.entry_date,
+            j.reference,
+            j.description,
+            j.is_posted,
+            j.posted_by,
+            COALESCE((
+              SELECT SUM(debit * COALESCE(exchange_rate, 1.0)) 
+              FROM journal_entry_lines 
+              WHERE journal_id = j.id
+            ), 0) as amount
+          FROM journal_entries j
+          ${whereConditions}
+          ORDER BY j.entry_no DESC
+          LIMIT $${values.length - 1} OFFSET $${values.length}
+        `;
+
+    const result = await pool.query(dataQuery, values);
+
+    return {
+      rows: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } */
 
 /* static async post(companyId: string, id: string): Promise<void> {
     const client = await pool.connect();

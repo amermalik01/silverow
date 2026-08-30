@@ -48,7 +48,7 @@ const DataTableCell = memo(function DataTableCell<T extends object>({
       style={{
         backgroundColor: col.headerColor ? `${col.headerColor}15` : undefined,
       }}
-      className={`border-r border-slate-200 dark:border-slate-800 p-3 font-medium ${
+      className={`border-r border-slate-200 dark:border-slate-800 p-2 ${
         col.isPinned ? "sticky left-0 z-10 bg-white dark:bg-slate-900 shadow-sm" : ""
       }`}
     >
@@ -74,7 +74,7 @@ const DataTableRow = memo(function DataTableRow<T extends object>({
 }) {
   return (
     <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
-      <td className="border-r border-slate-200 dark:border-slate-800 p-3 text-center">
+      <td className="border-r border-slate-200 dark:border-slate-800 p-2 text-center">
         <input type="checkbox" className="accent-emerald-600 cursor-pointer rounded" />
       </td>
       {visibleColumns.map((col) => (
@@ -107,7 +107,7 @@ export function DataTable<T extends object>({
 
   // Pagination, Filter & Sorting State
   const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(50);
+  const [pageSize, setPageSize] = useState<number>(20);
   const [filters, setFilters] = useState<FilterValue>({});
   const [debouncedFilters, setDebouncedFilters] = useState<FilterValue>({});
   const [showFilters, setShowFilters] = useState<boolean>(false);
@@ -280,7 +280,7 @@ export function DataTable<T extends object>({
         <table className="w-full border-collapse table-fixed text-left text-xs">
           <thead>
             <tr className="bg-emerald-900 font-semibold text-emerald-50">
-              <th className="w-10 border-r border-emerald-800 p-3 text-center">
+              <th className="w-10 border-r border-emerald-800 p-2 text-center">
                 <input type="checkbox" className="accent-emerald-600 cursor-pointer rounded" />
               </th>
               {visibleColumns.map((col) => (
@@ -291,7 +291,7 @@ export function DataTable<T extends object>({
                     width: col.columnWidth ? `${col.columnWidth}px` : "auto",
                     backgroundColor: col.headerColor || undefined,
                   }}
-                  className={`border-r border-emerald-800/80 p-3 font-bold capitalize tracking-wider text-[11px] select-none ${
+                  className={`border-r border-emerald-800/80 p-2 font-bold capitalize tracking-wider text-[11px] select-none ${
                     col.columnKey !== "actions" ? "cursor-pointer hover:bg-emerald-800/60" : ""
                   } ${col.isPinned ? "sticky left-0 z-20 shadow-md" : ""}`}
                 >
@@ -365,7 +365,7 @@ export function DataTable<T extends object>({
         </table>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between border-t bg-slate-50 dark:bg-slate-800/60 p-3 text-xs text-slate-600 dark:text-slate-300 gap-3">
+      <div className="flex flex-col sm:flex-row items-center justify-between border-t bg-slate-50 dark:bg-slate-800/60 p-2 text-xs text-slate-600 dark:text-slate-300 gap-3">
         <div className="font-semibold">{totalRecords} Total Records</div>
         <div className="flex items-center gap-4">
           <div>
@@ -378,7 +378,7 @@ export function DataTable<T extends object>({
               setPageSize(Number(e.target.value));
               setPage(1);
             }}
-            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 outline-none font-medium cursor-pointer"
+            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 outline-none  cursor-pointer"
           >
             <option value={20}>20 &nbsp;&nbsp;</option>
             <option value={50}>50 &nbsp;&nbsp;</option>

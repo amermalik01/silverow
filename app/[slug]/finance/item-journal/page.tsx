@@ -15,13 +15,13 @@ export default async function ItemJournalPage({
         <h1 className="text-2xl font-bold">Finance / Item Journal</h1>
       </div>
 
-      <JournalList
+      {/* <JournalList
         slug={slug}
         title="Item Journals"
         journalType="item"
         apiBase="/api/finance/item-journal"
         createPath={`/${slug}/finance/item-journal/create`}
-      />
+      /> */}
     </div>
   );
 }

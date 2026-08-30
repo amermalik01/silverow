@@ -11,6 +11,7 @@ import CRMLookupModal, {
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface AddressPayload {
   id: string;
@@ -36,6 +37,7 @@ export default function LegacyCRMListing() {
   const [dateAsAt, setDateAsAt] = useState<Date | undefined>(new Date());
   const [selectedCRMs, setSelectedCRMs] = useState<CRMLookupItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { show, hide } = useLoader();
 
   const [isProcessing, setIsProcessing] = useState<"pdf" | "xlsx" | null>(null);
 

@@ -14,6 +14,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
+import { useLoader } from "@/app/context/LoaderContext";
 
 type StatementEntry = {
   id: string;
@@ -74,6 +75,7 @@ type StatementExportRow = {
 
 export default function SupplierStatementReport() {
   const [loading, setLoading] = useState(false);
+  const { show, hide } = useLoader();
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Filter State Hooks

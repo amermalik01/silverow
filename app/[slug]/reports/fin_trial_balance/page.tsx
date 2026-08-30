@@ -10,6 +10,7 @@ import {
   ReportFilters,
 } from "@/app/components/reports/ReportFilters";
 import { Loader2, Play } from "lucide-react";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface TrialBalanceRow {
   accountCode: string;
@@ -43,6 +44,7 @@ export default function TrialBalanceReport() {
   );
 
   const [hasGenerated, setHasGenerated] = useState(false);
+  const { show, hide } = useLoader();
 
   // 1. Fetch G/L Account drop-down options on component mount
   useEffect(() => {

@@ -15,6 +15,7 @@ import CustomerLookupModal, {
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { useLoader } from "@/app/context/LoaderContext";
 
 type ReportLineItem = {
   id: string;
@@ -32,6 +33,7 @@ type ReportLineItem = {
 
 export default function UnpostedSalesOrdersReport() {
   const [loading, setLoading] = useState(false);
+  const { show, hide } = useLoader();
   const [reportData, setReportData] = useState<ReportLineItem[]>([]);
 
   // Filter Target Controls Hooks

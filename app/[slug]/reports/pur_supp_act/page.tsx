@@ -21,6 +21,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
+import { useLoader } from "@/app/context/LoaderContext";
 
 type ReportLineItem = {
   id: string;
@@ -55,6 +56,8 @@ export default function SupplierActivityReport() {
   );
   const [reportType, setReportType] = useState("By Posting Date");
   const [documentType, setDocumentType] = useState("All");
+
+  const { show, hide } = useLoader();
 
   // Selection Arrays for Lookup Modal
   const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);

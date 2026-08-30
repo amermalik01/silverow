@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { ReportHeader } from "@/app/components/reports/ReportHeader";
 import { ReportFilters } from "@/app/components/reports/ReportFilters";
 import { Loader2 } from "lucide-react";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface BSReportRow {
   accountCode: string | null;
@@ -26,6 +27,7 @@ export default function BalanceSheetReport() {
   const [tableData, setTableData] = useState<BSReportRow[]>([]);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const { show, hide } = useLoader();
 
   const getPriorPeriodDateString = (currentDateStr: string) => {
     if (!currentDateStr) return "";

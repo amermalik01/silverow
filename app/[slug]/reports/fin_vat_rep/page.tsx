@@ -8,6 +8,7 @@ import { ReportHeader } from "@/app/components/reports/ReportHeader";
 import { ReportFilters } from "@/app/components/reports/ReportFilters";
 import { Loader2, Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLoader } from "@/app/context/LoaderContext";
 
 interface VATSummaryRow {
   rowNo: number;
@@ -25,6 +26,8 @@ export default function VatReportComponent() {
   const [tableData, setTableData] = useState<VATSummaryRow[]>([]);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+
+  const { show, hide } = useLoader();
 
   const handleGenerateReport = async () => {
     try {

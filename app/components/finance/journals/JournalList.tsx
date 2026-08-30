@@ -2,6 +2,145 @@
 
 "use client";
 
+import { useMemo, useCallback, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/app/components/DataTable/DataTable";
+import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
+import { getJournalCellRenderers, JournalRecord } from "./journalCellRenderers";
+
+type StatusFilter = "unposted" | "posted" | "all";
+
+type Props = {
+  slug?: string;
+  title: string;
+  moduleKey: string;
+  sourceType: "CUSTOMER_JOURNAL" | "SUPPLIER_JOURNAL" | "GENERAL";
+  createPath: string;
+};
+
+export default function JournalList({
+  slug = "",
+  title,
+  moduleKey,
+  sourceType,
+  createPath,
+}: Props) {
+  const [status, setStatus] = useState<StatusFilter>("unposted");
+
+  // Custom cell renderers (entry links, formatted numbers, status badges)
+  const cellRenderers = useMemo(() => {
+    return getJournalCellRenderers(slug, createPath);
+  }, [slug, createPath]);
+
+  const renderRowCell = useCallback(
+    (row: JournalRecord, columnKey: string) => {
+      const renderer = cellRenderers[columnKey as keyof typeof cellRenderers];
+      return renderer ? renderer(row) : undefined;
+    },
+    [cellRenderers],
+  );
+
+  // Fetch API callback bound to current status tab & source type
+  const fetchJournals = useCallback(
+    async (params: FetchParams): Promise<FetchResponse<JournalRecord>> => {
+      const res = await fetch("/api/finance/journals/listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...params,
+          source: sourceType,
+          status: status === "all" ? undefined : status,
+        }),
+      });
+      return res.json();
+    },
+    [sourceType, status],
+  );
+
+  const columnsConfigApi = useMemo(
+    () => ({
+      get: async (key: string): Promise<ColumnConfig[]> => {
+        const res = await fetch(`/api/table-config?moduleKey=${key}`);
+        return res.json();
+      },
+      save: async (key: string, configs: ColumnConfig[]): Promise<void> => {
+        await fetch("/api/table-config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ moduleKey: key, configs }),
+        });
+      },
+      reset: async (key: string): Promise<ColumnConfig[]> => {
+        await fetch(`/api/table-config/reset?moduleKey=${key}`, {
+          method: "POST",
+        });
+        const res = await fetch(`/api/table-config?moduleKey=${key}`);
+        return res.json();
+      },
+    }),
+    [],
+  );
+
+  return (
+    <div className="space-y-6 container mx-auto py-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold">{title}</h2>
+          {/* <p className="text-xs text-slate-500">
+            Manage, verify, and review double-entry financial journals.
+          </p> */}
+        </div>
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={createPath}>+ Create</Link>
+        </Button>
+      </div>
+
+      <div className="space-y-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm pt-2">
+        {/* Accounting Lifecycle Status Tabs */}
+        <div className="flex border-b border-slate-200 dark:border-slate-800 text-xs gap-1 mx-4">
+          {(["unposted", "posted", "all"] as StatusFilter[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setStatus(tab)}
+              className={`px-4 py-2 font-medium border-b-2 -mb-[2px] transition capitalize ${
+                status === tab
+                  ? "border-emerald-600 text-emerald-600 font-bold"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
+              }`}
+            >
+              {tab === "unposted"
+                ? "Drafts"
+                : tab === "posted"
+                  ? "Posted Ledger"
+                  : "All Journals"}
+            </button>
+          ))}
+        </div>
+
+        {/* High-Volume Data Table */}
+        <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+          <DataTable<JournalRecord>
+            key={status} // Resets grid parameters cleanly on tab switches
+            moduleKey={moduleKey}
+            fetchApi={fetchJournals}
+            columnsConfigApi={columnsConfigApi}
+            renderRowCell={renderRowCell}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
+
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -24,7 +163,7 @@ export interface JournalListItem {
 type Props = {
   slug?: string;
   title: string;
-  journalType: "customer" | "supplier" | "item" | "general";
+  journalType: "customer" | "supplier" | "general"; // "item" | 
   apiBase: string;
   createPath: string;
 };
@@ -67,7 +206,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
 
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
-      {/* HEADER SECTION */}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -86,7 +225,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
         </Button>
       </div>
 
-      {/* FILTER TABS */}
+
       <div className="flex border-b border-zinc-200 dark:border-zinc-700 text-xs">
         {(["unposted", "posted", "all"] as StatusFilter[]).map((tab) => (
           <button
@@ -107,7 +246,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
         ))}
       </div>
 
-      {/* DATA VIEW GRID */}
+
       {loading ? (
         <div className="py-12 text-center text-xs text-zinc-500 font-medium">
           Loading journal entries...
@@ -123,6 +262,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
               <tr className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">
                 <th className="p-3 w-28">Entry No</th>
                 <th className="p-3 w-28">Posting Date</th>
+                <th className="p-3 w-28">Posting By</th>
                 <th className="p-3 w-28">Entry Date</th>
                 <th className="p-3 w-24 text-center">Status</th>
               </tr>
@@ -166,7 +306,7 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
             </tbody>
           </table>
 
-          {/* PAGINATION CONTROLS */}
+   
           <div className="flex justify-between items-center p-4 border-t border-zinc-200 dark:border-zinc-800 text-xs">
             <Button
               disabled={page <= 1 || loading}
@@ -190,80 +330,4 @@ export default function JournalList({ title, apiBase, createPath }: Props) {
       )}
     </div>
   );
-}
-
-/* 
-
-
-  const handlePost = async (id: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to lock and post this journal entry to general ledgers?",
-      )
-    )
-      return;
-    try {
-      const res = await fetch(`${apiBase}/${id}/post`, { method: "POST" });
-      if (!res.ok) throw new Error("Posting execution failed.");
-      await loadData();
-    } catch (err) {
-      console.error(err);
-      alert("Error posting transactional item.");
-    }
-  };
-*/
-/* 
-
-                <th className="p-3 w-32">Reference</th>
-                <th className="p-3">Description</th>
-                <th className="p-3 w-20 text-center">Currency</th>
-                <th className="p-3 w-32 text-right">Debit Amount</th>
-                <th className="p-3 w-32 text-right">Credit Amount</th>
-                <th className="p-3 w-24 text-center">Action</th>
-*/
-                  {/* <td className="p-3 text-center font-mono text-zinc-600 dark:text-zinc-400">
-                    {row.currency_code || "—"}
-                  </td>
-                  <td className="p-3 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
-                    {Number(row.total_debit || 0).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </td>
-                  <td className="p-3 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
-                    {Number(row.total_credit || 0).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </td> 
-                  <td className="p-3 font-mono text-xs max-w-[140px] truncate">
-                    {row.reference || (
-                      <span className="text-zinc-300 dark:text-zinc-700">
-                        —
-                      </span>
-                    )}
-                  </td>
-                  <td
-                    className="p-3 max-w-xs truncate text-zinc-600 dark:text-zinc-400"
-                    title={row.description || ""}
-                  >
-                    {row.description || (
-                      <span className="text-zinc-400 italic">
-                        No description
-                      </span>
-                    )}
-                  </td>
-                   <td className="p-3 text-center">
-                    {!row.is_posted ? (
-                      <Button
-                        onClick={() => handlePost(row.id)}
-                        className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline text-xs bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-800/40"
-                      >
-                        Post
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-zinc-400 italic">
-                        Locked
-                      </span>
-                    )}
-                  </td> */}
+} */

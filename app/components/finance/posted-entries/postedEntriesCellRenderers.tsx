@@ -71,7 +71,7 @@ export const postedEntriesCellRenderers: Record<
     <span className="font-semibold">{row.document_number || "—"}</span>
   ),
   gl_no: (row) => <span className="font-semibold">{row.gl_no}</span>,
-  name: (row) => <span className="font-sans font-medium">{row.name}</span>,
+  name: (row) => <span className="font-sans ">{row.name}</span>,
   source_no: (row) => row.source_no || "-",
 
   // Debit and Credit suppress 0 values for clean presentation
@@ -125,7 +125,7 @@ const formatAmount = (val?: number | string | null): React.ReactNode => {
       <span className="font-semibold">{row.gl_no}</span>
     ),
     name: (row: PostedLedgerEntry) => (
-      <span className="font-sans font-medium">{row.name}</span>
+      <span className="font-sans ">{row.name}</span>
     ),
     source_no: (row: PostedLedgerEntry) => row.source_no || "-",
     // currency_code: (row: PostedLedgerEntry) => (

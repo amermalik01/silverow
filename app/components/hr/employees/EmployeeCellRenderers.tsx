@@ -23,7 +23,7 @@ export function getEmployeeCellRenderers(slug: string) {
         <div className="flex flex-col">
           <Link
             href={`/${slug}/hr/employees/${row.id}`}
-            className="font-medium text-slate-900 dark:text-slate-100 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition-colors"
+            className=" text-slate-900 dark:text-slate-100 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition-colors"
           >
             {fullName}
           </Link>
@@ -86,7 +86,7 @@ export function getEmployeeCellRenderers(slug: string) {
 
       return (
         <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border capitalize ${
+          className={`inline-flex items-center px-2 py-0.5 rounded text-xs  border capitalize ${
             statusStyles[currentStatus] || statusStyles.inactive
           }`}
         >
@@ -100,7 +100,7 @@ export function getEmployeeCellRenderers(slug: string) {
 
         <Link
           href={`/${slug}/hr/employees/${row.id}/edit`}
-          className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px]  hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
           Edit
         </Link>
