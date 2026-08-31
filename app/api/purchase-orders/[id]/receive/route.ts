@@ -17,6 +17,8 @@ interface IncomingOrder {
   posting_date?: string;
   reference?: string;
   notes?: string;
+  currency_id?: string;
+  exchange_rate?: number;
 }
 
 interface RequestBody {
@@ -27,6 +29,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const client = await pool.connect();
   try {
     const companyId = await getCompanyId();
+    const userId = req.headers.get("x-user-id") || undefined;
     const { id } = await params;
 
     if (!companyId) {
@@ -95,6 +98,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
           order.posting_date || new Date().toISOString().split("T")[0],
         reference_no: order.reference,
         notes: order.notes,
+        currency_id: order.currency_id,
+        exchange_rate: order.exchange_rate,
+        userId,
       },
       lines: unfulfilledLines.map((line, idx) => {
         const remainingQty =

@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import {
   Search,
   RotateCcw,
@@ -19,6 +20,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 // --- Type System Definitions ---
 type DocumentTypeFilter = "sales invoices" | "posted credit notes" | "both";
@@ -40,6 +42,8 @@ interface TransactionItem {
 }
 
 export default function PostedSalesInvoiceAndCreditNoteReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   // --- Core Filtering State Hooks ---
   // const [fromDate, setFromDate] = useState<string>("");
   // const [toDate, setToDate] = useState<string>("2026-06-14"); // Synced to current application runtime era
@@ -133,8 +137,15 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
   // };
 
   return (
-    <div className="space-y-6 container mx-auto p-4">
-      <div className="gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+    <div className="space-y-6 container mx-auto">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Posted Sales Invoice and Credit Note" },
+        ]}
+      />
+      {/* <div className="gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div className="flex items-center gap-2 text-xs text-slate-500 mb-4 bg-white px-4 py-2">
           <span className="cursor-pointer hover:text-emerald-800 transition">
             Reports
@@ -148,7 +159,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
             Posted Sales Invoice and Credit Note
           </span>
         </div>
-      </div>
+      </div> */}
 
       {/* Primary Control Hub Panel Block */}
       <div className="bg-[#093009] text-white p-5 rounded-lg shadow-lg border border-emerald-900 mb-6">

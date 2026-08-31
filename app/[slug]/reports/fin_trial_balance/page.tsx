@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { ReportHeader } from "@/app/components/reports/ReportHeader";
 
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/app/components/reports/ReportFilters";
 import { Loader2, Play } from "lucide-react";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 interface TrialBalanceRow {
   accountCode: string;
@@ -26,6 +28,8 @@ interface TrialBalanceRow {
 }
 
 export default function TrialBalanceReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [fromDate, setFromDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -34,7 +38,6 @@ export default function TrialBalanceReport() {
   const [toAccount, setToAccount] = useState("");
   const [viewType, setViewType] = useState<"summary" | "detailed">("summary");
   const [showBalances, setShowBalances] = useState(true);
-
 
   const [isProcessing, setIsProcessing] = useState<"pdf" | "xlsx" | null>(null);
   const [tableData, setTableData] = useState<TrialBalanceRow[]>([]);
@@ -174,6 +177,13 @@ export default function TrialBalanceReport() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 text-slate-800">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Trial Balance Report" },
+        ]}
+      />
       <ReportHeader
         title="Trial Balance Ledger"
         subtitle="Multi-period ledger performance verification"
@@ -201,10 +211,9 @@ export default function TrialBalanceReport() {
           setTableData([]);
           setHasGenerated(false);
         }}
-        hideFromDate={false}          // Clean presentation mode flag
-        showAccountRanges={true}    // Clean dropdown visibility flag
+        hideFromDate={false} // Clean presentation mode flag
+        showAccountRanges={true} // Clean dropdown visibility flag
         showOpeningClosingToggle={true}
-        
       >
         <div className="flex flex-col space-y-1">
           <label className="text-xs font-medium text-emerald-300">

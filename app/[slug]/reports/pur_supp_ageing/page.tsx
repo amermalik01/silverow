@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import {
   Search,
   RotateCcw,
@@ -23,6 +24,7 @@ import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 type SummaryRow = {
   vendor_id: string;
@@ -73,6 +75,9 @@ type DetailedExportRow = {
 };
 
 export default function SupplierAgeingReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+
   const [loading, setLoading] = useState(false);
   const { show, hide } = useLoader();
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -210,6 +215,13 @@ export default function SupplierAgeingReport() {
 
   return (
     <div className="w-full p-4 space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Supplier Ageing Report" },
+        ]}
+      />
       {/* Search Filter Board */}
       <div className="bg-[#0b3310] text-white p-5 rounded-lg shadow-md space-y-4">
         {validationError && (

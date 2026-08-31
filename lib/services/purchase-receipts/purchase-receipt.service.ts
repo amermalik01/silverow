@@ -68,6 +68,11 @@ export class PurchaseReceiptService {
     );
 
     const receipt = receiptResult.rows[0];
+
+    const currencyId = payload.receipt.currency_id;
+    const exchangeRate = payload.receipt.exchange_rate;
+    const userId = payload.receipt.userId;
+
     const glLines: JournalLineInput[] = [];
 
     for (const line of payload.lines) {
@@ -296,6 +301,9 @@ export class PurchaseReceiptService {
         reference: receipt.receipt_no,
         source_id: receipt.id,
         description: `Posted receipt tracking document: ${receipt.receipt_no}`,
+        currency_id: currencyId,
+        exchange_rate: exchangeRate,
+        created_by: userId || null,
         lines: glLines,
       });
     }

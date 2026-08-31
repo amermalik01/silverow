@@ -45,28 +45,10 @@ export default async function CompanyLayout({ children, params }: LayoutProps) {
           <CompanySidebar />
         </aside>
         <main className="flex-1 min-w-0 overflow-x-auto px-4">
-          <div className="container mx-auto py-2">{children}</div>{/* py-6 */}
+          <div className="container mx-auto py-2">{children}</div>
         </main>
       </div>
     </div>
   );
 }
-/* return (
-    <div className="relative min-h-screen bg-background"> bg-[#F9FAFB]
-      <div className="xl:block hidden">
-        <CompanySidebar />
-      </div>
-      
- 
-      <div className="body-wrapper min-h-screen xl:pl-[240px] flex flex-col w-full">
-        <CompanyHeader />
-        
 
-        <div className="flex-1 w-full overflow-x-auto">
-          <div className="container mx-auto py-6 min-w-0">
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>
-  ); */

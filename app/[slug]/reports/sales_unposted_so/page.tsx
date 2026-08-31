@@ -3,6 +3,8 @@
 "use client";
 
 import { useState } from "react";
+
+import { useParams } from "next/navigation";
 import { Search, RotateCcw, FileText, Download } from "lucide-react";
 import { Icon } from "@iconify/react";
 
@@ -16,6 +18,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 type ReportLineItem = {
   id: string;
@@ -32,6 +35,8 @@ type ReportLineItem = {
 };
 
 export default function UnpostedSalesOrdersReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [loading, setLoading] = useState(false);
   const { show, hide } = useLoader();
   const [reportData, setReportData] = useState<ReportLineItem[]>([]);
@@ -134,7 +139,14 @@ export default function UnpostedSalesOrdersReport() {
   };
 
   return (
-    <div className="w-full p-4 space-y-6">
+    <div className="w-full space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Unposted Sales Orders" },
+        ]}
+      />
       {/* Search Criteria Control Board */}
       <div className="bg-[#0b3310] text-white p-5 rounded-lg shadow-md space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs items-center">
@@ -243,7 +255,10 @@ export default function UnpostedSalesOrdersReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
               </span> */}
@@ -269,7 +284,10 @@ export default function UnpostedSalesOrdersReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
               </span> */}
@@ -295,7 +313,10 @@ export default function UnpostedSalesOrdersReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
               </span> */}

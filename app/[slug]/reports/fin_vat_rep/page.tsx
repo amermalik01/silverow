@@ -3,12 +3,14 @@
 "use client";
 
 import React, { useState } from "react";
+import { useParams } from "next/navigation";
 import { ReportHeader } from "@/app/components/reports/ReportHeader";
 
 import { ReportFilters } from "@/app/components/reports/ReportFilters";
 import { Loader2, Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 interface VATSummaryRow {
   rowNo: number;
@@ -17,6 +19,8 @@ interface VATSummaryRow {
 }
 
 export default function VatReportComponent() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [fromDate, setFromDate] = useState("2026-01-01");
   const [toDate, setToDate] = useState("2026-06-14");
   const [vatStatus, setVatStatus] = useState("Open");
@@ -114,6 +118,13 @@ export default function VatReportComponent() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 text-slate-800">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "VAT Report" },
+        ]}
+      />
       <ReportHeader
         title="VAT Report"
         subtitle="Tax breakdown summary for return submissions"

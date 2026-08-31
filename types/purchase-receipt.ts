@@ -10,8 +10,11 @@ export interface PurchaseReceipt {
   posting_date: string;
   reference_no?: string;
   notes?: string;
+  currency_id?: string;
+  exchange_rate?: number;
   status?: string;
   is_posted?: boolean;
+  userId?: string;
 }
 export interface PurchaseReceiptLine {
   id?: string;
@@ -43,4 +46,3 @@ export interface PurchaseReceiptPayload {
   receipt: PurchaseReceipt;
   lines: PurchaseReceiptLine[];
 }
-

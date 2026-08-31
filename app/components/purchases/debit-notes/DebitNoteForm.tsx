@@ -234,6 +234,24 @@ export const DebitNoteForm: React.FC<Props> = ({
       (sum, l) => sum + Number(l.discount_amount || 0),
       0,
     );
+
+    // const totalDiscount = lines.reduce((sum, l) => {
+    //   const qty = Number(l.quantity || 0);
+    //   const unitCost = Number(l.unit_cost || 0);
+    //   const lineSubtotal = qty * unitCost;
+
+    //   let discountAmt = 0;
+    //   if (l.discount_type === "PERCENT") {
+    //     discountAmt = lineSubtotal * (Number(l.discount_value || 0) / 100);
+    //   } else if (l.discount_type === "AMOUNT") {
+    //     discountAmt = Number(l.discount_value || 0);
+    //   } else {
+    //     discountAmt = Number(l.discount_amount || 0);
+    //   }
+
+    //   return sum + discountAmt;
+    // }, 0);
+
     const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
     const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
     const amountInclVat = amount + vat;
@@ -610,9 +628,35 @@ export const DebitNoteForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
+      // const payload = {
+      //   dispatch: {
+      //     supplier_id: note.supplier_id,
+      //     dispatch_date:
+      //       note.receipt_date ||
+      //       note.order_date ||
+      //       new Date().toISOString().split("T")[0],
+      //     posting_date:
+      //       note.document_date || new Date().toISOString().split("T")[0],
+      //     reference: note.debit_note_no || note.reference,
+      //     notes: note.notes,
+      //   },
+      //   lines: lines.map((line) => ({
+      //     id: line.id,
+      //     debit_note_line_id: line.id,
+      //     line_type: line.line_type,
+      //     item_id: line.item_id,
+      //     warehouse_id: line.warehouse_id,
+      //     location_id: line.warehouse_location_id || null,
+      //     quantity: Number(line.quantity || 0),
+      //     unit_price: Number(line.unit_cost || 0),
+      //     unit_cost: Number(line.unit_cost || 0),
+      //   })),
+      // };
+
       const payload = {
         dispatch: {
           supplier_id: note.supplier_id,
+          warehouse_id: note.warehouse_id || null, // pass if available on header
           dispatch_date:
             note.receipt_date ||
             note.order_date ||
@@ -622,17 +666,6 @@ export const DebitNoteForm: React.FC<Props> = ({
           reference: note.debit_note_no || note.reference,
           notes: note.notes,
         },
-        lines: lines.map((line) => ({
-          id: line.id,
-          debit_note_line_id: line.id,
-          line_type: line.line_type,
-          item_id: line.item_id,
-          warehouse_id: line.warehouse_id,
-          location_id: line.warehouse_location_id || null,
-          quantity: Number(line.quantity || 0),
-          unit_price: Number(line.unit_cost || 0),
-          unit_cost: Number(line.unit_cost || 0),
-        })),
       };
 
       const res = await fetch(`/api/debit-notes/${id}/dispatch`, {
@@ -680,7 +713,13 @@ export const DebitNoteForm: React.FC<Props> = ({
           supplier_invoice_no: note.reference,
           invoice_date: note.invoice_date,
           posting_date: note.order_date,
-          financials: financials, // { amount, vat, amountInclVat }
+          financials: {
+            amount: financials.amount,
+            discount: financials.totalDiscount || 0, // Pass total discount
+            vat: financials.vat,
+            amountInclVat: financials.amountInclVat,
+          },
+          // financials: financials, // { amount, vat, amountInclVat }
         }),
       });
 

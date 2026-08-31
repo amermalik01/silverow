@@ -1,5 +1,6 @@
 // app/[slug]/purchases/purchase-orders/page.tsx
 
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 import PurchaseOrderList from "@/app/components/purchases/purchase-orders/PurchaseOrderList";
 
 type Props = {
@@ -13,6 +14,7 @@ export default async function PurchaseOrdersPage({ params }: Props) {
 
   return (
     <div>
+      {/* <Breadcrumbs items={[ { label: "Reports", href: `/${slug}/reports`, }, { label: "All Reports", href: `/${slug}/reports`, }, { label: "Posted Sales Invoice and Credit Note", }, ]} /> */}
       <PurchaseOrderList slug={slug} />
     </div>
   );

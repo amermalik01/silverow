@@ -3,9 +3,16 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 
 import { Icon } from "@iconify/react";
-import { Search, RotateCcw, FileText, Download, FileSpreadsheet } from "lucide-react";
+import {
+  Search,
+  RotateCcw,
+  FileText,
+  Download,
+  FileSpreadsheet,
+} from "lucide-react";
 import SupplierLookupModal, {
   SupplierLookupItem,
 } from "@/app/components/shared/modals/SupplierLookupModal";
@@ -15,6 +22,7 @@ import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 type StatementEntry = {
   id: string;
@@ -74,12 +82,16 @@ type StatementExportRow = {
 };
 
 export default function SupplierStatementReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [loading, setLoading] = useState(false);
   const { show, hide } = useLoader();
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Filter State Hooks
-  const [asOfDate, setAsOfDate] = useState<Date | undefined>(startOfDay(new Date()));
+  const [asOfDate, setAsOfDate] = useState<Date | undefined>(
+    startOfDay(new Date()),
+  );
   const [statements, setStatements] = useState<SupplierStatementGroup[]>([]);
 
   // Selection Arrays for Lookup Modal
@@ -106,7 +118,9 @@ export default function SupplierStatementReport() {
         params.append("supplierIds", selectedSupplierIds.join(","));
       }
 
-      const res = await fetch(`/api/reports/supplier-statement?${params.toString()}`);
+      const res = await fetch(
+        `/api/reports/supplier-statement?${params.toString()}`,
+      );
       if (!res.ok) throw new Error("Failed fetching supplier statements");
 
       const json = await res.json();
@@ -169,12 +183,22 @@ export default function SupplierStatementReport() {
 
     const ws = XLSX.utils.json_to_sheet(rows);
     XLSX.utils.book_append_sheet(workbook, ws, "Supplier Statements");
-    XLSX.writeFile(workbook, `Supplier_Statement_${format(new Date(), "yyyyMMdd")}.xlsx`);
+    XLSX.writeFile(
+      workbook,
+      `Supplier_Statement_${format(new Date(), "yyyyMMdd")}.xlsx`,
+    );
     setExportMenuOpen(false);
   };
 
   return (
-    <div className="w-full p-4 space-y-6">
+    <div className="w-full space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Supplier Statement" },
+        ]}
+      />
       {/* Search Filter Board */}
       <div className="bg-[#0b3310] text-white p-5 rounded-lg shadow-md space-y-4">
         {validationError && (
@@ -211,37 +235,46 @@ export default function SupplierStatementReport() {
 
           {/* Supplier Multi-select */}
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">Select Supplier(s)</label>
-            <div className="relative cursor-pointer" onClick={() => setSupplierModalOpen(true)}>
+            <label className="font-semibold text-slate-200">
+              Select Supplier(s)
+            </label>
+            <div
+              className="relative cursor-pointer"
+              onClick={() => setSupplierModalOpen(true)}
+            >
               <input
                 readOnly
                 placeholder="All Suppliers Selected"
-                value={selectedSupplierIds.length ? `${selectedSupplierIds.length} Supplier(s) selected` : ""}
+                value={
+                  selectedSupplierIds.length
+                    ? `${selectedSupplierIds.length} Supplier(s) selected`
+                    : ""
+                }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer"
               />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">❐</span> */}
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
             </div>
           </div>
 
           {/* Action Buttons */}
 
           <div className="flex gap-2 justify-end pt-4">
-                      <Button
-                        onClick={handleGenerateReport}
-                        disabled={loading}
-                        variant="save"
-                      >
-                        <Search className="h-3.5 w-3.5" />{" "}
-                        {loading ? "Generating..." : "Generate Report"}
-                      </Button>
-                      <Button
-                        onClick={handleClearFilters}
-                        variant="cancel"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
-                      </Button>
-                    </div>
+            <Button
+              onClick={handleGenerateReport}
+              disabled={loading}
+              variant="save"
+            >
+              <Search className="h-3.5 w-3.5" />{" "}
+              {loading ? "Generating..." : "Generate Report"}
+            </Button>
+            <Button onClick={handleClearFilters} variant="cancel">
+              <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
+            </Button>
+          </div>
           {/* <div className="flex gap-2 justify-end pt-4">
             <Button
               onClick={handleGenerateReport}
@@ -265,7 +298,9 @@ export default function SupplierStatementReport() {
         <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <FileText className="text-emerald-700 h-5 w-5" />
-            <h1 className="text-base font-bold text-slate-900">Supplier Statement</h1>
+            <h1 className="text-base font-bold text-slate-900">
+              Supplier Statement
+            </h1>
           </div>
 
           <div className="relative">
@@ -283,7 +318,8 @@ export default function SupplierStatementReport() {
                   onClick={exportToExcel}
                   className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
                 >
-                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" /> Excel (.xlsx)
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" /> Excel
+                  (.xlsx)
                 </button>
               </div>
             )}
@@ -298,11 +334,15 @@ export default function SupplierStatementReport() {
             </div>
           ) : statements.length === 0 ? (
             <div className="p-12 text-center font-sans text-xs text-slate-400 italic">
-              No open supplier statements available as at {formatDate(asOfDate)}.
+              No open supplier statements available as at {formatDate(asOfDate)}
+              .
             </div>
           ) : (
             statements.map((stmt) => (
-              <div key={stmt.vendor_id} className="border border-slate-200 rounded-lg p-6 space-y-6 bg-white shadow-sm">
+              <div
+                key={stmt.vendor_id}
+                className="border border-slate-200 rounded-lg p-6 space-y-6 bg-white shadow-sm"
+              >
                 {/* Statement Header */}
                 <div className="flex justify-between items-start text-xs border-b border-slate-100 pb-4">
                   <div className="space-y-1">
@@ -311,18 +351,41 @@ export default function SupplierStatementReport() {
                     </h2>
                     <p className="text-slate-500">{stmt.country}</p>
                     <p className="text-slate-700 font-semibold pt-2">
-                      As at <span className="font-bold">{formatDate(asOfDate)}</span>
+                      As at{" "}
+                      <span className="font-bold">{formatDate(asOfDate)}</span>
                     </p>
                   </div>
 
                   {/* Company Banking Box */}
                   <div className="text-right space-y-0.5 text-slate-600">
-                    <p className="font-bold text-emerald-900 text-sm">{stmt.company_bank_info.account_name}</p>
-                    <p><span className="font-semibold text-slate-700">Bank:</span> {stmt.company_bank_info.bank_name}</p>
-                    <p><span className="font-semibold text-slate-700">Sort Code:</span> {stmt.company_bank_info.sort_code}</p>
-                    <p><span className="font-semibold text-slate-700">Account No:</span> {stmt.company_bank_info.account_no}</p>
+                    <p className="font-bold text-emerald-900 text-sm">
+                      {stmt.company_bank_info.account_name}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-slate-700">
+                        Bank:
+                      </span>{" "}
+                      {stmt.company_bank_info.bank_name}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-slate-700">
+                        Sort Code:
+                      </span>{" "}
+                      {stmt.company_bank_info.sort_code}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-slate-700">
+                        Account No:
+                      </span>{" "}
+                      {stmt.company_bank_info.account_no}
+                    </p>
                     {stmt.company_bank_info.vat_reg_no && (
-                      <p><span className="font-semibold text-slate-700">VAT Reg No:</span> {stmt.company_bank_info.vat_reg_no}</p>
+                      <p>
+                        <span className="font-semibold text-slate-700">
+                          VAT Reg No:
+                        </span>{" "}
+                        {stmt.company_bank_info.vat_reg_no}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -347,15 +410,31 @@ export default function SupplierStatementReport() {
                     <tbody className="divide-y divide-slate-100 text-[11px] font-mono text-slate-700">
                       {stmt.entries.map((e) => (
                         <tr key={e.id} className="hover:bg-slate-50">
-                          <td className="p-2.5">{formatDate(e.posting_date)}</td>
+                          <td className="p-2.5">
+                            {formatDate(e.posting_date)}
+                          </td>
                           <td className="p-2.5 font-sans">{e.document_type}</td>
-                          <td className="p-2.5 font-semibold text-emerald-800">{e.document_no || "—"}</td>
-                          <td className="p-2.5 font-sans text-slate-600">{e.external_doc_no}</td>
-                          <td className="p-2.5 text-center font-bold text-slate-600">{e.currency_code}</td>
-                          <td className="p-2.5 text-right tabular-nums">{formatCurrency(e.original_amount)}</td>
-                          <td className="p-2.5 text-right tabular-nums">{formatCurrency(e.settled_amount)}</td>
-                          <td className="p-2.5 text-right tabular-nums">{formatCurrency(e.outstanding_amount)}</td>
-                          <td className="p-2.5">{formatDate(e.due_date) || "—"}</td>
+                          <td className="p-2.5 font-semibold text-emerald-800">
+                            {e.document_no || "—"}
+                          </td>
+                          <td className="p-2.5 font-sans text-slate-600">
+                            {e.external_doc_no}
+                          </td>
+                          <td className="p-2.5 text-center font-bold text-slate-600">
+                            {e.currency_code}
+                          </td>
+                          <td className="p-2.5 text-right tabular-nums">
+                            {formatCurrency(e.original_amount)}
+                          </td>
+                          <td className="p-2.5 text-right tabular-nums">
+                            {formatCurrency(e.settled_amount)}
+                          </td>
+                          <td className="p-2.5 text-right tabular-nums">
+                            {formatCurrency(e.outstanding_amount)}
+                          </td>
+                          <td className="p-2.5">
+                            {formatDate(e.due_date) || "—"}
+                          </td>
                           <td className="p-2.5 text-right font-bold tabular-nums">
                             {formatCurrency(e.running_balance)}
                           </td>
@@ -390,13 +469,27 @@ export default function SupplierStatementReport() {
                     <tbody className="divide-y divide-slate-100 text-[11px] font-mono text-slate-700">
                       {stmt.ageing_summary.map((age, i) => (
                         <tr key={i} className="hover:bg-slate-50">
-                          <td className="p-2 font-bold font-sans text-slate-800">{age.currency_code}</td>
-                          <td className="p-2 text-right tabular-nums">{formatCurrency(age.b0_30)}</td>
-                          <td className="p-2 text-right tabular-nums">{formatCurrency(age.b31_60)}</td>
-                          <td className="p-2 text-right tabular-nums">{formatCurrency(age.b61_90)}</td>
-                          <td className="p-2 text-right tabular-nums">{formatCurrency(age.b91_120)}</td>
-                          <td className="p-2 text-right tabular-nums">{formatCurrency(age.b_over_120)}</td>
-                          <td className="p-2 text-right font-bold tabular-nums">{formatCurrency(age.total)}</td>
+                          <td className="p-2 font-bold font-sans text-slate-800">
+                            {age.currency_code}
+                          </td>
+                          <td className="p-2 text-right tabular-nums">
+                            {formatCurrency(age.b0_30)}
+                          </td>
+                          <td className="p-2 text-right tabular-nums">
+                            {formatCurrency(age.b31_60)}
+                          </td>
+                          <td className="p-2 text-right tabular-nums">
+                            {formatCurrency(age.b61_90)}
+                          </td>
+                          <td className="p-2 text-right tabular-nums">
+                            {formatCurrency(age.b91_120)}
+                          </td>
+                          <td className="p-2 text-right tabular-nums">
+                            {formatCurrency(age.b_over_120)}
+                          </td>
+                          <td className="p-2 text-right font-bold tabular-nums">
+                            {formatCurrency(age.total)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

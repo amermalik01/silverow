@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import {
   Search,
   RotateCcw,
@@ -35,6 +36,7 @@ import ItemLookupModal, {
 import GLAccountLookupModal, {
   GLAccountLookupRecord,
 } from "@/app/components/shared/modals/GLAccountLookupModal";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 type POLine = {
   id: string;
@@ -73,6 +75,8 @@ type ReportMeta = {
 };
 
 export default function UnpostedPurchaseOrdersReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [loading, setLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -286,7 +290,14 @@ export default function UnpostedPurchaseOrdersReport() {
   };
 
   return (
-    <div className="w-full p-4 space-y-6">
+    <div className="w-full space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Posted Purchase Invoices and Debit Notes" },
+        ]}
+      />
       <div className="bg-[#0b3310] text-white p-5 rounded-lg shadow-md space-y-4">
         {validationError && (
           <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-3 py-1.5 rounded text-xs font-medium">
@@ -376,7 +387,6 @@ export default function UnpostedPurchaseOrdersReport() {
             </div>
           </div>
 
-          
           <div className="flex gap-2 justify-end pt-4">
             <Button
               onClick={handleGenerateReport}
@@ -386,10 +396,7 @@ export default function UnpostedPurchaseOrdersReport() {
               <Search className="h-3.5 w-3.5" />{" "}
               {loading ? "Generating..." : "Generate Report"}
             </Button>
-            <Button
-              onClick={handleClearFilters}
-              variant="cancel"
-            >
+            <Button onClick={handleClearFilters} variant="cancel">
               <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
             </Button>
           </div>
@@ -418,7 +425,10 @@ export default function UnpostedPurchaseOrdersReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
               </span> */}
@@ -444,7 +454,10 @@ export default function UnpostedPurchaseOrdersReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
               </span> */}
@@ -468,7 +481,10 @@ export default function UnpostedPurchaseOrdersReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
               </span> */}
@@ -498,7 +514,10 @@ export default function UnpostedPurchaseOrdersReport() {
                 ❐
               </span> */}
 
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import {
   Search,
   RotateCcw,
@@ -35,6 +36,7 @@ import ItemLookupModal, {
 import GLAccountLookupModal, {
   GLAccountLookupRecord,
 } from "@/app/components/shared/modals/GLAccountLookupModal";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 type POLine = {
   id: string;
@@ -73,21 +75,29 @@ type ReportMeta = {
 };
 
 export default function UnpostedPurchaseOrdersReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [loading, setLoading] = useState(false);
   const { show, hide } = useLoader();
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Filter Bounds
   const [fromDate, setFromDate] = useState<Date | undefined>();
-  const [toDate, setToDate] = useState<Date | undefined>(startOfDay(new Date()));
+  const [toDate, setToDate] = useState<Date | undefined>(
+    startOfDay(new Date()),
+  );
   const [reportType, setReportType] = useState("By Order Date");
   const [viewMode, setViewMode] = useState<"summary" | "detailed">("summary");
 
   // Selection Arrays & Lookups
   const [selectedPurchasers, setSelectedPurchasers] = useState<Employee[]>([]);
-  const [selectedSuppliers, setSelectedSuppliers] = useState<SupplierLookupItem[]>([]);
+  const [selectedSuppliers, setSelectedSuppliers] = useState<
+    SupplierLookupItem[]
+  >([]);
   const [selectedItems, setSelectedItems] = useState<ItemLookupRecord[]>([]);
-  const [selectedGlAccounts, setSelectedGlAccounts] = useState<GLAccountLookupRecord[]>([]);
+  const [selectedGlAccounts, setSelectedGlAccounts] = useState<
+    GLAccountLookupRecord[]
+  >([]);
 
   // Modal Visibility Controls
   const [purchaserModalOpen, setPurchaserModalOpen] = useState(false);
@@ -104,7 +114,9 @@ export default function UnpostedPurchaseOrdersReport() {
 
   const handleGenerateReport = async () => {
     if (!fromDate || !toDate) {
-      setValidationError("Both 'From Date' and 'To Date' are mandatory parameters.");
+      setValidationError(
+        "Both 'From Date' and 'To Date' are mandatory parameters.",
+      );
       return;
     }
     setValidationError(null);
@@ -119,20 +131,32 @@ export default function UnpostedPurchaseOrdersReport() {
       });
 
       if (selectedPurchasers.length > 0) {
-        params.append("purchaserIds", selectedPurchasers.map((p) => p.id).join(","));
+        params.append(
+          "purchaserIds",
+          selectedPurchasers.map((p) => p.id).join(","),
+        );
       }
       if (selectedSuppliers.length > 0) {
-        params.append("supplierIds", selectedSuppliers.map((s) => s.id).join(","));
+        params.append(
+          "supplierIds",
+          selectedSuppliers.map((s) => s.id).join(","),
+        );
       }
       if (selectedItems.length > 0) {
         params.append("itemIds", selectedItems.map((i) => i.id).join(","));
       }
       if (selectedGlAccounts.length > 0) {
-        params.append("glAccountIds", selectedGlAccounts.map((g) => g.id).join(","));
+        params.append(
+          "glAccountIds",
+          selectedGlAccounts.map((g) => g.id).join(","),
+        );
       }
 
-      const res = await fetch(`/api/reports/unposted-purchase-orders?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch unposted purchase order report.");
+      const res = await fetch(
+        `/api/reports/unposted-purchase-orders?${params.toString()}`,
+      );
+      if (!res.ok)
+        throw new Error("Failed to fetch unposted purchase order report.");
 
       const json = await res.json();
       setMeta(json.data.report_meta);
@@ -208,14 +232,18 @@ export default function UnpostedPurchaseOrdersReport() {
         `"${o.shipping_city}"`,
       ]);
 
-      csvContent += [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+      csvContent += [headers.join(","), ...rows.map((e) => e.join(","))].join(
+        "\n",
+      );
     } else {
       const rows: string[] = [];
       orders.forEach((o) => {
-        rows.push(`PO Header,${o.po_no},${o.supplier_name},${formatDate(o.order_date)}`);
+        rows.push(
+          `PO Header,${o.po_no},${o.supplier_name},${formatDate(o.order_date)}`,
+        );
         (o.lines || []).forEach((l) => {
           rows.push(
-            `Line,${l.item_code},"${l.description.replace(/"/g, '""')}",${l.quantity},${l.unit_cost},${l.amount_lcy},${l.amount_incl_vat_lcy}`
+            `Line,${l.item_code},"${l.description.replace(/"/g, '""')}",${l.quantity},${l.unit_cost},${l.amount_lcy},${l.amount_incl_vat_lcy}`,
           );
         });
       });
@@ -225,7 +253,10 @@ export default function UnpostedPurchaseOrdersReport() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Unposted_POs_${format(new Date(), "yyyyMMdd")}.csv`);
+    link.setAttribute(
+      "download",
+      `Unposted_POs_${format(new Date(), "yyyyMMdd")}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -252,12 +283,22 @@ export default function UnpostedPurchaseOrdersReport() {
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Unposted POs");
-    XLSX.writeFile(workbook, `Unposted_POs_${format(new Date(), "yyyyMMdd")}.xlsx`);
+    XLSX.writeFile(
+      workbook,
+      `Unposted_POs_${format(new Date(), "yyyyMMdd")}.xlsx`,
+    );
     setExportMenuOpen(false);
   };
 
   return (
-    <div className="w-full p-4 space-y-6">
+    <div className="w-full  space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Unposted Purchase Orders" },
+        ]}
+      />
       {/* Search Criteria Control Board */}
       <div className="bg-[#0b3310] text-white p-5 rounded-lg shadow-md space-y-4">
         {validationError && (
@@ -281,7 +322,9 @@ export default function UnpostedPurchaseOrdersReport() {
                 }}
                 maxDate={toDate || new Date()}
                 className={`w-full bg-white text-slate-900 border px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-                  !fromDate && validationError ? "border-red-500 ring-1 ring-red-500" : "border-emerald-800"
+                  !fromDate && validationError
+                    ? "border-red-500 ring-1 ring-red-500"
+                    : "border-emerald-800"
                 }`}
               />
               <span className="self-center">to</span>
@@ -294,7 +337,9 @@ export default function UnpostedPurchaseOrdersReport() {
                 minDate={fromDate}
                 maxDate={new Date()}
                 className={`w-full bg-white text-slate-900 border px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-                  !toDate && validationError ? "border-red-500 ring-1 ring-red-500" : "border-emerald-800"
+                  !toDate && validationError
+                    ? "border-red-500 ring-1 ring-red-500"
+                    : "border-emerald-800"
                 }`}
               />
             </div>
@@ -302,7 +347,9 @@ export default function UnpostedPurchaseOrdersReport() {
 
           {/* Report Type Evaluation */}
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">Report Type Evaluation</label>
+            <label className="font-semibold text-slate-200">
+              Report Type Evaluation
+            </label>
             <select
               value={reportType}
               onChange={(e) => setReportType(e.target.value)}
@@ -352,10 +399,7 @@ export default function UnpostedPurchaseOrdersReport() {
               <Search className="h-3.5 w-3.5" />{" "}
               {loading ? "Generating..." : "Generate Report"}
             </Button>
-            <Button
-              onClick={handleClearFilters}
-              variant="cancel"
-            >
+            <Button onClick={handleClearFilters} variant="cancel">
               <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
             </Button>
           </div>
@@ -382,61 +426,107 @@ export default function UnpostedPurchaseOrdersReport() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
           {/* Purchaser Lookup */}
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">Select Purchaser(s)</label>
-            <div className="relative cursor-pointer" onClick={() => setPurchaserModalOpen(true)}>
+            <label className="font-semibold text-slate-200">
+              Select Purchaser(s)
+            </label>
+            <div
+              className="relative cursor-pointer"
+              onClick={() => setPurchaserModalOpen(true)}
+            >
               <input
                 readOnly
                 placeholder="All Purchasers"
-                value={selectedPurchasers.length ? `${selectedPurchasers.length} Purchaser(s)` : ""}
+                value={
+                  selectedPurchasers.length
+                    ? `${selectedPurchasers.length} Purchaser(s)`
+                    : ""
+                }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">❐</span> */}
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
             </div>
           </div>
 
           {/* Supplier Lookup */}
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">Select Supplier(s)</label>
-            <div className="relative cursor-pointer" onClick={() => setSupplierModalOpen(true)}>
+            <label className="font-semibold text-slate-200">
+              Select Supplier(s)
+            </label>
+            <div
+              className="relative cursor-pointer"
+              onClick={() => setSupplierModalOpen(true)}
+            >
               <input
                 readOnly
                 placeholder="All Suppliers"
-                value={selectedSuppliers.length ? `${selectedSuppliers.length} Supplier(s)` : ""}
+                value={
+                  selectedSuppliers.length
+                    ? `${selectedSuppliers.length} Supplier(s)`
+                    : ""
+                }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">❐</span> */}
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
             </div>
           </div>
 
           {/* Item Lookup */}
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">Select Item(s)</label>
-            <div className="relative cursor-pointer" onClick={() => setItemModalOpen(true)}>
+            <label className="font-semibold text-slate-200">
+              Select Item(s)
+            </label>
+            <div
+              className="relative cursor-pointer"
+              onClick={() => setItemModalOpen(true)}
+            >
               <input
                 readOnly
                 placeholder="All Items"
-                value={selectedItems.length ? `${selectedItems.length} Item(s)` : ""}
+                value={
+                  selectedItems.length ? `${selectedItems.length} Item(s)` : ""
+                }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">❐</span> */}
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
             </div>
           </div>
 
           {/* G/L Account Lookup */}
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">Select G/L Account(s)</label>
-            <div className="relative cursor-pointer" onClick={() => setGlModalOpen(true)}>
+            <label className="font-semibold text-slate-200">
+              Select G/L Account(s)
+            </label>
+            <div
+              className="relative cursor-pointer"
+              onClick={() => setGlModalOpen(true)}
+            >
               <input
                 readOnly
                 placeholder="All G/L Accounts"
-                value={selectedGlAccounts.length ? `${selectedGlAccounts.length} Account(s)` : ""}
+                value={
+                  selectedGlAccounts.length
+                    ? `${selectedGlAccounts.length} Account(s)`
+                    : ""
+                }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">❐</span> */}
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
             </div>
           </div>
         </div>
@@ -448,12 +538,18 @@ export default function UnpostedPurchaseOrdersReport() {
         <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <FileText className="text-emerald-700 h-5 w-5" /> Unposted Purchase Orders
+              <FileText className="text-emerald-700 h-5 w-5" /> Unposted
+              Purchase Orders
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
               Statement :{" "}
-              <span className="font-semibold">{formatDate(fromDate) || "Required"}</span> to{" "}
-              <span className="font-semibold">{formatDate(toDate) || "Required"}</span>
+              <span className="font-semibold">
+                {formatDate(fromDate) || "Required"}
+              </span>{" "}
+              to{" "}
+              <span className="font-semibold">
+                {formatDate(toDate) || "Required"}
+              </span>
             </p>
           </div>
 
@@ -482,7 +578,8 @@ export default function UnpostedPurchaseOrdersReport() {
                     onClick={exportToExcel}
                     className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
                   >
-                    <FileSpreadsheet className="h-4 w-4 text-emerald-600" /> Excel (.xlsx)
+                    <FileSpreadsheet className="h-4 w-4 text-emerald-600" />{" "}
+                    Excel (.xlsx)
                   </button>
                   <button
                     onClick={exportToCSV}
@@ -517,35 +614,59 @@ export default function UnpostedPurchaseOrdersReport() {
               <tbody className="divide-y divide-slate-100 text-[11px] text-slate-700 font-mono">
                 {loading ? (
                   <tr>
-                    <td colSpan={10} className="p-12 text-center font-sans text-xs text-slate-400 italic">
+                    <td
+                      colSpan={10}
+                      className="p-12 text-center font-sans text-xs text-slate-400 italic"
+                    >
                       Fetching unposted purchase order data...
                     </td>
                   </tr>
                 ) : orders.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-12 text-center font-sans text-xs text-slate-400 italic">
-                      No unposted purchase orders found within specified date bounds.
+                    <td
+                      colSpan={10}
+                      className="p-12 text-center font-sans text-xs text-slate-400 italic"
+                    >
+                      No unposted purchase orders found within specified date
+                      bounds.
                     </td>
                   </tr>
                 ) : (
                   orders.map((po) => (
-                    <tr key={po.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3 whitespace-nowrap">{formatDate(po.order_date)}</td>
-                      <td className="p-3 whitespace-nowrap">{formatDate(po.posting_date)}</td>
-                      <td className="p-3 font-semibold text-emerald-800 whitespace-nowrap">{po.po_no}</td>
-                      <td className="p-3 whitespace-nowrap">{po.supplier_no}</td>
+                    <tr
+                      key={po.id}
+                      className="hover:bg-slate-50/80 transition-colors"
+                    >
+                      <td className="p-3 whitespace-nowrap">
+                        {formatDate(po.order_date)}
+                      </td>
+                      <td className="p-3 whitespace-nowrap">
+                        {formatDate(po.posting_date)}
+                      </td>
+                      <td className="p-3 font-semibold text-emerald-800 whitespace-nowrap">
+                        {po.po_no}
+                      </td>
+                      <td className="p-3 whitespace-nowrap">
+                        {po.supplier_no}
+                      </td>
                       <td className="p-3 font-sans font-medium text-slate-900 max-w-[200px] truncate">
                         {po.supplier_name}
                       </td>
-                      <td className="p-3 whitespace-nowrap">{formatDate(po.req_receipt_date) || "—"}</td>
-                      <td className="p-3 whitespace-nowrap">{formatDate(po.receipt_date) || "—"}</td>
+                      <td className="p-3 whitespace-nowrap">
+                        {formatDate(po.req_receipt_date) || "—"}
+                      </td>
+                      <td className="p-3 whitespace-nowrap">
+                        {formatDate(po.receipt_date) || "—"}
+                      </td>
                       <td className="p-3 text-right font-bold tabular-nums text-slate-900">
                         {formatCurrency(po.amount_lcy)}
                       </td>
                       <td className="p-3 text-right font-bold tabular-nums text-emerald-800">
                         {formatCurrency(po.amount_incl_vat_lcy)}
                       </td>
-                      <td className="p-3 font-sans text-slate-600">{po.shipping_city || "—"}</td>
+                      <td className="p-3 font-sans text-slate-600">
+                        {po.shipping_city || "—"}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -558,11 +679,18 @@ export default function UnpostedPurchaseOrdersReport() {
         {viewMode === "detailed" && (
           <div className="p-4 space-y-6">
             {orders.map((po) => (
-              <div key={po.id} className="border border-slate-200 rounded-md overflow-hidden">
+              <div
+                key={po.id}
+                className="border border-slate-200 rounded-md overflow-hidden"
+              >
                 {/* Order Header Summary Row */}
                 <div className="bg-slate-100 p-3 flex flex-wrap justify-between text-xs font-semibold text-slate-800 border-b border-slate-200">
-                  <div>PO No: <span className="text-emerald-800">{po.po_no}</span></div>
-                  <div>Supplier: {po.supplier_name} ({po.supplier_no})</div>
+                  <div>
+                    PO No: <span className="text-emerald-800">{po.po_no}</span>
+                  </div>
+                  <div>
+                    Supplier: {po.supplier_name} ({po.supplier_no})
+                  </div>
                   <div>Order Date: {formatDate(po.order_date)}</div>
                   <div>City: {po.shipping_city || "—"}</div>
                 </div>
@@ -576,17 +704,27 @@ export default function UnpostedPurchaseOrdersReport() {
                       <th className="p-2 text-right">Quantity</th>
                       <th className="p-2 text-right">Unit Cost</th>
                       <th className="p-2 text-right">Amount (LCY)</th>
-                      <th className="p-2 text-right pr-4">Amount Incl VAT (LCY)</th>
+                      <th className="p-2 text-right pr-4">
+                        Amount Incl VAT (LCY)
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
                     {po.lines?.map((line) => (
                       <tr key={line.id}>
-                        <td className="p-2 pl-4 font-sans font-medium text-slate-800">{line.item_code}</td>
-                        <td className="p-2 font-sans text-slate-600">{line.description}</td>
+                        <td className="p-2 pl-4 font-sans font-medium text-slate-800">
+                          {line.item_code}
+                        </td>
+                        <td className="p-2 font-sans text-slate-600">
+                          {line.description}
+                        </td>
                         <td className="p-2 text-right">{line.quantity}</td>
-                        <td className="p-2 text-right">{formatCurrency(line.unit_cost)}</td>
-                        <td className="p-2 text-right font-bold">{formatCurrency(line.amount_lcy)}</td>
+                        <td className="p-2 text-right">
+                          {formatCurrency(line.unit_cost)}
+                        </td>
+                        <td className="p-2 text-right font-bold">
+                          {formatCurrency(line.amount_lcy)}
+                        </td>
                         <td className="p-2 text-right pr-4 font-bold text-emerald-800">
                           {formatCurrency(line.amount_incl_vat_lcy)}
                         </td>
@@ -603,7 +741,10 @@ export default function UnpostedPurchaseOrdersReport() {
         {meta && orders.length > 0 && (
           <div className="bg-slate-50 p-4 border-t border-slate-200 flex flex-col sm:flex-row gap-4 justify-between items-end sm:items-center font-sans text-xs font-semibold text-slate-600">
             <div>
-              Total Orders: <span className="text-slate-900 font-bold">{meta.total_orders}</span>
+              Total Orders:{" "}
+              <span className="text-slate-900 font-bold">
+                {meta.total_orders}
+              </span>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 bg-white border border-slate-200 px-4 py-2.5 rounded shadow-sm text-right">
               <div>

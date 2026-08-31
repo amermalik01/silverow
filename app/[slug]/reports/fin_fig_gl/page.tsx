@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useParams } from "next/navigation";
 import { ReportHeader } from "@/app/components/reports/ReportHeader";
 import { ReportFilters } from "@/app/components/reports/ReportFilters";
 import { Loader2, Search, X } from "lucide-react";
@@ -12,6 +13,7 @@ import GLAccountLookupModal, {
 } from "@/app/components/shared/modals/GLAccountLookupModal";
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 interface TransactionLine {
   postingDate: string;
@@ -33,6 +35,8 @@ interface GLGroupBlock {
 }
 
 export default function FigureByGLReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [fromDate, setFromDate] = useState("2026-01-01");
   const [toDate, setToDate] = useState("2026-06-14");
   const [reportType, setReportType] = useState("Detailed");
@@ -138,6 +142,13 @@ export default function FigureByGLReport() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 text-slate-800">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Figure By G.L" },
+        ]}
+      />
       <ReportHeader
         title="Figure By G/L"
         subtitle="Granular analysis of individual transaction history entries grouped by chosen accounts"

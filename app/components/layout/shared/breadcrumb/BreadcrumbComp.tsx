@@ -1,4 +1,73 @@
-'use client'
+// app/components/layout/shared/breadcrumb/BreadcrumbComp.tsx
+
+"use client";
+
+import Link from "next/link";
+import { ChevronRight, Home } from "lucide-react";
+import CardBox from "@/app/components/shared/CardBox";
+
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+  active?: boolean;
+}
+
+interface BreadcrumbsProps {
+  items: BreadcrumbItem[];
+}
+
+export default function Breadcrumbs({ items }: BreadcrumbsProps) {
+  return (
+    <CardBox className="mb-4 py-2 bg-lightsecondary overflow-hidden rounded-md border-none shadow-none relative">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-1.5 text-xs text-slate-500"
+      >
+        <Link
+          href="/"
+          className="flex items-center gap-1 hover:text-emerald-700 transition-colors"
+        >
+          <Home className="h-3.5 w-3.5" />
+          Home
+        </Link>
+
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+
+          return (
+            <div
+              key={`${item.label}-${index}`}
+              className="flex items-center gap-1.5"
+            >
+              <ChevronRight className="h-3 w-3 text-slate-400" />
+
+              {item.href && !isLast ? (
+                <Link
+                  href={item.href}
+                  className="hover:text-emerald-700 transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <span
+                  className={
+                    isLast
+                      ? "font-semibold  bg-[#0b3310] text-white px-2 py-0.5 rounded"
+                      : ""
+                  }
+                >
+                  {item.label}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+    </CardBox>
+  );
+}
+/* text-emerald-800 bg-emerald-50 */
+/* 'use client'
 
 import CardBox from '@/app/components/shared/CardBox'
 import Image from 'next/image'
@@ -67,4 +136,4 @@ const BreadcrumbComp = ({ items = [], title }: BreadCrumbType) => {
   )
 }
 
-export default BreadcrumbComp
+export default BreadcrumbComp */

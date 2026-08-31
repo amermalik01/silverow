@@ -7,6 +7,8 @@ import { ReportHeader } from "@/app/components/reports/ReportHeader";
 import { ReportFilters } from "@/app/components/reports/ReportFilters";
 import { Loader2 } from "lucide-react";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
+import { useParams } from "next/navigation";
 
 interface BSReportRow {
   accountCode: string | null;
@@ -19,6 +21,9 @@ interface BSReportRow {
 }
 
 export default function BalanceSheetReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+
   const [fromDate, setFromDate] = useState(""); // Unused but passed to satisfy component skeleton signature
   const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const [comparePrior, setComparePrior] = useState(true);
@@ -117,6 +122,13 @@ export default function BalanceSheetReport() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 text-slate-800">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Trial Balance Report" },
+        ]}
+      />
       <ReportHeader
         title="Balance Sheet Statement"
         subtitle="Statement of financial position reflecting assets, liabilities, and equity net worth capitalization"

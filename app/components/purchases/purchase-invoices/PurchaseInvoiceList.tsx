@@ -65,7 +65,7 @@ export default function PurchaseOrderList({ slug }: Props) {
   );
 
   return (
-    <div className="space-y-4 container mx-auto p-4">
+    <div className="space-y-4 container mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">Purchase Invoices</h2>

@@ -22,6 +22,7 @@ export interface PostDebitNoteInput {
   };
   financials?: {
     amount: number;
+    discount?: number;
     vat: number;
     amountInclVat: number;
   };
@@ -37,7 +38,7 @@ export class DebitNotePostingService {
 
       // 1. Fetch & lock Debit Note header record
       const dnResult = await client.query(
-        `SELECT id, debit_note_no, supplier_id, subtotal, tax_amount, total_amount, is_posted, status, currency_id, exchange_rate 
+        `SELECT id, debit_note_no, supplier_id, subtotal, discount_amount, tax_amount, total_amount, is_posted, status, currency_id, exchange_rate 
          FROM debit_notes 
          WHERE id = $1 AND company_id = $2 
          FOR UPDATE`,
@@ -56,7 +57,7 @@ export class DebitNotePostingService {
 
       // 2. Fetch active Debit Note lines
       const linesResult = await client.query(
-        `SELECT id, item_id, gl_account_id, warehouse_id, quantity, unit_cost, description, tax_percent, tax_amount, net_amount, gross_amount, line_type
+        `SELECT id, item_id, gl_account_id, warehouse_id, quantity, unit_cost, discount_amount, description, tax_percent, tax_amount, net_amount, gross_amount, line_type
          FROM debit_note_lines 
          WHERE debit_note_id = $1 AND company_id = $2 AND is_deleted = false`,
         [debitNoteId, companyId],
@@ -91,10 +92,21 @@ export class DebitNotePostingService {
 
       // 3. Process lines and build line-level GL entries
       for (const line of lines) {
+        const qty = Number(line.quantity || 0);
+        const unitCost = Number(line.unit_cost || 0);
+        const lineDiscount = Number(line.discount_amount || 0);
+        const grossLineCost = qty * unitCost;
+
         const netAmt = Number(
-          line.net_amount ||
-            Number(line.quantity || 0) * Number(line.unit_cost || 0),
+          line.net_amount
+            ? line.net_amount
+            : (grossLineCost - lineDiscount).toFixed(2),
         );
+
+        // const netAmt = Number(
+        //   line.net_amount ||
+        //     Number(line.quantity || 0) * Number(line.unit_cost || 0),
+        // );
         const vatAmt = Number(line.tax_amount || 0);
 
         calculatedNetSum += netAmt;
@@ -124,7 +136,7 @@ export class DebitNotePostingService {
               party_id: note.supplier_id,
               item_id: line.item_id,
               warehouse_id: line.warehouse_id,
-              quantity: Number(line.quantity),
+              quantity: qty,
               reference_type: "DEBIT_NOTE",
               reference_id: note.id,
               description: `GRNI return clearing for ${note.debit_note_no}`,
@@ -138,7 +150,7 @@ export class DebitNotePostingService {
               party_id: note.supplier_id,
               item_id: line.item_id,
               warehouse_id: line.warehouse_id,
-              quantity: Number(line.quantity),
+              quantity: qty,
               reference_type: "DEBIT_NOTE",
               reference_id: note.id,
               description: `Purchase return for ${note.debit_note_no}`,
@@ -260,11 +272,17 @@ export class DebitNotePostingService {
         `UPDATE debit_notes 
          SET is_posted = true, 
              posted_at = NOW(), 
-             status = 'posted', 
+             status = 'posted',
+             discount_amount = COALESCE($4, discount_amount),
              notes = COALESCE($3, notes),
              updated_at = NOW()
          WHERE id = $1 AND company_id = $2`,
-        [debitNoteId, companyId, postingData.notes || null],
+        [
+          debitNoteId,
+          companyId,
+          postingData.notes || null,
+          financials?.discount || null,
+        ],
       );
 
       await client.query("COMMIT");

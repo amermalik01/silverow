@@ -15,6 +15,7 @@ interface PostDebitNoteRequestBody {
   exchange_rate?: number;
   financials?: {
     amount: number;
+    discount?: number;
     vat: number;
     amountInclVat: number;
   };

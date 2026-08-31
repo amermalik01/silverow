@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import {
   Search,
   RotateCcw,
@@ -22,6 +23,7 @@ import { format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 type ReportLineItem = {
   id: string;
@@ -45,6 +47,8 @@ type ReportLineItem = {
 };
 
 export default function SupplierActivityReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<ReportLineItem[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -223,6 +227,13 @@ export default function SupplierActivityReport() {
 
   return (
     <div className="w-full p-4 space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Supplier Activity Report" },
+        ]}
+      />
       {/* Search Criteria Control Board */}
       <div className="bg-[#0b3310] text-white p-5 rounded-lg shadow-md space-y-4">
         {validationError && (
@@ -313,10 +324,7 @@ export default function SupplierActivityReport() {
               <Search className="h-3.5 w-3.5" />{" "}
               {loading ? "Generating..." : "Generate Report"}
             </Button>
-            <Button
-              onClick={handleClearFilters}
-              variant="cancel"
-            >
+            <Button onClick={handleClearFilters} variant="cancel">
               <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
             </Button>
           </div>
@@ -358,7 +366,10 @@ export default function SupplierActivityReport() {
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
               />
-              <Icon icon="tabler:external-link" className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+              />
               {/* <span className="absolute right-2.5 top-1.5 text-slate-400 pointer-events-none">
                 ❐
               </span> */}

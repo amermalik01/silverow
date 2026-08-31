@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useParams } from "next/navigation";
 import { ReportHeader } from "@/app/components/reports/ReportHeader";
 import { ReportFilters } from "@/app/components/reports/ReportFilters";
 import { Loader2, Search, X } from "lucide-react";
@@ -11,6 +12,7 @@ import GLAccountLookupModal, {
 } from "@/app/components/shared/modals/GLAccountLookupModal";
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 interface AccrualLine {
   id: string;
@@ -25,6 +27,8 @@ interface AccrualLine {
 }
 
 export default function HaulierAccrualsReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [fromDate, setFromDate] = useState("2026-06-01");
   const [toDate, setToDate] = useState("2026-06-14");
   const [selectedGLs, setSelectedGLs] = useState<GLAccountLookupRecord[]>([]);
@@ -127,6 +131,13 @@ export default function HaulierAccrualsReport() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 text-slate-800">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Haulier Accruals Report" },
+        ]}
+      />
       <ReportHeader
         title="Haulier Accruals"
         subtitle="Review outstanding balancing logistics provisions matching sub-ledger tracking rows"

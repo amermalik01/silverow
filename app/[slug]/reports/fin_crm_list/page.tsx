@@ -12,6 +12,8 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
+import { useParams } from "next/navigation";
 
 interface AddressPayload {
   id: string;
@@ -34,6 +36,8 @@ interface CRMReportGroup {
 }
 
 export default function LegacyCRMListing() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [dateAsAt, setDateAsAt] = useState<Date | undefined>(new Date());
   const [selectedCRMs, setSelectedCRMs] = useState<CRMLookupItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,6 +114,13 @@ export default function LegacyCRMListing() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 text-slate-800">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "CRM Listing" },
+        ]}
+      />
       <ReportHeader
         title="CRM Listing"
         subtitle="Review global corporate registry lines, credit authorization policies, and physical primary contact records"

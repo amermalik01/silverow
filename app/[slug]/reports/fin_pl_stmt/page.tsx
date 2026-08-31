@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { ReportHeader } from "@/app/components/reports/ReportHeader";
 
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/app/components/reports/ReportFilters";
 import { Loader2, Play } from "lucide-react";
 import { useLoader } from "@/app/context/LoaderContext";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 interface PLReportRow {
   accountCode: string | null;
@@ -27,6 +29,8 @@ interface PLReportRow {
 }
 
 export default function ProfitAndLossReport() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   const [fromDate, setFromDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -153,6 +157,13 @@ export default function ProfitAndLossReport() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 text-slate-800">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports", href: `/${slug}/reports` },
+          { label: "Profit and Loss Statement" },
+        ]}
+      />
       <ReportHeader
         title="Profit and Loss Statement"
         subtitle="Income performance and expenditure summary balance metrics"
