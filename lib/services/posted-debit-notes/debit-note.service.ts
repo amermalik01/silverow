@@ -13,10 +13,8 @@ export class PostedDebitNoteService {
     const result = await pool.query(
       `
       SELECT 
-        dn.*, 
-        p.name AS supplier_name
+        dn.*
       FROM debit_notes dn
-      LEFT JOIN parties p ON p.id = dn.supplier_id
       WHERE dn.company_id = $1 
         AND dn.status::text = 'completed'
       ORDER BY dn.created_at DESC
@@ -51,7 +49,7 @@ export class PostedDebitNoteService {
       prev_code: "dn.prev_code",
       current_stage: "cos.name",
       supplierNo: "dn.supplier_no",
-      supplierName: "p.name",
+      supplierName: "dn.supplier_name",
       supplierCity: "dna.city",
       purchaser: "dn.purchaser",
       posting_grp: "dn.posting_grp",
@@ -143,7 +141,6 @@ export class PostedDebitNoteService {
     // Base Join SQL Construction
     const joinSql = `
       FROM debit_notes dn
-      LEFT JOIN parties p ON p.id = dn.supplier_id
       LEFT JOIN currencies c ON c.id = dn.currency_id
       LEFT JOIN shipment_method sm ON sm.id = dn.shipment_method_id
       LEFT JOIN common_order_stages cos 
@@ -178,7 +175,6 @@ export class PostedDebitNoteService {
         dn.supplier_no AS "supplierNo",
         dn.subtotal AS "Amount",
         dn.total_amount AS "Amount (incl VAT)",
-        p.name AS "supplierName",
         c.code AS currency_code,
         cos.name AS current_stage,
         sm.name AS shipment_method,
@@ -220,13 +216,11 @@ export class PostedDebitNoteService {
   static async get(companyId: string, id: string) {
     const orderResult = await pool.query(
       `
-      SELECT dn.*, 
-        p.name AS supplier_name,
+      SELECT dn.*,
         pt.name AS payment_terms,
         pm.name AS payment_method,
         sm.name AS shipment_method
       FROM debit_notes dn
-      LEFT JOIN parties p ON p.id = dn.supplier_id
       LEFT JOIN payment_terms pt ON pt.id = dn.payment_terms_id
       LEFT JOIN payment_method pm ON pm.id = dn.payment_method_id
       LEFT JOIN shipment_method sm ON sm.id = dn.shipment_method_id

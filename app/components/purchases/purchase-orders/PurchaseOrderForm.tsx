@@ -22,6 +22,7 @@ import SupplierLookupModal, { SupplierLookupItem } from "./SupplierLookupModal";
 import SupplierShippingLocationsModal from "./SupplierShippingLocationsModal";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
 
 interface Props {
   slug: string;
@@ -30,6 +31,8 @@ interface Props {
 }
 
 type TabType = "general" | "invoicing" | "shipping";
+
+type SupplierSelectionSource = "general" | "invoicing";
 
 export const PurchaseOrderForm: React.FC<Props> = ({
   slug,
@@ -43,6 +46,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<TabType>("general");
   const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const [supplierSelectionSource, setSupplierSelectionSource] =
+    useState<SupplierSelectionSource>("general");
+  const [showSupplierChangeModal, setShowSupplierChangeModal] = useState(false);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 
@@ -73,6 +80,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     supplier_id: "",
     supplier_no: "",
     supplier_name: "",
+
+    pay_to_supplier_id: "",
+    pay_to_supplier_no: "",
+    pay_to_supplier_name: "",
+
     order_date: new Date().toISOString().split("T")[0],
     expected_date: "",
     invoice_date: new Date().toISOString().split("T")[0],
@@ -187,9 +199,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   }, [currencyConfig.currency_id, masterData]);
 
   const financials = useMemo(() => {
-
     const originalAmount = lines.reduce(
-      (sum, l) => sum + Number((Number(l.quantity || 0) * Number(l.unit_cost || 0)) || 0),
+      (sum, l) =>
+        sum + Number(Number(l.quantity || 0) * Number(l.unit_cost || 0) || 0),
       0,
     );
     // const originalAmount = lines.reduce(
@@ -221,12 +233,75 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     };
   }, [lines, currencyConfig.exchange_rate]);
 
+  const handleGeneralSupplierSelection = () => {
+    setSupplierSelectionSource("general");
+    if (lines.length > 0) {
+      setShowSupplierChangeModal(true);
+      return;
+    }
+    setSupplierModalOpen(true);
+  };
+
+  const handleInvoicingSupplierSelection = () => {
+    setSupplierSelectionSource("invoicing");
+    if (lines.length > 0) {
+      setShowSupplierChangeModal(true);
+      return;
+    }
+    setSupplierModalOpen(true);
+  };
+
+  const handleConfirmSupplierChange = () => {
+    // Remove all existing PO lines.
+    setLines([]);
+
+    // Close confirmation modal.
+    setShowSupplierChangeModal(false);
+
+    // Now allow supplier selection.
+    setSupplierModalOpen(true);
+    toast.info(
+      "Purchase order lines have been cleared. Please select a supplier.",
+    );
+  };
+
+  const handleCancelSupplierChange = () => {
+    setShowSupplierChangeModal(false);
+  };
+
   const handleSupplierSelect = (supplier: SupplierLookupItem) => {
+    if (supplierSelectionSource === "invoicing") {
+      // --------------------------------------------
+      // INVOICING TAB
+      // Only update Pay To Supplier + Billing Address
+      // --------------------------------------------
+      setOrder((prev) => ({
+        ...prev,
+        pay_to_supplier_id: supplier.id,
+        pay_to_supplier_no: supplier.supplier_code,
+        pay_to_supplier_name: supplier.name,
+      }));
+
+      if (supplier.billing_address) setBillingAddress(supplier.billing_address);
+
+      setSupplierModalOpen(false);
+      return;
+    }
+
+    // --------------------------------------------
+    // GENERAL TAB
+    // Full supplier selection
+    // --------------------------------------------
+
     setOrder((prev) => ({
       ...prev,
       supplier_id: supplier.id,
       supplier_no: supplier.supplier_code,
       supplier_name: supplier.name,
+
+      pay_to_supplier_id: supplier.id,
+      pay_to_supplier_no: supplier.supplier_code,
+      pay_to_supplier_name: supplier.name,
 
       // 💥 FIX: Capture the VAT Business / Purchase Posting Group from supplier
       purchase_posting_group_id: supplier.posting_group || "", // supplier.purchase_posting_group_id ||
@@ -378,19 +453,36 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
       toast.success(id ? "Purchase Order Updated" : "Purchase Order Created");
 
+      const targetId = id || result?.data?.id;
+
+      if (targetId) {
+        // Re-fetch persisted lines to update local state with database UUIDs
+        const linesRes = await fetch(`/api/purchase-orders/${targetId}/lines`);
+        const linesData = await linesRes.json();
+        if (linesData.lines) {
+          setLines(linesData.lines);
+        }
+      }
+
       if (id) {
         // Toggle back to View Mode after saving existing PO
         setIsEditMode(false);
         router.refresh();
-      } else {
-        // Redirect to list page on initial creation
-        // router.push(`/${slug}/purchases/purchase-orders`);
-
-        if (result?.data.id)
-          router.replace(
-            `/${slug}/purchases/purchase-orders/${result?.data.id}/edit`,
-          );
+      } else if (result?.data?.id) {
+        router.replace(
+          `/${slug}/purchases/purchase-orders/${result.data.id}/edit`,
+        );
       }
+
+      // else {
+      //   // Redirect to list page on initial creation
+      //   // router.push(`/${slug}/purchases/purchase-orders`);
+
+      //   if (result?.data.id)
+      //     router.replace(
+      //       `/${slug}/purchases/purchase-orders/${result?.data.id}/edit`,
+      //     );
+      // }
     } catch (err) {
       if (err instanceof Error) setValidationErrors([err.message]);
     } finally {
@@ -444,7 +536,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       const res = await fetch(`/api/purchase-orders/${id}/receive`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order, lines }),
+        body: JSON.stringify({ order }),// , lines
       });
 
       const data = await res.json();
@@ -654,7 +746,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           // currencies={currencies}
           masterData={masterData}
           updateField={updateField}
-          setSupplierModalOpen={setSupplierModalOpen}
+          // setSupplierModalOpen={setSupplierModalOpen}
+          onGeneralSupplierSelect={handleGeneralSupplierSelection}
+          onInvoicingSupplierSelect={handleInvoicingSupplierSelection}
           setLocationModalOpen={setLocationModalOpen}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
@@ -890,7 +984,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         loading={isPosting}
       />
 
-      <StockReceiveConfirmModal
+      <GeneralConfirmModal
         isOpen={showInvoiceModal}
         title="Confirmation"
         message="Are you sure you want to post the invoice for this purchase order?"
@@ -898,6 +992,16 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         onCancel={() => setShowInvoiceModal(false)}
         loading={isPosting}
       />
+
+      <GeneralConfirmModal
+        isOpen={showSupplierChangeModal}
+        title="Change Supplier"
+        message="This purchase order contains line items. All line items must be deleted before the supplier can be changed. Do you want to delete the existing line items and continue?"
+        onConfirm={handleConfirmSupplierChange}
+        onCancel={handleCancelSupplierChange}
+        loading={false}
+      />
+
       <SupplierLookupModal
         open={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}
@@ -927,229 +1031,3 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     </div>
   );
 };
-
-// interface Currency {
-//   id: string;
-//   code: string;
-//   name: string;
-//   exchange_rate: number;
-// }
-// interface OrderStage {
-//   id: string;
-//   name: string;
-//   rank: number;
-// }
-
-{
-    /* const handleStageClick = async (stageName: string) => {
-    const standardizedStatus =
-      stageName.toLowerCase() as PurchaseOrder["status"];
-
-    if (
-      !id ||
-      isUpdatingStatus ||
-      order.status?.toLowerCase() === stageName.toLowerCase()
-    ) {
-      return;
-    }
-
-    setIsUpdatingStatus(true);
-    try {
-      // 1. Check if the user is triggering a physical intake posting workflow
-      if (standardizedStatus === "received") {
-        const confirmPosting = confirm(
-          "Are you sure you want to change status to Received? This will generate a Purchase Receipt, commit stock lines to inventory, and write entries to the G/L ledger automatically.",
-        );
-        if (!confirmPosting) {
-          setIsUpdatingStatus(false);
-          return;
-        }
-
-        toast.loading("Generating purchase receipt draft context...", {
-          id: "posting-toast",
-        });
-
-        // Step A: Generate the Purchase Receipt Draft matching your order scope
-        const receiptDraftRes = await fetch("/api/purchase-receipts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            purchase_order_id: id,
-            receipt_date: new Date().toISOString().split("T")[0],
-            // Map order lines into receipt line inputs
-            lines: lines
-              .map((l) => ({
-                purchase_order_line_id: l.id,
-                item_id: l.item_id,
-                // If your UI tracks a specific quantity to receive, replace l.quantity here
-                quantity:
-                  Number(l.quantity || 0) - Number(l.received_quantity || 0),
-                warehouse_location_id: l.warehouse_id || null,
-              }))
-              .filter((l) => l.quantity > 0), // Only include rows that have open balances remaining
-          }),
-        });
-
-        const receiptDraftData = await receiptDraftRes.json();
-        if (!receiptDraftRes.ok) {
-          throw new Error(
-            receiptDraftData.error ||
-              "Failed to initialize receipt master record.",
-          );
-        }
-
-        const targetReceiptId = receiptDraftData.id;
-
-        toast.loading(
-          "Executing inventory posting and general ledger adjustments...",
-          { id: "posting-toast" },
-        );
-
-        // Step B: Submit the newly fetched ID to your PurchaseReceiptPostingService integration endpoint
-        const postRes = await fetch(
-          `/api/purchase-receipts/${targetReceiptId}/post`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-company-id": session?.user?.company_id || "",
-            },
-          },
-        );
-
-        const postData = await postRes.json();
-        if (!postRes.ok) {
-          throw new Error(
-            postData.error || "Ledger transaction allocation failure.",
-          );
-        }
-
-        toast.success(
-          "Stock intake processing & item allocations executed successfully.",
-          { id: "posting-toast" },
-        );
-        setOrder((prev) => ({ ...prev, status: "received" }));
-        router.refresh();
-        return;
-      }
-
-      // 2. Standard state fallback for non-received workflow triggers
-      const response = await fetch(`/api/purchase-orders/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order: {
-            ...order,
-            ...currencyConfig,
-            supplier_id: order.supplier_id || "",
-            order_date:
-              order.order_date || new Date().toISOString().split("T")[0],
-            status: standardizedStatus,
-            subtotal: financials.amount,
-            tax_amount: financials.vat,
-            total_amount: financials.amountInclVat,
-          },
-          primary_address: {
-            address_type: "primary",
-            address_1: primaryAddress.address_1 || "",
-            address_2: primaryAddress.address_2 || "",
-            city: primaryAddress.city || "",
-            county: primaryAddress.county || "",
-            postcode: primaryAddress.postcode || "",
-            country: primaryAddress.country || "",
-          },
-          billing_address: {
-            address_type: "billing",
-            address_1: billingAddress.address_1 || "",
-            address_2: billingAddress.address_2 || "",
-            city: billingAddress.city || "",
-            county: billingAddress.county || "",
-            postcode: billingAddress.postcode || "",
-            country: billingAddress.country || "",
-          },
-          shipping_address: {
-            address_type: "shipping",
-            name: shippingAddress.name || "",
-            address_1: shippingAddress.address_1 || "",
-            address_2: shippingAddress.address_2 || "",
-            city: shippingAddress.city || "",
-            county: shippingAddress.county || "",
-            country: shippingAddress.country || "",
-          },
-          lines: lines,
-        }),
-      });
-
-      if (response.ok) {
-        setOrder((prev) => ({ ...prev, status: standardizedStatus }));
-        toast.success(`Stage updated successfully to: ${stageName}`);
-        router.refresh();
-      } else {
-        const errData = await response.json();
-        toast.error(
-          `Failed to update stage: ${errData.error || "Unknown error"}`,
-        );
-      }
-    } catch (error) {
-      console.error("Error updating purchase order stage:", error);
-      if (error instanceof Error) {
-        toast.error(
-          error.message ||
-            "Network error updating purchase order stage status.",
-          { id: "posting-toast" },
-        );
-      } else {
-        toast.error("Network error updating purchase order stage status.", {
-          id: "posting-toast",
-        });
-      }
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  }; */
-
-  /* 
-       
-{isUpdateMode && !isLoadingStages && stages.length > 0 && (
-  <div className="flex justify-end ml-auto overflow-x-auto">
-    <div
-      className={`flex items-center min-w-max gap-1 text-xs font-bold text-slate-400 select-none ${
-        isUpdatingStatus ? "opacity-60 pointer-events-none" : ""
-      }`}
-    >
-        {stages.map((stage, index) => {
-        const isFirst = index === 0;
-        const isLast = index === stages.length - 1;
-        const isActive =
-          order.status?.toLowerCase() === stage.name.toLowerCase();
-
-        let activeBg = "bg-blue-600 text-white";
-        if (index === 1) activeBg = "bg-amber-500 text-white";
-        if (index === 2) activeBg = "bg-indigo-600 text-white";
-        if (index >= 3) activeBg = "bg-emerald-600 text-white";
-
-        return (
-          <button
-            type="button"
-            key={stage.id}
-            onClick={() => handleStageClick(stage.name)}
-            className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95
-          ${isFirst ? "rounded-l-md" : ""} 
-          ${isLast ? "rounded-r-md" : ""} 
-          ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
-          >
-            {stage.name}
-            {!isLast && (
-              <Icon
-                icon="tabler:chevron-right"
-                className="w-3 h-3 text-slate-400"
-              />
-            )}
-          </button>
-        );
-      })} 
-      </div>
-  </div>
-)}  
-      */
-}

@@ -32,6 +32,7 @@ import SupplierShippingLocationsModal from "../purchase-orders/SupplierShippingL
 import { StockReceiveConfirmModal } from "../../shared/modals/StockReceiveConfirmModal";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
 
 interface Props {
   slug: string;
@@ -40,6 +41,8 @@ interface Props {
 }
 
 type TabType = "general" | "invoicing" | "shipping";
+
+type SupplierSelectionSource = "general" | "invoicing";
 
 export const DebitNoteForm: React.FC<Props> = ({
   slug,
@@ -53,6 +56,10 @@ export const DebitNoteForm: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<TabType>("general");
   const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const [supplierSelectionSource, setSupplierSelectionSource] =
+    useState<SupplierSelectionSource>("general");
+  const [showSupplierChangeModal, setShowSupplierChangeModal] = useState(false);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 
@@ -83,6 +90,9 @@ export const DebitNoteForm: React.FC<Props> = ({
     supplier_id: "",
     supplier_no: "",
     supplier_name: "",
+    pay_to_supplier_id: "",
+    pay_to_supplier_no: "",
+    pay_to_supplier_name: "",
     order_date: new Date().toISOString().split("T")[0],
     expected_date: "",
     invoice_date: new Date().toISOString().split("T")[0],
@@ -216,7 +226,8 @@ export const DebitNoteForm: React.FC<Props> = ({
     //   0,
     // );
     const originalAmount = lines.reduce(
-      (sum, l) => sum + Number((Number(l.quantity || 0) * Number(l.unit_cost || 0)) || 0),
+      (sum, l) =>
+        sum + Number(Number(l.quantity || 0) * Number(l.unit_cost || 0) || 0),
       0,
     );
     const totalDiscount = lines.reduce(
@@ -244,12 +255,75 @@ export const DebitNoteForm: React.FC<Props> = ({
     };
   }, [lines, currencyConfig.exchange_rate]);
 
+  const handleGeneralSupplierSelection = () => {
+    setSupplierSelectionSource("general");
+    if (lines.length > 0) {
+      setShowSupplierChangeModal(true);
+      return;
+    }
+    setSupplierModalOpen(true);
+  };
+
+  const handleInvoicingSupplierSelection = () => {
+    setSupplierSelectionSource("invoicing");
+    if (lines.length > 0) {
+      setShowSupplierChangeModal(true);
+      return;
+    }
+    setSupplierModalOpen(true);
+  };
+
+  const handleConfirmSupplierChange = () => {
+    // Remove all existing PO lines.
+    setLines([]);
+
+    // Close confirmation modal.
+    setShowSupplierChangeModal(false);
+
+    // Now allow supplier selection.
+    setSupplierModalOpen(true);
+    toast.info(
+      "Purchase order lines have been cleared. Please select a supplier.",
+    );
+  };
+
+  const handleCancelSupplierChange = () => {
+    setShowSupplierChangeModal(false);
+  };
+
   const handleSupplierSelect = (supplier: SupplierLookupItem) => {
+    if (supplierSelectionSource === "invoicing") {
+      // --------------------------------------------
+      // INVOICING TAB
+      // Only update Pay To Supplier + Billing Address
+      // --------------------------------------------
+      setNote((prev) => ({
+        ...prev,
+        pay_to_supplier_id: supplier.id,
+        pay_to_supplier_no: supplier.supplier_code,
+        pay_to_supplier_name: supplier.name,
+      }));
+
+      if (supplier.billing_address) setBillingAddress(supplier.billing_address);
+
+      setSupplierModalOpen(false);
+      return;
+    }
+
+    // --------------------------------------------
+    // GENERAL TAB
+    // Full supplier selection
+    // --------------------------------------------
+
     setNote((prev) => ({
       ...prev,
       supplier_id: supplier.id,
       supplier_no: supplier.supplier_code,
       supplier_name: supplier.name,
+
+      pay_to_supplier_id: supplier.id,
+      pay_to_supplier_no: supplier.supplier_code,
+      pay_to_supplier_name: supplier.name,
 
       // 💥 FIX: Capture the VAT Business / Purchase Posting Group from supplier
       purchase_posting_group_id: supplier.posting_group || "", // supplier.purchase_posting_group_id ||
@@ -770,7 +844,9 @@ export const DebitNoteForm: React.FC<Props> = ({
           setCurrencyConfig={setCurrencyConfig}
           masterData={masterData}
           updateField={updateField}
-          setSupplierModalOpen={setSupplierModalOpen}
+          // setSupplierModalOpen={setSupplierModalOpen}
+          onGeneralSupplierSelect={handleGeneralSupplierSelection}
+          onInvoicingSupplierSelect={handleInvoicingSupplierSelection}
           setLocationModalOpen={setLocationModalOpen}
           setPiModalOpen={setPiModalOpen}
           labelStyle={labelStyle}
@@ -1010,6 +1086,15 @@ export const DebitNoteForm: React.FC<Props> = ({
         onConfirm={handlePostInvoice}
         onCancel={() => setShowInvoiceModal(false)}
         loading={isPosting}
+      />
+
+      <GeneralConfirmModal
+        isOpen={showSupplierChangeModal}
+        title="Change Supplier"
+        message="This purchase order contains line items. All line items must be deleted before the supplier can be changed. Do you want to delete the existing line items and continue?"
+        onConfirm={handleConfirmSupplierChange}
+        onCancel={handleCancelSupplierChange}
+        loading={false}
       />
 
       <SupplierLookupModal

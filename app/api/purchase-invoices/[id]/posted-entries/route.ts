@@ -85,13 +85,24 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
       const latestEntry = result.rows[result.rows.length - 1];
 
+      // const posted_at = latestEntry?.created_at ? new Date(latestEntry.created_at).toLocaleDateString("en-GB") : "";
+      const posted_at = latestEntry?.created_at
+        ? new Date(latestEntry.created_at)
+            .toISOString()
+            .slice(0, 10)
+            .split("-")
+            .reverse()
+            .join("/")
+        : "";
+
       return NextResponse.json({
         success: true,
         data: result.rows,
         posted_by: latestEntry?.user_id || "System",
-        posted_at: latestEntry?.created_at
-          ? new Date(latestEntry.created_at).toLocaleString()
-          : "",
+        posted_at: posted_at,
+        // posted_at: latestEntry?.created_at
+        //   ? new Date(latestEntry.created_at).toLocaleString()
+        //   : "",
       });
     } finally {
       client.release();

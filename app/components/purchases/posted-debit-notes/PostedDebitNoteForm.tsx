@@ -78,6 +78,9 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
     supplier_id: "",
     supplier_no: "",
     supplier_name: "",
+    pay_to_supplier_id: "",
+    pay_to_supplier_no: "",
+    pay_to_supplier_name: "",
     order_date: new Date().toISOString().split("T")[0],
     expected_date: "",
     invoice_date: new Date().toISOString().split("T")[0],
@@ -410,18 +413,20 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
           activeTab={activeTab}
           note={note}
           primaryAddress={primaryAddress}
-          setPrimaryAddress={setPrimaryAddress}
+          setPrimaryAddress={noop}
           billingAddress={billingAddress}
-          setBillingAddress={setBillingAddress}
+          setBillingAddress={noop}
           shippingAddress={shippingAddress}
-          setShippingAddress={setShippingAddress}
+          setShippingAddress={noop}
           currencyConfig={currencyConfig}
-          setCurrencyConfig={setCurrencyConfig}
+          setCurrencyConfig={noop}
           masterData={masterData}
-          updateField={updateField}
-          setSupplierModalOpen={setSupplierModalOpen}
-          setLocationModalOpen={setLocationModalOpen}
-          setPiModalOpen={setPiModalOpen}
+          updateField={noop}
+          // setSupplierModalOpen={setSupplierModalOpen}
+          onGeneralSupplierSelect={noop}
+          onInvoicingSupplierSelect={noop}
+          setLocationModalOpen={noop}
+          setPiModalOpen={noop}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
           isReadOnly={isFormDisabled}

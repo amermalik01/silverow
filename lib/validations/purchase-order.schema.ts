@@ -132,7 +132,12 @@ export const PurchaseOrderLineSchema = z
 export const PurchaseOrderSchema = z.object({
   supplier_id: z.string().uuid(),
   supplier_no: looseString,
+  supplier_name: looseString,
   stage_id: looseUuid,
+
+  pay_to_supplier_id: z.string().uuid(),
+  pay_to_supplier_no: looseString,
+  pay_to_supplier_name: looseString,
 
   purchaser: looseString,
   consignment_no: looseString,

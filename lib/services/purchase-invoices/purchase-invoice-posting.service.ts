@@ -56,7 +56,7 @@ export class PurchaseInvoicePostingService {
 
       // 2. Load active order lines
       const linesResult = await client.query(
-        `SELECT id, item_id, line_type, warehouse_id, quantity, received_quantity, unit_cost, description, tax_percent, tax_amount, net_amount, gross_amount
+        `SELECT id, item_id, line_type, warehouse_id, quantity, received_quantity, unit_cost, discount_amount, description, tax_percent, tax_amount, net_amount, gross_amount
          FROM purchase_order_lines 
          WHERE purchase_order_id = $1 AND company_id = $2 AND is_deleted = false`,
         [purchaseOrderId, companyId],
@@ -101,11 +101,22 @@ export class PurchaseInvoicePostingService {
       );
 
       // Calculate total GRNI subtotal directly from order lines
-      const grniSubtotal = lines.reduce(
-        (sum, line) =>
-          sum + Number(line.quantity) * Number(line.unit_cost || 0),
-        0,
-      );
+      // const grniSubtotal = lines.reduce(
+      //   (sum, line) =>
+      //     sum + Number(line.quantity) * Number(line.unit_cost || 0),
+      //   0,
+      // );
+
+      // Calculate GRNI subtotal using Net Amount (or Quantity * Unit Cost - Discount)
+      const grniSubtotal = lines.reduce((sum, line) => {
+        const lineNet =
+          line.net_amount !== undefined && line.net_amount !== null
+            ? Number(line.net_amount)
+            : Number(line.quantity) * Number(line.unit_cost || 0) -
+              Number(line.discount_amount || 0);
+        return sum + lineNet;
+      }, 0);
+
       const vatAmount = Number(financials.vat || 0);
 
       // Ensure Total Amount = GRNI Subtotal + VAT Amount
@@ -171,7 +182,14 @@ export class PurchaseInvoicePostingService {
 
       // 5. Create Purchase Invoice Lines, resolve Accounts & build GRNI clearing lines
       for (const line of lines) {
-        const lineTotal = Number(line.quantity) * Number(line.unit_cost || 0);
+        const lineGross = Number(line.quantity) * Number(line.unit_cost || 0);
+        const lineDiscount = Number(line.discount_amount || 0);
+
+        // Net line amount after discount
+        const lineNet =
+          line.net_amount !== undefined && line.net_amount !== null
+            ? Number(line.net_amount)
+            : lineGross - lineDiscount;
 
         await client.query(
           `INSERT INTO purchase_invoice_lines (
@@ -185,11 +203,12 @@ export class PurchaseInvoicePostingService {
             quantity,
             unit_cost,
             line_amount,
+            discount_amount,
             tax_percent,
             tax_amount,
             net_amount,
             gross_amount
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
           [
             companyId,
             createdInvoice.id,
@@ -200,11 +219,12 @@ export class PurchaseInvoicePostingService {
             line.description || null,
             line.quantity,
             line.unit_cost,
-            lineTotal,
+            lineGross, // line_amount
+            lineDiscount, // discount_amount
             line.tax_percent || 0,
             line.tax_amount || 0,
-            line.net_amount || lineTotal,
-            line.gross_amount || lineTotal,
+            lineNet,// net_amount
+            line.gross_amount || lineNet,// gross_amount
           ],
         );
         lineNo += 10000;
@@ -229,7 +249,7 @@ export class PurchaseInvoicePostingService {
           // DEBIT: Clear GRNI Liability
           glLines.push({
             account_id: accounts.grni_account_id,
-            debit: lineTotal,
+            debit: lineNet,
             credit: 0,
             party_id: po.supplier_id,
             item_id: line.item_id,
@@ -243,7 +263,7 @@ export class PurchaseInvoicePostingService {
           // --- PERIODIC: Post directly to Purchase Expense / Direct Costs Account ---
           glLines.push({
             account_id: accounts.purchase_account_id, // e.g. 4000 Purchases / Direct Cost
-            debit: lineTotal,
+            debit: lineNet,
             credit: 0,
             party_id: po.supplier_id,
             item_id: line.item_id,

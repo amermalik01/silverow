@@ -131,7 +131,7 @@ export class PurchaseOrderService {
     // Base Join SQL string reused for count and query
     const joinSql = `
       FROM purchase_orders po
-      LEFT JOIN parties p ON p.id = po.supplier_id
+      
       LEFT JOIN currencies c ON c.id = po.currency_id
       LEFT JOIN shipment_method sm ON sm.id = po.shipment_method_id
       LEFT JOIN common_order_stages cos ON cos.id = po.stage_id      
@@ -142,7 +142,11 @@ export class PurchaseOrderService {
           ON ship_a.purchase_order_id = po.id 
           AND ship_a.address_type = 'shipping'
     `;
-    /* LEFT JOIN common_order_stages cos 
+    /* 
+    p.name AS supplier_name,
+
+    LEFT JOIN parties p ON p.id = po.supplier_id
+    LEFT JOIN common_order_stages cos 
           ON cos.company_id = po.company_id 
           AND cos.stage_type = 'purchase_order' 
           AND cos.name ILIKE po.status::text */
@@ -159,7 +163,7 @@ export class PurchaseOrderService {
     const dataQuery = `
       SELECT DISTINCT ON (po.id, ${orderByColumn})
         po.*,
-        p.name AS supplier_name,
+        
         c.code AS currency,
         cos.name AS current_stage,
         sm.name AS shipment_method,
@@ -197,25 +201,20 @@ export class PurchaseOrderService {
     };
   }
 
+  // p.name AS supplier_name,
+  // LEFT JOIN parties p ON p.id = po.supplier_id
+
   static async get(companyId: string, id: string) {
     const orderResult = await pool.query(
       `
-      SELECT po.*, 
-        p.name AS supplier_name,
+      SELECT po.*,      
         pt.name AS payment_terms,
         pm.name AS payment_method,
         sm.name AS shipment_method
-
       FROM purchase_orders po
-
-      LEFT JOIN parties p ON p.id = po.supplier_id
-
       LEFT JOIN payment_terms pt ON pt.id=po.payment_terms_id
-
       LEFT JOIN payment_method pm ON pm.id=po.payment_method_id
-
       LEFT JOIN shipment_method sm ON sm.id=po.shipment_method_id
-
       WHERE po.id = $1 AND po.company_id = $2
       `,
       [id, companyId],
@@ -332,15 +331,11 @@ export class PurchaseOrderService {
 
     return {
       order: orderResult.rows[0],
-
       lines: linesWithAllocations,
-
       primary_address:
         addressResult.rows.find((x) => x.address_type === "primary") || null,
-
       billing_address:
         addressResult.rows.find((x) => x.address_type === "billing") || null,
-
       shipping_address:
         addressResult.rows.find((x) => x.address_type === "shipping") || null,
     };
@@ -387,6 +382,11 @@ export class PurchaseOrderService {
 
             supplier_id,
             supplier_no,
+            supplier_name,
+
+            pay_to_supplier_id,
+            pay_to_supplier_no,
+            pay_to_supplier_name,
 
             purchaser,
             consignment_no,
@@ -444,7 +444,7 @@ export class PurchaseOrderService {
             created_at
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
-        $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,$31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, NOW()
+        $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,$31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, NOW()
         )
         RETURNING *;
         `,
@@ -454,59 +454,64 @@ export class PurchaseOrderService {
 
           order.supplier_id, // $3
           order.supplier_no, // $4
+          order.supplier_name, // $5
 
-          order.purchaser, // $5
-          order.consignment_no, // $6
-          order.supp_order_no, // $7
-          order.link_to_so_no, // $8
+          order.pay_to_supplier_id, // $6
+          order.pay_to_supplier_no, // $7
+          order.pay_to_supplier_name, // $8
 
-          order.currency_id, // $9
-          order.exchange_rate, // $10
+          order.purchaser, // $9
+          order.consignment_no, // $10
+          order.supp_order_no, // $11
+          order.link_to_so_no, // $12
 
-          order.order_date || null,
-          order.req_receipt_date || null,
-          order.receipt_date || null,
-          order.expected_date || null,
-          order.invoice_date?.trim() ? order.invoice_date : null,
-          order.due_date || null,
+          order.currency_id, // $13
+          order.exchange_rate, // $14
 
-          order.reference, // $17
+          order.order_date || null,// $15
+          order.req_receipt_date || null,// $16
+          order.receipt_date || null,// $17
+          order.expected_date || null,// $18
+          order.invoice_date?.trim() ? order.invoice_date : null,// $19
+          order.due_date || null,// $20
 
-          order.payable_bank, // $18
-          order.payable_bank_id, // $19
+          order.reference, // $21
 
-          order.payment_terms_id, // $20
-          order.payment_method_id, // $21
+          order.payable_bank, // $22
+          order.payable_bank_id, // $23
 
-          order.previous_code, // $22
-          order.link_to_cust, // $23
-          order.deduct_from_rebate || false, // $24
+          order.payment_terms_id, // $24
+          order.payment_method_id, // $25
 
-          order.contact, // $25
-          order.book_in_phone, // $26
-          order.book_in_contact, // $27
-          order.book_in_email, // $28
+          order.previous_code, // $26
+          order.link_to_cust, // $27
+          order.deduct_from_rebate || false, // $28
 
-          order.shipment_method_id, // $29
-          order.shipping_agent, // $30
-          order.shipment_ref_no, // $31
-          order.warehouse_ref_no, // $32
+          order.contact, // $29
+          order.book_in_phone, // $30
+          order.book_in_contact, // $31
+          order.book_in_email, // $32
 
-          order.reason, // $33
-          order.linked_po, // $34
+          order.shipment_method_id, // $33
+          order.shipping_agent, // $34
+          order.shipment_ref_no, // $35
+          order.warehouse_ref_no, // $36
 
-          order.notes, // $35
-          order.internal_notes, // $36
+          order.reason, // $37
+          order.linked_po, // $38
 
-          order.subtotal, // $37
-          order.tax_amount, // $38
-          order.total_amount, // $39
+          order.notes, // $39
+          order.internal_notes, // $40
 
-          order.status, // $40
-          order.anonymous_supplier, // $41
+          order.subtotal, // $41
+          order.tax_amount, // $42
+          order.total_amount, // $43
 
-          supplierPostingGroupId, // $42
-          vatBusinessPostingGroupId, // $43
+          order.status, // $44
+          order.anonymous_supplier, // $45
+
+          supplierPostingGroupId, // $46
+          vatBusinessPostingGroupId, // $47
         ],
       );
 
@@ -614,69 +619,79 @@ export class PurchaseOrderService {
 
           supplier_id=$1,
           supplier_no=$2,
+          supplier_name=$3,
 
-          purchaser=$3,
-          consignment_no=$4,
-          supp_order_no=$5,
-          link_to_so_no=$6,
+          pay_to_supplier_id=$4,
+          pay_to_supplier_no=$5,
+          pay_to_supplier_name=$6,
 
-          currency_id=$7,
-          exchange_rate=$8,
+          purchaser=$7,
+          consignment_no=$8,
+          supp_order_no=$9,
+          link_to_so_no=$10,
 
-          order_date=$9,
-          req_receipt_date=$10,
-          receipt_date=$11,
-          expected_date=$12,
-          invoice_date=$13,
-          due_date=$14,
+          currency_id=$11,
+          exchange_rate=$12,
 
-          reference=$15,
+          order_date=$13,
+          req_receipt_date=$14,
+          receipt_date=$15,
+          expected_date=$16,
+          invoice_date=$17,
+          due_date=$18,
 
-          payable_bank=$16,
-          payable_bank_id=$17,
+          reference=$19,
 
-          payment_terms_id=$18,
-          payment_method_id=$19,
+          payable_bank=$20,
+          payable_bank_id=$21,
 
-          previous_code=$20,
-          link_to_cust=$21,
-          deduct_from_rebate=$22,
+          payment_terms_id=$22,
+          payment_method_id=$23,
 
-          contact=$23,
-          book_in_phone=$24,
-          book_in_contact=$25,
-          book_in_email=$26,
+          previous_code=$24,
+          link_to_cust=$25,
+          deduct_from_rebate=$26,
 
-          shipment_method_id=$27,
-          shipping_agent=$28,
-          shipment_ref_no=$29,
-          warehouse_ref_no=$30,
+          contact=$27,
+          book_in_phone=$28,
+          book_in_contact=$29,
+          book_in_email=$30,
 
-          reason=$31,
-          linked_po=$32,
+          shipment_method_id=$31,
+          shipping_agent=$32,
+          shipment_ref_no=$33,
+          warehouse_ref_no=$34,
 
-          notes=$33,
-          internal_notes=$34,
+          reason=$35,
+          linked_po=$36,
 
-          subtotal=$35,
-          tax_amount=$36,
-          total_amount=$37,
+          notes=$37,
+          internal_notes=$38,
 
-          status=$38,
+          subtotal=$39,
+          tax_amount=$40,
+          total_amount=$41,
 
-          anonymous_supplier=$39,
+          status=$42,
 
-          supplier_posting_group_id=$40,
-          vat_business_posting_group_id=$41,
+          anonymous_supplier=$43,
+
+          supplier_posting_group_id=$44,
+          vat_business_posting_group_id=$45,
 
           updated_at=NOW()
 
-          WHERE id=$42 AND company_id=$43;
+          WHERE id=$46 AND company_id=$47;
         `,
 
       [
         order.supplier_id,
         order.supplier_no,
+        order.supplier_name,
+
+        order.pay_to_supplier_id,
+        order.pay_to_supplier_no,
+        order.pay_to_supplier_name,
 
         order.purchaser,
         order.consignment_no,

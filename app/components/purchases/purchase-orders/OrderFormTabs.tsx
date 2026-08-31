@@ -62,7 +62,10 @@ interface OrderFormTabsProps {
     field: K,
     value: PurchaseOrder[K],
   ) => void;
-  setSupplierModalOpen: (open: boolean) => void;
+
+  onGeneralSupplierSelect: () => void; 
+  onInvoicingSupplierSelect: () => void;
+  // setSupplierModalOpen: (open: boolean) => void;
   setLocationModalOpen: (open: boolean) => void;
   labelStyle?: string;
   inputStyle?: string;
@@ -83,7 +86,9 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   setCurrencyConfig,
   masterData,
   updateField,
-  setSupplierModalOpen,
+  // setSupplierModalOpen,
+  onGeneralSupplierSelect, 
+  onInvoicingSupplierSelect,
   setLocationModalOpen,
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
   inputStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
@@ -150,7 +155,8 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <button
                   type="button"
                   disabled={isReadOnly}
-                  onClick={() => setSupplierModalOpen(true)}
+                  onClick={onGeneralSupplierSelect}
+                  // onClick={() => setSupplierModalOpen(true)}
                   className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                 >
                   {/* <Icon icon="tabler:search" /> */}
@@ -516,15 +522,15 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   type="text"
                   readOnly
                   className={`${inputStyle} font-mono`}
-                  value={order.supplier_no || "Click Select..."}
+                  value={order.pay_to_supplier_no || "Click Select..."}
                 />
                 <button
                   type="button"
                   disabled={isReadOnly}
-                  onClick={() => setSupplierModalOpen(true)}
+                  // onClick={() => setSupplierModalOpen(true)}
+                  onClick={onInvoicingSupplierSelect}
                   className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                 >
-                  {/* <Icon icon="tabler:search" /> */}
                   <Icon icon="tabler:external-link" className="w-4 h-4" />
                 </button>
               </div>
@@ -535,7 +541,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 type="text"
                 disabled={isSettingsDisabled}
                 className={inputStyle}
-                value={order.supplier_name || ""}
+                value={order.pay_to_supplier_name || ""}
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
@@ -730,9 +736,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               <label className={labelStyle}>Due Date</label>
 
               <DatePicker
-                value={
-                  order.due_date ? new Date(order.due_date) : undefined
-                }
+                value={order.due_date ? new Date(order.due_date) : undefined}
                 containerClassName="col-span-8"
                 onChange={(date) =>
                   updateField(
@@ -874,7 +878,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   <Icon icon="tabler:external-link" className="w-4 h-4" />
                 </button>
               </div>
-
 
               {/* <input
                 type="text"
@@ -1099,4 +1102,3 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
     </div>
   );
 };
-

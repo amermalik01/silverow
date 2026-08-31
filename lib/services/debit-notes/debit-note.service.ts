@@ -48,7 +48,7 @@ export class DebitNoteService {
       previous_code: "dn.previous_code",
       current_stage: "cos.name",
       supplierNo: "dn.supplier_no",
-      supplierName: "p.name",
+      supplierName: "dn.supplier_name",
       supplierCity: "dna.city",
       purchaser: "dn.purchaser",
       currency_code: "c.code",
@@ -95,7 +95,7 @@ export class DebitNoteService {
           whereClauses.push(`dn.supplier_cn_no ILIKE $${queryValues.length}`);
         } else if (colKey === "supplierName") {
           queryValues.push(`%${filter.value}%`);
-          whereClauses.push(`p.name ILIKE $${queryValues.length}`);
+          whereClauses.push(`dn.supplier_name ILIKE $${queryValues.length}`);
         }
       }
 
@@ -124,7 +124,6 @@ export class DebitNoteService {
     // Base Join SQL
     const joinSql = `
       FROM debit_notes dn
-      LEFT JOIN parties p ON p.id = dn.supplier_id
       LEFT JOIN currencies c ON c.id = dn.currency_id
       LEFT JOIN shipment_method sm ON sm.id = dn.shipment_method_id
       LEFT JOIN common_order_stages cos 
@@ -158,7 +157,6 @@ export class DebitNoteService {
         dn.supplier_no AS "supplierNo",
         dn.subtotal AS "Amount",
         dn.total_amount AS "Amount (incl VAT)",
-        p.name AS "supplierName",
         c.code AS currency_code,
         cos.name AS current_stage,
         sm.name AS shipment_method,
@@ -197,13 +195,11 @@ export class DebitNoteService {
   static async get(companyId: string, id: string) {
     const orderResult = await pool.query(
       `
-      SELECT dn.*, 
-        p.name AS supplier_name,
+      SELECT dn.*,
         pt.name AS payment_terms,
         pm.name AS payment_method,
         sm.name AS shipment_method
       FROM debit_notes dn
-      LEFT JOIN parties p ON p.id = dn.supplier_id
       LEFT JOIN payment_terms pt ON pt.id = dn.payment_terms_id
       LEFT JOIN payment_method pm ON pm.id = dn.payment_method_id
       LEFT JOIN shipment_method sm ON sm.id = dn.shipment_method_id
@@ -350,29 +346,37 @@ export class DebitNoteService {
       );
       const debitNoteNo = seqResult.rows[0].code;
 
-      // const supplierResult = await client.query(
-      //   `SELECT id FROM parties WHERE id = $1 AND company_id = $2`,
-      //   [note.supplier_id, companyId],
-      // );
-      // if (!supplierResult.rows.length) throw new Error("Supplier not found");
+      const supplierResult = await client.query(
+        `SELECT id FROM parties WHERE id = $1 AND company_id = $2`,
+        [note.supplier_id, companyId],
+      );
+      if (!supplierResult.rows.length) throw new Error("Supplier not found");
+
+      const supplierPostingGroupId =
+        note.supplier_posting_group_id ||
+        note.purchase_posting_group_id ||
+        null;
+
+      const vatBusinessPostingGroupId =
+        note.vat_business_posting_group_id || null;
 
       const noteResult = await client.query(
         `
         INSERT INTO debit_notes (
-          company_id, debit_note_no, supplier_id, supplier_no, warehouse_id, currency_id, 
-          purchaser, consignment_no, supp_order_no, link_to_so_no, anonymous_supplier,
-          order_date, req_receipt_date, receipt_date, expected_date, invoice_date, due_date,
+          company_id, debit_note_no, supplier_id, supplier_no, supplier_name, pay_to_supplier_id, pay_to_supplier_no, 
+          pay_to_supplier_name, warehouse_id, currency_id, purchaser, consignment_no, supp_order_no, link_to_so_no, 
+          anonymous_supplier, order_date, req_receipt_date, receipt_date, expected_date, invoice_date, due_date,
           payable_bank, payable_bank_id, payment_terms, payment_terms_id, payment_method, payment_method_id,
           previous_code, contact, book_in_phone, book_in_contact, book_in_email, shipment_method_id,
           shipment_method, shipping_agent, shipment_ref_no, warehouse_booking_ref_no, supplier_booking_ref_no,
           reason, linked_po, exchange_rate, document_date, reference,
           freight_charges, shipment_date, delivery_date, delivery_time, notes, internal_notes,
-          subtotal, tax_amount, total_amount, status, created_at
+          subtotal, tax_amount, total_amount, status, supplier_posting_group_id, vat_business_posting_group_id, created_at
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
           $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36,
-          $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, now()
+          $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, now()
         )
         RETURNING *
         `,
@@ -381,6 +385,12 @@ export class DebitNoteService {
           debitNoteNo,
           note.supplier_id,
           note.supplier_no || null,
+          note.supplier_name || null,
+
+          note.pay_to_supplier_id || null,
+          note.pay_to_supplier_no || null,
+          note.pay_to_supplier_name || null,
+
           note.warehouse_id || null,
           note.currency_id || null,
           note.purchaser || null,
@@ -427,6 +437,8 @@ export class DebitNoteService {
           note.tax_amount || 0,
           note.total_amount || 0,
           note.status || "draft",
+          supplierPostingGroupId,
+          vatBusinessPostingGroupId,
         ],
       );
 
@@ -497,28 +509,42 @@ export class DebitNoteService {
       throw new Error("Posted debit notes cannot be modified");
     }
 
+    const supplierPostingGroupId =
+      note.supplier_posting_group_id || note.purchase_posting_group_id || null;
+
+    const vatBusinessPostingGroupId =
+      note.vat_business_posting_group_id || null;
+
     await client.query(
       `
       UPDATE debit_notes
       SET
-        supplier_id = $1, supplier_no = $2, warehouse_id = $3, currency_id = $4,
-        purchaser = $5, consignment_no = $6, supp_order_no = $7, link_to_so_no = $8,
-        anonymous_supplier = $9, order_date = $10, req_receipt_date = $11, receipt_date = $12,
-        expected_date = $13, invoice_date = $14, due_date = $15, payable_bank = $16,
-        payable_bank_id = $17, payment_terms = $18, payment_terms_id = $19, payment_method = $20,
-        payment_method_id = $21, previous_code = $22, contact = $23, book_in_phone = $24,
-        book_in_contact = $25, book_in_email = $26, shipment_method_id = $27, shipment_method = $28,
-        shipping_agent = $29, shipment_ref_no = $30, warehouse_booking_ref_no = $31,
-        supplier_booking_ref_no = $32,  reason = $33, linked_po = $34,
-        exchange_rate = $35, document_date = $36, reference = $37, freight_charges = $38,
-        shipment_date = $39, delivery_date = $40, delivery_time = $41, notes = $42,
-        internal_notes = $43, subtotal = $44, tax_amount = $45, total_amount = $46, status = $47,
+        supplier_id = $1, supplier_no = $2, supplier_name=$3, pay_to_supplier_id=$4, 
+        pay_to_supplier_no=$5, pay_to_supplier_name=$6, warehouse_id = $7, currency_id = $8,
+        purchaser = $9, consignment_no = $10, supp_order_no = $11, link_to_so_no = $12,
+        anonymous_supplier = $13, order_date = $14, req_receipt_date = $15, receipt_date = $16,
+        expected_date = $17, invoice_date = $18, due_date = $19, payable_bank = $20,
+        payable_bank_id = $21, payment_terms = $22, payment_terms_id = $23, payment_method = $24,
+        payment_method_id = $25, previous_code = $26, contact = $27, book_in_phone = $28,
+        book_in_contact = $29, book_in_email = $30, shipment_method_id = $31, shipment_method = $32,
+        shipping_agent = $33, shipment_ref_no = $34, warehouse_booking_ref_no = $35,
+        supplier_booking_ref_no = $36,  reason = $37, linked_po = $38,
+        exchange_rate = $39, document_date = $40, reference = $41, freight_charges = $42,
+        shipment_date = $43, delivery_date = $44, delivery_time = $45, notes = $46,
+        internal_notes = $47, subtotal = $48, tax_amount = $49, total_amount = $50, status = $51,
+        supplier_posting_group_id=$52, vat_business_posting_group_id=$53,
         updated_at = now()
-      WHERE id = $48 AND company_id = $49
+      WHERE id = $54 AND company_id = $55
       `,
       [
         note.supplier_id,
         note.supplier_no || null,
+        note.supplier_name,
+
+        note.pay_to_supplier_id,
+        note.pay_to_supplier_no,
+        note.pay_to_supplier_name,
+
         note.warehouse_id || null,
         note.currency_id || null,
         note.purchaser || null,
@@ -565,6 +591,8 @@ export class DebitNoteService {
         note.tax_amount || 0,
         note.total_amount || 0,
         note.status || "draft",
+        supplierPostingGroupId,
+        vatBusinessPostingGroupId,
         id,
         companyId,
       ],

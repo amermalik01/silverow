@@ -480,28 +480,6 @@ export default function SalesOrderLines({
               );
             })}
           </tbody>
-
-          {/* <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
-            <tr>
-              <td
-                colSpan={9}
-                className="p-2.5 text-right capitalize tracking-wider text-xs"
-              >
-                Totals
-              </td>
-              <td className="p-2.5 text-right font-mono text-amber-600 dark:text-amber-400">
-                {totals.discount.toFixed(2)}
-              </td>
-              <td className="p-2.5" />
-              <td className="p-2.5 text-right font-mono">
-                {totals.net.toFixed(2)}
-              </td>
-              <td className="p-2.5 text-right font-mono">
-                {totals.gross.toFixed(2)}
-              </td>
-              {!isReadonly && <td />}
-            </tr>
-          </tfoot> */}
         </table>
       </div>
 

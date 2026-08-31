@@ -146,7 +146,8 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
 
   const financials = useMemo(() => {
     const originalAmount = lines.reduce(
-      (sum, l) => sum + Number((Number(l.quantity || 0) * Number(l.unit_cost || 0)) || 0),
+      (sum, l) =>
+        sum + Number(Number(l.quantity || 0) * Number(l.unit_cost || 0) || 0),
       0,
     );
     // const originalAmount = lines.reduce(
@@ -321,7 +322,9 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           setCurrencyConfig={noop}
           masterData={masterData}
           updateField={noop}
-          setSupplierModalOpen={noop}
+          // setSupplierModalOpen={noop}
+          onGeneralSupplierSelect={noop}
+          onInvoicingSupplierSelect={noop}
           setLocationModalOpen={noop}
           labelStyle={labelStyle}
           inputStyle={inputStyle}

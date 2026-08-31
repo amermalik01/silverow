@@ -68,7 +68,9 @@ interface OrderFormTabsProps {
     field: K,
     value: DebitNote[K],
   ) => void;
-  setSupplierModalOpen: (open: boolean) => void;
+  onGeneralSupplierSelect: () => void;
+  onInvoicingSupplierSelect: () => void;
+  // setSupplierModalOpen: (open: boolean) => void;
   setLocationModalOpen: (open: boolean) => void;
   setPiModalOpen?: (open: boolean) => void;
   labelStyle?: string;
@@ -89,7 +91,9 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   setCurrencyConfig,
   masterData,
   updateField,
-  setSupplierModalOpen,
+  // setSupplierModalOpen,
+  onGeneralSupplierSelect,
+  onInvoicingSupplierSelect,
   setLocationModalOpen,
   setPiModalOpen,
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
@@ -156,7 +160,8 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <button
                   type="button"
                   disabled={isReadOnly}
-                  onClick={() => setSupplierModalOpen(true)}
+                  onClick={onGeneralSupplierSelect}
+                  // onClick={() => setSupplierModalOpen(true)}
                   className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                 >
                   <Icon icon="tabler:external-link" className="w-4 h-4" />
@@ -495,12 +500,13 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   type="text"
                   readOnly
                   className={`${inputStyle} font-mono`}
-                  value={note.supplier_no || "Click Select..."}
+                  value={note.pay_to_supplier_no || "Click Select..."}
                 />
                 <button
                   type="button"
                   disabled={isReadOnly}
-                  onClick={() => setSupplierModalOpen(true)}
+                  onClick={onInvoicingSupplierSelect}
+                  // onClick={() => setSupplierModalOpen(true)}
                   className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                 >
                   <Icon icon="tabler:external-link" className="w-4 h-4" />
@@ -513,7 +519,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 type="text"
                 disabled={isSettingsDisabled}
                 className={inputStyle}
-                value={note.supplier_name || ""}
+                value={note.pay_to_supplier_name || ""}
               />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">

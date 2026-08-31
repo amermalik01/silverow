@@ -133,8 +133,12 @@ export const DebitNoteLineSchema = z
 
 export const DebitNoteSchema = z.object({
   supplier_id: z.string().uuid("Supplier selection is required"),
-
   supplier_no: looseString,
+  supplier_name: looseString,
+
+  pay_to_supplier_id: z.string().uuid(),
+  pay_to_supplier_no: looseString,
+  pay_to_supplier_name: looseString,
 
   purchaser: looseString,
   consignment_no: looseString,

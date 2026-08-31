@@ -58,7 +58,7 @@ export const purchaseInvoicesConfig: ColumnConfig[] = [
     columnWidth: 100,
   },
   {
-    columnKey: "sell_to_cust_no",
+    columnKey: "supplier_no",
     label: "Supplier No.",
     dataType: "text",
     isVisible: true,
@@ -67,7 +67,7 @@ export const purchaseInvoicesConfig: ColumnConfig[] = [
     columnWidth: 100,
   },
   {
-    columnKey: "sell_to_cust_name",
+    columnKey: "supplier_name",
     label: "Name",
     dataType: "text",
     isVisible: true,

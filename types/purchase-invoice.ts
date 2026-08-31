@@ -12,9 +12,15 @@ export interface PurchaseInvoice {
   purchase_order_id?: string; // Links back to source PO
   purchase_order_no?: string;
   order_code?: string; // Legacy/Display alias for purchase_order_no
+  
   supplier_id: string;
-  supplier_name?: string;
   supplier_no?: string;
+  supplier_name?: string;
+
+  pay_to_supplier_id: string;
+  pay_to_supplier_no?: string;
+  pay_to_supplier_name?: string;
+
   supplier_invoice_no?: string;
   supp_order_no?: string;
   prev_code?: string;

@@ -9,6 +9,10 @@ export interface PurchaseOrder {
   supplier_id: string;
   supplier_no?: string;
   supplier_name?: string;
+  
+  pay_to_supplier_id: string;
+  pay_to_supplier_no?: string;
+  pay_to_supplier_name?: string;
 
   stage_id?: string;
   stage_name?: string;

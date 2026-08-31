@@ -25,8 +25,8 @@ export class PurchaseInvoiceService {
       invoice_code: "pi.invoice_no",
       order_code: "po.order_no",
       supp_order_no: "pi.supplier_invoice_no",
-      sell_to_cust_no: "p.supplier_code",
-      sell_to_cust_name: "p.name",
+      supplier_no: "pi.supplier_no",
+      supplier_name: "pi.supplier_name",
       sell_to_city: "poa.city",
       srm_purchase_code: "COALESCE(po.purchaser, '')",
       crcode: "c.code",
@@ -99,7 +99,7 @@ export class PurchaseInvoiceService {
     // Base Joins targeting purchase_order_addresses via pi.purchase_order_id
     const joinSql = `
       FROM purchase_invoices pi
-      LEFT JOIN parties p ON p.id = pi.supplier_id
+      
       LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id
       LEFT JOIN currencies c ON c.id = pi.currency_id
       LEFT JOIN shipment_method sm ON sm.id = po.shipment_method_id
@@ -114,6 +114,10 @@ export class PurchaseInvoiceService {
              ON ship_a.purchase_order_id = pi.purchase_order_id 
             AND ship_a.address_type = 'shipping'
     `;
+
+    /* 
+    LEFT JOIN parties p ON p.id = pi.supplier_id
+    */
 
     // Count Query
     const countQuery = `SELECT COUNT(DISTINCT pi.id) as total ${joinSql} ${whereSql}`;
@@ -137,8 +141,6 @@ export class PurchaseInvoiceService {
         po.order_no AS order_code,
         pi.supplier_invoice_no AS supp_order_no,
         po.previous_code AS prev_code,
-        p.supplier_code AS sell_to_cust_no,
-        p.name AS sell_to_cust_name,
         
         -- Supplier Address Details (from purchase_order_addresses)
         poa.address_1 AS sell_to_address,
@@ -204,12 +206,17 @@ export class PurchaseInvoiceService {
       `
       SELECT 
         pi.*,
-        p.name AS supplier_name,
         pt.name AS payment_terms,
         pm.name AS payment_method,
         sm.name AS shipment_method,
         po.supplier_no,
         po.supplier_id,
+        po.supplier_name,
+
+        po.pay_to_supplier_id,
+        po.pay_to_supplier_no,
+        po.pay_to_supplier_name,
+        
         po.currency_id,
         po.supp_order_no,
         po.order_no AS purchase_order_no,
@@ -233,7 +240,7 @@ export class PurchaseInvoiceService {
         po.warehouse_ref_no,
         po.anonymous_supplier,
         po.vat_business_posting_group_id,
-        COALESCE(po.supplier_posting_group_id, p.purchase_posting_group_id) AS supplier_posting_group_id,
+        po.supplier_posting_group_id,
 
         po.previous_code,
         po.link_to_cust,
@@ -257,9 +264,6 @@ export class PurchaseInvoiceService {
         po.payment_terms_id,
         po.purchaser_id,
         po.location_id,
-
-        p.name AS supplier_name,
-        p.supplier_code,
         
         c.code AS currency_code,
         pt.name AS payment_terms,
@@ -268,7 +272,6 @@ export class PurchaseInvoiceService {
 
       FROM purchase_invoices pi
       LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id AND po.company_id = $2
-      LEFT JOIN parties p ON p.id = pi.supplier_id AND p.company_id = $2
       LEFT JOIN currencies c ON c.id = pi.currency_id
       LEFT JOIN payment_terms pt ON pt.id = po.payment_terms_id
       LEFT JOIN payment_method pm ON pm.id = po.payment_method_id
@@ -404,7 +407,7 @@ export class PurchaseInvoiceService {
       invoice_code: "pi.invoice_no",
       order_code: "po.order_no",
       supp_order_no: "pi.supplier_invoice_no",
-      sell_to_cust_no: "p.supplier_code",
+      supplier_no: "p.supplier_no",
       sell_to_cust_name: "p.name",
       sell_to_city: "pia.city",
       srm_purchase_code: "pi.purchaser",
@@ -513,7 +516,7 @@ export class PurchaseInvoiceService {
         po.order_no AS order_code,
         pi.supplier_invoice_no AS supp_order_no,
         pi.previous_code AS prev_code,
-        p.supplier_code AS sell_to_cust_no,
+        pi.supplier_no AS supplier_no,
         p.name AS sell_to_cust_name,
         
         -- Supplier Address Details

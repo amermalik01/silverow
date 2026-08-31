@@ -32,21 +32,21 @@ const formatAmount = (val?: string | number | null): React.ReactNode => {
 export function getPostedDebitNoteCellRenderers(slug: string) {
   return {
     // Primary Posted Document Code (Main Identifier)
-    invoice_code: (
-      row: DebitNote & { invoice_code?: string; posted_debit_note_no?: string },
+    debit_note_no: (
+      row: DebitNote & { invoice_code?: string; debit_note_no?: string },
     ) => (
       <Link
         href={`/${slug}/purchases/posted-debit-notes/${row.id}`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
-        {row.invoice_code || row.posted_debit_note_no || "-"}
+        {row.debit_note_no || row.invoice_code || "-"}
       </Link>
     ),
 
     // Original Unposted Reference Code
-    debitNoteCode: (
-      row: DebitNote & { debitNoteCode?: string; debit_note_no?: string },
-    ) => row.debitNoteCode || row.debit_note_no || "-",
+    // debitNoteCode: (
+    //   row: DebitNote & { debitNoteCode?: string; debit_note_no?: string },
+    // ) => row.debitNoteCode || row.debit_note_no || "-",
 
     // Status / Stage Badges
     /* current_stage: (
@@ -173,20 +173,20 @@ export function getPostedDebitNoteCellRenderers(slug: string) {
       row: DebitNote & { "Amount (incl VAT)"?: number; total_amount?: number },
     ) => formatAmount(row["Amount (incl VAT)"] ?? row.total_amount),
 
-    // Counts & Posting Flags
-    documentDNCount: (row: DebitNote & { documentDNCount?: number }) => (
-      <span className="font-mono text-right block">
-        {row.documentDNCount ?? 0}
-      </span>
-    ),
-    documentPDNCount: (row: DebitNote & { documentPDNCount?: number }) => (
-      <span className="font-mono text-right block">
-        {row.documentPDNCount ?? 0}
-      </span>
-    ),
-    emailCount: (row: DebitNote & { emailCount?: number }) => (
-      <span className="font-mono text-right block">{row.emailCount ?? 0}</span>
-    ),
+    // // Counts & Posting Flags
+    // documentDNCount: (row: DebitNote & { documentDNCount?: number }) => (
+    //   <span className="font-mono text-right block">
+    //     {row.documentDNCount ?? 0}
+    //   </span>
+    // ),
+    // documentPDNCount: (row: DebitNote & { documentPDNCount?: number }) => (
+    //   <span className="font-mono text-right block">
+    //     {row.documentPDNCount ?? 0}
+    //   </span>
+    // ),
+    // emailCount: (row: DebitNote & { emailCount?: number }) => (
+    //   <span className="font-mono text-right block">{row.emailCount ?? 0}</span>
+    // ),
     vatPosted: (row: DebitNote & { vatPosted?: string }) => (
       <span className="text-center block">{row.vatPosted || "No"}</span>
     ),

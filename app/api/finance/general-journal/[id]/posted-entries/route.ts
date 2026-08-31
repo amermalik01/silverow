@@ -61,13 +61,24 @@ export async function POST(
 
     const header = headerQuery.rows[0];
 
+    // const posted_at = latestEntry?.created_at ? new Date(latestEntry.created_at).toLocaleDateString("en-GB") : "";
+    const posted_at = header?.posted_at
+      ? new Date(header?.posted_at)
+          .toISOString()
+          .slice(0, 10)
+          .split("-")
+          .reverse()
+          .join("/")
+      : "";
+
     return NextResponse.json({
       success: true,
       data: result.rows,
       posted_by: header?.posted_by || "System User",
-      posted_at: header?.posted_at
-        ? new Date(header.posted_at).toLocaleDateString("en-GB")
-        : "",
+      posted_at: posted_at
+      // posted_at: header?.posted_at
+      //   ? new Date(header.posted_at).toLocaleDateString("en-GB")
+      //   : "",
     });
   } catch (err) {
     console.error("Fetch Posted Journal Entries Error:", err);

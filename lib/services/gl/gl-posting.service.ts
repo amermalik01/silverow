@@ -207,20 +207,6 @@ export class GLPostingService {
 
     const entryNo = seqResult.rows[0].code;
 
-    // Fetch next system transaction sequences
-    const txKeyResult = await client.query(
-      "SELECT nextval('gl_transaction_id_seq') AS tx_id",
-    );
-    const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
-
-    let vatTransactionId: number | null = null;
-    if (data.source === "SALES" || data.source === "PURCHASE") {
-      const vatKeyResult = await client.query(
-        "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
-      );
-      vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
-    }
-
     // 4. Insert Header into journal_entries
     const headerResult = await client.query(
       `
@@ -296,6 +282,20 @@ export class GLPostingService {
     // 6. Post expanded lines to journal_entry_lines and gl_ledger_entries
     for (const leg of expandedLines) {
       let resolvedAccountId = leg.account_id;
+
+      // Fetch next system transaction sequences
+      const txKeyResult = await client.query(
+        "SELECT nextval('gl_transaction_id_seq') AS tx_id",
+      );
+      const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
+
+      let vatTransactionId: number | null = null;
+      if (data.source === "SALES" || data.source === "PURCHASE") {
+        const vatKeyResult = await client.query(
+          "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
+        );
+        vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
+      }
 
       // Fallback AP/AR resolution for sub-ledger journal entries without direct account_id
       if (!resolvedAccountId && leg.party_id) {
@@ -444,32 +444,6 @@ export class GLPostingService {
           data.created_by || null,
         ],
       );
-      // await client.query(
-      //   `
-      //   INSERT INTO gl_ledger_entries (
-      //     company_id, account_id, source_journal_id, entry_no, posting_date,
-      //     source_type, reference, description, debit, credit,
-      //     party_type, party_id, document_no, posted_by, posted_at
-      //   )
-      //   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
-      //   `,
-      //   [
-      //     data.company_id,
-      //     resolvedAccountId,
-      //     journalId,
-      //     entryNo,
-      //     data.entry_date,
-      //     data.source,
-      //     data.reference || null,
-      //     leg.description,
-      //     leg.debit,
-      //     leg.credit,
-      //     subLedgerPartyType || null,
-      //     leg.party_id,
-      //     data.reference || entryNo,
-      //     data.created_by || null,
-      //   ],
-      // );
 
       lineNo += 10000;
     }
@@ -482,3 +456,30 @@ export class GLPostingService {
     };
   }
 }
+
+// await client.query(
+//   `
+//   INSERT INTO gl_ledger_entries (
+//     company_id, account_id, source_journal_id, entry_no, posting_date,
+//     source_type, reference, description, debit, credit,
+//     party_type, party_id, document_no, posted_by, posted_at
+//   )
+//   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+//   `,
+//   [
+//     data.company_id,
+//     resolvedAccountId,
+//     journalId,
+//     entryNo,
+//     data.entry_date,
+//     data.source,
+//     data.reference || null,
+//     leg.description,
+//     leg.debit,
+//     leg.credit,
+//     subLedgerPartyType || null,
+//     leg.party_id,
+//     data.reference || entryNo,
+//     data.created_by || null,
+//   ],
+// );
