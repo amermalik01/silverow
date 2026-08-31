@@ -674,7 +674,7 @@ export default function JournalForm({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-6 bg-white p-3 rounded shadow-sm border border-zinc-200">
+      <div className="flex flex-wrap justify-between items-start gap-6 bg-white p-3 rounded shadow-sm border border-zinc-200">
         <div className="flex items-center gap-2">
           <span className="font-medium text-zinc-600">Journal No.</span>
           <input
@@ -685,7 +685,7 @@ export default function JournalForm({
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <span className="font-medium text-zinc-600 shrink-0">
             Header Desc.
           </span>
@@ -699,6 +699,21 @@ export default function JournalForm({
               setMetadata({ ...metadata, description: e.target.value })
             }
           />
+        </div> */}
+        <div className="flex justify-end gap-2">
+          {!formDisabled && (
+            <div className="flex justify-start">
+              <Button
+                type="button"
+                // variant="outline"
+                onClick={addLineRow}
+                // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                variant="add_line"
+              >
+                Add Line
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -711,14 +726,14 @@ export default function JournalForm({
               <th className="p-2 w-32">Doc. Type</th>
               <th className="p-2 w-24">Doc. No.</th>
               <th className="p-2 w-32">Tx Type</th>
-              <th className="p-2 w-72">Account Selection</th>
+              <th className="p-2 w-48">Account Selection</th>
               <th className="p-2 w-20">Currency</th>
               <th className="p-2 w-24">Debit</th>
               <th className="p-2 w-24">Credit</th>
               <th className="p-2 w-20 text-center">Cnv. Rate</th>
               <th className="p-2 w-28">Converted</th>
               <th className="p-2 w-64">Balancing G/L Selector</th>
-              <th className="p-2 w-24 text-center">Action</th>
+              <th className="p-2 w-20 text-center">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 font-medium text-zinc-600">
@@ -1028,7 +1043,7 @@ export default function JournalForm({
                             formDisabled || !line.party_id || localAmount <= 0
                           }
                           onClick={() => setAllocationModalIndex(index)}
-                          className={`flex items-center justify-center gap-1 py-1 px-2 border rounded font-semibold transition ${
+                          className={`flex items-center justify-center gap-1 p-1 border rounded  transition ${
                             totalLineAllocated > 0
                               ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
                               : "bg-zinc-100 text-zinc-700 border-zinc-300 hover:bg-zinc-200"
@@ -1043,7 +1058,7 @@ export default function JournalForm({
                         type="button"
                         disabled={lines.length === 1 || formDisabled}
                         onClick={() => removeLineRow(index)}
-                        className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                        className="text-red-600 hover:text-red-800 p-1 rounded  bg-slate-100 border border-zinc-300 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
                       >
                         <Icon icon="lucide:x" className="w-4 h-4" />
                       </Button>
@@ -1055,20 +1070,9 @@ export default function JournalForm({
           </tbody>
         </table>
       </div>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 bg-white rounded border border-zinc-200">
-        {!formDisabled && (
-          <div className="flex justify-start">
-            <Button
-              type="button"
-              // variant="outline"
-              onClick={addLineRow}
-              // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-              variant="add_line"
-            >
-              Add Line
-            </Button>
-          </div>
-        )}
+
+      {(journalType == "general") &&(
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 bg-white rounded border border-zinc-200">
         <div className="flex justify-start"></div>
 
         <div className="flex items-center justify-end gap-6 font-mono text-zinc-600 bg-zinc-50 border p-2 px-4 rounded font-bold">
@@ -1092,6 +1096,9 @@ export default function JournalForm({
           </div>
         </div>
       </div>
+
+      )}
+      
 
       <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
         {!readOnly && (

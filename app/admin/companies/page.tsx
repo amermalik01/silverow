@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import DeleteCompanyButton from "@/app/components/admin/DeleteCompanyButton";
-import BreadcrumbComp from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
+// import BreadcrumbComp from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 import DataTable from "@/app/components/utilities/data-table/DataTable";
 import BasicTable from "@/app/components/utilities/basic-table/BasicTable";
 import StripedRowTable from "@/app/components/utilities/striped-row-table/StripedRowTable";
@@ -66,7 +66,7 @@ export default function CompaniesPage() {
         </Button>
       </div>
 
-      <BreadcrumbComp title="Companies" items={BCrumb} />
+      {/* <BreadcrumbComp title="Companies" items={BCrumb} /> */}
 
       {/* <div className="flex gap-6 flex-col ">
         <DataTable data={companies} />

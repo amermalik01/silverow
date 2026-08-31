@@ -116,9 +116,9 @@ export default function JournalList({
               }`}
             >
               {tab === "unposted"
-                ? "Drafts"
+                ? "Open"
                 : tab === "posted"
-                  ? "Posted Ledger"
+                  ? "Posted Journals"
                   : "All Journals"}
             </button>
           ))}

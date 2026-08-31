@@ -5,7 +5,7 @@ import { ColumnConfig } from "@/types/table";
 export const journalsColumnsConfig: ColumnConfig[] = [
   {
     columnKey: "entry_no",
-    label: "Code / Ref",
+    label: "Journal No.",
     dataType: "text",
     isVisible: true,
     isPinned: false,
