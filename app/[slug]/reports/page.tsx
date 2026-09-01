@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useParams } from "next/navigation";
 import { Star, FileText, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
@@ -18,6 +19,9 @@ interface ReportGroups {
 }
 
 export default function ReportsPage() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+
   // 2. Client-side state handling search and bookmarks (favorites)
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<string[]>([
@@ -36,7 +40,6 @@ export default function ReportsPage() {
     "PUR_SUPP_STMT",
     "PUR_UNPOSTED_PO",
     "PUR_POSTED_INV",
-    
   ]);
 
   // Toggle favorite status safely
@@ -50,9 +53,9 @@ export default function ReportsPage() {
   const reportData: ReportGroups = {
     Finance: [
       { id: "FIN_TRIAL_BALANCE", name: "Trial Balance Report" },
-    //   { id: "FIN_TRIAL_DET", name: "Trial Balance - Detailed  - Summary" },
+      //   { id: "FIN_TRIAL_DET", name: "Trial Balance - Detailed  - Summary" },
       { id: "FIN_VAT_REP", name: "VAT Report" },
-    //   { id: "FIN_OSS_VAT", name: "One Stop VAT Report" },
+      //   { id: "FIN_OSS_VAT", name: "One Stop VAT Report" },
       { id: "FIN_EC_SALES", name: "EC Sales List" },
       { id: "FIN_PL_STMT", name: "Profit and Loss Statement" },
       { id: "FIN_BAL_SHEET", name: "Balance Sheet" },
@@ -137,16 +140,21 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-6 container mx-auto p-4">
-      {/* <Breadcrumbs items={[ { label: "Reports", href: `/${slug}/reports`, }, { label: "All Reports", href: `/${slug}/reports`, }, { label: "Posted Sales Invoice and Credit Note", }, ]} /> */}
+    <div className="space-y-6 container mx-auto">
+      <Breadcrumbs
+        items={[
+          { label: "Reports", href: `/${slug}/reports` },
+          { label: "All Reports" },
+        ]}
+      />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center space-x-2 text-xs text-slate-500">
+        {/* <div className="flex items-center space-x-2 text-xs text-slate-500">
           <span>Reports</span>
           <span>/</span>
           <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
             All Reports
           </span>
-        </div>
+        </div> */}
 
         {/* Real-time Filter Field */}
         <div className="relative w-72">

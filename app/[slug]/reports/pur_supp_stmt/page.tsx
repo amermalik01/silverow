@@ -194,7 +194,7 @@ export default function SupplierStatementReport() {
     <div className="w-full space-y-6">
       <Breadcrumbs
         items={[
-          { label: "Reports", href: `/${slug}/reports` },
+          // { label: "Reports", href: `/${slug}/reports` },
           { label: "All Reports", href: `/${slug}/reports` },
           { label: "Supplier Statement" },
         ]}

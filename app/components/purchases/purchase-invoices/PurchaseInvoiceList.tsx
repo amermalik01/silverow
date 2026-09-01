@@ -7,6 +7,7 @@ import { PurchaseInvoice } from "@/types/purchase-invoice";
 import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
 import { DataTable } from "@/app/components/DataTable/DataTable";
 import { getPurchaseInvoiceCellRenderers } from "./purchaseInvoiceCellRenderers";
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
 type Props = {
   slug: string;
@@ -66,6 +67,13 @@ export default function PurchaseOrderList({ slug }: Props) {
 
   return (
     <div className="space-y-4 container mx-auto">
+      <Breadcrumbs
+        items={[
+          {
+            label: "Purchase Invoices",
+          },
+        ]}
+      />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">Purchase Invoices</h2>

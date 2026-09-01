@@ -23,6 +23,7 @@ import { OrderFormTabs } from "../debit-notes/OrderFormTabs";
 // import { PostedTransactionsModal } from "./PostedTransactionsModal";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { PostedTransactionsModal } from "../../finance/posted-entries/PostedTransactionsModal";
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
 interface Props {
   slug: string;
@@ -209,9 +210,9 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
   }, [currencyConfig.currency_id, masterData]);
 
   const financials = useMemo(() => {
-
     const originalAmount = lines.reduce(
-      (sum, l) => sum + Number((Number(l.quantity || 0) * Number(l.unit_cost || 0)) || 0),
+      (sum, l) =>
+        sum + Number(Number(l.quantity || 0) * Number(l.unit_cost || 0) || 0),
       0,
     );
     const totalDiscount = lines.reduce(
@@ -257,6 +258,21 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
 
   return (
     <div className="space-y-4">
+      <Breadcrumbs
+        items={[
+          {
+            label: "Posted Debit Notes",
+            href: `/${slug}/purchases/posted-debit-notes`,
+          },
+          { label: note.debit_note_no || "" },
+        ]}
+      />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <h1 className="text-2xl font-bold px-4">Debit Note</h1>
+        <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
+          Debit Note No. {note.debit_note_no || ""}
+        </div>
+      </div>
       {/*  container mx-auto p-1 */}
       {validationErrors.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">

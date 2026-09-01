@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
 import { DataTable } from "@/app/components/DataTable/DataTable";
 import { getDebitNoteCellRenderers } from "./debitNoteCellRenderers";
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
 type Props = {
   slug: string;
@@ -59,12 +60,20 @@ export default function DebitNoteList({ slug }: Props) {
 
   return (
     <div className="space-y-4 container mx-auto p-4">
+      <Breadcrumbs
+        items={[
+          {
+            label: "Debit Notes",
+          },
+        ]}
+      />
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">Debit Notes</h2>
           <p className="text-xs text-gray-500">
-            Manage supplier return notes, debit reversals and purchase adjustments
+            Manage supplier return notes, debit reversals and purchase
+            adjustments
           </p>
         </div>
 
@@ -73,9 +82,7 @@ export default function DebitNoteList({ slug }: Props) {
           size="sm"
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
-          <Link href={`/${slug}/purchases/debit-notes/create`}>
-            + Create
-          </Link>
+          <Link href={`/${slug}/purchases/debit-notes/create`}>+ Create</Link>
         </Button>
       </div>
 

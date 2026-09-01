@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
 import { DataTable } from "@/app/components/DataTable/DataTable";
 import { getPurchaseOrderCellRenderers } from "./purchaseOrderCellRenderers";
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
 type Props = {
   slug: string;
@@ -24,7 +25,7 @@ export default function PurchaseOrderList({ slug }: Props) {
       const renderer = cellRenderers[columnKey as keyof typeof cellRenderers];
       return renderer ? renderer(row) : undefined;
     },
-    [cellRenderers]
+    [cellRenderers],
   );
 
   // 3. Memoized Fetch API reference to keep DataTable useEffect dependencies stable
@@ -37,7 +38,7 @@ export default function PurchaseOrderList({ slug }: Props) {
       });
       return res.json();
     },
-    []
+    [],
   );
 
   // 4. Memoized columnsConfigApi object reference
@@ -49,7 +50,7 @@ export default function PurchaseOrderList({ slug }: Props) {
       },
       save: async (
         moduleKey: string,
-        configs: ColumnConfig[]
+        configs: ColumnConfig[],
       ): Promise<void> => {
         await fetch("/api/table-config", {
           method: "POST",
@@ -65,11 +66,18 @@ export default function PurchaseOrderList({ slug }: Props) {
         return res.json();
       },
     }),
-    []
+    [],
   );
 
   return (
     <div className="space-y-4 container mx-auto">
+      <Breadcrumbs
+        items={[
+          {
+            label: "Purchase Order",
+          },
+        ]}
+      />
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
@@ -194,4 +202,3 @@ export default function PurchaseOrderList({ slug }: Props) {
     </div>
   );
 } */
-

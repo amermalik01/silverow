@@ -3,6 +3,7 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 import CardBox from "@/app/components/shared/CardBox";
 
@@ -17,15 +18,17 @@ interface BreadcrumbsProps {
 }
 
 export default function Breadcrumbs({ items }: BreadcrumbsProps) {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   return (
-    <CardBox className="mb-4 py-2 bg-lightsecondary overflow-hidden rounded-md border-none shadow-none relative">
+    <CardBox className="mb-4 py-2 px-2 bg-lightsecondary overflow-hidden rounded-md border-none shadow-none relative">
       <nav
         aria-label="Breadcrumb"
-        className="flex items-center gap-1.5 text-xs text-slate-500"
+        className="flex items-center  text-xs text-slate-500"
       >
         <Link
-          href="/"
-          className="flex items-center gap-1 hover:text-emerald-700 transition-colors"
+          href= {`/${slug}/dashboard`} 
+          className="flex items-center gap-1 px-2 py-0.5 transition-colors hover:bg-[#0b3310] hover:text-white hover:rounded "
         >
           <Home className="h-3.5 w-3.5" />
           Home
@@ -37,14 +40,14 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
           return (
             <div
               key={`${item.label}-${index}`}
-              className="flex items-center gap-1.5"
+              className="flex items-center"
             >
               <ChevronRight className="h-3 w-3 text-slate-400" />
 
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
-                  className="hover:text-emerald-700 transition-colors"
+                  className="flex items-center hover:bg-[#0b3310] hover:text-white hover:rounded transition-colors px-2 py-0.5"
                 >
                   {item.label}
                 </Link>
@@ -52,7 +55,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
                 <span
                   className={
                     isLast
-                      ? "font-semibold  bg-[#0b3310] text-white px-2 py-0.5 rounded"
+                      ? "bg-[#0b3310] text-white px-2 py-0.5 rounded"
                       : ""
                   }
                 >

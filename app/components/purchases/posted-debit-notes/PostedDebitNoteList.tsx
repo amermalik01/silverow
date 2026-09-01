@@ -6,6 +6,7 @@ import { DebitNote } from "@/types/debit-note";
 import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
 import { DataTable } from "@/app/components/DataTable/DataTable";
 import { getPostedDebitNoteCellRenderers } from "./PosteddebitNoteCellRenderers";
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
 type Props = {
   slug: string;
@@ -23,7 +24,7 @@ export default function PostedDebitNoteList({ slug }: Props) {
 
   // 3. Data Fetching Handler
   const fetchPostedDebitNotes = async (
-    params: FetchParams
+    params: FetchParams,
   ): Promise<FetchResponse<DebitNote>> => {
     const res = await fetch("/api/posted-debit-notes/listing", {
       method: "POST",
@@ -57,12 +58,20 @@ export default function PostedDebitNoteList({ slug }: Props) {
 
   return (
     <div className="space-y-4 container mx-auto">
+      <Breadcrumbs
+        items={[
+          {
+            label: "Posted Debit Notes",
+          },
+        ]}
+      />
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">Posted Debit Notes</h2>
           <p className="text-xs text-gray-500">
-            View posted supplier debit notes, general ledger reversals, and historical purchase adjustments
+            View posted supplier debit notes, general ledger reversals, and
+            historical purchase adjustments
           </p>
         </div>
       </div>

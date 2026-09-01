@@ -22,6 +22,7 @@ import { OrderFormTabs } from "../purchase-orders/OrderFormTabs";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { PostedTransactionsModal } from "../../finance/posted-entries/PostedTransactionsModal";
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
 interface Props {
   slug: string;
@@ -193,14 +194,29 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
 
   return (
     <div className="space-y-4">
+      <Breadcrumbs
+        items={[
+          {
+            label: "Purchase Order",
+            href: `/${slug}/purchases/purchase-orders`,
+          },
+          { label: invoice.invoice_no || invoice.order_no || "" },
+        ]}
+      />
       <div className="p-3 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-        <span className="flex items-center gap-2">
+        {/* <span className="flex items-center gap-2">
           <Icon icon="tabler:eye" className="w-4 h-4 text-blue-600" />
           Purchase Invoice Document Viewer — <strong>Read-Only Mode</strong>
-        </span>
-        <span className="px-2.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px] capitalize font-bold tracking-wider">
+        </span> */}
+        {/* <span className="px-2.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px] capitalize font-bold tracking-wider">
           {invoice.status || "POSTED"}
-        </span>
+        </span> */}
+
+        <h1 className="text-2xl font-bold px-4">Purchase Invoice</h1>
+        <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
+          Invoice/Order No. {invoice.invoice_no || ""}/
+          {invoice.purchase_order_no || ""}
+        </div>
       </div>
 
       {/* {isCompleted && (

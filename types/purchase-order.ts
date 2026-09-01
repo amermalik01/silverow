@@ -6,6 +6,7 @@ export interface PurchaseOrder {
   company_id?: string;
   order_no?: string;
   invoice_no?: string;
+  purchase_order_no?: string;
   supplier_id: string;
   supplier_no?: string;
   supplier_name?: string;

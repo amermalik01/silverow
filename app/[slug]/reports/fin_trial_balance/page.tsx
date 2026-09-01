@@ -179,7 +179,7 @@ export default function TrialBalanceReport() {
     <div className="min-h-screen bg-slate-50/50 p-6 text-slate-800">
       <Breadcrumbs
         items={[
-          { label: "Reports", href: `/${slug}/reports` },
+          // { label: "Reports", href: `/${slug}/reports` },
           { label: "All Reports", href: `/${slug}/reports` },
           { label: "Trial Balance Report" },
         ]}

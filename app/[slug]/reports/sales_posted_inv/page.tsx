@@ -140,7 +140,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
     <div className="space-y-6 container mx-auto">
       <Breadcrumbs
         items={[
-          { label: "Reports", href: `/${slug}/reports` },
+          // { label: "Reports", href: `/${slug}/reports` },
           { label: "All Reports", href: `/${slug}/reports` },
           { label: "Posted Sales Invoice and Credit Note" },
         ]}
