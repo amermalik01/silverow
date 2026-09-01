@@ -687,4 +687,3 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
   },
 ];
 
-// export default CompanySidebarContent;

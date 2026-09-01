@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/app/components/DataTable/DataTable";
 import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
 import { getPartyCellRenderers, PartyRecord } from "./partyCellRenderers";
+import Breadcrumbs from "../layout/shared/breadcrumb/BreadcrumbComp";
 
 type Props = {
   slug?: string;
@@ -35,7 +36,7 @@ export default function PartyList({
       const renderer = cellRenderers[columnKey as keyof typeof cellRenderers];
       return renderer ? renderer(row) : undefined;
     },
-    [cellRenderers]
+    [cellRenderers],
   );
 
   // 3. Stable reference for pagination/search fetch handler
@@ -48,7 +49,7 @@ export default function PartyList({
       });
       return res.json();
     },
-    [roleFlag]
+    [roleFlag],
   );
 
   // 4. Memoize table configuration API object reference
@@ -73,11 +74,18 @@ export default function PartyList({
         return res.json();
       },
     }),
-    []
+    [],
   );
 
   return (
     <div className="space-y-4 container mx-auto">
+      <Breadcrumbs
+        items={[
+          {
+            label: `${title}`,
+          },
+        ]}
+      />
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>

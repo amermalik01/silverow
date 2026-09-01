@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/app/components/DataTable/DataTable";
 import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
 import { getJournalCellRenderers, JournalRecord } from "./journalCellRenderers";
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
 type StatusFilter = "unposted" | "posted" | "all";
 
@@ -84,6 +85,14 @@ export default function JournalList({
 
   return (
     <div className="space-y-6 container mx-auto py-4">
+      <Breadcrumbs
+        items={[
+          {
+            label: `${title}`,
+            href: `${createPath.replace("/create", "")}`,
+          },
+        ]}
+      />
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>

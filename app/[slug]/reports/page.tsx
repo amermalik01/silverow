@@ -2,10 +2,9 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Star, FileText, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 // 1. Define strict TypeScript interfaces for our reports metadata
@@ -24,30 +23,85 @@ export default function ReportsPage() {
 
   // 2. Client-side state handling search and bookmarks (favorites)
   const [searchQuery, setSearchQuery] = useState("");
-  const [favorites, setFavorites] = useState<string[]>([
-    "FIN_TRIAL_BALANCE",
-    "FIN_VAT_REP",
-    "FIN_PL_STMT",
-    "FIN_BAL_SHEET",
-    "FIN_CUST_LIST",
-    "FIN_CRM_LIST",
-    "FIN_FIG_GL",
-    "FIN_HAULIER_ACCR",
-    "SALES_UNPOSTED_SO",
-    "SALES_POSTED_INV",
-    "PUR_SUPP_ACT",
-    "PUR_SUPP_AGEING",
-    "PUR_SUPP_STMT",
-    "PUR_UNPOSTED_PO",
-    "PUR_POSTED_INV",
-  ]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(true);
+
+  // const [favorites, setFavorites] = useState<string[]>([
+  //   "FIN_TRIAL_BALANCE",
+  //   "FIN_VAT_REP",
+  //   "FIN_PL_STMT",
+  //   "FIN_BAL_SHEET",
+  //   "FIN_CUST_LIST",
+  //   "FIN_CRM_LIST",
+  //   "FIN_FIG_GL",
+  //   "FIN_HAULIER_ACCR",
+  //   "SALES_UNPOSTED_SO",
+  //   "SALES_POSTED_INV",
+  //   "PUR_SUPP_ACT",
+  //   "PUR_SUPP_AGEING",
+  //   "PUR_SUPP_STMT",
+  //   "PUR_UNPOSTED_PO",
+  //   "PUR_POSTED_INV",
+  // ]);
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        setFavoritesLoading(true);
+        const response = await fetch("/api/reports/favorites", {
+          method: "GET",
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          throw new Error("Failed to load favorite reports");
+        }
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data)) {
+          setFavorites(
+            result.data.map(
+              (item: { report_code: string }) => item.report_code,
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load favorite reports:", error);
+      } finally {
+        setFavoritesLoading(false);
+      }
+    };
+    loadFavorites();
+  }, []); /* * Add / remove favorite. */
+
+  const toggleFavorite = async (reportId: string) => {
+    const isFavorite = favorites.includes(reportId);
+    // Optimistic UI update
+    setFavorites((prev) =>
+      isFavorite ? prev.filter((id) => id !== reportId) : [...prev, reportId],
+    );
+    try {
+      const response = await fetch("/api/reports/favorites", {
+        method: isFavorite ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportCode: reportId }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update favorite");
+      }
+    } catch (error) {
+      console.error("Failed to update favorite:", error);
+      // Roll back optimistic update
+      setFavorites((prev) =>
+        isFavorite ? [...prev, reportId] : prev.filter((id) => id !== reportId),
+      );
+    }
+  };
 
   // Toggle favorite status safely
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id],
-    );
-  };
+  // const toggleFavorite = (id: string) => {
+  //   setFavorites((prev) =>
+  //     prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id],
+  //   );
+  // };
 
   // 3. Complete structural data registry matching your legacy application screenshots
   const reportData: ReportGroups = {
@@ -156,6 +210,15 @@ export default function ReportsPage() {
           </span>
         </div> */}
 
+        <div>
+          {" "}
+          <h2 className="text-xl font-semibold"> Reports </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            {" "}
+            Select the reports you use most frequently.{" "}
+          </p>{" "}
+        </div>
+
         {/* Real-time Filter Field */}
         <div className="relative w-72">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
@@ -168,6 +231,41 @@ export default function ReportsPage() {
           />
         </div>
       </div>
+
+      {favorites.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4">
+          {" "}
+          <div className="mb-3 flex items-center gap-2">
+            {" "}
+            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />{" "}
+            <h2 className="text-sm font-bold text-slate-800">
+              {" "}
+              My Favorite Reports{" "}
+            </h2>{" "}
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+              {" "}
+              {favorites.length}{" "}
+            </span>{" "}
+          </div>{" "}
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+            {" "}
+            {Object.values(reportData)
+              .flat()
+              .filter((report) => favorites.includes(report.id))
+              .map((report) => (
+                <a
+                  key={report.id}
+                  href={`/${slug}/reports/${report.id.toLowerCase()}`}
+                  className="group flex items-center gap-2 rounded-md border border-amber-100 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-amber-300 hover:text-emerald-700"
+                >
+                  {" "}
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />{" "}
+                  <span className="truncate"> {report.name} </span>{" "}
+                </a>
+              ))}{" "}
+          </div>{" "}
+        </div>
+      )}
 
       {/* Responsive Columns Layout Mapping (Balanced Grid System) */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">

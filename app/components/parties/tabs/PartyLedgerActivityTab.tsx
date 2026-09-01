@@ -33,6 +33,7 @@ interface Props {
   currencyCode?: string;
   slug?: string;
   sourceDocType?: string;
+  onSummaryLoaded?: (summary: Summary) => void; // Added Callback
 }
 
 export default function PartyLedgerActivityTab({
@@ -41,6 +42,7 @@ export default function PartyLedgerActivityTab({
   currencyCode = "GBP",
   slug,
   sourceDocType = "",
+  onSummaryLoaded,
 }: Props) {
   const { show, hide } = useLoader();
 
@@ -157,10 +159,13 @@ export default function PartyLedgerActivityTab({
       const data = await res.json();
       if (data.summary) {
         setSummary(data.summary);
+        if (onSummaryLoaded) {
+          onSummaryLoaded(data.summary);
+        }
       }
       return data;
     },
-    [partyId, partyType, sourceDocType, filter]
+    [partyId, partyType, sourceDocType, filter, onSummaryLoaded]
   );
 
   // Handlers for Modals & Actions
@@ -283,7 +288,7 @@ export default function PartyLedgerActivityTab({
   return (
     <div className="space-y-4">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
           <span className="text-[11px]  text-amber-700 dark:text-amber-400 capitalize tracking-wider">
             Open Outstanding Balance
@@ -304,7 +309,7 @@ export default function PartyLedgerActivityTab({
             {summary.openCount} Entries
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Tabs Filter Bar */}
       <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs w-fit">

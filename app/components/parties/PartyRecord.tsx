@@ -35,6 +35,7 @@ import type {
   PartyContactDraft,
   PartyAddressDraft,
 } from "@/types/erp";
+import Breadcrumbs from "../layout/shared/breadcrumb/BreadcrumbComp";
 
 type Props = {
   id: string;
@@ -72,6 +73,12 @@ export default function PartyRecord({
     [],
   );
 
+  const [ledgerSummary, setLedgerSummary] = useState({
+    totalRemainingFCY: 0,
+    totalRemainingLCY: 0,
+    openCount: 0,
+  });
+
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
@@ -81,10 +88,14 @@ export default function PartyRecord({
   useEffect(() => {
     const loadData = async () => {
       show("Fetching Record...");
+
+      const partyType = module === "supplier" ? "supplier" : "customer";
+
       try {
-        const [partyRes, currencyRes] = await Promise.all([
+        const [partyRes, currencyRes, summaryRes] = await Promise.all([
           fetch(`/api/parties/${id}`),
           fetch("/api/parties/currencies"),
+          fetch(`/api/parties/${id}/ledger/summary?partyType=${partyType}`),
         ]);
 
         if (!partyRes.ok)
@@ -113,6 +124,13 @@ export default function PartyRecord({
           const currencyData = await currencyRes.json();
           setCurrencies(currencyData);
         }
+
+        if (summaryRes.ok) {
+          const summaryData = await summaryRes.json();
+          if (summaryData.summary) {
+            setLedgerSummary(summaryData.summary);
+          }
+        }
       } catch (err) {
         console.error(err);
         toast.error("Failed to load party record details.");
@@ -122,7 +140,48 @@ export default function PartyRecord({
       }
     };
     loadData();
-  }, [id]);
+  }, [id, module]);
+
+  // app/components/parties/PartyRecord.tsx
+
+  /* useEffect(() => {
+    async function loadInitialData() {
+      try {
+        setLoading(true);
+        const partyType =
+          module === "supplier" || account.is_supplier
+            ? "supplier"
+            : "customer";
+
+        // Execute party detail fetch and summary fetch simultaneously
+        const [partyRes, summaryRes] = await Promise.all([
+          fetch(`/api/parties/${id}`),
+          fetch(`/api/parties/${id}/ledger/summary?partyType=${partyType}`),
+        ]);
+
+        if (partyRes.ok) {
+          const partyData = await partyRes.json();
+          setAccount(partyData);
+          setInitialAccount(partyData);
+        }
+
+        if (summaryRes.ok) {
+          const summaryData = await summaryRes.json();
+          if (summaryData.summary) {
+            setLedgerSummary(summaryData.summary);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to preload party record details:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (id) {
+      loadInitialData();
+    }
+  }, [id, module, account]); */
 
   const validateForm = (): boolean => {
     setFormErrors({});
@@ -260,186 +319,243 @@ export default function PartyRecord({
   tabs.push("activities", "notes", "attachments");
 
   return (
-    <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
-      <PartyDetailHeader
-        party={account}
-        onPartyUpdated={(updatedAccount) => {
-          setAccount((prev) => ({ ...prev, ...updatedAccount }));
-          setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
-        }}
+    <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          {
+            label:
+              (account.is_customer
+                ? `Customer`
+                : account.is_supplier
+                  ? `Supplier`
+                  : account.is_crm_lead
+                    ? `CRM Lead`
+                    : `${account.srm_code} SRM`) || "",
+          },
+          {
+            label:
+              (account.is_customer
+                ? `${account.customer_code}`
+                : account.is_supplier
+                  ? `${account.supplier_code}`
+                  : account.is_crm_lead
+                    ? `${account.crm_code}`
+                    : `${account.srm_code}`) || "",
+          },
+        ]}
       />
-      {Object.keys(formErrors).length > 0 && (
-        <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
-          <p className="font-semibold mb-1">
-            Please fix the following validation errors:
-          </p>
-          <ul className="list-disc pl-5 space-y-0.5 text-xs">
-            {formErrors.global && <li>{formErrors.global}</li>}
-            {Object.entries(formErrors)
-              .filter(([key]) => key !== "global")
-              .map(([key, message]) => (
-                <li key={key}>
-                  {/* <span className="capitalize font-medium">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <h1 className="text-2xl font-bold px-4 capitalize">{module}</h1>
+        <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded capitalize">
+          {account.is_customer
+            ? "Customer No."
+            : account.is_supplier
+              ? "Supplier No."
+              : "CRM Lead No."}{" "}
+          &nbsp;
+          {(account.is_customer
+            ? account.customer_code
+            : account.is_supplier
+              ? account.supplier_code
+              : account.is_crm_lead
+                ? account.crm_code
+                : account.srm_code) || "[Auto-Generated]"}
+        </div>
+      </div>
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
+        <PartyDetailHeader
+          party={account}
+          currencyCode={activeCurrencyCode}
+          outstandingBalance={ledgerSummary.totalRemainingFCY}
+          openEntriesCount={ledgerSummary.openCount}
+          lcyBalance={ledgerSummary.totalRemainingLCY}
+          onPartyUpdated={(updatedAccount) => {
+            setAccount((prev) => ({ ...prev, ...updatedAccount }));
+            setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
+          }}
+        />
+        {/* 
+        <PartyDetailHeader
+          party={account}
+          onPartyUpdated={(updatedAccount) => {
+            setAccount((prev) => ({ ...prev, ...updatedAccount }));
+            setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
+          }}
+        /> */}
+        {Object.keys(formErrors).length > 0 && (
+          <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
+            <p className="font-semibold mb-1">
+              Please fix the following validation errors:
+            </p>
+            <ul className="list-disc pl-5 space-y-0.5 text-xs">
+              {formErrors.global && <li>{formErrors.global}</li>}
+              {Object.entries(formErrors)
+                .filter(([key]) => key !== "global")
+                .map(([key, message]) => (
+                  <li key={key}>
+                    {/* <span className="capitalize font-medium">
                     {key.replace(".", " ")}
                   </span>
                   : */}
-                  {message}
-                </li>
-              ))}
-          </ul>
+                    {message}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
+          {tabs.map((tab) => {
+            const hasErrorInTab = Object.keys(formErrors).some((k) =>
+              k.startsWith(`${tab}.`),
+            );
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`capitalize px-4 py-2.5 text-xs font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
+                  activeTab === tab
+                    ? "border-blue-600 text-blue-600 font-semibold"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                {tab}
+                {hasErrorInTab && (
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                )}
+              </button>
+            );
+          })}
         </div>
-      )}
 
-      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
-        {tabs.map((tab) => {
-          const hasErrorInTab = Object.keys(formErrors).some((k) =>
-            k.startsWith(`${tab}.`),
-          );
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`capitalize px-4 py-2.5 text-xs font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
-                activeTab === tab
-                  ? "border-blue-600 text-blue-600 font-semibold"
-                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-              }`}
-            >
-              {tab}
-              {hasErrorInTab && (
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        <div className="py-2">
+          {activeTab === "general" && (
+            <GeneralTab
+              account={account}
+              setAccount={setAccount}
+              contacts={contacts}
+              setContacts={setContacts}
+              addresses={addresses}
+              setAddresses={setAddresses}
+              errors={formErrors}
+              currencies={currencies}
+              isReadonly={effectiveReadonly}
+            />
+          )}
+
+          {activeTab === "finance" && (
+            <FinanceTab
+              account={account}
+              setAccount={setAccount}
+              isReadonly={effectiveReadonly}
+              errors={formErrors}
+            />
+          )}
+
+          {activeTab === "contacts" && (
+            <ContactsTab
+              contacts={contacts}
+              setContacts={setContacts}
+              isReadonly={effectiveReadonly}
+              errors={formErrors}
+            />
+          )}
+          {activeTab === "locations" && (
+            <AddressesTab
+              addresses={addresses}
+              setAddresses={setAddresses}
+              isReadonly={effectiveReadonly}
+              errors={formErrors}
+            />
+          )}
+
+          {activeTab === "opportunities" && (
+            <OpportunityCycleTab partyId={id} readonly={effectiveReadonly} />
+          )}
+          {/* <><ActivitiesTab module={module} recordId={id} /></> */}
+
+          {activeTab === "activities" && (
+            <PartyLedgerActivityTab
+              partyId={id}
+              partyType={
+                module === "supplier" || account.is_supplier
+                  ? "supplier"
+                  : "customer"
+              }
+              currencyCode={activeCurrencyCode}
+              slug={slug}
+              sourceDocType=""
+              onSummaryLoaded={setLedgerSummary}
+            />
+          )}
+          {activeTab === "notes" && (
+            <NotesTab
+              module={module}
+              recordId={id}
+              readonly={effectiveReadonly}
+            />
+          )}
+          {activeTab === "attachments" && (
+            <AttachmentsTab
+              module={module}
+              recordId={id}
+              readonly={effectiveReadonly}
+            />
+          )}
+        </div>
+
+        <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
+          {!isReadonlyProp && (
+            <>
+              {!isEditing ? (
+                <>
+                  <Button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    variant="edit"
+                  >
+                    Edit
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="cancel"
+                    onClick={() => router.back()}
+                  >
+                    Close
+                  </Button>
+                </>
+              ) : (
+                /* EDIT MODE BUTTONS */
+                <>
+                  <Button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    variant="save"
+                  >
+                    {saving ? (
+                      <>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>Save</>
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="cancel"
+                    onClick={handleCancelEdit}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </Button>
+                </>
               )}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="py-2">
-        {activeTab === "general" && (
-          <GeneralTab
-            account={account}
-            setAccount={setAccount}
-            contacts={contacts}
-            setContacts={setContacts}
-            addresses={addresses}
-            setAddresses={setAddresses}
-            errors={formErrors}
-            currencies={currencies}
-            isReadonly={effectiveReadonly}
-          />
-        )}
-
-        {activeTab === "finance" && (
-          <FinanceTab
-            account={account}
-            setAccount={setAccount}
-            isReadonly={effectiveReadonly}
-            errors={formErrors}
-          />
-        )}
-
-        {activeTab === "contacts" && (
-          <ContactsTab
-            contacts={contacts}
-            setContacts={setContacts}
-            isReadonly={effectiveReadonly}
-            errors={formErrors}
-          />
-        )}
-        {activeTab === "locations" && (
-          <AddressesTab
-            addresses={addresses}
-            setAddresses={setAddresses}
-            isReadonly={effectiveReadonly}
-            errors={formErrors}
-          />
-        )}
-
-        {activeTab === "opportunities" && (
-          <OpportunityCycleTab partyId={id} readonly={effectiveReadonly} />
-        )}
-        {/* <><ActivitiesTab module={module} recordId={id} /></> */}
-
-        {activeTab === "activities" && (
-          <PartyLedgerActivityTab
-            partyId={id}
-            partyType={
-              module === "supplier" || account.is_supplier
-                ? "supplier"
-                : "customer"
-            }
-            currencyCode={activeCurrencyCode}
-            slug={slug}
-            sourceDocType=""
-          />
-        )}
-        {activeTab === "notes" && (
-          <NotesTab
-            module={module}
-            recordId={id}
-            readonly={effectiveReadonly}
-          />
-        )}
-        {activeTab === "attachments" && (
-          <AttachmentsTab
-            module={module}
-            recordId={id}
-            readonly={effectiveReadonly}
-          />
-        )}
-      </div>
-
-      <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
-        {!isReadonlyProp && (
-          <>
-            {!isEditing ? (
-              <>
-                <Button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  variant="edit"
-                >
-                  Edit
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="cancel"
-                  onClick={() => router.back()}
-                >
-                  Close
-                </Button>
-              </>
-            ) : (
-              /* EDIT MODE BUTTONS */
-              <>
-                <Button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  variant="save"
-                >
-                  {saving ? (
-                    <>
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>Save</>
-                  )}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="cancel"
-                  onClick={handleCancelEdit}
-                  disabled={saving}
-                >
-                  Cancel
-                </Button>
-              </>
-            )}
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

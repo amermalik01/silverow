@@ -21,15 +21,11 @@ interface SidebarItemType {
   children?: SidebarItemType[];
 }
 
-// const isItemActive = (item: SidebarItemType, currentPath: string): boolean => {
-//   if (item.url && currentPath.startsWith(item.url)) return true;
-//   if (item.children) {
-//     return item.children.some((child) => isItemActive(child, currentPath));
-//   }
-//   return false;
-// };
+const isItemActive = (
+  item: SidebarItemType, 
+  currentPath: string
+): boolean => {
 
-const isItemActive = (item: SidebarItemType, currentPath: string): boolean => {
   if (item.url && currentPath === item.url) {
     return true;
   }
@@ -45,14 +41,19 @@ const getActiveParentIds = (
   items: SidebarItemType[],
   currentPath: string,
 ): (string | number)[] => {
+
   let result: (string | number)[] = [];
+
   for (const item of items) {
     if (item.children) {
       const active = isItemActive(item, currentPath);
       if (active && item.id) {
         result.push(item.id);
       }
-      result = [...result, ...getActiveParentIds(item.children, currentPath)];
+      result = [
+        ...result, 
+        ...getActiveParentIds(item.children, currentPath)
+      ];
     }
   }
   return result;
@@ -220,65 +221,6 @@ const CompanySidebarLayout = () => {
           )}
         </div>
       );
-
-      // if (item.heading) {
-      //   return (
-      //     <div
-      //       key={item.heading}
-      //       className="text-[10px] font-bold capitalize tracking-wider text-slate-400/80 mt-5 mb-1.5 px-2"
-      //     >
-      //       {item.heading}
-      //     </div>
-      //   );
-      // }
-
-      /* return (
-        <div key={item.id} className="w-full">
-          <div
-            onClick={(e) => {
-              if (hasChildren) {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleMenu(item.id!);
-              }
-            }}
-            className={`flex items-center justify-between cursor-pointer px-1.5 py-2 rounded-md transition-all duration-150 text-xs group mb-0.5
-              ${isSelected ? "text-emerald-400 font-semibold bg-slate-900/40" : "text-slate-300"}
-              ${isActive && !isSelected ? "bg-slate-800/30 text-white" : ""}
-              hover:bg-slate-800/60 hover:text-white`}
-            style={{ paddingLeft: `${level * 12 + 10}px` }}
-          >
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <Icon
-                icon={item.icon || ""}
-                width={16}
-                className={`shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
-              />
-              {item.url ? (
-                <Link href={item.url} className="truncate flex-1">
-                  {item.title || item.name}
-                </Link>
-              ) : (
-                <span className="truncate flex-1">
-                  {item.title || item.name}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {hasChildren && (
-            <div
-              className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                isOpen
-                  ? "max-h-[1000px] opacity-100 mt-0.5"
-                  : "max-h-0 opacity-0 pointer-events-none"
-              }`}
-            >
-              {renderItems(item.children!, level + 1)}
-            </div>
-          )}
-        </div>
-      ); */
     });
   };
 
@@ -302,3 +244,69 @@ const CompanySidebarLayout = () => {
 };
 
 export default CompanySidebarLayout;
+
+// const isItemActive = (item: SidebarItemType, currentPath: string): boolean => {
+//   if (item.url && currentPath.startsWith(item.url)) return true;
+//   if (item.children) {
+//     return item.children.some((child) => isItemActive(child, currentPath));
+//   }
+//   return false;
+// };
+// if (item.heading) {
+//   return (
+//     <div
+//       key={item.heading}
+//       className="text-[10px] font-bold capitalize tracking-wider text-slate-400/80 mt-5 mb-1.5 px-2"
+//     >
+//       {item.heading}
+//     </div>
+//   );
+// }
+
+/* return (
+    <div key={item.id} className="w-full">
+      <div
+        onClick={(e) => {
+          if (hasChildren) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMenu(item.id!);
+          }
+        }}
+        className={`flex items-center justify-between cursor-pointer px-1.5 py-2 rounded-md transition-all duration-150 text-xs group mb-0.5
+          ${isSelected ? "text-emerald-400 font-semibold bg-slate-900/40" : "text-slate-300"}
+          ${isActive && !isSelected ? "bg-slate-800/30 text-white" : ""}
+          hover:bg-slate-800/60 hover:text-white`}
+        style={{ paddingLeft: `${level * 12 + 10}px` }}
+      >
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <Icon
+            icon={item.icon || ""}
+            width={16}
+            className={`shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
+          />
+          {item.url ? (
+            <Link href={item.url} className="truncate flex-1">
+              {item.title || item.name}
+            </Link>
+          ) : (
+            <span className="truncate flex-1">
+              {item.title || item.name}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {hasChildren && (
+        <div
+          className={`overflow-hidden transition-all duration-200 ease-in-out ${
+            isOpen
+              ? "max-h-[1000px] opacity-100 mt-0.5"
+              : "max-h-0 opacity-0 pointer-events-none"
+          }`}
+        >
+          {renderItems(item.children!, level + 1)}
+        </div>
+      )}
+    </div>
+  ); */
