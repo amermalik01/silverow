@@ -27,6 +27,7 @@ import { useLoader } from "@/app/context/LoaderContext";
 import { JournalPayload2, JournalSource } from "@/types/journal";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { PostedTransactionsModal } from "../posted-entries/PostedTransactionsModal";
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
 type Currency = {
   id: string;
@@ -110,6 +111,7 @@ type Props = {
 };
 
 export default function JournalForm({
+  slug,
   journalId,
   journalType,
   readOnly = false,
@@ -667,25 +669,51 @@ export default function JournalForm({
     allocationModalIndex !== null ? lines[allocationModalIndex] : null;
 
   return (
-    <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
-      {errorMsg && (
-        <div className="p-2 bg-red-200 text-red-800 rounded font-medium">
-          {errorMsg}
-        </div>
-      )}
+    <div className="space-y-6 container mx-auto py-4">
 
-      <div className="flex flex-wrap justify-between items-start gap-6 bg-white p-3 rounded shadow-sm border border-zinc-200">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-zinc-600">Journal No.</span>
-          <input
-            type="text"
-            readOnly
-            className="border bg-zinc-50 p-1 px-2 rounded w-32 font-bold tracking-wide outline-none text-zinc-700"
-            value={metadata.entry_no || "DRAFT"}
-          />
+      <Breadcrumbs
+        items={[
+          {
+            label:
+              journalType == "customer"
+                ? "Customer Journal"
+                : journalType == "supplier"
+                  ? "Supplier Journal"
+                  : "General Journal",
+            href: `${redirectPath}`,
+          },
+          {
+            label: `${metadata.entry_no}` || "",
+          },
+        ]}
+      />
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold capitalize">
+            {journalType} Journal
+          </h2>
         </div>
+      </div>
+      <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
+        {errorMsg && (
+          <div className="p-2 bg-red-200 text-red-800 rounded font-medium">
+            {errorMsg}
+          </div>
+        )}
 
-        {/* <div className="flex items-center gap-2">
+        <div className="flex flex-wrap justify-between items-start gap-6 bg-white p-3 rounded shadow-sm border border-zinc-200">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-zinc-600">Journal No.</span>
+            <input
+              type="text"
+              readOnly
+              className="border bg-zinc-50 p-1 px-2 rounded w-32 font-bold tracking-wide outline-none text-zinc-700"
+              value={metadata.entry_no || "DRAFT"}
+            />
+          </div>
+
+          {/* <div className="flex items-center gap-2">
           <span className="font-medium text-zinc-600 shrink-0">
             Header Desc.
           </span>
@@ -700,204 +728,215 @@ export default function JournalForm({
             }
           />
         </div> */}
-        <div className="flex justify-end gap-2">
-          {!formDisabled && (
-            <div className="flex justify-start">
-              <Button
-                type="button"
-                // variant="outline"
-                onClick={addLineRow}
-                // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-                variant="add_line"
-              >
-                Add Line
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* MATRIX LAYOUT */}
-      <div className="overflow-x-auto bg-white text-zinc-600 rounded border border-zinc-200 shadow-sm">
-        <table className="w-full border-collapse table-fixed text-left min-w-[1250px]">
-          <thead>
-            <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-600 font-semibold select-none">
-              <th className="p-2 w-28">Posting Date</th>
-              <th className="p-2 w-32">Doc. Type</th>
-              <th className="p-2 w-24">Doc. No.</th>
-              <th className="p-2 w-32">Tx Type</th>
-              <th className="p-2 w-48">Account Selection</th>
-              <th className="p-2 w-20">Currency</th>
-              <th className="p-2 w-24">Debit</th>
-              <th className="p-2 w-24">Credit</th>
-              <th className="p-2 w-20 text-center">Cnv. Rate</th>
-              <th className="p-2 w-28">Converted</th>
-              <th className="p-2 w-64">Balancing G/L Selector</th>
-              <th className="p-2 w-20 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 font-medium text-zinc-600">
-            {lines.map((line, index) => {
-              const localAmount = line.debit > 0 ? line.debit : line.credit;
-              const convertedValue = localAmount * line.exchange_rate;
-
-              const debitDisabled = isDebitDisabled(line);
-              const creditDisabled = isCreditDisabled(line);
-
-              const isPartyLine =
-                line.transaction_type === "supplier" ||
-                line.transaction_type === "customer";
-
-              const totalLineAllocated = (line.allocations || []).reduce(
-                (s, a) => s + (a.amount || 0),
-                0,
-              );
-
-              return (
-                <tr
-                  key={index}
-                  className="hover:bg-zinc-200/50 transition-colors"
+          <div className="flex justify-end gap-2">
+            {!formDisabled && (
+              <div className="flex justify-start">
+                <Button
+                  type="button"
+                  // variant="outline"
+                  onClick={addLineRow}
+                  // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                  variant="add_line"
                 >
-                  <td className="p-1.5 min-w-[130px]">
-                    <DatePicker
-                      id={`posting-date-${index}`}
-                      disabled={formDisabled}
-                      value={
-                        line.posting_date
-                          ? new Date(line.posting_date)
-                          : undefined
-                      }
-                      onChange={(selectedDate) => {
-                        if (!selectedDate) return;
-                        const year = selectedDate.getFullYear();
-                        const month = String(
-                          selectedDate.getMonth() + 1,
-                        ).padStart(2, "0");
-                        const day = String(selectedDate.getDate()).padStart(
-                          2,
-                          "0",
-                        );
-                        const localIsoString = `${year}-${month}-${day}`;
+                  Add Line
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
 
-                        handleLineChange(index, "posting_date", localIsoString);
-                      }}
-                    />
-                  </td>
+        {/* MATRIX LAYOUT */}
+        <div className="overflow-x-auto bg-white text-zinc-600 rounded border border-zinc-200 shadow-sm">
+          <table className="w-full border-collapse table-fixed text-left min-w-[1250px]">
+            <thead>
+              <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-600 font-semibold select-none">
+                <th className="p-2 w-28">Posting Date</th>
+                <th className="p-2 w-32">Doc. Type</th>
+                <th className="p-2 w-24">Doc. No.</th>
+                <th className="p-2 w-32">Tx Type</th>
+                <th className="p-2 w-48">Account Selection</th>
+                <th className="p-2 w-20">Currency</th>
+                <th className="p-2 w-24">Debit</th>
+                <th className="p-2 w-24">Credit</th>
+                <th className="p-2 w-20 text-center">Cnv. Rate</th>
+                <th className="p-2 w-28">Converted</th>
+                <th className="p-2 w-64">Balancing G/L Selector</th>
+                <th className="p-2 w-20 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 font-medium text-zinc-600">
+              {lines.map((line, index) => {
+                const localAmount = line.debit > 0 ? line.debit : line.credit;
+                const convertedValue = localAmount * line.exchange_rate;
 
-                  <td className="p-1.5">
-                    <select
-                      disabled={formDisabled}
-                      value={line.document_type || "Payment"}
-                      onChange={(e) =>
-                        handleLineChange(index, "document_type", e.target.value)
-                      }
-                      className="w-full border p-1 rounded bg-white text-zinc-700 disabled:bg-zinc-100 disabled:text-zinc-500"
-                    >
-                      {isGeneral ? (
-                        <>
-                          <option value="General Journal">
-                            General Journal
-                          </option>
-                          <option value="Payment">Payment</option>
-                          <option value="Refund">Refund</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="Payment">Payment</option>
-                          <option value="Refund">Refund</option>
-                        </>
-                      )}
-                    </select>
-                  </td>
+                const debitDisabled = isDebitDisabled(line);
+                const creditDisabled = isCreditDisabled(line);
 
-                  <td className="p-1.5">
-                    <input
-                      type="text"
-                      disabled={formDisabled}
-                      placeholder="REF"
-                      value={line.document_no}
-                      onChange={(e) =>
-                        handleLineChange(index, "document_no", e.target.value)
-                      }
-                      className="w-full border bg-white p-1 rounded text-center capitalize font-mono disabled:bg-zinc-100 disabled:text-zinc-500"
-                    />
-                  </td>
+                const isPartyLine =
+                  line.transaction_type === "supplier" ||
+                  line.transaction_type === "customer";
 
-                  <td className="p-1.5">
-                    <select
-                      disabled={formDisabled || journalType !== "general"}
-                      value={line.transaction_type}
-                      onChange={(e) =>
-                        handleLineChange(
-                          index,
-                          "transaction_type",
-                          e.target.value,
-                        )
-                      }
-                      className="w-full border p-1 rounded bg-white text-zinc-700 font-semibold disabled:bg-zinc-100 disabled:text-zinc-500"
-                    >
-                      <option value="gl_no">G/L No.</option>
-                      <option value="customer">Customer</option>
-                      <option value="supplier">Supplier</option>
-                    </select>
-                  </td>
+                const totalLineAllocated = (line.allocations || []).reduce(
+                  (s, a) => s + (a.amount || 0),
+                  0,
+                );
 
-                  <td className="p-1.5">
-                    <div className="flex gap-1">
+                return (
+                  <tr
+                    key={index}
+                    className="hover:bg-zinc-200/50 transition-colors"
+                  >
+                    <td className="p-1.5 min-w-[130px]">
+                      <DatePicker
+                        id={`posting-date-${index}`}
+                        disabled={formDisabled}
+                        value={
+                          line.posting_date
+                            ? new Date(line.posting_date)
+                            : undefined
+                        }
+                        onChange={(selectedDate) => {
+                          if (!selectedDate) return;
+                          const year = selectedDate.getFullYear();
+                          const month = String(
+                            selectedDate.getMonth() + 1,
+                          ).padStart(2, "0");
+                          const day = String(selectedDate.getDate()).padStart(
+                            2,
+                            "0",
+                          );
+                          const localIsoString = `${year}-${month}-${day}`;
+
+                          handleLineChange(
+                            index,
+                            "posting_date",
+                            localIsoString,
+                          );
+                        }}
+                      />
+                    </td>
+
+                    <td className="p-1.5">
+                      <select
+                        disabled={formDisabled}
+                        value={line.document_type || "Payment"}
+                        onChange={(e) =>
+                          handleLineChange(
+                            index,
+                            "document_type",
+                            e.target.value,
+                          )
+                        }
+                        className="w-full border p-1 rounded bg-white text-zinc-700 disabled:bg-zinc-100 disabled:text-zinc-500"
+                      >
+                        {isGeneral ? (
+                          <>
+                            <option value="General Journal">
+                              General Journal
+                            </option>
+                            <option value="Payment">Payment</option>
+                            <option value="Refund">Refund</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="Payment">Payment</option>
+                            <option value="Refund">Refund</option>
+                          </>
+                        )}
+                      </select>
+                    </td>
+
+                    <td className="p-1.5">
                       <input
                         type="text"
-                        readOnly
-                        placeholder={`Select ${line.transaction_type}...`}
-                        value={
-                          line.display_code
-                            ? `${line.display_code} - ${line.display_name}`
-                            : ""
-                        }
-                        className="w-full border p-1 rounded bg-zinc-50 text-zinc-700 font-mono text-[11px] outline-none truncate"
-                      />
-
-                      <Button
-                        type="button"
                         disabled={formDisabled}
-                        onClick={() =>
-                          setActiveModal({
-                            index,
-                            type: "main_account",
-                            target:
-                              line.transaction_type === "gl_no"
-                                ? "gl"
-                                : line.transaction_type,
-                          })
+                        placeholder="REF"
+                        value={line.document_no}
+                        onChange={(e) =>
+                          handleLineChange(index, "document_no", e.target.value)
                         }
-                        className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                        className="w-full border bg-white p-1 rounded text-center capitalize font-mono disabled:bg-zinc-100 disabled:text-zinc-500"
+                      />
+                    </td>
+
+                    <td className="p-1.5">
+                      <select
+                        disabled={formDisabled || journalType !== "general"}
+                        value={line.transaction_type}
+                        onChange={(e) =>
+                          handleLineChange(
+                            index,
+                            "transaction_type",
+                            e.target.value,
+                          )
+                        }
+                        className="w-full border p-1 rounded bg-white text-zinc-700 font-semibold disabled:bg-zinc-100 disabled:text-zinc-500"
                       >
-                        <Icon icon="tabler:external-link" className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
+                        <option value="gl_no">G/L No.</option>
+                        <option value="customer">Customer</option>
+                        <option value="supplier">Supplier</option>
+                      </select>
+                    </td>
 
-                  <td className="p-1.5">
-                    <select
-                      disabled={formDisabled}
-                      value={line.currency_id}
-                      onChange={(e) =>
-                        handleLineChange(index, "currency_id", e.target.value)
-                      }
-                      className="w-full border p-1 rounded bg-white font-bold text-center"
-                    >
-                      <option value="">{baseCurrencyCode}</option>
-                      {currencies
-                        .filter((c) => !c.is_base)
-                        .map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.code}
-                          </option>
-                        ))}
-                    </select>
-                  </td>
+                    <td className="p-1.5">
+                      <div className="flex gap-1">
+                        <input
+                          type="text"
+                          readOnly
+                          placeholder={`Select ${line.transaction_type}...`}
+                          value={
+                            line.display_code
+                              ? `${line.display_code} - ${line.display_name}`
+                              : ""
+                          }
+                          className="w-full border p-1 rounded bg-zinc-50 text-zinc-700 font-mono text-[11px] outline-none truncate"
+                        />
 
-                  <td className="p-1.5">
-                    {/* <input
+                        <Button
+                          type="button"
+                          disabled={formDisabled}
+                          onClick={() =>
+                            setActiveModal({
+                              index,
+                              type: "main_account",
+                              target:
+                                line.transaction_type === "gl_no"
+                                  ? "gl"
+                                  : line.transaction_type,
+                            })
+                          }
+                          className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                        >
+                          <Icon
+                            icon="tabler:external-link"
+                            className="w-4 h-4"
+                          />
+                        </Button>
+                      </div>
+                    </td>
+
+                    <td className="p-1.5">
+                      <select
+                        disabled={formDisabled}
+                        value={line.currency_id}
+                        onChange={(e) =>
+                          handleLineChange(index, "currency_id", e.target.value)
+                        }
+                        className="w-full border p-1 rounded bg-white font-bold text-center"
+                      >
+                        <option value="">{baseCurrencyCode}</option>
+                        {currencies
+                          .filter((c) => !c.is_base)
+                          .map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.code}
+                            </option>
+                          ))}
+                      </select>
+                    </td>
+
+                    <td className="p-1.5">
+                      {/* <input
                       type="number"
                       step="0.01"
                       disabled={debitDisabled}
@@ -915,23 +954,23 @@ export default function JournalForm({
                           : "bg-white"
                       }`}
                     /> */}
-                    <NumericTextInput
-                      value={Number(line.debit)}
-                      allowDecimals
-                      decimalScale={2}
-                      disabled={debitDisabled}
-                      onChange={(val) =>
-                        handleLineChange(index, "debit", String(val))
-                      }
-                      className={`w-full border p-1 rounded text-right font-mono ${
-                        debitDisabled
-                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-                          : "bg-white"
-                      }`}
-                    />
-                  </td>
-                  <td className="p-1.5">
-                    {/* <input
+                      <NumericTextInput
+                        value={Number(line.debit)}
+                        allowDecimals
+                        decimalScale={2}
+                        disabled={debitDisabled}
+                        onChange={(val) =>
+                          handleLineChange(index, "debit", String(val))
+                        }
+                        className={`w-full border p-1 rounded text-right font-mono ${
+                          debitDisabled
+                            ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                            : "bg-white"
+                        }`}
+                      />
+                    </td>
+                    <td className="p-1.5">
+                      {/* <input
                       type="number"
                       step="0.01"
                       disabled={creditDisabled}
@@ -950,24 +989,24 @@ export default function JournalForm({
                       }`}
                     /> */}
 
-                    <NumericTextInput
-                      value={Number(line.credit)}
-                      allowDecimals
-                      decimalScale={2}
-                      disabled={creditDisabled}
-                      onChange={(val) =>
-                        handleLineChange(index, "credit", String(val))
-                      }
-                      className={`w-full border p-1 rounded text-right font-mono ${
-                        creditDisabled
-                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-                          : "bg-white"
-                      }`}
-                    />
-                  </td>
+                      <NumericTextInput
+                        value={Number(line.credit)}
+                        allowDecimals
+                        decimalScale={2}
+                        disabled={creditDisabled}
+                        onChange={(val) =>
+                          handleLineChange(index, "credit", String(val))
+                        }
+                        className={`w-full border p-1 rounded text-right font-mono ${
+                          creditDisabled
+                            ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                            : "bg-white"
+                        }`}
+                      />
+                    </td>
 
-                  <td className="p-1.5">
-                    {/* <input
+                    <td className="p-1.5">
+                      {/* <input
                       type="number"
                       step="0.01"
                       disabled={!line.currency_id || formDisabled}
@@ -982,283 +1021,290 @@ export default function JournalForm({
                       className="w-full border p-1 rounded text-center bg-zinc-50 font-mono"
                     /> */}
 
-                    <NumericTextInput
-                      value={Number(line.currency_id ? line.exchange_rate : 1)}
-                      allowDecimals
-                      decimalScale={2}
-                      disabled={!line.currency_id || formDisabled}
-                      onChange={(val) =>
-                        handleLineChange(index, "exchange_rate", String(val))
-                      }
-                      className={`w-full border p-1 rounded text-right font-mono ${
-                        creditDisabled
-                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-                          : "bg-white"
-                      }`}
-                    />
-                  </td>
-
-                  <td className="p-1.5 text-right font-mono bg-zinc-50/60 text-zinc-600 font-semibold pr-3">
-                    {convertedValue > 0 ? convertedValue.toFixed(2) : "0.00"}
-                  </td>
-
-                  <td className="p-1.5">
-                    <div className="flex gap-1">
-                      <input
-                        type="text"
-                        readOnly
-                        placeholder="None"
-                        value={line.balancing_display_name || ""}
-                        className="w-full border p-1 rounded bg-zinc-50 text-zinc-700 font-mono text-[11px] outline-none truncate"
-                      />
-
-                      <Button
-                        type="button"
-                        disabled={formDisabled}
-                        onClick={() =>
-                          setActiveModal({
-                            index,
-                            type: "balancing_account",
-                            target: "gl",
-                          })
+                      <NumericTextInput
+                        value={Number(
+                          line.currency_id ? line.exchange_rate : 1,
+                        )}
+                        allowDecimals
+                        decimalScale={2}
+                        disabled={!line.currency_id || formDisabled}
+                        onChange={(val) =>
+                          handleLineChange(index, "exchange_rate", String(val))
                         }
-                        className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-                      >
-                        <Icon icon="tabler:external-link" className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
+                        className={`w-full border p-1 rounded text-right font-mono ${
+                          creditDisabled
+                            ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                            : "bg-white"
+                        }`}
+                      />
+                    </td>
 
-                  <td className="p-1.5 ">
-                    <div className="flex flex-row gap-1">
-                      {isPartyLine ? (
+                    <td className="p-1.5 text-right font-mono bg-zinc-50/60 text-zinc-600 font-semibold pr-3">
+                      {convertedValue > 0 ? convertedValue.toFixed(2) : "0.00"}
+                    </td>
+
+                    <td className="p-1.5">
+                      <div className="flex gap-1">
+                        <input
+                          type="text"
+                          readOnly
+                          placeholder="None"
+                          value={line.balancing_display_name || ""}
+                          className="w-full border p-1 rounded bg-zinc-50 text-zinc-700 font-mono text-[11px] outline-none truncate"
+                        />
+
                         <Button
                           type="button"
-                          title={
-                            totalLineAllocated > 0
-                              ? `$${totalLineAllocated.toFixed(2)}`
-                              : "Allocate"
+                          disabled={formDisabled}
+                          onClick={() =>
+                            setActiveModal({
+                              index,
+                              type: "balancing_account",
+                              target: "gl",
+                            })
                           }
-                          disabled={
-                            formDisabled || !line.party_id || localAmount <= 0
-                          }
-                          onClick={() => setAllocationModalIndex(index)}
-                          className={`flex items-center justify-center gap-1 p-1 border rounded  transition ${
-                            totalLineAllocated > 0
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                              : "bg-zinc-100 text-zinc-700 border-zinc-300 hover:bg-zinc-200"
-                          } disabled:opacity-40 disabled:cursor-not-allowed`}
+                          className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                         >
-                          <Icon icon="tabler:box-seam" className="w-4 h-4" />
+                          <Icon
+                            icon="tabler:external-link"
+                            className="w-4 h-4"
+                          />
                         </Button>
-                      ) : (
-                        <span className="text-zinc-300">-</span>
-                      )}
-                      <Button
-                        type="button"
-                        disabled={lines.length === 1 || formDisabled}
-                        onClick={() => removeLineRow(index)}
-                        className="text-red-600 hover:text-red-800 p-1 rounded  bg-slate-100 border border-zinc-300 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
-                      >
-                        <Icon icon="lucide:x" className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                      </div>
+                    </td>
 
-      {(journalType == "general") &&(
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 bg-white rounded border border-zinc-200">
-        <div className="flex justify-start"></div>
-
-        <div className="flex items-center justify-end gap-6 font-mono text-zinc-600 bg-zinc-50 border p-2 px-4 rounded font-bold">
-          <div>
-            Total Converted Debit:{" "}
-            <span className="text-zinc-800">
-              {totalDebitConverted.toFixed(2)}
-            </span>
-          </div>
-          <div>
-            Total Converted Credit:{" "}
-            <span className="text-zinc-800">
-              {totalCreditConverted.toFixed(2)}
-            </span>
-          </div>
-          <div className="border-l pl-6">
-            Difference:{" "}
-            <span className={isBalanced ? "text-emerald-600" : "text-red-500"}>
-              {difference.toFixed(2)}
-            </span>
-          </div>
+                    <td className="p-1.5 ">
+                      <div className="flex flex-row gap-1">
+                        {isPartyLine ? (
+                          <Button
+                            type="button"
+                            title={
+                              totalLineAllocated > 0
+                                ? `$${totalLineAllocated.toFixed(2)}`
+                                : "Allocate"
+                            }
+                            disabled={
+                              formDisabled || !line.party_id || localAmount <= 0
+                            }
+                            onClick={() => setAllocationModalIndex(index)}
+                            className={`flex items-center justify-center gap-1 p-1 border rounded  transition ${
+                              totalLineAllocated > 0
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                                : "bg-zinc-100 text-zinc-700 border-zinc-300 hover:bg-zinc-200"
+                            } disabled:opacity-40 disabled:cursor-not-allowed`}
+                          >
+                            <Icon icon="tabler:box-seam" className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <span className="text-zinc-300">-</span>
+                        )}
+                        <Button
+                          type="button"
+                          disabled={lines.length === 1 || formDisabled}
+                          onClick={() => removeLineRow(index)}
+                          className="text-red-600 hover:text-red-800 p-1 rounded  bg-slate-100 border border-zinc-300 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                        >
+                          <Icon icon="lucide:x" className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      </div>
 
-      )}
-      
+        {journalType == "general" && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 bg-white rounded border border-zinc-200">
+            <div className="flex justify-start"></div>
 
-      <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
-        {!readOnly && (
-          <>
-            {isPosted && (
-              <Button
-                type="button"
-                onClick={() => setShowNavigateModal(true)}
-                variant="add_line"
-                // className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2 disabled:opacity-50"
-              >
-                Navigate
-              </Button>
-            )}
-            {!isEditing ? (
-              /* VIEW MODE BUTTONS */
-              <>
+            <div className="flex items-center justify-end gap-6 font-mono text-zinc-600 bg-zinc-50 border p-2 px-4 rounded font-bold">
+              <div>
+                Total Converted Debit:{" "}
+                <span className="text-zinc-800">
+                  {totalDebitConverted.toFixed(2)}
+                </span>
+              </div>
+              <div>
+                Total Converted Credit:{" "}
+                <span className="text-zinc-800">
+                  {totalCreditConverted.toFixed(2)}
+                </span>
+              </div>
+              <div className="border-l pl-6">
+                Difference:{" "}
+                <span
+                  className={isBalanced ? "text-emerald-600" : "text-red-500"}
+                >
+                  {difference.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
+          {!readOnly && (
+            <>
+              {isPosted && (
                 <Button
                   type="button"
-                  onClick={() => setIsEditing(true)}
-                  disabled={isPosted}
-                  variant="edit"
+                  onClick={() => setShowNavigateModal(true)}
+                  variant="add_line"
+                  // className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2 disabled:opacity-50"
                 >
-                  Edit
+                  Navigate
                 </Button>
+              )}
+              {!isEditing ? (
+                /* VIEW MODE BUTTONS */
+                <>
+                  <Button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    disabled={isPosted}
+                    variant="edit"
+                  >
+                    Edit
+                  </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.back()}
-                  className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white dark:bg-slate-800 dark:text-zinc-200"
-                >
-                  Close
-                </Button>
-              </>
-            ) : (
-              /* EDIT MODE BUTTONS */
-              <>
-                <Button
-                  type="button"
-                  disabled={
-                    loading ||
-                    (!isBalanced && lines.every((l) => !l.balancing_account_id))
-                  }
-                  onClick={() => handlePersistAction(true)}
-                  variant="post"
-                >
-                  {loading ? "Posting..." : "Post Journal"}
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                    className="px-5 font-semibold text-zinc-700 hover:bg-zinc-50 bg-white dark:bg-slate-800 dark:text-zinc-200"
+                  >
+                    Close
+                  </Button>
+                </>
+              ) : (
+                /* EDIT MODE BUTTONS */
+                <>
+                  <Button
+                    type="button"
+                    disabled={
+                      loading ||
+                      (!isBalanced &&
+                        lines.every((l) => !l.balancing_account_id))
+                    }
+                    onClick={() => handlePersistAction(true)}
+                    variant="post"
+                  >
+                    {loading ? "Posting..." : "Post Journal"}
+                  </Button>
 
-                <Button
-                  type="button"
-                  onClick={() => handlePersistAction(false)}
-                  disabled={loading}
-                  variant="save"
-                >
-                  {loading ? "Saving..." : "Save"}
-                </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handlePersistAction(false)}
+                    disabled={loading}
+                    variant="save"
+                  >
+                    {loading ? "Saving..." : "Save"}
+                  </Button>
 
-                <Button
-                  type="button"
-                  variant="cancel"
-                  onClick={journalId ? handleCancelEdit : () => router.back()}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-              </>
-            )}
-          </>
+                  <Button
+                    type="button"
+                    variant="cancel"
+                    onClick={journalId ? handleCancelEdit : () => router.back()}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        {activeModal?.target === "gl" && (
+          <GLAccountLookupModal
+            open={true}
+            onClose={() => setActiveModal(null)}
+            onSelect={(rec: GLAccountLookupRecord) =>
+              handleModalSelection({
+                id: rec.id,
+                code: rec.code,
+                name: rec.name,
+              })
+            }
+          />
+        )}
+
+        {activeModal?.target === "customer" && (
+          <CustomerLookupModal
+            open={true}
+            onClose={() => setActiveModal(null)}
+            onSelect={(rec: CustomerLookupItem) =>
+              handleModalSelection({
+                id: rec.id,
+                code: rec.customer_code || "CUST",
+                name: rec.name,
+                currency_id: rec.currency_id,
+                gl_account_receivable: rec.gl_account_receivable,
+              })
+            }
+          />
+        )}
+
+        {activeModal?.target === "supplier" && (
+          <SupplierLookupModal
+            open={true}
+            onClose={() => setActiveModal(null)}
+            onSelect={(rec: SupplierLookupItem) =>
+              handleModalSelection({
+                id: rec.id,
+                code: rec.supplier_code || "SUPP",
+                name: rec.name,
+                currency_id: rec.currency_id,
+                gl_account_payable: rec.gl_account_payable,
+              })
+            }
+          />
+        )}
+
+        {/* ALLOCATION MODAL BINDING */}
+        {activeAllocationLine && allocationModalIndex !== null && (
+          <AllocateJournalPaymentModal
+            isOpen={allocationModalIndex !== null}
+            onClose={() => setAllocationModalIndex(null)}
+            partyId={activeAllocationLine.party_id}
+            partyType={
+              activeAllocationLine.transaction_type as "supplier" | "customer"
+            }
+            documentType={activeAllocationLine.document_type}
+            paymentAmount={
+              activeAllocationLine.debit > 0
+                ? activeAllocationLine.debit
+                : activeAllocationLine.credit
+            }
+            currencyIsoCode={
+              currencies.find((c) => c.id === activeAllocationLine.currency_id)
+                ?.code || baseCurrencyCode
+            }
+            initialAllocations={activeAllocationLine.allocations || []}
+            onApplyAllocations={(allocations) =>
+              handleApplyAllocations(allocationModalIndex, allocations)
+            }
+          />
+        )}
+
+        {isPosted && journalId && (
+          // <PostedTransactionsModal
+          //   isOpen={showNavigateModal}
+          //   onClose={() => setShowNavigateModal(false)}
+          //   journalId={journalId}
+          //   journalNo={metadata.entry_no}
+          // />
+          <PostedTransactionsModal
+            isOpen={showNavigateModal}
+            onClose={() => setShowNavigateModal(false)}
+            documentNo={metadata.entry_no}
+            documentTitle="Journal"
+            fetchEndpoint={`/api/finance/general-journal/${journalId}/posted-entries`}
+          />
         )}
       </div>
-
-      {activeModal?.target === "gl" && (
-        <GLAccountLookupModal
-          open={true}
-          onClose={() => setActiveModal(null)}
-          onSelect={(rec: GLAccountLookupRecord) =>
-            handleModalSelection({
-              id: rec.id,
-              code: rec.code,
-              name: rec.name,
-            })
-          }
-        />
-      )}
-
-      {activeModal?.target === "customer" && (
-        <CustomerLookupModal
-          open={true}
-          onClose={() => setActiveModal(null)}
-          onSelect={(rec: CustomerLookupItem) =>
-            handleModalSelection({
-              id: rec.id,
-              code: rec.customer_code || "CUST",
-              name: rec.name,
-              currency_id: rec.currency_id,
-              gl_account_receivable: rec.gl_account_receivable,
-            })
-          }
-        />
-      )}
-
-      {activeModal?.target === "supplier" && (
-        <SupplierLookupModal
-          open={true}
-          onClose={() => setActiveModal(null)}
-          onSelect={(rec: SupplierLookupItem) =>
-            handleModalSelection({
-              id: rec.id,
-              code: rec.supplier_code || "SUPP",
-              name: rec.name,
-              currency_id: rec.currency_id,
-              gl_account_payable: rec.gl_account_payable,
-            })
-          }
-        />
-      )}
-
-      {/* ALLOCATION MODAL BINDING */}
-      {activeAllocationLine && allocationModalIndex !== null && (
-        <AllocateJournalPaymentModal
-          isOpen={allocationModalIndex !== null}
-          onClose={() => setAllocationModalIndex(null)}
-          partyId={activeAllocationLine.party_id}
-          partyType={
-            activeAllocationLine.transaction_type as "supplier" | "customer"
-          }
-          documentType={activeAllocationLine.document_type}
-          paymentAmount={
-            activeAllocationLine.debit > 0
-              ? activeAllocationLine.debit
-              : activeAllocationLine.credit
-          }
-          currencyIsoCode={
-            currencies.find((c) => c.id === activeAllocationLine.currency_id)
-              ?.code || baseCurrencyCode
-          }
-          initialAllocations={activeAllocationLine.allocations || []}
-          onApplyAllocations={(allocations) =>
-            handleApplyAllocations(allocationModalIndex, allocations)
-          }
-        />
-      )}
-
-      {isPosted && journalId && (
-        // <PostedTransactionsModal
-        //   isOpen={showNavigateModal}
-        //   onClose={() => setShowNavigateModal(false)}
-        //   journalId={journalId}
-        //   journalNo={metadata.entry_no}
-        // />
-        <PostedTransactionsModal
-          isOpen={showNavigateModal}
-          onClose={() => setShowNavigateModal(false)}
-          documentNo={metadata.entry_no}
-          documentTitle="Journal"
-          fetchEndpoint={`/api/finance/general-journal/${journalId}/posted-entries`}
-        />
-      )}
     </div>
   );
 }

@@ -979,7 +979,7 @@ export const DebitNoteForm: React.FC<Props> = ({
             </div>
             <div className="grid grid-cols-2 gap-2 items-center">
               <span className="text-xs font-semibold text-slate-500">
-                Amount Incl. VAT ({baseCurrencyCode})
+                Amount Incl. VAT (LCY: {baseCurrencyCode})
               </span>
               <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
                 {financials.amountInclVatLCY.toLocaleString(undefined, {

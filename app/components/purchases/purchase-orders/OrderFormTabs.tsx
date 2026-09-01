@@ -6,6 +6,7 @@ import { PurchaseOrder, PurchaseOrderMasterData } from "@/types/purchase-order";
 import MasterDropdown from "../../common/MasterDropdown";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import AttachmentsTab from "../../shared/AttachmentsTab";
 interface Address {
   name?: string;
   address_1?: string;
@@ -46,7 +47,7 @@ type ExtendedMasterData = PurchaseOrderMasterData & {
 };
 
 interface OrderFormTabsProps {
-  activeTab: "general" | "invoicing" | "shipping";
+  activeTab: "general" | "invoicing" | "shipping" | "attachments";
   order: Partial<PurchaseOrder>;
   primaryAddress: Address;
   setPrimaryAddress: React.Dispatch<React.SetStateAction<Address>>;
@@ -95,8 +96,14 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   inputDateStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
   isReadOnly = false,
 }) => {
+  const labelcolumnDivStyle =
+    "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-2";
+
   const inputcolumnDivStyle =
-    "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200";
+    "w-full text-xs px-2 py-1.5 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200";
+
+  // const inputStyle =
+  // "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
 
   const maxOrderDate =
     [order.invoice_date, order.req_receipt_date, order.receipt_date]
@@ -129,7 +136,8 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-sm w-full">
       {/* ---------------- GENERAL TAB ---------------- */}
       {activeTab === "general" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 space-x-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4">
+          {/* lg:grid-cols-4 space-x-2 */}
           {/* Column 1 */}
           <div className="space-y-2">
             {/* <div className="grid grid-cols-12 items-center gap-2">
@@ -142,70 +150,76 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               />
             </div> */}
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>
-                Supplier No. <span className="text-red-500">*</span>
+              <label className={labelcolumnDivStyle} title="Supplier No./Name">
+                Suppl. No./Name <span className="text-red-500">*</span>
               </label>
-              <div className="col-span-8 flex gap-1">
+
+              <div className="col-span-10 grid grid-cols-2 gap-2">
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    readOnly
+                    className={`${inputcolumnDivStyle} font-mono`}
+                    value={order.supplier_no || "Click Select..."}
+                  />
+                  <button
+                    type="button"
+                    disabled={isReadOnly}
+                    onClick={onGeneralSupplierSelect}
+                    // onClick={() => setSupplierModalOpen(true)}
+                    className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                  >
+                    {/* <Icon icon="tabler:search" /> */}
+                    <Icon icon="tabler:external-link" className="w-4 h-4" />
+                  </button>
+                </div>
                 <input
                   type="text"
-                  readOnly
-                  className={`${inputStyle} font-mono`}
-                  value={order.supplier_no || "Click Select..."}
+                  disabled={isSettingsDisabled}
+                  className={inputcolumnDivStyle}
+                  value={order.supplier_name || ""}
                 />
-                <button
-                  type="button"
-                  disabled={isReadOnly}
-                  onClick={onGeneralSupplierSelect}
-                  // onClick={() => setSupplierModalOpen(true)}
-                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-                >
-                  {/* <Icon icon="tabler:search" /> */}
-                  <Icon icon="tabler:external-link" className="w-4 h-4" />
-                </button>
+              </div>
+            </div>
+            {/* <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Supplier Name</label>
+              
+            </div> */}
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelcolumnDivStyle}>Address Line 1</label>
+
+              <div className="col-span-10 grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="Address Line 1"
+                  className={inputcolumnDivStyle}
+                  disabled={isSettingsDisabled}
+                  value={primaryAddress.address_1 || ""}
+                  onChange={(e) =>
+                    setPrimaryAddress({
+                      ...primaryAddress,
+                      address_1: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="text"
+                  placeholder="Address Line 2"
+                  className={inputcolumnDivStyle}
+                  disabled={isSettingsDisabled}
+                  value={primaryAddress.address_2 || ""}
+                  onChange={(e) =>
+                    setPrimaryAddress({
+                      ...primaryAddress,
+                      address_2: e.target.value,
+                    })
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Supplier Name</label>
-              <input
-                type="text"
-                disabled={isSettingsDisabled}
-                className={inputStyle}
-                value={order.supplier_name || ""}
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 1</label>
-              <input
-                type="text"
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={primaryAddress.address_1 || ""}
-                onChange={(e) =>
-                  setPrimaryAddress({
-                    ...primaryAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={primaryAddress.address_2 || ""}
-                onChange={(e) =>
-                  setPrimaryAddress({
-                    ...primaryAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>City</label>
-              <div className="col-span-8 grid grid-cols-2 gap-2">
+              <label className={labelcolumnDivStyle}>City/County</label>
+              <div className="col-span-10 grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="City"
@@ -235,8 +249,8 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Postcode/Co.</label>
-              <div className="col-span-8 grid grid-cols-2 gap-2">
+              <label className={labelcolumnDivStyle}>Postcode/Co.</label>
+              <div className="col-span-10 grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="Postcode"
@@ -356,7 +370,9 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
           {/* Column 3 */}
           <div className="space-y-2">
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Supplier Invoice No.</label>
+              <label className={labelStyle} title="Supplier Invoice No.">
+                Suppl. Inv. No.
+              </label>
               <input
                 type="text"
                 className={inputStyle}
@@ -367,7 +383,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Supplier Order No.">
-                Suppl. Order No.
+                Suppl. Ord. No.
               </label>
               <input
                 type="text"
@@ -528,16 +544,17 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 
       {/* ---------------- INVOICING TAB ---------------- */}
       {activeTab === "invoicing" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 space-x-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 ">{/* lg:grid-cols-4 gap-4 space-x-2 */}
           {/* Column 1 */}
-          <div className="space-y-2">
+          <div className="space-y-2 ">
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Pay to Suppl. No.</label>
-              <div className="col-span-8 flex gap-1">
+              <label className={labelcolumnDivStyle}>Pay to Suppl. No./Name</label>
+              <div className="col-span-10 grid grid-cols-2 gap-2">
+              <div className="flex gap-1">
                 <input
                   type="text"
                   readOnly
-                  className={`${inputStyle} font-mono`}
+                  className={`${inputcolumnDivStyle} font-mono`}
                   value={order.pay_to_supplier_no || "Click Select..."}
                 />
                 <button
@@ -550,16 +567,20 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   <Icon icon="tabler:external-link" className="w-4 h-4" />
                 </button>
               </div>
-            </div>
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Name</label>
+
               <input
                 type="text"
                 disabled={isSettingsDisabled}
-                className={inputStyle}
+                className={inputcolumnDivStyle}
                 value={order.pay_to_supplier_name || ""}
               />
+
             </div>
+            </div>
+            {/* <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Name</label>
+              
+            </div> */}
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Address Line 1</label>
               <input
@@ -880,7 +901,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
           </div>
 
           {/* Column 4 */}
-          <div className="space-y-2">
+          <div className="space-y-2 bg-slate-100 dark:bg-slate-800/80 p-1">
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Link to Customer</label>
               <input
@@ -902,16 +923,14 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>Linked PO</label>
-                <input
-                  type="text"
-                  className={inputStyle}
-                  value={order.linked_po || ""}
-                  onChange={(e) => updateField("linked_po", e.target.value)}
-                />
-              </div>
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>Linked PO</label>
+              <input
+                type="text"
+                className={inputStyle}
+                value={order.linked_po || ""}
+                onChange={(e) => updateField("linked_po", e.target.value)}
+              />
             </div>
           </div>
         </div>
@@ -1092,7 +1111,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 onChange={(e) => updateField("book_in_phone", e.target.value)}
               />
             </div>
-            
+
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Book In Email</label>
               <input
@@ -1166,6 +1185,15 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ---------------- Attachments TAB ---------------- */}
+      {activeTab === "attachments" && order.id && (
+        <AttachmentsTab
+          module="purchase_order"
+          recordId={order.id}
+          readonly={isSettingsDisabled}
+        />
       )}
     </div>
   );

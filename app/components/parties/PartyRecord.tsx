@@ -142,47 +142,6 @@ export default function PartyRecord({
     loadData();
   }, [id, module]);
 
-  // app/components/parties/PartyRecord.tsx
-
-  /* useEffect(() => {
-    async function loadInitialData() {
-      try {
-        setLoading(true);
-        const partyType =
-          module === "supplier" || account.is_supplier
-            ? "supplier"
-            : "customer";
-
-        // Execute party detail fetch and summary fetch simultaneously
-        const [partyRes, summaryRes] = await Promise.all([
-          fetch(`/api/parties/${id}`),
-          fetch(`/api/parties/${id}/ledger/summary?partyType=${partyType}`),
-        ]);
-
-        if (partyRes.ok) {
-          const partyData = await partyRes.json();
-          setAccount(partyData);
-          setInitialAccount(partyData);
-        }
-
-        if (summaryRes.ok) {
-          const summaryData = await summaryRes.json();
-          if (summaryData.summary) {
-            setLedgerSummary(summaryData.summary);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to preload party record details:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (id) {
-      loadInitialData();
-    }
-  }, [id, module, account]); */
-
   const validateForm = (): boolean => {
     setFormErrors({});
     const structuredErrors: Record<string, string> = {};
@@ -318,19 +277,30 @@ export default function PartyRecord({
 
   tabs.push("activities", "notes", "attachments");
 
+  const redirectPath =
+    module == "srm"
+      ? `/${slug}/purchases/srm`
+      : module == "supplier"
+        ? `/${slug}/purchases/supplier`
+        : module == "crm"
+          ? `/${slug}/sales/crm`
+          : `/${slug}/sales/customer`;
+
   return (
     <div className="space-y-6">
       <Breadcrumbs
         items={[
           {
-            label:
-              (account.is_customer
-                ? `Customer`
-                : account.is_supplier
-                  ? `Supplier`
-                  : account.is_crm_lead
-                    ? `CRM Lead`
-                    : `${account.srm_code} SRM`) || "",
+            label: account.is_customer
+              ? "Customer"
+              : account.is_supplier
+                ? "Supplier"
+                : account.is_crm_lead
+                  ? "CRM Lead"
+                  : account.is_srm_vendor
+                    ? "SRM"
+                    : "",
+            href: `${redirectPath}`,
           },
           {
             label:
@@ -340,7 +310,9 @@ export default function PartyRecord({
                   ? `${account.supplier_code}`
                   : account.is_crm_lead
                     ? `${account.crm_code}`
-                    : `${account.srm_code}`) || "",
+                    : account.is_srm_vendor
+                      ? `${account.srm_code}`
+                      : "") || "",
           },
         ]}
       />
@@ -351,7 +323,11 @@ export default function PartyRecord({
             ? "Customer No."
             : account.is_supplier
               ? "Supplier No."
-              : "CRM Lead No."}{" "}
+              : account.is_crm_lead
+                ? "CRM Lead No."
+                : account.is_srm_vendor
+                  ? "SRM No."
+                  : ""}
           &nbsp;
           {(account.is_customer
             ? account.customer_code
@@ -359,7 +335,9 @@ export default function PartyRecord({
               ? account.supplier_code
               : account.is_crm_lead
                 ? account.crm_code
-                : account.srm_code) || "[Auto-Generated]"}
+                : account.is_srm_vendor
+                  ? account.srm_code
+                  : "") || ""}
         </div>
       </div>
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">

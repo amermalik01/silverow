@@ -272,7 +272,7 @@ export function DataTable<T extends object>({
         </div>
 
         <div className="text-xs text-emerald-300 font-medium self-end sm:self-auto">
-          {totalRecords} Total Entries Found
+          {/* {totalRecords} Total Entries Found */}
         </div>
       </div>
 

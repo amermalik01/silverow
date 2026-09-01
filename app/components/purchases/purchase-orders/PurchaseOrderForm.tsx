@@ -31,7 +31,7 @@ interface Props {
   isReadOnly?: boolean;
 }
 
-type TabType = "general" | "invoicing" | "shipping";
+type TabType = "general" | "invoicing" | "shipping" | "attachments";
 
 type SupplierSelectionSource = "general" | "invoicing";
 
@@ -662,7 +662,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200  pb-2 mb-4">
           <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar ">
-            {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
+            {(["general", "invoicing", "shipping", "attachments"] as TabType[]).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -796,10 +796,14 @@ export const PurchaseOrderForm: React.FC<Props> = ({
               />
             </div>
             <div className="col-span-2">
+              
+    
               <textarea
                 placeholder="Add External Notes"
                 disabled={isFormDisabled}
-                className={`${inputStyle} font-mono`}
+                className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-slate-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
+  
+                // className={`${inputStyle} font-mono bg-[#ddd]`}
                 value={order.notes || ""}
                 onChange={(e) => updateField("notes", e.target.value)}
               />
@@ -844,7 +848,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             </div>
             <div className="grid grid-cols-2 gap-2 items-center">
               <span className="text-xs font-semibold text-slate-500">
-                Amount Incl. VAT ({baseCurrencyCode})
+                Amount Incl. VAT (LCY: {baseCurrencyCode})
               </span>
               <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
                 {financials.amountInclVatLCY.toLocaleString(undefined, {
