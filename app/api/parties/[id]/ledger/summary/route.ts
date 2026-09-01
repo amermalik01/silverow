@@ -25,7 +25,7 @@ export async function GET(
     const partyColumn = isSupplier ? "vendor_id" : "customer_id";
 
     // SQL calculation applying sign conventions directly in database engine
-    const query = `
+    /* const query = `
       SELECT 
         SUM(
           CASE 
@@ -70,7 +70,105 @@ export async function GET(
         COUNT(CASE WHEN e.is_open = true AND ABS(e.remaining_amount_fcy) > 0 THEN 1 END) AS open_count
       FROM ${tableName} e
       WHERE e.company_id = $1 AND e.${partyColumn} = $2
-    `;
+    `; */
+
+    const query = `
+        WITH party_totals AS (
+            SELECT
+            COALESCE(SUM(
+                CASE
+                WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%REFUND%'
+                THEN -ABS(e.original_amount_fcy)
+                ELSE ABS(e.original_amount_fcy)
+                END
+            ), 0) AS total_original_fcy,
+
+            COALESCE(SUM(
+                CASE
+                WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%REFUND%'
+                THEN -ABS(e.remaining_amount_fcy)
+                ELSE ABS(e.remaining_amount_fcy)
+                END
+            ), 0) AS total_remaining_fcy,
+
+            COALESCE(SUM(
+                CASE
+                WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%REFUND%'
+                THEN -ABS(e.original_amount_lcy)
+                ELSE ABS(e.original_amount_lcy)
+                END
+            ), 0) AS total_original_lcy,
+
+            COALESCE(SUM(
+                CASE
+                WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%REFUND%'
+                THEN -ABS(e.remaining_amount_lcy)
+                ELSE ABS(e.remaining_amount_lcy)
+                END
+            ), 0) AS total_remaining_lcy,
+
+            COUNT(
+                CASE
+                WHEN e.is_open = true
+                    AND ABS(e.remaining_amount_fcy) > 0
+                THEN 1
+                END
+            ) AS open_count
+
+            FROM ${tableName} e
+            WHERE e.company_id = $1
+            AND e.${partyColumn} = $2
+        ),
+
+        fx_totals AS (
+            SELECT
+            COALESCE(SUM(
+                CASE
+                WHEN gle.debit > 0 THEN gle.debit
+                WHEN gle.credit > 0 THEN -gle.credit
+                ELSE 0
+                END
+            ), 0) AS fx_lcy
+
+            FROM gl_ledger_entries gle
+            WHERE gle.company_id = $1
+            AND gle.source_type::text = 'FX_VARIANCE'
+            AND gle.party_type::text = '${isSupplier ? "SUPPLIER" : "CUSTOMER"}'
+            AND gle.party_id = $2
+        )
+
+        SELECT
+            p.total_original_fcy,
+            p.total_remaining_fcy,
+
+            p.total_original_lcy,
+            p.total_remaining_lcy,
+
+            f.fx_lcy,
+
+            p.total_original_lcy + f.fx_lcy
+            AS adjusted_original_lcy,
+
+            p.total_remaining_lcy + f.fx_lcy
+            AS adjusted_remaining_lcy,
+
+            p.open_count
+
+        FROM party_totals p
+        CROSS JOIN fx_totals f
+        `;
 
     const result = await pool.query(query, [companyId, partyId]);
     const row = result.rows[0] || {};
