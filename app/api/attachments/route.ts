@@ -26,7 +26,14 @@ export async function GET(req: NextRequest) {
     }
 
     const result = await pool.query(
-      `SELECT id, file_name, file_path, file_size, mime_type, created_at 
+      `SELECT
+        id,
+        file_name,
+        file_key,
+        file_path,
+        file_size,
+        mime_type,
+        created_at
        FROM attachments 
        WHERE company_id = $1 AND module = $2 AND record_id = $3 
        ORDER BY created_at DESC`,
@@ -43,7 +50,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+/* export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.company_id) {
@@ -102,4 +109,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+} */

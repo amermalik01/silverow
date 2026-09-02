@@ -18,11 +18,17 @@ export const OurFileRouter = {
       maxFileCount: 5,
     },
     "application/vnd.ms-excel": { maxFileSize: "16MB", maxFileCount: 5 },
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+      maxFileSize: "16MB",
+      maxFileCount: 5,
+    },
+    "application/msword": { maxFileSize: "16MB", maxFileCount: 5 },
+    "text/plain": { maxFileSize: "2MB", maxFileCount: 5 },
   })
     .input(
       z.object({
-        module: z.string(),
-        recordId: z.string(),
+        module: z.string().min(1).max(100),
+        recordId: z.string().min(1).max(200),
       }),
     )
     .middleware(async ({ input }) => {
@@ -40,24 +46,38 @@ export const OurFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       // Auto-insert record into PostgreSQL upon successful UploadThing upload
-      const dbPath = file.ufsUrl || file.url; // Remote UploadThing CDN URL
+      const fileUrl = file.ufsUrl ?? file.url;
 
-      await pool.query(
-        `INSERT INTO attachments (company_id, module, record_id, file_name, file_path, file_size, mime_type, uploaded_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          metadata.companyId,
-          metadata.module,
-          metadata.recordId,
-          file.name,
-          dbPath,
-          file.size,
-          file.type,
-          metadata.userId,
-        ],
-      );
+      try {
+        const result = await pool.query(
+          `INSERT INTO attachments (company_id, module, record_id, file_name, file_key, file_path, file_size, mime_type, uploaded_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, file_name, file_key, file_path, file_size, mime_type, created_at`,
+          [
+            metadata.companyId,
+            metadata.module,
+            metadata.recordId,
+            file.name,
+            file.key,
+            fileUrl,
+            file.size,
+            file.type,
+            metadata.userId,
+          ],
+        );
+        console.log("Attachment saved:", result.rows[0]);
 
-      return { uploadedBy: metadata.userId, filePath: dbPath };
+        return {
+          attachmentId: result.rows[0].id,
+          fileKey: file.key,
+          fileUrl,
+        };
+      } catch (error) {
+        console.error("Failed to save attachment:", error);
+        throw new UploadThingError(
+          "File uploaded but attachment record could not be saved",
+        );
+      }
     }),
 } satisfies FileRouter;
 
