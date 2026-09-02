@@ -19,10 +19,10 @@ export async function GET(req: NextRequest) {
     const postcode = searchParams.get("postcode") || "";
     const email = searchParams.get("email") || "";
 
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 20));
     const limit = Math.max(
       1,
-      Math.min(100, parseInt(searchParams.get("limit") || "10", 10)),
+      Math.min(100, parseInt(searchParams.get("limit") || "20", 20)),
     );
     const offset = (page - 1) * limit;
 
