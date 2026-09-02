@@ -173,12 +173,16 @@ export default function PartyForm({
           payload.error || "Persistence operation processing error.",
         );
 
+      // console.log('payload === ',payload);
+
       if (payload.id) {
         router.replace(`${redirectPath}/${payload.id}/edit`);
+      } else {
+        router.replace(`${redirectPath}`);
       }
 
-      router.push(redirectPath);
-      router.refresh();
+      // router.push(redirectPath);
+      // router.refresh();
     } catch (err) {
       if (err instanceof Error)
         setFormErrors({

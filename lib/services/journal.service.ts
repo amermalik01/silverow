@@ -1156,65 +1156,65 @@ export class JournalService {
           debit: leg.debit_lcy,
           credit: leg.credit_lcy,
         })),
-      );
-
-      // 4. Sequence Keys
-      const txKeyResult = await client.query(
-        "SELECT nextval('gl_transaction_id_seq') AS tx_id",
-      );
-      const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
-
-      let vatTransactionId: number | null = null;
-      const vatSettlementId: number | null = null;
-
-      if (
-        journal.source === "VAT_POSTING" ||
-        journal.source === "SALES" ||
-        journal.source === "PURCHASE"
-      ) {
-        const vatKeyResult = await client.query(
-          "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
-        );
-        vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
-      }
+      );      
 
       // 5. Bulk insert validated legs into gl_ledger_entries
       for (const leg of expandedLegs) {
+        const txKeyResult = await client.query(
+          "SELECT nextval('gl_transaction_id_seq') AS tx_id",
+        );
+        const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
+
+
+        let vatTransactionId: number | null = null;
+        const vatSettlementId: number | null = null;
+
+        if (
+          journal.source === "VAT_POSTING" ||
+          journal.source === "SALES" ||
+          journal.source === "PURCHASE"
+        ) {
+          const vatKeyResult = await client.query(
+            "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
+          );
+          vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
+        }
+
         // 1. Insert into gl_ledger_entries
         const insertedGlEntry = await client.query(
           `
-        INSERT INTO gl_ledger_entries (
-          company_id,
-          account_id,
-          transaction_id,
-          vat_transaction_id,
-          vat_settlement_transaction_id,
-          source_journal_id,
-          entry_no,
-          posting_date,
-          source_type,
-          reference,
-          description,
-          debit,
-          credit,
-          currency_id,
-          exchange_rate,
-          debit_fcy,
-          credit_fcy,
-          source_document_id,
-          source_document_no,
-          party_type,
-          party_id,
-          document_no,
-          posted_at
-        )
-        VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
-          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
-          $21, $22, NOW()
-        )
-        RETURNING id
-        `,
+          INSERT INTO gl_ledger_entries (
+            company_id,
+            account_id,
+            transaction_id,
+            vat_transaction_id,
+            vat_settlement_transaction_id,
+            source_journal_id,
+            entry_no,
+            posting_date,
+            source_type,
+            reference,
+            description,
+            debit,
+            credit,
+            currency_id,
+            exchange_rate,
+            debit_fcy,
+            credit_fcy,
+            source_document_id,
+            source_document_no,
+            party_type,
+            party_id,
+            document_no,
+            posted_at
+          )
+          VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+            $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
+            $21, $22, NOW()
+          )
+          RETURNING id
+          `,
           [
             companyId,
             leg.account_id,
@@ -1240,47 +1240,7 @@ export class JournalService {
             leg.document_no,
           ],
         );
-        // const insertedGlEntry = await client.query(
-        //   `
-        //   INSERT INTO gl_ledger_entries (
-        //     company_id,
-        //     account_id,
-        //     transaction_id,
-        //     vat_transaction_id,
-        //     vat_settlement_transaction_id,
-        //     source_journal_id,
-        //     entry_no,
-        //     posting_date,
-        //     source_type,
-        //     reference,
-        //     description,
-        //     debit,
-        //     credit,
-        //     party_type,
-        //     party_id,
-        //     posted_at
-        //   )
-        //   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
-        //   RETURNING id
-        //   `,
-        //   [
-        //     companyId,
-        //     leg.account_id,
-        //     nextTransactionId,
-        //     vatTransactionId,
-        //     vatSettlementId,
-        //     journal.id,
-        //     journal.entry_no,
-        //     formattedDate,
-        //     journal.source,
-        //     journal.reference || null,
-        //     leg.description,
-        //     leg.debit,
-        //     leg.credit,
-        //     leg.party_type,
-        //     leg.party_id,
-        //   ],
-        // );
+        
 
         const glLedgerEntryId = insertedGlEntry.rows[0].id;
         let subLedgerEntryId: string | null = null;
@@ -1433,7 +1393,7 @@ export class JournalService {
                 updated_at = NOW()
               WHERE id = $2 AND company_id = $3
               `,
-              [alloc.allocated_amount, alloc.ledger_entry_id, companyId],
+              [alloc.allocated_amount_fcy, alloc.ledger_entry_id, companyId],
             );
           }
         }
@@ -1480,6 +1440,48 @@ export class JournalService {
   }
 }
 
+
+// const insertedGlEntry = await client.query(
+        //   `
+        //   INSERT INTO gl_ledger_entries (
+        //     company_id,
+        //     account_id,
+        //     transaction_id,
+        //     vat_transaction_id,
+        //     vat_settlement_transaction_id,
+        //     source_journal_id,
+        //     entry_no,
+        //     posting_date,
+        //     source_type,
+        //     reference,
+        //     description,
+        //     debit,
+        //     credit,
+        //     party_type,
+        //     party_id,
+        //     posted_at
+        //   )
+        //   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+        //   RETURNING id
+        //   `,
+        //   [
+        //     companyId,
+        //     leg.account_id,
+        //     nextTransactionId,
+        //     vatTransactionId,
+        //     vatSettlementId,
+        //     journal.id,
+        //     journal.entry_no,
+        //     formattedDate,
+        //     journal.source,
+        //     journal.reference || null,
+        //     leg.description,
+        //     leg.debit,
+        //     leg.credit,
+        //     leg.party_type,
+        //     leg.party_id,
+        //   ],
+        // );
 
 /* static async list(
     companyId: string,

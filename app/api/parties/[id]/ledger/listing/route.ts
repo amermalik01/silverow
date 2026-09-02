@@ -327,6 +327,9 @@ export async function POST(
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
 
+    // console.log('dataQuery ===',dataQuery);
+    // console.log('queryParams ===',queryParams);
+
     const dataResult = await pool.query(dataQuery, queryParams);
 
     const rows = dataResult.rows.map((row) => {
