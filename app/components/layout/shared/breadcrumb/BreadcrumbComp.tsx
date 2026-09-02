@@ -1,6 +1,120 @@
 // app/components/layout/shared/breadcrumb/BreadcrumbComp.tsx
+// app/components/layout/shared/breadcrumb/BreadcrumbComp.tsx
 
 "use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ChevronRight, Home } from "lucide-react";
+import CardBox from "@/app/components/shared/CardBox";
+
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+  active?: boolean;
+}
+
+interface BreadcrumbsProps {
+  items: BreadcrumbItem[];
+}
+
+export default function Breadcrumbs({ items }: BreadcrumbsProps) {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+
+  return (
+    <CardBox
+      className="
+        mb-4
+        py-2
+        px-2
+        bg-[#F2F7F3]
+        overflow-hidden
+        rounded-md
+        border
+        border-[#D8E7DC]
+        shadow-none
+        relative
+      "
+    >
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center text-xs text-[#6B7F75]"
+      >
+        {/* Home */}
+        <Link
+          href={`/${slug}/dashboard`}
+          className="
+            flex
+            items-center
+            gap-1
+            px-2
+            py-0.5
+            rounded
+            transition-colors
+            hover:bg-[#E2EFE5]
+            hover:text-[#0B4A0A]
+          "
+        >
+          <Home className="h-3.5 w-3.5" />
+          Home
+        </Link>
+
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+
+          return (
+            <div key={`${item.label}-${index}`} className="flex items-center">
+              {/* Separator */}
+              <ChevronRight className="h-3 w-3 mx-0.5 text-[#A7B8AE]" />
+
+              {/* Intermediate breadcrumb */}
+              {item.href && !isLast ? (
+                <Link
+                  href={item.href}
+                  className="
+                    flex
+                    items-center
+                    px-2
+                    py-0.5
+                    rounded
+                    transition-colors
+                    hover:bg-[#E2EFE5]
+                    hover:text-[#0B4A0A]
+                  "
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                /* Current breadcrumb */
+                item.label && (
+                  <span
+                    className={
+                      isLast
+                        ? `
+                        bg-[#0B4A0A]
+                        text-white
+                        px-2.5
+                        py-0.5
+                        rounded
+                        font-medium
+                      `
+                        : ""
+                    }
+                  >
+                    {item.label}
+                  </span>
+                )
+              )}
+            </div>
+          );
+        })}
+      </nav>
+    </CardBox>
+  );
+}
+
+/* "use client";
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -68,7 +182,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
       </nav>
     </CardBox>
   );
-}
+} */
 /* text-emerald-800 bg-emerald-50 */
 /* 'use client'
 

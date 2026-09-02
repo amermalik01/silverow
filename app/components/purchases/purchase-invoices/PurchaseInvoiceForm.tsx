@@ -214,10 +214,12 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
         </span> */}
 
         <h1 className="text-2xl font-bold px-4">Purchase Invoice</h1>
-        <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
-          Invoice/Order No. {invoice.invoice_no || ""}/
-          {invoice.purchase_order_no || ""}
-        </div>
+
+        {invoice.purchase_order_no && (
+          <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
+            {`Invoice/Order No. ${invoice.invoice_no || ""}/${invoice.purchase_order_no || ""}`}
+          </div>
+        )}
       </div>
 
       {/* {isCompleted && (

@@ -72,7 +72,7 @@ export default function PartyDetailHeader({
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                {party.name || "Unnamed Party"}
+                {party.name || ""}
               </h2>
               <span
                 className={`px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize ${
@@ -371,7 +371,7 @@ export default function PartyDetailHeader({ party, onPartyUpdated }: Props) {
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                {party.name || "Unnamed Party"}
+                {party.name || ""}
               </h2>
               <span
                 className={`px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize ${

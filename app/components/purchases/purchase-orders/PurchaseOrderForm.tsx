@@ -702,9 +702,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           {`Purchase Order`}
           {/* ${!isReadOnly ? "Edit" : "View"} */}
         </h1>
-        <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
-          Order No. {order.order_no || order.invoice_no || ""}
-        </div>
+
+        {order.order_no && (
+          <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
+            {`Order No. ${order.order_no || order.invoice_no || ""}`}
+          </div>
+        )}
       </div>
       {validationErrors.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
