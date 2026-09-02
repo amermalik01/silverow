@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { PostedTransactionsModal } from "../../finance/posted-entries/PostedTransactionsModal";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+import { PdfPreviewModal } from "@/components/ui/PdfPreviewModal";
 
 interface Props {
   slug: string;
@@ -526,6 +527,13 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {isUpdateMode && (
+              <PdfPreviewModal
+                buttonText="Print Purchase Invoice"
+                pdfApiUrl={`/api/purchase-invoices/${id}/pdf`}
+                fileName={`PI_${invoice.invoice_no}.pdf`}
+              />
+            )}
             {/* Navigate Button (Opens Legacy Modal) */}
             {isUpdateMode && (
               <Button
