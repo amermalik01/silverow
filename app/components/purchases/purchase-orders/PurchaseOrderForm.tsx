@@ -24,6 +24,17 @@ import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+import CustomerLookupModal, {
+  CustomerLookupItem,
+} from "../../sales/orders/CustomerLookupModal";
+import {
+  PurchaseOrderLookupItem,
+  PurchaseOrderLookupModal,
+} from "../../shared/modals/PurchaseOrderLookupModal";
+import {
+  SalesOrderLookupItem,
+  SalesOrderLookupModal,
+} from "../../shared/modals/SalesOrderLookupModal";
 
 interface Props {
   slug: string;
@@ -33,7 +44,7 @@ interface Props {
 
 type TabType = "general" | "invoicing" | "shipping" | "attachments";
 
-type SupplierSelectionSource = "general" | "invoicing";
+type SupplierSelectionSource = "general" | "invoicing" | "shipping_agent";
 
 export const PurchaseOrderForm: React.FC<Props> = ({
   slug,
@@ -53,6 +64,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const [showSupplierChangeModal, setShowSupplierChangeModal] = useState(false);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+
+  const [customerModalOpen, setCustomerModalOpen] = useState<boolean>(false);
+
+  const [POModalOpen, setPOModalOpen] = useState(false);
+  const [SOModalOpen, setSOModalOpen] = useState(false);
 
   // Manage view/edit state locally
   const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
@@ -289,6 +305,17 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       return;
     }
 
+    // Shipping Agent
+    if (supplierSelectionSource === "shipping_agent") {
+      setOrder((prev) => ({
+        ...prev,
+        shipping_agent: `${supplier.supplier_code} - ${supplier.name}`,
+      }));
+
+      setSupplierModalOpen(false);
+      return;
+    }
+
     // --------------------------------------------
     // GENERAL TAB
     // Full supplier selection
@@ -336,6 +363,53 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
     setSupplierModalOpen(false);
   };
+
+  const handleShippingAgentSelection = () => {
+    setSupplierSelectionSource("shipping_agent");
+    setSupplierModalOpen(true);
+  };
+
+  const handleCustomerSelection = () => {
+    setCustomerModalOpen(true);
+  };
+
+  const handleCustomerSelect = (customer: CustomerLookupItem) => {
+    setOrder((prev) => ({
+      ...prev,
+      link_to_cust: `${customer.customer_code} - ${customer.name}`,
+    }));
+
+    setCustomerModalOpen(false);
+  };
+
+  const handlePurchaseOrderSelection = () => {
+    setPOModalOpen(true);
+  };
+
+  const handleSelectPurchaseOrder = async (order: PurchaseOrderLookupItem) => {
+    setOrder((prev) => ({
+      ...prev,
+      linked_po: `${order.order_no}`,
+    }));
+    setPOModalOpen(false);
+  };
+
+  const handleSalesOrderSelection = () => {
+    setSOModalOpen(true);
+  };
+
+  const handleSelectSalesOrder = async (order: SalesOrderLookupItem) => {
+    setOrder((prev) => ({
+      ...prev,
+      link_to_so_no: `${order.order_no}`,
+    }));
+    setPOModalOpen(false);
+  };
+
+  // onPurchaseOrderSelect={handlePurchaseOrderSelection}
+  //         onSalesOrderSelect={handleSalesOrderSelection}
+  //         onCustomerSelect={handleCustomerSelection}
+  //         onShippingAgentSelect={handleShippingAgentSelection}
 
   const updateField = <K extends keyof PurchaseOrder>(
     field: K,
@@ -662,7 +736,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200  pb-2 mb-4">
           <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar ">
-            {(["general", "invoicing", "shipping", "attachments"] as TabType[]).map((tab) => (
+            {(
+              ["general", "invoicing", "shipping", "attachments"] as TabType[]
+            ).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -769,6 +845,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           onGeneralSupplierSelect={handleGeneralSupplierSelection}
           onInvoicingSupplierSelect={handleInvoicingSupplierSelection}
           setLocationModalOpen={setLocationModalOpen}
+          onPurchaseOrderSelect={handlePurchaseOrderSelection}
+          onSalesOrderSelect={handleSalesOrderSelection}
+          onCustomerSelect={handleCustomerSelection}
+          onShippingAgentSelect={handleShippingAgentSelection}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
           inputDateStyle={inputDateStyle}
@@ -796,13 +876,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
               />
             </div>
             <div className="col-span-2">
-              
-    
               <textarea
                 placeholder="Add External Notes"
                 disabled={isFormDisabled}
                 className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-slate-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
-  
                 // className={`${inputStyle} font-mono bg-[#ddd]`}
                 value={order.notes || ""}
                 onChange={(e) => updateField("notes", e.target.value)}
@@ -1025,11 +1102,37 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         loading={false}
       />
 
-      <SupplierLookupModal
-        open={supplierModalOpen}
-        onClose={() => setSupplierModalOpen(false)}
-        onSelect={handleSupplierSelect}
-      />
+      {supplierModalOpen && (
+        <SupplierLookupModal
+          open={supplierModalOpen}
+          onClose={() => setSupplierModalOpen(false)}
+          onSelect={handleSupplierSelect}
+        />
+      )}
+
+      {customerModalOpen && (
+        <CustomerLookupModal
+          open={customerModalOpen}
+          onClose={() => setCustomerModalOpen(false)}
+          onSelect={handleCustomerSelect}
+        />
+      )}
+
+      {POModalOpen && (
+        <PurchaseOrderLookupModal
+          isOpen={POModalOpen}
+          onClose={() => setPOModalOpen(false)}
+          onSelectOrder={handleSelectPurchaseOrder}
+        />
+      )}
+
+      {SOModalOpen && (
+        <SalesOrderLookupModal
+          isOpen={SOModalOpen}
+          onClose={() => setSOModalOpen(false)}
+          onSelectOrder={handleSelectSalesOrder}
+        />
+      )}
 
       {/* Modal to Select Location */}
       <SupplierShippingLocationsModal

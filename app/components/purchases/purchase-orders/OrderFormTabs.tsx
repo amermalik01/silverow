@@ -68,6 +68,12 @@ interface OrderFormTabsProps {
   onInvoicingSupplierSelect: () => void;
   // setSupplierModalOpen: (open: boolean) => void;
   setLocationModalOpen: (open: boolean) => void;
+  
+  onPurchaseOrderSelect: () => void;
+  onSalesOrderSelect: () => void;
+  onCustomerSelect: () => void;
+  onShippingAgentSelect: () => void;
+
   labelStyle?: string;
   inputStyle?: string;
   inputDateStyle?: string;
@@ -91,6 +97,12 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   onGeneralSupplierSelect,
   onInvoicingSupplierSelect,
   setLocationModalOpen,
+
+  onPurchaseOrderSelect,
+  onSalesOrderSelect,
+  onCustomerSelect,
+  onShippingAgentSelect,
+
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
   inputStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
   inputDateStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
@@ -544,76 +556,73 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 
       {/* ---------------- INVOICING TAB ---------------- */}
       {activeTab === "invoicing" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 ">{/* lg:grid-cols-4 gap-4 space-x-2 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 ">
+          {/* lg:grid-cols-4 gap-4 space-x-2 */}
           {/* Column 1 */}
           <div className="space-y-2 ">
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelcolumnDivStyle}>Pay to Suppl. No./Name</label>
+              <label className={labelcolumnDivStyle}>
+                Pay to Suppl. No./Name
+              </label>
               <div className="col-span-10 grid grid-cols-2 gap-2">
-              <div className="flex gap-1">
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    readOnly
+                    className={`${inputcolumnDivStyle} font-mono`}
+                    value={order.pay_to_supplier_no || "Click Select..."}
+                  />
+                  <button
+                    type="button"
+                    disabled={isReadOnly}
+                    // onClick={() => setSupplierModalOpen(true)}
+                    onClick={onInvoicingSupplierSelect}
+                    className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                  >
+                    <Icon icon="tabler:external-link" className="w-4 h-4" />
+                  </button>
+                </div>
+
                 <input
                   type="text"
-                  readOnly
-                  className={`${inputcolumnDivStyle} font-mono`}
-                  value={order.pay_to_supplier_no || "Click Select..."}
+                  disabled={isSettingsDisabled}
+                  className={inputcolumnDivStyle}
+                  value={order.pay_to_supplier_name || ""}
                 />
-                <button
-                  type="button"
-                  disabled={isReadOnly}
-                  // onClick={() => setSupplierModalOpen(true)}
-                  onClick={onInvoicingSupplierSelect}
-                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-                >
-                  <Icon icon="tabler:external-link" className="w-4 h-4" />
-                </button>
               </div>
-
-              <input
-                type="text"
-                disabled={isSettingsDisabled}
-                className={inputcolumnDivStyle}
-                value={order.pay_to_supplier_name || ""}
-              />
-
-            </div>
-            </div>
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Name</label>
-              
-            </div> */}
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 1</label>
-              <input
-                type="text"
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={billingAddress.address_1 || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={billingAddress.address_2 || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
+              <label className={labelcolumnDivStyle}>Address Line 1</label>
+              <div className="col-span-10 grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  className={inputcolumnDivStyle}
+                  disabled={isSettingsDisabled}
+                  value={billingAddress.address_1 || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...billingAddress,
+                      address_1: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="text"
+                  className={inputcolumnDivStyle}
+                  disabled={isSettingsDisabled}
+                  value={billingAddress.address_2 || ""}
+                  onChange={(e) =>
+                    setBillingAddress({
+                      ...billingAddress,
+                      address_2: e.target.value,
+                    })
+                  }
+                />
+              </div>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>City</label>
-              <div className="col-span-8 grid grid-cols-2 gap-2">
+              <label className={labelcolumnDivStyle}>City</label>
+              <div className="col-span-10 grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="City"
@@ -644,8 +653,8 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
 
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Postcode/Co.</label>
-              <div className="col-span-8 grid grid-cols-2 gap-2">
+              <label className={labelcolumnDivStyle}>Postcode/Co.</label>
+              <div className="col-span-10 grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="Postcode"
@@ -678,21 +687,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 
           {/* Column 2 */}
           <div className="space-y-2">
-            {/* <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>County</label>
-              <input
-                type="text"
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={billingAddress.county || ""}
-                onChange={(e) =>
-                  setBillingAddress({
-                    ...billingAddress,
-                    county: e.target.value,
-                  })
-                }
-              />
-            </div> */}
 
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Contact Person</label>
@@ -737,6 +731,33 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   })
                 }
               />
+            </div>
+            <div className="grid grid-cols-12 items-center gap-2">
+              <label className={labelStyle}>
+                Currency <span className="text-red-500">*</span>
+              </label>
+              <select
+                disabled={isSettingsDisabled}
+                className={inputStyle}
+                value={currencyConfig.currency_id ?? ""}
+                onChange={(e) => {
+                  const targetId = e.target.value;
+                  const matched = masterData?.currencies.find(
+                    (c) => c.id === targetId,
+                  );
+                  setCurrencyConfig({
+                    currency_id: targetId,
+                    exchange_rate: matched ? matched.exchange_rate : 1,
+                  });
+                }}
+              >
+                <option value="">Select Currency...</option>
+                {masterData?.currencies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.code} - {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -803,12 +824,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   )
                 }
               />
-              {/* <input
-                type="date"
-                className={inputStyle}
-                value={order.due_date?.split("T")[0] ?? ""}
-                onChange={(e) => updateField("due_date", e.target.value)}
-              /> */}
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Payment Method</label>
@@ -834,60 +849,11 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   </option>
                 ))}
               </select>
-
-              {/* <select
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={order.payment_method_id || ""}
-                onChange={(e) => {
-                  const selected = masterData?.paymentMethods.find(
-                    (x) => x.id === e.target.value,
-                  );
-
-                  updateField("payment_method_id", e.target.value);
-                  updateField("payment_method", selected?.name || "");
-                }}
-              >
-                <option value="">Select...</option>
-
-                {masterData?.paymentMethods.map((method) => (
-                  <option key={method.id} value={method.id}>
-                    {method.name}
-                  </option>
-                ))}
-              </select> */}
             </div>
 
-            <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>
-                Currency <span className="text-red-500">*</span>
-              </label>
-              <select
-                disabled={isSettingsDisabled}
-                className={inputStyle}
-                value={currencyConfig.currency_id ?? ""}
-                onChange={(e) => {
-                  const targetId = e.target.value;
-                  const matched = masterData?.currencies.find(
-                    (c) => c.id === targetId,
-                  );
-                  setCurrencyConfig({
-                    currency_id: targetId,
-                    exchange_rate: matched ? matched.exchange_rate : 1,
-                  });
-                }}
-              >
-                <option value="">Select Currency...</option>
-                {masterData?.currencies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.code} - {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Deduct from Rebate">
-                Ded. from Rebate
+                {/* Ded. from Rebate */}Rebate Ded.
               </label>
               <input
                 type="checkbox"
@@ -901,36 +867,69 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
           </div>
 
           {/* Column 4 */}
-          <div className="space-y-2 bg-slate-100 dark:bg-slate-800/80 p-1">
+          <div className="space-y-2 bg-slate-100 dark:bg-slate-800/80 py-1 px-2 rounded-xl shadow-sm">
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Link to Customer</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.link_to_cust || ""}
-                onChange={(e) => updateField("link_to_cust", e.target.value)}
-              />
+              <label className={labelStyle} title="Link to Customer">Link to Cust.</label>
+              <div className="col-span-8 flex gap-1">
+                <input
+                  type="text"
+                  readOnly
+                  className={inputStyle}
+                  value={order.link_to_cust || ""}
+                  onChange={(e) => updateField("link_to_cust", e.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={isReadOnly}
+                  onClick={onCustomerSelect}
+                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                >
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Link to SO No.">
                 Link to SO No.
               </label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.link_to_so_no || ""}
-                onChange={(e) => updateField("link_to_so_no", e.target.value)}
-              />
+              <div className="col-span-8 flex gap-1">
+                <input
+                  type="text"
+                  readOnly
+                  className={inputStyle}
+                  value={order.link_to_so_no || ""}
+                  onChange={(e) => updateField("link_to_so_no", e.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={isReadOnly}
+                  onClick={onSalesOrderSelect}
+                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                >
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Linked PO</label>
-              <input
-                type="text"
-                className={inputStyle}
-                value={order.linked_po || ""}
-                onChange={(e) => updateField("linked_po", e.target.value)}
-              />
+              <div className="col-span-8 flex gap-1">
+                <input
+                  type="text"
+                  readOnly
+                  className={inputStyle}
+                  value={order.linked_po || ""}
+                  onChange={(e) => updateField("linked_po", e.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={isReadOnly}
+                  onClick={onPurchaseOrderSelect}
+                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                >
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -938,13 +937,14 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 
       {/* ---------------- SHIPPING TAB ---------------- */}
       {activeTab === "shipping" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 space-x-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4">
+          {/* lg:grid-cols-4 space-x-2 */}
           {/* Column 1 */}
           <div className="space-y-2">
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Location Name</label>
+              <label className={labelcolumnDivStyle}>Location Name</label>
 
-              <div className="col-span-8 flex gap-1">
+              <div className="col-span-5 flex gap-1">
                 <input
                   type="text"
                   readOnly
@@ -975,38 +975,43 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               /> */}
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Address Line 1</label>
-              <input
-                type="text"
-                disabled={isSettingsDisabled}
-                className={inputStyle}
-                value={shippingAddress.address_1 || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    address_1: e.target.value,
-                  })
-                }
-              />
+              <label className={labelcolumnDivStyle}>Address Line 1</label>
+              <div className="col-span-10 grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="Address Line 1"
+                  disabled={isSettingsDisabled}
+                  className={inputcolumnDivStyle}
+                  value={shippingAddress.address_1 || ""}
+                  onChange={(e) =>
+                    setShippingAddress({
+                      ...shippingAddress,
+                      address_1: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="text"
+                  placeholder="Address Line 2"
+                  className={inputcolumnDivStyle}
+                  disabled={isSettingsDisabled}
+                  value={shippingAddress.address_2 || ""}
+                  onChange={(e) =>
+                    setShippingAddress({
+                      ...shippingAddress,
+                      address_2: e.target.value,
+                    })
+                  }
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-12 items-center gap-2">
+            {/* <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Address Line 2</label>
-              <input
-                type="text"
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={shippingAddress.address_2 || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
+              
+            </div> */}
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>City</label>
-              <div className="col-span-8 grid grid-cols-2 gap-2">
+              <label className={labelcolumnDivStyle}>City/County</label>
+              <div className="col-span-10 grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="City"
@@ -1051,8 +1056,8 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               />
             </div> */}
             <div className="grid grid-cols-12 items-center gap-2">
-              <label className={labelStyle}>Postcode/Co.</label>
-              <div className="col-span-8 grid grid-cols-2 gap-2">
+              <label className={labelcolumnDivStyle}>Postcode/Co.</label>
+              <div className="col-span-10 grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="Postcode"
@@ -1152,13 +1157,27 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle}>Shipping Agent</label>
+              <div className="col-span-8 flex gap-1">
               <input
                 type="text"
+                readOnly
                 className={inputStyle}
                 value={order.shipping_agent || ""}
                 onChange={(e) => updateField("shipping_agent", e.target.value)}
               />
+              <button
+                  type="button"
+                  disabled={isReadOnly}
+                  onClick={onShippingAgentSelect}
+                  className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                >
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
+                </button>
+              </div>              
             </div>
+
+            
+
             <div className="grid grid-cols-12 items-center gap-2">
               <label className={labelStyle} title="Shipment Reference No.">
                 Shipt. Ref. No.
