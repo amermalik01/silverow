@@ -72,7 +72,7 @@ export default function MasterDropdown({
       onChange={(e) => onChange(e.target.value ? e.target.value : null)}
       className={className}
     >
-      <option value="">Select {type}</option>
+      <option value="">{type}</option>
 
       {options.map((opt) => {
         const optionValue = valueKey === "code" ? (opt.code || opt.id) : opt.id;

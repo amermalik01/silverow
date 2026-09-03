@@ -201,7 +201,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="Address Line 1"
                     className={inputStyle}
                     disabled={isSettingsDisabled}
                     value={primaryAddress.address_1 || ""}
@@ -221,7 +220,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="Address Line 2"
                     className={inputStyle}
                     disabled={isSettingsDisabled}
                     value={primaryAddress.address_2 || ""}
@@ -241,7 +239,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="City"
                     className={inputStyle}
                     disabled={isSettingsDisabled}
                     value={primaryAddress.city || ""}
@@ -260,7 +257,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="County"
                     className={inputStyle}
                     disabled={isSettingsDisabled}
                     value={primaryAddress.county || ""}
@@ -278,7 +274,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 grid grid-cols-2 gap-2">
                   <input
                     type="text"
-                    placeholder="Postcode"
                     disabled={isSettingsDisabled}
                     className={inputcolumnDivStyle}
                     value={primaryAddress.postcode || ""}
@@ -313,6 +308,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
+                  disabled={isSettingsDisabled}
                   value={primaryAddress.contact_person || ""}
                   onChange={(e) =>
                     setPrimaryAddress({
@@ -374,6 +370,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   type="text"
                   className={inputStyle}
                   placeholder="e.g. INV-9932"
+                  disabled={isSettingsDisabled}
                   value={order.reference || ""}
                   onChange={(e) => updateField("reference", e.target.value)}
                 />
@@ -385,6 +382,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
+                  disabled={isSettingsDisabled}
                   value={order.supp_order_no || ""}
                   onChange={(e) => updateField("supp_order_no", e.target.value)}
                 />
@@ -397,6 +395,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
+                  disabled={isSettingsDisabled}
                   value={order.consignment_no || ""}
                   onChange={(e) =>
                     updateField("consignment_no", e.target.value)
@@ -420,6 +419,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   minDate={
                     order.order_date ? new Date(order.order_date) : undefined
                   }
+                  disabled={isSettingsDisabled}
                   onChange={(date) =>
                     updateField(
                       "invoice_date",
@@ -437,6 +437,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     order.order_date ? new Date(order.order_date) : undefined
                   }
                   containerClassName="col-span-8"
+                  disabled={isSettingsDisabled}
                   maxDate={maxOrderDate ? new Date(maxOrderDate) : undefined}
                   onChange={(date) => {
                     const formattedDate = date
@@ -491,6 +492,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       : undefined
                   }
                   containerClassName="col-span-8"
+                  disabled={isSettingsDisabled}
                   minDate={
                     order.order_date ? new Date(order.order_date) : undefined
                   }
@@ -521,6 +523,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       : undefined
                   }
                   containerClassName="col-span-8"
+                  disabled={isSettingsDisabled}
                   minDate={
                     order.order_date ? new Date(order.order_date) : undefined
                   }
@@ -625,7 +628,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="City"
                     className={inputStyle}
                     disabled={isSettingsDisabled}
                     value={billingAddress.city || ""}
@@ -644,7 +646,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="County"
                     className={inputStyle}
                     disabled={isSettingsDisabled}
                     value={billingAddress.county || ""}
@@ -698,6 +699,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
+                  disabled={isSettingsDisabled}
                   value={billingAddress.contact_person || ""}
                   onChange={(e) =>
                     setBillingAddress({
@@ -822,6 +824,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <DatePicker
                   value={order.due_date ? new Date(order.due_date) : undefined}
                   containerClassName="col-span-8"
+                  disabled={isSettingsDisabled}
                   onChange={(date) =>
                     updateField(
                       "due_date",
@@ -862,6 +865,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 </label>
                 <input
                   type="checkbox"
+                  disabled={isSettingsDisabled}
                   checked={!!order.deduct_from_rebate}
                   onChange={(e) =>
                     updateField("deduct_from_rebate", e.target.checked)
@@ -990,7 +994,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="Address Line 1"
                     disabled={isSettingsDisabled}
                     className={inputStyle}
                     value={shippingAddress.address_1 || ""}
@@ -1008,7 +1011,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="Address Line 2"
                     className={inputStyle}
                     disabled={isSettingsDisabled}
                     value={shippingAddress.address_2 || ""}
@@ -1028,7 +1030,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="City"
                     className={inputStyle}
                     disabled={isSettingsDisabled}
                     value={shippingAddress.city || ""}
@@ -1104,6 +1105,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
+                  disabled={isSettingsDisabled}
                   value={order.book_in_contact || ""}
                   onChange={(e) =>
                     updateField("book_in_contact", e.target.value)
@@ -1115,6 +1117,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
+                  disabled={isSettingsDisabled}
                   value={order.book_in_phone || ""}
                   onChange={(e) => updateField("book_in_phone", e.target.value)}
                 />
@@ -1125,6 +1128,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
+                  disabled={isSettingsDisabled}
                   value={order.book_in_email || ""}
                   onChange={(e) => updateField("book_in_email", e.target.value)}
                 />
@@ -1140,6 +1144,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <select
                   className={inputStyle}
                   value={order.shipment_method_id || ""}
+                  disabled={isSettingsDisabled}
                   onChange={(e) => {
                     const selected = masterData?.shipmentMethods.find(
                       (x) => x.id === e.target.value,
@@ -1188,6 +1193,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
+                  disabled={isSettingsDisabled}
                   value={order.shipment_ref_no || ""}
                   onChange={(e) =>
                     updateField("shipment_ref_no", e.target.value)
@@ -1201,6 +1207,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
+                  disabled={isSettingsDisabled}
                   value={order.warehouse_ref_no || ""}
                   onChange={(e) =>
                     updateField("warehouse_ref_no", e.target.value)

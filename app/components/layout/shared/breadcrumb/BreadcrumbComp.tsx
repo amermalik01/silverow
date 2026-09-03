@@ -27,6 +27,123 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
       className="
         mb-4
         py-2
+        px-3
+        bg-[#103701]
+        overflow-hidden
+        rounded-md
+        border
+        border-[#1a4f03]
+        shadow-none
+        relative
+      "
+    >
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center text-xs text-slate-300"
+      >
+        {/* Home */}
+        <Link
+          href={`/${slug}/dashboard`}
+          className="
+            flex
+            items-center
+            gap-1
+            px-2
+            py-1
+            rounded-md
+            transition-all
+            duration-150
+            hover:bg-slate-800/60
+            hover:text-white
+          "
+        >
+          <Home className="h-3.5 w-3.5 text-slate-400" />
+          Home
+        </Link>
+
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+
+          return (
+            <div key={`${item.label}-${index}`} className="flex items-center">
+              {/* Separator */}
+              <ChevronRight className="h-3.5 w-3.5 mx-1 text-slate-500 shrink-0" />
+
+              {/* Intermediate breadcrumb */}
+              {item.href && !isLast ? (
+                <Link
+                  href={item.href}
+                  className="
+                    flex
+                    items-center
+                    px-2
+                    py-1
+                    rounded-md
+                    transition-all
+                    duration-150
+                    hover:bg-slate-800/60
+                    hover:text-white
+                  "
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                /* Current / Active breadcrumb */
+                item.label && (
+                  <span
+                    className={
+                      isLast
+                        ? `
+                          bg-slate-900/50
+                          text-emerald-400
+                          border
+                          border-emerald-500/20
+                          px-2.5
+                          py-0.5
+                          rounded-md
+                          font-semibold
+                        `
+                        : "px-2 py-1"
+                    }
+                  >
+                    {item.label}
+                  </span>
+                )
+              )}
+            </div>
+          );
+        })}
+      </nav>
+    </CardBox>
+  );
+}
+
+/* "use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ChevronRight, Home } from "lucide-react";
+import CardBox from "@/app/components/shared/CardBox";
+
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+  active?: boolean;
+}
+
+interface BreadcrumbsProps {
+  items: BreadcrumbItem[];
+}
+
+export default function Breadcrumbs({ items }: BreadcrumbsProps) {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+
+  return (
+    <CardBox
+      className="
+        mb-4
+        py-2
         px-2
         bg-[#F2F7F3]
         overflow-hidden
@@ -41,7 +158,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
         aria-label="Breadcrumb"
         className="flex items-center text-xs text-[#6B7F75]"
       >
-        {/* Home */}
+
         <Link
           href={`/${slug}/dashboard`}
           className="
@@ -65,10 +182,10 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
 
           return (
             <div key={`${item.label}-${index}`} className="flex items-center">
-              {/* Separator */}
+      
               <ChevronRight className="h-3 w-3 mx-0.5 text-[#A7B8AE]" />
 
-              {/* Intermediate breadcrumb */}
+
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
@@ -86,7 +203,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
                   {item.label}
                 </Link>
               ) : (
-                /* Current breadcrumb */
+
                 item.label && (
                   <span
                     className={
@@ -112,7 +229,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
       </nav>
     </CardBox>
   );
-}
+} */
 
 /* "use client";
 
