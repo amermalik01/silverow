@@ -59,7 +59,7 @@ export default function DebitNoteList({ slug }: Props) {
   };
 
   return (
-    <div className="space-y-4 container mx-auto p-4">
+    <div className="space-y-4">
       <Breadcrumbs
         items={[
           {

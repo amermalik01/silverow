@@ -60,7 +60,7 @@ export default function WarehouseList() {
   };
 
   return (
-    <div className="space-y-6 container mx-auto p-4">
+    <div className="space-y-6 ">
       {/* Header Bar */}
       <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
@@ -101,7 +101,7 @@ export default function WarehouseList() {
           started.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm container mx-auto p-4">
+        <div className="overflow-x-auto rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm ">
           <table className="w-full text-left border-collapse text-xs table-fixed">
             <thead>
               <tr className="bg-slate-50 text-slate-500 border-b border-slate-200 font-medium">

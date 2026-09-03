@@ -403,7 +403,7 @@ export default function SalesReturnFormView({
 
   return (
     <div className="space-y-4">
-      {/*  container mx-auto p-1 text-black dark:text-white */}
+
       {validationErrors.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
           {validationErrors.map((err, idx) => (

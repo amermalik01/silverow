@@ -152,7 +152,7 @@ export default function SupportTicketListView({ slug }: Props) {
     "w-full block border border-slate-300 dark:border-slate-700 p-0.5 rounded text-[11px] font-normal text-black bg-white dark:bg-slate-900 focus:outline-none focus:border-emerald-500 text-center";
 
   return (
-    <div className="space-y-3 p-1 text-black dark:text-white container mx-auto">
+    <div className="space-y-3 p-1 text-black dark:text-white ">
       
       {/* Top Main Command Header Strip */}
       <div className="flex justify-between items-center bg-transparent border-b pb-2">

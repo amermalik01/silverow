@@ -226,7 +226,7 @@ const CompanySidebarLayout = () => {
 
   return (
     <SimpleBar
-      className="h-full px-1.5 py-3 overflow-x-hidden bg-[#103701] text-xs text-[#fff] dark:bg-[#11161D] dark:text-[#8C9DAF]"
+      className="h-full px-1.5 py-3 overflow-x-hidden bg-[#103701] text-xs text-white dark:bg-[#11161D] dark:text-[#8C9DAF]"
       style={{
         height: "100%",
       }}

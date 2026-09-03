@@ -58,7 +58,7 @@ export default function EmployeeList({ slug }: Props) {
   };
 
   return (
-    <div className="space-y-4 container mx-auto">
+    <div className="space-y-4 ">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
@@ -172,7 +172,7 @@ export default function EmployeeList() {
   }, [search, status, page]);
 
   return (
-    <div className="space-y-6 container mx-auto p-4">
+    <div className="space-y-6  p-4">
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>

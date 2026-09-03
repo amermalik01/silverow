@@ -57,7 +57,7 @@ export default function PostedDebitNoteList({ slug }: Props) {
   };
 
   return (
-    <div className="space-y-4 container mx-auto">
+    <div className="space-y-4 ">
       <Breadcrumbs
         items={[
           {

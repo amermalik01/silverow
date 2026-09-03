@@ -80,7 +80,7 @@ export default function PostedSalesReturnListView({ slug }: { slug: string }) {
   };
 
   return (
-    <div className="space-y-6 container mx-auto p-2 text-black dark:text-white">
+    <div className="space-y-6 p-2 text-black dark:text-white">
       {/* Structural Workspace Header Banner */}
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

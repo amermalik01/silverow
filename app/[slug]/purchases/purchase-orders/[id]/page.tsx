@@ -12,9 +12,11 @@ export default async function ViewPurchaseOrderPage({
 }) {
   const { slug, id } = await params;
 
-  return (
+  return <PurchaseOrderForm slug={slug} id={id} isReadOnly />;
+}
+/* 
+return (
     <div className="space-y-6 container mx-auto">
       <PurchaseOrderForm slug={slug} id={id} isReadOnly />
     </div>
-  );
-}
+  ); */

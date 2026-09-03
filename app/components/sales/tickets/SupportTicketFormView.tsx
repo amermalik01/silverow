@@ -321,7 +321,7 @@ export default function SupportTicketFormView({ slug, id }: Props) {
     "block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5 min-w-[110px]";
 
   return (
-    <div className="space-y-4 container mx-auto p-1 text-black dark:text-white">
+    <div className="space-y-4  text-black dark:text-white">
       {/* Top Section Nav & Chevron Pipeline Workflow Selector Component */}
       <div className="flex border-b border-slate-200 dark:border-slate-800 justify-between items-center pb-2 flex-wrap gap-2">
         <div className="flex gap-2">

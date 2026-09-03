@@ -137,7 +137,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
   // };
 
   return (
-    <div className="space-y-6 container mx-auto">
+    <div className="space-y-6">
       <Breadcrumbs
         items={[
           // { label: "Reports", href: `/${slug}/reports` },

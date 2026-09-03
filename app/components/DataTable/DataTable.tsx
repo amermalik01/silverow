@@ -278,6 +278,7 @@ export function DataTable<T extends object>({
 
       <div className="relative overflow-x-auto bg-white dark:bg-slate-900">
         <table className="w-full border-collapse table-fixed text-left text-xs">
+        {/* <table className="min-w-max border-collapse text-left text-xs"> */}
           <thead>
             <tr className="bg-emerald-900 font-semibold text-emerald-50">
               <th className="w-10 border-r border-emerald-800 p-2 text-center">

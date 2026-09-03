@@ -81,7 +81,7 @@ export default function RoleManagement() {
   }, [selectedRole]);
 
   return (
-    <div className="grid grid-cols-12 gap-6 rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm container mx-auto p-4">
+    <div className="grid grid-cols-12 gap-6 rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm ">
       {/* LEFT */}
       <div className="col-span-4 space-y-6">
         <RoleForm onCreated={loadRoles} />

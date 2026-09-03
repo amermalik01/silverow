@@ -78,7 +78,7 @@ export default function SalesInvoiceDetail({
   const { invoice, lines } = data;
 
   return (
-    <div className="space-y-6 container mx-auto p-4">
+    <div className="space-y-6 p-4">
       {/* Top Action Ribbon Navigation */}
       <div className="flex items-center justify-between border-b pb-4">
         <div>

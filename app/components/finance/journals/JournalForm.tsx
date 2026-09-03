@@ -669,7 +669,7 @@ export default function JournalForm({
     allocationModalIndex !== null ? lines[allocationModalIndex] : null;
 
   return (
-    <div className="space-y-6 container mx-auto py-4">
+    <div className="space-y-6 ">
 
       <Breadcrumbs
         items={[
