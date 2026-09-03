@@ -137,7 +137,7 @@ export default function AttachmentsTab({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {!readonly && (
-        <div className=" lg:col-span-1 border border-dashed border-slate-300 dark:border-slate-800 p-2 rounded-xl text-center bg-slate-50/50 dark:bg-slate-900/50 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 transition-all ">
+        <div className=" lg:col-span-1 border border-dashed border-slate-300 dark:border-slate-800 p-1 rounded-xl text-center bg-slate-50/50 dark:bg-slate-900/50 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 transition-all ">
           <UploadDropzone
             endpoint="attachmentUploader"
             input={{ module, recordId }}
@@ -149,7 +149,7 @@ export default function AttachmentsTab({
             }}
             appearance={{
               container:
-                "w-full min-h-[190px] border-0 bg-transparent px-5 py-6",
+                "w-full min-h-[40px] border-0 bg-transparent ",
               label: "text-sm font-semibold text-slate-700 dark:text-slate-200",
               allowedContent: "text-[11px] text-slate-400 dark:text-slate-500",
               button: [
@@ -200,7 +200,7 @@ export default function AttachmentsTab({
             return (
               <div
                 key={item.id}
-                className=" border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 rounded-xl flex justify-between items-center gap-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/50 "
+                className=" border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 rounded-xl flex justify-between items-center gap-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/50 "
               >
                 {" "}
                 {/* File information */}{" "}
@@ -249,7 +249,7 @@ export default function AttachmentsTab({
                       type="button"
                       onClick={() => handleDelete(item.id!)}
                       disabled={deletingId === item.id}
-                      className=" inline-flex items-center text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950 px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed "
+                      className=" inline-flex items-center text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950 px-2 py-1 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed "
                     >
                       {" "}
                       {deletingId === item.id ? "Deleting..." : "Delete"}{" "}
