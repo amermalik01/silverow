@@ -431,7 +431,7 @@ export default function PurchaseOrderLines({
                       allowDecimals={false}
                       disabled={isLineDisabled || line.line_type === "COMMENT"}
                       onChange={(val) => updateLine(index, "quantity", val)}
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-[11px] text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-[11px] text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </td>
 
@@ -485,7 +485,7 @@ export default function PurchaseOrderLines({
                       decimalScale={2}
                       disabled={isLineDisabled}
                       onChange={(val) => updateLine(index, "unit_cost", val)}
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right text-[11px] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-right text-[11px] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </td>
 
@@ -496,7 +496,7 @@ export default function PurchaseOrderLines({
                       onChange={(e) =>
                         handleDiscountTypeChange(index, e.target.value)
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 text-[11px] w-full disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 text-[11px] w-full disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <option value="PERCENT">%</option>
                       <option value="FIXED">Fixed</option>
@@ -512,7 +512,7 @@ export default function PurchaseOrderLines({
                       onChange={(val) =>
                         updateLine(index, "discount_value", val)
                       }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-[11px] text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-[11px] text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                     {/* <input
                       type="number"
