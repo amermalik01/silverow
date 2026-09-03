@@ -7,6 +7,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+import { Icon } from "@iconify/react";
 
 export type PO_StockAllocationRecord = {
   location_id: string;
@@ -163,9 +164,12 @@ export default function PO_StockAllocationModal({
   if (!open) return null;
 
   return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-lg shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* 
     <div className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 backdrop-blur-xs">
-      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-xl w-full max-w-7xl overflow-hidden border border-slate-200 dark:border-slate-800">
-        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+    <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-xl w-full max-w-7xl overflow-hidden border border-slate-200 dark:border-slate-800"> */}
+        {/* <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
           <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">
             Stock Allocation - Purchase Intake Pipeline ({itemCode})
           </h2>
@@ -174,6 +178,22 @@ export default function PO_StockAllocationModal({
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition-colors"
           >
             &times;
+          </button>
+        </div> */}
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center px-6 py-4 bg-[#103701] dark:bg-[#262F3C] text-white">
+          <div className="flex items-center gap-2">
+            <Icon icon="tabler:building-warehouse" className="text-xl" />
+            <h2 className="text-lg font-semibold tracking-wide text-white">
+              Stock Allocation - Purchase Intake Pipeline ({itemCode})
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition"
+          >
+            <Icon icon="tabler:x" className="text-xl" />
           </button>
         </div>
 

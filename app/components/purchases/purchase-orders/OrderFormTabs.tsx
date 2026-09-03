@@ -664,7 +664,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="Postcode"
                     disabled={isSettingsDisabled}
                     className={inputcolumnDivStyle}
                     value={billingAddress.postcode || ""}
@@ -1062,7 +1061,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
-                    placeholder="Postcode"
                     disabled={isSettingsDisabled}
                     className={inputcolumnDivStyle}
                     value={shippingAddress.postcode || ""}
