@@ -1,7 +1,14 @@
 // app/components/DataTable/DataTable.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  memo,
+  useRef,
+} from "react";
 import {
   ColumnConfig,
   FetchParams,
@@ -31,7 +38,9 @@ const DataTableCell = memo(function DataTableCell<T extends object>({
   col: ColumnConfig;
   renderRowCell?: (row: T, columnKey: string) => React.ReactNode;
 }) {
-  const customRender = renderRowCell ? renderRowCell(row, col.columnKey) : undefined;
+  const customRender = renderRowCell
+    ? renderRowCell(row, col.columnKey)
+    : undefined;
 
   let cellValue: React.ReactNode = "-";
   if (customRender !== undefined) {
@@ -39,7 +48,8 @@ const DataTableCell = memo(function DataTableCell<T extends object>({
   } else {
     const val = (row as Record<string, unknown>)[col.columnKey];
     if (val !== null && val !== undefined) {
-      cellValue = typeof val === "object" ? String(val) : (val as React.ReactNode);
+      cellValue =
+        typeof val === "object" ? String(val) : (val as React.ReactNode);
     }
   }
 
@@ -49,7 +59,9 @@ const DataTableCell = memo(function DataTableCell<T extends object>({
         backgroundColor: col.headerColor ? `${col.headerColor}15` : undefined,
       }}
       className={`border-r border-slate-200 dark:border-slate-800 p-2 ${
-        col.isPinned ? "sticky left-0 z-10 bg-white dark:bg-slate-900 shadow-sm" : ""
+        col.isPinned
+          ? "sticky left-0 z-10 bg-white dark:bg-slate-900 shadow-sm"
+          : ""
       }`}
     >
       {cellValue}
@@ -75,14 +87,19 @@ const DataTableRow = memo(function DataTableRow<T extends object>({
   return (
     <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
       <td className="border-r border-slate-200 dark:border-slate-800 p-2 text-center">
-        <input type="checkbox" className="accent-emerald-600 cursor-pointer rounded" />
+        <input
+          type="checkbox"
+          className="accent-emerald-600 cursor-pointer rounded"
+        />
       </td>
       {visibleColumns.map((col) => (
         <DataTableCell
           key={col.columnKey}
           row={row}
           col={col}
-          renderRowCell={renderRowCell as (row: object, columnKey: string) => React.ReactNode}
+          renderRowCell={
+            renderRowCell as (row: object, columnKey: string) => React.ReactNode
+          }
         />
       ))}
     </tr>
@@ -112,7 +129,9 @@ export function DataTable<T extends object>({
   const [debouncedFilters, setDebouncedFilters] = useState<FilterValue>({});
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(
+    undefined,
+  );
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [globalSearch, setGlobalSearch] = useState<string>("");
 
@@ -166,13 +185,16 @@ export function DataTable<T extends object>({
     loadData();
   }, [loadData]);
 
-  const handleFilterChange = useCallback((columnKey: string, filterData: FilterValue[string]) => {
-    setFilters((prev) => ({
-      ...prev,
-      [columnKey]: filterData,
-    }));
-    setPage(1);
-  }, []);
+  const handleFilterChange = useCallback(
+    (columnKey: string, filterData: FilterValue[string]) => {
+      setFilters((prev) => ({
+        ...prev,
+        [columnKey]: filterData,
+      }));
+      setPage(1);
+    },
+    [],
+  );
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -199,7 +221,7 @@ export function DataTable<T extends object>({
 
   const visibleColumns = useMemo(
     () => columns.filter((col) => col.isVisible),
-    [columns]
+    [columns],
   );
 
   const filteredData = useMemo(() => {
@@ -208,13 +230,19 @@ export function DataTable<T extends object>({
     return data.filter((row) => {
       return visibleColumns.some((col) => {
         const rawVal = (row as Record<string, unknown>)[col.columnKey];
-        return rawVal !== null && rawVal !== undefined && String(rawVal).toLowerCase().includes(term);
+        return (
+          rawVal !== null &&
+          rawVal !== undefined &&
+          String(rawVal).toLowerCase().includes(term)
+        );
       });
     });
   }, [data, globalSearch, visibleColumns]);
 
   const activeFilterCount = useMemo(() => {
-    return Object.values(filters).filter((f) => f && Boolean(f.value || f.from || f.to)).length;
+    return Object.values(filters).filter(
+      (f) => f && Boolean(f.value || f.from || f.to),
+    ).length;
   }, [filters]);
 
   const startRecord = (page - 1) * pageSize + 1;
@@ -232,7 +260,9 @@ export function DataTable<T extends object>({
               onChange={(e) => setGlobalSearch(e.target.value)}
               className="w-full rounded-lg bg-emerald-900/60 border border-emerald-700/50 px-3 py-1.5 pl-8 text-xs text-emerald-100 placeholder-emerald-400/70 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
             />
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-emerald-400">🔍</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-emerald-400">
+              🔍
+            </span>
             {globalSearch && (
               <button
                 onClick={() => setGlobalSearch("")}
@@ -278,12 +308,22 @@ export function DataTable<T extends object>({
 
       <div className="relative overflow-x-auto bg-white dark:bg-slate-900">
         <table className="w-full border-collapse table-fixed text-left text-xs">
-        {/* <table className="min-w-max border-collapse text-left text-xs"> */}
+          {/* <table className="min-w-max border-collapse text-left text-xs"> */}
           <thead>
             <tr className="bg-emerald-900 font-semibold text-emerald-50">
-              <th className="w-10 border-r border-emerald-800 p-2 text-center">
+              {/* <th className="w-10 border-r border-emerald-800 p-2 text-center">
                 <input type="checkbox" className="accent-emerald-600 cursor-pointer rounded" />
-              </th>
+              </th> */}
+              {!loading && filteredData.length > 0 && (
+                <th className="w-10 border-r border-emerald-800 p-2 text-center">
+                  <input
+                    type="checkbox"
+                    // checked={isAllSelected}
+                    // onChange={handleSelectAll}
+                    className="rounded border-slate-300 dark:border-slate-700 text-slate-900 focus:ring-slate-500"
+                  />
+                </th>
+              )}
               {visibleColumns.map((col) => (
                 <th
                   key={col.columnKey}
@@ -293,14 +333,20 @@ export function DataTable<T extends object>({
                     backgroundColor: col.headerColor || undefined,
                   }}
                   className={`border-r border-emerald-800/80 p-2 font-bold capitalize tracking-wider text-[11px] select-none ${
-                    col.columnKey !== "actions" ? "cursor-pointer hover:bg-emerald-800/60" : ""
+                    col.columnKey !== "actions"
+                      ? "cursor-pointer hover:bg-emerald-800/60"
+                      : ""
                   } ${col.isPinned ? "sticky left-0 z-20 shadow-md" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-1">
                     <span>{col.label}</span>
                     {col.columnKey !== "actions" && (
                       <span className="text-[10px] text-emerald-300 opacity-80">
-                        {sortBy === col.columnKey ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}
+                        {sortBy === col.columnKey
+                          ? sortOrder === "asc"
+                            ? "▲"
+                            : "▼"
+                          : "⇅"}
                       </span>
                     )}
                   </div>
@@ -329,6 +375,57 @@ export function DataTable<T extends object>({
           </thead>
 
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            {loading ? (
+              // Render skeleton rows equal to current pageSize to preserve table height and eliminate flickering
+              Array.from({ length: pageSize }).map((_, rowIndex) => (
+                <tr key={`skeleton-row-${rowIndex}`} className="animate-pulse">
+                  {filteredData.length > 0 && (
+                    <td className="border-r border-slate-200 dark:border-slate-800 p-2 text-center">
+                      <div className="h-4 w-4 bg-slate-200 dark:bg-slate-800 rounded mx-auto" />
+                    </td>
+                  )}
+                  {visibleColumns.map((col) => (
+                    <td
+                      key={`skeleton-cell-${col.columnKey}`}
+                      className="border-r border-slate-200 dark:border-slate-800 p-2"
+                    >
+                      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : filteredData.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={visibleColumns.length + 1}
+                  className="p-12 text-center text-slate-400 font-medium"
+                >
+                  No data matching criteria.
+                </td>
+              </tr>
+            ) : (
+              filteredData.map((row, idx) => {
+                const rowObj = row as Record<string, unknown>;
+                const rowId =
+                  "id" in rowObj &&
+                  (typeof rowObj.id === "string" ||
+                    typeof rowObj.id === "number")
+                    ? rowObj.id
+                    : idx;
+
+                return (
+                  <DataTableRow
+                    key={rowId}
+                    row={row}
+                    rowId={rowId}
+                    visibleColumns={visibleColumns}
+                    renderRowCell={renderRowCell}
+                  />
+                );
+              })
+            )}
+          </tbody>
+          {/* <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
             {loading ? (
               <tr>
                 <td colSpan={visibleColumns.length + 1} className="p-12 text-center text-slate-400 font-medium">
@@ -362,7 +459,7 @@ export function DataTable<T extends object>({
                 );
               })
             )}
-          </tbody>
+          </tbody> */}
         </table>
       </div>
 
@@ -370,8 +467,11 @@ export function DataTable<T extends object>({
         <div className="font-semibold">{totalRecords} Total Records</div>
         <div className="flex items-center gap-4">
           <div>
-            Showing <span className="font-bold">{totalRecords > 0 ? startRecord : 0}</span> to{" "}
-            <span className="font-bold">{endRecord}</span>
+            Showing{" "}
+            <span className="font-bold">
+              {totalRecords > 0 ? startRecord : 0}
+            </span>{" "}
+            to <span className="font-bold">{endRecord}</span>
           </div>
           <select
             value={pageSize}
