@@ -12,7 +12,7 @@ export default async function EditPurchaseOrderPage({
 }) {
   const { slug, id } = await params;
 
-  return <PurchaseOrderForm slug={slug} id={id} />;
+  return <PurchaseOrderForm slug={slug} id={id} isReadOnly />;
 }
 /* return (
     <div className="space-y-6 container mx-auto">

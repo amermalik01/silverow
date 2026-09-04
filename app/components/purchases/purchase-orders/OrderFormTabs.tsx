@@ -370,7 +370,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   type="text"
                   className={inputStyle}
                   placeholder="e.g. INV-9932"
-                  disabled={isSettingsDisabled}
+                  disabled={isReadOnly}
                   value={order.reference || ""}
                   onChange={(e) => updateField("reference", e.target.value)}
                 />

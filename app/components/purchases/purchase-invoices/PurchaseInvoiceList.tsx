@@ -14,7 +14,12 @@ type Props = {
 };
 
 export default function PurchaseOrderList({ slug }: Props) {
-  const cellRenderers = getPurchaseInvoiceCellRenderers(slug);
+  // const cellRenderers = getPurchaseInvoiceCellRenderers(slug);
+
+  const cellRenderers = useMemo(
+    () => getPurchaseInvoiceCellRenderers(slug),
+    [slug],
+  );
 
   const renderRowCell = useCallback(
     (row: PurchaseInvoice, columnKey: string) => {
