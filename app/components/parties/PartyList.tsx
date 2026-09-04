@@ -111,6 +111,8 @@ export default function PartyList({
           fetchApi={fetchParties}
           columnsConfigApi={columnsConfigApi}
           renderRowCell={renderRowCell}
+          enableRowSelection={true}
+          rowKey="id"
         />
       </div>
     </div>

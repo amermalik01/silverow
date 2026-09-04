@@ -93,6 +93,8 @@ export default function DebitNoteList({ slug }: Props) {
           fetchApi={fetchDebitNotes}
           columnsConfigApi={columnsConfigApi}
           renderRowCell={renderRowCell}
+          enableRowSelection={true}
+          rowKey="id"
         />
       </div>
     </div>

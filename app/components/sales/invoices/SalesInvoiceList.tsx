@@ -84,6 +84,8 @@ export default function SalesInvoiceList({ slug }: Props) {
           fetchApi={fetchSalesInvoices}
           columnsConfigApi={columnsConfigApi}
           renderRowCell={renderRowCell}
+          enableRowSelection={true}
+          rowKey="id"
         />
       </div>
     </div>

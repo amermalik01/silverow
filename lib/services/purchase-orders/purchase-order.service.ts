@@ -20,7 +20,7 @@ export class PurchaseOrderService {
       SELECT po.*, p.name AS supplier_name
       FROM purchase_orders po
       LEFT JOIN parties p ON p.id = po.supplier_id
-      WHERE po.company_id = $1 AND po.status !='completed'
+      WHERE po.company_id = $1 AND po.status::text !='completed'
       ORDER BY po.created_at DESC
       `,
       [companyId],
@@ -34,13 +34,26 @@ export class PurchaseOrderService {
     companyId: string,
     params: FetchParams,
   ): Promise<FetchResponse<PurchaseOrder>> {
-    const {
-      page = 1,
-      pageSize = 20,
-      filters = {},
-      sortBy,
-      sortOrder = "DESC",
-    } = params;
+    // const {
+    //   page = 1,
+    //   pageSize = 20,
+    //   filters = {},
+    //   sortBy,
+    //   sortOrder = "DESC",
+    // } = params;
+
+    const page = Math.max(1, Number(params.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(params.pageSize) || 20));
+
+    const filters = params.filters || {};
+
+    const search =
+      typeof params.search === "string" ? params.search.trim() : "";
+
+    const sortBy = params.sortBy;
+    const sortOrder =
+      params.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
     const offset = (page - 1) * pageSize;
 
     const SORT_FIELDS: Record<string, string> = {
@@ -73,10 +86,21 @@ export class PurchaseOrderService {
     // console.log('orderDirection === ',orderDirection);
 
     const queryValues: (string | number)[] = [companyId];
-    const whereClauses = [
+    const whereClauses: string[] = [
       "po.company_id = $1",
       "po.status::text != 'completed'",
     ];
+
+    /* -------------------------------------------------------------------- */
+    /* Global search */
+    /* -------------------------------------------------------------------- */
+    if (search) {
+      queryValues.push(`%${search}%`);
+      const searchParam = `$${queryValues.length}`;
+      whereClauses.push(
+        ` ( po.order_no ILIKE ${searchParam} OR po.supp_order_no ILIKE ${searchParam} OR po.previous_code ILIKE ${searchParam} OR po.supplier_no ILIKE ${searchParam} OR p.name ILIKE ${searchParam} OR cos.name ILIKE ${searchParam} OR c.code ILIKE ${searchParam} OR sm.name ILIKE ${searchParam} OR po.purchaser ILIKE ${searchParam} ) `,
+      );
+    }
 
     // Dynamic Filters
     Object.entries(filters).forEach(([colKey, filter]) => {
@@ -468,12 +492,12 @@ export class PurchaseOrderService {
           order.currency_id, // $13
           order.exchange_rate, // $14
 
-          order.order_date || null,// $15
-          order.req_receipt_date || null,// $16
-          order.receipt_date || null,// $17
-          order.expected_date || null,// $18
-          order.invoice_date?.trim() ? order.invoice_date : null,// $19
-          order.due_date || null,// $20
+          order.order_date || null, // $15
+          order.req_receipt_date || null, // $16
+          order.receipt_date || null, // $17
+          order.expected_date || null, // $18
+          order.invoice_date?.trim() ? order.invoice_date : null, // $19
+          order.due_date || null, // $20
 
           order.reference, // $21
 

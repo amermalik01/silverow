@@ -86,6 +86,8 @@ export default function PurchaseOrderList({ slug }: Props) {
           fetchApi={fetchPurchaseInvoice}
           columnsConfigApi={columnsConfigApi}
           renderRowCell={renderRowCell}
+          enableRowSelection={true}
+          rowKey="id"
         />
       </div>
     </div>

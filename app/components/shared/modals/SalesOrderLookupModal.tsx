@@ -140,7 +140,7 @@ export const SalesOrderLookupModal: React.FC<Props> = ({
             />
             <input
               type="text"
-              placeholder="Type to search SO number, customer, status..."
+              placeholder="Type to search SO No., SI No.,..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-8 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#103701] dark:focus:ring-slate-600"
