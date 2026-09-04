@@ -81,6 +81,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
                     rounded-md
                     transition-all
                     duration-150
+                    text-white
                     hover:bg-slate-800/60
                     hover:text-white
                   "
@@ -95,7 +96,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
                       isLast
                         ? `
                           bg-slate-900/50
-                          text-emerald-400
+                          text-white
                           border
                           border-emerald-500/20
                           px-2.5

@@ -570,8 +570,8 @@ export default function PurchaseOrderLines({
                   </td>
 
                   <td className="p-2 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {!isReadonly && line.line_type === "ITEM" ? (
+                    <div className="flex items-center justify-center gap-2">{/* !isReadonly &&  */}
+                      {line.line_type === "ITEM" ? (
                         <button
                           type="button"
                           disabled={isAllocationDisabled}

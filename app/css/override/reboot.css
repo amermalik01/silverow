@@ -59,7 +59,7 @@
   border: none !important
 }
 
-select {
+/* select {
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   background: transparent !important;
@@ -69,7 +69,39 @@ select {
   background-repeat: no-repeat !important;
   background-size: .75em .75em !important;
   cursor: pointer;
+} */
+
+
+select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+
+  /* Normal select background */
+  background-color: #ffffff !important;
+
+  /* Keep dropdown arrow */
+  background-image: url("data:image/svg+xml,%3csvg aria-hidden='true' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 10 6'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 1 4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right .75rem center !important;
+  background-size: .75em .75em !important;
+
+  cursor: pointer;
 }
+
+/* Disabled select */
+select:disabled {
+  background-color: #f8fafc !important; /* slate-100 */
+  cursor: not-allowed;
+
+  /* Keep the same dropdown arrow */
+  background-image: url("data:image/svg+xml,%3csvg aria-hidden='true' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 10 6'%3e%3cpath stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 1 4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right .75rem center !important;
+  background-size: .75em .75em !important;
+}
+
+
 
 select:focus{
   outline: none;

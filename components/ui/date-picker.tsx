@@ -63,7 +63,7 @@ export function DatePicker({
             id={id}
             disabled={disabled}
             className={cn(
-              "w-full h-7 px-2 justify-between font-normal bg-white text-slate-800 border-slate-300 hover:bg-slate-50 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-xs dark:bg-white dark:text-slate-900 dark:border-slate-300 dark:hover:bg-slate-100",
+              "w-full h-7 px-2 justify-between font-normal bg-white text-slate-800 border-slate-300 hover:bg-slate-50 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 disabled:cursor-not-allowed text-xs dark:bg-white dark:text-slate-900 dark:border-slate-300 dark:hover:bg-slate-100",
               className,
             )}
             // className={cn(
