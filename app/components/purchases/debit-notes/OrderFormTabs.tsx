@@ -178,6 +178,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   <input
                     type="text"
                     readOnly
+                    disabled
                     className={`${inputStyle} font-mono`}
                     value={note.supplier_no || "Click Select..."}
                   />
@@ -499,11 +500,12 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             {/* Column 1 */}
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>Pay to Suppl. No.</label>
+                <label className={labelStyle} title="Pay to Supplier No.">Pay to Suppl. No.</label>
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
                     readOnly
+                    disabled
                     className={`${inputStyle} font-mono`}
                     value={note.pay_to_supplier_no || "Click Select..."}
                   />
@@ -519,7 +521,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 </div>
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>Name</label>
+                <label className={labelStyle}>Supplier Name</label>
                 <input
                   type="text"
                   disabled={isSettingsDisabled}
@@ -799,6 +801,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   <input
                     type="text"
                     readOnly
+                    disabled
                     className={`${inputStyle} font-mono`}
                     value={shippingAddress.name || "Click Select..."}
                   />

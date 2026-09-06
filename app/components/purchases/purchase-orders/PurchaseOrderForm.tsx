@@ -642,9 +642,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
     show("Posting Invoice...");
     try {
-      toast.loading("Posting purchase invoice to G/L ledger...", {
+      toast.loading("Posting purchase invoice..", {
         id: "action-toast",
-      });
+      });//  to G/L ledger.
 
       const res = await fetch(`/api/purchase-orders/${id}/post-invoice`, {
         method: "POST",
@@ -872,7 +872,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             <div>
               <textarea
                 placeholder="Add Internal Notes"
-                disabled={isFormDisabled}
+                disabled={isReadOnly}
                 className={`${inputStyle} font-mono`}
                 value={order.internal_notes || ""}
                 onChange={(e) => updateField("internal_notes", e.target.value)}
@@ -881,7 +881,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             <div className="col-span-2">
               <textarea
                 placeholder="Add External Notes"
-                disabled={isFormDisabled}
+                disabled={isReadOnly}
                 className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-slate-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
                 // className={`${inputStyle} font-mono bg-[#ddd]`}
                 value={order.notes || ""}

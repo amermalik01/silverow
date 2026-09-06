@@ -7,6 +7,11 @@ export type SalesOrder = {
   customer_id: string;
   customer_no?: string;
   customer_name?: string;
+  
+  bill_to_customer_id: string;
+  bill_to_customer_no?: string;
+  bill_to_customer_name?: string;
+
   reference?: string;
 
   stage_id?: string;
