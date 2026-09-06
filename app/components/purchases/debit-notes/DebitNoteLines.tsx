@@ -329,8 +329,14 @@ export default function DebitNoteLines({
 
             {lines.map((line, index) => {
               const displayQty = Number(line.quantity || 0);
-              const displayUnitCost = Number(line.unit_cost || 0);
+              const returnedQty = Number(line.returned_quantity || 0);
+              const isStockReturned = returnedQty > 0;
+              const isFullyReturned =
+                returnedQty >= displayQty && displayQty > 0;
 
+              const isLineDisabled = isReadonly || isStockReturned;
+
+              const displayUnitCost = Number(line.unit_cost || 0);
               const displayOriginalAmount = displayUnitCost * displayQty;
               const displayDiscountValue = Number(line.discount_value || 0);
               const displayDiscountAmount = Number(line.discount_amount || 0);
@@ -346,7 +352,12 @@ export default function DebitNoteLines({
               return (
                 <tr
                   key={index}
-                  className="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
+                  className={`border-b transition-colors ${
+                    isStockReturned
+                      ? "bg-slate-50/70 dark:bg-slate-800/30"
+                      : "bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+                  }`}
+                  // className="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
                 >
                   <td className="p-2">
                     <select
@@ -543,44 +554,66 @@ export default function DebitNoteLines({
                       {line.line_type === "ITEM" ? (
                         <button
                           type="button"
-                          title={
-                            line.is_allocated ? "De-Allocated" : "Alloc Batches"
-                          }
-                          disabled={
-                            !line.item_id || !line.warehouse_id || isReadonly
-                          }
+                          disabled={isAllocationDisabled}
+                          // title={
+                          //   line.is_allocated
+                          //     ? "De-Allocated "
+                          //     : "Alloc Batches"
+                          // }
                           onClick={() => {
                             setActiveDeAllocRowKey(String(index));
                             setIsDeAllocModalOpen(true);
                           }}
-                          className={`p-1 rounded font-medium flex items-center gap-1 ${
-                            line.is_allocated
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                          // className={`p-1 rounded font-medium flex items-center gap-1 ${
+                          //   line.is_allocated
+                          //     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                          //     : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                          // }`}
+
+                          className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                            // 🟡 YELLOW / AMBER = Stock Received
+                            isStockReturned
+                              ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
+                              : // 🟢 GREEN = Allocated Stock (Fully allocated)
+                                line.is_allocated
+                                ? "text-emerald-500"
+                                : // 🔴 RED = Partially Allocated (Not fully allocated yet)
+                                  "text-indigo-500"
                           }`}
+                          title={
+                            isStockReturned
+                              ? `Stock Returned (${returnedQty}/${displayQty}).`
+                              : line.is_allocated
+                                ? "Allocated Stock"
+                                : "Partially Allocated"
+                          }
                         >
                           <Icon
                             icon="tabler:box-seam"
                             className="w-3.5 h-3.5"
                           />
-                          {/* <span>
-                              {line.is_allocated
-                                ? "De-Allocated"
-                                : "Alloc Batches"}
-                            </span> */}
                         </button>
                       ) : (
                         <div className="w-4 h-4" />
                       )}
 
-                      <button
-                        type="button"
-                        onClick={() => removeLine(index)}
-                        disabled={isReadonly}
-                        className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
-                      >
-                        <Icon icon="lucide:x" className="w-4 h-4" />
-                      </button>
+                      {!isStockReturned ? (
+                        <button
+                          type="button"
+                          onClick={() => removeLine(index)}
+                          disabled={isReadonly}
+                          className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                        >
+                          <Icon icon="lucide:x" className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <span
+                          className="text-[10px] text-slate-400 italic cursor-help"
+                          title="Line locked because stock has been received against it."
+                        >
+                          -
+                        </span>
+                      )}
                     </div>
                   </td>
                 </tr>

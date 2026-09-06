@@ -18,7 +18,7 @@ export default async function EditDebitNotePage({
         <h1 className="text-2xl font-bold">Edit Debit Note</h1>
       </div> */}
 
-      <DebitNoteForm slug={slug} id={id} />
+      <DebitNoteForm slug={slug} id={id} isReadOnly />
     </div>
   );
 }

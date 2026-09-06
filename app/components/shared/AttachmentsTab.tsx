@@ -34,7 +34,10 @@ export default function AttachmentsTab({
 }: Props) {
   const [files, setFiles] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Upload state
   const [uploading, setUploading] = useState(false);
+  const [uploadComplete, setUploadComplete] = useState(false);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -42,7 +45,11 @@ export default function AttachmentsTab({
     try {
       setLoading(true);
 
-      const params = new URLSearchParams({ module, record_id: recordId });
+      const params = new URLSearchParams({
+        module,
+        record_id: recordId,
+      });
+
       const res = await fetch(`/api/attachments?${params.toString()}`);
 
       if (!res.ok) {
@@ -71,11 +78,17 @@ export default function AttachmentsTab({
     }
     try {
       setDeletingId(id);
-      const res = await fetch(`/api/attachments/${id}`, { method: "DELETE" });
+
+      const res = await fetch(`/api/attachments/${id}`, {
+        method: "DELETE",
+      });
+
       const data = await res.json();
+
       if (!res.ok) {
         throw new Error(data?.error || "Failed to delete attachment");
       }
+
       setFiles((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       console.error("Delete operation failed:", err);
@@ -110,14 +123,18 @@ export default function AttachmentsTab({
     if (!bytes) {
       return "";
     }
+
     if (bytes < 1024) {
       return `${bytes} B`;
     }
+
     if (bytes < 1024 * 1024) {
       return `${(bytes / 1024).toFixed(1)} KB`;
     }
+
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
+
   const getFileIconColor = (mimeType?: string) => {
     if (mimeType === "application/pdf") {
       return "text-red-600 bg-red-50 dark:bg-red-950/40";
@@ -137,51 +154,65 @@ export default function AttachmentsTab({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {!readonly && (
-        <div className=" lg:col-span-1 border border-dashed border-slate-300 dark:border-slate-800 p-1 rounded-xl text-center bg-slate-50/50 dark:bg-slate-900/50 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 transition-all ">
+        <div className=" lg:col-span-1 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-1 text-center transition-all hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 ">
+          {" "}
           <UploadDropzone
             endpoint="attachmentUploader"
             input={{ module, recordId }}
+            config={{ mode: "auto" }}
+            onUploadBegin={() => {
+              setUploading(true);
+              setUploadComplete(false);
+            }}
             onClientUploadComplete={() => {
+              setUploading(false);
+              setUploadComplete(true);
               loadFiles();
+              window.setTimeout(() => {
+                setUploadComplete(false);
+              }, 2500);
             }}
             onUploadError={(error: Error) => {
+              setUploading(false);
+              setUploadComplete(false);
               console.error(`Upload error: ${error.message}`);
             }}
             appearance={{
-              container:
-                "w-full min-h-[40px] border-0 bg-transparent ",
+              container: "w-full min-h-[90px] border-0 bg-transparent",
               label: "text-sm font-semibold text-slate-700 dark:text-slate-200",
               allowedContent: "text-[11px] text-slate-400 dark:text-slate-500",
               button: [
-                "bg-blue-600",
-                "hover:bg-blue-700",
-                "text-white",
+                "w-full",
+                "h-9",
+                "w-24",
+                "rounded-lg",
                 "text-xs",
                 "font-semibold",
-                "px-4",
-                "py-2",
-                "rounded-lg",
+                "text-white",
                 "shadow-sm",
                 "transition-all",
                 "duration-200",
-                "ut-uploading:bg-slate-400",
-                "ut-uploading:cursor-not-allowed",
-              ].join(" "),
+                // Normal state
+                !uploading && !uploadComplete
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "",
+                // Uploading state
+                uploading ? "bg-slate-400 cursor-not-allowed" : "",
+                // Completed state
+                uploadComplete ? "bg-emerald-500 hover:bg-emerald-600" : "",
+              ]
+                .filter(Boolean)
+                .join(" "),
             }}
-            // appearance={{
-            //   container:
-            //     "border-none bg-transparent py-6 cursor-pointer focus:outline-none",
-            //   label:
-            //     "text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-500",
-            //   allowedContent: "text-[11px] text-slate-400 mt-1",
-            //   button:
-            //     "bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2 rounded-lg transition-all ut-uploading:bg-slate-400",
-            // }}
             content={{
-              label: "Click or Drag Documents Here",
+              label: uploading
+                ? "Uploading..."
+                : uploadComplete
+                  ? "✓ Upload Complete"
+                  : "Click or Drag Documents Here",
               allowedContent: "PDF, Excel sheets, images up to 4MB",
             }}
-          />
+          />{" "}
         </div>
       )}
 
@@ -202,15 +233,12 @@ export default function AttachmentsTab({
                 key={item.id}
                 className=" border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 rounded-xl flex justify-between items-center gap-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/50 "
               >
-                {" "}
-                {/* File information */}{" "}
                 <div className="flex items-center gap-3 min-w-0">
-                  {" "}
                   <div
                     className={` w-10 h-10 rounded-lg flex items-center justify-center text-[9px] font-bold tracking-tight shrink-0 ${getFileIconColor(item.mime_type)} `}
                   >
                     {" "}
-                    {getFileTypeLabel(item.file_name, item.mime_type)}{" "}
+                    {getFileTypeLabel(item.file_name, item.mime_type)}
                   </div>{" "}
                   <div className="min-w-0">
                     {" "}
@@ -265,6 +293,47 @@ export default function AttachmentsTab({
   );
 }
 
+/* 
+
+{!readonly && (
+         <div className=" lg:col-span-1 border border-dashed border-slate-300 dark:border-slate-800 p-1 rounded-xl text-center bg-slate-50/50 dark:bg-slate-900/50 hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 transition-all ">
+          <UploadDropzone
+            endpoint="attachmentUploader"
+            input={{ module, recordId }}
+            onClientUploadComplete={() => {
+              loadFiles();
+            }}
+            onUploadError={(error: Error) => {
+              console.error(`Upload error: ${error.message}`);
+            }}
+            appearance={{
+              container: "w-full min-h-[40px] border-0 bg-transparent ",
+              label: "text-sm font-semibold text-slate-700 dark:text-slate-200",
+              allowedContent: "text-[11px] text-slate-400 dark:text-slate-500",
+              button: [
+                "bg-blue-600",
+                "hover:bg-blue-700",
+                "text-white",
+                "text-xs",
+                "font-semibold",
+                // "px-4",
+                // "py-0",
+                "rounded-lg",
+                "shadow-sm",
+                "transition-all",
+                "duration-200",
+                "ut-uploading:bg-slate-400",
+                "ut-uploading:cursor-not-allowed",
+              ].join(" "),
+            }}
+            content={{
+              label: "Click or Drag Documents Here",
+              allowedContent: "PDF, Excel sheets, images up to 4MB",
+            }}
+          />
+        </div>
+      )}
+*/
 /* files.map((item) => (
             <div
               key={item.id}

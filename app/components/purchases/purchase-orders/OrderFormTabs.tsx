@@ -646,6 +646,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 </div>
               </div>
             </div>
+            {/* Column 2 */}
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>City</label>
@@ -715,7 +716,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
             </div>
 
-            {/* Column 2 */}
+            {/* Column 3 */}
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>Contact Person</label>
@@ -791,7 +792,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
             </div>
 
-            {/* Column 3 */}
+            {/* Column 4 */}
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>Payable Bank</label>
@@ -898,7 +899,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
             </div>
 
-            {/* Column 4 */}
+            {/* Column 5 */}
             <div className="space-y-2 bg-slate-100 dark:bg-slate-800/80 py-1 px-2 rounded-xl shadow-sm">
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Link to Customer">
@@ -1001,19 +1002,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     <Icon icon="tabler:external-link" className="w-4 h-4" />
                   </button>
                 </div>
-
-                {/* <input
-                type="text"
-                className={inputStyle}
-                disabled={isSettingsDisabled}
-                value={shippingAddress.name || ""}
-                onChange={(e) =>
-                  setShippingAddress({
-                    ...shippingAddress,
-                    name: e.target.value,
-                  })
-                }
-              /> */}
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>Address Line 1</label>
@@ -1194,6 +1182,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   <input
                     type="text"
                     readOnly
+                    disabled
                     className={inputStyle}
                     value={order.shipping_agent || ""}
                     onChange={(e) =>

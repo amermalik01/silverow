@@ -249,7 +249,6 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
 
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
-
   const inputDateStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700  rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
 
@@ -443,8 +442,10 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
           onInvoicingSupplierSelect={noop}
           setLocationModalOpen={noop}
           setPiModalOpen={noop}
+          onShippingAgentSelect={noop}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
+          inputDateStyle={inputDateStyle}
           isReadOnly={isFormDisabled}
         />
       </div>

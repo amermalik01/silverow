@@ -14,6 +14,9 @@ import type { Session } from "next-auth";
 import FullLogo from "../layout/shared/logo/FullLogo";
 import { useRouter, useParams } from "next/navigation";
 
+import bgImage from "@/public/images/logos/nevico-login-bg-1.png";
+import Image from "next/image";
+
 export const Login = () => {
   const { data: session, status } = useSession();
 
@@ -95,8 +98,20 @@ export const Login = () => {
 
   return (
     <>
-      <div className="h-screen w-full flex justify-center items-center bg-[url('/images/logos/nevico-login-bg-1.png')] bg-cover bg-center p-4">
-        {" "}
+      {/* <div className="h-screen w-full flex justify-center items-center  bg-cover bg-center p-4"> */}
+      <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden">
+        {/* Background Image Container */}
+        <div className="absolute inset-0 -z-10">
+          <Image
+            src={bgImage}
+            alt="Login Background"
+            fill
+            priority // Tells Next.js to load this image instantly
+            placeholder="blur" // Optional: shows a blur-up effect while loading
+            className="object-cover object-center"
+          />
+        </div>
+        {/* bg-[url('/images/logos/nevico-login-bg-1.png')] */}
         {/* bg-lightprimary */}
         {/* <div className="md:min-w-[480px] min-w-max "> */}
         <div className="w-full sm:max-w-[480px] md:max-w-[520px] ">
@@ -109,7 +124,7 @@ export const Login = () => {
             border border-emerald-100/60
             shadow-[0_20px_80px_rgba(0,0,0,0.15)]
             text-slate-800
-            p-8 sm:p-10
+            p-8 sm:p-10 
           "
           >
             {/* <div className="h-1.5 w-20 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-700 mx-auto mb-6" /> */}

@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
+import { useLoader } from "@/app/context/LoaderContext";
 
 import {
   DebitNote,
@@ -17,7 +18,6 @@ import {
 
 import DebitNoteLines from "./DebitNoteLines";
 import { OrderFormTabs } from "./OrderFormTabs";
-import { useLoader } from "@/app/context/LoaderContext";
 
 import SupplierLookupModal, {
   SupplierLookupItem,
@@ -41,9 +41,9 @@ interface Props {
   isReadOnly?: boolean;
 }
 
-type TabType = "general" | "invoicing" | "shipping";
+type TabType = "general" | "invoicing" | "shipping" | "attachments";
 
-type SupplierSelectionSource = "general" | "invoicing";
+type SupplierSelectionSource = "general" | "invoicing" | "shipping_agent";
 
 export const DebitNoteForm: React.FC<Props> = ({
   slug,
@@ -87,13 +87,15 @@ export const DebitNoteForm: React.FC<Props> = ({
   const isUpdateMode = !!id;
 
   const [note, setNote] = useState<Partial<DebitNote>>({
-    debit_note_no: id ? "" : "[Auto-Generated]",
+    debit_note_no: id ? "" : "", // [Auto-Generated]
     supplier_id: "",
     supplier_no: "",
     supplier_name: "",
+
     pay_to_supplier_id: "",
     pay_to_supplier_no: "",
     pay_to_supplier_name: "",
+
     order_date: new Date().toISOString().split("T")[0],
     expected_date: "",
     invoice_date: new Date().toISOString().split("T")[0],
@@ -123,6 +125,11 @@ export const DebitNoteForm: React.FC<Props> = ({
 
   const [lines, setLines] = useState<DebitNoteLine[]>([]);
 
+  const [currencyConfig, setCurrencyConfig] = useState({
+    currency_id: "",
+    exchange_rate: 1,
+  });
+
   const isCompleted = note.status === "completed" || note.status === "POSTED";
   const isFormDisabled = !isEditMode || isCompleted;
 
@@ -138,11 +145,6 @@ export const DebitNoteForm: React.FC<Props> = ({
       return qty > 0 && rcvd >= qty;
     });
   }, [lines]);
-
-  const [currencyConfig, setCurrencyConfig] = useState({
-    currency_id: "",
-    exchange_rate: 1,
-  });
 
   useEffect(() => {
     if (!id) return;
@@ -187,16 +189,6 @@ export const DebitNoteForm: React.FC<Props> = ({
       );
   }, [id]);
 
-  const refreshLines = async () => {
-    if (!note.id) return;
-
-    const response = await fetch(`/api/debit-notes/${note.id}/lines`);
-
-    const data = await response.json();
-
-    setLines(data.lines ?? []);
-  };
-
   useEffect(() => {
     async function loadMasterData() {
       try {
@@ -214,6 +206,16 @@ export const DebitNoteForm: React.FC<Props> = ({
     loadMasterData();
   }, []);
 
+  const refreshLines = async () => {
+    if (!note.id) return;
+
+    const response = await fetch(`/api/debit-notes/${note.id}/lines`);
+
+    const data = await response.json();
+
+    setLines(data.lines ?? []);
+  };
+
   const selectedCurrency = useMemo(() => {
     return (
       masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
@@ -222,10 +224,6 @@ export const DebitNoteForm: React.FC<Props> = ({
   }, [currencyConfig.currency_id, masterData]);
 
   const financials = useMemo(() => {
-    // const originalAmount = lines.reduce(
-    //   (sum, l) => sum + Number(l.original_amount || 0),
-    //   0,
-    // );
     const originalAmount = lines.reduce(
       (sum, l) =>
         sum + Number(Number(l.quantity || 0) * Number(l.unit_cost || 0) || 0),
@@ -235,23 +233,6 @@ export const DebitNoteForm: React.FC<Props> = ({
       (sum, l) => sum + Number(l.discount_amount || 0),
       0,
     );
-
-    // const totalDiscount = lines.reduce((sum, l) => {
-    //   const qty = Number(l.quantity || 0);
-    //   const unitCost = Number(l.unit_cost || 0);
-    //   const lineSubtotal = qty * unitCost;
-
-    //   let discountAmt = 0;
-    //   if (l.discount_type === "PERCENT") {
-    //     discountAmt = lineSubtotal * (Number(l.discount_value || 0) / 100);
-    //   } else if (l.discount_type === "AMOUNT") {
-    //     discountAmt = Number(l.discount_value || 0);
-    //   } else {
-    //     discountAmt = Number(l.discount_amount || 0);
-    //   }
-
-    //   return sum + discountAmt;
-    // }, 0);
 
     const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
     const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
@@ -329,6 +310,17 @@ export const DebitNoteForm: React.FC<Props> = ({
       return;
     }
 
+    // Shipping Agent
+    if (supplierSelectionSource === "shipping_agent") {
+      setNote((prev) => ({
+        ...prev,
+        shipping_agent: `${supplier.supplier_code} - ${supplier.name}`,
+      }));
+
+      setSupplierModalOpen(false);
+      return;
+    }
+
     // --------------------------------------------
     // GENERAL TAB
     // Full supplier selection
@@ -373,6 +365,11 @@ export const DebitNoteForm: React.FC<Props> = ({
     }
 
     setSupplierModalOpen(false);
+  };
+
+  const handleShippingAgentSelection = () => {
+    setSupplierSelectionSource("shipping_agent");
+    setSupplierModalOpen(true);
   };
 
   const handleSelectPurchaseInvoice = async (
@@ -629,31 +626,6 @@ export const DebitNoteForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
-      // const payload = {
-      //   dispatch: {
-      //     supplier_id: note.supplier_id,
-      //     dispatch_date:
-      //       note.receipt_date ||
-      //       note.order_date ||
-      //       new Date().toISOString().split("T")[0],
-      //     posting_date:
-      //       note.document_date || new Date().toISOString().split("T")[0],
-      //     reference: note.debit_note_no || note.reference,
-      //     notes: note.notes,
-      //   },
-      //   lines: lines.map((line) => ({
-      //     id: line.id,
-      //     debit_note_line_id: line.id,
-      //     line_type: line.line_type,
-      //     item_id: line.item_id,
-      //     warehouse_id: line.warehouse_id,
-      //     location_id: line.warehouse_location_id || null,
-      //     quantity: Number(line.quantity || 0),
-      //     unit_price: Number(line.unit_cost || 0),
-      //     unit_cost: Number(line.unit_cost || 0),
-      //   })),
-      // };
-
       const payload = {
         dispatch: {
           supplier_id: note.supplier_id,
@@ -716,7 +688,7 @@ export const DebitNoteForm: React.FC<Props> = ({
           posting_date: note.order_date,
           financials: {
             amount: financials.amount,
-            discount: financials.totalDiscount || 0, // Pass total discount
+            discount: financials.totalDiscount || 0,
             vat: financials.vat,
             amountInclVat: financials.amountInclVat,
           },
@@ -745,7 +717,6 @@ export const DebitNoteForm: React.FC<Props> = ({
 
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
-
   const inputDateStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700  rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
 
@@ -800,7 +771,7 @@ export const DebitNoteForm: React.FC<Props> = ({
       <div className=" bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200  pb-2 mb-4">
           <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar ">
-            {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
+            {(["general", "invoicing", "shipping", "attachments"] as TabType[]).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -904,8 +875,10 @@ export const DebitNoteForm: React.FC<Props> = ({
           onInvoicingSupplierSelect={handleInvoicingSupplierSelection}
           setLocationModalOpen={setLocationModalOpen}
           setPiModalOpen={setPiModalOpen}
+          onShippingAgentSelect={handleShippingAgentSelection}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
+          inputDateStyle={inputDateStyle}
           isReadOnly={isFormDisabled}
         />
       </div>
@@ -1057,7 +1030,7 @@ export const DebitNoteForm: React.FC<Props> = ({
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
-              Stock Received
+              Stock Dispatched
             </span>
           </div>
 
