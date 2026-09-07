@@ -68,8 +68,8 @@ export default function AllocateJournalPaymentModal({
   const isSupplier = partyType === "supplier";
   const isRefund = documentType?.toLowerCase() === "refund";
 
-  console.log('partyType ====',partyType);
-  console.log('documentType ====',documentType);
+  // console.log('partyType ====',partyType);
+  // console.log('documentType ====',documentType);
 
   const targetDocType = documentType;
 

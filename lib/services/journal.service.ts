@@ -1156,7 +1156,7 @@ export class JournalService {
           debit: leg.debit_lcy,
           credit: leg.credit_lcy,
         })),
-      );      
+      );
 
       // 5. Bulk insert validated legs into gl_ledger_entries
       for (const leg of expandedLegs) {
@@ -1164,7 +1164,6 @@ export class JournalService {
           "SELECT nextval('gl_transaction_id_seq') AS tx_id",
         );
         const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
-
 
         let vatTransactionId: number | null = null;
         const vatSettlementId: number | null = null;
@@ -1240,7 +1239,6 @@ export class JournalService {
             leg.document_no,
           ],
         );
-        
 
         const glLedgerEntryId = insertedGlEntry.rows[0].id;
         let subLedgerEntryId: string | null = null;
@@ -1376,8 +1374,13 @@ export class JournalService {
             [targetSubEntryId, leg.journal_line_id, companyId],
           );
 
-          // Apply allocated payment amounts directly against open invoice balances
+          let totalAllocatedFCY = 0;
+
+          // 1. Apply allocated payment amounts against open target invoices/documents
           for (const alloc of allocationsRes.rows) {
+            const allocFCY = Number(alloc.allocated_amount_fcy);
+            totalAllocatedFCY += allocFCY;
+
             const subTable =
               alloc.allocation_type === "AP"
                 ? "vendor_ledger_entries"
@@ -1387,13 +1390,65 @@ export class JournalService {
               `
               UPDATE ${subTable}
               SET 
-                remaining_amount_fcy = remaining_amount_fcy - $1,
-                remaining_amount_lcy = remaining_amount_lcy - ($1 * exchange_rate),
-                is_open = CASE WHEN (remaining_amount_fcy - $1) = 0 THEN false ELSE true END,
+                remaining_amount_fcy = CASE 
+                  WHEN remaining_amount_fcy < 0 THEN remaining_amount_fcy + $1
+                  ELSE remaining_amount_fcy - $1
+                END,
+                remaining_amount_lcy = CASE 
+                  WHEN remaining_amount_lcy < 0 THEN remaining_amount_lcy + ($1 * exchange_rate)
+                  ELSE remaining_amount_lcy - ($1 * exchange_rate)
+                END,
+                is_open = CASE 
+                  WHEN ABS(ABS(remaining_amount_fcy) - $1) <= 0.001 THEN false 
+                  ELSE true 
+                END,
                 updated_at = NOW()
               WHERE id = $2 AND company_id = $3
               `,
-              [alloc.allocated_amount_fcy, alloc.ledger_entry_id, companyId],
+              [allocFCY, alloc.ledger_entry_id, companyId],
+            );
+
+            // await client.query(
+            //   `
+            //   UPDATE ${subTable}
+            //   SET 
+            //     remaining_amount_fcy = remaining_amount_fcy - $1,
+            //     remaining_amount_lcy = remaining_amount_lcy - ($1 * exchange_rate),
+            //     is_open = CASE WHEN (remaining_amount_fcy - $1) = 0 THEN false ELSE true END,
+            //     updated_at = NOW()
+            //   WHERE id = $2 AND company_id = $3
+            //   `,
+            //   [alloc.allocated_amount_fcy, alloc.ledger_entry_id, companyId],
+            // );
+          }
+
+          // 2. CRITICAL FIX: Deduct total allocated amount from the SOURCE Payment/Refund entry balance
+          if (totalAllocatedFCY > 0 && subLedgerEntryId) {
+            const paymentSubTable =
+              leg.party_type === "supplier"
+                ? "vendor_ledger_entries"
+                : "customer_ledger_entries";
+
+            await client.query(
+              `
+              UPDATE ${paymentSubTable}
+              SET 
+                remaining_amount_fcy = CASE 
+                  WHEN remaining_amount_fcy < 0 THEN remaining_amount_fcy + $1
+                  ELSE remaining_amount_fcy - $1
+                END,
+                remaining_amount_lcy = CASE 
+                  WHEN remaining_amount_lcy < 0 THEN remaining_amount_lcy + ($1 * exchange_rate)
+                  ELSE remaining_amount_lcy - ($1 * exchange_rate)
+                END,
+                is_open = CASE 
+                  WHEN ABS(ABS(remaining_amount_fcy) - $1) <= 0.001 THEN false 
+                  ELSE true 
+                END,
+                updated_at = NOW()
+              WHERE id = $2 AND company_id = $3
+              `,
+              [totalAllocatedFCY, subLedgerEntryId, companyId],
             );
           }
         }
@@ -1439,365 +1494,3 @@ export class JournalService {
     }
   }
 }
-
-
-// const insertedGlEntry = await client.query(
-        //   `
-        //   INSERT INTO gl_ledger_entries (
-        //     company_id,
-        //     account_id,
-        //     transaction_id,
-        //     vat_transaction_id,
-        //     vat_settlement_transaction_id,
-        //     source_journal_id,
-        //     entry_no,
-        //     posting_date,
-        //     source_type,
-        //     reference,
-        //     description,
-        //     debit,
-        //     credit,
-        //     party_type,
-        //     party_id,
-        //     posted_at
-        //   )
-        //   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
-        //   RETURNING id
-        //   `,
-        //   [
-        //     companyId,
-        //     leg.account_id,
-        //     nextTransactionId,
-        //     vatTransactionId,
-        //     vatSettlementId,
-        //     journal.id,
-        //     journal.entry_no,
-        //     formattedDate,
-        //     journal.source,
-        //     journal.reference || null,
-        //     leg.description,
-        //     leg.debit,
-        //     leg.credit,
-        //     leg.party_type,
-        //     leg.party_id,
-        //   ],
-        // );
-
-/* static async list(
-    companyId: string,
-    filters: {
-      status?: "posted" | "unposted";
-      source: string;
-      page?: number;
-      limit?: number;
-    },
-  ) {
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
-    const offset = (page - 1) * limit;
-
-    // Use dbSource instead of filters.source for the query bindings array
-    const values: (string | number)[] = [companyId, filters.source];
-    let whereConditions = `WHERE j.company_id = $1 AND j.source = $2`;
-
-    if (filters.status === "posted") {
-      whereConditions += ` AND j.is_posted = true`;
-    } else if (filters.status === "unposted") {
-      whereConditions += ` AND j.is_posted = false`;
-    }
-
-    // Get total count for pagination controls
-    const countQuery = `SELECT COUNT(*)::int AS total FROM journal_entries j ${whereConditions}`;
-    const countResult = await pool.query(countQuery, values);
-    const total = countResult.rows[0].total;
-
-    // Append limits to parameters array safely
-    values.push(limit, offset);
-
-    const dataQuery = `
-          SELECT 
-            j.id,
-            j.entry_no,
-            j.entry_date,
-            j.reference,
-            j.description,
-            j.is_posted,
-            j.posted_by,
-            COALESCE((
-              SELECT SUM(debit * COALESCE(exchange_rate, 1.0)) 
-              FROM journal_entry_lines 
-              WHERE journal_id = j.id
-            ), 0) as amount
-          FROM journal_entries j
-          ${whereConditions}
-          ORDER BY j.entry_no DESC
-          LIMIT $${values.length - 1} OFFSET $${values.length}
-        `;
-
-    const result = await pool.query(dataQuery, values);
-
-    return {
-      rows: result.rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  } */
-
-/* static async post(companyId: string, id: string): Promise<void> {
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      // 1. Fetch the original draft unposted header to verify status
-      const journalResult = await client.query(
-        `
-        SELECT id, entry_no, entry_date, source, reference, description
-        FROM journal_entries
-        WHERE id = $1 AND company_id = $2 AND is_posted = false
-        FOR UPDATE
-        `,
-        [id, companyId],
-      );
-
-      if (journalResult.rows.length === 0) {
-        throw new Error(
-          "Journal entry not found, or it has already been posted.",
-        );
-      }
-
-      const journal = journalResult.rows[0];
-
-      // 2. Fetch the draft lines associated with this document
-      const linesResult = await client.query(
-        `
-        SELECT account_id, party_type, party_id, description, debit, credit, exchange_rate
-        FROM journal_entry_lines
-        WHERE journal_id = $1
-        `,
-        [id],
-      );
-
-      if (linesResult.rows.length === 0) {
-        throw new Error("Cannot post a journal entry with zero lines.");
-      }
-
-      // 3. Obtain next global GL transaction key from the PostgreSQL sequence
-      const txKeyResult = await client.query(
-        "SELECT nextval('gl_transaction_id_seq') AS tx_id",
-      );
-      const nextTransactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
-
-      // 4. (Optional) Check if VAT tracking numbers are required based on source type
-      let vatTransactionId: number | null = null;
-      const vatSettlementId: number | null = null;
-
-      if (
-        journal.source === "VAT_POSTING" ||
-        journal.source === "SALES" ||
-        journal.source === "PURCHASE"
-      ) {
-        const vatKeyResult = await client.query(
-          "SELECT nextval('vat_transaction_id_seq') AS vat_tx_id",
-        );
-        vatTransactionId = parseInt(vatKeyResult.rows[0].vat_tx_id, 10);
-      }
-
-      // 5. Bulk insert lines cleanly into the 'gl_ledger_entries' table
-      for (const line of linesResult.rows) {
-        // Calculate Base Currency Amount (LCY) exactly as done during verification
-        const rate = Number(line.exchange_rate || 1.0);
-        const debitLCY = Number((Number(line.debit || 0) * rate).toFixed(2));
-        const creditLCY = Number((Number(line.credit || 0) * rate).toFixed(2));
-
-        await client.query(
-          `
-          INSERT INTO gl_ledger_entries (
-            company_id,
-            account_id,
-            transaction_id,
-            vat_transaction_id,
-            vat_settlement_transaction_id,
-            source_journal_id,
-            entry_no,
-            posting_date,
-            source_type,
-            reference,
-            description,
-            debit,
-            credit,
-            party_type,
-            party_id,
-            posted_at
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())
-          `,
-          [
-            companyId,
-            line.account_id,
-            nextTransactionId,
-            vatTransactionId,
-            vatSettlementId,
-            journal.id,
-            journal.entry_no,
-            journal.entry_date,
-            journal.source, // maps to journal_source_enum
-            journal.reference,
-            line.description || journal.description, // Fallback to header note if lines are empty
-            debitLCY,
-            creditLCY,
-            line.party_type,
-            line.party_id,
-          ],
-        );
-      }
-
-      // 6. Update the header flag on the draft workspace so it shows as 'posted'
-      await client.query(
-        `
-        UPDATE journal_entries
-        SET
-          is_posted = true,
-          posted_at = now()
-        WHERE id = $1
-        `,
-        [id],
-      );
-
-      await client.query("COMMIT");
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
-  } */
-/* for (const line of lines) {
-      const debit = Number(line.debit || 0);
-      const credit = Number(line.credit || 0);
-      const rate = Number(line.exchange_rate || 1.0);
-
-      if (debit > 0 && credit > 0) {
-        throw new Error("Line cannot have both debit and credit");
-      }
-
-      // Legacy rule: If a line handles its own offset via a balancing account,
-      // it bypasses the global document cross-line validation total sums.
-      if (
-        line.balancing_account_id &&
-        line.balancing_account_id.trim() !== ""
-      ) {
-        continue;
-      }
-
-      if (debit > 0) {
-        totalDebitConverted += Number((debit * rate).toFixed(2));
-      }
-
-      if (credit > 0) {
-        totalCreditConverted += Number((credit * rate).toFixed(2));
-      }
-    } */
-/**
- * Helper to fetch the control account from customer/supplier tables
- */
-/* private static async getControlAccountForParty(
-    client: PoolClient,
-    companyId: string,
-    partyId: string,
-    type: "customer" | "supplier",
-  ): Promise<string | null> {
-    if (type === "customer") {
-      // Join the unified parties row to its assigned Sales Posting Group profile
-      const res = await client.query(
-        `SELECT spg.receivable_account_id 
-       FROM public.parties p
-       INNER JOIN public.sales_posting_groups spg ON p.sales_posting_group_id = spg.id
-       WHERE p.id = $1 
-         AND p.company_id = $2 
-         AND p.is_customer = true`,
-        [partyId, companyId],
-      );
-      return res.rows[0]?.receivable_account_id || null;
-    }
-
-    if (type === "supplier") {
-      // Join the unified parties row to its assigned Purchase Posting Group profile
-      const res = await client.query(
-        `SELECT ppg.payable_account_id 
-       FROM public.parties p
-       INNER JOIN public.purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
-       WHERE p.id = $1 
-         AND p.company_id = $2 
-         AND p.is_supplier = true`,
-        [partyId, companyId],
-      );
-      return res.rows[0]?.payable_account_id || null;
-    }
-
-    return null;
-  } */
-/* 
-static async get(companyId: string, id: string) {
-    const journalResult = await pool.query(
-      `
-      SELECT *
-      FROM journal_entries
-      WHERE id = $1 AND company_id = $2
-      `,
-      [id, companyId],
-    );
-
-    if (!journalResult.rows.length) return null;
-
-    const linesResult = await pool.query(
-      `
-          SELECT 
-            l.*,
-            l.party_type::text AS raw_party_type,
-            a.code AS account_code,
-            a.name AS account_name, 
-            p.name AS party_name,
-            p.customer_code,
-            p.supplier_code, 
-            bal.code AS balancing_account_code,
-            bal.name AS balancing_account_name
-          FROM journal_entry_lines l
-          LEFT JOIN chart_of_accounts a ON l.account_id = a.id
-          LEFT JOIN public.parties p ON l.party_id = p.id
-          LEFT JOIN chart_of_accounts bal ON l.reference_id = bal.id AND l.reference_type = 'G/L Account'
-          WHERE l.journal_id = $1
-          ORDER BY l.line_no ASC, l.created_at ASC
-          `,
-      [id],
-    );
-
-    const formattedLines = linesResult.rows.map((row) => {
-      // Determine exact UI transaction_type
-      let transactionType: "gl_no" | "customer" | "supplier" = "gl_no";
-
-      if (row.raw_party_type === "customer" || row.customer_code) {
-        transactionType = "customer";
-      } else if (row.raw_party_type === "supplier" || row.supplier_code) {
-        transactionType = "supplier";
-      }
-
-      return {
-        ...row,
-        transaction_type: transactionType,
-        party_type:
-          row.raw_party_type ||
-          (transactionType !== "gl_no" ? transactionType : null),
-      };
-    });
-
-    return {
-      journal: journalResult.rows[0],
-      lines: formattedLines,
-    };
-  }
-*/
