@@ -40,8 +40,8 @@ export const purchaseInvoicesConfig: ColumnConfig[] = [
     columnWidth: 100,
   },
   {
-    columnKey: "supp_order_no",
-    label: "Supplier Inv. No.",
+    columnKey: "reference",
+    label: "Suppl. Inv. No.",
     dataType: "text",
     isVisible: true,
     isPinned: false,
@@ -384,12 +384,21 @@ export const purchaseInvoicesConfig: ColumnConfig[] = [
     columnWidth: 100,
   },
   {
+    columnKey: "supp_order_no",
+    label: "Suppl. Ord. No.",
+    dataType: "text",
+    isVisible: false,
+    isPinned: false,
+    columnOrder: 43,
+    columnWidth: 130,
+  },
+  {
     columnKey: "actions",
     label: "Actions",
     dataType: "text",
     isVisible: true,
     isPinned: false,
-    columnOrder: 43,
+    columnOrder: 44,
     columnWidth: 100,
   },
 ];

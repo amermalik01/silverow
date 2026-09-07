@@ -60,11 +60,11 @@ export class PurchaseOrderService {
       invoice_date: "po.invoice_date",
       order_date: "po.order_date",
       order_no: "po.order_no",
-      supp_order_no: "po.supp_order_no",
+      reference: "po.reference",
       previous_code: "po.previous_code",
       current_stage: "cos.name",
       supplier_no: "po.supplier_no",
-      supplier_name: "p.name",
+      supplier_name: "po.supplier_name",
       city: "poa.city",
       purchaser: "po.purchaser",
       currency: "c.code",
@@ -98,7 +98,7 @@ export class PurchaseOrderService {
       queryValues.push(`%${search}%`);
       const searchParam = `$${queryValues.length}`;
       whereClauses.push(
-        ` ( po.order_no ILIKE ${searchParam} OR po.supp_order_no ILIKE ${searchParam} OR po.previous_code ILIKE ${searchParam} OR po.supplier_no ILIKE ${searchParam} OR p.name ILIKE ${searchParam} OR cos.name ILIKE ${searchParam} OR c.code ILIKE ${searchParam} OR sm.name ILIKE ${searchParam} OR po.purchaser ILIKE ${searchParam} ) `,
+        ` ( po.order_no ILIKE ${searchParam} OR po.reference ILIKE ${searchParam} OR po.previous_code ILIKE ${searchParam} OR po.supplier_no ILIKE ${searchParam} OR po.supplier_name ILIKE ${searchParam} OR cos.name ILIKE ${searchParam} OR c.code ILIKE ${searchParam} OR sm.name ILIKE ${searchParam} OR po.purchaser ILIKE ${searchParam} ) `,
       );
     }
 

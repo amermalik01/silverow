@@ -13,11 +13,14 @@ import NumericTextInput from "@/components/ui/NumericTextInput";
 
 interface RateHistoryItem {
   id: string;
-  start_date: string;
-  exchange_rate: number;
-  inverted_exchange_rate: number;
-  created_by: string;
-  created_date: string;
+  // start_date: string;
+  // exchange_rate: number;
+
+  effective_date: string;
+  rate: number;
+  inverted_exchange_rate?: number;
+  created_by?: string;
+  created_date?: string;
 }
 
 export default function CurrencyTab() {
@@ -33,6 +36,8 @@ export default function CurrencyTab() {
   const [currencyName, setCurrencyName] = useState("");
   const [rate, setRate] = useState<number | "">(1);
   // const [startDate, setStartDate] = useState("2020-06-23");
+
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [saving, setSaving] = useState(false);
@@ -74,7 +79,7 @@ export default function CurrencyTab() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch("/api/setup/general/company/currencies", {
+      const res = await fetch("/api/setup/general/company/currencies/rates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -216,7 +221,7 @@ export default function CurrencyTab() {
         </div>
       ) : (
         /* SCREENSHOT 2: CURRENCY EDIT/ADD FORM VIEW */
-        <form onSubmit={handleSaveCurrency} className="space-y-4 pt-2">
+        <div  className="space-y-4 pt-2">
           <div className="space-y-3 max-w-xl">
             {/* Currency Name / Dropdown */}
             <div className="grid grid-cols-3 items-center gap-2">
@@ -250,22 +255,11 @@ export default function CurrencyTab() {
               <label className="font-medium text-gray-700">
                 Exchange Rate <span className="text-red-500">*</span>
               </label>
-              {/* <input
-                type="number"
-                step="0.00001"
-                required
-                value={rate}
-                onChange={(e) =>
-                  setRate(
-                    e.target.value === "" ? "" : parseFloat(e.target.value),
-                  )
-                }
-                className="col-span-2 border px-2.5 py-1.5 rounded focus:outline-none focus:ring-1 focus:ring-emerald-600 font-mono"
-              /> */}
               <NumericTextInput
                 allowDecimals
                 decimalScale={2}
                 value={Number(rate)}
+                disabled={!isEditMode}
                 onChange={(val) => setRate(val === 0 ? "" : Number(val))}
                 className="col-span-2 border px-2.5 py-1.5 rounded focus:outline-none focus:ring-1 focus:ring-emerald-600 font-mono"
               />
@@ -293,15 +287,9 @@ export default function CurrencyTab() {
                 <DatePicker
                   value={startDate}
                   onChange={setStartDate}
+                  disabled={!isEditMode}
                   className="w-full border px-2.5 py-1.5 rounded focus:outline-none focus:ring-1 focus:ring-emerald-600"
                 />
-                {/* <input
-                  type="date"
-                  required
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full border px-2.5 py-1.5 rounded focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                /> */}
               </div>
             </div>
           </div>
@@ -312,18 +300,31 @@ export default function CurrencyTab() {
               <Button
                 type="button"
                 onClick={openConversionHistory}
-                className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-1.5 rounded transition-colors"
+                variant="post"
+                // className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-1.5 rounded transition-colors"
               >
                 Conversion History
               </Button>
             )}
-            <Button
-              type="submit"
-              disabled={saving}
-              className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-5 py-1.5 rounded transition-colors"
-            >
-              {saving ? "Saving..." : "Edit"}
-            </Button>
+
+            {!isEditMode ? (
+              <Button
+                type="button"
+                variant="edit"
+                onClick={() => setIsEditMode(true)}
+              >
+                Edit
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="save"
+                onClick={handleSaveCurrency}
+                disabled={saving}
+              >
+                {saving ? "Saving..." : "Save"}
+              </Button>
+            )}
             <Button
               type="button"
               onClick={() => setMode("list")}
@@ -332,8 +333,10 @@ export default function CurrencyTab() {
               Cancel
             </Button>
           </div>
-        </form>
+        </div>
       )}
+
+      {/* onSubmit={handleSaveCurrency} */}
 
       {showHistoryModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -375,9 +378,9 @@ export default function CurrencyTab() {
                     ) : (
                       historyData.map((item) => (
                         <tr key={item.id} className="border-b hover:bg-gray-50">
-                          <td className="p-2.5">{item.start_date}</td>
+                          <td className="p-2.5">{item.effective_date}</td>
                           <td className="p-2.5 font-mono">
-                            {item.exchange_rate}
+                            {item.rate}
                           </td>
                           <td className="p-2.5 font-mono">
                             {item.inverted_exchange_rate}

@@ -53,6 +53,7 @@ export function getPurchaseOrderCellRenderers(slug: string) {
     supplier_name: (row: PurchaseOrder) => row.supplier_name || "-",
     supplier_no: (row: PurchaseOrder) => row.supplier_no || "-",
     supp_order_no: (row: PurchaseOrder) => row.supp_order_no || "-",
+    reference: (row: PurchaseOrder) => row.reference || "-",
     previous_code: (row: PurchaseOrder) => row.previous_code || "-",
     purchaser: (row: PurchaseOrder) => row.purchaser || "-",
     contact: (row: PurchaseOrder) => row.contact || "-",

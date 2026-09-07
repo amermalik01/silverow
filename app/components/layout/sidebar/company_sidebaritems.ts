@@ -400,11 +400,11 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 name: "Company",
                 url: `/${slug}/setup/system/company`,
               },
-              {
-                id: "Currency Setup",
-                name: "Currency Setup",
-                url: `/${slug}/setup/system/currencies`,
-              },
+              // {
+              //   id: "Currency Setup",
+              //   name: "Currency Setup",
+              //   url: `/${slug}/setup/system/currencies`,
+              // },
               {
                 id: "Module Codes",
                 name: "Module Codes",

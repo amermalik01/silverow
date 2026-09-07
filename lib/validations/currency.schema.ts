@@ -12,10 +12,11 @@ export const companyCurrencySchema = z.object({
 // Validates historical spot-rate overrides
 export const currencyRateSchema = z.object({
   currency_id: z.string().uuid({ message: "Valid operational currency reference ID required" }),
-  rate: z.number().positive({ message: "Spot exchange rate entry must be greater than 0" }),
-  effective_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { 
-    message: "Effective date must match standard ISO YYYY-MM-DD format" 
-  }),
+  exchange_rate: z.number().positive({ message: "Spot exchange rate entry must be greater than 0" }),
+  start_date: z.string(),
+  // start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { 
+  //   message: "Effective date must match standard ISO YYYY-MM-DD format" 
+  // }),
 });
 
 /* import { z } from "zod";

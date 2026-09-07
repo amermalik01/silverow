@@ -31,7 +31,7 @@ export const purchaseOrdersConfig: ColumnConfig[] = [
     columnWidth: 100,
   },
   {
-    columnKey: "supp_order_no",
+    columnKey: "reference",
     label: "Suppl. Invoice No.",
     dataType: "text",
     isVisible: true,
@@ -366,8 +366,8 @@ export const purchaseOrdersConfig: ColumnConfig[] = [
     columnWidth: 100,
   },
   {
-    columnKey: "cust_order_no",
-    label: "Suppl. Order No.",
+    columnKey: "supp_order_no",
+    label: "Suppl. Ord. No.",
     dataType: "text",
     isVisible: false,
     isPinned: false,

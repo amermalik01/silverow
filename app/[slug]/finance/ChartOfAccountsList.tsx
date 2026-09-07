@@ -105,7 +105,7 @@ export default function ChartOfAccountsList() {
       <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/50">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white">
-            General Ledger Chart Structure
+            {/* General Ledger  */}Chart of Accounts
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Manage operational accounting structures and dynamic summary
@@ -119,8 +119,8 @@ export default function ChartOfAccountsList() {
           className="bg-emerald-700 hover:bg-emerald-800  text-white rounded"
         >
           <Link href="./chart-of-accounts/create">
-            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}+
-            Create
+            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}
+            + Create
           </Link>
         </Button>
       </div>
@@ -185,6 +185,10 @@ export default function ChartOfAccountsList() {
               filteredAccounts.map((acc) => {
                 const rowStyles = getRowStyle(acc.gl_account_type);
                 const indentClass = getNameIndent(acc.gl_account_type);
+
+                const total_amount = (
+                  Number(acc.display_debit) - Number(acc.display_credit)
+                ).toFixed(2);
 
                 return (
                   <tr
@@ -251,21 +255,57 @@ export default function ChartOfAccountsList() {
                     </td>
 
                     <td className="p-3 text-right font-mono font-medium text-slate-900 dark:text-slate-200">
-                      {acc.display_debit > 0
+                      {/* {acc.display_debit > 0
                         ? acc.display_debit.toLocaleString("en-US", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })
-                        : "0.00"}
+                        : "0.00"} */}
+
+                      {Number(total_amount) > 0 &&
+                      acc.gl_account_type === "Posting" ? (
+                        <button
+                          onClick={() =>
+                            setSelectedAccount({
+                              id: acc.id,
+                              name: acc.name,
+                              code: acc.code,
+                            })
+                          }
+                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium text-left transition"
+                        >
+                          {Number(total_amount).toFixed(2)}
+                        </button>
+                      ) : (
+                        ""
+                      )}
                     </td>
 
                     <td className="p-3 text-right font-mono font-medium text-slate-900 dark:text-slate-200">
-                      {acc.display_credit > 0
+
+                      {Number(total_amount) < 0 &&
+                      acc.gl_account_type === "Posting" ? (
+                        <button
+                          onClick={() =>
+                            setSelectedAccount({
+                              id: acc.id,
+                              name: acc.name,
+                              code: acc.code,
+                            })
+                          }
+                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium text-left transition"
+                        >
+                          {Math.abs(Number(total_amount)).toFixed(2)}
+                        </button>
+                      ) : (
+                        ""
+                      )}
+                      {/* {acc.display_credit > 0
                         ? acc.display_credit.toLocaleString("en-US", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })
-                        : "0.00"}
+                        : "0.00"} */}
                     </td>
 
                     <td className="p-3 text-center">

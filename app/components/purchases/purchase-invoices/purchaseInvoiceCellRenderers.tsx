@@ -56,6 +56,7 @@ export function getPurchaseInvoiceCellRenderers(slug: string) {
     prev_code: (row: PurchaseInvoice) => row.prev_code || "-",
     supplier_no: (row: PurchaseInvoice) => row.supplier_no || "-",
     supplier_name: (row: PurchaseInvoice) => row.supplier_name || "-",
+    reference: (row: PurchaseInvoice) => row.reference || "-",
     sell_to_address: (row: PurchaseInvoice) => row.sell_to_address || "-",
     sell_to_address2: (row: PurchaseInvoice) => row.sell_to_address2 || "-",
     sell_to_city: (row: PurchaseInvoice) => row.sell_to_city || "-",

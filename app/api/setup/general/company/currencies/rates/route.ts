@@ -2,15 +2,14 @@
 
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { currencyRateSchema } from "@/lib/validations/currency.schema";
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-  const companyId = session?.user?.company_id;
-  if (!companyId)
+  const companyId = await getCompanyId();
+  if (!companyId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { searchParams } = new URL(req.url);
   const currencyId = searchParams.get("currency_id");
@@ -32,14 +31,16 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  const companyId = session?.user?.company_id;
-  if (!companyId)
+  const companyId = await getCompanyId();
+  if (!companyId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   try {
     const body = await req.json();
     const parsed = currencyRateSchema.safeParse(body);
+
+    console.log("parsed === ", parsed);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { currency_id, rate, effective_date } = parsed.data;
+    const { currency_id, exchange_rate, start_date } = parsed.data;
 
     // Safety check: Prevent changing historical rates on the base currency if its conversion factor isn't 1
     const baseCheck = await pool.query(
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
     // Fallback to 0 if rowCount is null or undefined using the nullish coalescing operator (??)
     const rowsFound = baseCheck?.rowCount ?? 0;
 
-    if (rowsFound > 0 && baseCheck.rows[0].is_base && rate !== 1) {
+    if (rowsFound > 0 && baseCheck.rows[0].is_base && exchange_rate !== 1) {
       return NextResponse.json(
         { error: "Base currency rates must remain locked at exactly 1.000000" },
         { status: 422 },
@@ -71,15 +72,15 @@ export async function POST(req: Request) {
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (company_id, currency_id, effective_date)
        DO UPDATE SET rate = EXCLUDED.rate`,
-      [companyId, currency_id, rate, effective_date],
+      [companyId, currency_id, exchange_rate, start_date],
     );
 
     // Sync back to the main relationship link record if this entry targets today's date
     const todayStr = new Date().toISOString().split("T")[0];
-    if (effective_date === todayStr) {
+    if (start_date === todayStr) {
       await pool.query(
         `UPDATE company_currencies SET exchange_rate = $1 WHERE company_id = $2 AND currency_id = $3`,
-        [rate, companyId, currency_id],
+        [exchange_rate, companyId, currency_id],
       );
     }
 
