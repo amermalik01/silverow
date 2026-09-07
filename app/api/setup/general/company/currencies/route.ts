@@ -14,12 +14,45 @@ export async function GET() {
     if (!companyId)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // const result = await pool.query(
+    //   `SELECT cc.id, c.code, c.name, c.symbol, cc.exchange_rate, cc.is_base
+    //    FROM currencies c
+    //    JOIN company_currencies cc ON cc.currency_id = c.id
+    //    WHERE cc.company_id = $1 AND cc.status = 1
+    //    ORDER BY cc.is_base DESC, c.name ASC`,
+    //   [companyId],
+    // );
+
     const result = await pool.query(
-      `SELECT cc.id, c.code, c.name, c.symbol, cc.exchange_rate, cc.is_base
-       FROM currencies c
-       JOIN company_currencies cc ON cc.currency_id = c.id
-       WHERE cc.company_id = $1 AND cc.status = 1
-       ORDER BY cc.is_base DESC, c.name ASC`,
+      `SELECT
+            cc.id AS company_currency_id,
+            cc.company_id,
+            cc.currency_id,
+            c.code,
+            c.name,
+            c.symbol,
+            cc.is_base,
+            cc.exchange_rate,
+            cc.status,
+
+            (
+                SELECT cr.effective_date
+                FROM currency_rates cr
+                WHERE cr.company_currency_id = cc.id
+                  AND cr.effective_date <= CURRENT_DATE
+                ORDER BY cr.effective_date DESC
+                LIMIT 1
+            ) AS effective_date
+
+        FROM company_currencies cc
+
+        INNER JOIN currencies c
+            ON c.id = cc.currency_id
+
+        WHERE cc.company_id = $1
+          AND cc.status = 1
+
+        ORDER BY cc.is_base DESC, c.code;`,
       [companyId],
     );
     return NextResponse.json(result.rows);

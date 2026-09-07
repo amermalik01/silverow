@@ -34,7 +34,7 @@ export default function CompanyCurrencies() {
     <div>
       <CurrencyForm onSuccess={fetchData} />
 
-      <div className="border rounded-lg overflow-hidden">
+      {/* <div className="border rounded-lg overflow-hidden">
         <table className="w-full text-xs table-fixed">
           <thead className="bg-gray-100 text-black">
             <tr>
@@ -110,7 +110,7 @@ export default function CompanyCurrencies() {
           currencySymbol={selectedCurrency.symbol}
           onClose={() => setSelectedCurrency(null)}
         />
-      )}
+      )} */}
     </div>
   );
 }
