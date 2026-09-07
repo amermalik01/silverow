@@ -139,11 +139,7 @@ export default function PartyForm({
   };
 
   const handleSubmit = async () => {
-    // console.log("handleSubmit ==== ", handleSubmit);
-    // console.log(
-    //   "handleFormSubmissionValidation ==== ",
-    //   handleFormSubmissionValidation(),
-    // );
+
     if (!handleFormSubmissionValidation()) return;
     setLoading(true);
 
@@ -168,10 +164,27 @@ export default function PartyForm({
       });
 
       const payload = await res.json();
-      if (!res.ok)
-        throw new Error(
-          payload.error || "Persistence operation processing error.",
-        );
+
+      if (!res.ok) {
+        // Map field-specific errors returned from API to state
+        if (payload.field) {
+          setFormErrors({ [payload.field]: payload.error });
+          if (payload.field.startsWith("general.")) {
+            setActiveTab("general");
+          } else if (payload.field.startsWith("contacts.")) {
+            setActiveTab("contacts");
+          } else {
+            setActiveTab("locations");
+          }
+        } else {
+          setFormErrors({ global: payload.error || "Persistence operation processing error." });
+        }
+        return;
+      }
+      // if (!res.ok)
+      //   throw new Error(
+      //     payload.error || "Persistence operation processing error.",
+      //   );
 
       // console.log('payload === ',payload);
 

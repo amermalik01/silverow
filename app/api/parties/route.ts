@@ -423,11 +423,112 @@ export async function POST(req: Request) {
     } catch (txErr) {
       await client.query("ROLLBACK");
       console.error("Transaction failure trace: ", txErr);
-      const dbError = txErr as { message?: string };
+      // const dbError = txErr as { message?: string };
+
+      const dbErr = txErr as {
+        code?: string;
+        constraint?: string;
+        message?: string;
+      };
+
+      // PostgreSQL Code 23505: Unique Constraint Violation
+      if (dbErr.code === "23505") {
+        const constraint = dbErr.constraint || "";
+
+        // Handle Role-based Name Unique Indexes
+        if (constraint.includes("uq_parties_company_name_crm")) {
+          return NextResponse.json(
+            {
+              error:
+                "A CRM Lead with this name already exists in your company.",
+              field: "general.name",
+            },
+            { status: 409 },
+          );
+        }
+        if (constraint.includes("uq_parties_company_name_srm")) {
+          return NextResponse.json(
+            {
+              error:
+                "An SRM Vendor with this name already exists in your company.",
+              field: "general.name",
+            },
+            { status: 409 },
+          );
+        }
+        if (constraint.includes("uq_parties_company_name_customer")) {
+          return NextResponse.json(
+            {
+              error:
+                "A Customer with this name already exists in your company.",
+              field: "general.name",
+            },
+            { status: 409 },
+          );
+        }
+        if (constraint.includes("uq_parties_company_name_supplier")) {
+          return NextResponse.json(
+            {
+              error:
+                "A Supplier with this name already exists in your company.",
+              field: "general.name",
+            },
+            { status: 409 },
+          );
+        }
+
+        // Handle Code Unique Constraints
+        if (constraint.includes("uq_party_crm_code")) {
+          return NextResponse.json(
+            {
+              error: "CRM Code already exists in your company.",
+              field: "general.crm_code",
+            },
+            { status: 409 },
+          );
+        }
+        if (constraint.includes("uq_party_customer_code")) {
+          return NextResponse.json(
+            {
+              error: "Customer Code already exists in your company.",
+              field: "general.customer_code",
+            },
+            { status: 409 },
+          );
+        }
+        if (constraint.includes("uq_party_srm_code")) {
+          return NextResponse.json(
+            {
+              error: "SRM Code already exists in your company.",
+              field: "general.srm_code",
+            },
+            { status: 409 },
+          );
+        }
+        if (constraint.includes("uq_party_supplier_code")) {
+          return NextResponse.json(
+            {
+              error: "Supplier Code already exists in your company.",
+              field: "general.supplier_code",
+            },
+            { status: 409 },
+          );
+        }
+
+        // Generic fallback for any other unique constraint violation
+        return NextResponse.json(
+          {
+            error: "A record with these unique details already exists.",
+            field: "general.name",
+          },
+          { status: 409 },
+        );
+      }
+
       return NextResponse.json(
         {
           error:
-            dbError.message ||
+            dbErr.message ||
             "Database engine failure executing persistence profiles.",
         },
         { status: 400 },
