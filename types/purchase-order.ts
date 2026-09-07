@@ -1,5 +1,7 @@
 // types/purchase-order.ts
 
+import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
+
 export type PurchaseOrderStatus = string;
 export interface PurchaseOrder {
   id?: string;
@@ -118,6 +120,7 @@ export interface PurchaseOrderPayload {
 export type PurchaseOrderLineType = "ITEM" | "GL_ACCOUNT" | "COMMENT";
 
 export interface PurchaseOrderLine {
+  _key?: string;
   id?: string;
   company_id?: string;
   purchase_order_id?: string;
@@ -185,19 +188,25 @@ export interface PurchaseOrderLine {
 }
 
 export interface PurchaseOrderLineUI extends PurchaseOrderLine {
+  _stableKey?: string;
   reserved_quantity?: string | number;
   available_stock?: string | number;
   is_allocated?: boolean;
 
-  allocations?: Array<{
-    quantity: number;
-    [key: string]: unknown;
-  }>;
+  // allocations?: Array<{
+  //   quantity: number;
+  //   [key: string]: unknown;
+  // }>;
 
-  initialAllocations?: Array<{
-    quantity: number;
-    [key: string]: unknown;
-  }>;
+  // initialAllocations?: Array<{
+  //   quantity: number;
+  //   [key: string]: unknown;
+  // }>;
+
+  allocations?: PO_StockAllocationRecord[];
+  initialAllocations?: PO_StockAllocationRecord[];
+  stock_allocations?: PO_StockAllocationRecord[];
+  po_line_allocations?: PO_StockAllocationRecord[];
 }
 
 export interface StockAllocationRecord {

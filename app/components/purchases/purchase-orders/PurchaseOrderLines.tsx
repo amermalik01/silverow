@@ -62,20 +62,63 @@ export default function PurchaseOrderLines({
 
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
-  const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
+
+  // FIX 1: Track active allocation target by stable unique key instead of raw index
+  const [activeAllocationLineId, setActiveAllocationLineId] = useState<
     string | null
   >(null);
 
+  // Ensure each line has a fallback stable key for unsaved rows
+  const linesWithKeys = useMemo(() => {
+    return lines.map((line, idx) => ({
+      ...line,
+      _stableKey: line.id || line._key || `temp-line-${idx}`,
+    }));
+  }, [lines]);
+
   const activeAllocationLine = useMemo(() => {
-    if (activeAllocationRowKey === null) return null;
-    const idx = parseInt(activeAllocationRowKey, 10);
-    return lines[idx] || null;
-  }, [activeAllocationRowKey, lines]);
+    if (!activeAllocationLineId) return null;
+    return (
+      linesWithKeys.find((l) => l._stableKey === activeAllocationLineId) || null
+    );
+  }, [activeAllocationLineId, linesWithKeys]);
+
+  // const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
+  //   string | null
+  // >(null);
+
+  // const activeAllocationLine = useMemo(() => {
+  //   if (activeAllocationRowKey === null) return null;
+  //   const idx = parseInt(activeAllocationRowKey, 10);
+  //   return lines[idx] || null;
+  // }, [activeAllocationRowKey, lines]);
+
+  // const addLine = () => {
+  //   setLines([
+  //     ...lines,
+  //     {
+  //       line_type: "ITEM",
+  //       quantity: 1,
+  //       unit_cost: 0,
+  //       discount_type: "PERCENT",
+  //       discount_value: 0,
+  //       vat_percent: 0,
+  //       original_amount: 0,
+  //       discount_amount: 0,
+  //       net_amount: 0,
+  //       vat_amount: 0,
+  //       gross_amount: 0,
+  //       is_allocated: false,
+  //       received_quantity: 0,
+  //     },
+  //   ]);
+  // };
 
   const addLine = () => {
-    setLines([
-      ...lines,
+    setLines((prev) => [
+      ...prev,
       {
+        _key: `temp-${Date.now()}-${Math.random()}`,
         line_type: "ITEM",
         quantity: 1,
         unit_cost: 0,
@@ -89,6 +132,8 @@ export default function PurchaseOrderLines({
         gross_amount: 0,
         is_allocated: false,
         received_quantity: 0,
+        allocations: [],
+        initialAllocations: [],
       },
     ]);
   };
@@ -112,6 +157,73 @@ export default function PurchaseOrderLines({
 
     loadVatOptions();
   }, [purchaseOrder?.purchase_posting_group_id]);
+
+  // FIX 2: Explicitly preserve allocations in calculateLine
+  const calculateLine = (
+    line: Partial<PurchaseOrderLineUI>,
+  ): PurchaseOrderLineUI => {
+    const qty = Number(line.quantity || 0);
+    const price = Number(line.unit_cost || 0);
+    const original = qty * price;
+    let discountAmount = 0;
+
+    if (line.discount_type === "PERCENT") {
+      discountAmount = original * (Number(line.discount_value || 0) / 100);
+    } else {
+      discountAmount = Number(line.discount_value || 0);
+    }
+
+    const net = original - discountAmount;
+    const vat = net * (Number(line.vat_percent || 0) / 100);
+    const gross = net + vat;
+
+    const currentAllocations =
+      line.allocations || line.initialAllocations || [];
+    const totalAllocated = currentAllocations.reduce(
+      (sum, a) => sum + Number(a.quantity || 0),
+      0,
+    );
+
+    return {
+      ...(line as PurchaseOrderLineUI),
+      original_amount: original,
+      discount_amount: discountAmount,
+      net_amount: net,
+      vat_amount: vat,
+      gross_amount: gross,
+      allocations: currentAllocations,
+      initialAllocations: line.initialAllocations || currentAllocations,
+      is_allocated: qty > 0 && totalAllocated === qty,
+    };
+  };
+
+  // const calculateLine = (
+  //   line: Partial<PurchaseOrderLineUI>,
+  // ): PurchaseOrderLine => {
+  //   const qty = Number(line.quantity || 0);
+  //   const price = Number(line.unit_cost || 0);
+  //   const original = qty * price;
+  //   let discountAmount = 0;
+
+  //   if (line.discount_type === "PERCENT") {
+  //     discountAmount = original * (Number(line.discount_value || 0) / 100);
+  //   } else {
+  //     discountAmount = Number(line.discount_value || 0);
+  //   }
+
+  //   const net = original - discountAmount;
+  //   const vat = net * (Number(line.vat_percent || 0) / 100);
+  //   const gross = net + vat;
+
+  //   return {
+  //     ...(line as PurchaseOrderLineUI),
+  //     original_amount: original,
+  //     discount_amount: discountAmount,
+  //     net_amount: net,
+  //     vat_amount: vat,
+  //     gross_amount: gross,
+  //   };
+  // };
 
   const handleVatChange = (index: number, selectedVatOptionId: string) => {
     const selectedOption = vatOptions.find(
@@ -138,51 +250,72 @@ export default function PurchaseOrderLines({
     setLines(lines.filter((_, i) => i !== index));
   };
 
-  const calculateLine = (
-    line: Partial<PurchaseOrderLineUI>,
-  ): PurchaseOrderLine => {
-    const qty = Number(line.quantity || 0);
-    const price = Number(line.unit_cost || 0);
-    const original = qty * price;
-    let discountAmount = 0;
-
-    if (line.discount_type === "PERCENT") {
-      discountAmount = original * (Number(line.discount_value || 0) / 100);
-    } else {
-      discountAmount = Number(line.discount_value || 0);
-    }
-
-    const net = original - discountAmount;
-    const vat = net * (Number(line.vat_percent || 0) / 100);
-    const gross = net + vat;
-
-    return {
-      ...(line as PurchaseOrderLineUI),
-      original_amount: original,
-      discount_amount: discountAmount,
-      net_amount: net,
-      vat_amount: vat,
-      gross_amount: gross,
-    };
-  };
-
   const updateLine = <K extends keyof PurchaseOrderLineUI>(
     index: number,
     field: K,
     value: PurchaseOrderLineUI[K],
   ) => {
     const updated = [...lines];
-    updated[index] = { ...updated[index], [field]: value };
+    const targetLine = { ...updated[index], [field]: value };
 
+    // Reset allocations if quantity changes
     if (field === "quantity") {
-      updated[index].allocations = undefined;
-      updated[index].initialAllocations = undefined;
-      updated[index].is_allocated = false;
+      targetLine.allocations = [];
+      targetLine.initialAllocations = [];
+      targetLine.is_allocated = false;
     }
 
-    updated[index] = calculateLine(updated[index]);
+    updated[index] = calculateLine(targetLine);
     setLines(updated);
   };
+
+  // const updateLine = <K extends keyof PurchaseOrderLineUI>(
+  //   index: number,
+  //   field: K,
+  //   value: PurchaseOrderLineUI[K],
+  // ) => {
+  //   const updated = [...lines];
+  //   updated[index] = { ...updated[index], [field]: value };
+
+  //   if (field === "quantity") {
+  //     updated[index].allocations = undefined;
+  //     updated[index].initialAllocations = undefined;
+  //     updated[index].is_allocated = false;
+  //   }
+
+  //   updated[index] = calculateLine(updated[index]);
+  //   setLines(updated);
+  // };
+
+  // const changeLineType = (
+  //   index: number,
+  //   type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
+  // ) => {
+  //   const updated = [...lines];
+
+  //   updated[index] = {
+  //     ...updated[index],
+
+  //     line_type: type,
+
+  //     item_id: undefined,
+  //     item_code: undefined,
+  //     item_name: undefined,
+
+  //     gl_account_id: undefined,
+  //     account_code: undefined,
+  //     account_name: undefined,
+
+  //     warehouse_id: undefined,
+  //     warehouse_code: undefined,
+  //     warehouse_name: undefined,
+
+  //     allocations: undefined,
+  //     is_allocated: false,
+  //   };
+
+  //   setLines(updated);
+  // };
 
   const changeLineType = (
     index: number,
@@ -190,56 +323,82 @@ export default function PurchaseOrderLines({
   ) => {
     const updated = [...lines];
 
-    updated[index] = {
+    updated[index] = calculateLine({
       ...updated[index],
-
       line_type: type,
-
       item_id: undefined,
       item_code: undefined,
       item_name: undefined,
-
       gl_account_id: undefined,
       account_code: undefined,
       account_name: undefined,
-
       warehouse_id: undefined,
       warehouse_code: undefined,
       warehouse_name: undefined,
-
-      allocations: undefined,
+      allocations: [],
+      initialAllocations: [],
       is_allocated: false,
-    };
+    });
 
     setLines(updated);
   };
 
+  // const handleSaveAllocations = (
+  //   allocationsData: PO_StockAllocationRecord[],
+  // ) => {
+  //   if (activeAllocationRowKey === null) return;
+  //   const targetIdx = parseInt(activeAllocationRowKey, 10);
+
+  //   setLines((prev) =>
+  //     prev.map((line, index) => {
+  //       if (index !== targetIdx) return line;
+
+  //       const totalAllocated = allocationsData.reduce(
+  //         (sum, a) => sum + a.quantity,
+  //         0,
+  //       );
+
+  //       return {
+  //         ...line,
+  //         allocations: allocationsData,
+  //         initialAllocations: allocationsData,
+  //         is_allocated: totalAllocated === (line.quantity || 0),
+  //       };
+  //     }),
+  //   );
+
+  //   setIsAllocationModalOpen(false);
+  //   setActiveAllocationRowKey(null);
+  // };
+
+  // FIX 3: Save allocations using stable line matching
   const handleSaveAllocations = (
     allocationsData: PO_StockAllocationRecord[],
   ) => {
-    if (activeAllocationRowKey === null) return;
-    const targetIdx = parseInt(activeAllocationRowKey, 10);
+    if (!activeAllocationLineId) return;
 
     setLines((prev) =>
       prev.map((line, index) => {
-        if (index !== targetIdx) return line;
+        const lineKey = line.id || line._key || `temp-line-${index}`;
+        if (lineKey !== activeAllocationLineId) return line;
 
         const totalAllocated = allocationsData.reduce(
-          (sum, a) => sum + a.quantity,
+          (sum, a) => sum + Number(a.quantity || 0),
           0,
         );
+        const lineQty = Number(line.quantity || 0);
 
         return {
           ...line,
           allocations: allocationsData,
           initialAllocations: allocationsData,
-          is_allocated: totalAllocated === (line.quantity || 0),
+          is_allocated: lineQty > 0 && totalAllocated === lineQty,
         };
       }),
     );
 
     setIsAllocationModalOpen(false);
-    setActiveAllocationRowKey(null);
+    setActiveAllocationLineId(null);
   };
 
   const handleDiscountTypeChange = (index: number, value: string) => {
@@ -308,16 +467,22 @@ export default function PurchaseOrderLines({
               <th className="p-2 w-[90px]">Disc. Type</th>
               <th className="p-2 text-right w-[90px]">Discount</th>
               <th className="p-2 text-left w-[120px]">VAT Rate</th>
-              <th className="p-2 text-right w-[90px] wrap-break-word">Original Amount</th>
-              <th className="p-2 text-right w-[80px] wrap-break-word">Discount Amount</th>
-              <th className="p-2 text-right w-[90px] wrap-break-word">Total Amount</th>
+              <th className="p-2 text-right w-[90px] wrap-break-word">
+                Original Amount
+              </th>
+              <th className="p-2 text-right w-[80px] wrap-break-word">
+                Discount Amount
+              </th>
+              <th className="p-2 text-right w-[90px] wrap-break-word">
+                Total Amount
+              </th>
               <th className="p-2 text-right w-[80px] wrap-break-word">VAT</th>
               <th className="p-2 text-center w-[80px]">Action</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
-            {lines.length === 0 && (
+            {linesWithKeys.length === 0 && (
               <tr>
                 <td colSpan={16} className="text-center p-8 text-gray-500 ">
                   No lines added
@@ -325,12 +490,13 @@ export default function PurchaseOrderLines({
               </tr>
             )}
 
-            {lines.map((line, index) => {
+            {linesWithKeys.map((line, index) => {
               const displayQty = Number(line.quantity || 0);
               const receivedQty = Number(line.received_quantity || 0);
               const isStockReceived = receivedQty > 0;
-              const isFullyReceived =
-                receivedQty >= displayQty && displayQty > 0;
+
+              // const isFullyReceived =
+              //   receivedQty >= displayQty && displayQty > 0;
 
               const isLineDisabled = isReadonly || isStockReceived;
 
@@ -340,16 +506,29 @@ export default function PurchaseOrderLines({
               const displayDiscountAmount = Number(line.discount_amount || 0);
               const displayVATAmount = Number(line.vat_amount || 0);
               const displayVatPercent = Number(line.vat_percent || 0);
-              const displayAvailableStock =
-                line.available_stock !== undefined
-                  ? Number(line.available_stock)
-                  : undefined;
+
+              // const displayAvailableStock =
+              //   line.available_stock !== undefined
+              //     ? Number(line.available_stock)
+              //     : undefined;
 
               const isAllocationDisabled = !line.item_id || !line.warehouse_id;
 
+              const currentAllocations =
+                line.allocations || line.initialAllocations || [];
+              const totalAllocated = currentAllocations.reduce(
+                (sum, a) => sum + Number(a.quantity || 0),
+                0,
+              );
+              const isFullyAllocated =
+                displayQty > 0 && totalAllocated === displayQty;
+              const isPartiallyAllocated =
+                totalAllocated > 0 && totalAllocated < displayQty;
+
               return (
                 <tr
-                  key={index}
+                  // key={index}
+                  key={line._stableKey}
                   className={`border-b transition-colors ${
                     isStockReceived
                       ? "bg-slate-50/70 dark:bg-slate-800/30"
@@ -405,7 +584,7 @@ export default function PurchaseOrderLines({
 
                   <td className="p-2">
                     <input
-                    type="text"
+                      type="text"
                       value={line.description || ""}
                       disabled={isLineDisabled}
                       onChange={(e) =>
@@ -417,15 +596,6 @@ export default function PurchaseOrderLines({
                   </td>
 
                   <td className="p-2">
-                    {/* <input
-                      type="number"
-                      value={displayQty}
-                      disabled={isLineDisabled || line.line_type === "COMMENT"}
-                      onChange={(e) =>
-                        updateLine(index, "quantity", Number(e.target.value))
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
-                    /> */}
                     <NumericTextInput
                       value={displayQty}
                       allowDecimals={false}
@@ -470,15 +640,6 @@ export default function PurchaseOrderLines({
                     )}
                   </td>
                   <td className="p-2">
-                    {/* <input
-                      type="number"
-                      value={displayUnitCost}
-                      disabled={isLineDisabled}
-                      onChange={(e) =>
-                        updateLine(index, "unit_cost", Number(e.target.value))
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
-                    /> */}
                     <NumericTextInput
                       value={displayUnitCost}
                       allowDecimals={true}
@@ -514,19 +675,6 @@ export default function PurchaseOrderLines({
                       }
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-[11px] text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
-                    {/* <input
-                      type="number"
-                      value={displayDiscountValue}
-                      disabled={isLineDisabled}
-                      onChange={(e) =>
-                        updateLine(
-                          index,
-                          "discount_value",
-                          Number(e.target.value),
-                        )
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
-                    /> */}
                   </td>
 
                   <td className="p-2">
@@ -566,35 +714,59 @@ export default function PurchaseOrderLines({
                   </td>
 
                   <td className="p-2 text-right font-semibold text-[11px]">
-                    {Number(displayVATAmount|| 0).toFixed(2)}
+                    {Number(displayVATAmount || 0).toFixed(2)}
                   </td>
 
                   <td className="p-2 text-center">
-                    <div className="flex items-center justify-center gap-2">{/* !isReadonly &&  */}
+                    <div className="flex items-center justify-center gap-2">
+                      {/* !isReadonly &&  */}
                       {line.line_type === "ITEM" ? (
                         <button
                           type="button"
                           disabled={isAllocationDisabled}
+                          // onClick={() => {
+                          //   setActiveAllocationRowKey(index.toString());
+                          //   setIsAllocationModalOpen(true);
+                          // }}
                           onClick={() => {
-                            setActiveAllocationRowKey(index.toString());
+                            setActiveAllocationLineId(line._stableKey);
                             setIsAllocationModalOpen(true);
                           }}
                           className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                            // 🟡 YELLOW / AMBER = Stock Received
                             isStockReceived
-                              ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
-                              : // 🟢 GREEN = Allocated Stock (Fully allocated)
-                                line.is_allocated
+                              ? "text-amber-500"
+                              : isFullyAllocated || line.is_allocated
                                 ? "text-emerald-500"
-                                : // 🔴 RED = Partially Allocated (Not fully allocated yet)
-                                  "text-indigo-500"
+                                : isPartiallyAllocated
+                                  ? "text-amber-500"
+                                  : "text-indigo-500"
                           }`}
+                          // className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                          //   // 🟡 YELLOW / AMBER = Stock Received
+                          //   isStockReceived
+                          //     ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
+                          //     : // 🟢 GREEN = Allocated Stock (Fully allocated)
+                          //       line.is_allocated
+                          //       ? "text-emerald-500"
+                          //       : // 🔴 RED = Partially Allocated (Not fully allocated yet)
+                          //         "text-indigo-500"
+                          // }`}
+                          // title={
+                          //   isStockReceived
+                          //     ? `Stock Received (${receivedQty}/${displayQty}).`
+                          //     : line.is_allocated
+                          //       ? "Allocated Stock"
+                          //       : "Partially Allocated"
+                          // }
+
                           title={
                             isStockReceived
-                              ? `Stock Received (${receivedQty}/${displayQty}).`
-                              : line.is_allocated
-                                ? "Allocated Stock"
-                                : "Partially Allocated"
+                              ? `Stock Received (${receivedQty}/${displayQty})`
+                              : isFullyAllocated || line.is_allocated
+                                ? "Allocated Stock (Complete)"
+                                : isPartiallyAllocated
+                                  ? `Partially Allocated (${totalAllocated}/${displayQty})`
+                                  : "Not Allocated"
                           }
                         >
                           <Icon icon="tabler:box-seam" className="w-4 h-4" />
@@ -768,7 +940,43 @@ export default function PurchaseOrderLines({
         }}
       />
 
-      {isAllocationModalOpen &&
+      {isAllocationModalOpen && activeAllocationLine && (
+        <PO_StockAllocationModal
+          key={`allocation-row-${activeAllocationLine._stableKey}`}
+          open={isAllocationModalOpen}
+          onClose={() => {
+            setIsAllocationModalOpen(false);
+            setActiveAllocationLineId(null);
+          }}
+          targetQuantity={Number(activeAllocationLine.quantity || 0)}
+          itemId={activeAllocationLine.item_id || ""}
+          itemCode={activeAllocationLine.item_code || ""}
+          itemName={activeAllocationLine.item_name || ""}
+          warehouseId={activeAllocationLine.warehouse_id || ""}
+          warehouseName={activeAllocationLine.warehouse_name || ""}
+          uomName={activeAllocationLine.uom_name || ""}
+          initialAllocations={(
+            activeAllocationLine.allocations ||
+            activeAllocationLine.initialAllocations ||
+            []
+          ).map((alloc) => ({
+            location_id: String(alloc.location_id || ""),
+            location_name: String(alloc.location_name || ""),
+            date_received: String(alloc.date_received || ""),
+            prod_date: String(alloc.prod_date || ""),
+            expiry_date: String(alloc.expiry_date || ""),
+            batch_no: String(alloc.batch_no || ""),
+            // bin_code: String(alloc.bin_code || ""),
+            serial_no: String(alloc.serial_no || ""),
+            quantity: Number(alloc.quantity || 0),
+          }))}
+          onSave={(allocationsPayload) =>
+            handleSaveAllocations(allocationsPayload)
+          }
+        />
+      )}
+
+      {/* {isAllocationModalOpen &&
         activeAllocationRowKey !== null &&
         activeAllocationLine && (
           <PO_StockAllocationModal
@@ -804,7 +1012,7 @@ export default function PurchaseOrderLines({
               handleSaveAllocations(allocationsPayload)
             }
           />
-        )}
+        )} */}
 
       <MigrationUploadModal
         open={isMigrationModalOpen}
@@ -821,151 +1029,3 @@ export default function PurchaseOrderLines({
     </div>
   );
 }
-
-/* 
-  const totals = useMemo(() => {
-    return lines.reduce(
-      (acc, line) => {
-        acc.original += Number(line.original_amount || 0);
-        acc.discount += Number(line.discount_amount || 0);
-        acc.net += Number(line.net_amount || 0);
-        acc.vat += Number(line.vat_amount || 0);
-        acc.gross += Number(line.gross_amount || 0);
-        return acc;
-      },
-      {
-        original: 0,
-        discount: 0,
-        net: 0,
-        vat: 0,
-        gross: 0,
-      },
-    );
-  }, [lines]);
-*/
-{
-  /* RECEIVED STOCK INDICATOR BADGE */
-}
-{
-  /* {isStockReceived && (
-  <div
-    className={`text-[10px] font-medium px-1.5 py-0.5 rounded text-center whitespace-nowrap ${
-      isFullyReceived
-        ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800"
-        : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800"
-    }`}
-  >
-    Rcvd: {receivedQty} / {displayQty}
-  </div>
-)} */
-}
-{
-  /* 
-<tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
-  <tr>
-    <td
-      colSpan={9}
-      className="p-2.5 text-right capitalize tracking-wider text-xs"
-    >
-      Totals
-    </td>
-    <td className="p-2.5 text-right font-mono text-amber-600 dark:text-amber-400">
-      {totals.discount.toFixed(2)}
-    </td>
-    <td className="p-2.5" />
-    <td className="p-2.5 text-right font-mono">
-      {totals.net.toFixed(2)}
-    </td>
-    <td className="p-2.5 text-right font-mono">
-      {totals.gross.toFixed(2)}
-    </td>
-    {!isReadonly && <td />}
-  </tr>
-</tfoot> 
-*/
-}
-
-{
-  /* <div className="flex items-center gap-3 shrink-0">
-        // ✅ RESERVED STOCK INDICATOR
-        {line.reserved_quantity && (
-          <span className="text-blue-600 whitespace-nowrap">
-            Reserved: {Number(line.reserved_quantity)}
-          </span>
-        )}
-
-        // ❗ STOCK WARNING 
-        {displayAvailableStock !== undefined &&
-          displayQty > displayAvailableStock && (
-            <span className="text-red-600 font-medium whitespace-nowrap">
-              Insufficient stock
-            </span>
-          )}
-      </div> */
-}
-/* 
-{!isReadonly && (
-  <td className="p-2 text-center">
-    <div className="flex items-center justify-center gap-2">
-      {line.line_type === "ITEM" ? (
-        <button
-          type="button"
-          disabled={isAllocationDisabled}
-          onClick={() => {
-            setActiveAllocationRowKey(index.toString());
-            setIsAllocationModalOpen(true);
-          }}
-          className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-            // 🟡 YELLOW / AMBER = Stock Received
-            isStockReceived
-              ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
-              : // 🟢 GREEN = Allocated Stock (Fully allocated)
-                line.is_allocated
-                ? "text-emerald-500"
-                : // 🔴 RED = Partially Allocated (Not fully allocated yet)
-                  "text-rose-500"
-          }`}
-          title={
-            isStockReceived
-              ? `Stock Received (${receivedQty}/${displayQty}).`
-              : line.is_allocated
-                ? "Allocated Stock"
-                : "Partially Allocated"
-          }
-          // title={
-          //   isStockReceived
-          //     ? `Stock Received (${receivedQty}/${displayQty}). Allocation locked.`
-          //     : isAllocationDisabled
-          //       ? "Requires item and warehouse assignment first"
-          //       : "Open Allocation Matrix"
-          // }
-        >
-
-          <Icon icon="tabler:box-seam" className="w-4 h-4" />
-        </button>
-      ) : (
-        <div className="w-4 h-4" />
-      )}
-
-
-      {!isStockReceived ? (
-        <button
-          type="button"
-          onClick={() => removeLine(index)}
-          // className="text-red-600 hover:text-red-800 font-medium text-xs"
-          className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
-        >
-          <Icon icon="lucide:x" className="w-4 h-4" />
-        </button>
-      ) : (
-        <span
-          className="text-[10px] text-slate-400 italic cursor-help"
-          title="Line locked because stock has been received against it."
-        >
-          -
-        </span>
-      )}
-    </div>
-  </td>
-)}
-*/

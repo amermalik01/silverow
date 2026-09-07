@@ -12,8 +12,15 @@ import {
   PurchaseOrder,
   PurchaseOrderAddress,
   PurchaseOrderLine,
+  PurchaseOrderLineUI,
   PurchaseOrderMasterData,
 } from "@/types/purchase-order";
+
+type FetchLinesAPIResponse = {
+  lines?: PurchaseOrderLineUI[];
+  success?: boolean;
+  error?: string;
+};
 
 import PurchaseOrderLines from "./PurchaseOrderLines";
 import { OrderFormTabs } from "./OrderFormTabs";
@@ -35,6 +42,7 @@ import {
   SalesOrderLookupItem,
   SalesOrderLookupModal,
 } from "../../shared/modals/SalesOrderLookupModal";
+import { PO_StockAllocationRecord } from "../../shared/modals/PO_StockAllocationModal";
 
 interface Props {
   slug: string;
@@ -201,11 +209,41 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const refreshLines = async () => {
     if (!order.id) return;
 
-    const response = await fetch(`/api/purchase-orders/${order.id}/lines`);
+    try {
+      const response = await fetch(`/api/purchase-orders/${order.id}/lines`);
 
-    const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`Failed to fetch lines: ${response.statusText}`);
+      }
 
-    setLines(data.lines ?? []);
+      const data: FetchLinesAPIResponse = await response.json();
+
+      // const data = await response.json();
+      // setLines(data.lines ?? []);
+
+      const formattedLines: PurchaseOrderLineUI[] = (data.lines ?? []).map(
+        (line) => {
+          const resolvedAllocations: PO_StockAllocationRecord[] =
+            line.allocations ??
+            line.stock_allocations ??
+            line.po_line_allocations ??
+            [];
+
+          return {
+            ...line,
+            // Maintain UI state keys for table iteration
+            _stableKey: line._stableKey || line.id || `line-${line.line_no}`,
+            allocations: resolvedAllocations,
+            initialAllocations: resolvedAllocations,
+            is_allocated: resolvedAllocations.length > 0,
+          };
+        },
+      );
+
+      setLines(formattedLines);
+    } catch (err) {
+      console.error("Error refreshing purchase order lines:", err);
+    }
   };
 
   const selectedCurrency = useMemo(() => {
@@ -405,11 +443,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     }));
     setPOModalOpen(false);
   };
-
-  // onPurchaseOrderSelect={handlePurchaseOrderSelection}
-  //         onSalesOrderSelect={handleSalesOrderSelection}
-  //         onCustomerSelect={handleCustomerSelection}
-  //         onShippingAgentSelect={handleShippingAgentSelection}
 
   const updateField = <K extends keyof PurchaseOrder>(
     field: K,
@@ -644,7 +677,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     try {
       toast.loading("Posting purchase invoice..", {
         id: "action-toast",
-      });//  to G/L ledger.
+      }); //  to G/L ledger.
 
       const res = await fetch(`/api/purchase-orders/${id}/post-invoice`, {
         method: "POST",
@@ -664,7 +697,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       toast.success("Purchase invoice posted cleanly!", { id: "action-toast" });
       setShowInvoiceModal(false);
 
-      router.push(`/${slug}/purchases/purchase-orders`);
+      router.push(`/${slug}/purchases/purchase-orders/create`);
       // router.refresh();
     } catch (err) {
       if (err instanceof Error)

@@ -725,7 +725,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       toast.success("Sales invoice posted cleanly!", { id: "action-toast" });
       setShowInvoiceModal(false);
 
-      router.push(`/${slug}/sales/sales-orders`);
+      router.push(`/${slug}/sales/orders/new`);
     } catch (err) {
       if (err instanceof Error)
         toast.error(err.message || "Error posting invoice", {

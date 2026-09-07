@@ -702,7 +702,7 @@ export const DebitNoteForm: React.FC<Props> = ({
       toast.success("Debit note posted cleanly!", { id: "action-toast" });
       setShowInvoiceModal(false);
 
-      router.push(`/${slug}/purchases/debit-notes`);
+      router.push(`/${slug}/purchases/debit-notes/create`);
     } catch (err) {
       if (err instanceof Error)
         // setValidationErrors([err.message]);

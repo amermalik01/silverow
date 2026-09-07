@@ -274,6 +274,12 @@ input[type="time"]::-webkit-calendar-picker-indicator { display: none; -webkit-a
 input[type="time"] { -moz-appearance: textfield; }
 [data-testid="flowbite-drawer"] { will-change: transform; -webkit-transform: translate3d(0, 0, 0); }
 
+.custom-attachment{
+  /* padding: 2px !important; */
+  @apply p-2
+
+}
+
 /* 
 @import 'tailwindcss';
 @import './app.css';

@@ -27,3 +27,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.custom-attachment{
+  /* padding: 2px !important; */
+  @apply p-2
+
+}
