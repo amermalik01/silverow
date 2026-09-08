@@ -10,6 +10,7 @@ import {
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 import { validateLedgerPostingDate } from "@/lib/validations/postingGate";
 import { FxVarianceService } from "./fx/fx-variance.service";
+import { AllocationService } from "./payments/allocation.service";
 
 export interface ColumnFilter {
   value?: string | number | boolean | null;
@@ -1005,6 +1006,7 @@ export class JournalService {
         const isSupplier =
           line.party_type === "supplier" ||
           journal.source === "SUPPLIER_JOURNAL";
+
         const isCustomer =
           line.party_type === "customer" ||
           journal.source === "CUSTOMER_JOURNAL";
@@ -1089,23 +1091,8 @@ export class JournalService {
           credit_fcy: creditFCY,
           debit_lcy: debitLCY,
           credit_lcy: creditLCY,
-          // debit: line.debit || 0,
-          // credit: line.credit || 0,
-          // debit_lcy: debitLCY,
-          // credit_lcy: creditLCY,
           is_balancing: false,
         });
-        // expandedLegs.push({
-        //   journal_line_id: line.journal_line_id,
-        //   account_id: mainAccountId,
-        //   party_type: line.party_type || null,
-        //   party_id: line.party_id || null,
-        //   document_type: line.document_type || null,
-        //   description: line.description || journal.description || null,
-        //   debit: debitLCY,
-        //   credit: creditLCY,
-        //   is_balancing: false,
-        // });
 
         // Add Offsetting Balancing Leg if inline reference_id exists
         if (line.reference_id) {
@@ -1123,28 +1110,12 @@ export class JournalService {
               : journal.description || null,
             currency_id: line.currency_id || null,
             exchange_rate: rate,
-            // debit: line.credit || 0,
-            // credit: line.debit || 0,
             debit_fcy: creditFCY,
             credit_fcy: debitFCY,
             debit_lcy: creditLCY,
             credit_lcy: debitLCY,
             is_balancing: true,
           });
-
-          // expandedLegs.push({
-          //   journal_line_id: line.journal_line_id,
-          //   account_id: line.reference_id,
-          //   party_type: null,
-          //   party_id: null,
-          //   document_type: line.document_type || null,
-          //   description: line.description
-          //     ? `Balancing: ${line.description}`
-          //     : journal.description || null,
-          //   debit: creditLCY,
-          //   credit: debitLCY,
-          //   is_balancing: true,
-          // });
         }
       }
 
@@ -1250,16 +1221,6 @@ export class JournalService {
             ? "vendor_ledger_entries"
             : "customer_ledger_entries";
           const partyCol = isSupplier ? "vendor_id" : "customer_id";
-
-          // Standardize document type (PAYMENT vs INVOICE)
-          // For AP (Supplier): Debit = Payment/Debit Note, Credit = Invoice/Bill
-          // For AR (Customer): Credit = Payment/Credit Note, Debit = Invoice
-          // let docType = "PAYMENT";
-          // if (isSupplier) {
-          //   docType = leg.debit > 0 ? "PAYMENT" : "INVOICE";
-          // } else {
-          //   docType = leg.credit > 0 ? "PAYMENT" : "INVOICE";
-          // }
 
           let docType: string;
 
@@ -1369,24 +1330,31 @@ export class JournalService {
             WHERE journal_line_id = $2
               AND company_id = $3
               AND is_unapplied = false
-            RETURNING ledger_entry_id, allocated_amount_fcy, allocation_type
+            RETURNING id, ledger_entry_id, allocated_amount_fcy, allocation_type
             `,
             [targetSubEntryId, leg.journal_line_id, companyId],
           );
 
           let totalAllocatedFCY = 0;
+          const paymentRate = Number(leg.exchange_rate || 1.0);
 
           // 1. Apply allocated payment amounts against open target invoices/documents
           for (const alloc of allocationsRes.rows) {
             const allocFCY = Number(alloc.allocated_amount_fcy);
             totalAllocatedFCY += allocFCY;
 
-            const subTable =
-              alloc.allocation_type === "AP"
-                ? "vendor_ledger_entries"
-                : "customer_ledger_entries";
+            const isAP = alloc.allocation_type === "AP";
+            const subTable = isAP
+              ? "vendor_ledger_entries"
+              : "customer_ledger_entries";
 
-            await client.query(
+            // const subTable =
+            //   alloc.allocation_type === "AP"
+            //     ? "vendor_ledger_entries"
+            //     : "customer_ledger_entries";
+
+            // Update Target Invoice/Document remaining balances
+            const targetDocRes = await client.query(
               `
               UPDATE ${subTable}
               SET 
@@ -1404,22 +1372,47 @@ export class JournalService {
                 END,
                 updated_at = NOW()
               WHERE id = $2 AND company_id = $3
+              RETURNING exchange_rate, document_no, currency_id
               `,
               [allocFCY, alloc.ledger_entry_id, companyId],
             );
 
-            // await client.query(
-            //   `
-            //   UPDATE ${subTable}
-            //   SET 
-            //     remaining_amount_fcy = remaining_amount_fcy - $1,
-            //     remaining_amount_lcy = remaining_amount_lcy - ($1 * exchange_rate),
-            //     is_open = CASE WHEN (remaining_amount_fcy - $1) = 0 THEN false ELSE true END,
-            //     updated_at = NOW()
-            //   WHERE id = $2 AND company_id = $3
-            //   `,
-            //   [alloc.allocated_amount_fcy, alloc.ledger_entry_id, companyId],
-            // );
+            const invoiceDoc = targetDocRes.rows[0];
+            const invoiceRate = Number(invoiceDoc?.exchange_rate || 1.0);
+
+            // 🎯 CALCULATE REALIZED FX VARIANCE
+            const fx = await FxVarianceService.calculateVariance(client, {
+              companyId,
+              allocationType: isAP ? "AP" : "AR",
+              invoiceExchangeRate: invoiceRate,
+              paymentExchangeRate: paymentRate,
+              allocatedAmountFCY: allocFCY,
+            });
+
+            // Update Realized Gain/Loss in ledger_allocations
+            await client.query(
+              `UPDATE ledger_allocations SET realized_gain_loss = $1 WHERE id = $2`,
+              [fx.realizedGainLoss, alloc.id],
+            );
+
+            // 🎯 POST FX GL ENTRIES
+            if (Math.abs(fx.realizedGainLoss) > 0.0001 && leg.party_id) {
+              await AllocationService["postFxGlEntries"](client, {
+                companyId,
+                allocationId: alloc.id,
+                allocationType: isAP ? "AP" : "AR",
+                partyType: isAP ? "supplier" : "customer",
+                partyId: leg.party_id,
+                varianceLCY: Math.abs(fx.realizedGainLoss),
+                fxGlAccountId: fx.glAccountId,
+                isGain: fx.isGain,
+                documentNo:
+                  invoiceDoc?.document_no ||
+                  leg.document_no ||
+                  journal.entry_no,
+                currencyId: invoiceDoc?.currency_id || leg.currency_id || null,
+              });
+            }
           }
 
           // 2. CRITICAL FIX: Deduct total allocated amount from the SOURCE Payment/Refund entry balance

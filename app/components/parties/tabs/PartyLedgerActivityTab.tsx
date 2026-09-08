@@ -287,29 +287,6 @@ export default function PartyLedgerActivityTab({
 
   return (
     <div className="space-y-4">
-      {/* Summary Cards */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
-          <span className="text-[11px]  text-amber-700 dark:text-amber-400 capitalize tracking-wider">
-            Open Outstanding Balance
-          </span>
-          <div className="text-lg font-bold font-mono text-amber-800 dark:text-amber-300">
-            {formatFCY(summary.totalRemainingFCY, currencyCode)}
-          </div>
-          <div className="text-xs font-mono text-amber-600/80 dark:text-amber-400/70">
-            LCY: {lcyFormatter.format(summary.totalRemainingLCY || 0)}
-          </div>
-        </div>
-
-        <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-200/50 dark:border-blue-900/30">
-          <span className="text-[11px]  text-blue-700 dark:text-blue-400 capitalize tracking-wider">
-            Open Entries Count
-          </span>
-          <div className="text-lg font-bold font-mono text-blue-800 dark:text-blue-300">
-            {summary.openCount} Entries
-          </div>
-        </div>
-      </div> */}
 
       {/* Tabs Filter Bar */}
       <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs w-fit">
@@ -421,6 +398,31 @@ export default function PartyLedgerActivityTab({
     </div>
   );
 }
+
+
+      {/* Summary Cards */}
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
+          <span className="text-[11px]  text-amber-700 dark:text-amber-400 capitalize tracking-wider">
+            Open Outstanding Balance
+          </span>
+          <div className="text-lg font-bold font-mono text-amber-800 dark:text-amber-300">
+            {formatFCY(summary.totalRemainingFCY, currencyCode)}
+          </div>
+          <div className="text-xs font-mono text-amber-600/80 dark:text-amber-400/70">
+            LCY: {lcyFormatter.format(summary.totalRemainingLCY || 0)}
+          </div>
+        </div>
+
+        <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-200/50 dark:border-blue-900/30">
+          <span className="text-[11px]  text-blue-700 dark:text-blue-400 capitalize tracking-wider">
+            Open Entries Count
+          </span>
+          <div className="text-lg font-bold font-mono text-blue-800 dark:text-blue-300">
+            {summary.openCount} Entries
+          </div>
+        </div>
+      </div> */}
 
 /* "use client";
 
