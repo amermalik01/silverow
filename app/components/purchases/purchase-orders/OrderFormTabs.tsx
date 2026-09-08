@@ -581,7 +581,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             <div className="space-y-2 ">
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Pay to Supplier No.">
-                  Pay to Suppl. No.
+                  Pay to <br></br> Suppl. No.
                 </label>
                 <div className="col-span-8 flex gap-1">
                   <input
@@ -955,7 +955,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
 
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>Linked PO</label>
+                <label className={labelStyle}>Linked PO-S</label>
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
@@ -1024,7 +1024,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 </div>
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle} title="Address Line 2">Add.Line 2</label>
+                <label className={labelStyle} title="Address Line 2">Add. Line 2</label>
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
@@ -1219,7 +1219,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Warehouse Reference No.">
-                  Wrh. Ref. No.
+                  WH. Ref. No.
                 </label>
                 <input
                   type="text"
