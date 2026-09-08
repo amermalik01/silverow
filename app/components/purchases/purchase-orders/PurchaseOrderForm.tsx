@@ -722,7 +722,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const handlePostInvoiceClick = () => {
     if (!order.reference) {
       toast.error(
-        "Please enter a Vendor Invoice/Reference number before posting.",
+        "Please enter a Supplier Invoice No. before posting.",
       );
       return;
     }
@@ -968,7 +968,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         />
 
         <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 px-2">
-          <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
+          <div className="space-x-2 gap-y-2 col-span-2 grid grid-cols-3 items-start">
             <div>
               <textarea
                 placeholder="Add Internal Notes"

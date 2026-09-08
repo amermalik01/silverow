@@ -560,7 +560,7 @@ export default function PurchaseOrderLines({
                           disabled={isLineDisabled}
                           title={line.item_name}
                           onClick={() => setItemIndex(index)}
-                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] text-[11px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-full text-[11px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {line.item_code || "Select Item"}
                         </button>
@@ -574,7 +574,7 @@ export default function PurchaseOrderLines({
                           title={line.account_name}
                           disabled={isLineDisabled}
                           onClick={() => setGlIndex(index)}
-                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-[120px] text-[11px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-full text-[11px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {line.account_code || "Select GL"}
                         </button>
