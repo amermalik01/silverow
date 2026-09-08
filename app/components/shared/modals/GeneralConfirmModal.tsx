@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 interface GeneralConfirmModalProps {
   isOpen: boolean;
   title?: string;
-  message: string;
+  // message: string;
+  message: React.ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;

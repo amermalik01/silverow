@@ -761,8 +761,8 @@ export class AllocationService {
       0.0, // $13 (credit_fcy)
       allocationId, // $14 (source_document_id)
       documentNo, // $15 (source_document_no)
-      partyType, // $16
-      partyId, // $17
+      null, // $16 (party_type)
+      null, // $17 (party_id)
       documentNo, // $18
       userId || null, // $19
     ]);
@@ -970,7 +970,8 @@ export class AllocationService {
     }
   } */
 
-/* private static async postFxGlEntries(
+/* 
+private static async postFxGlEntries(
     client: PoolClient,
     params: {
       companyId: string;

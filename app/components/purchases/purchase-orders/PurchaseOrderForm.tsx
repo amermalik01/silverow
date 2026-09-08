@@ -135,7 +135,43 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     Partial<PurchaseOrderAddress>
   >({ address_type: "shipping" });
 
-  const [lines, setLines] = useState<PurchaseOrderLine[]>([]);
+  const createEmptyPurchaseOrderLine = (): PurchaseOrderLineUI => ({
+    _key: `temp-${Date.now()}-${Math.random()}`,
+    line_type: "ITEM",
+
+    item_id: undefined,
+    item_code: undefined,
+    item_name: undefined,
+
+    description: "",
+    quantity: 1,
+
+    unit_cost: 0,
+    discount_type: "PERCENT",
+    discount_value: 0,
+
+    vat_percent: 0,
+    original_amount: 0,
+    discount_amount: 0,
+    net_amount: 0,
+    vat_amount: 0,
+    gross_amount: 0,
+
+    warehouse_id: undefined,
+    warehouse_code: undefined,
+    warehouse_name: undefined,
+
+    is_allocated: false,
+    received_quantity: 0,
+
+    allocations: [],
+    initialAllocations: [],
+  });
+
+  // const [lines, setLines] = useState<PurchaseOrderLine[]>([]);
+  const [lines, setLines] = useState<PurchaseOrderLineUI[]>(
+    id ? [] : [createEmptyPurchaseOrderLine()],
+  );
 
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
@@ -155,6 +191,32 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       const qty = Number(l.quantity || 0);
       const rcvd = Number(l.received_quantity || 0);
       return qty > 0 && rcvd >= qty;
+    });
+  }, [lines]);
+
+  const isFullyAllocated = useMemo(() => {
+    const itemLines = lines.filter(
+      (line) => (line.line_type || "ITEM") === "ITEM",
+    );
+
+    if (itemLines.length === 0) return false;
+
+    return itemLines.every((line) => {
+      const quantity = Number(line.quantity || 0);
+
+      const allocations = line.allocations || line.initialAllocations || [];
+
+      const allocatedQuantity = allocations.reduce(
+        (sum, allocation) => sum + Number(allocation.quantity || 0),
+        0,
+      );
+
+      return (
+        line.item_id &&
+        line.warehouse_id &&
+        quantity > 0 &&
+        allocatedQuantity === quantity
+      );
     });
   }, [lines]);
 
@@ -291,9 +353,20 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     };
   }, [lines, currencyConfig.exchange_rate]);
 
+  const hasSelectedLineItem = useMemo(() => {
+    return lines.some((line) => {
+      return !!line.item_id || !!line.gl_account_id;
+    });
+  }, [lines]);
+
   const handleGeneralSupplierSelection = () => {
     setSupplierSelectionSource("general");
-    if (lines.length > 0) {
+    // if (lines.length > 0) {
+    //   setShowSupplierChangeModal(true);
+    //   return;
+    // }
+
+    if (hasSelectedLineItem) {
       setShowSupplierChangeModal(true);
       return;
     }
@@ -302,7 +375,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   const handleInvoicingSupplierSelection = () => {
     setSupplierSelectionSource("invoicing");
-    if (lines.length > 0) {
+    // if (lines.length > 0) {
+    //   setShowSupplierChangeModal(true);
+    //   return;
+    // }
+    if (hasSelectedLineItem) {
       setShowSupplierChangeModal(true);
       return;
     }
@@ -311,7 +388,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   const handleConfirmSupplierChange = () => {
     // Remove all existing PO lines.
-    setLines([]);
+    // setLines([]);
+    setLines([createEmptyPurchaseOrderLine()]);
 
     // Close confirmation modal.
     setShowSupplierChangeModal(false);
@@ -454,6 +532,101 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     setOrder((prev) => ({ ...prev, [field]: value }));
   };
 
+  const validateLines = (): string[] => {
+    const errors: string[] = [];
+
+    if (lines.length === 0) {
+      errors.push("Purchase orders require at least one line.");
+      return errors;
+    }
+
+    lines.forEach((line, index) => {
+      const lineNo = index + 1;
+      const lineType = line.line_type || "ITEM";
+      const quantity = Number(line.quantity || 0);
+
+      if (lineType === "ITEM") {
+        if (!line.item_id) {
+          errors.push(`Line ${lineNo}: Please select an item.`);
+        }
+
+        if (!line.warehouse_id) {
+          errors.push(`Line ${lineNo}: Warehouse is required.`);
+        }
+
+        if (quantity <= 0) {
+          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
+        }
+      } else if (lineType === "GL_ACCOUNT") {
+        if (!line.gl_account_id) {
+          errors.push(`Line ${lineNo}: Please select a G/L account.`);
+        }
+
+        if (quantity <= 0) {
+          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
+        }
+      } else {
+        errors.push(`Line ${lineNo}: Invalid line type.`);
+      }
+    });
+
+    return errors;
+  };
+
+  const allocationValidation = useMemo(() => {
+    const itemLines = lines.filter(
+      (line) => (line.line_type || "ITEM") === "ITEM",
+    );
+
+    const errors: string[] = [];
+
+    if (itemLines.length === 0) {
+      return {
+        valid: false,
+        errors: ["At least one item line is required."],
+      };
+    }
+
+    itemLines.forEach((line, index) => {
+      const quantity = Number(line.quantity || 0);
+
+      const allocations = line.allocations || line.initialAllocations || [];
+
+      const allocatedQuantity = allocations.reduce(
+        (sum, allocation) => sum + Number(allocation.quantity || 0),
+        0,
+      );
+
+      if (!line.item_id) {
+        errors.push(`Item line ${index + 1}: Item has not been selected.`);
+        return;
+      }
+
+      if (!line.warehouse_id) {
+        errors.push(`Item line ${index + 1}: Warehouse has not been selected.`);
+        return;
+      }
+
+      if (quantity <= 0) {
+        errors.push(
+          `Item line ${index + 1}: Quantity must be greater than zero.`,
+        );
+        return;
+      }
+
+      if (allocatedQuantity !== quantity) {
+        errors.push(
+          `Item line ${index + 1}: Stock allocation is incomplete (${allocatedQuantity}/${quantity}).`,
+        );
+      }
+    });
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
+  }, [lines]);
+
   const validateForm = (): boolean => {
     const errors: string[] = [];
     if (!order.supplier_id) errors.push("Supplier selection is required.");
@@ -470,9 +643,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
     if (!currencyConfig.currency_id)
       errors.push("Transactional currency is required.");
-    if (lines.length === 0)
-      errors.push("Purchase orders require at least one line item.");
+    // if (lines.length === 0)
+    //   errors.push("Purchase orders require at least one line item.");
 
+    errors.push(...validateLines());
     errors.push(...validateDates());
 
     setValidationErrors(errors);
@@ -519,9 +693,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   const handleSave = async () => {
     if (!validateForm()) {
-      toast.error(
-        "Please fix layout constraints validation errors before saving.",
-      );
+      toast.error("Please fix validation errors before saving.");
       return;
     }
 
@@ -632,9 +804,75 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     }
   };
 
+  const validateBeforeStockAction = (): boolean => {
+    const errors: string[] = [];
+
+    if (lines.length === 0) {
+      errors.push("Purchase order has no lines.");
+    }
+
+    lines.forEach((line, index) => {
+      const lineNo = index + 1;
+      const lineType = line.line_type || "ITEM";
+
+      if (lineType === "ITEM") {
+        const quantity = Number(line.quantity || 0);
+
+        if (!line.item_id) {
+          errors.push(`Line ${lineNo}: Item is required.`);
+          return;
+        }
+
+        if (!line.warehouse_id) {
+          errors.push(`Line ${lineNo}: Warehouse is required.`);
+          return;
+        }
+
+        if (quantity <= 0) {
+          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
+          return;
+        }
+
+        const allocations = line.allocations || line.initialAllocations || [];
+
+        const allocatedQuantity = allocations.reduce(
+          (sum, allocation) => sum + Number(allocation.quantity || 0),
+          0,
+        );
+
+        if (allocatedQuantity !== quantity) {
+          errors.push(
+            `Line ${lineNo}: Stock allocation is incomplete. Allocated ${allocatedQuantity} of ${quantity}.`,
+          );
+        }
+      }
+
+      if (lineType === "GL_ACCOUNT" && !line.gl_account_id) {
+        errors.push(`Line ${lineNo}: G/L account is required.`);
+      }
+    });
+
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+
+      toast.error("Please complete the purchase order before continuing.");
+
+      return false;
+    }
+
+    setValidationErrors([]);
+
+    return true;
+  };
+
   // 1. Separate Handler for Receiving Stock (Physical Intake)
   const handleReceiveStock = async () => {
     if (!id) return;
+
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
     setIsPosting(true);
 
     show("Saving and Receiving Record...");
@@ -674,6 +912,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   // Handler for combined Receive + Post Invoice API call
   const handleReceiveAndPost = async () => {
     if (!id) return;
+
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
     setIsPosting(true);
 
     show("Receiving Stock & Posting Invoice...");
@@ -720,10 +963,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   // Handler when user clicks the "Post Invoice" button
   const handlePostInvoiceClick = () => {
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
     if (!order.reference) {
-      toast.error(
-        "Please enter a Supplier Invoice No. before posting.",
-      );
+      toast.error("Please enter a Supplier Invoice No. before posting.");
       return;
     }
 
@@ -738,6 +983,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   // 2. Separate Handler for Posting Invoice (Financial Posting to Accounts Payable)
   const handlePostInvoice = async () => {
     if (!id) return;
+
+    if (!validateBeforeStockAction()) {
+      return;
+    }
     setIsPosting(true);
 
     show("Posting Invoice...");
@@ -1129,7 +1378,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                 <Button
                   type="button"
                   variant="dispatch"
-                  onClick={() => setShowReceiveModal(true)}
+                  onClick={() => {
+                    if (!validateBeforeStockAction()) return;
+
+                    setShowReceiveModal(true);
+                  }}
                   disabled={isPosting || isFullyReceived || isCompleted}
                   // className={`px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded transition-colors ${
                   //   isFullyReceived || isCompleted
@@ -1201,7 +1454,14 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       <GeneralConfirmModal
         isOpen={showReceiveAndPostModal}
         title="Stock Receipt Required"
-        message="Stock has not been fully received for this order. Would you like to receive the remaining stock automatically and post the purchase invoice now?"
+        // message="Stock has not been fully received for this order. Would you like to receive the remaining stock automatically and <b>post the purchase invoice now?</b>"
+        message={
+          <>
+            Stock has not been fully received for this order. Would you like to
+            receive the remaining stock automatically and{" "}
+            <strong>post the purchase invoice now?</strong>
+          </>
+        }
         onConfirm={handleReceiveAndPost}
         onCancel={() => setShowReceiveAndPostModal(false)}
         loading={isPosting}

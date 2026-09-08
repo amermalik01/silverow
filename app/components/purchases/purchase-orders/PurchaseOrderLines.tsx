@@ -83,20 +83,48 @@ export default function PurchaseOrderLines({
     );
   }, [activeAllocationLineId, linesWithKeys]);
 
-  // const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
-  //   string | null
-  // >(null);
+  const createEmptyLine = (): PurchaseOrderLineUI => ({
+    _key: `temp-${Date.now()}-${Math.random()}`,
+    line_type: "ITEM",
 
-  // const activeAllocationLine = useMemo(() => {
-  //   if (activeAllocationRowKey === null) return null;
-  //   const idx = parseInt(activeAllocationRowKey, 10);
-  //   return lines[idx] || null;
-  // }, [activeAllocationRowKey, lines]);
+    item_id: undefined,
+    item_code: undefined,
+    item_name: undefined,
+
+    description: "",
+    quantity: 1,
+
+    unit_cost: 0,
+    discount_type: "PERCENT",
+    discount_value: 0,
+
+    vat_percent: 0,
+    original_amount: 0,
+    discount_amount: 0,
+    net_amount: 0,
+    vat_amount: 0,
+    gross_amount: 0,
+
+    warehouse_id: undefined,
+    warehouse_code: undefined,
+    warehouse_name: undefined,
+
+    is_allocated: false,
+    received_quantity: 0,
+
+    allocations: [],
+    initialAllocations: [],
+  });
+
+  const addLine = () => {
+    setLines((prev) => [...prev, createEmptyLine()]);
+  };
 
   // const addLine = () => {
-  //   setLines([
-  //     ...lines,
+  //   setLines((prev) => [
+  //     ...prev,
   //     {
+  //       _key: `temp-${Date.now()}-${Math.random()}`,
   //       line_type: "ITEM",
   //       quantity: 1,
   //       unit_cost: 0,
@@ -110,33 +138,11 @@ export default function PurchaseOrderLines({
   //       gross_amount: 0,
   //       is_allocated: false,
   //       received_quantity: 0,
+  //       allocations: [],
+  //       initialAllocations: [],
   //     },
   //   ]);
   // };
-
-  const addLine = () => {
-    setLines((prev) => [
-      ...prev,
-      {
-        _key: `temp-${Date.now()}-${Math.random()}`,
-        line_type: "ITEM",
-        quantity: 1,
-        unit_cost: 0,
-        discount_type: "PERCENT",
-        discount_value: 0,
-        vat_percent: 0,
-        original_amount: 0,
-        discount_amount: 0,
-        net_amount: 0,
-        vat_amount: 0,
-        gross_amount: 0,
-        is_allocated: false,
-        received_quantity: 0,
-        allocations: [],
-        initialAllocations: [],
-      },
-    ]);
-  };
 
   useEffect(() => {
     async function loadVatOptions() {
@@ -197,34 +203,6 @@ export default function PurchaseOrderLines({
     };
   };
 
-  // const calculateLine = (
-  //   line: Partial<PurchaseOrderLineUI>,
-  // ): PurchaseOrderLine => {
-  //   const qty = Number(line.quantity || 0);
-  //   const price = Number(line.unit_cost || 0);
-  //   const original = qty * price;
-  //   let discountAmount = 0;
-
-  //   if (line.discount_type === "PERCENT") {
-  //     discountAmount = original * (Number(line.discount_value || 0) / 100);
-  //   } else {
-  //     discountAmount = Number(line.discount_value || 0);
-  //   }
-
-  //   const net = original - discountAmount;
-  //   const vat = net * (Number(line.vat_percent || 0) / 100);
-  //   const gross = net + vat;
-
-  //   return {
-  //     ...(line as PurchaseOrderLineUI),
-  //     original_amount: original,
-  //     discount_amount: discountAmount,
-  //     net_amount: net,
-  //     vat_amount: vat,
-  //     gross_amount: gross,
-  //   };
-  // };
-
   const handleVatChange = (index: number, selectedVatOptionId: string) => {
     const selectedOption = vatOptions.find(
       (opt) => opt.id === selectedVatOptionId,
@@ -269,54 +247,6 @@ export default function PurchaseOrderLines({
     setLines(updated);
   };
 
-  // const updateLine = <K extends keyof PurchaseOrderLineUI>(
-  //   index: number,
-  //   field: K,
-  //   value: PurchaseOrderLineUI[K],
-  // ) => {
-  //   const updated = [...lines];
-  //   updated[index] = { ...updated[index], [field]: value };
-
-  //   if (field === "quantity") {
-  //     updated[index].allocations = undefined;
-  //     updated[index].initialAllocations = undefined;
-  //     updated[index].is_allocated = false;
-  //   }
-
-  //   updated[index] = calculateLine(updated[index]);
-  //   setLines(updated);
-  // };
-
-  // const changeLineType = (
-  //   index: number,
-  //   type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
-  // ) => {
-  //   const updated = [...lines];
-
-  //   updated[index] = {
-  //     ...updated[index],
-
-  //     line_type: type,
-
-  //     item_id: undefined,
-  //     item_code: undefined,
-  //     item_name: undefined,
-
-  //     gl_account_id: undefined,
-  //     account_code: undefined,
-  //     account_name: undefined,
-
-  //     warehouse_id: undefined,
-  //     warehouse_code: undefined,
-  //     warehouse_name: undefined,
-
-  //     allocations: undefined,
-  //     is_allocated: false,
-  //   };
-
-  //   setLines(updated);
-  // };
-
   const changeLineType = (
     index: number,
     type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
@@ -342,34 +272,6 @@ export default function PurchaseOrderLines({
 
     setLines(updated);
   };
-
-  // const handleSaveAllocations = (
-  //   allocationsData: PO_StockAllocationRecord[],
-  // ) => {
-  //   if (activeAllocationRowKey === null) return;
-  //   const targetIdx = parseInt(activeAllocationRowKey, 10);
-
-  //   setLines((prev) =>
-  //     prev.map((line, index) => {
-  //       if (index !== targetIdx) return line;
-
-  //       const totalAllocated = allocationsData.reduce(
-  //         (sum, a) => sum + a.quantity,
-  //         0,
-  //       );
-
-  //       return {
-  //         ...line,
-  //         allocations: allocationsData,
-  //         initialAllocations: allocationsData,
-  //         is_allocated: totalAllocated === (line.quantity || 0),
-  //       };
-  //     }),
-  //   );
-
-  //   setIsAllocationModalOpen(false);
-  //   setActiveAllocationRowKey(null);
-  // };
 
   // FIX 3: Save allocations using stable line matching
   const handleSaveAllocations = (
@@ -724,10 +626,6 @@ export default function PurchaseOrderLines({
                         <button
                           type="button"
                           disabled={isAllocationDisabled}
-                          // onClick={() => {
-                          //   setActiveAllocationRowKey(index.toString());
-                          //   setIsAllocationModalOpen(true);
-                          // }}
                           onClick={() => {
                             setActiveAllocationLineId(line._stableKey);
                             setIsAllocationModalOpen(true);
@@ -741,24 +639,6 @@ export default function PurchaseOrderLines({
                                   ? "text-amber-500"
                                   : "text-indigo-500"
                           }`}
-                          // className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                          //   // 🟡 YELLOW / AMBER = Stock Received
-                          //   isStockReceived
-                          //     ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
-                          //     : // 🟢 GREEN = Allocated Stock (Fully allocated)
-                          //       line.is_allocated
-                          //       ? "text-emerald-500"
-                          //       : // 🔴 RED = Partially Allocated (Not fully allocated yet)
-                          //         "text-indigo-500"
-                          // }`}
-                          // title={
-                          //   isStockReceived
-                          //     ? `Stock Received (${receivedQty}/${displayQty}).`
-                          //     : line.is_allocated
-                          //       ? "Allocated Stock"
-                          //       : "Partially Allocated"
-                          // }
-
                           title={
                             isStockReceived
                               ? `Stock Received (${receivedQty}/${displayQty})`
@@ -976,7 +856,42 @@ export default function PurchaseOrderLines({
         />
       )}
 
-      {/* {isAllocationModalOpen &&
+      <MigrationUploadModal
+        open={isMigrationModalOpen}
+        onClose={() => setIsMigrationModalOpen(false)}
+        purchaseOrder={purchaseOrder}
+        onCompleted={async () => {
+          if (refreshLines) {
+            await refreshLines();
+          }
+
+          setIsMigrationModalOpen(false);
+        }}
+      />
+    </div>
+  );
+}
+
+// className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+//   // 🟡 YELLOW / AMBER = Stock Received
+//   isStockReceived
+//     ? "text-amber-500 ring-2 ring-amber-300 dark:ring-amber-900"
+//     : // 🟢 GREEN = Allocated Stock (Fully allocated)
+//       line.is_allocated
+//       ? "text-emerald-500"
+//       : // 🔴 RED = Partially Allocated (Not fully allocated yet)
+//         "text-indigo-500"
+// }`}
+// title={
+//   isStockReceived
+//     ? `Stock Received (${receivedQty}/${displayQty}).`
+//     : line.is_allocated
+//       ? "Allocated Stock"
+//       : "Partially Allocated"
+// }
+
+{
+  /* {isAllocationModalOpen &&
         activeAllocationRowKey !== null &&
         activeAllocationLine && (
           <PO_StockAllocationModal
@@ -1012,20 +927,140 @@ export default function PurchaseOrderLines({
               handleSaveAllocations(allocationsPayload)
             }
           />
-        )} */}
-
-      <MigrationUploadModal
-        open={isMigrationModalOpen}
-        onClose={() => setIsMigrationModalOpen(false)}
-        purchaseOrder={purchaseOrder}
-        onCompleted={async () => {
-          if (refreshLines) {
-            await refreshLines();
-          }
-
-          setIsMigrationModalOpen(false);
-        }}
-      />
-    </div>
-  );
+        )} */
 }
+
+// const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
+//   string | null
+// >(null);
+
+// const activeAllocationLine = useMemo(() => {
+//   if (activeAllocationRowKey === null) return null;
+//   const idx = parseInt(activeAllocationRowKey, 10);
+//   return lines[idx] || null;
+// }, [activeAllocationRowKey, lines]);
+
+// const addLine = () => {
+//   setLines([
+//     ...lines,
+//     {
+//       line_type: "ITEM",
+//       quantity: 1,
+//       unit_cost: 0,
+//       discount_type: "PERCENT",
+//       discount_value: 0,
+//       vat_percent: 0,
+//       original_amount: 0,
+//       discount_amount: 0,
+//       net_amount: 0,
+//       vat_amount: 0,
+//       gross_amount: 0,
+//       is_allocated: false,
+//       received_quantity: 0,
+//     },
+//   ]);
+// };
+
+// const calculateLine = (
+//   line: Partial<PurchaseOrderLineUI>,
+// ): PurchaseOrderLine => {
+//   const qty = Number(line.quantity || 0);
+//   const price = Number(line.unit_cost || 0);
+//   const original = qty * price;
+//   let discountAmount = 0;
+
+//   if (line.discount_type === "PERCENT") {
+//     discountAmount = original * (Number(line.discount_value || 0) / 100);
+//   } else {
+//     discountAmount = Number(line.discount_value || 0);
+//   }
+
+//   const net = original - discountAmount;
+//   const vat = net * (Number(line.vat_percent || 0) / 100);
+//   const gross = net + vat;
+
+//   return {
+//     ...(line as PurchaseOrderLineUI),
+//     original_amount: original,
+//     discount_amount: discountAmount,
+//     net_amount: net,
+//     vat_amount: vat,
+//     gross_amount: gross,
+//   };
+// };
+
+// const updateLine = <K extends keyof PurchaseOrderLineUI>(
+//   index: number,
+//   field: K,
+//   value: PurchaseOrderLineUI[K],
+// ) => {
+//   const updated = [...lines];
+//   updated[index] = { ...updated[index], [field]: value };
+
+//   if (field === "quantity") {
+//     updated[index].allocations = undefined;
+//     updated[index].initialAllocations = undefined;
+//     updated[index].is_allocated = false;
+//   }
+
+//   updated[index] = calculateLine(updated[index]);
+//   setLines(updated);
+// };
+
+// const changeLineType = (
+//   index: number,
+//   type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
+// ) => {
+//   const updated = [...lines];
+
+//   updated[index] = {
+//     ...updated[index],
+
+//     line_type: type,
+
+//     item_id: undefined,
+//     item_code: undefined,
+//     item_name: undefined,
+
+//     gl_account_id: undefined,
+//     account_code: undefined,
+//     account_name: undefined,
+
+//     warehouse_id: undefined,
+//     warehouse_code: undefined,
+//     warehouse_name: undefined,
+
+//     allocations: undefined,
+//     is_allocated: false,
+//   };
+
+//   setLines(updated);
+// };
+
+// const handleSaveAllocations = (
+//   allocationsData: PO_StockAllocationRecord[],
+// ) => {
+//   if (activeAllocationRowKey === null) return;
+//   const targetIdx = parseInt(activeAllocationRowKey, 10);
+
+//   setLines((prev) =>
+//     prev.map((line, index) => {
+//       if (index !== targetIdx) return line;
+
+//       const totalAllocated = allocationsData.reduce(
+//         (sum, a) => sum + a.quantity,
+//         0,
+//       );
+
+//       return {
+//         ...line,
+//         allocations: allocationsData,
+//         initialAllocations: allocationsData,
+//         is_allocated: totalAllocated === (line.quantity || 0),
+//       };
+//     }),
+//   );
+
+//   setIsAllocationModalOpen(false);
+//   setActiveAllocationRowKey(null);
+// };

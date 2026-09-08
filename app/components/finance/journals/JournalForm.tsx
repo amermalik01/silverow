@@ -670,7 +670,6 @@ export default function JournalForm({
 
   return (
     <div className="space-y-6 ">
-
       <Breadcrumbs
         items={[
           {
@@ -1088,11 +1087,21 @@ export default function JournalForm({
                               formDisabled || !line.party_id || localAmount <= 0
                             }
                             onClick={() => setAllocationModalIndex(index)}
-                            className={`flex items-center justify-center gap-1 p-1 border rounded  transition ${
+                            className={`flex items-center justify-center gap-1 p-1  rounded  hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                               totalLineAllocated > 0
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                                : "bg-zinc-100 text-zinc-700 border-zinc-300 hover:bg-zinc-200"
-                            } disabled:opacity-40 disabled:cursor-not-allowed`}
+                                ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                : "bg-zinc-100 text-zinc-700  hover:bg-zinc-200"
+                            } `}
+
+                            //   className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                            //   totalLineAllocated > 0
+                            //     ? "text-amber-500"
+                            //     : isFullyAllocated || line.is_allocated
+                            //       ? "text-emerald-500"
+                            //       : isPartiallyAllocated
+                            //         ? "text-amber-500"
+                            //         : "text-indigo-500"
+                            // }`}
                           >
                             <Icon icon="tabler:box-seam" className="w-4 h-4" />
                           </Button>
@@ -1103,7 +1112,7 @@ export default function JournalForm({
                           type="button"
                           disabled={lines.length === 1 || formDisabled}
                           onClick={() => removeLineRow(index)}
-                          className="text-red-600 hover:text-red-800 p-1 rounded  bg-slate-100 border border-zinc-300 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
+                          className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
                         >
                           <Icon icon="lucide:x" className="w-4 h-4" />
                         </Button>
@@ -1158,6 +1167,20 @@ export default function JournalForm({
                   Navigate
                 </Button>
               )}
+
+              {!isPosted && (
+                <Button
+                  type="button"
+                  disabled={
+                    loading ||
+                    (!isBalanced && lines.every((l) => !l.balancing_account_id))
+                  }
+                  onClick={() => handlePersistAction(true)}
+                  variant="post"
+                >
+                  {loading ? "Posting..." : "Post Journal"}
+                </Button>
+              )}
               {!isEditing ? (
                 /* VIEW MODE BUTTONS */
                 <>
@@ -1182,19 +1205,6 @@ export default function JournalForm({
               ) : (
                 /* EDIT MODE BUTTONS */
                 <>
-                  <Button
-                    type="button"
-                    disabled={
-                      loading ||
-                      (!isBalanced &&
-                        lines.every((l) => !l.balancing_account_id))
-                    }
-                    onClick={() => handlePersistAction(true)}
-                    variant="post"
-                  >
-                    {loading ? "Posting..." : "Post Journal"}
-                  </Button>
-
                   <Button
                     type="button"
                     onClick={() => handlePersistAction(false)}
