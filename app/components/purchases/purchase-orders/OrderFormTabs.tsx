@@ -955,7 +955,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
 
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>Linked PO-S</label>
+                <label className={labelStyle}>{`Linked PO's`}</label>
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"

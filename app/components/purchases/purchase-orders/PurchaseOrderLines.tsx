@@ -458,10 +458,10 @@ export default function PurchaseOrderLines({
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
               <th className="p-2 w-[80px]">Type</th>
-              <th className="p-2 w-[120px]">No.</th>
+              <th className="p-2 w-[120px]">No</th>
               <th className="p-2 w-[180px]">Description</th>
-              <th className="p-2 text-right w-[65px]">Qty.</th>
-              <th className="p-2 w-[60px]">U.O.M</th>
+              <th className="p-2 text-right w-[65px]">Qty</th>
+              <th className="p-2 w-[60px]">UOM</th>
               <th className="p-2 w-[150px] overflow-hidden">Warehouse</th>
               <th className="p-2 text-right w-[90px]">Unit Price</th>
               <th className="p-2 w-[90px]">Disc. Type</th>
