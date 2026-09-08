@@ -1031,11 +1031,12 @@ export default function JournalForm({
                         onChange={(val) =>
                           handleLineChange(index, "exchange_rate", String(val))
                         }
-                        className={`w-full border p-1 rounded text-right font-mono ${
-                          creditDisabled
-                            ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-                            : "bg-white"
-                        }`}
+                        className={`w-full border p-1 rounded text-right font-mono bg-white`}
+                        // className={`w-full border p-1 rounded text-right font-mono ${
+                        //   creditDisabled
+                        //     ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                        //     : "bg-white"
+                        // }`}
                       />
                     </td>
 

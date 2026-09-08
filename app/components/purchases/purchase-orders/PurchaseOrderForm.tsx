@@ -87,6 +87,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   // Add states for modal control
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
+  const [showReceiveAndPostModal, setShowReceiveAndPostModal] = useState(false);
+
   const [isPosting, setIsPosting] = useState(false);
 
   const { show, hide } = useLoader();
@@ -668,6 +671,70 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     }
   };
 
+  // Handler for combined Receive + Post Invoice API call
+  const handleReceiveAndPost = async () => {
+    if (!id) return;
+    setIsPosting(true);
+
+    show("Receiving Stock & Posting Invoice...");
+    try {
+      toast.loading("Receiving stock and posting purchase invoice...", {
+        id: "action-toast",
+      });
+
+      const res = await fetch(`/api/purchase-orders/${id}/receive-and-post`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplier_invoice_no: order.reference,
+          invoice_date: order.invoice_date,
+          posting_date: order.order_date,
+          financials: financials,
+          order: order,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(
+          data.error || "Failed to receive stock and post invoice.",
+        );
+
+      toast.success("Stock received and invoice posted successfully!", {
+        id: "action-toast",
+      });
+      setShowReceiveAndPostModal(false);
+
+      router.push(`/${slug}/purchases/purchase-orders/create`);
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message || "Error processing operation.", {
+          id: "action-toast",
+        });
+      }
+    } finally {
+      setIsPosting(false);
+      hide();
+    }
+  };
+
+  // Handler when user clicks the "Post Invoice" button
+  const handlePostInvoiceClick = () => {
+    if (!order.reference) {
+      toast.error(
+        "Please enter a Vendor Invoice/Reference number before posting.",
+      );
+      return;
+    }
+
+    // If item lines exist and are NOT fully received, prompt to receive & post
+    if (!isFullyReceived) {
+      setShowReceiveAndPostModal(true);
+    } else {
+      setShowInvoiceModal(true);
+    }
+  };
+
   // 2. Separate Handler for Posting Invoice (Financial Posting to Accounts Payable)
   const handlePostInvoice = async () => {
     if (!id) return;
@@ -1051,7 +1118,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                 <Button
                   type="button"
                   variant="post"
-                  onClick={() => setShowInvoiceModal(true)}
+                  // onClick={() => setShowInvoiceModal(true)}
+                  onClick={handlePostInvoiceClick}
                   disabled={isPosting || isCompleted}
                   // className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
@@ -1126,6 +1194,16 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         message="Are you sure you want to post the invoice for this purchase order?"
         onConfirm={handlePostInvoice}
         onCancel={() => setShowInvoiceModal(false)}
+        loading={isPosting}
+      />
+
+      {/* Combined Receive & Post Modal */}
+      <GeneralConfirmModal
+        isOpen={showReceiveAndPostModal}
+        title="Stock Receipt Required"
+        message="Stock has not been fully received for this order. Would you like to receive the remaining stock automatically and post the purchase invoice now?"
+        onConfirm={handleReceiveAndPost}
+        onCancel={() => setShowReceiveAndPostModal(false)}
         loading={isPosting}
       />
 

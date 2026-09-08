@@ -1,5 +1,6 @@
 // lib/services/purchase-invoices/purchase-invoice-posting.service.ts
 
+import { PoolClient } from "pg";
 import { pool } from "@/lib/db";
 import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
 import {
@@ -14,6 +15,7 @@ export interface PostInvoiceInput {
   companyId: string;
   purchaseOrderId: string;
   userId?: string;
+  skip3WayMatchCheck?: boolean;
   invoiceData: {
     supplier_invoice_no: string;
     invoice_date?: string;
@@ -31,13 +33,29 @@ export interface PostInvoiceInput {
 }
 
 export class PurchaseInvoicePostingService {
-  static async postInvoice(input: PostInvoiceInput) {
-    const client = await pool.connect();
-    const { companyId, purchaseOrderId, userId, invoiceData, financials } =
-      input;
+  static async postInvoice(
+    input: PostInvoiceInput,
+    externalClient?: PoolClient,
+  ) {
+    // const client = await pool.connect();
+
+    const client = externalClient || (await pool.connect());
+    const isExternalClient = !!externalClient;
+
+    const {
+      companyId,
+      purchaseOrderId,
+      userId,
+      skip3WayMatchCheck,
+      invoiceData,
+      financials,
+    } = input;
 
     try {
-      await client.query("BEGIN");
+      // await client.query("BEGIN");
+      if (!isExternalClient) {
+        await client.query("BEGIN");
+      }
 
       // 1. Fetch & lock Purchase Order record
       const poResult = await client.query(
@@ -67,20 +85,23 @@ export class PurchaseInvoicePostingService {
         throw new Error("Cannot post invoice for an order without lines.");
       }
 
-      // 2. 🌟 ENFORCE 3-WAY MATCHING (Scenario A: Goods-First Workflow)
-      const stockLines = lines.filter(
-        (line) =>
-          line.line_type === "ITEM" || (!line.line_type && !!line.item_id),
-      );
-
-      const unreceivedLines = stockLines.filter(
-        (line) => Number(line.received_quantity) < Number(line.quantity),
-      );
-
-      if (unreceivedLines.length > 0) {
-        throw new Error(
-          "3-Way Match Failed: Cannot post invoice. Stock must be physically received before posting a purchase invoice.",
+      // 3. ENFORCE 3-WAY MATCHING (Bypassed if executed via Receive-and-Post)
+      if (!skip3WayMatchCheck) {
+        // 2. 🌟 ENFORCE 3-WAY MATCHING (Scenario A: Goods-First Workflow)
+        const stockLines = lines.filter(
+          (line) =>
+            line.line_type === "ITEM" || (!line.line_type && !!line.item_id),
         );
+
+        const unreceivedLines = stockLines.filter(
+          (line) => Number(line.received_quantity) < Number(line.quantity),
+        );
+
+        if (unreceivedLines.length > 0) {
+          throw new Error(
+            "3-Way Match Failed: Cannot post invoice. Stock must be physically received before posting a purchase invoice.",
+          );
+        }
       }
 
       // 3. Auto-generate sequence for invoice_no
@@ -223,8 +244,8 @@ export class PurchaseInvoicePostingService {
             lineDiscount, // discount_amount
             line.tax_percent || 0,
             line.tax_amount || 0,
-            lineNet,// net_amount
-            line.gross_amount || lineNet,// gross_amount
+            lineNet, // net_amount
+            line.gross_amount || lineNet, // gross_amount
           ],
         );
         lineNo += 10000;
@@ -372,13 +393,36 @@ export class PurchaseInvoicePostingService {
         [purchaseOrderId],
       );
 
-      await client.query("COMMIT");
+      // await client.query("COMMIT");
+
+      if (!isExternalClient) {
+        await client.query("COMMIT");
+      }
+
       return createdInvoice;
     } catch (err) {
-      await client.query("ROLLBACK");
+      // await client.query("ROLLBACK");
+
+      if (!isExternalClient) {
+        await client.query("ROLLBACK");
+      }
+
       throw err;
     } finally {
-      client.release();
+      // client.release();
+      if (!isExternalClient) {
+        client.release();
+      }
     }
+  }
+
+  /**
+   * Explicit transactional helper matching your API call structure
+   */
+  static async postInvoiceTransactional(
+    client: PoolClient,
+    params: PostInvoiceInput,
+  ) {
+    return this.postInvoice(params, client);
   }
 }
