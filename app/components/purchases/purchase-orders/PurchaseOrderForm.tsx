@@ -36,8 +36,8 @@ import CustomerLookupModal, {
 } from "../../sales/orders/CustomerLookupModal";
 import {
   PurchaseOrderLookupItem,
-  PurchaseOrderLookupModal,
-} from "../../shared/modals/PurchaseOrderLookupModal";
+  PurchaseOrderMultiLookupModal,
+} from "../../shared/modals/PurchaseOrderMultiLookupModal";
 import {
   SalesOrderLookupItem,
   SalesOrderLookupModal,
@@ -501,10 +501,21 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     setPOModalOpen(true);
   };
 
-  const handleSelectPurchaseOrder = async (order: PurchaseOrderLookupItem) => {
+  // const handleSelectPurchaseOrder = async (order: PurchaseOrderLookupItem) => {
+  //   setOrder((prev) => ({
+  //     ...prev,
+  //     linked_po: `${order.order_no}`,
+  //   }));
+  //   setPOModalOpen(false);
+  // };
+
+  const handleSelectPurchaseOrders = (
+    selectedOrders: PurchaseOrderLookupItem[],
+  ) => {
+    const codes = selectedOrders.map((o) => o.order_no).join(", ");
     setOrder((prev) => ({
       ...prev,
-      linked_po: `${order.order_no}`,
+      linked_po: codes,
     }));
     setPOModalOpen(false);
   };
@@ -1465,11 +1476,24 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         />
       )}
 
-      {POModalOpen && (
+      {/* {POModalOpen && (
         <PurchaseOrderLookupModal
           isOpen={POModalOpen}
           onClose={() => setPOModalOpen(false)}
           onSelectOrder={handleSelectPurchaseOrder}
+        /> 
+      )} */}
+
+      {POModalOpen && (
+        <PurchaseOrderMultiLookupModal
+          isOpen={POModalOpen}
+          onClose={() => setPOModalOpen(false)}
+          onSelectOrders={handleSelectPurchaseOrders}
+          selectedOrderNos={
+            order.linked_po
+              ? order.linked_po.split(",").map((s) => s.trim())
+              : []
+          }
         />
       )}
 
