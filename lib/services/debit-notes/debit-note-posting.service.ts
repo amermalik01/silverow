@@ -1,5 +1,6 @@
 // lib/services/debit-notes/debit-note-posting.service.ts
 
+import { PoolClient } from "pg";
 import { pool } from "@/lib/db";
 import {
   GLPostingService,
@@ -29,12 +30,19 @@ export interface PostDebitNoteInput {
 }
 
 export class DebitNotePostingService {
-  static async postDebitNote(input: PostDebitNoteInput) {
-    const client = await pool.connect();
+  static async postDebitNote(
+    input: PostDebitNoteInput,
+    externalClient?: PoolClient,
+  ) {
+    const client = externalClient || (await pool.connect());
+    const isExternalClient = !!externalClient;
+
     const { companyId, debitNoteId, userId, postingData, financials } = input;
 
     try {
-      await client.query("BEGIN");
+      if (!isExternalClient) {
+        await client.query("BEGIN");
+      }
 
       // 1. Fetch & lock Debit Note header record
       const dnResult = await client.query(
@@ -279,10 +287,9 @@ export class DebitNotePostingService {
         [debitNoteId, companyId, postingData.notes || null],
       );
 
-      //  discount_amount = COALESCE($4, discount_amount),
-      // financials?.discount || null,
-
-      await client.query("COMMIT");
+      if (!isExternalClient) {
+        await client.query("COMMIT");
+      }
 
       return {
         id: note.id,
@@ -290,10 +297,23 @@ export class DebitNotePostingService {
         journalId: journal.id,
       };
     } catch (err) {
-      await client.query("ROLLBACK");
+      if (!isExternalClient) {
+        await client.query("ROLLBACK");
+      }
       throw err;
     } finally {
-      client.release();
+      if (!isExternalClient) {
+        client.release();
+      }
     }
+  }
+  /**
+   * Transactional helper matching the PO posting service layout
+   */
+  static async postDebitNoteTransactional(
+    client: PoolClient,
+    params: PostDebitNoteInput,
+  ) {
+    return this.postDebitNote(params, client);
   }
 }
