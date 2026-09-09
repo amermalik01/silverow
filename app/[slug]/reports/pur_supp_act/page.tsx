@@ -148,9 +148,9 @@ export default function SupplierActivityReport() {
       "Posting Date",
       "Doc Type",
       "Doc No",
-      "Vendor No",
-      "Vendor Name",
-      "Description",
+      "Supplier No",
+      "Supplier Name",
+      // "Description",
       "Due Date",
       "CCY",
       "Amount (FCY)",
@@ -166,7 +166,7 @@ export default function SupplierActivityReport() {
       `"${row.document_no || ""}"`,
       `"${row.vendor_no || ""}"`,
       `"${(row.vendor_name || "").replace(/"/g, '""')}"`,
-      `"${(row.description || "").replace(/"/g, '""')}"`,
+      // `"${(row.description || "").replace(/"/g, '""')}"`,
       formatDate(row.due_date),
       row.currency_code,
       row.currency_code !== "GBP" ? row.original_amount_fcy : "",
@@ -200,9 +200,9 @@ export default function SupplierActivityReport() {
       "Posting Date": formatDate(row.posting_date),
       "Doc Type": row.document_type,
       "Doc No": row.document_no,
-      "Vendor No": row.vendor_no,
-      "Vendor Name": row.vendor_name,
-      Description: row.description,
+      "Supplier No": row.vendor_no,
+      "Supplier Name": row.vendor_name,
+      // Description: row.description,
       "Due Date": formatDate(row.due_date),
       CCY: row.currency_code,
       "Amount (FCY)":
@@ -408,9 +408,9 @@ export default function SupplierActivityReport() {
                 <th className="p-3">Posting Date</th>
                 <th className="p-3">Doc Type</th>
                 <th className="p-3">Doc No</th>
-                <th className="p-3">Vendor No</th>
-                <th className="p-3 min-w-[150px]">Vendor Name</th>
-                <th className="p-3">Description</th>
+                <th className="p-3">Supplier No</th>
+                <th className="p-3 min-w-[150px]">Supplier Name</th>
+                {/* <th className="p-3">Description</th> */}
                 <th className="p-3">Due Date</th>
                 <th className="p-3 text-center">CCY</th>
                 <th className="p-3 text-right">Amount (FCY)</th>
@@ -449,14 +449,28 @@ export default function SupplierActivityReport() {
                     <td className="p-3 whitespace-nowrap">
                       {formatDate(row.posting_date)}
                     </td>
-                    <td className="p-3 whitespace-nowrap font-sans font-medium text-slate-800">
-                      {row.document_type === "FX_VARIANCE" ? (
+                    <td className="p-3 whitespace-nowrap font-sans font-medium text-slate-800 capitalize">
+                      {row.document_type === "VENDOR_PAYMENT" ? (
+                        <span>Payment</span>
+                      ) : row.document_type === "FX_VARIANCE" ? (
+                        <span>Foreign Exchange</span>
+                      ) : (
+                        <span>
+                          {row.document_type
+                            ? row.document_type
+                                .replace(/_/g, " ")
+                                .toLowerCase()
+                                .replace(/\b\w/g, (s) => s.toUpperCase())
+                            : ""}
+                        </span>
+                      )}
+                      {/* {row.document_type === "FX_VARIANCE" ? (
                         <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
                           FX Variance
                         </span>
                       ) : (
                         row.document_type
-                      )}
+                      )} */}
                     </td>
                     <td className="p-3 font-semibold text-emerald-800 whitespace-nowrap">
                       {row.document_no || "—"}
@@ -467,9 +481,9 @@ export default function SupplierActivityReport() {
                     <td className="p-3 font-sans font-medium text-slate-900 max-w-[200px] truncate">
                       {row.vendor_name}
                     </td>
-                    <td className="p-3 font-sans text-slate-600 max-w-[220px] truncate">
+                    {/* <td className="p-3 font-sans text-slate-600 max-w-[220px] truncate">
                       {row.description || "—"}
-                    </td>
+                    </td> */}
                     <td className="p-3 whitespace-nowrap">
                       {formatDate(row.due_date) || "—"}
                     </td>
@@ -478,12 +492,16 @@ export default function SupplierActivityReport() {
                     </td>
 
                     {/* FCY Column Displays */}
-                    <td className="p-3 text-right font-bold tabular-nums text-slate-800">
+                    <td
+                      className={`p-3 text-right font-bold tabular-nums  ${row.original_amount_fcy < 0 ? "text-red-600" : "text-slate-800"}`}
+                    >
                       {row.currency_code !== "GBP"
                         ? formatCurrency(row.original_amount_fcy)
                         : "—"}
                     </td>
-                    <td className="p-3 text-right font-bold tabular-nums text-slate-600">
+                    <td
+                      className={`p-3 text-right font-bold tabular-nums  ${row.remaining_amount_fcy < 0 ? "text-red-600" : "text-slate-600"}`}
+                    >
                       {row.currency_code !== "GBP"
                         ? formatCurrency(row.remaining_amount_fcy)
                         : "—"}
@@ -502,9 +520,12 @@ export default function SupplierActivityReport() {
                     </td>
 
                     <td className="p-3 text-center whitespace-nowrap">
-                      {row.document_type === "FX_VARIANCE" ? (
-                        <span className="inline-block px-2 py-0.5 rounded font-sans font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200">
+                      {/* <span className="inline-block px-2 py-0.5 rounded font-sans font-semibold text-[10px] bg-slate-100 text-slate-600 border border-slate-200">
                           N/A
+                        </span> */}
+                      {row.document_type === "FX_VARIANCE" ? (
+                        <span className="inline-block px-2.5 py-0.5 rounded font-sans font-semibold text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          Closed
                         </span>
                       ) : row.is_open ? (
                         <span className="inline-block px-2.5 py-0.5 rounded font-sans font-semibold text-[10px] bg-amber-50 text-amber-800 border border-amber-200">
@@ -748,8 +769,8 @@ export default function SupplierActivityReport() {
       "Posting Date",
       "Doc Type",
       "Doc No",
-      "Vendor No",
-      "Vendor Name",
+      "Supplier No",
+      "Supplier Name",
       "Description",
       "Due Date",
       "CCY",
@@ -801,8 +822,8 @@ export default function SupplierActivityReport() {
       "Posting Date": formatDate(row.posting_date),
       "Doc Type": row.document_type,
       "Doc No": row.document_no,
-      "Vendor No": row.vendor_no,
-      "Vendor Name": row.vendor_name,
+      "Supplier No": row.vendor_no,
+      "Supplier Name": row.vendor_name,
       Description: row.description,
       "Due Date": formatDate(row.due_date),
       CCY: row.currency_code,
@@ -1020,8 +1041,8 @@ export default function SupplierActivityReport() {
                 <th className="p-3">Posting Date</th>
                 <th className="p-3">Doc Type</th>
                 <th className="p-3">Doc No</th>
-                <th className="p-3">Vendor No</th>
-                <th className="p-3 min-w-[150px]">Vendor Name</th>
+                <th className="p-3">Supplier No</th>
+                <th className="p-3 min-w-[150px]">Supplier Name</th>
                 <th className="p-3">Description</th>
                 <th className="p-3">Due Date</th>
                 <th className="p-3 text-center">CCY</th>

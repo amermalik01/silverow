@@ -376,20 +376,11 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
                 </span>
               </div>
               <div>
-                {/* <input
-                  type="number"
-                  disabled
-                  readOnly
-                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
-                  value={
-                    Number(currencyConfig.exchange_rate).toFixed(2) ?? "1.00"
-                  }
-                /> */}
 
                 <NumericTextInput
                   value={Number(currencyConfig.exchange_rate) ?? "1.00"}
                   allowDecimals={true}
-                  decimalScale={2}
+                  decimalScale={6}
                   disabled
                   className={`${inputStyle} font-mono max-w-[100px] text-end`}
                   onChange={noop}

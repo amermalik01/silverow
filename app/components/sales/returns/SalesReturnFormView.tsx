@@ -25,6 +25,7 @@ import { useLoader } from "@/app/context/LoaderContext";
 import { OrderFormTabs } from "./OrderFormTabs";
 import CustomerDeliveryLocationModal from "../orders/CustomerDeliveryLocationModal";
 import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 export type SalesReturnLineUI = SalesReturnLine & {
   item_code?: string;
@@ -403,7 +404,6 @@ export default function SalesReturnFormView({
 
   return (
     <div className="space-y-4">
-
       {validationErrors.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
           {validationErrors.map((err, idx) => (
@@ -528,7 +528,7 @@ export default function SalesReturnFormView({
                 </span>
               </div>
               <div>
-                <input
+                {/* <input
                   type="number"
                   // step="any"
                   step="0.01"
@@ -538,6 +538,20 @@ export default function SalesReturnFormView({
                     setCurrencyConfig({
                       ...currencyConfig,
                       exchange_rate: parseFloat(e.target.value) || 1,
+                    })
+                  }
+                /> */}
+
+                <NumericTextInput
+                  value={Number(currencyConfig.exchange_rate) || 1}
+                  allowDecimals={true}
+                  decimalScale={6}
+                  // disabled={isFormDisabled}
+                  className={`${inputStyle} font-mono text-end`}
+                  onChange={(val) =>
+                    setCurrencyConfig({
+                      ...currencyConfig,
+                      exchange_rate: Number(val) || 1,
                     })
                   }
                 />

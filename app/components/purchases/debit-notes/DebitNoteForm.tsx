@@ -424,7 +424,10 @@ export const DebitNoteForm: React.FC<Props> = ({
       vat_business_posting_group_id: supplier.posting_group || "", //  supplier.purchase_posting_group_id ||
 
       anonymous_supplier: supplier.anonymous_supplier ?? false,
-      purchaser_code: supplier.purchaser_code || "",
+      purchaser: supplier.purchaser_code || "",
+      contact_person: supplier.finance_contact_person || "",
+      email: supplier.email || "",
+      phone: supplier.phone || "",
       payable_bank: supplier.payable_bank || "",
       payment_terms_id: supplier.payment_terms || "",
       payment_method_id: supplier.payment_method || "",
@@ -753,7 +756,7 @@ export const DebitNoteForm: React.FC<Props> = ({
     const errors: string[] = [];
 
     if (lines.length === 0) {
-      errors.push("Purchase order has no lines.");
+      errors.push("Debit Note has no lines.");
     }
 
     lines.forEach((line, index) => {
@@ -800,7 +803,7 @@ export const DebitNoteForm: React.FC<Props> = ({
     if (errors.length > 0) {
       setValidationErrors(errors);
 
-      toast.error("Please complete the purchase order before continuing.");
+      toast.error("Please complete the Debit Note before continuing.");
 
       return false;
     }
@@ -881,7 +884,7 @@ export const DebitNoteForm: React.FC<Props> = ({
 
     show("Dispatching Stock & Posting Invoice...");
     try {
-      toast.loading("Dispatching stock and posting purchase invoice...", {
+      toast.loading("Dispatching stock and posting invoice...", {
         id: "action-toast",
       });
 
@@ -1203,7 +1206,7 @@ export const DebitNoteForm: React.FC<Props> = ({
                 <NumericTextInput
                   value={Number(currencyConfig.exchange_rate) || 1}
                   allowDecimals={true}
-                  decimalScale={2}
+                  decimalScale={6}
                   disabled={isFormDisabled}
                   className={`${inputStyle} font-mono max-w-[100px] text-end`}
                   onChange={(val) =>

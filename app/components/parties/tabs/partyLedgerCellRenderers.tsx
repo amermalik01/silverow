@@ -35,7 +35,7 @@ interface CellRendererOptions {
     id?: string,
     no?: string,
     partyType?: string,
-    slug?: string
+    slug?: string,
   ) => string;
   onViewAllocations: (row: LedgerEntry) => void;
   onHoldToggle: (row: LedgerEntry) => void;
@@ -69,7 +69,7 @@ export function getPartyLedgerCellRenderers({
         row.document_id || row.document_no,
         row.document_no,
         partyType,
-        slug
+        slug,
       );
 
       return targetUrl !== "#" ? (
@@ -88,8 +88,22 @@ export function getPartyLedgerCellRenderers({
     },
 
     document_type: (row: LedgerEntry) => (
-      <span className="uppercase text-[10px] font-medium text-slate-600 dark:text-slate-400">
-        {row.document_type.replace(/_/g, " ")}
+      <span className="capitalize text-[10px] font-medium text-slate-600 dark:text-slate-400">
+        {/* {row.document_type.replace(/_/g, " ")} */}
+        {row.document_type === "VENDOR_PAYMENT" ? (
+          <span>Payment</span>
+        ) : row.document_type === "FX_VARIANCE" ? (
+          <span>Foreign Exchange</span>
+        ) : (
+          <span>
+            {row.document_type
+              ? row.document_type
+                  .replace(/_/g, " ")
+                  .toLowerCase()
+                  .replace(/\b\w/g, (s) => s.toUpperCase())
+              : ""}
+          </span>
+        )}
       </span>
     ),
 

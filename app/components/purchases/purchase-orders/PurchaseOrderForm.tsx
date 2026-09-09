@@ -452,7 +452,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
       // Supplier Settings & Financial defaults
       anonymous_supplier: supplier.anonymous_supplier ?? false,
-      purchaser_code: supplier.purchaser_code || "",
+      purchaser: supplier.purchaser_code || "",
+      contact_person: supplier.finance_contact_person || "",
+      email: supplier.email || "",
+      phone: supplier.phone || "",
       payable_bank: supplier.payable_bank || "",
       payment_terms_id: supplier.payment_terms || "",
       payment_method_id: supplier.payment_method || "",
@@ -1247,7 +1250,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                 <NumericTextInput
                   value={Number(currencyConfig.exchange_rate) || 1}
                   allowDecimals={true}
-                  decimalScale={2}
+                  decimalScale={6}
                   disabled={isFormDisabled}
                   className={`${inputStyle} font-mono max-w-[100px] text-end`}
                   onChange={(val) =>

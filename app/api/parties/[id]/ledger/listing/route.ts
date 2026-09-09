@@ -18,7 +18,8 @@ function getSignedAmount(
       type.includes("PAYMENT") ||
       type.includes("VENDOR_PAYMENT") ||
       type.includes("DEBIT_NOTE") ||
-      type.includes("REFUND")
+      type.includes("REFUND") ||
+      type.includes("FX_VARIANCE")
     ) {
       return -absAmount;
     }
@@ -271,7 +272,8 @@ export async function POST(
           0 AS original_amount_fcy,
           0 AS remaining_amount_fcy,
           (CASE WHEN gle.debit > 0 THEN gle.debit ELSE -gle.credit END) AS original_amount_lcy,
-          (CASE WHEN gle.debit > 0 THEN gle.debit ELSE -gle.credit END) AS remaining_amount_lcy,
+          -- (CASE WHEN gle.debit > 0 THEN gle.debit ELSE -gle.credit END)
+          0 AS remaining_amount_lcy,
           1.0 AS exchange_rate,
           false AS is_open,
           false AS on_hold,

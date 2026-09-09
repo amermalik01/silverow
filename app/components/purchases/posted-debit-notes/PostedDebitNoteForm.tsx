@@ -491,24 +491,11 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
                 </span>
               </div>
               <div>
-                {/* <input
-                  type="number"
-                  step="0.01"
-                  disabled={isFormDisabled}
-                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
-                  value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
-                  onChange={(e) =>
-                    setCurrencyConfig({
-                      ...currencyConfig,
-                      exchange_rate: parseFloat(e.target.value) || 1,
-                    })
-                  }
-                /> */}
 
                 <NumericTextInput
                   value={Number(currencyConfig.exchange_rate) ?? ""}
                   allowDecimals={true}
-                  decimalScale={2}
+                  decimalScale={6}
                   disabled={isFormDisabled}
                   className={`${inputStyle} font-mono max-w-[100px] text-end`}
                   onChange={noop}

@@ -208,7 +208,8 @@ export default function AccountingTab({
           <Button
             type="button"
             onClick={() => setShowOverrides(!showOverrides)}
-            className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1"
+            // className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1"
+            variant="save"
           >
             {showOverrides
               ? "Hide Specific GL Overrides"

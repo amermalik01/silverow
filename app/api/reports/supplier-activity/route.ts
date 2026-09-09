@@ -10,10 +10,12 @@ function getSignedAmount(docType: string, amount: number): number {
 
   if (
     normalizedType.includes("PAYMENT") ||
+    normalizedType.includes("VENDOR_PAYMENT") ||
     normalizedType.includes("DEBIT_NOTE") ||
-    normalizedType.includes("REFUND")
+    normalizedType.includes("REFUND")||
+    normalizedType.includes("FX_VARIANCE")
   ) {
-    return -absAmount; // Liability reductions
+    return -absAmount; // Liability reductions 
   } else if (
     normalizedType.includes("INVOICE") ||
     normalizedType.includes("PURCHASE")
@@ -148,7 +150,7 @@ export async function GET(req: NextRequest) {
           0 AS original_amount_fcy,
           0 AS remaining_amount_fcy,
           (gl.debit - gl.credit) AS original_amount_lcy,
-          (gl.debit - gl.credit) AS remaining_amount_lcy,
+          0 AS remaining_amount_lcy,
           false AS is_open,
           false AS on_hold,
           '' AS on_hold_reason,

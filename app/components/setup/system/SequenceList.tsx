@@ -68,7 +68,7 @@ export default function SequenceList() {
         <thead>
           <tr>
             <th className="p-2 text-left">Name</th>
-            <th className="p-2 text-left">Module</th>
+            {/* <th className="p-2 text-left">Module</th> */}
             <th className="p-2 text-left">Prefix</th>
             <th className="p-2 text-left">Current</th>
             <th className="p-2 text-left">Padding</th>
@@ -91,7 +91,7 @@ export default function SequenceList() {
                 )}
               </td>
 
-              <td className="p-2">{row.module}</td>
+              {/* <td className="p-2">{row.module}</td> */}
 
               <td className="p-2">
                 {editingId === row.id ? (

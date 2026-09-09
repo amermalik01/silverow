@@ -996,7 +996,7 @@ export const SalesOrderForm: React.FC<Props> = ({
               <NumericTextInput
                 value={Number(currencyConfig.exchange_rate) || 1}
                 allowDecimals={true}
-                decimalScale={2}
+                decimalScale={6}
                 disabled={isFormDisabled}
                 className={`${inputStyle} font-mono text-end`}
                 onChange={(val) =>

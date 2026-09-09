@@ -24,6 +24,7 @@ export type SupplierLookupItem = {
 
   anonymous_supplier?: boolean;
   purchaser_code?: string;
+  assign_person_id?: string;
 
   finance_contact_person?: string;
   finance_email?: string;

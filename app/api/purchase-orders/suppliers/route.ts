@@ -34,6 +34,9 @@ export async function GET(req: NextRequest) {
           p.currency_id,
           p.vat_reg_no,
           p.anonymous_supplier,
+
+          p.assign_person_id,
+          p.assign_person AS purchaser_code,
           
           -- Finance & Ledger Columns
           p.finance_contact_person,
@@ -43,7 +46,7 @@ export async function GET(req: NextRequest) {
           p.finance_alt_contact,
           p.finance_alt_email,
           p.payment_terms,
-          pt.name as paymentterms,
+          pt.name AS paymentterms,
           p.payment_method,
           p.company_reg_no,
           p.supplier_vat_no,
@@ -173,6 +176,7 @@ export async function GET(req: NextRequest) {
             'county', pa.county,
             'postcode', pa.postcode,
             'country', pa.country,
+            'contact_person', fs.finance_contact_person,
             'phone', pa.phone,
             'email', pa.email
           )
@@ -188,6 +192,7 @@ export async function GET(req: NextRequest) {
             'county', ba.county,
             'postcode', ba.postcode,
             'country', ba.country,
+            'contact_person', fs.finance_contact_person,
             'phone', ba.phone,
             'email', ba.email
           )
@@ -203,6 +208,7 @@ export async function GET(req: NextRequest) {
             'county', sa.county,
             'postcode', sa.postcode,
             'country', sa.country,
+            'contact_person', fs.finance_contact_person,
             'phone', sa.phone,
             'email', sa.email
           )
@@ -212,7 +218,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN ranked_primary_addresses pa ON pa.party_id = fs.id AND pa.rn = 1
       LEFT JOIN ranked_billing_addresses ba ON ba.party_id = fs.id AND ba.rn = 1
       LEFT JOIN ranked_shipping_addresses sa ON sa.party_id = fs.id AND sa.rn = 1
-      ORDER BY fs.name ASC;
+      ORDER BY fs.supplier_code desc;
     `;
 
     const result = await pool.query(queryText, [
