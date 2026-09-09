@@ -199,8 +199,8 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
       <Breadcrumbs
         items={[
           {
-            label: "Purchase Order",
-            href: `/${slug}/purchases/purchase-orders`,
+            label: "Purchase Invoice",
+            href: `/${slug}/purchases/purchase-invoices`,
           },
           { label: invoice.invoice_no || invoice.order_no || "" },
         ]}
@@ -220,7 +220,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
             {`Invoice No. ${invoice.invoice_no || ""}`}
           </div>
-        )} 
+        )}
 
         {/* {invoice.purchase_order_no && (
           <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
@@ -246,7 +246,9 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
       <div className=" bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200  pb-2 mb-4">
           <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar ">
-            {(["general", "invoicing", "shipping", "attachments"] as TabType[]).map((tab) => (
+            {(
+              ["general", "invoicing", "shipping", "attachments"] as TabType[]
+            ).map((tab) => (
               <button
                 key={tab}
                 type="button"

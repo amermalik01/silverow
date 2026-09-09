@@ -171,17 +171,6 @@ export class GLPostingService {
       );
     }
 
-    // const totalDebit = expandedLines.reduce((sum, l) => sum + l.debit, 0);
-    // const totalCredit = expandedLines.reduce((sum, l) => sum + l.credit, 0);
-
-    // if (Math.abs(totalDebit - totalCredit) > 0.001) {
-    //   throw new Error(
-    //     `Journal is not balanced. Total Debit (${totalDebit.toFixed(
-    //       2,
-    //     )}) must equal Total Credit (${totalCredit.toFixed(2)}).`,
-    //   );
-    // }
-
     if (expandedLines.length < 2) {
       throw new Error(
         "A valid posting requires at least 2 ledger entries (1 Debit and 1 Credit).",

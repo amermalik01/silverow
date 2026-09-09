@@ -43,8 +43,9 @@ export async function POST(
       LEFT JOIN users u ON gle.posted_by = u.id
       WHERE (gle.source_journal_id = $1 OR gle.source_document_id = $1)
         AND gle.company_id = $2
-      ORDER BY gle.posting_date ASC, gle.posted_at ASC;
+      ORDER BY gle.transaction_id ASC;
     `;
+    // ORDER BY gle.posting_date ASC, gle.posted_at ASC;
 
     // console.log('query ==== ',query);
     // console.log('id == ',id);

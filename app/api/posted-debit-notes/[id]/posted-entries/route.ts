@@ -72,8 +72,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
             gle.source_document_id = ANY($1::uuid[])
             OR gle.source_journal_id = ANY($1::uuid[])
           )
-        ORDER BY gle.posting_date ASC, gle.posted_at ASC
+        ORDER BY gle.transaction_id ASC;
+        
       `;
+      // ORDER BY gle.posting_date ASC, gle.posted_at ASC
 
       const result = await client.query(query, [targetSourceIds, companyId]);
 
