@@ -38,7 +38,7 @@ export class DebitNotePostingService {
 
       // 1. Fetch & lock Debit Note header record
       const dnResult = await client.query(
-        `SELECT id, debit_note_no, supplier_id, subtotal, discount_amount, tax_amount, total_amount, is_posted, status, currency_id, exchange_rate 
+        `SELECT id, debit_note_no, supplier_id, subtotal, tax_amount, total_amount, is_posted, status, currency_id, exchange_rate 
          FROM debit_notes 
          WHERE id = $1 AND company_id = $2 
          FOR UPDATE`,
@@ -273,17 +273,14 @@ export class DebitNotePostingService {
          SET is_posted = true, 
              posted_at = NOW(), 
              status = 'posted',
-             discount_amount = COALESCE($4, discount_amount),
              notes = COALESCE($3, notes),
              updated_at = NOW()
          WHERE id = $1 AND company_id = $2`,
-        [
-          debitNoteId,
-          companyId,
-          postingData.notes || null,
-          financials?.discount || null,
-        ],
+        [debitNoteId, companyId, postingData.notes || null],
       );
+
+      //  discount_amount = COALESCE($4, discount_amount),
+      // financials?.discount || null,
 
       await client.query("COMMIT");
 

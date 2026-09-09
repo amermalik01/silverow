@@ -31,7 +31,7 @@ interface Props {
   isReadOnly?: boolean;
 }
 
-type TabType = "general" | "invoicing" | "shipping";
+type TabType = "general" | "invoicing" | "shipping" | "attachments";
 
 export const PostedDebitNoteForm: React.FC<Props> = ({
   slug,
@@ -303,7 +303,9 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
       <div className=" bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200  pb-2 mb-4">
           <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar ">
-            {(["general", "invoicing", "shipping"] as TabType[]).map((tab) => (
+            {(
+              ["general", "invoicing", "shipping", "attachments"] as TabType[]
+            ).map((tab) => (
               <button
                 key={tab}
                 type="button"

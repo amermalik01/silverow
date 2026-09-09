@@ -324,10 +324,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         sum + Number(Number(l.quantity || 0) * Number(l.unit_cost || 0) || 0),
       0,
     );
-    // const originalAmount = lines.reduce(
-    //   (sum, l) => sum + Number(l.original_amount || 0),
-    //   0,
-    // );
     const totalDiscount = lines.reduce(
       (sum, l) => sum + Number(l.discount_amount || 0),
       0,
@@ -756,16 +752,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           `/${slug}/purchases/purchase-orders/${result.data.id}/edit`,
         );
       }
-
-      // else {
-      //   // Redirect to list page on initial creation
-      //   // router.push(`/${slug}/purchases/purchase-orders`);
-
-      //   if (result?.data.id)
-      //     router.replace(
-      //       `/${slug}/purchases/purchase-orders/${result?.data.id}/edit`,
-      //     );
-      // }
     } catch (err) {
       if (err instanceof Error) setValidationErrors([err.message]);
     } finally {
@@ -1260,19 +1246,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                     })
                   }
                 />
-                {/* <input
-                  type="number"
-                  step="0.01"
-                  disabled={isFormDisabled}
-                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
-                  value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
-                  onChange={(e) =>
-                    setCurrencyConfig({
-                      ...currencyConfig,
-                      exchange_rate: parseFloat(e.target.value) || 1,
-                    })
-                  }
-                /> */}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 items-center">
