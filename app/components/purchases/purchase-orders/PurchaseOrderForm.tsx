@@ -810,40 +810,43 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     if (lines.length === 0) {
       errors.push("Purchase order has no lines.");
     } else {
+      // Check whether every line is a G/L Account line
+      const allGLAccountLines = lines.every(
+        (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
+      );
+
+      if (allGLAccountLines) {
+        setValidationErrors([]);
+        return true;
+      }
       const hasItemLines = lines.some(
         (line) => (line.line_type || "ITEM") === "ITEM",
       );
 
-      const hasOnlyGLAccountLines = lines.every(
-        (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
-      );
+      lines.forEach((line, index) => {
+        const lineNo = index + 1;
+        const lineType = line.line_type || "ITEM";
 
-      // If all lines are G/L entries, no stock validation is required.
-      if (!hasOnlyGLAccountLines) {
-        lines.forEach((line, index) => {
-          const lineNo = index + 1;
-          const lineType = line.line_type || "ITEM";
+        if (lineType === "ITEM") {
+          const quantity = Number(line.quantity || 0);
 
-          if (lineType === "ITEM") {
-            const quantity = Number(line.quantity || 0);
+          if (!line.item_id) {
+            errors.push(`Line ${lineNo}: Item is required.`);
+            return;
+          }
 
-            if (!line.item_id) {
-              errors.push(`Line ${lineNo}: Item is required.`);
-              return;
-            }
+          if (!line.warehouse_id) {
+            errors.push(`Line ${lineNo}: Warehouse is required.`);
+            return;
+          }
 
-            if (!line.warehouse_id) {
-              errors.push(`Line ${lineNo}: Warehouse is required.`);
-              return;
-            }
+          if (quantity <= 0) {
+            errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
+            return;
+          }
 
-            if (quantity <= 0) {
-              errors.push(
-                `Line ${lineNo}: Quantity must be greater than zero.`,
-              );
-              return;
-            }
-
+          // Only validate allocation when there are ITEM lines.
+          if (hasItemLines) {
             const allocations =
               line.allocations || line.initialAllocations || [];
 
@@ -858,12 +861,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
               );
             }
           }
+        }
 
-          if (lineType === "GL_ACCOUNT" && !line.gl_account_id) {
-            errors.push(`Line ${lineNo}: G/L account is required.`);
-          }
-        });
-      }
+        if (lineType === "GL_ACCOUNT" && !line.gl_account_id) {
+          errors.push(`Line ${lineNo}: G/L account is required.`);
+        }
+      });
     }
 
     if (errors.length > 0) {
@@ -986,8 +989,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       return;
     }
 
+    const allGLAccountLines = lines.every(
+      (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
+    );
+
     // If item lines exist and are NOT fully received, prompt to receive & post
-    if (!isFullyReceived) {
+    if (!isFullyReceived && !allGLAccountLines) {
       setShowReceiveAndPostModal(true);
     } else {
       setShowInvoiceModal(true);

@@ -83,13 +83,19 @@ export default function PurchaseOrderLines({
     );
   }, [activeAllocationLineId, linesWithKeys]);
 
-  const createEmptyLine = (): PurchaseOrderLineUI => ({
+  const createEmptyLine = (
+    lineType: "ITEM" | "GL_ACCOUNT",
+  ): PurchaseOrderLineUI => ({
     _key: `temp-${Date.now()}-${Math.random()}`,
-    line_type: "ITEM",
+    line_type: lineType,
 
     item_id: undefined,
     item_code: undefined,
     item_name: undefined,
+
+    gl_account_id: undefined,
+    account_code: undefined,
+    account_name: undefined,
 
     description: "",
     quantity: 1,
@@ -116,33 +122,35 @@ export default function PurchaseOrderLines({
     initialAllocations: [],
   });
 
-  const addLine = () => {
-    setLines((prev) => [...prev, createEmptyLine()]);
+  // const addLine = () => {
+  //   setLines((prev) => [...prev, createEmptyLine()]);
+  // };
+
+  //   const addItemLine = () => {
+  //   setLines((prev) => [...prev, createEmptyLine("ITEM")]);
+  // };
+
+  // const addGLLine = () => {
+  //   setLines((prev) => [...prev, createEmptyLine("GL_ACCOUNT")]);
+  // };
+
+  const addItemLine = () => {
+    const newLine = createEmptyLine("ITEM");
+
+    setLines((prev) => {
+      setItemIndex(prev.length);
+      return [...prev, newLine];
+    });
   };
 
-  // const addLine = () => {
-  //   setLines((prev) => [
-  //     ...prev,
-  //     {
-  //       _key: `temp-${Date.now()}-${Math.random()}`,
-  //       line_type: "ITEM",
-  //       quantity: 1,
-  //       unit_cost: 0,
-  //       discount_type: "PERCENT",
-  //       discount_value: 0,
-  //       vat_percent: 0,
-  //       original_amount: 0,
-  //       discount_amount: 0,
-  //       net_amount: 0,
-  //       vat_amount: 0,
-  //       gross_amount: 0,
-  //       is_allocated: false,
-  //       received_quantity: 0,
-  //       allocations: [],
-  //       initialAllocations: [],
-  //     },
-  //   ]);
-  // };
+  const addGLLine = () => {
+    const newLine = createEmptyLine("GL_ACCOUNT");
+
+    setLines((prev) => {
+      setGlIndex(prev.length);
+      return [...prev, newLine];
+    });
+  };
 
   useEffect(() => {
     async function loadVatOptions() {
@@ -329,12 +337,32 @@ export default function PurchaseOrderLines({
 
           <Button
             type="button"
+            onClick={addItemLine}
+            variant="add_line"
+            disabled={isReadonly}
+          >
+            {/* <Icon icon="tabler:package" className="w-4 h-4 mr-1" /> */}
+            Select Item
+          </Button>
+
+          <Button
+            type="button"
+            onClick={addGLLine}
+            variant="add_line"
+            disabled={isReadonly}
+          >
+            {/* <Icon icon="tabler:receipt" className="w-4 h-4 mr-1" /> */}
+            Select G/L
+          </Button>
+
+          {/* <Button
+            type="button"
             onClick={addLine}
             variant="add_line"
             disabled={isReadonly}
           >
             Add Line
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -437,7 +465,7 @@ export default function PurchaseOrderLines({
                       : "bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
                   }`}
                 >
-                  <td className="p-2">
+                  {/* <td className="p-2">
                     <select
                       value={line.line_type || "ITEM"}
                       disabled={isLineDisabled}
@@ -452,6 +480,12 @@ export default function PurchaseOrderLines({
                       <option value="ITEM">Item</option>
                       <option value="GL_ACCOUNT">G/L</option>
                     </select>
+                  </td> */}
+
+                  <td className="p-2">
+                    <div className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                      {line.line_type === "ITEM" ? "Item" : "G/L"}
+                    </div>
                   </td>
 
                   <td className="p-2">
