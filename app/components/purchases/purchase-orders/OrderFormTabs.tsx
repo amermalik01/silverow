@@ -696,7 +696,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>Postcode/Co.</label>
-                <div className="col-span-8 flex gap-1">
+                <div className="col-span-8 grid grid-cols-2 gap-2">
                   <input
                     type="text"
                     disabled={isSettingsDisabled}
@@ -1127,7 +1127,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>Postcode/Co.</label>
-                <div className="col-span-8 flex gap-1">
+                <div className="col-span-8 grid grid-cols-2 gap-2">
                   <input
                     type="text"
                     disabled={isSettingsDisabled}
