@@ -1362,7 +1362,7 @@ export default function JournalForm({
 
         <GeneralConfirmModal
           isOpen={showPostConfirmModal}
-          title="Confirm Journal Posting"
+          title="Confirmation"
           message="Are you sure you want to post this Journal?"
           onConfirm={handlePostJournal}
           onCancel={() => setShowPostConfirmModal(false)}
