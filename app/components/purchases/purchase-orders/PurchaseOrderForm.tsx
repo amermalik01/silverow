@@ -703,7 +703,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   const handleSave = async () => {
     if (!validateForm()) {
-      toast.error("Please fix validation errors before saving.");
+      // toast.error("Please fix validation errors before saving.");
       return;
     }
 
@@ -809,48 +809,62 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
     if (lines.length === 0) {
       errors.push("Purchase order has no lines.");
+    } else {
+      const hasItemLines = lines.some(
+        (line) => (line.line_type || "ITEM") === "ITEM",
+      );
+
+      const hasOnlyGLAccountLines = lines.every(
+        (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
+      );
+
+      // If all lines are G/L entries, no stock validation is required.
+      if (!hasOnlyGLAccountLines) {
+        lines.forEach((line, index) => {
+          const lineNo = index + 1;
+          const lineType = line.line_type || "ITEM";
+
+          if (lineType === "ITEM") {
+            const quantity = Number(line.quantity || 0);
+
+            if (!line.item_id) {
+              errors.push(`Line ${lineNo}: Item is required.`);
+              return;
+            }
+
+            if (!line.warehouse_id) {
+              errors.push(`Line ${lineNo}: Warehouse is required.`);
+              return;
+            }
+
+            if (quantity <= 0) {
+              errors.push(
+                `Line ${lineNo}: Quantity must be greater than zero.`,
+              );
+              return;
+            }
+
+            const allocations =
+              line.allocations || line.initialAllocations || [];
+
+            const allocatedQuantity = allocations.reduce(
+              (sum, allocation) => sum + Number(allocation.quantity || 0),
+              0,
+            );
+
+            if (allocatedQuantity !== quantity) {
+              errors.push(
+                `Line ${lineNo}: Stock allocation is incomplete. Allocated ${allocatedQuantity} of ${quantity}.`,
+              );
+            }
+          }
+
+          if (lineType === "GL_ACCOUNT" && !line.gl_account_id) {
+            errors.push(`Line ${lineNo}: G/L account is required.`);
+          }
+        });
+      }
     }
-
-    lines.forEach((line, index) => {
-      const lineNo = index + 1;
-      const lineType = line.line_type || "ITEM";
-
-      if (lineType === "ITEM") {
-        const quantity = Number(line.quantity || 0);
-
-        if (!line.item_id) {
-          errors.push(`Line ${lineNo}: Item is required.`);
-          return;
-        }
-
-        if (!line.warehouse_id) {
-          errors.push(`Line ${lineNo}: Warehouse is required.`);
-          return;
-        }
-
-        if (quantity <= 0) {
-          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
-          return;
-        }
-
-        const allocations = line.allocations || line.initialAllocations || [];
-
-        const allocatedQuantity = allocations.reduce(
-          (sum, allocation) => sum + Number(allocation.quantity || 0),
-          0,
-        );
-
-        if (allocatedQuantity !== quantity) {
-          errors.push(
-            `Line ${lineNo}: Stock allocation is incomplete. Allocated ${allocatedQuantity} of ${quantity}.`,
-          );
-        }
-      }
-
-      if (lineType === "GL_ACCOUNT" && !line.gl_account_id) {
-        errors.push(`Line ${lineNo}: G/L account is required.`);
-      }
-    });
 
     if (errors.length > 0) {
       setValidationErrors(errors);
@@ -1232,7 +1246,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                 placeholder="Add External Notes"
                 disabled={isFormDisabled}
                 className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-slate-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
-              
                 value={order.notes || ""}
                 onChange={(e) => updateField("notes", e.target.value)}
               />
@@ -1431,7 +1444,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       <GeneralConfirmModal
         isOpen={showInvoiceModal}
         title="Confirmation"
-        message="Are you sure you want to post the invoice for this purchase order?"
+        message="Are you sure you want to post this purchase order?"
         onConfirm={handlePostInvoice}
         onCancel={() => setShowInvoiceModal(false)}
         loading={isPosting}
@@ -1442,11 +1455,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         isOpen={showReceiveAndPostModal}
         title="Stock Receipt Required"
         // message="Stock has not been fully received for this order. Would you like to receive the remaining stock automatically and <b>post the purchase invoice now?</b>"
+        // <strong></strong>
         message={
           <>
-            Stock has not been fully received for this order. Would you like to
-            receive the remaining stock automatically and{" "}
-            <strong>post the purchase invoice now?</strong>
+            Stock has not been received for this order. Would you like to
+            receive the remaining stock automatically and post the purchase
+            invoice now?
           </>
         }
         onConfirm={handleReceiveAndPost}

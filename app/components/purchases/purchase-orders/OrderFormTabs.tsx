@@ -374,7 +374,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Supplier Invoice No.">
-                  Suppl. Inv. No.
+                  Suppl. Inv. No.<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -387,7 +387,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Supplier Order No.">
-                  Suppl. Ord. No. <span className="text-red-500">*</span>
+                  Suppl. Ord. No. 
                 </label>
                 <input
                   type="text"

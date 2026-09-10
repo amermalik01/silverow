@@ -81,7 +81,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       return NextResponse.json(
         {
           success: false,
-          error: "No unfulfilled line quantities available to receive on this order.",
+          // error: "No unfulfilled line quantities available to receive on this order.",
+          error: "No Stock available to receive",
         },
         { status: 400 }
       );
