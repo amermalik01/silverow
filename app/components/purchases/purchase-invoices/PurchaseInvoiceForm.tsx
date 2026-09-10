@@ -331,6 +331,7 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
           onSalesOrderSelect={noop}
           onCustomerSelect={noop}
           onShippingAgentSelect={noop}
+          setPurchaserModalOpen={noop}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
           isReadOnly={true}
