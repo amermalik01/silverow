@@ -14,7 +14,6 @@ const looseNumber = z.preprocess((val) => {
   return isNaN(parsed) ? 0 : parsed;
 }, z.number().default(0));
 
-
 const looseUuid = z.preprocess((val) => {
   if (val === "" || val === null || val === undefined) {
     return undefined;
@@ -201,18 +200,44 @@ export const PurchaseOrderSchema = z.object({
   status: looseString,
 });
 
-export const PurchaseOrderPayloadSchema = z.object({
-  order: PurchaseOrderSchema,
-  lines: z
-    .array(PurchaseOrderLineSchema)
-    .min(
-      1,
-      "Transactional document records must contain at least 1 visual item line entry",
-    ),
-  primary_address: PurchaseOrderAddressSchema.nullable().optional(),
-  billing_address: PurchaseOrderAddressSchema.nullable().optional(),
-  shipping_address: PurchaseOrderAddressSchema.nullable().optional(),
-});
+// export const PurchaseOrderPayloadSchema = z.object({
+//   order: PurchaseOrderSchema,
+//   lines: z
+//     .array(PurchaseOrderLineSchema)
+//     .min(
+//       1,
+//       "Transactional document records must contain at least 1 visual item line entry",
+//     ),
+//   primary_address: PurchaseOrderAddressSchema.nullable().optional(),
+//   billing_address: PurchaseOrderAddressSchema.nullable().optional(),
+//   shipping_address: PurchaseOrderAddressSchema.nullable().optional(),
+// });
+
+export const PurchaseOrderPayloadSchema = z
+  .object({
+    order: PurchaseOrderSchema,
+
+    lines: z.array(PurchaseOrderLineSchema),
+
+    allow_empty_lines: z.boolean().optional().default(false),
+
+    primary_address: PurchaseOrderAddressSchema.nullable().optional(),
+    billing_address: PurchaseOrderAddressSchema.nullable().optional(),
+    shipping_address: PurchaseOrderAddressSchema.nullable().optional(),
+  })
+  .superRefine((payload, ctx) => {
+    if (!payload.allow_empty_lines && payload.lines.length === 0) {
+      ctx.addIssue({
+        code: "too_small",
+        minimum: 1,
+        inclusive: true,
+        origin: "array",
+        path: ["lines"],
+        message:
+          "Transactional document records must contain at least 1 visual item line entry",
+      });
+    }
+  });
 
 export type PurchaseOrderInput = z.infer<typeof PurchaseOrderSchema>;
 export type PurchaseOrderAddressInput = z.infer<

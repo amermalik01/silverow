@@ -10,7 +10,7 @@ import {
   PurchaseOrderLineUI,
 } from "@/types/purchase-order";
 
-import MigrationUploadModal from "@/app/components/migration/MigrationUploadModal";
+// import MigrationUploadModal from "@/app/components/migration/MigrationUploadModal";
 
 import ItemLookupModal, {
   ItemLookupRecord,
@@ -45,6 +45,8 @@ type Props = {
 
   purchaseOrder: Partial<PurchaseOrder>;
   refreshLines?: () => Promise<void>;
+
+  onImportItems?: () => void;
 };
 
 export default function PurchaseOrderLines({
@@ -53,6 +55,7 @@ export default function PurchaseOrderLines({
   isReadonly = false,
   purchaseOrder,
   refreshLines,
+  onImportItems,
 }: Props) {
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [glModalOpen, setGlModalOpen] = useState(false);
@@ -64,7 +67,7 @@ export default function PurchaseOrderLines({
 
   const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
 
-  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+  // const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
 
   // FIX 1: Track active allocation target by stable unique key instead of raw index
@@ -125,36 +128,6 @@ export default function PurchaseOrderLines({
     allocations: [],
     initialAllocations: [],
   });
-
-  // const addLine = () => {
-  //   setLines((prev) => [...prev, createEmptyLine()]);
-  // };
-
-  //   const addItemLine = () => {
-  //   setLines((prev) => [...prev, createEmptyLine("ITEM")]);
-  // };
-
-  // const addGLLine = () => {
-  //   setLines((prev) => [...prev, createEmptyLine("GL_ACCOUNT")]);
-  // };
-
-  // const addItemLine = () => {
-  //   const newLine = createEmptyLine("ITEM");
-
-  //   setLines((prev) => {
-  //     setItemIndex(prev.length);
-  //     return [...prev, newLine];
-  //   });
-  // };
-
-  // const addGLLine = () => {
-  //   const newLine = createEmptyLine("GL_ACCOUNT");
-
-  //   setLines((prev) => {
-  //     setGlIndex(prev.length);
-  //     return [...prev, newLine];
-  //   });
-  // };
 
   const addItemLine = () => {
     setItemModalOpen(true);
@@ -464,7 +437,7 @@ export default function PurchaseOrderLines({
         </h3>
 
         <div className="flex items-center gap-2">
-          {purchaseOrder.id && (
+          {/* {purchaseOrder.id && (
             <Button
               type="button"
               onClick={() => setIsMigrationModalOpen(true)}
@@ -474,7 +447,17 @@ export default function PurchaseOrderLines({
               <span>⇧</span>
               Import Items
             </Button>
-          )}
+          )} */}
+
+          <Button
+  type="button"
+  onClick={onImportItems}
+  variant="save"
+  disabled={isReadonly}
+>
+  <span>⇧</span>
+  Import Items
+</Button>
 
           <Button
             type="button"
@@ -864,6 +847,123 @@ export default function PurchaseOrderLines({
         onSelectMultiple={handleMultipleItemSelect}
       />
 
+      <GLAccountLookupModal
+        open={glModalOpen}
+        onClose={() => setGlModalOpen(false)}
+        multiple={true}
+        onSelect={() => {}}
+        onSelectMultiple={handleMultipleGLSelect}
+      />
+
+      <WarehouseLookupModal
+        open={warehouseIndex !== null}
+        onClose={() => setWarehouseIndex(null)}
+        onSelect={(warehouse: WarehouseLookupRecord) => {
+          if (warehouseIndex === null) return;
+
+          const updated = [...lines];
+
+          updated[warehouseIndex] = {
+            ...updated[warehouseIndex],
+
+            warehouse_id: warehouse.id,
+            warehouse_code: warehouse.code,
+            warehouse_name: warehouse.name,
+
+            allocations: undefined,
+            initialAllocations: undefined,
+            is_allocated: false,
+          };
+
+          setLines(updated);
+          setWarehouseIndex(null);
+        }}
+      />
+
+      {isAllocationModalOpen && activeAllocationLine && (
+        <PO_StockAllocationModal
+          key={`allocation-row-${activeAllocationLine._stableKey}`}
+          open={isAllocationModalOpen}
+          isReadonly={isReadonly}
+          onClose={() => {
+            setIsAllocationModalOpen(false);
+            setActiveAllocationLineId(null);
+          }}
+          targetQuantity={Number(activeAllocationLine.quantity || 0)}
+          itemId={activeAllocationLine.item_id || ""}
+          itemCode={activeAllocationLine.item_code || ""}
+          itemName={activeAllocationLine.item_name || ""}
+          warehouseId={activeAllocationLine.warehouse_id || ""}
+          warehouseName={activeAllocationLine.warehouse_name || ""}
+          uomName={activeAllocationLine.uom_name || ""}
+          initialAllocations={(
+            activeAllocationLine.allocations ||
+            activeAllocationLine.initialAllocations ||
+            []
+          ).map((alloc) => ({
+            location_id: String(alloc.location_id || ""),
+            location_name: String(alloc.location_name || ""),
+            date_received: String(alloc.date_received || ""),
+            prod_date: String(alloc.prod_date || ""),
+            expiry_date: String(alloc.expiry_date || ""),
+            batch_no: String(alloc.batch_no || ""),
+            // bin_code: String(alloc.bin_code || ""),
+            serial_no: String(alloc.serial_no || ""),
+            quantity: Number(alloc.quantity || 0),
+          }))}
+          onSave={(allocationsPayload) =>
+            handleSaveAllocations(allocationsPayload)
+          }
+        />
+      )}
+
+      {/* <MigrationUploadModal
+        open={isMigrationModalOpen}
+        onClose={() => setIsMigrationModalOpen(false)}
+        purchaseOrder={purchaseOrder}
+        onCompleted={async () => {
+          if (refreshLines) {
+            await refreshLines();
+          }
+
+          setIsMigrationModalOpen(false);
+        }}
+      /> */}
+    </div>
+  );
+}
+
+
+  // const addLine = () => {
+  //   setLines((prev) => [...prev, createEmptyLine()]);
+  // };
+
+  //   const addItemLine = () => {
+  //   setLines((prev) => [...prev, createEmptyLine("ITEM")]);
+  // };
+
+  // const addGLLine = () => {
+  //   setLines((prev) => [...prev, createEmptyLine("GL_ACCOUNT")]);
+  // };
+
+  // const addItemLine = () => {
+  //   const newLine = createEmptyLine("ITEM");
+
+  //   setLines((prev) => {
+  //     setItemIndex(prev.length);
+  //     return [...prev, newLine];
+  //   });
+  // };
+
+  // const addGLLine = () => {
+  //   const newLine = createEmptyLine("GL_ACCOUNT");
+
+  //   setLines((prev) => {
+  //     setGlIndex(prev.length);
+  //     return [...prev, newLine];
+  //   });
+  // };
+
       {/* <ItemLookupModal
         open={itemIndex !== null}
         onClose={() => setItemIndex(null)}
@@ -977,93 +1077,6 @@ export default function PurchaseOrderLines({
           setGlIndex(null);
         }}
       /> */}
-
-      <GLAccountLookupModal
-        open={glModalOpen}
-        onClose={() => setGlModalOpen(false)}
-        multiple={true}
-        onSelect={() => {}}
-        onSelectMultiple={handleMultipleGLSelect}
-      />
-
-      <WarehouseLookupModal
-        open={warehouseIndex !== null}
-        onClose={() => setWarehouseIndex(null)}
-        onSelect={(warehouse: WarehouseLookupRecord) => {
-          if (warehouseIndex === null) return;
-
-          const updated = [...lines];
-
-          updated[warehouseIndex] = {
-            ...updated[warehouseIndex],
-
-            warehouse_id: warehouse.id,
-            warehouse_code: warehouse.code,
-            warehouse_name: warehouse.name,
-
-            allocations: undefined,
-            initialAllocations: undefined,
-            is_allocated: false,
-          };
-
-          setLines(updated);
-          setWarehouseIndex(null);
-        }}
-      />
-
-      {isAllocationModalOpen && activeAllocationLine && (
-        <PO_StockAllocationModal
-          key={`allocation-row-${activeAllocationLine._stableKey}`}
-          open={isAllocationModalOpen}
-          isReadonly={isReadonly}
-          onClose={() => {
-            setIsAllocationModalOpen(false);
-            setActiveAllocationLineId(null);
-          }}
-          targetQuantity={Number(activeAllocationLine.quantity || 0)}
-          itemId={activeAllocationLine.item_id || ""}
-          itemCode={activeAllocationLine.item_code || ""}
-          itemName={activeAllocationLine.item_name || ""}
-          warehouseId={activeAllocationLine.warehouse_id || ""}
-          warehouseName={activeAllocationLine.warehouse_name || ""}
-          uomName={activeAllocationLine.uom_name || ""}
-          initialAllocations={(
-            activeAllocationLine.allocations ||
-            activeAllocationLine.initialAllocations ||
-            []
-          ).map((alloc) => ({
-            location_id: String(alloc.location_id || ""),
-            location_name: String(alloc.location_name || ""),
-            date_received: String(alloc.date_received || ""),
-            prod_date: String(alloc.prod_date || ""),
-            expiry_date: String(alloc.expiry_date || ""),
-            batch_no: String(alloc.batch_no || ""),
-            // bin_code: String(alloc.bin_code || ""),
-            serial_no: String(alloc.serial_no || ""),
-            quantity: Number(alloc.quantity || 0),
-          }))}
-          onSave={(allocationsPayload) =>
-            handleSaveAllocations(allocationsPayload)
-          }
-        />
-      )}
-
-      <MigrationUploadModal
-        open={isMigrationModalOpen}
-        onClose={() => setIsMigrationModalOpen(false)}
-        purchaseOrder={purchaseOrder}
-        onCompleted={async () => {
-          if (refreshLines) {
-            await refreshLines();
-          }
-
-          setIsMigrationModalOpen(false);
-        }}
-      />
-    </div>
-  );
-}
-
 // className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
 //   // 🟡 YELLOW / AMBER = Stock Received
 //   isStockReceived

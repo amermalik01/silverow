@@ -115,6 +115,7 @@ export interface PurchaseOrderPayload {
   shipping_address?: PurchaseOrderAddress;
 
   lines: PurchaseOrderLine[];
+  allow_empty_lines: boolean;
 }
 
 export type PurchaseOrderLineType = "ITEM" | "GL_ACCOUNT" | "COMMENT";

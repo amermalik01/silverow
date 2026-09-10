@@ -47,6 +47,8 @@ import SalespersonLookupModal, {
   Employee,
 } from "../../shared/modals/SalespersonLookupModal";
 
+import MigrationUploadModal from "@/app/components/migration/MigrationUploadModal";
+
 interface Props {
   slug: string;
   id?: string;
@@ -82,6 +84,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const [SOModalOpen, setSOModalOpen] = useState(false);
 
   const [PurchaserModalOpen, setPurchaserModalOpen] = useState(false);
+
+  const [showMigrationModal, setShowMigrationModal] = useState(false);
+  const [migrationPurchaseOrderId, setMigrationPurchaseOrderId] = useState<
+    string | null
+  >(null);
 
   // Manage view/edit state locally
   const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
@@ -196,32 +203,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       const qty = Number(l.quantity || 0);
       const rcvd = Number(l.received_quantity || 0);
       return qty > 0 && rcvd >= qty;
-    });
-  }, [lines]);
-
-  const isFullyAllocated = useMemo(() => {
-    const itemLines = lines.filter(
-      (line) => (line.line_type || "ITEM") === "ITEM",
-    );
-
-    if (itemLines.length === 0) return false;
-
-    return itemLines.every((line) => {
-      const quantity = Number(line.quantity || 0);
-
-      const allocations = line.allocations || line.initialAllocations || [];
-
-      const allocatedQuantity = allocations.reduce(
-        (sum, allocation) => sum + Number(allocation.quantity || 0),
-        0,
-      );
-
-      return (
-        line.item_id &&
-        line.warehouse_id &&
-        quantity > 0 &&
-        allocatedQuantity === quantity
-      );
     });
   }, [lines]);
 
@@ -362,10 +343,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   const handleGeneralSupplierSelection = () => {
     setSupplierSelectionSource("general");
-    // if (lines.length > 0) {
-    //   setShowSupplierChangeModal(true);
-    //   return;
-    // }
 
     if (hasSelectedLineItem) {
       setShowSupplierChangeModal(true);
@@ -376,10 +353,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   const handleInvoicingSupplierSelection = () => {
     setSupplierSelectionSource("invoicing");
-    // if (lines.length > 0) {
-    //   setShowSupplierChangeModal(true);
-    //   return;
-    // }
+
     if (hasSelectedLineItem) {
       setShowSupplierChangeModal(true);
       return;
@@ -509,14 +483,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     setPOModalOpen(true);
   };
 
-  // const handleSelectPurchaseOrder = async (order: PurchaseOrderLookupItem) => {
-  //   setOrder((prev) => ({
-  //     ...prev,
-  //     linked_po: `${order.order_no}`,
-  //   }));
-  //   setPOModalOpen(false);
-  // };
-
   const handleSelectPurchaseOrders = (
     selectedOrders: PurchaseOrderLookupItem[],
   ) => {
@@ -600,61 +566,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     return errors;
   };
 
-  const allocationValidation = useMemo(() => {
-    const itemLines = lines.filter(
-      (line) => (line.line_type || "ITEM") === "ITEM",
-    );
-
-    const errors: string[] = [];
-
-    if (itemLines.length === 0) {
-      return {
-        valid: false,
-        errors: ["At least one item line is required."],
-      };
-    }
-
-    itemLines.forEach((line, index) => {
-      const quantity = Number(line.quantity || 0);
-
-      const allocations = line.allocations || line.initialAllocations || [];
-
-      const allocatedQuantity = allocations.reduce(
-        (sum, allocation) => sum + Number(allocation.quantity || 0),
-        0,
-      );
-
-      if (!line.item_id) {
-        errors.push(`Item line ${index + 1}: Item has not been selected.`);
-        return;
-      }
-
-      if (!line.warehouse_id) {
-        errors.push(`Item line ${index + 1}: Warehouse has not been selected.`);
-        return;
-      }
-
-      if (quantity <= 0) {
-        errors.push(
-          `Item line ${index + 1}: Quantity must be greater than zero.`,
-        );
-        return;
-      }
-
-      if (allocatedQuantity !== quantity) {
-        errors.push(
-          `Item line ${index + 1}: Stock allocation is incomplete (${allocatedQuantity}/${quantity}).`,
-        );
-      }
-    });
-
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
-  }, [lines]);
-
-  const validateForm = (): boolean => {
+  const validateForm = (includeLines = true): boolean => {
     const errors: string[] = [];
     if (!order.supplier_id) errors.push("Supplier selection is required.");
 
@@ -670,10 +582,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
     if (!currencyConfig.currency_id)
       errors.push("Transactional currency is required.");
-    // if (lines.length === 0)
-    //   errors.push("Purchase orders require at least one line item.");
 
-    errors.push(...validateLines());
+    if (includeLines) {
+      errors.push(...validateLines());
+    }
+
     errors.push(...validateDates());
 
     setValidationErrors(errors);
@@ -718,7 +631,133 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     return errors;
   };
 
+  const savePurchaseOrder = async (
+    requireLines = false,
+  ): Promise<string | null> => {
+    if (!validateForm(!requireLines)) {
+      return null;
+    }
+
+    show("Saving...");
+
+    try {
+      setSaving(true);
+      setValidationErrors([]);
+
+      const payload = {
+        order: {
+          ...order,
+          ...currencyConfig,
+          subtotal: financials.amount,
+          tax_amount: financials.vat,
+          total_amount: financials.amountInclVat,
+        },
+
+        primary_address: primaryAddress,
+        billing_address: billingAddress,
+        shipping_address: shippingAddress,
+
+        lines,
+        allow_empty_lines: requireLines,
+      };
+
+      const res = await fetch(
+        id ? `/api/purchase-orders/${id}` : "/api/purchase-orders",
+        {
+          method: id ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          result.error || "Execution error writing back purchase records.",
+        );
+      }
+
+      const targetId = id || result?.data?.id;
+
+      if (!targetId) {
+        throw new Error("Purchase Order was saved but no ID was returned.");
+      }
+
+      toast.success(id ? "Purchase Order Updated" : "Purchase Order Created");
+
+      // IMPORTANT:
+      // Keep the newly created ID in local state.
+      setOrder((prev) => ({
+        ...prev,
+        ...(result?.data || {}),
+        id: targetId,
+      }));
+
+      // Re-fetch persisted lines so newly created line IDs are available.
+      const linesRes = await fetch(`/api/purchase-orders/${targetId}/lines`);
+
+      if (linesRes.ok) {
+        const linesData = await linesRes.json();
+
+        if (linesData.lines) {
+          setLines(linesData.lines);
+        }
+      }
+
+      return targetId;
+    } catch (err) {
+      if (err instanceof Error) {
+        setValidationErrors([err.message]);
+        toast.error(err.message);
+      }
+
+      return null;
+    } finally {
+      setSaving(false);
+      hide();
+    }
+  };
+
   const handleSave = async () => {
+    const targetId = await savePurchaseOrder(false);
+
+    if (!targetId) return;
+
+    if (id) {
+      // Existing PO: return to view mode
+      setIsEditMode(false);
+      router.refresh();
+    } else {
+      // New PO: move to edit URL
+      router.replace(`/${slug}/purchases/purchase-orders/${targetId}/edit`);
+    }
+  };
+
+  const handleImportItems = async () => {
+    // Existing PO
+    if (order.id) {
+      setMigrationPurchaseOrderId(order.id);
+      setShowMigrationModal(true);
+      return;
+    }
+
+    // New PO - save first
+    const targetId = await savePurchaseOrder(true);
+
+    if (!targetId) {
+      return;
+    }
+
+    setMigrationPurchaseOrderId(targetId);
+    setIsEditMode(true);
+
+    router.replace(`/${slug}/purchases/purchase-orders/${targetId}/edit`);
+
+    setShowMigrationModal(true);
+  };
+
+  /* const handleSave = async () => {
     if (!validateForm()) {
       // toast.error("Please fix validation errors before saving.");
       return;
@@ -789,7 +828,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       setSaving(false);
       hide();
     }
-  };
+  }; */
 
   const handleStageClick = async (targetStage: {
     id: string;
@@ -1245,12 +1284,20 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         />
       </div>
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        {/* <PurchaseOrderLines
+          lines={lines}
+          setLines={setLines}
+          isReadonly={isFormDisabled}
+          purchaseOrder={order}
+          refreshLines={refreshLines}
+        /> */}
         <PurchaseOrderLines
           lines={lines}
           setLines={setLines}
           isReadonly={isFormDisabled}
           purchaseOrder={order}
           refreshLines={refreshLines}
+          onImportItems={handleImportItems}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 px-2">
@@ -1390,10 +1437,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                 <Button
                   type="button"
                   variant="post"
-                  // onClick={() => setShowInvoiceModal(true)}
                   onClick={handlePostInvoiceClick}
                   disabled={isPosting || isCompleted}
-                  // className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   Post Invoice
                 </Button>
@@ -1425,7 +1470,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                     type="button"
                     variant="edit"
                     onClick={() => setIsEditMode(true)}
-                    // className="px-3.5 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     Edit
                   </Button>
@@ -1435,7 +1479,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                     variant="save"
                     onClick={handleSave}
                     disabled={saving}
-                    // className="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
                   >
                     {saving ? "Saving..." : "Save"}
                   </Button>
@@ -1571,6 +1614,81 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           });
         }}
       />
+
+      {showMigrationModal && (
+        <MigrationUploadModal
+          open={showMigrationModal}
+          onClose={() => {
+            setShowMigrationModal(false);
+            setMigrationPurchaseOrderId(null);
+          }}
+          purchaseOrder={{
+            ...order,
+            id: migrationPurchaseOrderId || order.id,
+          }}
+          onCompleted={async () => {
+            await refreshLines();
+
+            setShowMigrationModal(false);
+            setMigrationPurchaseOrderId(null);
+          }}
+        />
+      )}
     </div>
   );
 };
+/* 
+
+  const allocationValidation = useMemo(() => {
+    const itemLines = lines.filter(
+      (line) => (line.line_type || "ITEM") === "ITEM",
+    );
+
+    const errors: string[] = [];
+
+    if (itemLines.length === 0) {
+      return {
+        valid: false,
+        errors: ["At least one item line is required."],
+      };
+    }
+
+    itemLines.forEach((line, index) => {
+      const quantity = Number(line.quantity || 0);
+
+      const allocations = line.allocations || line.initialAllocations || [];
+
+      const allocatedQuantity = allocations.reduce(
+        (sum, allocation) => sum + Number(allocation.quantity || 0),
+        0,
+      );
+
+      if (!line.item_id) {
+        errors.push(`Item line ${index + 1}: Item has not been selected.`);
+        return;
+      }
+
+      if (!line.warehouse_id) {
+        errors.push(`Item line ${index + 1}: Warehouse has not been selected.`);
+        return;
+      }
+
+      if (quantity <= 0) {
+        errors.push(
+          `Item line ${index + 1}: Quantity must be greater than zero.`,
+        );
+        return;
+      }
+
+      if (allocatedQuantity !== quantity) {
+        errors.push(
+          `Item line ${index + 1}: Stock allocation is incomplete (${allocatedQuantity}/${quantity}).`,
+        );
+      }
+    });
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
+  }, [lines]); */
