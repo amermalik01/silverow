@@ -43,6 +43,9 @@ import {
   SalesOrderLookupModal,
 } from "../../shared/modals/SalesOrderLookupModal";
 import { PO_StockAllocationRecord } from "../../shared/modals/PO_StockAllocationModal";
+import SalespersonLookupModal, {
+  Employee,
+} from "../../shared/modals/SalespersonLookupModal";
 
 interface Props {
   slug: string;
@@ -77,6 +80,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   const [POModalOpen, setPOModalOpen] = useState(false);
   const [SOModalOpen, setSOModalOpen] = useState(false);
+
+  const [PurchaserModalOpen, setPurchaserModalOpen] = useState(false);
 
   // Manage view/edit state locally
   const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
@@ -533,6 +538,18 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       link_to_so_no: `${order.order_no}`,
     }));
     setPOModalOpen(false);
+  };
+
+  const handlePurchaserSelection = () => {
+    setPurchaserModalOpen(true);
+  };
+
+  const handlePurchaserSelect = (emp: Employee) => {
+    setOrder((prev) => ({
+      ...prev,
+      purchaser: emp.employee_code + "-" + emp.display_name,
+    }));
+    setPurchaserModalOpen(false);
   };
 
   const updateField = <K extends keyof PurchaseOrder>(
@@ -1222,6 +1239,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           onSalesOrderSelect={handleSalesOrderSelection}
           onCustomerSelect={handleCustomerSelection}
           onShippingAgentSelect={handleShippingAgentSelection}
+          setPurchaserModalOpen={handlePurchaserSelection}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
           inputDateStyle={inputDateStyle}
@@ -1526,6 +1544,13 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           isOpen={SOModalOpen}
           onClose={() => setSOModalOpen(false)}
           onSelectOrder={handleSelectSalesOrder}
+        />
+      )}
+      {PurchaserModalOpen && (
+        <SalespersonLookupModal
+          open={PurchaserModalOpen}
+          onClose={() => setPurchaserModalOpen(false)}
+          onSelect={handlePurchaserSelect}
         />
       )}
 

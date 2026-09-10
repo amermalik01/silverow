@@ -73,6 +73,7 @@ interface OrderFormTabsProps {
   onSalesOrderSelect: () => void;
   onCustomerSelect: () => void;
   onShippingAgentSelect: () => void;
+  setPurchaserModalOpen: () => void;
 
   labelStyle?: string;
   inputStyle?: string;
@@ -102,6 +103,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   onSalesOrderSelect,
   onCustomerSelect,
   onShippingAgentSelect,
+  setPurchaserModalOpen,
 
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
   inputStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
@@ -295,7 +297,14 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     }
                   />
 
-                  <MasterDropdown
+                  <input
+                    type="text"
+                    disabled={isSettingsDisabled}
+                    className={inputcolumnDivStyle}
+                    value={primaryAddress.country || ""}
+                  />
+
+                  {/* <MasterDropdown
                     type="country"
                     value={primaryAddress.country || "United Kingdom"}
                     disabled={isSettingsDisabled}
@@ -306,7 +315,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                         country: val ?? undefined,
                       })
                     }
-                  />
+                  /> */}
                 </div>
               </div>
             </div>
@@ -318,7 +327,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
-                  disabled={isSettingsDisabled}
+                  disabled={isReadOnly}
                   value={primaryAddress.contact_person || ""}
                   onChange={(e) =>
                     setPrimaryAddress({
@@ -333,7 +342,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
-                  disabled={isSettingsDisabled}
+                  disabled={isReadOnly}
                   value={primaryAddress.phone || ""}
                   onChange={(e) =>
                     setPrimaryAddress({
@@ -348,7 +357,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <input
                   type="text"
                   className={inputStyle}
-                  disabled={isSettingsDisabled}
+                  disabled={isReadOnly}
                   value={primaryAddress.email || ""}
                   onChange={(e) =>
                     setPrimaryAddress({
@@ -360,13 +369,34 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>Purchaser</label>
-                <input
+                {/* <input
                   type="text"
                   className={inputStyle}
                   disabled={isSettingsDisabled}
                   value={order.purchaser || ""}
                   onChange={(e) => updateField("purchaser", e.target.value)}
-                />
+                /> */}
+
+                <div className="col-span-8 flex gap-1">
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
+                    className={inputStyle}
+                    value={order.purchaser || ""}
+                    onChange={(e) =>
+                      updateField("purchaser", e.target.value)
+                    }
+                  />
+                  <button
+                    type="button"
+                    disabled={isReadOnly}
+                    onClick={setPurchaserModalOpen}
+                    className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                  >
+                    <Icon icon="tabler:external-link" className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -709,8 +739,14 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       })
                     }
                   />
+                  <input
+                    type="text"
+                    disabled={isSettingsDisabled}
+                    className={inputcolumnDivStyle}
+                    value={billingAddress.country || ""}
+                  />
 
-                  <MasterDropdown
+                  {/* <MasterDropdown
                     type="country"
                     value={billingAddress.country || "United Kingdom"}
                     disabled={isSettingsDisabled}
@@ -721,7 +757,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                         country: val ?? undefined,
                       })
                     }
-                  />
+                  /> */}
                 </div>
               </div>
             </div>
@@ -1140,7 +1176,15 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       })
                     }
                   />
-                  <MasterDropdown
+
+                  
+                  <input
+                    type="text"
+                    disabled={isSettingsDisabled}
+                    className={inputcolumnDivStyle}
+                    value={shippingAddress.country || ""}
+                  />
+                  {/* <MasterDropdown
                     type="country"
                     value={shippingAddress.country || "United Kingdom"}
                     disabled={isSettingsDisabled}
@@ -1151,7 +1195,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                         country: val ?? undefined,
                       })
                     }
-                  />
+                  /> */}
                 </div>
               </div>
             </div>
