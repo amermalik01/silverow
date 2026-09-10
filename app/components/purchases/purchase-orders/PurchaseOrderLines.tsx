@@ -54,8 +54,12 @@ export default function PurchaseOrderLines({
   purchaseOrder,
   refreshLines,
 }: Props) {
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [glModalOpen, setGlModalOpen] = useState(false);
+
   const [itemIndex, setItemIndex] = useState<number | null>(null);
   const [glIndex, setGlIndex] = useState<number | null>(null);
+
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
 
   const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
@@ -86,7 +90,7 @@ export default function PurchaseOrderLines({
   const createEmptyLine = (
     lineType: "ITEM" | "GL_ACCOUNT",
   ): PurchaseOrderLineUI => ({
-    _key: `temp-${Date.now()}-${Math.random()}`,
+    // _key: `temp-${Date.now()}-${Math.random()}`,
     line_type: lineType,
 
     item_id: undefined,
@@ -134,22 +138,159 @@ export default function PurchaseOrderLines({
   //   setLines((prev) => [...prev, createEmptyLine("GL_ACCOUNT")]);
   // };
 
-  const addItemLine = () => {
-    const newLine = createEmptyLine("ITEM");
+  // const addItemLine = () => {
+  //   const newLine = createEmptyLine("ITEM");
 
-    setLines((prev) => {
-      setItemIndex(prev.length);
-      return [...prev, newLine];
-    });
+  //   setLines((prev) => {
+  //     setItemIndex(prev.length);
+  //     return [...prev, newLine];
+  //   });
+  // };
+
+  // const addGLLine = () => {
+  //   const newLine = createEmptyLine("GL_ACCOUNT");
+
+  //   setLines((prev) => {
+  //     setGlIndex(prev.length);
+  //     return [...prev, newLine];
+  //   });
+  // };
+
+  const addItemLine = () => {
+    setItemModalOpen(true);
   };
 
   const addGLLine = () => {
-    const newLine = createEmptyLine("GL_ACCOUNT");
+    setGlModalOpen(true);
+  };
 
-    setLines((prev) => {
-      setGlIndex(prev.length);
-      return [...prev, newLine];
+  const buildItemLine = async (
+    item: ItemLookupRecord,
+  ): Promise<PurchaseOrderLineUI> => {
+    // 1. Fetch Default Warehouse
+    let defaultWarehouse: {
+      id?: string;
+      code?: string;
+      name?: string;
+    } | null = null;
+
+    try {
+      const warehouseResponse = await fetch(
+        `/api/lookups/default-warehouse?item_id=${item.id}`,
+      );
+
+      if (warehouseResponse.ok) {
+        const warehouseData = await warehouseResponse.json();
+        defaultWarehouse = warehouseData.data;
+      }
+    } catch (err) {
+      console.error("Failed to fetch default warehouse:", err);
+    }
+
+    // 2. Resolve VAT Business Posting Group
+    const vatBusinessGroupId = purchaseOrder.purchase_posting_group_id || "";
+
+    // 3. Resolve VAT Product Posting Group
+    const vatProductGroupId = item.vat_product_group_id || "";
+
+    // 4. Resolve VAT percentage
+    let calculatedVatPercent = 0;
+
+    if (vatBusinessGroupId && vatProductGroupId) {
+      try {
+        const vatParams = new URLSearchParams({
+          vat_business_group_id: vatBusinessGroupId,
+          vat_product_group_id: vatProductGroupId,
+        });
+
+        const vatResponse = await fetch(
+          `/api/lookups/vat-posting-setup?${vatParams.toString()}`,
+        );
+
+        if (vatResponse.ok) {
+          const vatData = await vatResponse.json();
+
+          calculatedVatPercent = Number(
+            vatData.data?.vat_rate ?? vatData.data?.vat_percent ?? 0,
+          );
+        }
+      } catch (err) {
+        console.error("Error resolving VAT posting setup rate:", err);
+      }
+    }
+
+    return calculateLine({
+      ...createEmptyLine("ITEM"),
+
+      line_type: "ITEM",
+
+      item_id: item.id,
+      item_code: item.item_code,
+      item_name: item.name,
+
+      description: item.description || item.name,
+
+      unit_cost: Number(item.standard_cost || 0),
+
+      uom_id: item.base_uom_id,
+      uom_name: item.base_uom_name,
+
+      vat_percent: calculatedVatPercent,
+      vat_business_posting_group_id: vatBusinessGroupId,
+      vat_product_posting_group_id: vatProductGroupId,
+
+      warehouse_id: defaultWarehouse?.id,
+      warehouse_code: defaultWarehouse?.code,
+      warehouse_name: defaultWarehouse?.name,
+
+      allocations: [],
+      initialAllocations: [],
+      is_allocated: false,
     });
+  };
+
+  const handleMultipleItemSelect = async (items: ItemLookupRecord[]) => {
+    if (!items.length) {
+      setItemModalOpen(false);
+      return;
+    }
+
+    try {
+      const newLines = await Promise.all(
+        items.map((item) => buildItemLine(item)),
+      );
+
+      setLines((prev) => [...prev, ...newLines]);
+
+      setItemModalOpen(false);
+    } catch (error) {
+      console.error("Failed to add selected items:", error);
+    }
+  };
+
+  const handleMultipleGLSelect = (accounts: GLAccountLookupRecord[]) => {
+    if (!accounts.length) {
+      setGlModalOpen(false);
+      return;
+    }
+
+    const newLines = accounts.map((account) =>
+      calculateLine({
+        ...createEmptyLine("GL_ACCOUNT"),
+
+        line_type: "GL_ACCOUNT",
+
+        gl_account_id: account.id,
+        account_code: account.code,
+        account_name: account.name,
+
+        description: account.name,
+      }),
+    );
+
+    setLines((prev) => [...prev, ...newLines]);
+
+    setGlModalOpen(false);
   };
 
   useEffect(() => {
@@ -716,6 +857,14 @@ export default function PurchaseOrderLines({
       </div>
 
       <ItemLookupModal
+        open={itemModalOpen}
+        onClose={() => setItemModalOpen(false)}
+        multiple={true}
+        onSelect={() => {}}
+        onSelectMultiple={handleMultipleItemSelect}
+      />
+
+      {/* <ItemLookupModal
         open={itemIndex !== null}
         onClose={() => setItemIndex(null)}
         onSelect={async (item: ItemLookupRecord) => {
@@ -806,9 +955,9 @@ export default function PurchaseOrderLines({
           setLines(updated);
           setItemIndex(null);
         }}
-      />
+      /> */}
 
-      <GLAccountLookupModal
+      {/* <GLAccountLookupModal
         open={glIndex !== null}
         onClose={() => setGlIndex(null)}
         onSelect={(gl: GLAccountLookupRecord) => {
@@ -827,6 +976,14 @@ export default function PurchaseOrderLines({
           setLines(updated);
           setGlIndex(null);
         }}
+      /> */}
+
+      <GLAccountLookupModal
+        open={glModalOpen}
+        onClose={() => setGlModalOpen(false)}
+        multiple={true}
+        onSelect={() => {}}
+        onSelectMultiple={handleMultipleGLSelect}
       />
 
       <WarehouseLookupModal

@@ -252,7 +252,7 @@ export default function PO_StockAllocationModal({
                 <th className="p-3 w-40">Prod. Date</th>
                 <th className="p-3 w-40">Use By Date</th>
                 <th className="p-3 w-52">Storage Location</th>
-                <th className="p-3">Batch / Lot No.</th>
+                <th className="p-3">Batch No.</th>
                 <th className="p-3">Serial No.</th>
                 <th className="p-3 w-28 text-right">Qty. ({uomName})</th>
                 <th className="p-3 text-center w-16">Action</th>

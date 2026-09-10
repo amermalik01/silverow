@@ -384,9 +384,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     disabled
                     className={inputStyle}
                     value={order.purchaser || ""}
-                    onChange={(e) =>
-                      updateField("purchaser", e.target.value)
-                    }
+                    onChange={(e) => updateField("purchaser", e.target.value)}
                   />
                   <button
                     type="button"
@@ -417,7 +415,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Supplier Order No.">
-                  Suppl. Ord. No. 
+                  Suppl. Ord. No.
                 </label>
                 <input
                   type="text"
@@ -464,7 +462,9 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             {/* Column 4 */}
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>Invoice Date <span className="text-red-500">*</span></label>
+                <label className={labelStyle}>
+                  Invoice Date <span className="text-red-500">*</span>
+                </label>
 
                 <DatePicker
                   value={
@@ -813,7 +813,23 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 <label className={labelStyle}>
                   Currency {/* <span className="text-red-500">*</span> */}
                 </label>
-                <select
+
+                <input
+                  type="text"
+                  disabled={isSettingsDisabled}
+                  readOnly
+                  className={selectStyle}
+                  value={(() => {
+                    const currency = masterData?.currencies.find(
+                      (c) => c.id === currencyConfig.currency_id,
+                    );
+
+                    return currency
+                      ? `${currency.code} - ${currency.name}`
+                      : "";
+                  })()}
+                />
+                {/* <select
                   disabled={isSettingsDisabled}
                   className={selectStyle}
                   value={currencyConfig.currency_id ?? ""}
@@ -834,7 +850,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       {c.code} - {c.name}
                     </option>
                   ))}
-                </select>
+                </select> */}
               </div>
             </div>
 
@@ -1005,7 +1021,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
 
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>{`Link to PO's`}</label>
+                <label className={labelStyle}>{`Link to PO's.`}</label>
                 <div className="col-span-8 flex gap-1">
                   {/* <input
                     type="text"
@@ -1042,9 +1058,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                         );
                       })
                     ) : (
-                      <span className="text-slate-400 text-xs px-1">
-                        
-                      </span>
+                      <span className="text-slate-400 text-xs px-1"></span>
                     )}
                   </div>
                   <button
@@ -1177,7 +1191,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     }
                   />
 
-                  
                   <input
                     type="text"
                     disabled={isSettingsDisabled}

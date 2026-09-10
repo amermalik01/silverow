@@ -140,7 +140,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     Partial<PurchaseOrderAddress>
   >({ address_type: "shipping" });
 
-  const createEmptyPurchaseOrderLine = (): PurchaseOrderLineUI => ({
+  /* const createEmptyPurchaseOrderLine = (): PurchaseOrderLineUI => ({
     _key: `temp-${Date.now()}-${Math.random()}`,
     line_type: "ITEM",
 
@@ -171,12 +171,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
     allocations: [],
     initialAllocations: [],
-  });
+  }); */
 
-  // const [lines, setLines] = useState<PurchaseOrderLine[]>([]);
-  const [lines, setLines] = useState<PurchaseOrderLineUI[]>(
-    id ? [] : [createEmptyPurchaseOrderLine()],
-  );
+  const [lines, setLines] = useState<PurchaseOrderLineUI[]>([]);
+  // const [lines, setLines] = useState<PurchaseOrderLineUI[]>(
+  //   id ? [] : [createEmptyPurchaseOrderLine()],
+  // );
 
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
@@ -389,8 +389,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   const handleConfirmSupplierChange = () => {
     // Remove all existing PO lines.
-    // setLines([]);
-    setLines([createEmptyPurchaseOrderLine()]);
+    setLines([]);
+    // setLines([createEmptyPurchaseOrderLine()]);
 
     // Close confirmation modal.
     setShowSupplierChangeModal(false);
@@ -724,7 +724,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       return;
     }
 
-    show("Saving Record...");
+    show("Saving...");
 
     try {
       setSaving(true);
@@ -888,9 +888,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
     if (errors.length > 0) {
       setValidationErrors(errors);
-
-      toast.error("Please complete the purchase order before continuing.");
-
+      // toast.error("Please complete the purchase order before continuing.");
       return false;
     }
 
@@ -1484,8 +1482,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         message={
           <>
             Stock has not been received for this order. Would you like to
-            receive the remaining stock automatically and post the purchase
-            invoice now?
+            receive the stock automatically and post the purchase order now?
           </>
         }
         onConfirm={handleReceiveAndPost}

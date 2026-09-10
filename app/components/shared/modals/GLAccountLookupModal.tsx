@@ -105,22 +105,22 @@ export default function GLAccountLookupModal({
     setSelectedRecords((prev) =>
       prev.some((item) => item.id === acc.id)
         ? prev.filter((item) => item.id !== acc.id)
-        : [...prev, acc]
+        : [...prev, acc],
     );
   };
 
   const handleSelectAllOnPage = () => {
     const allSelected = accounts.every((acc) =>
-      selectedRecords.some((r) => r.id === acc.id)
+      selectedRecords.some((r) => r.id === acc.id),
     );
     if (allSelected) {
       setSelectedRecords((prev) =>
-        prev.filter((r) => !accounts.some((acc) => acc.id === r.id))
+        prev.filter((r) => !accounts.some((acc) => acc.id === r.id)),
       );
     } else {
       setSelectedRecords((prev) => {
         const uniqueNew = accounts.filter(
-          (acc) => !prev.some((r) => r.id === acc.id)
+          (acc) => !prev.some((r) => r.id === acc.id),
         );
         return [...prev, ...uniqueNew];
       });
@@ -183,14 +183,20 @@ export default function GLAccountLookupModal({
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-3">
             {loading && (
-              <span className="flex items-center gap-1 text-[#103701] dark:text-slate-300">
+              <span className="flex items-center gap-1 text-xs text-[#103701] dark:text-slate-300">
                 <Icon
                   icon="tabler:loader-2"
                   className="animate-spin text-base"
-                />{" "}
+                />
                 Searching...
+              </span>
+            )}
+
+            {multiple && selectedRecords.length > 0 && (
+              <span className="text-xs px-2.5 py-1 rounded-full bg-[#103701]/10 text-[#103701] dark:bg-slate-800 dark:text-slate-200 font-medium border border-[#103701]/20 dark:border-slate-700">
+                {selectedRecords.length} GL Account(s) selected
               </span>
             )}
           </div>
@@ -246,7 +252,7 @@ export default function GLAccountLookupModal({
 
               {accounts.map((acc) => {
                 const isChecked = selectedRecords.some(
-                  (item) => item.id === acc.id
+                  (item) => item.id === acc.id,
                 );
                 return (
                   <tr
@@ -312,7 +318,7 @@ export default function GLAccountLookupModal({
 
         {/* FOOTER & PAGINATION */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
-          <div className="flex items-center gap-3">
+          {/* <div className="flex items-center gap-3">
             {multiple && (
               <span className="font-bold text-[#103701] dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded">
                 {selectedRecords.length} Selected
@@ -323,27 +329,14 @@ export default function GLAccountLookupModal({
               {Math.min(page * limit, pagination.total)} of {pagination.total}{" "}
               accounts
             </div>
-          </div>
+          </div> */}
 
           <div className="flex items-center gap-4">
-            {multiple && (
-              <div className="flex items-center gap-2 border-r border-slate-200 dark:border-slate-700 pr-4">
-                <Button
-                  onClick={handleSubmitBatch}
-                  disabled={selectedRecords.length === 0}
-                  className="bg-[#103701] hover:bg-[#0c2b01] dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white h-8 px-3 text-xs rounded transition disabled:opacity-40"
-                >
-                  Add Selected ({selectedRecords.length})
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                  className="h-8 px-3 text-xs rounded"
-                >
-                  Cancel
-                </Button>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              Showing {accounts.length > 0 ? (page - 1) * limit + 1 : 0} to{" "}
+              {Math.min(page * limit, pagination.total)} of {pagination.total}{" "}
+              items
+            </div>
 
             <div className="flex items-center gap-2">
               <span>Rows per page:</span>
@@ -386,6 +379,24 @@ export default function GLAccountLookupModal({
                 <Icon icon="tabler:chevron-right" className="text-base" />
               </Button>
             </div>
+            {multiple && (
+              <div className="flex items-center gap-2 border-r border-slate-200 dark:border-slate-700 pr-4">
+                <Button
+                  onClick={handleSubmitBatch}
+                  disabled={selectedRecords.length === 0}
+                  className="bg-[#103701] hover:bg-[#0c2b01] dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white h-8 px-3 text-xs rounded transition disabled:opacity-40"
+                >
+                  Add Selected ({selectedRecords.length})
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  className="h-8 px-3 text-xs rounded"
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
