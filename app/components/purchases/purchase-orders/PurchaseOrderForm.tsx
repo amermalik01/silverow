@@ -1221,7 +1221,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             <div>
               <textarea
                 placeholder="Add Internal Notes"
-                disabled={isReadOnly}
+                disabled={isFormDisabled}
                 className={`${inputStyle} font-mono`}
                 value={order.internal_notes || ""}
                 onChange={(e) => updateField("internal_notes", e.target.value)}
@@ -1230,9 +1230,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             <div className="col-span-2">
               <textarea
                 placeholder="Add External Notes"
-                disabled={isReadOnly}
+                disabled={isFormDisabled}
                 className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-slate-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
-                // className={`${inputStyle} font-mono bg-[#ddd]`}
+              
                 value={order.notes || ""}
                 onChange={(e) => updateField("notes", e.target.value)}
               />

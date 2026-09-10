@@ -824,6 +824,7 @@ export default function PurchaseOrderLines({
         <PO_StockAllocationModal
           key={`allocation-row-${activeAllocationLine._stableKey}`}
           open={isAllocationModalOpen}
+          isReadonly={isReadonly}
           onClose={() => {
             setIsAllocationModalOpen(false);
             setActiveAllocationLineId(null);

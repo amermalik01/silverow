@@ -29,6 +29,7 @@ type WarehouseLocation = {
 
 type Props = {
   open: boolean;
+  isReadonly?: boolean;
   onClose: () => void;
   onSave: (allocations: PO_StockAllocationRecord[]) => void;
   targetQuantity: number;
@@ -45,6 +46,7 @@ type Props = {
 
 export default function PO_StockAllocationModal({
   open,
+  isReadonly = false,
   onClose,
   onSave,
   targetQuantity,
@@ -291,6 +293,7 @@ export default function PO_StockAllocationModal({
                         ? new Date(newRowInput.date_received)
                         : undefined
                     }
+                    disabled={isReadonly}
                     minDate={
                       newRowInput.prod_date
                         ? new Date(newRowInput.prod_date)
@@ -311,6 +314,7 @@ export default function PO_StockAllocationModal({
                         ? new Date(newRowInput.prod_date)
                         : undefined
                     }
+                    disabled={isReadonly}
                     maxDate={
                       newRowInput.date_received
                         ? new Date(newRowInput.date_received)
@@ -331,6 +335,7 @@ export default function PO_StockAllocationModal({
                         ? new Date(newRowInput.expiry_date)
                         : undefined
                     }
+                    disabled={isReadonly}
                     minDate={
                       newRowInput.prod_date
                         ? new Date(newRowInput.prod_date)
@@ -358,6 +363,7 @@ export default function PO_StockAllocationModal({
                         location_name: selected?.title || "",
                       });
                     }}
+                    disabled={isReadonly}
                     className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900"
                   >
                     <option value="">Select Location</option>
@@ -374,6 +380,7 @@ export default function PO_StockAllocationModal({
                     type="text"
                     placeholder="Lot / Batch No"
                     value={newRowInput.batch_no}
+                    disabled={isReadonly}
                     onChange={(e) =>
                       setNewRowInput({
                         ...newRowInput,
@@ -388,6 +395,7 @@ export default function PO_StockAllocationModal({
                     type="text"
                     placeholder="Serial Tracking"
                     value={newRowInput.serial_no}
+                    disabled={isReadonly}
                     onChange={(e) =>
                       setNewRowInput({
                         ...newRowInput,
@@ -404,7 +412,7 @@ export default function PO_StockAllocationModal({
                     }
                     allowDecimals={false}
                     min="0"
-                    disabled={qtyToAllocate <= 0}
+                    disabled={qtyToAllocate <= 0 || isReadonly}
                     className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full text-right bg-white dark:bg-slate-900 font-semibold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-green-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500"
                     onChange={(val) =>
                       setNewRowInput({
@@ -424,7 +432,8 @@ export default function PO_StockAllocationModal({
                     disabled={
                       !newRowInput.location_id ||
                       currentInputQty <= 0 ||
-                      qtyToAllocate <= 0
+                      qtyToAllocate <= 0 ||
+                      isReadonly
                     }
                     className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-full w-7 h-7 inline-flex items-center justify-center shadow-xs font-bold text-lg disabled:opacity-30 transition-opacity"
                   >
@@ -440,7 +449,7 @@ export default function PO_StockAllocationModal({
           <Button
             type="button"
             onClick={handleCommitSave}
-            disabled={qtyToAllocate !== 0}
+            disabled={qtyToAllocate !== 0 || isReadonly}
             variant="save"
           >
             Save Allocation
