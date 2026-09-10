@@ -387,7 +387,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Supplier Order No.">
-                  Suppl. Ord. No.
+                  Suppl. Ord. No. <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -434,7 +434,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             {/* Column 4 */}
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>Invoice Date</label>
+                <label className={labelStyle}>Invoice Date <span className="text-red-500">*</span></label>
 
                 <DatePicker
                   value={
@@ -775,7 +775,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>
-                  Currency <span className="text-red-500">*</span>
+                  Currency {/* <span className="text-red-500">*</span> */}
                 </label>
                 <select
                   disabled={isSettingsDisabled}
