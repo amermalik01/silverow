@@ -28,6 +28,7 @@ import { JournalPayload2, JournalSource } from "@/types/journal";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { PostedTransactionsModal } from "../posted-entries/PostedTransactionsModal";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
 
 type Currency = {
   id: string;
@@ -125,6 +126,8 @@ export default function JournalForm({
   const [isPosted, setIsPosted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showNavigateModal, setShowNavigateModal] = useState(false);
+  const [showPostConfirmModal, setShowPostConfirmModal] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   const [isEditing, setIsEditing] = useState<boolean>(!journalId);
 
@@ -509,15 +512,52 @@ export default function JournalForm({
     handleLineChange(index, "allocations", newAllocations);
   };
 
-  const handlePersistAction = async (postToLedger: boolean = false) => {
-    if (formDisabled) return;
+  const handlePostJournal = async () => {
+    setIsPosting(true);
+
+    try {
+      const success = await handlePersistAction(true);
+
+      if (success) {
+        setShowPostConfirmModal(false);
+      }
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  // const handlePersistAction = async (postToLedger: boolean = false) => {
+  const handlePersistAction = async (
+    postToLedger: boolean = false,
+  ): Promise<boolean> => {
+    if (formDisabled) return false;
     setErrorMsg(null);
 
     if (!metadata.entry_date) {
       setErrorMsg(
         "Journal entry header requires a valid Entry Date definition.",
       );
-      return;
+      return false;
+    }
+
+    // Validate that the journal contains at least one valid line
+    const hasValidLine = lines.some((line) => {
+      const hasAccount =
+        line.transaction_type === "gl_no" ? !!line.account_id : !!line.party_id;
+
+      const amount =
+        Number(line.debit || 0) > 0
+          ? Number(line.debit || 0)
+          : Number(line.credit || 0);
+
+      return hasAccount && amount > 0;
+    });
+
+    if (!hasValidLine) {
+      setErrorMsg(
+        "Journal is empty. Please add at least one journal line with an account and amount.",
+      );
+      return false;
     }
 
     for (let i = 0; i < lines.length; i++) {
@@ -527,14 +567,14 @@ export default function JournalForm({
         setErrorMsg(
           `Line ${i + 1}: Missing explicit G/L Account binding target`,
         );
-        return;
+        return false;
       }
 
       if (line.transaction_type !== "gl_no" && !line.party_id) {
         setErrorMsg(
           `Line ${i + 1}: Missing sub-ledger party profile reference link`,
         );
-        return;
+        return false;
       }
 
       const lineAmount =
@@ -546,14 +586,14 @@ export default function JournalForm({
         setErrorMsg(
           `Line ${i + 1}: Entry legs require an amount value greater than 0 (Debit or Credit)`,
         );
-        return;
+        return false;
       }
 
       if (Number(line.exchange_rate || 0) <= 0) {
         setErrorMsg(
           `Line ${i + 1}: Exchange conversion rate cannot be zero or a negative expression`,
         );
-        return;
+        return false;
       }
 
       // Validate allocations against total line amount
@@ -569,7 +609,7 @@ export default function JournalForm({
               2,
             )}) exceeds the line total (${lineAmount.toFixed(2)}).`,
           );
-          return;
+          return false;
         }
       }
     }
@@ -578,7 +618,7 @@ export default function JournalForm({
       setErrorMsg(
         `Posting blocked: Journal entries must be perfectly balanced. Discrepancy: ${difference.toFixed(2)}`,
       );
-      return;
+      return false;
     }
 
     try {
@@ -654,11 +694,14 @@ export default function JournalForm({
         }
       }
 
+      return true;
+
       // router.push(redirectPath);
       // router.refresh();
       // setIsEditing(false);
     } catch (err) {
       if (err instanceof Error) setErrorMsg(err.message);
+      return false;
     } finally {
       hide();
       setLoading(false);
@@ -1173,9 +1216,10 @@ export default function JournalForm({
                   type="button"
                   disabled={
                     loading ||
+                    isPosting ||
                     (!isBalanced && lines.every((l) => !l.balancing_account_id))
                   }
-                  onClick={() => handlePersistAction(true)}
+                  onClick={() => setShowPostConfirmModal(true)}
                   variant="post"
                 >
                   {loading ? "Posting..." : "Post Journal"}
@@ -1315,6 +1359,15 @@ export default function JournalForm({
             fetchEndpoint={`/api/finance/general-journal/${journalId}/posted-entries`}
           />
         )}
+
+        <GeneralConfirmModal
+          isOpen={showPostConfirmModal}
+          title="Confirm Journal Posting"
+          message="Are you sure you want to post this Journal?"
+          onConfirm={handlePostJournal}
+          onCancel={() => setShowPostConfirmModal(false)}
+          loading={isPosting}
+        />
       </div>
     </div>
   );
