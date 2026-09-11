@@ -1,15 +1,18 @@
 // app/api/setup/general/company/currencies/[id]/route.ts
+
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getServerSession(authOptions);
-  const companyId = session?.user?.company_id;
+  const companyId = await getCompanyId();
+
+  if (!companyId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const client = await pool.connect();
 

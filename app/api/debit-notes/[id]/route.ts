@@ -6,6 +6,7 @@ import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { DebitNoteService } from "@/lib/services/debit-notes/debit-note.service";
 import { StockDeAllocationService } from "@/lib/services/debit-notes/stock-deallocation.service";
 import { StockDeAllocationRecord } from "@/app/components/shared/modals/StockDeAllocationModal";
+import { StockDeAllocationValidationService } from "@/lib/services/debit-notes/stock-deallocation-validation.service";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     if (!companyId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
         },
         {
           status: 404,
-        }
+        },
       );
     }
 
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
@@ -83,7 +84,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     if (!companyId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -93,12 +94,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     await client.query("BEGIN");
 
     // 1. Core update operation
-    const dbLines = await DebitNoteService.update(
-      client,
-      companyId,
-      id,
-      body
-    );
+    const dbLines = await DebitNoteService.update(client, companyId, id, body);
 
     // 2. Iterate safely using order indexes to guarantee accurate mapping of newly generated/updated IDs
     for (let i = 0; i < (lines || []).length; i++) {
@@ -111,6 +107,21 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         matchedDbLine?.warehouse_id &&
         payloadLine.allocations?.length
       ) {
+        await StockDeAllocationValidationService.validate(client, companyId, {
+          debit_note_line_id: matchedDbLine.id,
+
+          purchase_invoice_line_id:
+            matchedDbLine.purchase_invoice_line_id ||
+            payloadLine.purchase_invoice_line_id,
+
+          purchase_order_line_id:
+            matchedDbLine.purchase_order_line_id ||
+            payloadLine.purchase_order_line_id,
+
+          required_quantity: Number(matchedDbLine.quantity || 0),
+
+          allocations: payloadLine.allocations,
+        });
         await DebitNoteService.saveLineAllocations(
           client,
           companyId,
@@ -118,7 +129,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
           matchedDbLine.id,
           matchedDbLine.item_id,
           matchedDbLine.warehouse_id,
-          payloadLine.allocations
+          payloadLine.allocations,
         );
       }
     }
@@ -138,7 +149,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         .filter(
           (l: IncomingLine) =>
             Number(l.quantity) > 0 &&
-            (l.line_type === "ITEM" || (!l.line_type && !!l.item_id))
+            (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
         );
 
       if (dispatchLinesPayload.length) {
@@ -147,7 +158,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
           `SELECT id, quantity, COALESCE(returned_quantity, 0) as returned_quantity 
            FROM debit_note_lines 
            WHERE debit_note_id = $1 AND COALESCE(is_deleted, false) = false`,
-          [id]
+          [id],
         );
 
         const hasUnreturnedItems = dnLinesResult.rows.some((row) => {
@@ -162,7 +173,9 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
               debit_note_id: id,
               vendor_id: note.vendor_id || note.supplier_id,
               warehouse_id:
-                note.warehouse_id || dispatchLinesPayload[0]?.warehouse_id || null,
+                note.warehouse_id ||
+                dispatchLinesPayload[0]?.warehouse_id ||
+                null,
               dispatch_date:
                 note.dispatch_date || new Date().toISOString().split("T")[0],
               posting_date:
@@ -183,14 +196,14 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
                 expiry_date: line.expiry_date,
                 quantity: Number(line.quantity),
                 unit_cost: Number(line.unit_price || line.unit_cost || 0),
-              })
+              }),
             ),
           };
 
           await StockDeAllocationService.createTransactional(
             client,
             companyId,
-            dispatchPayload
+            dispatchPayload,
           );
         }
       }
@@ -217,13 +230,13 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
           error:
             "This debit note (or line) has already been fully dispatched/returned. Cannot dispatch additional stock.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     client.release();
@@ -238,7 +251,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     if (!companyId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -249,7 +262,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     if (stockDispatchLineId) {
       const result = await StockDeAllocationService.safeDeleteDispatchLine(
         companyId,
-        stockDispatchLineId
+        stockDispatchLineId,
       );
       return NextResponse.json({ success: true, data: result });
     }
@@ -263,13 +276,11 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
       {
         success: false,
         error:
-          err instanceof Error
-            ? err.message
-            : "Failed to delete debit note",
+          err instanceof Error ? err.message : "Failed to delete debit note",
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
