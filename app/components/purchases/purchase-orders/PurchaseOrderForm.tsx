@@ -1586,6 +1586,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           onSelectOrder={handleSelectSalesOrder}
         />
       )}
+      
       {PurchaserModalOpen && (
         <SalespersonLookupModal
           open={PurchaserModalOpen}

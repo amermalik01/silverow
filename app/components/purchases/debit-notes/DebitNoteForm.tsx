@@ -43,6 +43,9 @@ import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+import SalespersonLookupModal, {
+  Employee,
+} from "../../shared/modals/SalespersonLookupModal";
 
 interface Props {
   slug: string;
@@ -79,6 +82,8 @@ export const DebitNoteForm: React.FC<Props> = ({
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
   const [piModalOpen, setPiModalOpen] = useState(false);
+
+  const [PurchaserModalOpen, setPurchaserModalOpen] = useState(false);
   // Add states for modal control
   const [showDispatchModal, setShowDispatchModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -138,6 +143,7 @@ export const DebitNoteForm: React.FC<Props> = ({
 
   const createEmptyDebitNoteLine = (): DebitNoteLineUI => ({
     // _key: `temp-${Date.now()}-${Math.random()}`,
+    _stableKey: `temp-line-${crypto.randomUUID()}`,
     line_type: "ITEM",
 
     item_id: undefined,
@@ -269,6 +275,43 @@ export const DebitNoteForm: React.FC<Props> = ({
       const data: FetchLinesAPIResponse = await response.json();
 
       // setLines(data.lines ?? []);
+      // const formattedLines: DebitNoteLineUI[] = (data.lines ?? []).map(
+      //   (line) => {
+      //     const resolvedAllocations: StockDeAllocationRecord[] =
+      //       line.allocations ??
+      //       line.stock_allocations ??
+      //       line.po_line_allocations ??
+      //       [];
+
+      //     const totalAllocated = resolvedAllocations.reduce(
+      //       (sum, allocation) =>
+      //         sum + Number(allocation.allocated_quantity || 0),
+      //       0,
+      //     );
+
+      //     const quantity = Number(line.quantity || 0);
+
+      //     return {
+      //       ...line,
+      //       _stableKey:
+      //         line._stableKey || line.id || `line-${crypto.randomUUID()}`,
+
+      //       allocations: resolvedAllocations,
+      //       initialAllocations: resolvedAllocations,
+
+      //       is_allocated: quantity > 0 && totalAllocated >= quantity,
+      //     };
+
+      //     // return {
+      //     //   ...line,
+      //     //   // Maintain UI state keys for table iteration
+      //     //   _stableKey: line._stableKey || line.id || `line-${line.line_no}`,
+      //     //   allocations: resolvedAllocations,
+      //     //   initialAllocations: resolvedAllocations,
+      //     //   is_allocated: resolvedAllocations.length > 0,
+      //     // };
+      //   },
+      // );
       const formattedLines: DebitNoteLineUI[] = (data.lines ?? []).map(
         (line) => {
           const resolvedAllocations: StockDeAllocationRecord[] =
@@ -277,13 +320,24 @@ export const DebitNoteForm: React.FC<Props> = ({
             line.po_line_allocations ??
             [];
 
+          const totalAllocated = resolvedAllocations.reduce(
+            (sum, allocation) =>
+              sum + Number(allocation.allocated_quantity || 0),
+            0,
+          );
+
+          const quantity = Number(line.quantity || 0);
+
           return {
             ...line,
-            // Maintain UI state keys for table iteration
-            _stableKey: line._stableKey || line.id || `line-${line.line_no}`,
+
+            _stableKey:
+              line._stableKey || line.id || `line-${crypto.randomUUID()}`,
+
             allocations: resolvedAllocations,
             initialAllocations: resolvedAllocations,
-            is_allocated: resolvedAllocations.length > 0,
+
+            is_allocated: quantity > 0 && totalAllocated >= quantity,
           };
         },
       );
@@ -490,35 +544,68 @@ export const DebitNoteForm: React.FC<Props> = ({
         if (shipping_address) setShippingAddress(shipping_address);
 
         if (Array.isArray(fetchedRawLines)) {
-          const mappedLines: DebitNoteLine[] = fetchedRawLines.map(
-            (l: DebitNoteLine, idx: number) => ({
+          const mappedLines: DebitNoteLineUI[] = fetchedRawLines.map(
+            (l: DebitNoteLineUI, idx: number) => ({
+              ...l,
+
+              _stableKey:
+                l._stableKey ||
+                l.id ||
+                `invoice-line-${invoice.id}-${idx}-${crypto.randomUUID()}`,
+
               line_no: idx + 1,
-              purchase_invoice_line_id: l.purchase_invoice_line_id, // Critical for de-allocation
+              purchase_invoice_line_id: l.purchase_invoice_line_id || l.id,
+              // purchase_invoice_line_id: l.purchase_invoice_line_id, // Critical for de-allocation
               line_type: l.line_type || "ITEM",
+
               item_id: l.item_id,
               item_code: l.item_code || "",
               item_name: l.item_name || l.description || "",
+
               description: l.description || "",
+
               warehouse_id: l.warehouse_id || "",
               warehouse_name: l.warehouse_name || "",
               warehouse_location_id: l.warehouse_location_id,
+
               uom_id: l.uom_id || "",
               uom_name: l.uom_name || "",
+
               gl_account_id: l.gl_account_id,
               account_code: l.account_code,
+
               quantity: Number(l.quantity || 0),
               unit_cost: Number(l.unit_cost || 0),
+
               discount_type: l.discount_type || "PERCENT",
               discount_value: Number(l.discount_value || 0),
               discount_amount: Number(l.discount_amount || 0),
+
               original_amount: Number(
                 l.original_amount ||
                   Number(l.quantity || 0) * Number(l.unit_cost || 0),
               ),
+
               vat_percent: Number(l.vat_percent || 0),
               vat_amount: Number(l.vat_amount || 0),
               net_amount: Number(l.net_amount || 0),
               gross_amount: Number(l.gross_amount || 0),
+
+              allocations:
+                l.allocations ??
+                l.stock_allocations ??
+                l.po_line_allocations ??
+                [],
+
+              initialAllocations:
+                l.initialAllocations ??
+                l.allocations ??
+                l.stock_allocations ??
+                l.po_line_allocations ??
+                [],
+
+              is_allocated: false,
+              reserved_quantity: Number(l.reserved_quantity || 0),
             }),
           );
 
@@ -533,6 +620,18 @@ export const DebitNoteForm: React.FC<Props> = ({
       console.error("Failed to load purchase invoice lines:", err);
       toast.error("Error populating lines from purchase invoice.");
     }
+  };
+
+  const handlePurchaserSelection = () => {
+    setPurchaserModalOpen(true);
+  };
+
+  const handlePurchaserSelect = (emp: Employee) => {
+    setNote((prev) => ({
+      ...prev,
+      purchaser: emp.employee_code + "-" + emp.display_name,
+    }));
+    setPurchaserModalOpen(false);
   };
 
   const updateField = <K extends keyof DebitNote>(
@@ -700,8 +799,31 @@ export const DebitNoteForm: React.FC<Props> = ({
         // Re-fetch persisted lines to update local state with database UUIDs
         const linesRes = await fetch(`/api/debit-notes/${targetId}/lines`);
         const linesData = await linesRes.json();
+        // if (linesData.lines) {
+        //   setLines(linesData.lines);
+        // }
+
         if (linesData.lines) {
-          setLines(linesData.lines);
+          const formattedLines: DebitNoteLineUI[] = linesData.lines.map(
+            (line: DebitNoteLineUI) => ({
+              ...line,
+              _stableKey:
+                line._stableKey || line.id || `line-${crypto.randomUUID()}`,
+              allocations:
+                line.allocations ??
+                line.stock_allocations ??
+                line.po_line_allocations ??
+                [],
+              initialAllocations:
+                line.initialAllocations ??
+                line.allocations ??
+                line.stock_allocations ??
+                line.po_line_allocations ??
+                [],
+            }),
+          );
+
+          setLines(formattedLines);
         }
       }
 
@@ -1156,6 +1278,7 @@ export const DebitNoteForm: React.FC<Props> = ({
           setLocationModalOpen={setLocationModalOpen}
           setPiModalOpen={setPiModalOpen}
           onShippingAgentSelect={handleShippingAgentSelection}
+          setPurchaserModalOpen={handlePurchaserSelection}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
           inputDateStyle={inputDateStyle}
@@ -1435,6 +1558,14 @@ export const DebitNoteForm: React.FC<Props> = ({
           });
         }}
       />
+
+      {PurchaserModalOpen && (
+        <SalespersonLookupModal
+          open={PurchaserModalOpen}
+          onClose={() => setPurchaserModalOpen(false)}
+          onSelect={handlePurchaserSelect}
+        />
+      )}
 
       <PurchaseInvoiceLookupModal
         isOpen={piModalOpen}

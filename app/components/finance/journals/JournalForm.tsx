@@ -513,6 +513,7 @@ export default function JournalForm({
   };
 
   const handlePostJournal = async () => {
+
     setIsPosting(true);
 
     try {
@@ -530,7 +531,8 @@ export default function JournalForm({
   const handlePersistAction = async (
     postToLedger: boolean = false,
   ): Promise<boolean> => {
-    if (formDisabled) return false;
+    // console.log('handlePostJournal formDisabled === ',formDisabled);
+    // if (formDisabled) return false;
     setErrorMsg(null);
 
     if (!metadata.entry_date) {
@@ -623,7 +625,7 @@ export default function JournalForm({
 
     try {
       setLoading(true);
-      show("Saving Record...");
+      show("Saving...");
 
       const payload: JournalPayload2 = {
         entry_date: metadata.entry_date,
@@ -696,9 +698,6 @@ export default function JournalForm({
 
       return true;
 
-      // router.push(redirectPath);
-      // router.refresh();
-      // setIsEditing(false);
     } catch (err) {
       if (err instanceof Error) setErrorMsg(err.message);
       return false;

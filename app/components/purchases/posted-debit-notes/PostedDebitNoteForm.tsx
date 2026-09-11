@@ -445,6 +445,7 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
           setLocationModalOpen={noop}
           setPiModalOpen={noop}
           onShippingAgentSelect={noop}
+          setPurchaserModalOpen={noop}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
           inputDateStyle={inputDateStyle}
@@ -491,7 +492,6 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
                 </span>
               </div>
               <div>
-
                 <NumericTextInput
                   value={Number(currencyConfig.exchange_rate) ?? ""}
                   allowDecimals={true}

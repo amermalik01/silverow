@@ -450,14 +450,14 @@ export default function PurchaseOrderLines({
           )} */}
 
           <Button
-  type="button"
-  onClick={onImportItems}
-  variant="save"
-  disabled={isReadonly}
->
-  <span>⇧</span>
-  Import Items
-</Button>
+            type="button"
+            onClick={onImportItems}
+            variant="save"
+            disabled={isReadonly}
+          >
+            <span>⇧</span>
+            Import Items
+          </Button>
 
           <Button
             type="button"
@@ -933,38 +933,38 @@ export default function PurchaseOrderLines({
   );
 }
 
+// const addLine = () => {
+//   setLines((prev) => [...prev, createEmptyLine()]);
+// };
 
-  // const addLine = () => {
-  //   setLines((prev) => [...prev, createEmptyLine()]);
-  // };
+//   const addItemLine = () => {
+//   setLines((prev) => [...prev, createEmptyLine("ITEM")]);
+// };
 
-  //   const addItemLine = () => {
-  //   setLines((prev) => [...prev, createEmptyLine("ITEM")]);
-  // };
+// const addGLLine = () => {
+//   setLines((prev) => [...prev, createEmptyLine("GL_ACCOUNT")]);
+// };
 
-  // const addGLLine = () => {
-  //   setLines((prev) => [...prev, createEmptyLine("GL_ACCOUNT")]);
-  // };
+// const addItemLine = () => {
+//   const newLine = createEmptyLine("ITEM");
 
-  // const addItemLine = () => {
-  //   const newLine = createEmptyLine("ITEM");
+//   setLines((prev) => {
+//     setItemIndex(prev.length);
+//     return [...prev, newLine];
+//   });
+// };
 
-  //   setLines((prev) => {
-  //     setItemIndex(prev.length);
-  //     return [...prev, newLine];
-  //   });
-  // };
+// const addGLLine = () => {
+//   const newLine = createEmptyLine("GL_ACCOUNT");
 
-  // const addGLLine = () => {
-  //   const newLine = createEmptyLine("GL_ACCOUNT");
+//   setLines((prev) => {
+//     setGlIndex(prev.length);
+//     return [...prev, newLine];
+//   });
+// };
 
-  //   setLines((prev) => {
-  //     setGlIndex(prev.length);
-  //     return [...prev, newLine];
-  //   });
-  // };
-
-      {/* <ItemLookupModal
+{
+  /* <ItemLookupModal
         open={itemIndex !== null}
         onClose={() => setItemIndex(null)}
         onSelect={async (item: ItemLookupRecord) => {
@@ -1055,9 +1055,11 @@ export default function PurchaseOrderLines({
           setLines(updated);
           setItemIndex(null);
         }}
-      /> */}
+      /> */
+}
 
-      {/* <GLAccountLookupModal
+{
+  /* <GLAccountLookupModal
         open={glIndex !== null}
         onClose={() => setGlIndex(null)}
         onSelect={(gl: GLAccountLookupRecord) => {
@@ -1076,7 +1078,8 @@ export default function PurchaseOrderLines({
           setLines(updated);
           setGlIndex(null);
         }}
-      /> */}
+      /> */
+}
 // className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
 //   // 🟡 YELLOW / AMBER = Stock Received
 //   isStockReceived

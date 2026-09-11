@@ -64,16 +64,14 @@ interface OrderFormTabsProps {
     field: K,
     value: DebitNote[K],
   ) => void;
+
   onGeneralSupplierSelect: () => void;
   onInvoicingSupplierSelect: () => void;
-  // setSupplierModalOpen: (open: boolean) => void;
   setLocationModalOpen: (open: boolean) => void;
   setPiModalOpen?: (open: boolean) => void;
 
-  // onPurchaseOrderSelect: () => void;
-  // onSalesOrderSelect: () => void;
-  // onCustomerSelect: () => void;
   onShippingAgentSelect: () => void;
+  setPurchaserModalOpen: () => void;
 
   labelStyle?: string;
   inputStyle?: string;
@@ -104,6 +102,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
   // onSalesOrderSelect,
   // onCustomerSelect,
   onShippingAgentSelect,
+  setPurchaserModalOpen,
 
   labelStyle = "text-xs font-medium text-slate-600 dark:text-slate-400 self-center",
   inputStyle = "w-full text-xs px-2 py-1 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200",
@@ -153,7 +152,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
         {/* ---------------- GENERAL TAB ---------------- */}
         {activeTab === "general" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 space-x-2 gap-4">
-            {/*  lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4*/}
             {/* Column 1 */}
             <div className="space-y-2">
               {/* <div className="grid grid-cols-12 items-center gap-2">
@@ -181,7 +179,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     type="button"
                     disabled={isReadOnly}
                     onClick={onGeneralSupplierSelect}
-                    // onClick={() => setSupplierModalOpen(true)}
                     className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                   >
                     <Icon icon="tabler:external-link" className="w-4 h-4" />
@@ -289,7 +286,14 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     }
                   />
 
-                  <MasterDropdown
+                  <input
+                    type="text"
+                    disabled={isSettingsDisabled}
+                    className={inputcolumnDivStyle}
+                    value={primaryAddress.country || ""}
+                  />
+
+                  {/* <MasterDropdown
                     type="country"
                     value={primaryAddress.country || "United Kingdom"}
                     disabled={isSettingsDisabled}
@@ -300,7 +304,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                         country: val ?? undefined,
                       })
                     }
-                  />
+                  /> */}
                 </div>
               </div>
             </div>
@@ -354,13 +358,32 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>Purchaser</label>
-                <input
+                {/* <input
                   type="text"
                   className={inputStyle}
                   disabled={isReadOnly}
                   value={note.purchaser || ""}
                   onChange={(e) => updateField("purchaser", e.target.value)}
-                />
+                /> */}
+
+                <div className="col-span-8 flex gap-1">
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
+                    className={inputStyle}
+                    value={note.purchaser || ""}
+                    onChange={(e) => updateField("purchaser", e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    disabled={isReadOnly}
+                    onClick={setPurchaserModalOpen}
+                    className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                  >
+                    <Icon icon="tabler:external-link" className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -393,7 +416,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Supplier Credit Note No.">
-                  Suppl. CN No.
+                  Suppl. CN No.<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -410,7 +433,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Supplier Credit Note Date">
-                  Suppl. CN Date
+                  Suppl. CN Date<span className="text-red-500">*</span>
                 </label>
 
                 <DatePicker
@@ -613,8 +636,14 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       })
                     }
                   />
+                  <input
+                    type="text"
+                    disabled={isSettingsDisabled}
+                    className={inputcolumnDivStyle}
+                    value={billingAddress.country || ""}
+                  />
 
-                  <MasterDropdown
+                  {/* <MasterDropdown
                     type="country"
                     value={billingAddress.country || "United Kingdom"}
                     disabled={isSettingsDisabled}
@@ -625,7 +654,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                         country: val ?? undefined,
                       })
                     }
-                  />
+                  /> */}
                 </div>
               </div>
             </div>
@@ -763,9 +792,25 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>
-                  Currency <span className="text-red-500">*</span>
+                  Currency {/* <span className="text-red-500">*</span> */}
                 </label>
-                <select
+
+                <input
+                  type="text"
+                  disabled={isSettingsDisabled}
+                  readOnly
+                  className={selectStyle}
+                  value={(() => {
+                    const currency = masterData?.currencies.find(
+                      (c) => c.id === currencyConfig.currency_id,
+                    );
+
+                    return currency
+                      ? `${currency.code} - ${currency.name}`
+                      : "";
+                  })()}
+                />
+                {/* <select
                   disabled={isSettingsDisabled}
                   className={inputStyle}
                   value={currencyConfig.currency_id ?? ""}
@@ -786,7 +831,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       {c.code} - {c.name}
                     </option>
                   ))}
-                </select>
+                </select> */}
               </div>
             </div>
           </div>
@@ -811,7 +856,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   <button
                     type="button"
                     disabled={isReadOnly || !note.supplier_id}
-                    // disabled={isSettingsDisabled || !note.supplier_id}
                     onClick={() => setLocationModalOpen(true)}
                     className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                   >
@@ -911,7 +955,13 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       })
                     }
                   />
-                  <MasterDropdown
+                  <input
+                    type="text"
+                    disabled={isSettingsDisabled}
+                    className={inputcolumnDivStyle}
+                    value={shippingAddress.country || ""}
+                  />
+                  {/* <MasterDropdown
                     type="country"
                     value={shippingAddress.country || "United Kingdom"}
                     disabled={isSettingsDisabled}
@@ -922,7 +972,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                         country: val ?? undefined,
                       })
                     }
-                  />
+                  /> */}
                 </div>
               </div>
             </div>
@@ -1002,7 +1052,9 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 </select>
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle} title="Shipping Agent">Ship. Agent</label>
+                <label className={labelStyle} title="Shipping Agent">
+                  Ship. Agent
+                </label>
                 <div className="col-span-8 flex gap-1">
                   <input
                     type="text"
@@ -1035,7 +1087,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Shipment Reference No.">
-                  Shipt. Ref
+                  Shipt. Ref. No.
                 </label>
                 <input
                   type="text"
@@ -1050,7 +1102,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Warehouse Reference No.">
-                  WH Ref
+                  WH. Ref. No.
                 </label>
                 <input
                   type="text"

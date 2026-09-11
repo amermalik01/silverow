@@ -318,25 +318,14 @@ export default function GLAccountLookupModal({
 
         {/* FOOTER & PAGINATION */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
-          {/* <div className="flex items-center gap-3">
-            {multiple && (
-              <span className="font-bold text-[#103701] dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded">
-                {selectedRecords.length} Selected
-              </span>
-            )}
-            <div>
-              Showing {accounts.length > 0 ? (page - 1) * limit + 1 : 0} to{" "}
-              {Math.min(page * limit, pagination.total)} of {pagination.total}{" "}
-              accounts
-            </div>
-          </div> */}
+
+          <div>
+            Showing {accounts.length > 0 ? (page - 1) * limit + 1 : 0} to{" "}
+            {Math.min(page * limit, pagination.total)} of {pagination.total}{" "}
+            items
+          </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              Showing {accounts.length > 0 ? (page - 1) * limit + 1 : 0} to{" "}
-              {Math.min(page * limit, pagination.total)} of {pagination.total}{" "}
-              items
-            </div>
 
             <div className="flex items-center gap-2">
               <span>Rows per page:</span>

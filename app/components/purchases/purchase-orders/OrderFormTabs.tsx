@@ -463,7 +463,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
             <div className="space-y-2">
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>
-                  Invoice Date <span className="text-red-500">*</span>
+                  Invoice Date<span className="text-red-500">*</span>
                 </label>
 
                 <DatePicker

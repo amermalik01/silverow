@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react"; //useMemo,
 import { Icon } from "@iconify/react";
 import { DebitNote, DebitNoteLine, DebitNoteLineUI } from "@/types/debit-note";
 
@@ -50,50 +50,41 @@ export default function DebitNoteLines({
   refreshLines,
 }: Props) {
   const [itemIndex, setItemIndex] = useState<number | null>(null);
+  const [glModalOpen, setGlModalOpen] = useState(false);
+
   const [glIndex, setGlIndex] = useState<number | null>(null);
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
 
   const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
 
   const [isDeAllocModalOpen, setIsDeAllocModalOpen] = useState(false);
-  const [activeDeAllocRowKey, setActiveDeAllocRowKey] = useState<string | null>(
-    null,
-  );
 
-  // const activeDeAllocLine = useMemo(() => {
-  //   if (activeDeAllocRowKey === null) return null;
-  //   const idx = parseInt(activeDeAllocRowKey, 10);
-  //   return lines[idx] || null;
-  // }, [activeDeAllocRowKey, lines]);
-
-  // FIX 1: Track active allocation target by stable unique key instead of raw index
-  const [activeDeAllocationLineId, setActiveDeAllocationLineId] = useState<
+  const [activeDeAllocationLineKey, setActiveDeAllocationLineKey] = useState<
     string | null
   >(null);
 
-  // Ensure each line has a fallback stable key for unsaved rows
-  const linesWithKeys = useMemo(() => {
-    return lines.map((line, idx) => ({
-      ...line,
-      _stableKey: line.id || `temp-line-${idx}`,
-    }));
-  }, [lines]);
+  const activeDeAllocLine =
+    lines.find(
+      (line) => (line._stableKey || line.id) === activeDeAllocationLineKey,
+    ) || null;
 
-  const activeDeAllocLine = useMemo(() => {
-    if (!activeDeAllocationLineId) return null;
-    return (
-      linesWithKeys.find((l) => l._stableKey === activeDeAllocationLineId) ||
-      null
-    );
-  }, [activeDeAllocationLineId, linesWithKeys]);
+    const getLineKey = (line: DebitNoteLineUI): string | null => {
+  return line._stableKey || line.id || null;
+};
 
-  const createEmptyLine = (): DebitNoteLineUI => ({
-    // _key: `temp-${Date.now()}-${Math.random()}`,
-    line_type: "ITEM",
+  const createEmptyLine = (
+    lineType: "ITEM" | "GL_ACCOUNT",
+  ): DebitNoteLineUI => ({
+    _stableKey: `temp-line-${crypto.randomUUID()}`,
+    line_type: lineType,
 
     item_id: undefined,
     item_code: undefined,
     item_name: undefined,
+
+    gl_account_id: undefined,
+    account_code: undefined,
+    account_name: undefined,
 
     description: "",
     quantity: 1,
@@ -119,29 +110,6 @@ export default function DebitNoteLines({
     allocations: [],
     initialAllocations: [],
   });
-
-  const addLine = () => {
-    setLines((prev) => [...prev, createEmptyLine()]);
-  };
-
-  // const addLine = () => {
-  //   setLines([
-  //     ...lines,
-  //     {
-  //       line_type: "ITEM",
-  //       quantity: 1,
-  //       unit_cost: 0,
-  //       discount_type: "PERCENT",
-  //       discount_value: 0,
-  //       vat_percent: 0,
-  //       original_amount: 0,
-  //       discount_amount: 0,
-  //       net_amount: 0,
-  //       vat_amount: 0,
-  //       gross_amount: 0,
-  //     },
-  //   ]);
-  // };
 
   useEffect(() => {
     async function loadVatOptions() {
@@ -187,11 +155,36 @@ export default function DebitNoteLines({
   const removeLine = (index: number) => {
     setLines(lines.filter((_, i) => i !== index));
   };
-  /**
-   * =====================================================
-   * CALCULATE LINE
-   * =====================================================
-   */
+
+  const addGLLine = () => {
+    setGlModalOpen(true);
+  };
+
+  const handleMultipleGLSelect = (accounts: GLAccountLookupRecord[]) => {
+    if (!accounts.length) {
+      setGlModalOpen(false);
+      return;
+    }
+
+    const newLines = accounts.map((account) =>
+      calculateLine({
+        ...createEmptyLine("GL_ACCOUNT"),
+
+        line_type: "GL_ACCOUNT",
+
+        gl_account_id: account.id,
+        account_code: account.code,
+        account_name: account.name,
+
+        description: account.name,
+      }),
+    );
+
+    setLines((prev) => [...prev, ...newLines]);
+
+    setGlModalOpen(false);
+  };
+
   const calculateLine = (line: Partial<DebitNoteLineUI>): DebitNoteLineUI => {
     const qty = Number(line.quantity || 0);
     const price = Number(line.unit_cost || 0);
@@ -228,11 +221,6 @@ export default function DebitNoteLines({
     };
   };
 
-  /**
-   * =====================================================
-   * UPDATE LINE
-   * =====================================================
-   */
   const updateLine = <K extends keyof DebitNoteLineUI>(
     index: number,
     field: K,
@@ -248,110 +236,41 @@ export default function DebitNoteLines({
       targetLine.is_allocated = false;
     }
 
-    // updated[index] = {
-    //   ...updated[index],
-    //   [field]: value,
-    // };
-
-    // updated[index] = calculateLine(updated[index]);
     updated[index] = calculateLine(targetLine);
     setLines(updated);
   };
 
-  /**
-   * =====================================================
-   * CHANGE LINE TYPE
-   * =====================================================
-   */
-  const changeLineType = (
-    index: number,
-    type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
-  ) => {
-    const updated = [...lines];
-
-    // updated[index] = {
-    //   ...updated[index],
-    //   line_type: type,
-    //   item_id: undefined,
-    //   item_code: undefined,
-    //   item_name: undefined,
-    //   gl_account_id: undefined,
-    //   account_code: undefined,
-    //   account_name: undefined,
-    //   warehouse_id: undefined,
-    //   warehouse_code: undefined,
-    //   warehouse_name: undefined,
-    //   allocations: undefined,
-    //   is_allocated: false,
-    // };
-    updated[index] = calculateLine({
-      ...updated[index],
-      line_type: type,
-      item_id: undefined,
-      item_code: undefined,
-      item_name: undefined,
-      gl_account_id: undefined,
-      account_code: undefined,
-      account_name: undefined,
-      warehouse_id: undefined,
-      warehouse_code: undefined,
-      warehouse_name: undefined,
-      allocations: [],
-      initialAllocations: [],
-      is_allocated: false,
-    });
-
-    setLines(updated);
-  };
-
-  /**
-   * =====================================================
-   * De ALLOCATION SAVE HANDLER
-   * =====================================================
-   */
-
   const handleSaveDeAllocations = (
     deAllocationsData: StockDeAllocationRecord[],
   ) => {
-    // if (activeDeAllocRowKey === null) return;
-    if (!activeDeAllocationLineId) return;
-    // const targetIdx = parseInt(activeDeAllocRowKey, 10);
+    if (!activeDeAllocationLineKey) return;
 
     setLines((prev) =>
-      prev.map((line, index) => {
-        const lineKey = line.id || `temp-line-${index}`;
-        if (lineKey !== activeDeAllocationLineId) return line;
+      prev.map((line) => {
+        const key = line._stableKey || line.id;
+
+        if (key !== activeDeAllocationLineKey) {
+          return line;
+        }
 
         const totalAllocated = deAllocationsData.reduce(
-          (sum, a) => sum + Number(a.allocated_quantity || 0),
+          (sum, allocation) => sum + Number(allocation.allocated_quantity || 0),
           0,
         );
-        const lineQty = Number(line.quantity || 0);
+
+        const quantity = Number(line.quantity || 0);
 
         return {
           ...line,
           allocations: deAllocationsData,
           initialAllocations: deAllocationsData,
-          is_allocated: lineQty > 0 && totalAllocated === lineQty,
+          is_allocated: quantity > 0 && totalAllocated >= quantity,
         };
-
-        // if (index !== targetIdx) return line;
-
-        // const totalReturned = deAllocationsData.reduce(
-        //   (sum, d) => sum + d.return_quantity,
-        //   0,
-        // );
-
-        // return {
-        //   ...line,
-        //   allocations: deAllocationsData,
-        //   is_allocated: totalReturned === (line.quantity || 0),
-        // };
       }),
     );
 
     setIsDeAllocModalOpen(false);
-    setActiveDeAllocRowKey(null);
+    setActiveDeAllocationLineKey(null);
   };
 
   const handleDiscountTypeChange = (index: number, value: string) => {
@@ -366,17 +285,24 @@ export default function DebitNoteLines({
         </h3>
 
         <div className="flex items-center gap-2">
-          <Button
+          {/* <Button
             type="button"
             onClick={addLine}
             variant="add_line"
             disabled={isReadonly}
           >
             Add Line
+          </Button> */}
+          <Button
+            type="button"
+            onClick={addGLLine}
+            variant="add_line"
+            disabled={isReadonly}
+          >
+            Select G/L
           </Button>
         </div>
       </div>
-
       <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm ">
         <table className="w-full table-fixed text-left text-xs border-collapse min-w-[1300px] p-2">
           <colgroup>
@@ -451,8 +377,6 @@ export default function DebitNoteLines({
                   ? Number(line.available_stock)
                   : undefined;
 
-              const isAllocationDisabled = !line.item_id || !line.warehouse_id;
-
               const currentAllocations =
                 line.allocations || line.initialAllocations || [];
               const totalAllocated = currentAllocations.reduce(
@@ -473,23 +397,11 @@ export default function DebitNoteLines({
                       ? "bg-slate-50/70 dark:bg-slate-800/30"
                       : "bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
                   }`}
-                  // className="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
                 >
                   <td className="p-2">
-                    <select
-                      value={line.line_type || "ITEM"}
-                      disabled={isReadonly}
-                      onChange={(e) =>
-                        changeLineType(
-                          index,
-                          e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
-                        )
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 text-[11px] w-full disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      <option value="ITEM">Item</option>
-                      <option value="GL_ACCOUNT">G/L</option>
-                    </select>
+                    <div className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                      {line.line_type === "ITEM" ? "Item" : "G/L"}
+                    </div>
                   </td>
 
                   <td className="p-2">
@@ -497,7 +409,7 @@ export default function DebitNoteLines({
                       <div className="space-y-1">
                         <button
                           type="button"
-                          disabled={isReadonly}
+                          disabled={isLineDisabled}
                           title={line.item_name}
                           onClick={() => setItemIndex(index)}
                           className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-full text-[11px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
@@ -511,7 +423,7 @@ export default function DebitNoteLines({
                       <div className="space-y-1">
                         <button
                           type="button"
-                          disabled={isReadonly}
+                          disabled={isLineDisabled}
                           title={line.account_name}
                           onClick={() => setGlIndex(index)}
                           className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-full text-[11px] truncate disabled:opacity-60 disabled:cursor-not-allowed"
@@ -523,9 +435,9 @@ export default function DebitNoteLines({
                   </td>
 
                   <td className="p-2">
-                    <textarea
+                    <input
                       value={line.description || ""}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(e) =>
                         updateLine(index, "description", e.target.value)
                       }
@@ -537,7 +449,7 @@ export default function DebitNoteLines({
                     <NumericTextInput
                       value={displayQty}
                       allowDecimals={false}
-                      disabled={isReadonly || line.line_type === "COMMENT"}
+                      disabled={isLineDisabled || line.line_type === "COMMENT"}
                       onChange={(val) => updateLine(index, "quantity", val)}
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-[11px] text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
@@ -554,7 +466,7 @@ export default function DebitNoteLines({
                       <div className="space-y-1">
                         <button
                           type="button"
-                          disabled={isReadonly}
+                          disabled={isLineDisabled}
                           onClick={() => setWarehouseIndex(index)}
                           className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-[11px] bg-white dark:bg-slate-800 flex items-center justify-between gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
@@ -582,7 +494,7 @@ export default function DebitNoteLines({
                       value={displayUnitCost}
                       allowDecimals={true}
                       decimalScale={2}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(val) => updateLine(index, "unit_cost", val)}
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-right text-[11px] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
@@ -591,7 +503,7 @@ export default function DebitNoteLines({
                   <td className="p-2">
                     <select
                       value={line.discount_type || "PERCENT"}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(e) =>
                         handleDiscountTypeChange(index, e.target.value)
                       }
@@ -607,7 +519,7 @@ export default function DebitNoteLines({
                       value={displayDiscountValue}
                       allowDecimals={true}
                       decimalScale={2}
-                      disabled={isReadonly}
+                      disabled={isLineDisabled}
                       onChange={(val) =>
                         updateLine(index, "discount_value", val)
                       }
@@ -626,7 +538,7 @@ export default function DebitNoteLines({
                             opt.vat_percent === displayVatPercent,
                         )?.id || ""
                       }
-                      disabled={isReadonly || line.line_type === "COMMENT"}
+                      disabled={isLineDisabled || line.line_type === "COMMENT"}
                       onChange={(e) => handleVatChange(index, e.target.value)}
                       className="border dark:border-slate-700 dark:bg-slate-800 text-[11px] rounded p-1.5 w-full bg-white dark:text-slate-100 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     >
@@ -659,9 +571,29 @@ export default function DebitNoteLines({
                       {line.line_type === "ITEM" ? (
                         <button
                           type="button"
-                          disabled={isAllocationDisabled}
+                          disabled={isReadonly}
                           onClick={() => {
-                            setActiveDeAllocRowKey(String(index));
+                            // const key = line._stableKey || line.id;
+                            const key = getLineKey(line);
+
+                            console.log("ALLOCATION CLICK", {
+                              line,
+                              key,
+                              id: line.id,
+                              stableKey: line._stableKey,
+                              purchaseInvoiceLineId:
+                                line.purchase_invoice_line_id,
+                            });
+
+                            if (!key) {
+                              console.error(
+                                "Cannot open allocation modal: line has no key",
+                                line,
+                              );
+                              return;
+                            }
+
+                            setActiveDeAllocationLineKey(key);
                             setIsDeAllocModalOpen(true);
                           }}
                           className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
@@ -714,9 +646,7 @@ export default function DebitNoteLines({
           </tbody>
         </table>
       </div>
-
       {/* MODALS */}
-
       <ItemLookupModal
         open={itemIndex !== null}
         onClose={() => setItemIndex(null)}
@@ -808,26 +738,12 @@ export default function DebitNoteLines({
           setItemIndex(null);
         }}
       />
-
       <GLAccountLookupModal
-        open={glIndex !== null}
-        onClose={() => setGlIndex(null)}
-        onSelect={(gl: GLAccountLookupRecord) => {
-          if (glIndex === null) return;
-          const updated = [...lines];
-
-          updated[glIndex] = calculateLine({
-            ...updated[glIndex],
-            line_type: "GL_ACCOUNT",
-            gl_account_id: gl.id,
-            account_code: gl.code,
-            account_name: gl.name,
-            description: gl.name,
-          });
-
-          setLines(updated);
-          setGlIndex(null);
-        }}
+        open={glModalOpen}
+        onClose={() => setGlModalOpen(false)}
+        multiple={true}
+        onSelect={() => {}}
+        onSelectMultiple={handleMultipleGLSelect}
       />
 
       <WarehouseLookupModal
@@ -849,7 +765,120 @@ export default function DebitNoteLines({
         }}
       />
 
-      {isDeAllocModalOpen &&
+      {isDeAllocModalOpen && activeDeAllocLine && (
+        <StockDeAllocationModal
+          open={isDeAllocModalOpen}
+          onClose={() => {
+            setIsDeAllocModalOpen(false);
+            setActiveDeAllocationLineKey(null);
+          }}
+          requiredQuantity={Number(activeDeAllocLine.quantity || 0)}
+          debitNoteLineId={activeDeAllocLine.id}
+          purchaseOrderLineId={activeDeAllocLine.purchase_order_line_id}
+          purchaseInvoiceLineId={activeDeAllocLine.purchase_invoice_line_id}
+          initialAllocations={
+            activeDeAllocLine.allocations ||
+            activeDeAllocLine.initialAllocations ||
+            []
+          }
+          itemCode={activeDeAllocLine.item_code}
+          itemName={activeDeAllocLine.item_name}
+          warehouseName={activeDeAllocLine.warehouse_name}
+          onSave={handleSaveDeAllocations}
+        />
+      )}
+    </div>
+  );
+}
+
+// const [isDeAllocModalOpen, setIsDeAllocModalOpen] = useState(false);
+// const [activeDeAllocRowKey, setActiveDeAllocRowKey] = useState<string | null>(
+//   null,
+// );
+
+// Ensure each line has a fallback stable key for unsaved rows
+// const linesWithKeys = useMemo(() => {
+//   return lines.map((line, idx) => ({
+//     ...line,
+//     _stableKey: line.id || `temp-line-${idx}`,
+//   }));
+// }, [lines]);
+
+// const linesWithKeys = useMemo(() => {
+//   return lines.map((line) => ({
+//     ...line,
+//     _stableKey: line._stableKey || line.id || crypto.randomUUID(),
+//   }));
+// }, [lines]);
+
+// const activeDeAllocLine = useMemo(() => {
+
+//   if (!activeDeAllocationLineId) return null;
+//   return (
+//     linesWithKeys.find((l) => (l._stableKey || l.id) === activeDeAllocationLineId) ||
+//     null
+//   );
+// }, [activeDeAllocationLineId, linesWithKeys]);
+
+// const activeDeAllocLine = useMemo(() => {
+//   if (!activeDeAllocationLineId) return null;
+
+//   return (
+//     lines.find(
+//       (line) => (line._stableKey || line.id) === activeDeAllocationLineId,
+//     ) || null
+//   );
+// }, [activeDeAllocationLineId, lines]);
+
+/* const handleSaveDeAllocations = (
+    deAllocationsData: StockDeAllocationRecord[],
+  ) => {
+    if (!activeDeAllocationLineId) return;
+
+    setLines((prev) =>
+      prev.map((line, index) => {
+        const lineKey = line.id || `temp-line-${index}`;
+        if (lineKey !== activeDeAllocationLineId) return line;
+
+        const totalAllocated = deAllocationsData.reduce(
+          (sum, a) => sum + Number(a.allocated_quantity || 0),
+          0,
+        );
+        const lineQty = Number(line.quantity || 0);
+
+        return {
+          ...line,
+          allocations: deAllocationsData,
+          initialAllocations: deAllocationsData,
+          is_allocated: lineQty > 0 && totalAllocated === lineQty,
+        };
+      }),
+    );
+
+    setIsDeAllocModalOpen(false);
+    setActiveDeAllocRowKey(null);
+  }; */
+
+// onClick={() => {
+//   setActiveDeAllocRowKey(String(index));
+//   setIsDeAllocModalOpen(true);
+// }}
+// onClick={() => {
+//   const lineKey = line._stableKey || line.id;
+
+//   if (!lineKey) {
+//     console.error(
+//       "Unable to identify debit note line for allocation",
+//       line,
+//     );
+//     return;
+//   }
+
+//   setActiveDeAllocationLineId(lineKey);
+//   setActiveDeAllocRowKey(lineKey);
+//   setIsDeAllocModalOpen(true);
+// }}
+/* {isDeAllocModalOpen &&
         activeDeAllocRowKey !== null &&
         activeDeAllocLine && (
           <StockDeAllocationModal
@@ -857,6 +886,7 @@ export default function DebitNoteLines({
             onClose={() => {
               setIsDeAllocModalOpen(false);
               setActiveDeAllocRowKey(null);
+              setActiveDeAllocationLineId(null);
             }}
             requiredQuantity={activeDeAllocLine.quantity || 0}
             debitNoteLineId={activeDeAllocLine.id}
@@ -868,153 +898,51 @@ export default function DebitNoteLines({
             warehouseName={activeDeAllocLine.warehouse_name}
             onSave={handleSaveDeAllocations}
           />
-        )}
-    </div>
-  );
-}
+        )} */
 
-{
-  /* <div className="flex items-center gap-3 shrink-0">
-        // ✅ RESERVED STOCK INDICATOR
-        {line.reserved_quantity && (
-          <span className="text-blue-600 whitespace-nowrap">
-            Reserved: {Number(line.reserved_quantity)}
-          </span>
-        )}
+/* <GLAccountLookupModal
+        open={glIndex !== null}
+        onClose={() => setGlIndex(null)}
+        onSelect={(gl: GLAccountLookupRecord) => {
+          if (glIndex === null) return;
+          const updated = [...lines];
 
-        // ❗ STOCK WARNING
-        {displayAvailableStock !== undefined &&
-          displayQty > displayAvailableStock && (
-            <span className="text-red-600 font-medium whitespace-nowrap">
-              Insufficient stock
-            </span>
-          )}
-      </div> */
-}
+          updated[glIndex] = calculateLine({
+            ...updated[glIndex],
+            line_type: "GL_ACCOUNT",
+            gl_account_id: gl.id,
+            account_code: gl.code,
+            account_name: gl.name,
+            description: gl.name,
+          });
 
-/**
- * =====================================================
- * TOTALS
- * =====================================================
- */
-/* const totals = useMemo(() => {
-    return lines.reduce(
-      (acc, line) => {
-        acc.original += Number(line.original_amount || 0);
-        acc.discount += Number(line.discount_amount || 0);
-        acc.net += Number(line.net_amount || 0);
-        acc.vat += Number(line.vat_amount || 0);
-        acc.gross += Number(line.gross_amount || 0);
-        return acc;
-      },
-      {
-        original: 0,
-        discount: 0,
-        net: 0,
-        vat: 0,
-        gross: 0,
-      },
-    );
-  }, [lines]); */
+          setLines(updated);
+          setGlIndex(null);
+        }}
+      /> */
 
-{
-  /* <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">
-        <tr>
-          <td
-            colSpan={9}
-            className="p-2.5 text-right capitalize tracking-wider text-xs"
-          >
-            Totals
-          </td>
-          <td className="p-2.5 text-right font-mono text-amber-600 dark:text-amber-400">
-            {totals.discount.toFixed(2)}
-          </td>
-          <td className="p-2.5" />
-          <td className="p-2.5 text-right font-mono">
-            {totals.net.toFixed(2)}
-          </td>
-          <td className="p-2.5 text-right font-mono">
-            {totals.gross.toFixed(2)}
-          </td>
-          {!isReadonly && <td />}
-        </tr>
-      </tfoot> */
-}
-
-/* export type DebitNoteLineUI = DebitNoteLine & {
-  item_code?: string;
-  item_name?: string;
-  account_code?: string;
-  account_name?: string;
-  warehouse_code?: string;
-  warehouse_name?: string;
-  uom_name?: string;
-  reserved_quantity?: number;
-  available_stock?: number;
-  is_allocated?: boolean;
-  purchase_order_line_id?: string;
-  purchase_invoice_line_id?: string;
-  allocations?: StockDeAllocationRecord[];
-}; */
-{
-  /* <ItemLookupModal
-  open={itemIndex !== null}
-  onClose={() => setItemIndex(null)}
-  onSelect={(item: ItemLookupRecord) => {
-    if (itemIndex === null) return;
+/* const changeLineType = (
+    index: number,
+    type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
+  ) => {
     const updated = [...lines];
 
-    updated[itemIndex] = calculateLine({
-      ...updated[itemIndex],
-      line_type: "ITEM",
-      item_id: item.id,
-      item_code: item.item_code,
-      item_name: item.name,
-      description: item.description || item.name,
-      unit_cost: Number(item.standard_cost || 0),
-      uom_id: item.base_uom_id,
-      purchase_gl_id: item.purchase_gl_id,
-      sales_gl_id: item.sales_gl_id,
-      inventory_gl_id: item.inventory_gl_id,
+    updated[index] = calculateLine({
+      ...updated[index],
+      line_type: type,
+      item_id: undefined,
+      item_code: undefined,
+      item_name: undefined,
+      gl_account_id: undefined,
+      account_code: undefined,
+      account_name: undefined,
+      warehouse_id: undefined,
+      warehouse_code: undefined,
+      warehouse_name: undefined,
+      allocations: [],
+      initialAllocations: [],
+      is_allocated: false,
     });
 
     setLines(updated);
-    setItemIndex(null);
-  }}
-/> */
-}
-{
-  /* {isAllocationModalOpen &&
-        activeAllocationRowKey !== null &&
-        activeAllocationLine && (
-          <StockAllocationModal
-            key={`debit-note-allocation-row-${activeAllocationRowKey}`}
-            open={isAllocationModalOpen}
-            onClose={() => {
-              setIsAllocationModalOpen(false);
-              setActiveAllocationRowKey(null);
-            }}
-            targetQuantity={activeAllocationLine.quantity || 0}
-            itemId={activeAllocationLine.item_id || ""}
-            itemCode={activeAllocationLine.item_code || ""}
-            itemName={activeAllocationLine.item_name || ""}
-            warehouseId={activeAllocationLine.warehouse_id || ""}
-            warehouseName={activeAllocationLine.warehouse_name || ""}
-            locationName=""
-            // Explicitly type the map parameter to perfectly match StockAllocationRecord
-            initialAllocations={(activeAllocationLine.allocations || []).map(
-              (alloc: StockAllocationRecord) => ({
-                date_received: String(alloc.date_received || ""),
-                prod_date: String(alloc.prod_date || ""),
-                expiry_date: String(alloc.expiry_date || ""),
-                batch_no: String(alloc.batch_no || ""),
-                serial_no: String(alloc.serial_no || ""),
-                quantity: Number(alloc.quantity || 0),
-              }),
-            )}
-            onSave={(allocationsPayload) =>
-              handleSaveAllocations(allocationsPayload)
-            }
-          />
-        )} */
-}
+  }; */
