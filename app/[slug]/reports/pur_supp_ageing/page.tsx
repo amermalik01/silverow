@@ -10,7 +10,6 @@ import {
   FileText,
   Download,
   FileSpreadsheet,
-  FileCode,
 } from "lucide-react";
 
 import { Icon } from "@iconify/react";
@@ -32,6 +31,7 @@ type SummaryRow = {
   vendor_name: string;
   currency_code: string;
   total: number;
+  total_fcy: number;
   b0_30: number;
   b31_60: number;
   b61_90: number;
@@ -60,6 +60,27 @@ type DetailedGroup = {
   total_fcy: number;
   total_lcy: number;
   entries: DetailedEntry[];
+};
+
+type SummaryTotals = {
+  lcy?: {
+    total: number;
+    b0_30: number;
+    b31_60: number;
+    b61_90: number;
+    b91_120: number;
+    b_over_120: number;
+  };
+  total_lcy?: number;
+  currencies: Array<{
+    currency_code: string;
+    total: number;
+    b0_30?: number;
+    b31_60?: number;
+    b61_90?: number;
+    b91_120?: number;
+    b_over_120?: number;
+  }>;
 };
 
 type DetailedExportRow = {
@@ -91,6 +112,9 @@ export default function SupplierAgeingReport() {
   // Report Data States
   const [summaryData, setSummaryData] = useState<SummaryRow[]>([]);
   const [detailedData, setDetailedData] = useState<DetailedGroup[]>([]);
+  const [summaryTotals, setSummaryTotals] = useState<SummaryTotals | null>(
+    null,
+  );
 
   // Selection Arrays for Lookup Modal
   const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
@@ -125,6 +149,8 @@ export default function SupplierAgeingReport() {
       if (!res.ok) throw new Error("Failed fetching ageing data");
 
       const json = await res.json();
+      setSummaryTotals(json.summaryTotals || null);
+
       if (viewMode === "Summary") {
         setSummaryData(json.data || []);
         setDetailedData([]);
@@ -146,6 +172,7 @@ export default function SupplierAgeingReport() {
     setSelectedSuppliers([]);
     setSummaryData([]);
     setDetailedData([]);
+    setSummaryTotals(null);
     setValidationError(null);
   };
 
@@ -217,7 +244,6 @@ export default function SupplierAgeingReport() {
     <div className="w-full p-4 space-y-6">
       <Breadcrumbs
         items={[
-          // { label: "Reports", href: `/${slug}/reports` },
           { label: "All Reports", href: `/${slug}/reports` },
           { label: "Supplier Ageing Report" },
         ]}
@@ -420,40 +446,102 @@ export default function SupplierAgeingReport() {
                     </td>
                   </tr>
                 ) : (
-                  summaryData.map((row) => (
-                    <tr
-                      key={row.vendor_id}
-                      className="hover:bg-slate-50 transition-colors"
-                    >
-                      <td className="p-3 whitespace-nowrap font-sans font-semibold text-emerald-800">
-                        {row.vendor_no}
-                      </td>
-                      <td className="p-3 font-sans font-medium text-slate-900">
-                        {row.vendor_name}
-                      </td>
-                      <td className="p-3 text-center font-bold text-slate-600">
-                        {row.currency_code}
-                      </td>
-                      <td className="p-3 text-right font-bold tabular-nums text-slate-900">
-                        {formatCurrency(row.total)}
-                      </td>
-                      <td className="p-3 text-right tabular-nums">
-                        {formatCurrency(row.b0_30)}
-                      </td>
-                      <td className="p-3 text-right tabular-nums">
-                        {formatCurrency(row.b31_60)}
-                      </td>
-                      <td className="p-3 text-right tabular-nums">
-                        {formatCurrency(row.b61_90)}
-                      </td>
-                      <td className="p-3 text-right tabular-nums">
-                        {formatCurrency(row.b91_120)}
-                      </td>
-                      <td className="p-3 text-right tabular-nums">
-                        {formatCurrency(row.b_over_120)}
-                      </td>
-                    </tr>
-                  ))
+                  <>
+                    {summaryData.map((row) => (
+                      <tr
+                        key={row.vendor_id}
+                        className="hover:bg-slate-50 transition-colors"
+                      >
+                        <td className="p-3 whitespace-nowrap font-sans font-semibold text-emerald-800">
+                          {row.vendor_no}
+                        </td>
+                        <td className="p-3 font-sans font-medium text-slate-900">
+                          {row.vendor_name}
+                        </td>
+                        <td className="p-3 text-center font-bold text-slate-600">
+                          {row.currency_code}
+                        </td>
+                        <td className="p-3 text-right font-bold tabular-nums text-slate-900">
+                          {formatCurrency(row.total)}
+                        </td>
+                        <td className="p-3 text-right tabular-nums">
+                          {formatCurrency(row.b0_30)}
+                        </td>
+                        <td className="p-3 text-right tabular-nums">
+                          {formatCurrency(row.b31_60)}
+                        </td>
+                        <td className="p-3 text-right tabular-nums">
+                          {formatCurrency(row.b61_90)}
+                        </td>
+                        <td className="p-3 text-right tabular-nums">
+                          {formatCurrency(row.b91_120)}
+                        </td>
+                        <td className="p-3 text-right tabular-nums">
+                          {formatCurrency(row.b_over_120)}
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* Summary Footer Section with Multi-Currencies */}
+                    {summaryTotals && summaryTotals.lcy && (
+                      <>
+                        <tr className="bg-slate-100/80 font-bold border-t-2 border-slate-300">
+                          <td colSpan={2} className="p-3"></td>
+                          <td className="p-3 text-center font-sans">
+                            Total (LCY)
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {formatCurrency(summaryTotals.lcy.total)}
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {formatCurrency(summaryTotals.lcy.b0_30)}
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {formatCurrency(summaryTotals.lcy.b31_60)}
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {formatCurrency(summaryTotals.lcy.b61_90)}
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {formatCurrency(summaryTotals.lcy.b91_120)}
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {formatCurrency(summaryTotals.lcy.b_over_120)}
+                          </td>
+                        </tr>
+
+                        {summaryTotals.currencies.map((curr) => (
+                          <tr
+                            key={curr.currency_code}
+                            className="bg-slate-50 font-bold border-t border-slate-200"
+                          >
+                            <td colSpan={2} className="p-3"></td>
+                            <td className="p-3 text-center font-sans">
+                              Total ({curr.currency_code})
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {formatCurrency(curr.total)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {formatCurrency(curr.b0_30 ?? 0)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {formatCurrency(curr.b31_60 ?? 0)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {formatCurrency(curr.b61_90 ?? 0)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {formatCurrency(curr.b91_120 ?? 0)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {formatCurrency(curr.b_over_120 ?? 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </>
+                    )}
+                  </>
                 )}
               </tbody>
             </table>
@@ -469,76 +557,102 @@ export default function SupplierAgeingReport() {
                   No detailed ageing entries found.
                 </div>
               ) : (
-                detailedData.map((group) => (
-                  <div key={group.vendor_id} className="space-y-2">
-                    <h3 className="text-xs font-bold text-slate-800 font-sans">
-                      {group.vendor_name} ({group.vendor_no})
-                    </h3>
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead className="bg-[#0b3310] text-white font-bold">
-                        <tr>
-                          <th className="p-2.5">Posting Date</th>
-                          <th className="p-2.5">Document Type</th>
-                          <th className="p-2.5">Document No</th>
-                          <th className="p-2.5 text-center">Currency</th>
-                          <th className="p-2.5 text-right">
-                            Outstanding Amount
-                          </th>
-                          <th className="p-2.5 text-right">
-                            Outstanding Amount (LCY)
-                          </th>
-                          <th className="p-2.5">Due Date</th>
-                          <th className="p-2.5 text-right">Balance</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-[11px] font-mono text-slate-700">
-                        {group.entries.map((entry) => (
-                          <tr key={entry.id} className="hover:bg-slate-50">
-                            <td className="p-2.5">
-                              {formatDate(entry.posting_date)}
-                            </td>
-                            <td className="p-2.5 font-sans">
-                              {entry.document_type}
-                            </td>
-                            <td className="p-2.5 font-semibold text-emerald-800">
-                              {entry.document_no || "—"}
-                            </td>
-                            <td className="p-2.5 text-center font-bold text-slate-600">
-                              {entry.currency_code}
-                            </td>
-                            <td className="p-2.5 text-right tabular-nums">
-                              {formatCurrency(entry.outstanding_fcy)}
-                            </td>
-                            <td className="p-2.5 text-right tabular-nums">
-                              {formatCurrency(entry.outstanding_lcy)}
-                            </td>
-                            <td className="p-2.5">
-                              {formatDate(entry.due_date) || "—"}
-                            </td>
-                            <td className="p-2.5 text-right font-bold tabular-nums">
-                              {formatCurrency(entry.running_balance_fcy)}
-                            </td>
+                <>
+                  {detailedData.map((group) => (
+                    <div key={group.vendor_id} className="space-y-2">
+                      <h3 className="text-xs font-bold text-slate-800 font-sans">
+                        {group.vendor_name} ({group.vendor_no})
+                      </h3>
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead className="bg-[#0b3310] text-white font-bold">
+                          <tr>
+                            <th className="p-2.5">Posting Date</th>
+                            <th className="p-2.5">Document Type</th>
+                            <th className="p-2.5">Document No</th>
+                            <th className="p-2.5 text-center">Currency</th>
+                            <th className="p-2.5 text-right">
+                              Outstanding Amount
+                            </th>
+                            <th className="p-2.5 text-right">
+                              Outstanding Amount (LCY)
+                            </th>
+                            <th className="p-2.5">Due Date</th>
+                            <th className="p-2.5 text-right">Balance</th>
                           </tr>
-                        ))}
-                        <tr className="bg-slate-50 font-bold border-t border-slate-300">
-                          <td
-                            colSpan={4}
-                            className="p-2.5 text-right font-sans"
-                          >
-                            Total
-                          </td>
-                          <td className="p-2.5 text-right tabular-nums">
-                            {formatCurrency(group.total_fcy)}
-                          </td>
-                          <td className="p-2.5 text-right tabular-nums">
-                            {formatCurrency(group.total_lcy)}
-                          </td>
-                          <td colSpan={2}></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                ))
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-[11px] font-mono text-slate-700">
+                          {group.entries.map((entry) => (
+                            <tr key={entry.id} className="hover:bg-slate-50">
+                              <td className="p-2.5">
+                                {formatDate(entry.posting_date)}
+                              </td>
+                              <td className="p-2.5 font-sans">
+                                {entry.document_type}
+                              </td>
+                              <td className="p-2.5 font-semibold text-emerald-800">
+                                {entry.document_no || "—"}
+                              </td>
+                              <td className="p-2.5 text-center font-bold text-slate-600">
+                                {entry.currency_code}
+                              </td>
+                              <td className="p-2.5 text-right tabular-nums">
+                                {formatCurrency(entry.outstanding_fcy)}
+                              </td>
+                              <td className="p-2.5 text-right tabular-nums">
+                                {formatCurrency(entry.outstanding_lcy)}
+                              </td>
+                              <td className="p-2.5">
+                                {formatDate(entry.due_date) || "—"}
+                              </td>
+                              <td className="p-2.5 text-right font-bold tabular-nums">
+                                {formatCurrency(entry.running_balance_fcy)}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="bg-slate-50 font-bold border-t border-slate-300">
+                            <td
+                              colSpan={4}
+                              className="p-2.5 text-right font-sans"
+                            >
+                              Total
+                            </td>
+                            <td className="p-2.5 text-right tabular-nums">
+                              {formatCurrency(group.total_fcy)}
+                            </td>
+                            <td className="p-2.5 text-right tabular-nums">
+                              {formatCurrency(group.total_lcy)}
+                            </td>
+                            <td colSpan={2}></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                  {/* Detailed Multi-Currency Summary Footer Section */}
+                  {summaryTotals && (
+                    <div className="pt-4 border-t border-slate-200 text-xs font-bold font-mono w-full max-w-sm space-y-1.5 justify-end">
+                      {summaryTotals.total_lcy !== undefined && (
+                        <div className="flex justify-between items-center px-2 py-1 bg-slate-100 rounded">
+                          <span className="font-sans text-slate-800">
+                            Total (LCY)
+                          </span>
+                          <span>{formatCurrency(summaryTotals.total_lcy)}</span>
+                        </div>
+                      )}
+                      {summaryTotals.currencies.map((curr) => (
+                        <div
+                          key={curr.currency_code}
+                          className="flex justify-between items-center px-2 py-1 bg-slate-50 rounded"
+                        >
+                          <span className="font-sans text-slate-800">
+                            Total ({curr.currency_code})
+                          </span>
+                          <span>{formatCurrency(curr.total)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
