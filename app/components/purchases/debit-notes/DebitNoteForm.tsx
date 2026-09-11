@@ -925,7 +925,7 @@ export const DebitNoteForm: React.FC<Props> = ({
     if (errors.length > 0) {
       setValidationErrors(errors);
 
-      toast.error("Please complete the Debit Note before continuing.");
+      // toast.error("Please complete the Debit Note before continuing.");
 
       return false;
     }

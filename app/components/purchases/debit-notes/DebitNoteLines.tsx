@@ -63,14 +63,18 @@ export default function DebitNoteLines({
     string | null
   >(null);
 
-  const activeDeAllocLine =
-    lines.find(
-      (line) => (line._stableKey || line.id) === activeDeAllocationLineKey,
-    ) || null;
+  // const activeDeAllocLine =
+  //   lines.find(
+  //     (line) => (line._stableKey || line.id) === activeDeAllocationLineKey,
+  //   ) || null;
 
-    const getLineKey = (line: DebitNoteLineUI): string | null => {
-  return line._stableKey || line.id || null;
-};
+  const getLineKey = (line: DebitNoteLineUI): string | null => {
+    return line._stableKey || line.id || null;
+  };
+
+  const activeDeAllocLine =
+    lines.find((line) => getLineKey(line) === activeDeAllocationLineKey) ??
+    null;
 
   const createEmptyLine = (
     lineType: "ITEM" | "GL_ACCOUNT",
@@ -576,18 +580,14 @@ export default function DebitNoteLines({
                             // const key = line._stableKey || line.id;
                             const key = getLineKey(line);
 
-                            console.log("ALLOCATION CLICK", {
-                              line,
+                            console.log("Opening allocation modal", {
                               key,
-                              id: line.id,
-                              stableKey: line._stableKey,
-                              purchaseInvoiceLineId:
-                                line.purchase_invoice_line_id,
+                              line,
                             });
 
                             if (!key) {
                               console.error(
-                                "Cannot open allocation modal: line has no key",
+                                "Allocation line has no stable key",
                                 line,
                               );
                               return;
