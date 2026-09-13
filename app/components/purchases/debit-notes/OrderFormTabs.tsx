@@ -705,6 +705,50 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   }
                 />
               </div>
+
+              <div className="grid grid-cols-12 items-center gap-2">
+                <label className={labelStyle}>
+                  Currency {/* <span className="text-red-500">*</span> */}
+                </label>
+
+                <input
+                  type="text"
+                  disabled={isSettingsDisabled}
+                  readOnly
+                  className={selectStyle}
+                  value={(() => {
+                    const currency = masterData?.currencies.find(
+                      (c) => c.id === currencyConfig.currency_id,
+                    );
+
+                    return currency
+                      ? `${currency.code} - ${currency.name}`
+                      : "";
+                  })()}
+                />
+                {/* <select
+                  disabled={isSettingsDisabled}
+                  className={inputStyle}
+                  value={currencyConfig.currency_id ?? ""}
+                  onChange={(e) => {
+                    const targetId = e.target.value;
+                    const matched = masterData?.currencies.find(
+                      (c) => c.id === targetId,
+                    );
+                    setCurrencyConfig({
+                      currency_id: targetId,
+                      exchange_rate: matched ? matched.exchange_rate : 1,
+                    });
+                  }}
+                >
+                  <option value="">Select Currency...</option>
+                  {masterData?.currencies.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.code} - {c.name}
+                    </option>
+                  ))}
+                </select> */}
+              </div>
             </div>
 
             {/* Column 4 */}
@@ -790,49 +834,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 
             {/* Column 5 */}
             <div className="space-y-2">
-              <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>
-                  Currency {/* <span className="text-red-500">*</span> */}
-                </label>
-
-                <input
-                  type="text"
-                  disabled={isSettingsDisabled}
-                  readOnly
-                  className={selectStyle}
-                  value={(() => {
-                    const currency = masterData?.currencies.find(
-                      (c) => c.id === currencyConfig.currency_id,
-                    );
-
-                    return currency
-                      ? `${currency.code} - ${currency.name}`
-                      : "";
-                  })()}
-                />
-                {/* <select
-                  disabled={isSettingsDisabled}
-                  className={inputStyle}
-                  value={currencyConfig.currency_id ?? ""}
-                  onChange={(e) => {
-                    const targetId = e.target.value;
-                    const matched = masterData?.currencies.find(
-                      (c) => c.id === targetId,
-                    );
-                    setCurrencyConfig({
-                      currency_id: targetId,
-                      exchange_rate: matched ? matched.exchange_rate : 1,
-                    });
-                  }}
-                >
-                  <option value="">Select Currency...</option>
-                  {masterData?.currencies.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.code} - {c.name}
-                    </option>
-                  ))}
-                </select> */}
-              </div>
+              
             </div>
           </div>
         )}
@@ -1021,6 +1023,24 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   onChange={(e) => updateField("book_in_email", e.target.value)}
                 />
               </div>
+
+              <div className="grid grid-cols-12 items-center gap-2">
+                <label
+                  className={labelStyle}
+                  title="Supplier Booking Reference No."
+                >
+                  Suppl. WH Ref.
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  disabled={isReadOnly}
+                  value={note.supplier_booking_ref_no || ""}
+                  onChange={(e) =>
+                    updateField("supplier_booking_ref_no", e.target.value)
+                  }
+                />
+              </div>
             </div>
 
             {/* Column 4 */}
@@ -1111,24 +1131,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   value={note.warehouse_booking_ref_no || ""}
                   onChange={(e) =>
                     updateField("warehouse_booking_ref_no", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-12 items-center gap-2">
-                <label
-                  className={labelStyle}
-                  title="Supplier Booking Reference No."
-                >
-                  Suppl. WH Ref.
-                </label>
-                <input
-                  type="text"
-                  className={inputStyle}
-                  disabled={isReadOnly}
-                  value={note.supplier_booking_ref_no || ""}
-                  onChange={(e) =>
-                    updateField("supplier_booking_ref_no", e.target.value)
                   }
                 />
               </div>

@@ -57,7 +57,6 @@ interface OrderFormTabsProps {
   setShippingAddress: React.Dispatch<React.SetStateAction<Address>>;
   currencyConfig: CurrencyConfig;
   setCurrencyConfig: React.Dispatch<React.SetStateAction<CurrencyConfig>>;
-  // currencies: Currency[];
   masterData: PurchaseOrderMasterData | null;
   updateField: <K extends keyof PurchaseOrder>(
     field: K,

@@ -757,79 +757,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     setShowMigrationModal(true);
   };
 
-  /* const handleSave = async () => {
-    if (!validateForm()) {
-      // toast.error("Please fix validation errors before saving.");
-      return;
-    }
-
-    show("Saving...");
-
-    try {
-      setSaving(true);
-      setValidationErrors([]);
-
-      const payload = {
-        order: {
-          ...order,
-          ...currencyConfig,
-          subtotal: financials.amount,
-          tax_amount: financials.vat,
-          total_amount: financials.amountInclVat,
-        },
-
-        primary_address: primaryAddress,
-        billing_address: billingAddress,
-        shipping_address: shippingAddress,
-
-        lines,
-      };
-
-      const res = await fetch(
-        id ? `/api/purchase-orders/${id}` : "/api/purchase-orders",
-        {
-          method: id ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      const result = await res.json();
-      if (!res.ok)
-        throw new Error(
-          result.error || "Execution error writing back purchase records.",
-        );
-
-      toast.success(id ? "Purchase Order Updated" : "Purchase Order Created");
-
-      const targetId = id || result?.data?.id;
-
-      if (targetId) {
-        // Re-fetch persisted lines to update local state with database UUIDs
-        const linesRes = await fetch(`/api/purchase-orders/${targetId}/lines`);
-        const linesData = await linesRes.json();
-        if (linesData.lines) {
-          setLines(linesData.lines);
-        }
-      }
-
-      if (id) {
-        // Toggle back to View Mode after saving existing PO
-        setIsEditMode(false);
-        router.refresh();
-      } else if (result?.data?.id) {
-        router.replace(
-          `/${slug}/purchases/purchase-orders/${result.data.id}/edit`,
-        );
-      }
-    } catch (err) {
-      if (err instanceof Error) setValidationErrors([err.message]);
-    } finally {
-      setSaving(false);
-      hide();
-    }
-  }; */
-
   const handleStageClick = async (targetStage: {
     id: string;
     name: string;
@@ -1122,10 +1049,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         ]}
       />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <h1 className="text-2xl font-bold px-4">
-          {`Purchase Order`}
-          {/* ${!isReadOnly ? "Edit" : "View"} */}
-        </h1>
+        <h1 className="text-2xl font-bold px-4">{`Purchase Order`}</h1>
 
         {order.order_no && (
           <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
@@ -1265,10 +1189,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           setShippingAddress={setShippingAddress}
           currencyConfig={currencyConfig}
           setCurrencyConfig={setCurrencyConfig}
-          // currencies={currencies}
           masterData={masterData}
           updateField={updateField}
-          // setSupplierModalOpen={setSupplierModalOpen}
           onGeneralSupplierSelect={handleGeneralSupplierSelection}
           onInvoicingSupplierSelect={handleInvoicingSupplierSelection}
           setLocationModalOpen={setLocationModalOpen}
@@ -1284,13 +1206,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         />
       </div>
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        {/* <PurchaseOrderLines
-          lines={lines}
-          setLines={setLines}
-          isReadonly={isFormDisabled}
-          purchaseOrder={order}
-          refreshLines={refreshLines}
-        /> */}
         <PurchaseOrderLines
           lines={lines}
           setLines={setLines}
@@ -1414,11 +1329,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         </div>
 
         <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 p-2 rounded-lg">
-          {/* Legend Indicators */}
           <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />{" "}
-              {/* Partially Allocated */}Pending Allocation
+              Pending Allocation
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
@@ -1430,7 +1344,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             </span>
           </div>
 
-          {/* Dedicated Action Buttons */}
           <div className="flex items-center gap-2">
             {isUpdateMode && (
               <>
@@ -1497,7 +1410,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Modals */}
       <StockReceiveConfirmModal
         isOpen={showReceiveModal}
         title="Confirmation"
@@ -1516,7 +1428,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         loading={isPosting}
       />
 
-      {/* Combined Receive & Post Modal */}
       <GeneralConfirmModal
         isOpen={showReceiveAndPostModal}
         title="Stock Receipt Required"
@@ -1558,14 +1469,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         />
       )}
 
-      {/* {POModalOpen && (
-        <PurchaseOrderLookupModal
-          isOpen={POModalOpen}
-          onClose={() => setPOModalOpen(false)}
-          onSelectOrder={handleSelectPurchaseOrder}
-        /> 
-      )} */}
-
       {POModalOpen && (
         <PurchaseOrderMultiLookupModal
           isOpen={POModalOpen}
@@ -1586,7 +1489,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           onSelectOrder={handleSelectSalesOrder}
         />
       )}
-      
+
       {PurchaserModalOpen && (
         <SalespersonLookupModal
           open={PurchaserModalOpen}
@@ -1595,7 +1498,6 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         />
       )}
 
-      {/* Modal to Select Location */}
       <SupplierShippingLocationsModal
         open={locationModalOpen}
         supplierId={order.supplier_id}
@@ -1638,58 +1540,3 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     </div>
   );
 };
-/* 
-
-  const allocationValidation = useMemo(() => {
-    const itemLines = lines.filter(
-      (line) => (line.line_type || "ITEM") === "ITEM",
-    );
-
-    const errors: string[] = [];
-
-    if (itemLines.length === 0) {
-      return {
-        valid: false,
-        errors: ["At least one item line is required."],
-      };
-    }
-
-    itemLines.forEach((line, index) => {
-      const quantity = Number(line.quantity || 0);
-
-      const allocations = line.allocations || line.initialAllocations || [];
-
-      const allocatedQuantity = allocations.reduce(
-        (sum, allocation) => sum + Number(allocation.quantity || 0),
-        0,
-      );
-
-      if (!line.item_id) {
-        errors.push(`Item line ${index + 1}: Item has not been selected.`);
-        return;
-      }
-
-      if (!line.warehouse_id) {
-        errors.push(`Item line ${index + 1}: Warehouse has not been selected.`);
-        return;
-      }
-
-      if (quantity <= 0) {
-        errors.push(
-          `Item line ${index + 1}: Quantity must be greater than zero.`,
-        );
-        return;
-      }
-
-      if (allocatedQuantity !== quantity) {
-        errors.push(
-          `Item line ${index + 1}: Stock allocation is incomplete (${allocatedQuantity}/${quantity}).`,
-        );
-      }
-    });
-
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
-  }, [lines]); */

@@ -2,14 +2,24 @@
 
 import { PoolClient } from "pg";
 
+// export type SalesOrderStatus =
+//   | "OPEN"
+//   | "PARTIAL"
+//   | "RELEASED"
+//   | "DISPATCHED"
+//   | "INVOICED"
+//   | "CLOSED"
+//   | "CANCELLED";
+
 export type SalesOrderStatus =
-  | "OPEN"
-  | "PARTIAL"
-  | "RELEASED"
-  | "DISPATCHED"
-  | "INVOICED"
-  | "CLOSED"
-  | "CANCELLED";
+  | "draft"
+  | "open"
+  | "partially_shipped"
+  | "shipped"
+  | "invoiced"
+  | "closed"
+  | "cancelled"
+  | "completed";
 
 export class SalesOrderStatusService {
   //  * =========================================================
@@ -30,8 +40,8 @@ export class SalesOrderStatusService {
     }
 
     const order = orderResult.rows[0];
-    if (order.status === "CANCELLED") {
-      return "CANCELLED";
+    if (order.status === "cancelled") {
+      return "cancelled";
     }
 
     //  * -------------------------------------------------------
@@ -77,7 +87,7 @@ export class SalesOrderStatusService {
         [salesOrderId],
       );
 
-      return "OPEN";
+      return "open";
     }
 
     //  * -------------------------------------------------------
@@ -108,16 +118,16 @@ export class SalesOrderStatusService {
     //  * DETERMINE STATUS
     //  * -------------------------------------------------------
 
-    let status: SalesOrderStatus = "OPEN";
+    let status: SalesOrderStatus = "open";
 
     if (totalInvoiced >= totalQty && totalQty > 0) {
-      status = "INVOICED"; //  * FULLY INVOICED
+      status = "invoiced"; //  * FULLY INVOICED
     } else if (totalDispatched >= totalQty && totalQty > 0) {
-      status = "DISPATCHED"; //  * FULLY DISPATCHED
+      status = "shipped"; //  * FULLY DISPATCHED
     } else if (totalReserved >= totalQty && totalQty > 0) {
-      status = "RELEASED"; //  * STOCK RESERVED / RELEASED
+      status = "shipped"; //  * STOCK RESERVED / RELEASED
     } else if (totalReserved > 0 || totalDispatched > 0 || totalInvoiced > 0) {
-      status = "PARTIAL"; //  * PARTIAL ACTIVITY
+      status = "partially_shipped"; //  * PARTIAL ACTIVITY
     }
 
     //  * -------------------------------------------------------
@@ -140,7 +150,7 @@ export class SalesOrderStatusService {
     const uninvoicedCount = Number(closeResult.rows[0]?.uninvoiced_count || 0);
 
     if (uninvoicedCount === 0 && totalQty > 0) {
-      status = "CLOSED";
+      status = "closed";
     }
 
     //  * -------------------------------------------------------
@@ -166,11 +176,11 @@ export class SalesOrderStatusService {
   //  * =========================================================
 
   static validateTransition(current: SalesOrderStatus, next: SalesOrderStatus) {
-    if (current === "CANCELLED")
+    if (current === "cancelled")
       throw new Error("Cancelled sales order cannot be modified");
-    if (current === "CLOSED" && next !== "CLOSED")
+    if (current === "closed" && next !== "closed")
       throw new Error("Closed sales order cannot be reopened");
-    if (current === "INVOICED" && next === "OPEN")
+    if (current === "invoiced" && next === "open")
       throw new Error("Invoiced sales order cannot return to OPEN");
   }
 

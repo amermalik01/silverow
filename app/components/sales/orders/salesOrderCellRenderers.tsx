@@ -48,7 +48,7 @@ export function getSalesOrderCellRenderers(slug: string) {
     // Code / Identifier Links
     sale_order_code: (row: SalesOrderListing) => (
       <Link
-        href={`/${slug}/sales/orders/${row.id}`}
+        href={`/${slug}/sales/orders/${row.id}/edit`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
         {row.sale_order_code || row.order_no || "Draft"}

@@ -437,18 +437,6 @@ export default function PurchaseOrderLines({
         </h3>
 
         <div className="flex items-center gap-2">
-          {/* {purchaseOrder.id && (
-            <Button
-              type="button"
-              onClick={() => setIsMigrationModalOpen(true)}
-              variant="save"
-              disabled={isReadonly}
-            >
-              <span>⇧</span>
-              Import Items
-            </Button>
-          )} */}
-
           <Button
             type="button"
             onClick={onImportItems}
@@ -465,7 +453,6 @@ export default function PurchaseOrderLines({
             variant="add_line"
             disabled={isReadonly}
           >
-            {/* <Icon icon="tabler:package" className="w-4 h-4 mr-1" /> */}
             Select Item
           </Button>
 
@@ -475,18 +462,8 @@ export default function PurchaseOrderLines({
             variant="add_line"
             disabled={isReadonly}
           >
-            {/* <Icon icon="tabler:receipt" className="w-4 h-4 mr-1" /> */}
             Select G/L
           </Button>
-
-          {/* <Button
-            type="button"
-            onClick={addLine}
-            variant="add_line"
-            disabled={isReadonly}
-          >
-            Add Line
-          </Button> */}
         </div>
       </div>
 
@@ -589,23 +566,6 @@ export default function PurchaseOrderLines({
                       : "bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
                   }`}
                 >
-                  {/* <td className="p-2">
-                    <select
-                      value={line.line_type || "ITEM"}
-                      disabled={isLineDisabled}
-                      onChange={(e) =>
-                        changeLineType(
-                          index,
-                          e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
-                        )
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 text-[11px] w-full disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      <option value="ITEM">Item</option>
-                      <option value="GL_ACCOUNT">G/L</option>
-                    </select>
-                  </td> */}
-
                   <td className="p-2">
                     <div className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
                       {line.line_type === "ITEM" ? "Item" : "G/L"}
@@ -779,7 +739,6 @@ export default function PurchaseOrderLines({
 
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      {/* !isReadonly &&  */}
                       {line.line_type === "ITEM" ? (
                         <button
                           type="button"
@@ -916,19 +875,6 @@ export default function PurchaseOrderLines({
           }
         />
       )}
-
-      {/* <MigrationUploadModal
-        open={isMigrationModalOpen}
-        onClose={() => setIsMigrationModalOpen(false)}
-        purchaseOrder={purchaseOrder}
-        onCompleted={async () => {
-          if (refreshLines) {
-            await refreshLines();
-          }
-
-          setIsMigrationModalOpen(false);
-        }}
-      /> */}
     </div>
   );
 }

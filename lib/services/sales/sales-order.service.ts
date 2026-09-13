@@ -344,7 +344,7 @@ export class SalesOrderService {
           // orderData.sq_no || null,
           orderData.internal_notes || null,
           orderData.notes || null,
-          orderData.status || "OPEN",
+          orderData.status || "open",
           orderData.shipment_status || "PENDING",
           orderData.source_of_order || null,
           orderData.invoice_status || "UNINVOICED",

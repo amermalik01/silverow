@@ -22,8 +22,6 @@ import CustomerLookupModal, { CustomerLookupItem } from "./CustomerLookupModal";
 import CustomerDeliveryLocationModal from "./CustomerDeliveryLocationModal";
 import { Button } from "@/components/ui/button";
 
-// import { StockShipConfirmModal } from "@/app/components/shared/modals/StockShipConfirmModal";
-// import CustomerShippingLocationsModal from "./CustomerShippingLocationsModal";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
@@ -31,6 +29,10 @@ import {
   PurchaseOrderLookupItem,
   PurchaseOrderLookupModal,
 } from "../../shared/modals/PurchaseOrderLookupModal";
+import SalespersonLookupModal, {
+  Employee,
+} from "../../shared/modals/SalespersonLookupModal";
+import { PurchaseOrderMultiLookupModal } from "../../shared/modals/PurchaseOrderMultiLookupModal";
 
 type Props = {
   slug: string;
@@ -49,8 +51,10 @@ export const SalesOrderForm: React.FC<Props> = ({
 }) => {
   const router = useRouter();
   const { data: session } = useSession();
+  const { show, hide } = useLoader();
 
   const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
+
   const [activeTab, setActiveTab] = useState<TabType>("general");
   const [saving, setSaving] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -61,15 +65,13 @@ export const SalesOrderForm: React.FC<Props> = ({
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 
+  const [SalesPersonModalOpen, setSalesPersonModalOpen] = useState(false);
+
   const [POModalOpen, setPOModalOpen] = useState(false);
   const [SOModalOpen, setSOModalOpen] = useState(false);
 
-  // const [customerModalOpen, setCustomerModalOpen] = useState<boolean>(false);
-  // const [locationModalOpen, setLocationModalOpen] = useState(false);
-
   // Manage view/edit state locally
   const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
-
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
@@ -77,17 +79,17 @@ export const SalesOrderForm: React.FC<Props> = ({
   const [showShipModal, setShowShipModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
-
-  const { show, hide } = useLoader();
+  const [isShipping, setIsShipping] = useState(false);
 
   const [masterData, setMasterData] = useState<SalesOrderMasterData | null>(
     null,
   );
 
+  const isUpdateMode = Boolean(id);
   const isLoadingStages = !masterData;
   const stages = masterData?.stages ?? [];
 
-  const isUpdateMode = !!id;
+  // const isUpdateMode = !!id;
 
   const [order, setOrder] = useState<Partial<SalesOrder>>({
     order_no: id ? "" : "",
@@ -104,12 +106,13 @@ export const SalesOrderForm: React.FC<Props> = ({
     dispatch_date: new Date().toISOString().split("T")[0],
     requested_delivery_date: new Date().toISOString().split("T")[0],
     delivery_date: new Date().toISOString().split("T")[0],
-    // status: "order processing",
+
     status: "draft",
     subtotal: 0,
     tax_amount: 0,
     total_amount: 0,
     invoiced_amount: 0,
+
     reference: "",
     notes: "",
     email: "",
@@ -118,7 +121,7 @@ export const SalesOrderForm: React.FC<Props> = ({
     link_to_po: "",
     sq_no: "",
     source_of_order: "Others",
-    // external_document_no: "",
+
     currency_code: baseCurrencyCode,
   });
 
@@ -165,6 +168,7 @@ export const SalesOrderForm: React.FC<Props> = ({
     fetch(`/api/sales/sales-orders/${id}`)
       .then((r) => r.json())
       .then((payload) => {
+        hide();
         if (payload && payload.success && payload.data) {
           const actualData = payload.data;
 
@@ -258,14 +262,46 @@ export const SalesOrderForm: React.FC<Props> = ({
     };
   }, [lines, currencyConfig.exchange_rate]);
 
+  const hasSelectedLineItem = useMemo(() => {
+    return lines.some((line) => {
+      return !!line.item_id || !!line.gl_account_id;
+    });
+  }, [lines]);
+
+  const handleGeneralCustomerSelection = () => {
+    setCustomerSelectionSource("general");
+
+    if (hasSelectedLineItem) {
+      setShowCustomerChangeModal(true);
+      return;
+    }
+    setCustomerModalOpen(true);
+  };
+
+  const handleInvoicingCustomerSelection = () => {
+    setCustomerSelectionSource("invoicing");
+
+    if (hasSelectedLineItem) {
+      setShowCustomerChangeModal(true);
+      return;
+    }
+    setCustomerModalOpen(true);
+  };
+
+  const handleShippingAgentSelection = () => {
+    setCustomerSelectionSource("shipping_agent");
+    setCustomerModalOpen(true);
+  };
+
   const handleConfirmCustomerChange = () => {
     // Remove all existing PO lines.
     setLines([]);
+    // setLines([createEmptyPurchaseOrderLine()]);
 
     // Close confirmation modal.
     setShowCustomerChangeModal(false);
 
-    // Now allow supplier selection.
+    // Now allow Customer selection.
     setCustomerModalOpen(true);
     toast.info(
       "Sales order lines have been cleared. Please select a customer.",
@@ -277,6 +313,40 @@ export const SalesOrderForm: React.FC<Props> = ({
   };
 
   const handleCustomerSelect = (customer: CustomerLookupItem) => {
+    if (customerSelectionSource === "invoicing") {
+      // --------------------------------------------
+      // INVOICING TAB
+      // Only update Pay To Customer + Billing Address
+      // --------------------------------------------
+      setOrder((prev) => ({
+        ...prev,
+        bill_to_customer_id: customer.id,
+        bill_to_customer_no: customer.customer_code,
+        bill_to_customer_name: customer.name,
+      }));
+
+      if (customer.billing_address) setBillingAddress(customer.billing_address);
+
+      setCustomerModalOpen(false);
+      return;
+    }
+
+    // Shipping Agent
+    if (customerSelectionSource === "shipping_agent") {
+      setOrder((prev) => ({
+        ...prev,
+        shipping_agent: `${customer.customer_code} - ${customer.name}`,
+      }));
+
+      setCustomerModalOpen(false);
+      return;
+    }
+
+    // --------------------------------------------
+    // GENERAL TAB
+    // Full customer selection
+    // --------------------------------------------
+
     setOrder((prev) => ({
       ...prev,
       customer_id: customer.id,
@@ -292,13 +362,13 @@ export const SalesOrderForm: React.FC<Props> = ({
       customer_posting_group_id: customer.posting_group || "",
       vat_business_posting_group_id: customer.posting_group || "",
 
-      // customer_posting_group_id:
-      //   customer.sales_posting_group_id || customer.posting_group || "",
-      // vat_business_posting_group_id:
-      //   customer.sales_posting_group_id || customer.posting_group || "",
-
       anonymous_customer: customer.anonymous_customer ?? false,
       salesperson_code: customer.salesperson_code || "",
+
+      contact_person: customer.finance_contact_person || "",
+      // email: customer.email || "",
+      phone: customer.phone || "",
+
       payable_bank: customer.payable_bank || "",
       payment_terms_id: customer.payment_terms || "",
       payment_method_id: customer.payment_method || "",
@@ -308,18 +378,6 @@ export const SalesOrderForm: React.FC<Props> = ({
     if (customer.billing_address) setBillingAddress(customer.billing_address);
     if (customer.shipping_address)
       setShippingAddress(customer.shipping_address);
-
-    // if (customer.primary_address) setPrimaryAddress(customer.primary_address);
-
-    // if (customer.billing_address) {
-    //   setBillingAddress((prev) => ({ ...prev, ...customer.billing_address }));
-    // }
-    // if (customer.shipping_address) {
-    //   setShippingAddress((prev) => ({
-    //     ...prev,
-    //     ...customer.shipping_address,
-    //   }));
-    // }
 
     if (customer.currency_id) {
       const matchedCurr = masterData?.currencies.find(
@@ -332,6 +390,33 @@ export const SalesOrderForm: React.FC<Props> = ({
     }
 
     setCustomerModalOpen(false);
+  };
+
+  const handlePurchaseOrderSelection = () => {
+    setPOModalOpen(true);
+  };
+
+  const handleSelectPurchaseOrders = (
+    selectedOrders: PurchaseOrderLookupItem[],
+  ) => {
+    const codes = selectedOrders.map((o) => o.order_no).join(", ");
+    setOrder((prev) => ({
+      ...prev,
+      linked_po: codes,
+    }));
+    setPOModalOpen(false);
+  };
+
+  const handleSalesPersonSelection = () => {
+    setSalesPersonModalOpen(true);
+  };
+
+  const handleSalesPersonSelect = (emp: Employee) => {
+    setOrder((prev) => ({
+      ...prev,
+      salesperson: emp.employee_code + "-" + emp.display_name,
+    }));
+    setSalesPersonModalOpen(false);
   };
 
   const updateOrderField = <K extends keyof SalesOrder>(
@@ -444,7 +529,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       const targetId = id || result?.data?.id;
 
       if (targetId) {
-        const linesRes = await fetch(`/api/sales-orders/${targetId}/lines`);
+        const linesRes = await fetch(`/api/sales/sales-orders/${targetId}/lines`);
         const linesData = await linesRes.json();
         if (linesData.lines) setLines(linesData.lines);
       }
@@ -491,207 +576,6 @@ export const SalesOrderForm: React.FC<Props> = ({
       );
     } finally {
       setIsUpdatingStatus(false);
-    }
-  };
-
-  /* const handleStageClick = async (stageName: string) => {
-    const standardizedStatus = stageName.toLowerCase() as SalesOrder["status"];
-    if (
-      !id ||
-      isUpdatingStatus ||
-      order.status?.toLowerCase() === stageName.toLowerCase()
-    ) {
-      return;
-    }
-
-    setIsUpdatingStatus(true);
-
-    try {
-      // 1. Check if the user is triggering a physical outbound shipment workflow
-      if (standardizedStatus === "shipped") {
-        const confirmPosting = confirm(
-          "Are you sure you want to change status to Shipped? This will generate a Sales Shipment, reduce stock lines from inventory, and write entries to the G/L ledger automatically.",
-        );
-        if (!confirmPosting) {
-          setIsUpdatingStatus(false);
-          return;
-        }
-
-        toast.loading("Generating sales shipment draft context...", {
-          id: "posting-toast",
-        });
-
-        // Step A: Generate the Sales Shipment Draft matching your order scope
-        const shipmentDraftRes = await fetch("/api/sales/sales-shipments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sales_order_id: id,
-            shipment_date: new Date().toISOString().split("T")[0],
-            lines: lines
-              .map((l) => ({
-                sales_order_line_id: l.id,
-                item_id: l.item_id,
-                quantity:
-                  Number(l.quantity || 0) - Number(l.quantity_shipped || 0),
-                warehouse_location_id: l.warehouse_id || null,
-              }))
-              .filter((l) => l.quantity > 0),
-          }),
-        });
-
-        const shipmentDraftData = await shipmentDraftRes.json();
-        if (!shipmentDraftRes.ok) {
-          throw new Error(
-            shipmentDraftData.error ||
-              "Failed to initialize shipment master record.",
-          );
-        }
-
-        const targetShipmentId = shipmentDraftData.id;
-
-        toast.loading(
-          "Executing inventory dispatch and general ledger adjustments...",
-          { id: "posting-toast" },
-        );
-
-        // Step B: Submit to SalesShipmentPostingService endpoint
-        const postRes = await fetch(
-          `/api/sales-shipments/${targetShipmentId}/post`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-company-id": session?.user?.company_id || "",
-            },
-          },
-        );
-
-        const postData = await postRes.json();
-        if (!postRes.ok) {
-          throw new Error(
-            postData.error || "Ledger transaction allocation failure.",
-          );
-        }
-
-        toast.success(
-          "Stock dispatch processing & item allocations executed successfully.",
-          { id: "posting-toast" },
-        );
-        setOrder((prev) => ({ ...prev, status: "shipped" }));
-        router.refresh();
-        return;
-      }
-
-      // 2. Standard state fallback
-      const response = await fetch(`/api/sales/sales-orders/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order: {
-            ...order,
-            ...currencyConfig,
-            customer_id: order.customer_id || "",
-            order_date:
-              order.order_date || new Date().toISOString().split("T")[0],
-            status: standardizedStatus,
-            subtotal: financials.amount,
-            tax_amount: financials.vat,
-            total_amount: financials.amountInclVat,
-          },
-          primary_address: {
-            address_type: "primary",
-            address_1: primaryAddress.address_1 || "",
-            address_2: primaryAddress.address_2 || "",
-            city: primaryAddress.city || "",
-            county: primaryAddress.county || "",
-            postcode: primaryAddress.postcode || "",
-            country: primaryAddress.country || "",
-          },
-          billing_address: {
-            address_type: "billing",
-            address_1: billingAddress.address_1 || "",
-            address_2: billingAddress.address_2 || "",
-            city: billingAddress.city || "",
-            county: billingAddress.county || "",
-            postcode: billingAddress.postcode || "",
-            country: billingAddress.country || "",
-          },
-          shipping_address: {
-            address_type: "shipping",
-            name: shippingAddress.name || "",
-            address_1: shippingAddress.address_1 || "",
-            address_2: shippingAddress.address_2 || "",
-            city: shippingAddress.city || "",
-            county: shippingAddress.county || "",
-            country: shippingAddress.country || "",
-          },
-          lines: lines,
-        }),
-      });
-
-      if (response.ok) {
-        setOrder((prev) => ({ ...prev, status: standardizedStatus }));
-        toast.success(`Stage updated successfully to: ${stageName}`);
-        router.refresh();
-      } else {
-        const errData = await response.json();
-        toast.error(
-          `Failed to update stage: ${errData.error || "Unknown error"}`,
-        );
-      }
-    } catch (error) {
-      console.error("Error updating sales order stage:", error);
-      if (error instanceof Error) {
-        toast.error(
-          error.message || "Network error updating sales order stage status.",
-          { id: "posting-toast" },
-        );
-      } else {
-        toast.error("Network error updating sales order stage status.", {
-          id: "posting-toast",
-        });
-      }
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-
-  }; */
-
-  // 1. Post Physical Goods Outflow
-  const handleShipStock = async () => {
-    if (!id) return;
-    setIsPosting(true);
-    show("Processing Shipment...");
-
-    try {
-      toast.loading("Committing physical inventory shipment...", {
-        id: "action-toast",
-      });
-
-      const res = await fetch(`/api/sales-orders/${id}/ship`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to post shipment.");
-
-      toast.success("Shipment committed & inventory updated!", {
-        id: "action-toast",
-      });
-      setShowShipModal(false);
-      refreshLines();
-      router.refresh();
-    } catch (err) {
-      if (err instanceof Error)
-        toast.error(err.message || "Error posting shipment", {
-          id: "action-toast",
-        });
-    } finally {
-      setIsPosting(false);
-      hide();
     }
   };
 
@@ -800,7 +684,7 @@ export const SalesOrderForm: React.FC<Props> = ({
                 "general",
                 "invoicing",
                 "shipping",
-                "margin analysis",
+                "margin",
                 "attachments",
               ] as TabType[]
             ).map((tab) => (
@@ -889,46 +773,6 @@ export const SalesOrderForm: React.FC<Props> = ({
                 </div>
               );
             })()}
-
-          {/* {isUpdateMode && !isLoadingStages && stages.length > 0 && (
-            <div className="flex justify-end ml-auto overflow-x-auto">
-              <div
-                className={`flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-slate-400 select-none pb-2 ${isUpdatingStatus ? "opacity-60 pointer-events-none" : ""}`}
-              >
-                {stages.map((stage, index) => {
-                  const isLast = index === stages.length - 1;
-                  const isActive =
-                    order.status?.toLowerCase() === stage.name.toLowerCase();
-
-                  let activeBg = "bg-blue-600 text-white";
-                  if (index === 1) activeBg = "bg-amber-500 text-white";
-                  if (index === 2) activeBg = "bg-indigo-600 text-white";
-                  if (index >= 3) activeBg = "bg-emerald-600 text-white";
-
-                  return (
-                    <button
-                      type="button"
-                      key={stage.id}
-                      onClick={() => handleStageClick(stage.name)}
-                      // className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95
-                      //   ${isFirst ? "rounded-l-md" : ""}
-                      //   ${isLast ? "rounded-r-md" : ""}
-                      //   ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"}`}
-                      className={`px-4 py-1.5 flex items-center gap-1 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95 ${index === 0 ? "rounded-l-md" : ""} ${isLast ? "rounded-r-md" : ""} ${isActive ? activeBg : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"}`}
-                    >
-                      {stage.name}
-                      {!isLast && (
-                        <Icon
-                          icon="tabler:chevron-right"
-                          className="w-3 h-3 text-slate-400"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )} */}
         </div>
 
         <OrderFormTabs
@@ -944,8 +788,12 @@ export const SalesOrderForm: React.FC<Props> = ({
           setCurrencyConfig={setCurrencyConfig}
           masterData={masterData}
           updateField={updateOrderField}
-          setCustomerModalOpen={setCustomerModalOpen}
+          onGeneralCustomerSelect={handleGeneralCustomerSelection}
+          onInvoicingCustomerSelect={handleInvoicingCustomerSelection}
           setLocationModalOpen={setLocationModalOpen}
+          onPurchaseOrderSelect={handlePurchaseOrderSelection}
+          onShippingAgentSelect={handleShippingAgentSelection}
+          setSalesPersonModalOpen={handleSalesPersonSelection}
           labelStyle={labelStyle}
           inputStyle={inputStyle}
           inputDateStyle={inputDateStyle}
@@ -1013,10 +861,6 @@ export const SalesOrderForm: React.FC<Props> = ({
               </span>
               <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
                 {financials.amountInclVatLCY.toFixed(2)}
-                {/* {financials.amountInclVatLCY.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })} */}
               </div>
             </div>
           </div>
@@ -1092,7 +936,6 @@ export const SalesOrderForm: React.FC<Props> = ({
             </span>
           </div>
 
-          {/* Dedicated Action Buttons */}
           <div className="flex items-center gap-2">
             {isUpdateMode && (
               <>
@@ -1101,7 +944,6 @@ export const SalesOrderForm: React.FC<Props> = ({
                   variant="post"
                   onClick={() => setShowInvoiceModal(true)}
                   disabled={isPosting || isCompleted}
-                  // className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   Post Invoice
                 </Button>
@@ -1111,11 +953,6 @@ export const SalesOrderForm: React.FC<Props> = ({
                   variant="dispatch"
                   onClick={() => setShowShipModal(true)}
                   disabled={isPosting || isFullyDispatched || isCompleted}
-                  // className={`px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded transition-colors ${
-                  //   isFullyDispatched || isCompleted
-                  //     ? "text-amber-500 dark:text-amber-400 opacity-60 cursor-not-allowed"
-                  //     : "text-amber-600 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700"
-                  // }`}
                 >
                   Ship Items
                 </Button>
@@ -1182,7 +1019,27 @@ export const SalesOrderForm: React.FC<Props> = ({
         />
       )}
 
-      {/* Modal to Select Location */}
+      {POModalOpen && (
+        <PurchaseOrderMultiLookupModal
+          isOpen={POModalOpen}
+          onClose={() => setPOModalOpen(false)}
+          onSelectOrders={handleSelectPurchaseOrders}
+          selectedOrderNos={
+            order.link_to_po
+              ? order.link_to_po.split(",").map((s) => s.trim())
+              : []
+          }
+        />
+      )}
+
+      {SalesPersonModalOpen && (
+        <SalespersonLookupModal
+          open={SalesPersonModalOpen}
+          onClose={() => setSalesPersonModalOpen(false)}
+          onSelect={handleSalesPersonSelect}
+        />
+      )}
+
       {locationModalOpen && (
         <CustomerDeliveryLocationModal
           open={locationModalOpen}

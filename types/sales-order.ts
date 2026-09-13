@@ -1,5 +1,9 @@
 // /types/sales-order.ts
 
+import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
+
+export type SalesOrderStatus = string;
+
 export type SalesOrder = {
   id?: string;
   company_id?: string;
@@ -7,7 +11,7 @@ export type SalesOrder = {
   customer_id: string;
   customer_no?: string;
   customer_name?: string;
-  
+
   bill_to_customer_id: string;
   bill_to_customer_no?: string;
   bill_to_customer_name?: string;
@@ -17,6 +21,20 @@ export type SalesOrder = {
   stage_id?: string;
   stage_name?: string;
   current_stage?: string;
+
+  salesperson?: string;
+  cust_order_no?: string;
+  link_to_po?: string;
+  sq_no?: string;
+
+  currency_id?: string;
+  exchange_rate?: string | number;
+
+  order_date: string;
+  posting_date?: string;
+  dispatch_date?: string;
+  requested_delivery_date?: string;
+  delivery_date?: string;
 
   payable_bank?: string;
   payable_bank_id?: string;
@@ -30,35 +48,18 @@ export type SalesOrder = {
   customer_posting_group_id?: string;
   vat_business_posting_group_id?: string;
 
-  order_date: string;
-  posting_date?: string;
-  dispatch_date?: string;
-  requested_delivery_date?: string;
-  delivery_date?: string;
-  currency_id?: string;
   currency_code?: string;
-  exchange_rate?: number;
-  subtotal?: number;
-  tax_amount?: number;
-  total_amount?: number;
-  invoiced_amount?: number;
   email?: string;
-  salesperson?: string;
-  cust_order_no?: string;
-  link_to_po?: string;
-  sq_no?: string;
 
-  internal_notes?: string;
-  notes?: string;
-  status?: string;
-  shipment_status?: string;
-  source_of_order?: string;
-  invoice_status?: string;
-  created_at?: string;
-  updated_at?: string;
   sales_quote_id?: string;
   sales_quote_no?: string;
   anonymous_customer?: boolean;
+
+  internal_notes?: string;
+  notes?: string;
+  shipment_status?: string;
+  source_of_order?: string;
+  invoice_status?: string;
 
   contact?: string;
   book_in_phone?: string;
@@ -73,25 +74,41 @@ export type SalesOrder = {
   cust_warehouse_ref_no?: string;
   reason?: string;
 
+  subtotal?: number;
+  tax_amount?: number;
+  total_amount?: number;
+  invoiced_amount?: number;
+
   finance_charges?: number;
   insurance_charges?: number;
   converted_by?: string;
   freight_charges?: number;
   shipment_date?: string;
   delivery_time?: string;
+
+  status?: SalesOrderStatus;
+
+  created_at?: string;
+  updated_at?: string;
+  posted_at?: string;
+  created_by?: string;
+  updated_by?: string;
+  approved_at?: string;
+  closed_at?: string;
+  cancelled_at?: string;
+  is_posted?: boolean;
 };
 
 export type SalesOrderAddressType = "primary" | "billing" | "shipping";
 
 export interface SalesOrderAddress {
   id?: string;
+  company_id?: string;
   sales_order_id?: string;
   address_type: SalesOrderAddressType;
-  contact_name?: string;
   name?: string;
   company_name?: string;
   attention?: string;
-  contact_person?: string;
   phone?: string;
   email?: string;
   address_1?: string;
@@ -101,11 +118,25 @@ export interface SalesOrderAddress {
   county?: string;
   postcode?: string;
   country?: string;
+  contact_person?: string;
+  contact_name?: string;
 }
+
+export type SalesOrderPayload = {
+  order: SalesOrder;
+
+  primary_address?: SalesOrderAddress;
+  billing_address?: SalesOrderAddress;
+  shipping_address?: SalesOrderAddress;
+
+  lines: SalesOrderLine[];
+  allow_empty_lines: boolean;
+};
 
 export type SalesOrderLineType = "ITEM" | "GL_ACCOUNT" | "COMMENT";
 
 export interface SalesOrderLine {
+  _key?: string;
   id?: string;
   sales_order_id?: string;
   sales_quote_line_id?: string;
@@ -156,7 +187,7 @@ export interface SalesOrderLine {
   gross_amount?: number;
   line_amount?: number;
   line_total?: number;
-  
+
   purchase_gl_id?: string;
   sales_gl_id?: string;
   inventory_gl_id?: string;
@@ -166,73 +197,26 @@ export interface SalesOrderLine {
   updated_at?: string;
 }
 
-// export type SalesOrderLineUI = SalesOrderLine & {
-//   item_code?: string;
-//   item_name?: string;
-//   account_code?: string;
-//   account_name?: string;
-//   warehouse_code?: string;
-//   warehouse_name?: string;
-//   uom_name?: string;
-//   line_total?: number;
-//   gl_account_id?: string;
-//   available_stock?: number;
-// };
-
-export type SalesOrderPayload = {
-  order: SalesOrder;
-  primary_address?: SalesOrderAddress;
-  billing_address?: SalesOrderAddress;
-  shipping_address?: SalesOrderAddress;
-  lines: SalesOrderLine[];
-};
-
-export interface LookupItem {
-  id: string;
-  name: string;
-}
-
-export interface PaymentTermLookup extends LookupItem {
-  days: number;
-}
-
-export interface CurrencyLookup {
-  id: string;
-  code: string;
-  name: string;
-  exchange_rate: number;
-}
-
-export interface OrderStageLookup {
-  id: string;
-  name: string;
-  rank: number;
-}
-
-export interface SalesOrderMasterData {
-  currencies: CurrencyLookup[];
-  stages: OrderStageLookup[];
-  paymentTerms: PaymentTermLookup[];
-  paymentMethods: LookupItem[];
-  shipmentMethods: LookupItem[];
-}
-
-
-
 export interface SalesOrderLineUI extends SalesOrderLine {
+  _stableKey?: string;
   reserved_quantity?: string | number;
   available_stock?: string | number;
   is_allocated?: boolean;
 
-  allocations?: Array<{
-    quantity: number;
-    [key: string]: unknown;
-  }>;
+  // allocations?: Array<{
+  //   quantity: number;
+  //   [key: string]: unknown;
+  // }>;
 
-  initialAllocations?: Array<{
-    quantity: number;
-    [key: string]: unknown;
-  }>;
+  // initialAllocations?: Array<{
+  //   quantity: number;
+  //   [key: string]: unknown;
+  // }>;
+
+  allocations?: PO_StockAllocationRecord[];
+  initialAllocations?: PO_StockAllocationRecord[];
+  stock_allocations?: PO_StockAllocationRecord[];
+  po_line_allocations?: PO_StockAllocationRecord[];
 }
 
 export type SalesOrderListing = {
@@ -258,8 +242,8 @@ export type SalesOrderListing = {
   requested_delivery_date?: string;
   delivery_date?: string;
   currency_id?: string;
-  currency_code?: string;
-  exchange_rate?: number;
+  currency_code?: string;  
+  exchange_rate?: string | number;
   subtotal?: number;
   vat_amount?: number;
   discount_amount?: number;
@@ -350,117 +334,17 @@ export type SalesOrderListing = {
   linked_pos_1?: string;
   converted_to_so_by_name?: string;
 };
-/* 
-import { SalesLine } from "./sales-line";
 
-export type SalesOrderLine = SalesLine;
-
-export type SalesOrder = {
-  id?: string;
-  company_id?: string;
-  order_no?: string;
-  customer_id: string;
-  customer_no: string;
-  customer_name?: string;
-  reference?: string;
-
-  payable_bank?: string;
-  payable_bank_id?: string;
-  due_date?: string;
-  payment_terms?: string;
-  payment_terms_id?: string;
-  payment_method?: string;
-  payment_method_id?: string;
-
-  order_date: string;
-  posting_date: string;
-  dispatch_date: string;
-  requested_delivery_date?: string;
-  delivery_date?: string;
-  currency_id?: string;
-  currency_code?: string;
-  exchange_rate?: number;
-  subtotal?: number;
-  tax_amount?: number;
-  total_amount?: number;
-  invoiced_amount?: number;
-  email?: string;
-  salesperson?: string;
-  cust_order_no?: string;
-  link_to_po?: string;
-  sq_no?: string;
-
-  internal_notes?: string;
-  notes?: string;
-  status?: string;
-  shipment_status?: string;
-  source_of_order?: string;
-  invoice_status?: string;
-  created_at?: string;
-  updated_at?: string;
-  sales_quote_id?: string;
-  sales_quote_no?: string;
-  anonymous_customer?: boolean;
-
-  contact?: string;
-  book_in_phone?: string;
-  book_in_contact?: string;
-  book_in_email?: string;
-
-  shipment_method?: string;
-  shipment_method_id?: string;
-  shipping_agent?: string;
-  shipment_ref_no?: string;
-  warehouse_ref_no?: string;
-  cust_warehouse_ref_no?: string;
-  reason?: string;
-
-  finance_charges?: number;
-  insurance_charges?: number;
-  converted_by?: string;
-  freight_charges?: number;
-  shipment_date?: string;
-  // delivery_date?: string;
-  delivery_time?: string;
-};
-
-export type SalesOrderAddressType = "primary" | "billing" | "shipping";
-export interface SalesOrderAddress {
-  id?: string;
-  purchase_order_id?: string;
-  address_type: SalesOrderAddressType;
-  contact_name?: string;
-  company_name?: string;
-  phone?: string;
-  email?: string;
-  address_1?: string;
-  address_2?: string;
-  city?: string;
-  state?: string;
-  postcode?: string;
-  country?: string;
+export interface StockAllocationRecord {
+  production_date?: string;
+  use_by_date?: string;
+  date_received?: string;
+  storage_location?: string;
+  cons_no?: string;
+  ref_no?: string;
+  serial_no: string;
+  quantity: number;
 }
-
-export type SalesOrderPayload = {
-  order: SalesOrder;
-  primary_address?: SalesOrderAddress;
-  billing_address?: SalesOrderAddress;
-  shipping_address?: SalesOrderAddress;
-  lines: SalesOrderLine[];
-};
-
-export type SalesOrderLineUI = SalesOrderLine & {
-  item_code?: string;
-  item_name?: string;
-  account_code?: string;
-  account_name?: string;
-  warehouse_code?: string;
-  warehouse_name?: string;
-  uom_name?: string;
-  line_total?: number;
-  gl_account_id?: string;
-  available_stock?: number;
-};
 
 export interface LookupItem {
   id: string;
@@ -483,7 +367,6 @@ export interface OrderStageLookup {
   name: string;
   rank: number;
 }
-
 export interface SalesOrderMasterData {
   currencies: CurrencyLookup[];
   stages: OrderStageLookup[];
@@ -491,4 +374,3 @@ export interface SalesOrderMasterData {
   paymentMethods: LookupItem[];
   shipmentMethods: LookupItem[];
 }
- */
