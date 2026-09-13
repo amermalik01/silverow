@@ -16,6 +16,7 @@ import { suppliersConfig } from "./suppliers";
 import { CRM_LeadConfig } from "./crm_leads";
 import { customersConfig } from "./customers";
 
+import { salesQuotesConfig } from "./sales-quotes";
 import { salesOrdersConfig } from "./sales-orders";
 import { salesInvoicesConfig } from "./sales-invoices";
 
@@ -28,15 +29,15 @@ import { journalsColumnsConfig } from "./journals";
 import { partyLedgerActivityColumnsConfig } from "./party-ledger-activity";
 
 export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
-
   purchase_orders: purchaseOrdersConfig,
   purchase_invoices: purchaseInvoicesConfig,
 
   debit_notes: debitNotesConfig,
   posted_debit_notes: postedDebitNotesConfig,
-  
+
+  sales_quotes: salesQuotesConfig,
   sales_orders: salesOrdersConfig,
-  sales_invoices: salesInvoicesConfig,  
+  sales_invoices: salesInvoicesConfig,
 
   supplier_journals: journalsColumnsConfig,
   customer_journals: journalsColumnsConfig,
@@ -55,7 +56,6 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
 
   posted_ledger_entries: postedLedgerEntriesConfig,
   party_ledger_activity: partyLedgerActivityColumnsConfig,
-  
 };
 
 export function getDefaultTableConfig(moduleKey: string): ColumnConfig[] {

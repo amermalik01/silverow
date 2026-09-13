@@ -41,8 +41,8 @@ export class SalesQuoteService {
         companyId,
         quoteNo,
         payload.quote.customer_id,
-        payload.quote.quote_date,
-        payload.quote.valid_until || payload.quote.expiry_date || null,
+        payload.quote.customer_id,
+        payload.quote.customer_id || null,
         payload.quote.currency_id || null,
         payload.quote.exchange_rate || 1,
         payload.quote.subtotal || 0,
@@ -65,7 +65,7 @@ export class SalesQuoteService {
 
       const qty = Number(line.quantity ?? 0);
       const price = Number(line.unit_price ?? 0);
-      const taxPercent = Number(line.tax_percent ?? 0);
+      const taxPercent = Number(line.vat_percent ?? 0);
 
       // Safety validation for actual transactional lines
       if (line.line_type !== "COMMENT" && qty < 0) {
@@ -92,7 +92,7 @@ export class SalesQuoteService {
       }
 
       // Map either total_amount, line_total, or fall back to an inline programmatic calculation
-      const lineAmount = Number(line.total_amount || line.line_total || 0);
+      const lineAmount = Number(line.vat_percent || line.line_total || 0);
 
       await client.query(
         `
