@@ -769,7 +769,8 @@ export default function UnpostedPurchaseOrdersReport() {
         open={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}
         multiple={true}
-        onSelect={() => {}}
+        // onSelect={() => {}}
+        onSelect={(supplier) => setSelectedSuppliers([supplier])}
         onSelectMultiple={(suppliers) => setSelectedSuppliers(suppliers)}
       />
 
@@ -777,7 +778,8 @@ export default function UnpostedPurchaseOrdersReport() {
         open={purchaserModalOpen}
         onClose={() => setPurchaserModalOpen(false)}
         multiple={true}
-        onSelect={() => {}}
+        // onSelect={() => {}}
+        onSelect={(purchaser) => setSelectedPurchasers([purchaser])}
         onSelectMultiple={(purchasers) => setSelectedPurchasers(purchasers)}
       />
 
@@ -785,7 +787,8 @@ export default function UnpostedPurchaseOrdersReport() {
         open={itemModalOpen}
         onClose={() => setItemModalOpen(false)}
         multiple={true}
-        onSelect={() => {}}
+        // onSelect={() => {}}
+        onSelect={(item) =>  setSelectedItems([item])}
         onSelectMultiple={(items) => setSelectedItems(items)}
       />
 
@@ -793,7 +796,8 @@ export default function UnpostedPurchaseOrdersReport() {
         open={glModalOpen}
         onClose={() => setGlModalOpen(false)}
         multiple={true}
-        onSelect={() => {}}
+        // onSelect={() => {}}
+        onSelect={(account) => setSelectedGlAccounts([account])}
         onSelectMultiple={(accounts) => setSelectedGlAccounts(accounts)}
       />
     </div>

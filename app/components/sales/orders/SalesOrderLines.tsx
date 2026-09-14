@@ -887,7 +887,8 @@ export default function SalesOrderLines({
         open={itemModalOpen}
         onClose={() => setItemModalOpen(false)}
         multiple={true}
-        onSelect={() => {}}
+        // onSelect={() => {}}
+        onSelect={(item) =>  handleMultipleItemSelect([item])}
         onSelectMultiple={handleMultipleItemSelect}
       />
 
@@ -895,7 +896,8 @@ export default function SalesOrderLines({
         open={glModalOpen}
         onClose={() => setGlModalOpen(false)}
         multiple={true}
-        onSelect={() => {}}
+        // onSelect={() => {}}
+        onSelect={(account) => handleMultipleGLSelect([account])}
         onSelectMultiple={handleMultipleGLSelect}
       />
 

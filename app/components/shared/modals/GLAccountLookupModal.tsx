@@ -221,9 +221,9 @@ export default function GLAccountLookupModal({
                 <th className="p-2.5 text-left font-semibold">Account Name</th>
                 <th className="p-2.5 text-left font-semibold">Type</th>
                 <th className="p-2.5 text-left font-semibold">Description</th>
-                {!multiple && (
+                {/* {!multiple && ( */}
                   <th className="p-2.5 text-center font-semibold">Action</th>
-                )}
+                {/* )} */}
               </tr>
             </thead>
 
@@ -295,7 +295,7 @@ export default function GLAccountLookupModal({
                     <td className="p-2.5 text-slate-600 dark:text-slate-400">
                       {acc.description || "—"}
                     </td>
-                    {!multiple && (
+                    {/* {!multiple && ( */}
                       <td className="p-2.5 text-center">
                         <Button
                           onClick={(e) => {
@@ -308,7 +308,7 @@ export default function GLAccountLookupModal({
                           Select
                         </Button>
                       </td>
-                    )}
+                    {/* )} */}
                   </tr>
                 );
               })}

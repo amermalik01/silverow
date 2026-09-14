@@ -318,7 +318,7 @@ export default function HaulierAccrualsReport() {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         multiple={true}
-        onSelect={() => {}}
+        onSelect={(account) => setSelectedGLs([account])}
         onSelectMultiple={(accounts) => {
           setSelectedGLs(accounts);
         }}

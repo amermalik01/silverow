@@ -481,6 +481,7 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
         open={salespersonModalOpen}
         onClose={() => setSalespersonModalOpen(false)}
         multiple={true}
+        // onSelect={(purchaser) => setSelectedSalespersonIds([purchaser])}
         onSelectMultiple={(salespersons: Employee[]) => {
           setSelectedSalespersonIds(salespersons.map((s) => s.id));
         }}

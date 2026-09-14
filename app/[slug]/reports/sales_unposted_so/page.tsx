@@ -486,6 +486,7 @@ export default function UnpostedSalesOrdersReport() {
         onClose={() => setSalespersonModalOpen(false)}
         multiple={true}
         onSelect={() => {}}
+        // onSelect={(purchaser) => setSelectedSalespersonIds([purchaser])}
         onSelectMultiple={(salespersons) => {
           setSelectedSalespersonIds(salespersons.map((s) => s.id));
         }}

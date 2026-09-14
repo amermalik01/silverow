@@ -609,7 +609,8 @@ export default function SupplierActivityReport() {
         open={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}
         multiple={true}
-        onSelect={() => {}}
+        // onSelect={() => {}}
+        onSelect={(supplier) => setSelectedSuppliers([supplier])}
         onSelectMultiple={(suppliers) => {
           setSelectedSuppliers(suppliers);
           setSelectedSupplierIds(suppliers.map((s) => s.id));

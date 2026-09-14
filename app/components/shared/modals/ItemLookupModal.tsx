@@ -1,7 +1,5 @@
 // app/components/shared/modals/ItemLookupModal.tsx
 
-// app/components/shared/modals/ItemLookupModal.tsx
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -149,13 +147,16 @@ export default function ItemLookupModal({
 
   const handleConfirmMultiSelect = () => {
     const selectedList = Array.from(selectedItemsMap.values());
+
+    if (selectedList.length === 0) return;
+
     if (onSelectMultiple) {
       onSelectMultiple(selectedList);
     }
     onClose();
   };
 
-  const handleSingleSelect = (item: ItemLookupRecord) => {
+  const handleSelectItem = (item: ItemLookupRecord) => {
     if (onSelect) {
       onSelect(item);
     }
@@ -328,7 +329,7 @@ export default function ItemLookupModal({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Button
-                        onClick={() => handleSingleSelect(item)}
+                        onClick={() => handleSelectItem(item)}
                         className="bg-[#103701] hover:bg-[#0c2b01] dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white h-7 px-3 text-xs rounded transition"
                       >
                         Select

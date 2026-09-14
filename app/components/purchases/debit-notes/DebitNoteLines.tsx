@@ -742,7 +742,8 @@ export default function DebitNoteLines({
         open={glModalOpen}
         onClose={() => setGlModalOpen(false)}
         multiple={true}
-        onSelect={() => {}}
+        // onSelect={() => {}}
+        onSelect={(account) => handleMultipleGLSelect([account])}
         onSelectMultiple={handleMultipleGLSelect}
       />
 
