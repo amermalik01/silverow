@@ -19,7 +19,7 @@ export async function POST(
     const query = `
       SELECT 
         gle.transaction_id AS entry_no,
-        gle.posting_date,
+        gle.posting_date::text AS posting_date,
         CASE 
           WHEN gle.source_type::text = 'FX_VARIANCE' THEN 'Realized FX Variance'
           WHEN gle.source_type::text = 'GENERAL_JOURNAL' THEN 'General Journal'

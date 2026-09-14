@@ -94,7 +94,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
   // const isUpdateMode = !!id;
 
   const [quote, setQuote] = useState<Partial<SalesQuote>>({
-    order_no: id ? "" : "",
+    quote_no: id ? "" : "",
     customer_id: "",
     customer_no: "",
     customer_name: "",
@@ -113,16 +113,16 @@ export const SalesQuoteForm: React.FC<Props> = ({
     subtotal: 0,
     tax_amount: 0,
     total_amount: 0,
-    invoiced_amount: 0,
+    // invoiced_amount: 0,
 
     reference: "",
     notes: "",
     email: "",
     salesperson: "",
-    cust_order_no: "",
-    link_to_po: "",
-    sq_no: "",
-    source_of_order: "Others",
+    // cust_order_no: "",
+    // link_to_po: "",
+    // sq_no: "",
+    source_of_quote: "Others",
 
     currency_code: baseCurrencyCode,
   });
@@ -146,21 +146,22 @@ export const SalesQuoteForm: React.FC<Props> = ({
     exchange_rate: 1,
   });
 
-  const isCompleted = quote.status === "completed" || quote.status === "POSTED";
+  const isCompleted =
+    quote.status === "expired" || quote.status === "converted";
   const isFormDisabled = !isEditMode || isCompleted;
 
   // Check if all line items with quantity > 0 have been shipped
-  const isFullyDispatched = useMemo(() => {
-    if (lines.length === 0) return false;
-    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
-    if (itemLines.length === 0) return false;
+  // const isFullyDispatched = useMemo(() => {
+  //   if (lines.length === 0) return false;
+  //   const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
+  //   if (itemLines.length === 0) return false;
 
-    return itemLines.every((l) => {
-      const qty = Number(l.quantity || 0);
-      const shipped = Number(l.quantity_shipped || 0);
-      return qty > 0 && shipped >= qty;
-    });
-  }, [lines]);
+  //   return itemLines.every((l) => {
+  //     const qty = Number(l.quantity || 0);
+  //     const shipped = Number(l.quantity_shipped || 0);
+  //     return qty > 0 && shipped >= qty;
+  //   });
+  // }, [lines]);
 
   useEffect(() => {
     if (!id) return;
@@ -641,15 +642,15 @@ export const SalesQuoteForm: React.FC<Props> = ({
             label: "Sales Quote",
             href: `/${slug}/sales/sales-orders`,
           },
-          { label: quote.order_no || "" },
+          { label: quote.quote_no || "" },
         ]}
       />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <h1 className="text-2xl font-bold px-4">Sales Quote</h1>
-        {quote.order_no && (
+        {quote.quote_no && (
           <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 rounded text-xs font-mono">
-            {`Order No. ${quote.order_no}`}
+            {`Order No. ${quote.quote_no}`}
           </div>
         )}
       </div>

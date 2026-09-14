@@ -92,7 +92,7 @@ export class SalesQuoteService {
       }
 
       // Map either total_amount, line_total, or fall back to an inline programmatic calculation
-      const lineAmount = Number(line.vat_percent || line.line_total || 0);
+      const lineAmount = Number(line.vat_percent  || 0);
 
       await client.query(
         `

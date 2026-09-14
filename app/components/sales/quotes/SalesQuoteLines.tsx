@@ -113,7 +113,6 @@ export default function SalesQuoteLines({
     vat_amount: 0,
     gross_amount: 0,
     line_amount: 0,
-    line_total: 0,
 
     warehouse_id: undefined,
     warehouse_code: undefined,
@@ -122,9 +121,9 @@ export default function SalesQuoteLines({
     uom_id: undefined,
     uom_name: undefined,
 
-    quantity_reserved: 0,
-    quantity_shipped: 0,
-    quantity_invoiced: 0,
+    // quantity_reserved: 0,
+    // quantity_shipped: 0,
+    // quantity_invoiced: 0,
 
     is_allocated: false,
 
@@ -174,7 +173,6 @@ export default function SalesQuoteLines({
       gross_amount: gross,
 
       line_amount: net,
-      line_total: gross,
 
       allocations: currentAllocations,
       initialAllocations: line.initialAllocations || currentAllocations,
@@ -273,9 +271,9 @@ export default function SalesQuoteLines({
 
       warehouse_name: defaultWarehouse?.name,
 
-      quantity_reserved: 0,
-      quantity_shipped: 0,
-      quantity_invoiced: 0,
+      // quantity_reserved: 0,
+      // quantity_shipped: 0,
+      // quantity_invoiced: 0,
 
       allocations: [],
       initialAllocations: [],
@@ -601,10 +599,10 @@ export default function SalesQuoteLines({
 
             {linesWithKeys.map((line, index) => {
               const displayQty = Number(line.quantity || 0);
-              const shippedQty = Number(line.quantity_shipped || 0);
-              const invoicedQty = Number(line.quantity_invoiced || 0);
+              const shippedQty = 0;// Number(line.quantity_shipped || 0);
+              const invoicedQty = 0;// Number(line.quantity_invoiced || 0);
               const isLineFulfilled = shippedQty > 0;
-              const isLineDisabled = isReadonly || isLineFulfilled;
+              const isLineDisabled = isReadonly || isLineFulfilled
               const displayUnitPrice = Number(line.unit_price || 0);
               const displayDiscountValue = Number(line.discount_value || 0);
               const displayOriginalAmount = Number(

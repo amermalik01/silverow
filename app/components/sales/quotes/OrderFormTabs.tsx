@@ -402,20 +402,6 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle} title="Sales Quote/Order No.">
-                  SQ No.
-                </label>
-                <input
-                  type="text"
-                  className={inputStyle}
-                  disabled={isReadOnly}
-                  value={quote.sales_quote_no || ""}
-                  onChange={(e) =>
-                    updateField("sales_quote_no", e.target.value)
-                  }
-                />
-              </div>
             </div>
 
             {/* Column 4 */}
@@ -1130,15 +1116,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
 
             {/* Column 3 */}
             <div className="space-y-2">
-              {/* <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle}>Contact</label>
-                <input
-                  type="text"
-                  className={inputStyle}
-                  value={quote.contact || ""}
-                  onChange={(e) => updateField("contact", e.target.value)}
-                />
-              </div> */}
+              
               <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle}>Book In Contact</label>
                 <input

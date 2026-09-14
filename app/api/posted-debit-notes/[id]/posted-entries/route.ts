@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       const query = `
         SELECT 
           gle.transaction_id AS entry_no,
-          gle.posting_date,
+          gle.posting_date::text AS posting_date,
           CASE 
             WHEN gle.source_type::text IN ('DEBIT_NOTE', 'PURCHASE_DEBIT_NOTE') THEN 'Debit Note'
             WHEN gle.source_type::text = 'STOCK_DISPATCH' THEN 'Stock Dispatch'

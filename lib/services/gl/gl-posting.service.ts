@@ -179,9 +179,9 @@ export class GLPostingService {
 
     // 3. Resolve Sequence Code
     const moduleSequenceMap: Record<string, string> = {
-      PURCHASE: "supplier_journal",
+      PURCHASE: "purchase",
       SUPPLIER_JOURNAL: "supplier_journal",
-      SALES: "customer_journal",
+      SALES: "sales",
       CUSTOMER_JOURNAL: "customer_journal",
       INVENTORY: "item_journal",
       GENERAL: "gl_journal",
