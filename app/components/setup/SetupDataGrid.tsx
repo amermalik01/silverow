@@ -1,6 +1,5 @@
 // app/components/setup/SetupDataGrid.tsx
 
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -162,19 +161,24 @@ export default function SetupDataGrid({
     fields.forEach((f) => {
       if (f.type === "select") {
         // Look up alternative key formats if the target raw field value is missing
-        const structuralKey = f.name.replace("_id", ""); 
+        const structuralKey = f.name.replace("_id", "");
         const alternateKey = f.name.replace("vat_", "").replace("_id", "");
-        const recordDisplayValue = row[f.name] || row[structuralKey] || row[alternateKey];
+        const recordDisplayValue =
+          row[f.name] || row[structuralKey] || row[alternateKey];
 
         if (recordDisplayValue) {
           // Check if value already matches a functional option code id
-          const explicitMatch = f.options?.find(o => o.value === String(recordDisplayValue));
+          const explicitMatch = f.options?.find(
+            (o) => o.value === String(recordDisplayValue),
+          );
           if (explicitMatch) {
             editableState[f.name] = explicitMatch.value;
           } else {
             // Find option matching display text label
             const labelMatch = f.options?.find(
-              o => o.label.toLowerCase() === String(recordDisplayValue).toLowerCase()
+              (o) =>
+                o.label.toLowerCase() ===
+                String(recordDisplayValue).toLowerCase(),
             );
             if (labelMatch) {
               editableState[f.name] = labelMatch.value;
@@ -183,7 +187,11 @@ export default function SetupDataGrid({
         }
       } else if (f.type === "number") {
         // Explicitly patch up naming variation between vat_rate and vat_value keys
-        if (f.name === "vat_rate" && row["vat_value"] !== undefined && row["vat_rate"] === undefined) {
+        if (
+          f.name === "vat_rate" &&
+          row["vat_value"] !== undefined &&
+          row["vat_rate"] === undefined
+        ) {
           editableState["vat_rate"] = row["vat_value"];
         }
       }
@@ -309,11 +317,11 @@ export default function SetupDataGrid({
         <div className="overflow-x-auto border rounded-lg dark:border-slate-700">
           <table className="w-full table-fixed text-xs text-left">
             <colgroup>
-    {columns.map((c) => (
-      <col key={c.name} style={{ width: "180px" }} />
-    ))}
-    <col style={{ width: "220px" }} />
-  </colgroup>
+              {columns.map((c) => (
+                <col key={c.name} style={{ width: "180px" }} />
+              ))}
+              <col style={{ width: "220px" }} />
+            </colgroup>
             <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 capitalize text-xs tracking-wider">
               <tr>
                 {columns.map((c) => (
@@ -375,7 +383,10 @@ export default function SetupDataGrid({
                       const inputName = fieldConfig?.name || c.name;
 
                       return (
-                        <td key={c.name} className="p-3 overflow-hidden whitespace-nowrap text-ellipsis">
+                        <td
+                          key={c.name}
+                          className="p-3 overflow-hidden whitespace-nowrap text-ellipsis"
+                        >
                           {editingId === r.id ? (
                             fieldConfig?.type === "select" ? (
                               <select
@@ -404,8 +415,10 @@ export default function SetupDataGrid({
                                 }
                                 className="border p-1 w-full dark:bg-slate-800 dark:border-slate-700 rounded"
                                 value={
-                                  editForm[inputName] ?? 
-                                  (inputName === "vat_rate" ? editForm["vat_value"] : "") ?? 
+                                  editForm[inputName] ??
+                                  (inputName === "vat_rate"
+                                    ? editForm["vat_value"]
+                                    : "") ??
                                   ""
                                 }
                                 onChange={(e) =>

@@ -12,13 +12,15 @@ export default function PostingSetupPage() {
         <h1 className="text-2xl font-bold">Posting Setup</h1>
       </div>
 
-      <InventorySystemSetup />
+      <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-4">
+        <InventorySystemSetup />
 
-      <SalesPostingGroups />
+        <SalesPostingGroups />
 
-      <PurchasePostingGroups />
+        <PurchasePostingGroups />
 
-      <InventoryPostingGroups />
+        <InventoryPostingGroups />
+      </div>
     </div>
   );
 }

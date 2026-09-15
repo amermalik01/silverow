@@ -247,7 +247,9 @@ export async function POST(req: Request) {
           credit_rating_id, ownership_type_id, classification_id, type_id,
           status_id, source_of_crm_id, no_of_emp, turnover, comp_reg_no,
           date_of_inc, additional_information, assign_person_id, assign_person,
-          sales_posting_group_id, purchase_posting_group_id,anonymous_supplier,anonymous_customer,
+          sales_posting_group_id, 
+          purchase_posting_group_id,
+          anonymous_supplier,anonymous_customer,
 
           -- Finance & Ledger Columns
           finance_contact_person, finance_email, finance_phone, finance_fax,

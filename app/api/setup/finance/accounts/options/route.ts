@@ -2,14 +2,11 @@
 
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.company_id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const companyId = await getCompanyId();
+  if (!companyId) return NextResponse.json([], { status: 401 });
 
   try {
     // Corrected to use 'code' instead of 'account_code', and 'is_posting'/'is_active' flags
@@ -20,7 +17,7 @@ export async function GET() {
          AND is_active = TRUE 
          AND is_posting = TRUE
        ORDER BY code ASC`,
-      [session.user.company_id]
+      [companyId]
     );
     
     return NextResponse.json(result.rows);

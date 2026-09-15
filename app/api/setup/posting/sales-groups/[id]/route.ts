@@ -13,10 +13,10 @@ export async function PUT(
 
     await pool.query(
       `UPDATE sales_posting_groups SET 
-        name = $1, receivable_account_id = $2, sales_account_id = $3, discount_account_id = $4, vat_account_id = $5
+        posting_group_id = $1, receivable_account_id = $2, sales_account_id = $3, discount_account_id = $4, vat_account_id = $5
        WHERE id = $6`,
       [
-        b.name,
+        b.posting_group_id,
         b.receivable_account_id,
         b.sales_account_id,
         b.discount_account_id,
@@ -50,21 +50,3 @@ export async function DELETE(
     );
   }
 }
-
-/* import { pool } from "@/lib/db";
-import { NextResponse } from "next/server";
-
-export async function DELETE(
-  req:Request,
-  context:{ params:Promise<{id:string}> }
-){
-
-  const {id} = await context.params;
-
-  await pool.query(
-    `DELETE FROM sales_posting_groups WHERE id=$1`,
-    [id]
-  );
-
-  return NextResponse.json({success:true});
-} */

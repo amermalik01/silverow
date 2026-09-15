@@ -7,17 +7,21 @@ import SetupDataGrid from "@/app/components/setup/SetupDataGrid";
 
 export default function InventoryPostingGroupsPage() {
   const [accountOptions, setAccountOptions] = useState([]);
+  const [postingGroupOption, setPostingGroups] = useState([]);
   const [isPerpetual, setIsPerpetual] = useState(true);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetch("/api/setup/finance/accounts/options").then((r) => r.json()),
       fetch("/api/setup/posting/inventory-system").then((r) => r.json()),
+      fetch("/api/setup/finance/posting-groups").then((r) => r.json()),
     ])
-      .then(([accounts, systemStatus]) => {
+      .then(([accounts, systemStatus, postingGroup]) => {
         setAccountOptions(accounts);
         setIsPerpetual(systemStatus?.inventory_system === "PERPETUAL");
+        setPostingGroups(postingGroup);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -32,7 +36,14 @@ export default function InventoryPostingGroupsPage() {
       title="Inventory Posting Groups"
       api="/api/setup/posting/inventory-groups"
       fields={[
-        { name: "name", label: "Group Name", required: true },
+        // { name: "name", label: "Group Name", required: true },
+        {
+          name: "posting_group_id",
+          label: "Group Name",
+          type: "select",
+          options: postingGroupOption,
+          required: true,
+        },
         {
           name: "inventory_account_id",
           label: "Asset Account (Balance Sheet)",
@@ -55,7 +66,8 @@ export default function InventoryPostingGroupsPage() {
         },
       ]}
       columns={[
-        { name: "name", label: "Name", sortable: true },
+        // { name: "name", label: "Name", sortable: true },
+        { name: "posting_group", label: "Group Name", sortable: true },
         { name: "inventory_account", label: "Inventory Asset Account" },
         { name: "cogs_account", label: "COGS Account" },
         { name: "adjustment_account", label: "Adjustment Account" },

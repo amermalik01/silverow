@@ -7,12 +7,26 @@ import SetupDataGrid from "@/app/components/setup/SetupDataGrid";
 
 export default function PurchasePostingGroupsPage() {
   const [accountOptions, setAccountOptions] = useState([]);
+  const [postingGroupOption, setPostingGroups] = useState([]);
+  
   const [loading, setLoading] = useState(true);
 
+  // useEffect(() => {
+  //   fetch("/api/setup/finance/accounts/options")
+  //     .then((r) => r.json())
+  //     .then((data) => setAccountOptions(data))
+  //     .finally(() => setLoading(false));
+  // }, []);
+
   useEffect(() => {
-    fetch("/api/setup/finance/accounts/options")
-      .then((r) => r.json())
-      .then((data) => setAccountOptions(data))
+    Promise.all([
+      fetch("/api/setup/finance/accounts/options").then((r) => r.json()),
+      fetch("/api/setup/finance/posting-groups").then((r) => r.json()),
+    ])
+      .then(([accounts, postingGroup]) => {
+        setAccountOptions(accounts);
+        setPostingGroups(postingGroup);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -26,7 +40,14 @@ export default function PurchasePostingGroupsPage() {
       title="Purchase Posting Groups"
       api="/api/setup/posting/purchase-groups"
       fields={[
-        { name: "name", label: "Group Name", required: true },
+        // { name: "name", label: "Group Name", required: true },
+        {
+          name: "posting_group_id",
+          label: "Group Name",
+          type: "select",
+          options: postingGroupOption,
+          required: true,
+        },
         {
           name: "payable_account_id",
           label: "Payable Account",
@@ -68,7 +89,7 @@ export default function PurchasePostingGroupsPage() {
         },
       ]}
       columns={[
-        { name: "name", label: "Name", sortable: true },
+        { name: "posting_group", label: "Group Name", sortable: true },
         { name: "payable_account", label: "Payable Account" },
         { name: "grni_account", label: "GRNI Account" },
         { name: "purchase_account", label: "Purchase Account" },

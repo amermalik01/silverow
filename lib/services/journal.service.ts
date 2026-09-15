@@ -671,10 +671,11 @@ export class JournalService {
   ): Promise<string | null> {
     if (type === "customer") {
       // 1. Try resolving via sales_posting_group_id
+      // INNER JOIN public.sales_posting_groups spg ON p.sales_posting_group_id = spg.id
       const res = await client.query(
         `SELECT spg.receivable_account_id 
          FROM public.parties p
-         INNER JOIN public.sales_posting_groups spg ON p.sales_posting_group_id = spg.id
+         INNER JOIN public.sales_posting_groups spg ON p.posting_group::uuid = spg.posting_group_id
          WHERE p.id = $1 AND p.company_id = $2`,
         [partyId, companyId],
       );
@@ -707,10 +708,12 @@ export class JournalService {
 
     if (type === "supplier") {
       // 1. Try resolving via purchase_posting_group_id
+      //  INNER JOIN public.purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
+
       const res = await client.query(
         `SELECT ppg.payable_account_id 
          FROM public.parties p
-         INNER JOIN public.purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
+         INNER JOIN public.purchase_posting_groups ppg ON p.posting_group::uuid = ppg.posting_group_id         
          WHERE p.id = $1 AND p.company_id = $2`,
         [partyId, companyId],
       );
@@ -1012,14 +1015,15 @@ export class JournalService {
           journal.source === "CUSTOMER_JOURNAL";
 
         if (line.party_id && (isSupplier || isCustomer)) {
+          // LEFT JOIN purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
+
           if (isSupplier) {
             const partyRes = await client.query(
               `SELECT 
                   p.gl_account_payable,
                   ppg.payable_account_id AS group_account_id
                 FROM parties p
-                LEFT JOIN purchase_posting_groups ppg 
-                  ON p.purchase_posting_group_id = ppg.id
+                LEFT JOIN purchase_posting_groups ppg ON p.posting_group::uuid = ppg.posting_group_id
                 WHERE p.id = $1 AND p.company_id = $2`,
               [line.party_id, companyId],
             );
@@ -1036,13 +1040,13 @@ export class JournalService {
               mainAccountId = fallbackPpg.rows[0]?.payable_account_id || null;
             }
           } else if (isCustomer) {
+            // LEFT JOIN sales_posting_groups spg  ON p.sales_posting_group_id = spg.id
             const partyRes = await client.query(
               `SELECT 
                   p.gl_account_receivable,
                   spg.receivable_account_id AS group_account_id
                 FROM parties p
-                LEFT JOIN sales_posting_groups spg 
-                  ON p.sales_posting_group_id = spg.id
+                LEFT JOIN sales_posting_groups spg ON p.posting_group::uuid = spg.posting_group_id
                 WHERE p.id = $1 AND p.company_id = $2`,
               [line.party_id, companyId],
             );

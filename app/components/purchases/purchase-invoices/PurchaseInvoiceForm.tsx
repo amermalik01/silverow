@@ -548,44 +548,4 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
     </div>
   );
 };
-/* <PostedTransactionsModal
-          isOpen={showNavigateModal}
-          onClose={() => setShowNavigateModal(false)}
-          invoiceId={id}
-          invoiceNo={invoice.invoice_no}
-        /> */
 
-{
-  /* <span className="flex items-center gap-2">
-          <Icon icon="tabler:eye" className="w-4 h-4 text-blue-600" />
-          Purchase Invoice Document Viewer — <strong>Read-Only Mode</strong>
-        </span> */
-}
-{
-  /* <span className="px-2.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px] capitalize font-bold tracking-wider">
-          {invoice.status || "POSTED"}
-        </span> */
-}
-
-{
-  /* {invoice.purchase_order_no && (
-          <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
-            {`Invoice/Order No. ${invoice.invoice_no || ""}/${invoice.purchase_order_no || ""}`}
-          </div>
-        )} */
-}
-
-{
-  /* {isCompleted && (
-        <div className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Icon icon="tabler:lock" className="w-4 h-4 text-emerald-600" />
-            This Purchase Order is <strong>Completed / Fully Posted</strong> and
-            cannot be edited.
-          </span>
-          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] capitalize font-bold tracking-wider">
-            Read Only
-          </span>
-        </div>
-      )} */
-}

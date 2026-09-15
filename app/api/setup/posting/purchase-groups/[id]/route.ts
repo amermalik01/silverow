@@ -13,7 +13,7 @@ export async function PUT(
 
     await pool.query(
       `UPDATE purchase_posting_groups SET 
-        name = $1, 
+        posting_group_id = $1, 
         payable_account_id = $2, 
         purchase_account_id = $3, 
         discount_account_id = $4, 
@@ -22,7 +22,7 @@ export async function PUT(
         grni_account_id = $7
        WHERE id = $8`,
       [
-        b.name,
+        b.posting_group_id,
         b.payable_account_id,
         b.purchase_account_id,
         b.discount_account_id || null,

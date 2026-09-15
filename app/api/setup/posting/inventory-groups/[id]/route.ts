@@ -13,10 +13,10 @@ export async function PUT(
 
     await pool.query(
       `UPDATE inventory_posting_groups SET 
-        name = $1, inventory_account_id = $2, cogs_account_id = $3, adjustment_account_id = $4
+        posting_group_id = $1, inventory_account_id = $2, cogs_account_id = $3, adjustment_account_id = $4
        WHERE id = $5`,
       [
-        b.name,
+        b.posting_group_id,
         b.inventory_account_id,
         b.cogs_account_id,
         b.adjustment_account_id,

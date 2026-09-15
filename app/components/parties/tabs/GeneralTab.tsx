@@ -190,8 +190,8 @@ export default function GeneralTab({
           tpRes,
           statusRes,
           sourcesRes,
-          salesGroupRes,
-          purchaseGroupRes,
+          // salesGroupRes,
+          // purchaseGroupRes,
         ] = await Promise.all([
           fetch(`/api/setup/sales/segments?module=${activeModule}`),
           fetch(`/api/setup/sales/territories?module=${activeModule}`),
@@ -203,8 +203,8 @@ export default function GeneralTab({
           fetch("/api/setup/sales/status"),
           fetch("/api/setup/sales/sources"),
 
-          fetch("/api/setup/finance/sales-posting-groups"),
-          fetch("/api/setup/finance/purchase-posting-groups"),
+          // fetch("/api/setup/finance/sales-posting-groups"),
+          // fetch("/api/setup/finance/purchase-posting-groups"),
         ]);
 
         if (segRes.ok) setSegments(await segRes.json());
@@ -218,9 +218,9 @@ export default function GeneralTab({
         if (statusRes.ok) setStatus(await statusRes.json());
         if (sourcesRes.ok) setSourceOfCRM(await sourcesRes.json());
 
-        if (salesGroupRes.ok) setSalesPostingGroups(await salesGroupRes.json());
-        if (purchaseGroupRes.ok)
-          setPurchasePostingGroups(await purchaseGroupRes.json());
+        // if (salesGroupRes.ok) setSalesPostingGroups(await salesGroupRes.json());
+        // if (purchaseGroupRes.ok)
+        //   setPurchasePostingGroups(await purchaseGroupRes.json());
       } catch (err) {
         console.error("Error populating ledger configuration setups:", err);
       }
