@@ -14,7 +14,10 @@ type RouteContext = {
 
 interface IncomingLine {
   id?: string;
+  line_no?: number;
   debit_note_line_id?: string;
+  purchase_invoice_line_id?: string;
+  purchase_order_line_id?: string;
   line_type?: "ITEM" | "GL_ACCOUNT" | "COMMENT";
   item_id: string;
   gl_account_id?: string;
@@ -98,8 +101,14 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 
     // 2. Iterate safely using order indexes to guarantee accurate mapping of newly generated/updated IDs
     for (let i = 0; i < (lines || []).length; i++) {
-      const payloadLine = lines[i];
-      const matchedDbLine = dbLines[i]; // Matches lines sequentially exactly how they were updated/saved
+      const payloadLine: IncomingLine = lines[i];
+      // const matchedDbLine = dbLines[i]; // Matches lines sequentially exactly how they were updated/saved
+
+      const matchedDbLine = dbLines.find(
+        (dbl: { id?: string; line_no?: number }) =>
+          (payloadLine.id && dbl.id === payloadLine.id) ||
+          (payloadLine.line_no !== undefined && dbl.line_no === payloadLine.line_no)
+      ) || dbLines[i];
 
       if (
         matchedDbLine?.id &&
@@ -107,6 +116,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         matchedDbLine?.warehouse_id &&
         payloadLine.allocations?.length
       ) {
+
         await StockDeAllocationValidationService.validate(client, companyId, {
           debit_note_line_id: matchedDbLine.id,
 
@@ -122,6 +132,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 
           allocations: payloadLine.allocations,
         });
+
         await DebitNoteService.saveLineAllocations(
           client,
           companyId,
@@ -136,14 +147,18 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 
     // 3. Downstream Automated Stock Dispatch integration if explicitly marked as posted/dispatched
     if (note?.status === "posted" || note?.status === "dispatched") {
+
       const dispatchLinesPayload = (lines || [])
         .map((line: IncomingLine, idx: number) => {
-          const matchedDbLine = dbLines[idx];
+          const matchedDbLine = dbLines.find(
+            (dbl: { id?: string; line_no?: number }) =>
+              (line.id && dbl.id === line.id) ||
+              (line.line_no !== undefined && dbl.line_no === line.line_no)
+          ) || dbLines[idx];
+
           return {
             ...line,
-            // Ensure debit_note_line_id gets resolved correctly from updated DB lines
-            debit_note_line_id:
-              line.id || line.debit_note_line_id || matchedDbLine?.id,
+            debit_note_line_id: line.id || line.debit_note_line_id || matchedDbLine?.id,
           };
         })
         .filter(
@@ -151,6 +166,23 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
             Number(l.quantity) > 0 &&
             (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
         );
+
+        
+      // const dispatchLinesPayload = (lines || [])
+      //   .map((line: IncomingLine, idx: number) => {
+      //     const matchedDbLine = dbLines[idx];
+      //     return {
+      //       ...line,
+      //       // Ensure debit_note_line_id gets resolved correctly from updated DB lines
+      //       debit_note_line_id:
+      //         line.id || line.debit_note_line_id || matchedDbLine?.id,
+      //     };
+      //   })
+      //   .filter(
+      //     (l: IncomingLine) =>
+      //       Number(l.quantity) > 0 &&
+      //       (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
+      //   );
 
       if (dispatchLinesPayload.length) {
         // Calculate remaining un-returned quantity before attempting outbound dispatch

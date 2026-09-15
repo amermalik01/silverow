@@ -329,6 +329,7 @@ export class PurchaseInvoiceService {
         COALESCE(pol.uom_id, i.base_uom_id) AS uom_id,
         COALESCE(pol.uom_name, u.name) AS uom_name,
         COALESCE(pol.warehouse_name, w.name) AS warehouse_name,
+        pol.received_quantity,
         (pol.quantity - COALESCE(pol.received_quantity, 0)) AS remaining_quantity
 
       FROM purchase_invoice_lines pil

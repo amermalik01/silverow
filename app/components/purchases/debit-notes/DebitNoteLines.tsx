@@ -63,11 +63,6 @@ export default function DebitNoteLines({
     string | null
   >(null);
 
-  // const activeDeAllocLine =
-  //   lines.find(
-  //     (line) => (line._stableKey || line.id) === activeDeAllocationLineKey,
-  //   ) || null;
-
   const getLineKey = (line: DebitNoteLineUI): string | null => {
     return line._stableKey || line.id || null;
   };
@@ -160,6 +155,10 @@ export default function DebitNoteLines({
     setLines(lines.filter((_, i) => i !== index));
   };
 
+  const addEmptyItemLine = () => {
+    setLines((prev) => [...prev, createEmptyLine("ITEM")]);
+  };
+
   const addGLLine = () => {
     setGlModalOpen(true);
   };
@@ -214,6 +213,7 @@ export default function DebitNoteLines({
 
     return {
       ...(line as DebitNoteLineUI),
+      _stableKey: line._stableKey || `temp-line-${crypto.randomUUID()}`,
       original_amount: original,
       discount_amount: discountAmount,
       net_amount: net,
@@ -251,7 +251,8 @@ export default function DebitNoteLines({
 
     setLines((prev) =>
       prev.map((line) => {
-        const key = line._stableKey || line.id;
+        // const key = line._stableKey || line.id;
+        const key = getLineKey(line);
 
         if (key !== activeDeAllocationLineKey) {
           return line;
@@ -362,6 +363,7 @@ export default function DebitNoteLines({
             )}
 
             {lines.map((line, index) => {
+              const lineKey = getLineKey(line) || `line-${index}`;
               const displayQty = Number(line.quantity || 0);
               const returnedQty = Number(line.returned_quantity || 0);
               const isStockReturned = returnedQty > 0;
@@ -395,7 +397,8 @@ export default function DebitNoteLines({
               return (
                 <tr
                   // key={index}
-                  key={line._stableKey}
+                  // key={line._stableKey}
+                  key={lineKey}
                   className={`border-b transition-colors ${
                     isStockReturned
                       ? "bg-slate-50/70 dark:bg-slate-800/30"
@@ -792,158 +795,3 @@ export default function DebitNoteLines({
   );
 }
 
-// const [isDeAllocModalOpen, setIsDeAllocModalOpen] = useState(false);
-// const [activeDeAllocRowKey, setActiveDeAllocRowKey] = useState<string | null>(
-//   null,
-// );
-
-// Ensure each line has a fallback stable key for unsaved rows
-// const linesWithKeys = useMemo(() => {
-//   return lines.map((line, idx) => ({
-//     ...line,
-//     _stableKey: line.id || `temp-line-${idx}`,
-//   }));
-// }, [lines]);
-
-// const linesWithKeys = useMemo(() => {
-//   return lines.map((line) => ({
-//     ...line,
-//     _stableKey: line._stableKey || line.id || crypto.randomUUID(),
-//   }));
-// }, [lines]);
-
-// const activeDeAllocLine = useMemo(() => {
-
-//   if (!activeDeAllocationLineId) return null;
-//   return (
-//     linesWithKeys.find((l) => (l._stableKey || l.id) === activeDeAllocationLineId) ||
-//     null
-//   );
-// }, [activeDeAllocationLineId, linesWithKeys]);
-
-// const activeDeAllocLine = useMemo(() => {
-//   if (!activeDeAllocationLineId) return null;
-
-//   return (
-//     lines.find(
-//       (line) => (line._stableKey || line.id) === activeDeAllocationLineId,
-//     ) || null
-//   );
-// }, [activeDeAllocationLineId, lines]);
-
-/* const handleSaveDeAllocations = (
-    deAllocationsData: StockDeAllocationRecord[],
-  ) => {
-    if (!activeDeAllocationLineId) return;
-
-    setLines((prev) =>
-      prev.map((line, index) => {
-        const lineKey = line.id || `temp-line-${index}`;
-        if (lineKey !== activeDeAllocationLineId) return line;
-
-        const totalAllocated = deAllocationsData.reduce(
-          (sum, a) => sum + Number(a.allocated_quantity || 0),
-          0,
-        );
-        const lineQty = Number(line.quantity || 0);
-
-        return {
-          ...line,
-          allocations: deAllocationsData,
-          initialAllocations: deAllocationsData,
-          is_allocated: lineQty > 0 && totalAllocated === lineQty,
-        };
-      }),
-    );
-
-    setIsDeAllocModalOpen(false);
-    setActiveDeAllocRowKey(null);
-  }; */
-
-// onClick={() => {
-//   setActiveDeAllocRowKey(String(index));
-//   setIsDeAllocModalOpen(true);
-// }}
-// onClick={() => {
-//   const lineKey = line._stableKey || line.id;
-
-//   if (!lineKey) {
-//     console.error(
-//       "Unable to identify debit note line for allocation",
-//       line,
-//     );
-//     return;
-//   }
-
-//   setActiveDeAllocationLineId(lineKey);
-//   setActiveDeAllocRowKey(lineKey);
-//   setIsDeAllocModalOpen(true);
-// }}
-/* {isDeAllocModalOpen &&
-        activeDeAllocRowKey !== null &&
-        activeDeAllocLine && (
-          <StockDeAllocationModal
-            open={isDeAllocModalOpen}
-            onClose={() => {
-              setIsDeAllocModalOpen(false);
-              setActiveDeAllocRowKey(null);
-              setActiveDeAllocationLineId(null);
-            }}
-            requiredQuantity={activeDeAllocLine.quantity || 0}
-            debitNoteLineId={activeDeAllocLine.id}
-            purchaseOrderLineId={activeDeAllocLine.purchase_order_line_id}
-            purchaseInvoiceLineId={activeDeAllocLine.purchase_invoice_line_id}
-            initialAllocations={activeDeAllocLine.allocations}
-            itemCode={activeDeAllocLine.item_code}
-            itemName={activeDeAllocLine.item_name}
-            warehouseName={activeDeAllocLine.warehouse_name}
-            onSave={handleSaveDeAllocations}
-          />
-        )} */
-
-/* <GLAccountLookupModal
-        open={glIndex !== null}
-        onClose={() => setGlIndex(null)}
-        onSelect={(gl: GLAccountLookupRecord) => {
-          if (glIndex === null) return;
-          const updated = [...lines];
-
-          updated[glIndex] = calculateLine({
-            ...updated[glIndex],
-            line_type: "GL_ACCOUNT",
-            gl_account_id: gl.id,
-            account_code: gl.code,
-            account_name: gl.name,
-            description: gl.name,
-          });
-
-          setLines(updated);
-          setGlIndex(null);
-        }}
-      /> */
-
-/* const changeLineType = (
-    index: number,
-    type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
-  ) => {
-    const updated = [...lines];
-
-    updated[index] = calculateLine({
-      ...updated[index],
-      line_type: type,
-      item_id: undefined,
-      item_code: undefined,
-      item_name: undefined,
-      gl_account_id: undefined,
-      account_code: undefined,
-      account_name: undefined,
-      warehouse_id: undefined,
-      warehouse_code: undefined,
-      warehouse_name: undefined,
-      allocations: [],
-      initialAllocations: [],
-      is_allocated: false,
-    });
-
-    setLines(updated);
-  }; */

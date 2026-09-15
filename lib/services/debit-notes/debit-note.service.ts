@@ -210,7 +210,7 @@ export class DebitNoteService {
 
     if (!orderResult.rows.length) return null;
 
-    // Fetch PO Lines with standard UI components metadata
+    // 1. Fetch Debit Note Lines
     const linesResult = await pool.query(
       `
       SELECT 
@@ -244,46 +244,59 @@ export class DebitNoteService {
       [id, companyId],
     );
 
-    // 🌟 FIX: Join with debit_note_lines to look up by PO ID and select correct columns
+
+    // 2. Query Allocations accurately tied to this Debit Note's lines or linked source lines
     const allocationsResult = await pool.query(
       `
-      SELECT
-          ia.id,
-          ia.debit_note_line_id,
-          ia.purchase_order_line_id,
-          ia.purchase_invoice_line_id,
-          ia.item_id,
-          ia.warehouse_id,
-          ia.warehouse_location_id AS location_id,
-          wl.title AS location_name,
-          ia.allocated_quantity AS quantity,
-          ia.batch_no,
-          ia.bin_code,
-          TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
-          TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_received
+      SELECT DISTINCT
+        ia.id,
+        ia.debit_note_line_id,
+        ia.purchase_order_line_id,
+        ia.purchase_invoice_line_id,
+        ia.item_id,
+        ia.warehouse_id,
+        ia.warehouse_location_id AS location_id,
+        wl.title AS location_name,
+        ia.allocated_quantity AS quantity,
+        ia.batch_no,
+        ia.bin_code,
+        TO_CHAR(ia.expiry_date, 'YYYY-MM-DD') AS expiry_date,
+        TO_CHAR(ia.created_at, 'YYYY-MM-DD') AS date_received
       FROM inventory_allocations ia
       LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
-      INNER JOIN debit_note_lines dnl
-        ON (ia.debit_note_line_id = dnl.id OR 
-        (ia.purchase_order_line_id IS NOT NULL AND ia.purchase_order_line_id = dnl.purchase_order_line_id) OR 
-        (ia.purchase_invoice_line_id IS NOT NULL AND ia.purchase_invoice_line_id = dnl.purchase_invoice_line_id) 
+      WHERE ia.company_id = $2 
+        AND ia.status = 'ACTIVE'
+        AND (
+          ia.debit_note_line_id IN (SELECT id FROM debit_note_lines WHERE debit_note_id = $1 AND is_deleted = false)
+          OR ia.purchase_invoice_line_id IN (SELECT purchase_invoice_line_id FROM debit_note_lines WHERE debit_note_id = $1 AND is_deleted = false AND purchase_invoice_line_id IS NOT NULL)
+          OR ia.purchase_order_line_id IN (SELECT purchase_order_line_id FROM debit_note_lines WHERE debit_note_id = $1 AND is_deleted = false AND purchase_order_line_id IS NOT NULL)
         )
-      WHERE dnl.debit_note_id = $1 AND ia.company_id = $2 AND ia.status = 'ACTIVE'
       `,
       [id, companyId],
     );
 
-    // Map the accurate database properties to your frontend modal structures safely
+
+    // 3. Map Allocations to individual lines accurately
     const linesWithAllocations = linesResult.rows.map((line) => {
       const lineAllocations = allocationsResult.rows
-        .filter(
-          (alloc) =>
-            alloc.debit_note_line_id === line.id ||
-            (line.purchase_order_line_id &&
-              alloc.purchase_order_line_id === line.purchase_order_line_id) ||
-            (line.purchase_invoice_line_id &&
-              alloc.purchase_invoice_line_id === line.purchase_invoice_line_id),
-        )
+        .filter((alloc) => {
+          if (alloc.debit_note_line_id && alloc.debit_note_line_id === line.id) {
+            return true;
+          }
+          if (
+            line.purchase_invoice_line_id &&
+            alloc.purchase_invoice_line_id === line.purchase_invoice_line_id
+          ) {
+            return true;
+          }
+          if (
+            line.purchase_order_line_id &&
+            alloc.purchase_order_line_id === line.purchase_order_line_id
+          ) {
+            return true;
+          }
+          return false;
+        })
         .map((alloc) => ({
           id: alloc.id,
           date_received: alloc.date_received || "",
@@ -293,19 +306,82 @@ export class DebitNoteService {
           bin_code: alloc.bin_code || "",
           location_id: alloc.location_id || "",
           location_name: alloc.location_name || "",
-          quantity: Number(alloc.quantity) || 0,
+          allocated_quantity: Number(alloc.quantity) || 0,
+          return_quantity: Number(alloc.quantity) || 0,
         }));
+
+        const totalAllocated = lineAllocations.reduce((sum, a) => sum + a.allocated_quantity, 0);
 
       return {
         ...line,
         allocations: lineAllocations,
         initialAllocations: lineAllocations,
-        is_allocated:
-          lineAllocations.length > 0 &&
-          lineAllocations.reduce((sum, a) => sum + a.quantity, 0) ===
-            Number(line.quantity),
+        is_allocated: lineAllocations.length > 0 && totalAllocated === Number(line.quantity),
       };
     });
+
+    // 🌟 FIX: Join with debit_note_lines to look up by PO ID and select correct columns
+    // const allocationsResult = await pool.query(
+    //   `
+    //   SELECT DISTINCT
+    //       ia.id,
+    //       ia.debit_note_line_id,
+    //       ia.purchase_order_line_id,
+    //       ia.purchase_invoice_line_id,
+    //       ia.item_id,
+    //       ia.warehouse_id,
+    //       ia.warehouse_location_id AS location_id,
+    //       wl.title AS location_name,
+    //       ia.allocated_quantity AS quantity,
+    //       ia.batch_no,
+    //       ia.bin_code,
+    //       TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
+    //       TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_received
+    //   FROM inventory_allocations ia
+    //   LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
+    //   INNER JOIN debit_note_lines dnl
+    //     ON (ia.debit_note_line_id = dnl.id OR 
+    //     (ia.purchase_order_line_id IS NOT NULL AND ia.purchase_order_line_id = dnl.purchase_order_line_id) OR 
+    //     (ia.purchase_invoice_line_id IS NOT NULL AND ia.purchase_invoice_line_id = dnl.purchase_invoice_line_id) 
+    //     )
+    //   WHERE dnl.debit_note_id = $1 AND ia.company_id = $2 AND ia.status = 'ACTIVE'
+    //   `,
+    //   [id, companyId],
+    // );
+
+    // Map the accurate database properties to your frontend modal structures safely
+    // const linesWithAllocations = linesResult.rows.map((line) => {
+    //   const lineAllocations = allocationsResult.rows
+    //     .filter(
+    //       (alloc) =>
+    //         alloc.debit_note_line_id === line.id ||
+    //         (line.purchase_order_line_id &&
+    //           alloc.purchase_order_line_id === line.purchase_order_line_id) ||
+    //         (line.purchase_invoice_line_id &&
+    //           alloc.purchase_invoice_line_id === line.purchase_invoice_line_id),
+    //     )
+    //     .map((alloc) => ({
+    //       id: alloc.id,
+    //       date_received: alloc.date_received || "",
+    //       prod_date: "",
+    //       expiry_date: alloc.expiry_date || "",
+    //       batch_no: alloc.batch_no || "",
+    //       bin_code: alloc.bin_code || "",
+    //       location_id: alloc.location_id || "",
+    //       location_name: alloc.location_name || "",
+    //       quantity: Number(alloc.quantity) || 0,
+    //     }));
+
+    //   return {
+    //     ...line,
+    //     allocations: lineAllocations,
+    //     initialAllocations: lineAllocations,
+    //     is_allocated:
+    //       lineAllocations.length > 0 &&
+    //       lineAllocations.reduce((sum, a) => sum + a.quantity, 0) ===
+    //         Number(line.quantity),
+    //   };
+    // });
 
     const addressResult = await pool.query(
       `SELECT * FROM debit_note_addresses WHERE debit_note_id = $1`,
@@ -883,10 +959,7 @@ export class DebitNoteService {
     );
 
     const returnedQty = Number(lineCheck.rows[0]?.returned_quantity || 0);
-
-    if (returnedQty > 0) {
-      return;
-    }
+    if (returnedQty > 0) return;
 
     // 2. Clear existing allocations for unreturned lines
     await client.query(
@@ -901,6 +974,11 @@ export class DebitNoteService {
 
     // 3. Insert fresh allocation records
     for (const alloc of initialAllocations) {
+
+      const allocatedQty = Number(alloc.return_quantity ?? alloc.allocated_quantity ?? 0);
+      if (allocatedQty <= 0) continue;
+
+
       await client.query(
         `
         INSERT INTO inventory_allocations (
@@ -912,6 +990,7 @@ export class DebitNoteService {
           warehouse_id,
           warehouse_location_id,
           batch_no,
+          bin_code,
           expiry_date,
           allocated_quantity,
           unit_cost,
@@ -919,7 +998,7 @@ export class DebitNoteService {
           allocation_method,
           status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'FIFO', 'ACTIVE')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'FIFO', 'ACTIVE')
         `,
         [
           companyId,
@@ -930,8 +1009,9 @@ export class DebitNoteService {
           warehouseId,
           alloc.location_id || null,
           alloc.batch_no || null,
+          alloc.bin_code || null,
           alloc.expiry_date === "" ? null : alloc.expiry_date || null,
-          Number(alloc.return_quantity) || 0,
+          allocatedQty,
           0,
           0,
         ],

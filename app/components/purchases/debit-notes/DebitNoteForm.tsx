@@ -1431,7 +1431,8 @@ export const DebitNoteForm: React.FC<Props> = ({
                 <Button
                   type="button"
                   variant="post"
-                  onClick={() => setShowInvoiceModal(true)}
+                  // onClick={() => setShowInvoiceModal(true)}
+                  onClick={handlePostInvoiceClick}
                   disabled={isPosting || isCompleted}
                   // className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
