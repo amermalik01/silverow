@@ -606,7 +606,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       if (!res.ok)
         throw new Error(data.error || "Failed to post sales invoice");
 
-      toast.success("Sales invoice posted cleanly!", { id: "action-toast" });
+      toast.success("Sales invoice posted!", { id: "action-toast" });
       setShowInvoiceModal(false);
 
       router.push(`/${slug}/sales/orders/new`);

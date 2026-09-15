@@ -154,14 +154,60 @@ export class GLPostingService {
     }
 
     // 2. Validate double-entry equality (\sum Debit = \sum Credit)
-    const totalDebitLCY = expandedLines.reduce(
-      (sum, l) => sum + l.debit_lcy,
-      0,
+    // const totalDebitLCY = expandedLines.reduce(
+    //   (sum, l) => sum + l.debit_lcy,
+    //   0,
+    // );
+    // const totalCreditLCY = expandedLines.reduce(
+    //   (sum, l) => sum + l.credit_lcy,
+    //   0,
+    // );
+
+    // 2. Calculate initial totals in LCY
+    let totalDebitLCY = Number(
+      expandedLines.reduce((sum, l) => sum + l.debit_lcy, 0).toFixed(2)
     );
-    const totalCreditLCY = expandedLines.reduce(
-      (sum, l) => sum + l.credit_lcy,
-      0,
+    let totalCreditLCY = Number(
+      expandedLines.reduce((sum, l) => sum + l.credit_lcy, 0).toFixed(2)
     );
+
+    const diff = Number((totalDebitLCY - totalCreditLCY).toFixed(2));
+
+    // Fix small rounding discrepancies (e.g., <= 0.05 LCY) by adjusting the largest line item
+    if (Math.abs(diff) > 0 && Math.abs(diff) <= 0.05) {
+      if (diff > 0) {
+        // Debits exceed Credits: add difference to the largest credit line
+        const largestCreditLine = expandedLines
+          .filter((l) => l.credit_lcy > 0)
+          .sort((a, b) => b.credit_lcy - a.credit_lcy)[0];
+
+        if (largestCreditLine) {
+          largestCreditLine.credit_lcy = Number(
+            (largestCreditLine.credit_lcy + diff).toFixed(2)
+          );
+        }
+      } else {
+        // Credits exceed Debits: add difference to the largest debit line
+        const absDiff = Math.abs(diff);
+        const largestDebitLine = expandedLines
+          .filter((l) => l.debit_lcy > 0)
+          .sort((a, b) => b.debit_lcy - a.debit_lcy)[0];
+
+        if (largestDebitLine) {
+          largestDebitLine.debit_lcy = Number(
+            (largestDebitLine.debit_lcy + absDiff).toFixed(2)
+          );
+        }
+      }
+
+      // Recalculate totals after balancing adjustment
+      totalDebitLCY = Number(
+        expandedLines.reduce((sum, l) => sum + l.debit_lcy, 0).toFixed(2)
+      );
+      totalCreditLCY = Number(
+        expandedLines.reduce((sum, l) => sum + l.credit_lcy, 0).toFixed(2)
+      );
+    }
 
     if (Math.abs(totalDebitLCY - totalCreditLCY) > 0.001) {
       throw new Error(

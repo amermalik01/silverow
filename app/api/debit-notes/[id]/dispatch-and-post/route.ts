@@ -153,7 +153,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       debitNoteId: postingResult.id,
       debitNoteNo: postingResult.debit_note_no,
       journalId: postingResult.journalId,
-      message: "Stock dispatched & Debit Note posted cleanly to GL and AP.",
+      message: "Stock dispatched & Debit Note posted.",
     });
   } catch (err: unknown) {
     await client.query("ROLLBACK");

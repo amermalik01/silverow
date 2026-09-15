@@ -168,7 +168,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       success: true,
       invoiceId: invoiceResult.id,
       invoiceNo: invoiceResult.invoice_no,
-      message: "Stock received & Purchase Invoice posted cleanly.",
+      message: "Stock received & Purchase Invoice posted.",
     });
   } catch (err: unknown) {
     await client.query("ROLLBACK");

@@ -604,13 +604,15 @@ export class AllocationService {
     // 1. Resolve Control GL Account via parties table
     let controlGlAccountId: string | null = null;
 
+    // LEFT JOIN purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
+
     if (partyType === "supplier") {
       const partyRes = await client.query(
         `SELECT 
             p.gl_account_payable, 
             ppg.payable_account_id AS group_account_id
-         FROM parties p
-         LEFT JOIN purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
+         FROM parties p         
+         LEFT JOIN purchase_posting_groups ppg ON p.posting_group::uuid = ppg.posting_group_id 
          WHERE p.id = $1 AND p.company_id = $2`,
         [partyId, companyId],
       );
@@ -627,12 +629,13 @@ export class AllocationService {
         controlGlAccountId = fallback.rows[0]?.payable_account_id || null;
       }
     } else {
+      // LEFT JOIN sales_posting_groups spg ON p.sales_posting_group_id = spg.id
       const partyRes = await client.query(
         `SELECT 
             p.gl_account_receivable, 
             spg.receivable_account_id AS group_account_id
          FROM parties p
-         LEFT JOIN sales_posting_groups spg ON p.sales_posting_group_id = spg.id
+         LEFT JOIN sales_posting_groups spg ON p.posting_group::uuid = spg.posting_group_id
          WHERE p.id = $1 AND p.company_id = $2`,
         [partyId, companyId],
       );
@@ -970,261 +973,3 @@ export class AllocationService {
     }
   } */
 
-/* 
-private static async postFxGlEntries(
-    client: PoolClient,
-    params: {
-      companyId: string;
-      allocationId: string;
-      allocationType: "AP" | "AR";
-      partyType: "supplier" | "customer";
-      partyId: string;
-      varianceLCY: number;
-      fxGlAccountId: string;
-      isGain: boolean;
-      documentNo: string;
-      currencyId?: string | null;
-      userId?: string | null;
-    },
-  ) {
-    const {
-      companyId,
-      allocationId,
-      allocationType,
-      partyType,
-      partyId,
-      varianceLCY,
-      fxGlAccountId,
-      isGain,
-      documentNo,
-      currencyId,
-      userId,
-    } = params;
-
-    // 1. Resolve Control GL Account via the unified `parties` table (matching Journal logic)
-    let controlGlAccountId: string | null = null;
-
-    if (partyType === "supplier") {
-      const partyRes = await client.query(
-        `SELECT 
-            p.gl_account_payable, 
-            ppg.payable_account_id AS group_account_id
-         FROM parties p
-         LEFT JOIN purchase_posting_groups ppg ON p.purchase_posting_group_id = ppg.id
-         WHERE p.id = $1 AND p.company_id = $2`,
-        [partyId, companyId],
-      );
-
-      const party = partyRes.rows[0];
-
-      controlGlAccountId =
-        party?.group_account_id || party?.gl_account_payable || null;
-
-      if (!controlGlAccountId) {
-        const fallback = await client.query(
-          `SELECT payable_account_id FROM purchase_posting_groups WHERE company_id = $1 LIMIT 1`,
-          [companyId],
-        );
-        controlGlAccountId = fallback.rows[0]?.payable_account_id || null;
-      }
-    } else {
-      const partyRes = await client.query(
-        `SELECT 
-            p.gl_account_receivable, 
-            spg.receivable_account_id AS group_account_id
-         FROM parties p
-         LEFT JOIN sales_posting_groups spg ON p.sales_posting_group_id = spg.id
-         WHERE p.id = $1 AND p.company_id = $2`,
-        [partyId, companyId],
-      );
-
-      const party = partyRes.rows[0];
-
-      controlGlAccountId =
-        party?.group_account_id || party?.gl_account_receivable || null;
-
-      if (!controlGlAccountId) {
-        const fallback = await client.query(
-          `SELECT receivable_account_id FROM sales_posting_groups WHERE company_id = $1 LIMIT 1`,
-          [companyId],
-        );
-        controlGlAccountId = fallback.rows[0]?.receivable_account_id || null;
-      }
-    }
-
-    if (!controlGlAccountId) {
-      throw new Error(
-        `Control GL account for ${partyType} could not be resolved.`,
-      );
-    }
-
-    // 2. Determine Debits and Credits based on Gain/Loss and AP/AR context
-    let controlDebit = 0;
-    let controlCredit = 0;
-    let fxDebit = 0;
-    let fxCredit = 0;
-
-    if (allocationType === "AP") {
-      if (isGain) {
-        // Gain reduces AP Liability
-        controlDebit = varianceLCY;
-        fxCredit = varianceLCY;
-      } else {
-        // Loss increases AP Liability
-        fxDebit = varianceLCY;
-        controlCredit = varianceLCY;
-      }
-    } else {
-      if (isGain) {
-        // Gain increases Income / adjusts AR
-        controlDebit = varianceLCY;
-        fxCredit = varianceLCY;
-      } else {
-        // Loss reduces Receivables / adds Expense
-        fxDebit = varianceLCY;
-        controlCredit = varianceLCY;
-      }
-    }
-
-    // 3. Get next system transaction sequence for grouping legs
-    const txKeyResult = await client.query(
-      "SELECT nextval('gl_transaction_id_seq') AS tx_id",
-    );
-    const transactionId = parseInt(txKeyResult.rows[0].tx_id, 10);
-    const refTag = `ALLOC_FX_${allocationId}`;
-
-    // 4. Post Control Account Leg
-
-    await client.query(
-      `INSERT INTO gl_ledger_entries (
-        company_id,
-        account_id,
-        transaction_id,
-        entry_no,
-        posting_date,
-        source_type,
-        reference,
-        description,
-        debit,
-        credit,
-        currency_id,
-        exchange_rate,
-        debit_fcy,
-        credit_fcy,
-        source_document_id,
-        source_document_no,
-        party_type,
-        party_id,
-        document_no,
-        posted_by,
-        posted_at
-      ) VALUES (
-        $1, $2, $3, $4, CURRENT_DATE, $5, $6, $7, $8, $9,
-        $10, 1.0, 0.0, 0.0, $11, $12, $13, $14, $15, $16,
-        NOW()
-      )`,
-      [
-        companyId,
-        controlGlAccountId,
-        transactionId,
-        documentNo,
-        "FX_VARIANCE",
-        refTag,
-        `Realized FX ${isGain ? "Gain" : "Loss"} Allocation Adjustment`,
-        controlDebit,
-        controlCredit,
-        currencyId || null,
-        allocationId,
-        documentNo,
-        partyType,
-        partyId,
-        documentNo,
-        userId || null,
-      ],
-    );
-    // await client.query(
-    //   `INSERT INTO gl_ledger_entries (
-    //     company_id, account_id, entry_no, posting_date,
-    //     source_type, reference, description, debit, credit, party_type, party_id, document_no, posted_at
-    //   ) VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-    //   [
-    //     companyId,
-    //     controlGlAccountId,
-    //     documentNo,
-    //     "FX_VARIANCE",
-    //     refTag,
-    //     `Realized FX ${isGain ? "Gain" : "Loss"} Allocation Adjustment`,
-    //     controlDebit,
-    //     controlCredit,
-    //     partyType,
-    //     partyId,
-    //     documentNo,
-    //   ],
-    // );
-
-    // 5. Post Realized FX Gain/Loss Leg
-    await client.query(
-      `INSERT INTO gl_ledger_entries (
-        company_id,
-        account_id,
-        transaction_id,
-        entry_no,
-        posting_date,
-        source_type,
-        reference,
-        description,
-        debit,
-        credit,
-        currency_id,
-        exchange_rate,
-        debit_fcy,
-        credit_fcy,
-        source_document_id,
-        source_document_no,
-        party_type,
-        party_id,
-        document_no,
-        posted_by,
-        posted_at
-      ) VALUES (
-        $1, $2, $3, $4, CURRENT_DATE, $5, $6, $7, $8, $9,
-        $10, 1.0, 0.0, 0.0, $11, $12, NULL, NULL, $13, $14,
-        NOW()
-      )`,
-      [
-        companyId,
-        fxGlAccountId,
-        transactionId,
-        documentNo,
-        "FX_VARIANCE",
-        refTag,
-        `Realized FX ${isGain ? "Gain" : "Loss"} Line`,
-        fxDebit,
-        fxCredit,
-        currencyId || null,
-        allocationId,
-        documentNo,
-        documentNo,
-        userId || null,
-      ],
-    );
-    // await client.query(
-    //   `INSERT INTO gl_ledger_entries (
-    //     company_id, account_id, entry_no, posting_date,
-    //     source_type, reference, description, debit, credit, party_type, party_id, document_no, posted_at
-    //   ) VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-    //   [
-    //     companyId,
-    //     fxGlAccountId,
-    //     documentNo,
-    //     "FX_VARIANCE",
-    //     refTag,
-    //     `Realized FX ${isGain ? "Gain" : "Loss"} Line`,
-    //     fxDebit,
-    //     fxCredit,
-    //     null,
-    //     null,
-    //     documentNo,
-    //   ],
-    // );
-  } */

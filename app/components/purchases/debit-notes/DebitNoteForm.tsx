@@ -1053,10 +1053,10 @@ export const DebitNoteForm: React.FC<Props> = ({
       return;
     }
 
-    if (!note.debit_note_no && !note.reference) {
-      toast.error("Please enter a Supplier Invoice No. before posting.");
-      return;
-    }
+    // if (!note.debit_note_no && !note.reference) {
+    //   toast.error("Please enter a Supplier Invoice No. before posting.");
+    //   return;
+    // }
 
     // If item lines exist and are NOT fully received, prompt to receive & post
     if (!isFullyDispatched) {
@@ -1100,7 +1100,7 @@ export const DebitNoteForm: React.FC<Props> = ({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to post Debit note");
 
-      toast.success("Debit note posted cleanly!", { id: "action-toast" });
+      toast.success("Debit note posted!", { id: "action-toast" });
       setShowInvoiceModal(false);
 
       router.push(`/${slug}/purchases/debit-notes/create`);

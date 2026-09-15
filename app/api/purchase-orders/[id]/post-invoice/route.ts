@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       success: true,
       invoiceId: result.id,
       invoiceNo: result.invoice_no,
-      message: "Purchase invoice posted cleanly to Accounts Payable.",
+      message: "Purchase invoice posted.",
     });
   } catch (err: unknown) {
     console.error("[PURCHASE_INVOICE_POST_FAILURE]:", err);

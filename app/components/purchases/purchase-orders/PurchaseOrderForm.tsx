@@ -1012,7 +1012,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       if (!res.ok)
         throw new Error(data.error || "Failed to post purchase invoice");
 
-      toast.success("Purchase invoice posted cleanly!", { id: "action-toast" });
+      toast.success("Purchase invoice posted!", { id: "action-toast" });
       setShowInvoiceModal(false);
 
       router.push(`/${slug}/purchases/purchase-orders/create`);

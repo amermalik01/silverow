@@ -346,7 +346,7 @@ export class PurchaseInvoicePostingService {
       });
 
       // 8. Validate journal balance
-      GLValidationService.validateBalanced(glLines);
+      const validateBalanced = GLValidationService.validateBalanced(glLines);
 
       // 9. Post journal entry with currency details
       const journal = await GLPostingService.postJournal(client, {
