@@ -10,8 +10,6 @@ import {
   PurchaseOrderLineUI,
 } from "@/types/purchase-order";
 
-// import MigrationUploadModal from "@/app/components/migration/MigrationUploadModal";
-
 import ItemLookupModal, {
   ItemLookupRecord,
 } from "@/app/components/shared/modals/ItemLookupModal";
@@ -637,6 +635,7 @@ export default function PurchaseOrderLines({
                         <button
                           type="button"
                           disabled={isLineDisabled}
+                          title={line.warehouse_name && `${line.warehouse_code || ""} - ${line.warehouse_name}  - (${Number(line.reserved_quantity)})`}
                           onClick={() => setWarehouseIndex(index)}
                           className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-[11px] bg-white dark:bg-slate-800 flex items-center justify-between gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
                         >

@@ -38,8 +38,6 @@ type Props = {
   itemName: string;
   warehouseId?: string;
   warehouseName: string;
-  // locationId?: string;
-  // locationName: string;
   uomName?: string;
   initialAllocations?: PO_StockAllocationRecord[];
 };
@@ -55,8 +53,6 @@ export default function PO_StockAllocationModal({
   itemName,
   warehouseId,
   warehouseName,
-  // locationId,
-  // locationName,
   uomName,
   initialAllocations = [],
 }: Props) {
@@ -277,6 +273,7 @@ export default function PO_StockAllocationModal({
                     <button
                       type="button"
                       onClick={() => handleRemoveRow(index)}
+                      disabled={isReadonly}
                       className="text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold transition-colors"
                     >
                       &#x2715;

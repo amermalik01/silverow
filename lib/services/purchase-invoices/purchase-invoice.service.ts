@@ -328,7 +328,8 @@ export class PurchaseInvoiceService {
         COALESCE(pol.item_name, i.name) AS item_name,
         COALESCE(pol.uom_id, i.base_uom_id) AS uom_id,
         COALESCE(pol.uom_name, u.name) AS uom_name,
-        COALESCE(pol.warehouse_name, w.name) AS warehouse_name
+        COALESCE(pol.warehouse_name, w.name) AS warehouse_name,
+        (pol.quantity - COALESCE(pol.received_quantity, 0)) AS remaining_quantity
 
       FROM purchase_invoice_lines pil
       LEFT JOIN purchase_order_lines pol ON pol.id = pil.purchase_order_line_id AND pol.company_id = $2
@@ -343,7 +344,63 @@ export class PurchaseInvoiceService {
       [id, companyId],
     );
 
-    // 3. Fetch Addresses from purchase_order_addresses using purchase_order_id
+    // 3. Fetch allocations using purchase_invoice_lines mapped to purchase_order_line_id
+    const allocationsResult = await pool.query(
+      `
+      SELECT
+        ia.id,
+        ia.purchase_order_line_id,
+        pil.id AS purchase_invoice_line_id,
+        ia.item_id,
+        ia.warehouse_id,
+        ia.warehouse_location_id AS location_id,
+        wl.title AS location_name,
+        ia.allocated_quantity AS quantity,
+        ia.batch_no,
+        ia.bin_code,
+        TO_CHAR(ia.expiry_date, 'YYYY-MM-DD') AS expiry_date,
+        TO_CHAR(ia.created_at, 'YYYY-MM-DD') AS date_received
+      FROM inventory_allocations ia
+      INNER JOIN purchase_invoice_lines pil ON pil.purchase_order_line_id = ia.purchase_order_line_id
+      LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
+      WHERE pil.purchase_invoice_id = $1 AND ia.company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    // 4. Map allocations correctly back to invoice lines
+    const linesWithAllocations = linesResult.rows.map((line) => {
+      const lineAllocations = allocationsResult.rows
+        .filter(
+          (alloc) =>
+            alloc.purchase_invoice_line_id === line.id ||
+            (line.purchase_order_line_id &&
+              alloc.purchase_order_line_id === line.purchase_order_line_id),
+        )
+        .map((alloc) => ({
+          date_received: alloc.date_received || "",
+          prod_date: "",
+          expiry_date: alloc.expiry_date || "",
+          batch_no: alloc.batch_no || "",
+          bin_code: alloc.bin_code || "",
+
+          location_id: alloc.location_id || "",
+          location_name: alloc.location_name || "",
+          quantity: Number(alloc.quantity) || 0,
+        }));
+
+      return {
+        ...line,
+        allocations: lineAllocations,
+        initialAllocations: lineAllocations,
+        is_allocated:
+          lineAllocations.length > 0 &&
+          lineAllocations.reduce((sum, a) => sum + a.quantity, 0) ===
+            Number(line.quantity),
+      };
+    });
+
+    // 5. Fetch Addresses from purchase_order_addresses using purchase_order_id
     let addressRows: PurchaseOrderAddress[] = [];
     if (purchaseInvoice.purchase_order_id) {
       const addressResult = await pool.query(
@@ -374,7 +431,8 @@ export class PurchaseInvoiceService {
 
     return {
       invoice: purchaseInvoice,
-      lines: linesResult.rows,
+      // lines: linesResult.rows,
+      lines: linesWithAllocations,
       primary_address:
         addressRows.find((x) => x.address_type === "primary") || null,
       billing_address:
@@ -384,202 +442,3 @@ export class PurchaseInvoiceService {
     };
   }
 }
-
-/* import { PoolClient } from "pg";
-import { pool } from "@/lib/db";
-import { FetchParams, FetchResponse } from "@/types/table";
-import { PurchaseInvoice } from "@/types/purchase-invoice";
-
-export class PurchaseInvoiceService {
-
-  static async listPaginated(
-    companyId: string,
-    params: FetchParams,
-  ): Promise<FetchResponse<PurchaseInvoice>> {
-    const {
-      page = 1,
-      pageSize = 20,
-      filters = {},
-      sortBy,
-      sortOrder = "asc",
-    } = params;
-    const offset = (page - 1) * pageSize;
-
-    const SORT_FIELDS: Record<string, string> = {
-      invoice_date: "pi.invoice_date",
-      order_date: "po.order_date",
-      invoice_code: "pi.invoice_no",
-      order_code: "po.order_no",
-      supp_order_no: "pi.supplier_invoice_no",
-      supplier_no: "p.supplier_no",
-      sell_to_cust_name: "p.name",
-      sell_to_city: "pia.city",
-      srm_purchase_code: "pi.purchaser",
-      crcode: "c.code",
-      current_stage: "cos.name",
-      net_amount: "pi.subtotal",
-      tax_amount: "pi.tax_amount",
-      grand_total: "pi.total_amount",
-      due_date: "pi.due_date",
-    };
-
-    const orderByColumn =
-      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "pi.invoice_date";
-    const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
-
-    const queryValues: (string | number)[] = [companyId];
-    const whereClauses = ["pi.company_id = $1"];
-
-    // Dynamic Filters
-    Object.entries(filters).forEach(([colKey, filter]) => {
-      if (!filter) return;
-
-      if (filter.value !== undefined && filter.value !== "") {
-        if (colKey === "crcode") {
-          queryValues.push(String(filter.value));
-          whereClauses.push(`c.code = $${queryValues.length}`);
-        } else if (colKey === "current_stage") {
-          queryValues.push(String(filter.value));
-          whereClauses.push(`cos.name = $${queryValues.length}`);
-        } else if (colKey === "status") {
-          queryValues.push(String(filter.value));
-          whereClauses.push(`pi.status::text = $${queryValues.length}`);
-        } else if (colKey === "invoice_code") {
-          queryValues.push(`%${filter.value}%`);
-          whereClauses.push(`pi.invoice_no ILIKE $${queryValues.length}`);
-        } else if (colKey === "order_code") {
-          queryValues.push(`%${filter.value}%`);
-          whereClauses.push(`po.order_no ILIKE $${queryValues.length}`);
-        } else if (colKey === "sell_to_cust_name") {
-          queryValues.push(`%${filter.value}%`);
-          whereClauses.push(`p.name ILIKE $${queryValues.length}`);
-        }
-      }
-
-      if (filter.from !== undefined && filter.from !== "") {
-        queryValues.push(filter.from);
-        const idx = queryValues.length;
-        if (colKey === "invoice_date")
-          whereClauses.push(`pi.invoice_date >= $${idx}::date`);
-        if (colKey === "order_date")
-          whereClauses.push(`po.order_date >= $${idx}::date`);
-        if (colKey === "net_amount")
-          whereClauses.push(`pi.subtotal >= $${idx}::numeric`);
-      }
-
-      if (filter.to !== undefined && filter.to !== "") {
-        queryValues.push(filter.to);
-        const idx = queryValues.length;
-        if (colKey === "invoice_date")
-          whereClauses.push(`pi.invoice_date <= $${idx}::date`);
-        if (colKey === "order_date")
-          whereClauses.push(`po.order_date <= $${idx}::date`);
-        if (colKey === "net_amount")
-          whereClauses.push(`pi.subtotal <= $${idx}::numeric`);
-      }
-    });
-
-    const whereSql =
-      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
-
-    // Base Joins cast pi.status::text safely to prevent type operator errors
-    const joinSql = `
-      FROM purchase_invoices pi
-      LEFT JOIN parties p ON p.id = pi.supplier_id
-      LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id
-      LEFT JOIN currencies c ON c.id = pi.currency_id
-      LEFT JOIN shipment_method sm ON sm.id = pi.shipment_method_id
-      LEFT JOIN common_order_stages cos 
-             ON cos.company_id = pi.company_id 
-            AND cos.stage_type = 'purchase_invoice' 
-            AND cos.name ILIKE pi.status::text
-      LEFT JOIN purchase_invoice_addresses pia 
-             ON pia.purchase_invoice_id = pi.id 
-            AND pia.address_type = 'primary'
-      LEFT JOIN purchase_invoice_addresses ship_a 
-             ON ship_a.purchase_invoice_id = pi.id 
-            AND ship_a.address_type = 'shipping'
-    `;
-
-    // Count Query
-    const countQuery = `SELECT COUNT(DISTINCT pi.id) as total ${joinSql} ${whereSql}`;
-    const countResult = await pool.query(countQuery, queryValues);
-    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
-
-    // Paginated Data Query mapping legacy fields
-    const dataQueryValues = [...queryValues, pageSize, offset];
-    const limitIdx = dataQueryValues.length - 1;
-    const offsetIdx = dataQueryValues.length;
-
-    const dataQuery = `
-      SELECT DISTINCT ON (pi.id, ${orderByColumn})
-        pi.id,
-        pi.invoice_date,
-        po.order_date,
-        pi.invoice_no AS invoice_code,
-        po.order_no AS order_code,
-        pi.supplier_invoice_no AS supp_order_no,
-        pi.previous_code AS prev_code,
-        pi.supplier_no AS supplier_no,
-        p.name AS sell_to_cust_name,
-        
-        -- Supplier Address Details
-        pia.address_1 AS sell_to_address,
-        pia.address_2 AS sell_to_address2,
-        pia.city AS sell_to_city,
-        pia.county AS sell_to_county,
-        pia.postcode AS sell_to_post_code,
-        pia.country AS country,
-        pia.contact_person AS sell_to_contact_no,
-        pia.phone AS cust_phone,
-        pia.email AS cust_email,
-
-        pi.purchaser AS srm_purchase_code,
-        pi.posting_group AS posting_grp,
-        pi.segment,
-        c.code AS crcode,
-        cos.name AS current_stage,
-        pi.status,
-        
-        -- Amounts
-        pi.subtotal AS net_amount,
-        pi.tax_amount,
-        pi.total_amount AS grand_total,
-
-        -- Dates & Shipping
-        pi.due_date,
-        po.req_receipt_date AS requested_delivery_date,
-        pi.receipt_date AS "receiptDate",
-        pi.shipping_agent,
-        sm.name AS shipment_method,
-
-        -- Shipping Address Details
-        ship_a.address_1 AS ship_to_address,
-        ship_a.address_2 AS ship_to_address2,
-        ship_a.city AS ship_to_city,
-        ship_a.county AS ship_to_county,
-        ship_a.postcode AS ship_to_post_code,
-
-        -- Booking / Warehouse Metadata
-        pi.book_in_contact,
-        pi.book_in_phone AS book_in_tel,
-        pi.book_in_email,
-        pi.warehouse_booking_ref,
-        pi.consignment_no AS "consignmentNo",
-        pi.vat_posted AS "vatPosted",
-        pi.link_to_so_no AS "LinkToSo"
-
-      ${joinSql}
-      ${whereSql}
-      ORDER BY ${orderByColumn} ${orderDirection}, pi.id ASC
-      LIMIT $${limitIdx} OFFSET $${offsetIdx}
-    `;
-
-    const dataResult = await pool.query(dataQuery, dataQueryValues);
-
-    return {
-      data: dataResult.rows,
-      totalRecords,
-    };
-  }
-} */
