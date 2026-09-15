@@ -7,6 +7,7 @@ import VatPostingSetupList from "@/app/components/setup/VatPostingSetupList";
 import VatBusinessPostingGroupsList from "@/app/components/setup/VatBusinessPostingGroupsList";
 import VatProductPostingGroupsList from "@/app/components/setup/VatProductPostingGroupsList";
 import VatRatesList from "@/app/components/setup/VatRatesList";
+import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 
 type TabType = "matrix" | "business" | "product" | "rates";
 
@@ -21,7 +22,14 @@ export default function VatPostingSetupPage() {
   ];
 
   return (
-    <div className="space-y-6 ">
+    <div className="space-y-4 ">
+      <Breadcrumbs
+        items={[
+          {
+            label: "VAT Setup",
+          },
+        ]}
+      />
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>

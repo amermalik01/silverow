@@ -43,8 +43,6 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
         name: "Dashboard",
         icon: "solar:widget-2-linear",
         id: "Dashboard",
-        // id: uniqueId(),
-        // url: "/",
         url: `/${slug}/dashboard`,
         isPro: false,
       },
@@ -64,46 +62,21 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "General Journals",
             url: `/${slug}/finance/general-journal`,
           },
-          // {
-          //   id: "Posted General Journals",
-          //   name: "Posted General Journals",
-          //   url: `/${slug}/finance/posted-general-journal`,
-          // },
           {
             id: "Customer Journals",
             name: "Customer Journals",
             url: `/${slug}/finance/customer-journal`,
           },
-          // {
-          //   id: "Posted Customer Journals",
-          //   name: "Posted Customer Journals",
-          //   url: `/${slug}/finance/posted-customer-journal`,
-          // },
           {
             id: "Supplier Journals",
             name: "Supplier Journals",
             url: `/${slug}/finance/supplier-journal`,
           },
-          // {
-          //   id: "Posted Supplier Journals",
-          //   name: "Posted Supplier Journals",
-          //   url: `/${slug}/finance/posted-supplier-journal`,
-          // },
           {
             id: "Item Journals",
             name: "Item Journals",
             url: `/${slug}/finance/item-journal`,
           },
-          // {
-          //   id: "Posted Item Journals",
-          //   name: "Posted Item Journals",
-          //   url: `/${slug}/finance/posted-item-journal`,
-          // },
-          // {
-          //   id: "Finance Matrix",
-          //   name: "Finance Matrix",
-          //   url: `/${slug}/finance/matrix`,
-          // },
         ],
       },
 
@@ -116,7 +89,6 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             id: "CRM",
             name: "CRM",
             url: `/${slug}/sales/crm`,
-            // icon: "solar:shield-keyhole-minimalistic-linear",
           },
           {
             id: "Customers",
@@ -149,55 +121,11 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Posted Credit Notes",
             url: `/${slug}/sales/posted-credit-notes`,
           },
-          // {
-          //   id: "Orders",
-          //   name: "Orders",
-          //   icon: "solar:shield-keyhole-minimalistic-linear",
-
-          //   children: [
-          //     {
-          //       id: "Sales Quotes",
-          //       name: "Sales Quotes",
-          //       url: `/${slug}/sales/quotes`,
-          //     },
-          //     {
-          //       id: "Sales Orders",
-          //       name: "Sales Orders",
-          //       url: `/${slug}/sales/orders`,
-          //     },
-          //     {
-          //       id: "Sales Invoices",
-          //       name: "Sales Invoices",
-          //       url: `/${slug}/sales/invoices`,
-          //     },
-          //     {
-          //       id: "Credit Notes",
-          //       name: "Credit Notes",
-          //       url: `/${slug}/sales/returns`,
-          //     },
-          //     {
-          //       id: "Posted Credit Notes",
-          //       name: "Posted Credit Notes",
-          //       url: `/${slug}/sales/posted-credit-notes`,
-          //     },
-          //   ],
-          // },
           {
             id: "Support Tickets",
             name: "Support Tickets",
             url: `/${slug}/sales/support-ticket`,
           },
-          // {
-          //   id: "Sales Forecast",
-          //   name: "Sales Forecast",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   // id: uniqueId(),
-          //   id: "Sales Matrix",
-          //   name: "Sales Matrix",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
         ],
       },
 
@@ -237,40 +165,6 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Posted Debit Notes",
             url: `/${slug}/purchases/posted-debit-notes`,
           },
-          // {
-          //   id: "Orders",
-          //   name: "Orders",
-          //   icon: "solar:shield-keyhole-minimalistic-linear",
-
-          //   children: [
-          //     {
-          //       id: "Purchase Orders",
-          //       name: "Purchase Orders",
-          //       url: `/${slug}/purchases/purchase-orders`,
-          //     },
-          //     {
-          //       id: "Purchase Invoices",
-          //       name: "Purchase Invoices",
-          //       url: `/${slug}/purchases/purchase-invoices`,
-          //     },
-          //     {
-          //       id: "Debit Notes",
-          //       name: "Debit Notes",
-          //       url: `/${slug}/purchases/debit-notes`,
-          //     },
-          //     {
-          //       id: "Posted Debit Notes",
-          //       name: "Posted Debit Notes",
-          //       url: `/${slug}/purchases/posted-debit-notes`,
-          //     },
-          //   ],
-          // },
-          // {
-          //   // id: uniqueId(),
-          //   id: "Purchase Matrix",
-          //   name: "Purchase Matrix",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
         ],
       },
 
@@ -284,44 +178,11 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Items",
             url: `/${slug}/inventory/items`,
           },
-          // {
-          //   id: "Stock Sheet",
-          //   name: "Stock Sheet",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   id: "Items Activity",
-          //   name: "Items Activity",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
           {
             id: "Transfer Stock",
             name: "Transfer Stock",
             url: `/${slug}/inventory/transfer-stock`,
           },
-          // {
-          //   id: "Posted Transfer Stock",
-          //   name: "Posted Transfer Stock",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   // id: uniqueId(),
-          //   id: "Item Journal",
-          //   name: "Item Journal",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   // id: uniqueId(),
-          //   id: "Posted Item Journal",
-          //   name: "Posted Item Journal",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   // id: uniqueId(),
-          //   id: "Inventory Matrix",
-          //   name: "Inventory Matrix",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
         ],
       },
 
@@ -368,16 +229,6 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Attendance",
             url: `/${slug}/hr/attendance`,
           },
-          // {
-          //   id: "View Bucket",
-          //   name: "View Bucket",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   id: "HR Matrix",
-          //   name: "HR Matrix",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
         ],
       },
     ],
@@ -400,47 +251,17 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 name: "Company",
                 url: `/${slug}/setup/system/company`,
               },
-              // {
-              //   id: "Currency Setup",
-              //   name: "Currency Setup",
-              //   url: `/${slug}/setup/system/currencies`,
-              // },
               {
                 id: "Module Codes",
                 name: "Module Codes",
                 url: `/${slug}/setup/system/sequences`,
               },
-              // {
-              //   id: "Widget Roles",
-              //   name: "Widget Roles",
-              //   url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
-              // },
-              // {
-              //   id: "Reports Roles",
-              //   name: "Reports Roles",
-              //   url: "https://react.tailwind-admin.com/auth/auth1/two-steps",
-              // },
             ],
           },
           {
             id: "Finance",
             name: "Finance",
             children: [
-              // {
-              //   id: "VAT Rates",
-              //   name: "VAT Rates",
-              //   url: `/${slug}/setup/finance/vat-rates`,
-              // },
-              // {
-              //   id: "VAT Business Posting Groups",
-              //   name: "VAT Business Posting Groups",
-              //   url: `/${slug}/setup/finance/vat-business-posting-groups`,
-              // },
-              // {
-              //   id: "VAT Product Posting Groups",
-              //   name: "VAT Product Posting Groups",
-              //   url: `/${slug}/setup/finance/vat-product-posting-groups`,
-              // },
               {
                 id: "VAT Posting Setup",
                 name: "VAT Posting Setup",
@@ -451,26 +272,11 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 name: "Posting Setup",
                 url: `/${slug}/setup/finance/posting-setup`,
               },
-              // {
-              //   id: uniqueId(),
-              //   name: "Inventory Setup",
-              //   url: `/${slug}/setup/finance/inventory-setup`,
-              // },
               {
                 id: "Posting Date Range",
                 name: "Posting Date Range",
                 url: `/${slug}/setup/finance/posting-date-range`,
               },
-              // {
-              //   id: "G/L Account(s) Setup for Opening Balances",
-              //   name: "G/L Account(s) Setup for Opening Balances",
-              //   url: `/${slug}/setup/finance/posting-groups`,
-              // },
-              // {
-              //   id: "G/L Account for Goods Received Not Invoiced",
-              //   name: "G/L Account for Goods Received Not Invoiced",
-              //   url: `/${slug}/setup/finance/posting-groups`,
-              // },
             ],
           },
           {
@@ -666,24 +472,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
               },
             ],
           },
-          // {
-          //   id: "Data Migration",
-          //   name: "Data Migration",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   id: "Auto-email Templates",
-          //   name: "Auto-email Templates",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
-          // {
-          //   id: "Shopify Setup",
-          //   name: "Shopify Setup",
-          //   url: "https://react.tailwind-admin.com/auth/auth2/two-steps",
-          // },
         ],
       },
     ],
   },
 ];
-

@@ -1193,6 +1193,7 @@ export class PurchaseOrderService {
           warehouse_id,
           warehouse_location_id,
           batch_no,
+          bin_code,
           expiry_date,
           allocated_quantity,
           unit_cost,
@@ -1200,7 +1201,7 @@ export class PurchaseOrderService {
           allocation_method,
           status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'FIFO', 'ACTIVE')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'FIFO', 'ACTIVE')
         `,
         [
           companyId,
@@ -1211,6 +1212,7 @@ export class PurchaseOrderService {
           warehouseId,
           alloc.location_id || null,
           alloc.batch_no || null,
+          alloc.serial_no || null,
           alloc.expiry_date === "" ? null : alloc.expiry_date || null,
           Number(alloc.quantity) || 0,
           0,

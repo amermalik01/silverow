@@ -57,6 +57,7 @@ interface DBAllocationRecord {
 
   batch_no?: string;
   bin_code?: string;
+  serial_no?: string;
   expiry_date?: string;
 
   location_id?: string;

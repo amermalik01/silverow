@@ -282,162 +282,166 @@ export default function PO_StockAllocationModal({
                 </tr>
               ))}
 
-              <tr className="bg-slate-50/60 dark:bg-slate-800/20">
-                <td className="p-2">
-                  <DatePicker
-                    value={
-                      newRowInput.date_received
-                        ? new Date(newRowInput.date_received)
-                        : undefined
-                    }
-                    disabled={isReadonly}
-                    minDate={
-                      newRowInput.prod_date
-                        ? new Date(newRowInput.prod_date)
-                        : undefined
-                    }
-                    onChange={(date) =>
-                      setNewRowInput({
-                        ...newRowInput,
-                        date_received: date ? format(date, "yyyy-MM-dd") : "",
-                      })
-                    }
-                  />
-                </td>
-                <td className="p-2">
-                  <DatePicker
-                    value={
-                      newRowInput.prod_date
-                        ? new Date(newRowInput.prod_date)
-                        : undefined
-                    }
-                    disabled={isReadonly}
-                    maxDate={
-                      newRowInput.date_received
-                        ? new Date(newRowInput.date_received)
-                        : undefined
-                    }
-                    onChange={(date) =>
-                      setNewRowInput({
-                        ...newRowInput,
-                        prod_date: date ? format(date, "yyyy-MM-dd") : "",
-                      })
-                    }
-                  />
-                </td>
-                <td className="p-2">
-                  <DatePicker
-                    value={
-                      newRowInput.expiry_date
-                        ? new Date(newRowInput.expiry_date)
-                        : undefined
-                    }
-                    disabled={isReadonly}
-                    minDate={
-                      newRowInput.prod_date
-                        ? new Date(newRowInput.prod_date)
-                        : undefined
-                    }
-                    onChange={(date) =>
-                      setNewRowInput({
-                        ...newRowInput,
-                        expiry_date: date ? format(date, "yyyy-MM-dd") : "",
-                      })
-                    }
-                  />
-                </td>
-                <td className="p-2">
-                  <select
-                    value={newRowInput.location_id}
-                    onChange={(e) => {
-                      const selected = locations.find(
-                        (x) => x.id === e.target.value,
-                      );
+              {!isReadonly && (
+                <tr className="bg-slate-50/60 dark:bg-slate-800/20">
+                  <td className="p-2">
+                    <DatePicker
+                      value={
+                        newRowInput.date_received
+                          ? new Date(newRowInput.date_received)
+                          : undefined
+                      }
+                      disabled={isReadonly}
+                      minDate={
+                        newRowInput.prod_date
+                          ? new Date(newRowInput.prod_date)
+                          : undefined
+                      }
+                      onChange={(date) =>
+                        setNewRowInput({
+                          ...newRowInput,
+                          date_received: date ? format(date, "yyyy-MM-dd") : "",
+                        })
+                      }
+                    />
+                  </td>
+                  <td className="p-2">
+                    <DatePicker
+                      value={
+                        newRowInput.prod_date
+                          ? new Date(newRowInput.prod_date)
+                          : undefined
+                      }
+                      disabled={isReadonly}
+                      maxDate={
+                        newRowInput.date_received
+                          ? new Date(newRowInput.date_received)
+                          : undefined
+                      }
+                      onChange={(date) =>
+                        setNewRowInput({
+                          ...newRowInput,
+                          prod_date: date ? format(date, "yyyy-MM-dd") : "",
+                        })
+                      }
+                    />
+                  </td>
+                  <td className="p-2">
+                    <DatePicker
+                      value={
+                        newRowInput.expiry_date
+                          ? new Date(newRowInput.expiry_date)
+                          : undefined
+                      }
+                      disabled={isReadonly}
+                      minDate={
+                        newRowInput.prod_date
+                          ? new Date(newRowInput.prod_date)
+                          : undefined
+                      }
+                      onChange={(date) =>
+                        setNewRowInput({
+                          ...newRowInput,
+                          expiry_date: date ? format(date, "yyyy-MM-dd") : "",
+                        })
+                      }
+                    />
+                  </td>
+                  <td className="p-2">
+                    <select
+                      value={newRowInput.location_id}
+                      onChange={(e) => {
+                        const selected = locations.find(
+                          (x) => x.id === e.target.value,
+                        );
 
-                      setNewRowInput({
-                        ...newRowInput,
-                        location_id: selected?.id || "",
-                        location_name: selected?.title || "",
-                      });
-                    }}
-                    disabled={isReadonly}
-                    className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900"
-                  >
-                    <option value="">Select Location</option>
+                        setNewRowInput({
+                          ...newRowInput,
+                          location_id: selected?.id || "",
+                          location_name: selected?.title || "",
+                        });
+                      }}
+                      disabled={isReadonly}
+                      className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900"
+                    >
+                      <option value="">Select Location</option>
 
-                    {locations.map((loc) => (
-                      <option key={loc.id} value={loc.id}>
-                        {loc.code ? `${loc.code} - ${loc.title}` : loc.title}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="p-2">
-                  <input
-                    type="text"
-                    placeholder="Lot / Batch No"
-                    value={newRowInput.batch_no}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      setNewRowInput({
-                        ...newRowInput,
-                        batch_no: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900 font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:ring-1 focus:ring-green-600"
-                  />
-                </td>
-                <td className="p-2">
-                  <input
-                    type="text"
-                    placeholder="Serial Tracking"
-                    value={newRowInput.serial_no}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      setNewRowInput({
-                        ...newRowInput,
-                        serial_no: e.target.value,
-                      })
-                    }
-                    className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900 font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:ring-1 focus:ring-green-600"
-                  />
-                </td>
-                <td className="p-2">
-                  <NumericTextInput
-                    value={
-                      qtyToAllocate <= 0 ? 0 : Number(newRowInput.quantity)
-                    }
-                    allowDecimals={false}
-                    min="0"
-                    disabled={qtyToAllocate <= 0 || isReadonly}
-                    className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full text-right bg-white dark:bg-slate-900 font-semibold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-green-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500"
-                    onChange={(val) =>
-                      setNewRowInput({
-                        ...newRowInput,
-                        quantity: String(val),
-                      })
-                    }
-                    placeholder={
-                      derivedDefaultQty > 0 ? derivedDefaultQty.toString() : "0"
-                    }
-                  />
-                </td>
-                <td className="p-2 text-center">
-                  <button
-                    type="button"
-                    onClick={handleAddRow}
-                    disabled={
-                      !newRowInput.location_id ||
-                      currentInputQty <= 0 ||
-                      qtyToAllocate <= 0 ||
-                      isReadonly
-                    }
-                    className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-full w-7 h-7 inline-flex items-center justify-center shadow-xs font-bold text-lg disabled:opacity-30 transition-opacity"
-                  >
-                    +
-                  </button>
-                </td>
-              </tr>
+                      {locations.map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.code ? `${loc.code} - ${loc.title}` : loc.title}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="p-2">
+                    <input
+                      type="text"
+                      placeholder="Lot / Batch No"
+                      value={newRowInput.batch_no}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        setNewRowInput({
+                          ...newRowInput,
+                          batch_no: e.target.value,
+                        })
+                      }
+                      className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900 font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:ring-1 focus:ring-green-600"
+                    />
+                  </td>
+                  <td className="p-2">
+                    <input
+                      type="text"
+                      placeholder="Serial Tracking"
+                      value={newRowInput.serial_no}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        setNewRowInput({
+                          ...newRowInput,
+                          serial_no: e.target.value,
+                        })
+                      }
+                      className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full bg-white dark:bg-slate-900 font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:ring-1 focus:ring-green-600"
+                    />
+                  </td>
+                  <td className="p-2">
+                    <NumericTextInput
+                      value={
+                        qtyToAllocate <= 0 ? 0 : Number(newRowInput.quantity)
+                      }
+                      allowDecimals={false}
+                      min="0"
+                      disabled={qtyToAllocate <= 0 || isReadonly}
+                      className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full text-right bg-white dark:bg-slate-900 font-semibold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-green-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500"
+                      onChange={(val) =>
+                        setNewRowInput({
+                          ...newRowInput,
+                          quantity: String(val),
+                        })
+                      }
+                      placeholder={
+                        derivedDefaultQty > 0
+                          ? derivedDefaultQty.toString()
+                          : "0"
+                      }
+                    />
+                  </td>
+                  <td className="p-2 text-center">
+                    <button
+                      type="button"
+                      onClick={handleAddRow}
+                      disabled={
+                        !newRowInput.location_id ||
+                        currentInputQty <= 0 ||
+                        qtyToAllocate <= 0 ||
+                        isReadonly
+                      }
+                      className="bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-full w-7 h-7 inline-flex items-center justify-center shadow-xs font-bold text-lg disabled:opacity-30 transition-opacity"
+                    >
+                      +
+                    </button>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

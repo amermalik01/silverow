@@ -64,7 +64,7 @@ export default function CompanySetupForm() {
   ];
 
   return (
-    <div className="w-full bg-white dark:bg-slate-900 border rounded-sm shadow-sm text-xs p-6">
+    <div className="w-full bg-white dark:bg-slate-900 border rounded-xl shadow-sm text-xs p-4">
       <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl p-4 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

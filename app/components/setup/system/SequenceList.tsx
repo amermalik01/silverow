@@ -63,7 +63,7 @@ export default function SequenceList() {
   };
 
   return (
-    <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm  shadow dark:shadow-white">
+    <div className="w-full bg-white dark:bg-slate-900 border rounded-xl shadow-sm text-xs p-4">
       <table className="w-full border text-xs table-fixed">
         <thead>
           <tr>
