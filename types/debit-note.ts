@@ -108,9 +108,12 @@ export interface DebitNoteAddress {
 
 export interface DebitNotePayload {
   debitNote: DebitNote;
+
   primary_address?: DebitNoteAddress;
   billing_address?: DebitNoteAddress;
   shipping_address?: DebitNoteAddress;
+  allocations?: StockDeAllocationRecord[];
+
   lines: DebitNoteLine[];
 }
 
@@ -161,6 +164,7 @@ export interface DebitNoteLine {
   purchase_gl_id?: string;
   sales_gl_id?: string;
   inventory_gl_id?: string;
+  allocations?: StockDeAllocationRecord[];
 }
 
 export interface LookupItem {

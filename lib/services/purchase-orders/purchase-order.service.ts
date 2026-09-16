@@ -313,7 +313,7 @@ export class PurchaseOrderService {
           prod_date: "", // Set to blank string since it is not saved on this table
           expiry_date: alloc.expiry_date || "",
           batch_no: alloc.batch_no || "",
-          bin_code: alloc.bin_code || "",
+          serial_no: alloc.bin_code || "",
 
           location_id: alloc.location_id || "",
           location_name: alloc.location_name || "",

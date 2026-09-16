@@ -383,7 +383,7 @@ export class PurchaseInvoiceService {
           prod_date: "",
           expiry_date: alloc.expiry_date || "",
           batch_no: alloc.batch_no || "",
-          bin_code: alloc.bin_code || "",
+          serial_no: alloc.bin_code || "",
 
           location_id: alloc.location_id || "",
           location_name: alloc.location_name || "",

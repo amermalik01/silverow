@@ -272,23 +272,24 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
                 name: "Posting Setup",
                 url: `/${slug}/setup/finance/posting-setup`,
               },
-              {
-                id: "Posting Date Range",
-                name: "Posting Date Range",
-                url: `/${slug}/setup/finance/posting-date-range`,
-              },
+              // {
+              //   id: "Posting Date Range",
+              //   name: "Posting Date Range",
+              //   url: `/${slug}/setup/finance/posting-date-range`,
+              // },
             ],
           },
           {
             id: "Sales",
             name: "Sales",
-            children: [
-              {
-                id: "setup",
-                name: "Setup",
-                url: `/${slug}/setup/sales`,
-              },
-            ]
+            url: `/${slug}/setup/sales`,
+            // children: [
+            //   {
+            //     id: "setup",
+            //     name: "Setup",
+            //     url: `/${slug}/setup/sales`,
+            //   },
+            // ]
             // children: [
             //   {
             //     id: "setup",
@@ -380,13 +381,14 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
           {
             id: "Purchases",
             name: "Purchases",
-            children: [
-              {
-                id: "setup",
-                name: "Setup",
-                url: `/${slug}/setup/purchases`,
-              },
-            ]
+            url: `/${slug}/setup/purchases`,
+            // children: [
+            //   {
+            //     id: "setup",
+            //     name: "Setup",
+            //     url: `/${slug}/setup/purchases`,
+            //   },
+            // ]
             // children: [
             //   {
             //     id: "segments",

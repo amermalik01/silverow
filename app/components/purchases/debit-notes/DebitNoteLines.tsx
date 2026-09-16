@@ -206,8 +206,13 @@ export default function DebitNoteLines({
 
     const currentAllocations =
       line.allocations || line.initialAllocations || [];
-    const totalAllocated = currentAllocations.reduce(
-      (sum, a) => sum + Number(a.allocated_quantity || 0),
+    // const totalAllocated = currentAllocations.reduce(
+    //   (sum, a) => sum + Number(a.allocated_quantity || 0),
+    //   0,
+    // );
+
+    const totalReturnQuantity = currentAllocations.reduce(
+      (sum, a) => sum + Number(a.return_quantity || 0),
       0,
     );
 
@@ -221,7 +226,8 @@ export default function DebitNoteLines({
       gross_amount: gross,
       allocations: currentAllocations,
       initialAllocations: line.initialAllocations || currentAllocations,
-      is_allocated: qty > 0 && totalAllocated === qty,
+      is_allocated: qty > 0 && Math.abs(totalReturnQuantity - qty) < 0.000001,
+      // is_allocated: qty > 0 && totalAllocated === qty,
     };
   };
 
@@ -258,8 +264,13 @@ export default function DebitNoteLines({
           return line;
         }
 
-        const totalAllocated = deAllocationsData.reduce(
-          (sum, allocation) => sum + Number(allocation.allocated_quantity || 0),
+        // const totalAllocated = deAllocationsData.reduce(
+        //   (sum, allocation) => sum + Number(allocation.allocated_quantity || 0),
+        //   0,
+        // );
+
+        const totalReturnQuantity = deAllocationsData.reduce(
+          (sum, allocation) => sum + Number(allocation.return_quantity || 0),
           0,
         );
 
@@ -269,7 +280,10 @@ export default function DebitNoteLines({
           ...line,
           allocations: deAllocationsData,
           initialAllocations: deAllocationsData,
-          is_allocated: quantity > 0 && totalAllocated >= quantity,
+          is_allocated:
+            quantity > 0 && Math.abs(totalReturnQuantity - quantity) < 0.000001,
+
+          // is_allocated: quantity > 0 && totalAllocated >= quantity,
         };
       }),
     );
@@ -385,14 +399,27 @@ export default function DebitNoteLines({
 
               const currentAllocations =
                 line.allocations || line.initialAllocations || [];
-              const totalAllocated = currentAllocations.reduce(
-                (sum, a) => sum + Number(a.allocated_quantity || 0),
+              // const totalAllocated = currentAllocations.reduce(
+              //   (sum, a) => sum + Number(a.allocated_quantity || 0),
+              //   0,
+              // );
+
+              const totalReturnAllocated = currentAllocations.reduce(
+                (sum, a) => sum + Number(a.return_quantity || 0),
                 0,
               );
+
               const isFullyAllocated =
-                displayQty > 0 && totalAllocated === displayQty;
+                displayQty > 0 &&
+                Math.abs(totalReturnAllocated - displayQty) < 0.000001;
+
               const isPartiallyAllocated =
-                totalAllocated > 0 && totalAllocated < displayQty;
+                totalReturnAllocated > 0 && totalReturnAllocated < displayQty;
+
+              // const isFullyAllocated =
+              //   displayQty > 0 && totalAllocated === displayQty;
+              // const isPartiallyAllocated =
+              //   totalAllocated > 0 && totalAllocated < displayQty;
 
               return (
                 <tr
@@ -614,7 +641,7 @@ export default function DebitNoteLines({
                               : isFullyAllocated || line.is_allocated
                                 ? "DeAllocated Stock (Complete)"
                                 : isPartiallyAllocated
-                                  ? `Partially De-Allocated (${totalAllocated}/${displayQty})`
+                                  ? `Partially De-Allocated (${totalReturnAllocated}/${displayQty})`
                                   : "Not De-Allocated"
                           }
                         >
@@ -777,6 +804,8 @@ export default function DebitNoteLines({
             setActiveDeAllocationLineKey(null);
           }}
           requiredQuantity={Number(activeDeAllocLine.quantity || 0)}
+          itemId={activeDeAllocLine.item_id}
+          warehouseId={activeDeAllocLine.warehouse_id}
           debitNoteLineId={activeDeAllocLine.id}
           purchaseOrderLineId={activeDeAllocLine.purchase_order_line_id}
           purchaseInvoiceLineId={activeDeAllocLine.purchase_invoice_line_id}
@@ -794,4 +823,3 @@ export default function DebitNoteLines({
     </div>
   );
 }
-

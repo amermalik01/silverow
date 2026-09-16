@@ -5,11 +5,12 @@
 import { useState } from "react";
 import VatPostingSetupList from "@/app/components/setup/VatPostingSetupList";
 import VatBusinessPostingGroupsList from "@/app/components/setup/VatBusinessPostingGroupsList";
-import VatProductPostingGroupsList from "@/app/components/setup/VatProductPostingGroupsList";
+// import VatProductPostingGroupsList from "@/app/components/setup/VatProductPostingGroupsList";
 import VatRatesList from "@/app/components/setup/VatRatesList";
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
+import PostingDateRangeSetup from "@/app/components/setup/posting/PostingDateRangeSetup";
 
-type TabType = "matrix" | "business" | "product" | "rates";
+type TabType = "matrix" | "business" | "rates" | "posting_date_range";// "product" | 
 
 export default function VatPostingSetupPage() {
   const [activeTab, setActiveTab] = useState<TabType>("matrix");
@@ -17,8 +18,10 @@ export default function VatPostingSetupPage() {
   const tabs: { id: TabType; label: string }[] = [
     { id: "matrix", label: "Posting Setup Matrix" },
     { id: "business", label: "Business Groups" },
-    { id: "product", label: "Product Groups" },
+    // { id: "product", label: "Product Groups" },
     { id: "rates", label: "VAT Rates" },
+    { id: "posting_date_range", label: "Posting Date Range" },
+    // { id: "posting_date_range", label: "Posting Date Range" },
   ];
 
   return (
@@ -73,7 +76,8 @@ export default function VatPostingSetupPage() {
         <div className="mt-4">
           {activeTab === "matrix" && <VatPostingSetupList />}
           {activeTab === "business" && <VatBusinessPostingGroupsList />}
-          {activeTab === "product" && <VatProductPostingGroupsList />}
+          {activeTab === "posting_date_range" && <PostingDateRangeSetup />}
+          {/* {activeTab === "product" && <VatProductPostingGroupsList />} */}
           {activeTab === "rates" && <VatRatesList />}
         </div>
       </div>
