@@ -314,6 +314,8 @@ export class GLPostingService {
 
     const createdJournalLines: PostedJournalLine[] = [];
 
+    console.log('expandedLines === ',expandedLines);
+
     // 6. Post expanded lines to journal_entry_lines and gl_ledger_entries
     for (const leg of expandedLines) {
       let resolvedAccountId = leg.account_id;

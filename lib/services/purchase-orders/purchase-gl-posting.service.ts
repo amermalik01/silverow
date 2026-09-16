@@ -88,6 +88,8 @@ export class PurchaseGLPostingService {
 
     if (glLines.length === 0) return;
 
+    console.log('Posting through lib/services/purchase-orders/purchase-gl-posting.service.ts ');
+
     // Call shared core system engine posting matrix
     await GLPostingService.postJournal(client, {
       company_id: companyId,

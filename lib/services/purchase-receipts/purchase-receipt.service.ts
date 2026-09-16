@@ -73,7 +73,7 @@ export class PurchaseReceiptService {
     const exchangeRate = payload.receipt.exchange_rate;
     const userId = payload.receipt.userId;
 
-    const glLines: JournalLineInput[] = [];
+    
 
     for (const line of payload.lines) {
       if (line.item_id && !line.warehouse_id) {
@@ -81,6 +81,8 @@ export class PurchaseReceiptService {
           `Warehouse identification is required for item ${line.item_id}`,
         );
       }
+
+      const glLines: JournalLineInput[] = [];
 
       const qtyReceived = Number(line.quantity);
       if (qtyReceived <= 0) {
@@ -234,6 +236,8 @@ export class PurchaseReceiptService {
         companyRes.rows[0]?.inventory_system || "PERIODIC";
 
       // Build General Ledger Posting Entries (ONLY for PERPETUAL mode)
+
+      console.log('inventorySystem ===  ',inventorySystem);
       if (inventorySystem === "PERPETUAL") {
         // DR - Inventory Asset (Interim)
         glLines.push({
@@ -292,6 +296,9 @@ export class PurchaseReceiptService {
 
       // 7. Validate GL Balance & Post Journal
       GLValidationService.validateBalanced(glLines);
+
+      console.log('Posting through lib/services/purchase-receipts/purchase-receipt.service.ts ');
+      console.log('glLines lib/services/purchase-receipts/purchase-receipt.service.ts ==== ', glLines);
 
       await GLPostingService.postJournal(client, {
         company_id: companyId,
@@ -472,6 +479,8 @@ export class PurchaseReceiptService {
       }
 
       GLValidationService.validateBalanced(reversalGlLines);
+
+      console.log('2 - Posting through lib/services/purchase-receipts/purchase-receipt.service.ts ');
 
       await GLPostingService.postJournal(client, {
         company_id: companyId,

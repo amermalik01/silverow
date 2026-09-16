@@ -144,6 +144,8 @@ export class InventoryCOGSService {
      * POST TO GL
      * -----------------------------------------------------
      */
+
+    console.log('Posting through lib/services/inventory/inventory-cogs.service.ts ');
     await GLPostingService.postJournal(client, {
       company_id: companyId,
 
