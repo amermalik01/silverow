@@ -189,6 +189,8 @@ export const DebitNoteSchema = z.object({
 
   reason: looseString,
   linked_po: looseString,
+  apply_to_pi: looseString,
+  apply_to_pi_id: looseUuid,
 
   freight_charges: z.coerce.number().optional(),
   shipment_date: looseString,

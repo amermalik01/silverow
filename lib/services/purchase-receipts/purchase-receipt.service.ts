@@ -237,7 +237,7 @@ export class PurchaseReceiptService {
 
       // Build General Ledger Posting Entries (ONLY for PERPETUAL mode)
 
-      console.log('inventorySystem ===  ',inventorySystem);
+
       if (inventorySystem === "PERPETUAL") {
         // DR - Inventory Asset (Interim)
         glLines.push({
@@ -296,9 +296,6 @@ export class PurchaseReceiptService {
 
       // 7. Validate GL Balance & Post Journal
       GLValidationService.validateBalanced(glLines);
-
-      console.log('Posting through lib/services/purchase-receipts/purchase-receipt.service.ts ');
-      console.log('glLines lib/services/purchase-receipts/purchase-receipt.service.ts ==== ', glLines);
 
       await GLPostingService.postJournal(client, {
         company_id: companyId,
@@ -479,8 +476,6 @@ export class PurchaseReceiptService {
       }
 
       GLValidationService.validateBalanced(reversalGlLines);
-
-      console.log('2 - Posting through lib/services/purchase-receipts/purchase-receipt.service.ts ');
 
       await GLPostingService.postJournal(client, {
         company_id: companyId,

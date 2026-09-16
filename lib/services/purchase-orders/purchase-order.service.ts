@@ -89,6 +89,7 @@ export class PurchaseOrderService {
     const whereClauses: string[] = [
       "po.company_id = $1",
       "po.status::text != 'completed'",
+      "po.is_invoiced = false",
     ];
 
     /* -------------------------------------------------------------------- */

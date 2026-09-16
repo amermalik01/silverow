@@ -74,7 +74,7 @@ export class PurchaseInvoicePostingService {
 
       // 2. Load active order lines
       const linesResult = await client.query(
-        `SELECT id, item_id, line_type, warehouse_id, quantity, received_quantity, unit_cost, discount_amount, description, tax_percent, tax_amount, net_amount, gross_amount
+        `SELECT id, item_id, line_type, warehouse_id, quantity, received_quantity, unit_cost, discount_amount, description, tax_percent, tax_amount, net_amount, vat_percent, vat_amount, gross_amount
          FROM purchase_order_lines 
          WHERE purchase_order_id = $1 AND company_id = $2 AND is_deleted = false`,
         [purchaseOrderId, companyId],
@@ -241,9 +241,9 @@ export class PurchaseInvoicePostingService {
             line.quantity,
             line.unit_cost,
             lineGross, // line_amount
-            lineDiscount, // discount_amount
-            line.tax_percent || 0,
-            line.tax_amount || 0,
+            lineDiscount, // discount_amount , vat_amount, 
+            line.vat_percent || 0,
+            line.vat_amount || 0,
             lineNet, // net_amount
             line.gross_amount || lineNet, // gross_amount
           ],
@@ -347,9 +347,6 @@ export class PurchaseInvoicePostingService {
 
       // 8. Validate journal balance
       const validateBalanced = GLValidationService.validateBalanced(glLines);
-
-      console.log('Posting through lib/services/purchase-invoices/purchase-invoice-posting.service.ts ');
-      console.log('glLines === ',glLines);
 
       // 9. Post journal entry with currency details
       const journal = await GLPostingService.postJournal(client, {

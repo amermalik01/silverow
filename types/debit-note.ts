@@ -1,7 +1,5 @@
 // types/debit-note.ts
 
-import { StockDeAllocationRecord } from "@/app/components/shared/modals/StockDeAllocationModal";
-
 export type DebitNoteStatus = string;
 
 export interface DebitNote {
@@ -250,4 +248,43 @@ export interface StockDispatchLine {
 export interface StockDeAllocationPayload {
   dispatch: StockDispatchHeader;
   lines: StockDispatchLine[];
+}
+
+export interface StockDeAllocationRecord {
+  id: string;
+
+  source_allocation_id?: string;
+
+  purchase_order_line_id?: string;
+  purchase_invoice_line_id?: string;
+  debit_note_line_id?: string;
+
+  inbound_entry_id?: string;
+
+  itemId?: string;
+  warehouseId?: string;
+
+  batch_no?: string;
+  bin_code?: string;
+  serial_no?: string | null;
+  expiry_date?: string;
+
+  location_id?: string;
+  location_name?: string;
+
+  allocated_quantity: number;
+  returned_quantity: number;
+
+  return_quantity: number;
+  available_quantity: number;
+
+  unit_cost: number;
+
+  available_quantity_for_edit?: number | string;
+
+  original_quantity?: number | string;
+  already_returned_before_this_dn?: number | string;
+
+  date_received?: string;
+  received_at?: string;
 }

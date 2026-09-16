@@ -92,156 +92,25 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     }
 
     const body = await req.json();
-    const { note, lines } = body;
+
+    const normalizedPayload = {
+      debitNote: body.debitNote || body.note || body,
+      lines: body.lines || [],
+      primary_address: body.primary_address,
+      billing_address: body.billing_address,
+      shipping_address: body.shipping_address,
+    };
+
+    // const { note, lines } = body;
 
     await client.query("BEGIN");
 
-    // 1. Core update operation
-    const dbLines = await DebitNoteService.update(client, companyId, id, body);
-
-    // 2. Iterate safely using order indexes to guarantee accurate mapping of newly generated/updated IDs
-    for (let i = 0; i < (lines || []).length; i++) {
-      const payloadLine: IncomingLine = lines[i];
-      // const matchedDbLine = dbLines[i]; // Matches lines sequentially exactly how they were updated/saved
-
-      const matchedDbLine = dbLines.find(
-        (dbl: { id?: string; line_no?: number }) =>
-          (payloadLine.id && dbl.id === payloadLine.id) ||
-          (payloadLine.line_no !== undefined && dbl.line_no === payloadLine.line_no)
-      ) || dbLines[i];
-
-      if (
-        matchedDbLine?.id &&
-        matchedDbLine?.item_id &&
-        matchedDbLine?.warehouse_id &&
-        payloadLine.allocations?.length
-      ) {
-
-        await StockDeAllocationValidationService.validate(client, companyId, {
-          debit_note_line_id: matchedDbLine.id,
-
-          purchase_invoice_line_id:
-            matchedDbLine.purchase_invoice_line_id ||
-            payloadLine.purchase_invoice_line_id,
-
-          purchase_order_line_id:
-            matchedDbLine.purchase_order_line_id ||
-            payloadLine.purchase_order_line_id,
-
-          required_quantity: Number(matchedDbLine.quantity || 0),
-
-          allocations: payloadLine.allocations,
-        });
-
-        await DebitNoteService.saveLineAllocations(
-          client,
-          companyId,
-          id,
-          matchedDbLine.id,
-          matchedDbLine.item_id,
-          matchedDbLine.warehouse_id,
-          payloadLine.allocations,
-        );
-      }
-    }
-
-    // 3. Downstream Automated Stock Dispatch integration if explicitly marked as posted/dispatched
-    if (note?.status === "posted" || note?.status === "dispatched") {
-
-      const dispatchLinesPayload = (lines || [])
-        .map((line: IncomingLine, idx: number) => {
-          const matchedDbLine = dbLines.find(
-            (dbl: { id?: string; line_no?: number }) =>
-              (line.id && dbl.id === line.id) ||
-              (line.line_no !== undefined && dbl.line_no === line.line_no)
-          ) || dbLines[idx];
-
-          return {
-            ...line,
-            debit_note_line_id: line.id || line.debit_note_line_id || matchedDbLine?.id,
-          };
-        })
-        .filter(
-          (l: IncomingLine) =>
-            Number(l.quantity) > 0 &&
-            (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
-        );
-
-        
-      // const dispatchLinesPayload = (lines || [])
-      //   .map((line: IncomingLine, idx: number) => {
-      //     const matchedDbLine = dbLines[idx];
-      //     return {
-      //       ...line,
-      //       // Ensure debit_note_line_id gets resolved correctly from updated DB lines
-      //       debit_note_line_id:
-      //         line.id || line.debit_note_line_id || matchedDbLine?.id,
-      //     };
-      //   })
-      //   .filter(
-      //     (l: IncomingLine) =>
-      //       Number(l.quantity) > 0 &&
-      //       (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
-      //   );
-
-      if (dispatchLinesPayload.length) {
-        // Calculate remaining un-returned quantity before attempting outbound dispatch
-        const dnLinesResult = await client.query(
-          `SELECT id, quantity, COALESCE(returned_quantity, 0) as returned_quantity 
-           FROM debit_note_lines 
-           WHERE debit_note_id = $1 AND COALESCE(is_deleted, false) = false`,
-          [id],
-        );
-
-        const hasUnreturnedItems = dnLinesResult.rows.some((row) => {
-          const remaining =
-            Number(row.quantity) - Number(row.returned_quantity || 0);
-          return remaining > 0;
-        });
-
-        if (hasUnreturnedItems) {
-          const dispatchPayload = {
-            dispatch: {
-              debit_note_id: id,
-              vendor_id: note.vendor_id || note.supplier_id,
-              warehouse_id:
-                note.warehouse_id ||
-                dispatchLinesPayload[0]?.warehouse_id ||
-                null,
-              dispatch_date:
-                note.dispatch_date || new Date().toISOString().split("T")[0],
-              posting_date:
-                note.posting_date || new Date().toISOString().split("T")[0],
-              reference_no: note.reference,
-              notes: note.notes,
-            },
-            lines: dispatchLinesPayload.map(
-              (line: IncomingLine, idx: number) => ({
-                line_no: idx + 1,
-                debit_note_line_id: line.debit_note_line_id,
-                item_id: line.item_id,
-                warehouse_id: line.warehouse_id,
-                location_id: line.location_id,
-                bin_code: line.bin_code,
-                batch_no: line.batch_no,
-                serial_no: line.serial_no,
-                expiry_date: line.expiry_date,
-                quantity: Number(line.quantity),
-                unit_cost: Number(line.unit_price || line.unit_cost || 0),
-              }),
-            ),
-          };
-
-          await StockDeAllocationService.createTransactional(
-            client,
-            companyId,
-            dispatchPayload,
-          );
-        }
-      }
-
-      await DebitNoteService.recalculateStatus(client, id);
-    }
+    const dbLines = await DebitNoteService.update(
+      client,
+      companyId,
+      id,
+      normalizedPayload,
+    );
 
     await client.query("COMMIT");
     return NextResponse.json({ success: true, data: { lines: dbLines } });
@@ -316,3 +185,170 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     );
   }
 }
+// 2. Iterate safely using order indexes to guarantee accurate mapping of newly generated/updated IDs
+// for (let i = 0; i < (lines || []).length; i++) {
+//   const payloadLine: IncomingLine = lines[i];
+//   // const matchedDbLine = dbLines[i]; // Matches lines sequentially exactly how they were updated/saved
+
+//   const matchedDbLine =
+//     dbLines.find(
+//       (dbl: { id?: string; line_no?: number }) =>
+//         (payloadLine.id && dbl.id === payloadLine.id) ||
+//         (payloadLine.line_no !== undefined &&
+//           dbl.line_no === payloadLine.line_no),
+//     ) || dbLines[i];
+
+//   if (!matchedDbLine?.id) {
+//     throw new Error(`Unable to resolve Debit Note line ${i + 1}.`);
+//   }
+
+//   if (payloadLine.line_type === "ITEM") {
+//     if (!matchedDbLine.item_id) {
+//       throw new Error(`Line ${i + 1}: Item is required.`);
+//     }
+
+//     if (!matchedDbLine.warehouse_id) {
+//       throw new Error(`Line ${i + 1}: Warehouse is required.`);
+//     }
+
+//     await StockDeAllocationValidationService.validate(client, companyId, {
+//       debit_note_line_id: matchedDbLine.id,
+
+//       required_quantity: Number(matchedDbLine.quantity || 0),
+
+//       allocations: payloadLine.allocations ?? [],
+//     });
+
+//     await DebitNoteService.saveLineAllocations(
+//       client,
+//       companyId,
+//       id,
+//       matchedDbLine.id,
+//       matchedDbLine.item_id,
+//       matchedDbLine.warehouse_id,
+//       payloadLine.allocations ?? [],
+//     );
+//   }
+// }
+// await StockDeAllocationValidationService.validate(client, companyId, {
+//   debit_note_line_id: matchedDbLine.id,
+
+//   purchase_invoice_line_id:
+//     matchedDbLine.purchase_invoice_line_id ||
+//     payloadLine.purchase_invoice_line_id,
+
+//   purchase_order_line_id:
+//     matchedDbLine.purchase_order_line_id ||
+//     payloadLine.purchase_order_line_id,
+
+//   required_quantity: Number(matchedDbLine.quantity || 0),
+
+//   allocations: payloadLine.allocations,
+// });
+
+// await DebitNoteService.saveLineAllocations(
+//   client,
+//   companyId,
+//   id,
+//   matchedDbLine.id,
+//   matchedDbLine.item_id,
+//   matchedDbLine.warehouse_id,
+//   payloadLine.allocations,
+// );
+// 3. Downstream Automated Stock Dispatch integration if explicitly marked as posted/dispatched
+// if (note?.status === "posted" || note?.status === "dispatched") {
+//   const dispatchLinesPayload = (lines || [])
+//     .map((line: IncomingLine, idx: number) => {
+//       const matchedDbLine =
+//         dbLines.find(
+//           (dbl: { id?: string; line_no?: number }) =>
+//             (line.id && dbl.id === line.id) ||
+//             (line.line_no !== undefined && dbl.line_no === line.line_no),
+//         ) || dbLines[idx];
+
+//       return {
+//         ...line,
+//         debit_note_line_id:
+//           line.id || line.debit_note_line_id || matchedDbLine?.id,
+//       };
+//     })
+//     .filter(
+//       (l: IncomingLine) =>
+//         Number(l.quantity) > 0 &&
+//         (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
+//     );
+
+//   // const dispatchLinesPayload = (lines || [])
+//   //   .map((line: IncomingLine, idx: number) => {
+//   //     const matchedDbLine = dbLines[idx];
+//   //     return {
+//   //       ...line,
+//   //       // Ensure debit_note_line_id gets resolved correctly from updated DB lines
+//   //       debit_note_line_id:
+//   //         line.id || line.debit_note_line_id || matchedDbLine?.id,
+//   //     };
+//   //   })
+//   //   .filter(
+//   //     (l: IncomingLine) =>
+//   //       Number(l.quantity) > 0 &&
+//   //       (l.line_type === "ITEM" || (!l.line_type && !!l.item_id)),
+//   //   );
+
+//   if (dispatchLinesPayload.length) {
+//     // Calculate remaining un-returned quantity before attempting outbound dispatch
+//     const dnLinesResult = await client.query(
+//       `SELECT id, quantity, COALESCE(returned_quantity, 0) as returned_quantity
+//        FROM debit_note_lines
+//        WHERE debit_note_id = $1 AND COALESCE(is_deleted, false) = false`,
+//       [id],
+//     );
+
+//     const hasUnreturnedItems = dnLinesResult.rows.some((row) => {
+//       const remaining =
+//         Number(row.quantity) - Number(row.returned_quantity || 0);
+//       return remaining > 0;
+//     });
+
+//     if (hasUnreturnedItems) {
+//       const dispatchPayload = {
+//         dispatch: {
+//           debit_note_id: id,
+//           vendor_id: note.vendor_id || note.supplier_id,
+//           warehouse_id:
+//             note.warehouse_id ||
+//             dispatchLinesPayload[0]?.warehouse_id ||
+//             null,
+//           dispatch_date:
+//             note.dispatch_date || new Date().toISOString().split("T")[0],
+//           posting_date:
+//             note.posting_date || new Date().toISOString().split("T")[0],
+//           reference_no: note.reference,
+//           notes: note.notes,
+//         },
+//         lines: dispatchLinesPayload.map(
+//           (line: IncomingLine, idx: number) => ({
+//             line_no: idx + 1,
+//             debit_note_line_id: line.debit_note_line_id,
+//             item_id: line.item_id,
+//             warehouse_id: line.warehouse_id,
+//             location_id: line.location_id,
+//             bin_code: line.bin_code,
+//             batch_no: line.batch_no,
+//             serial_no: line.serial_no,
+//             expiry_date: line.expiry_date,
+//             quantity: Number(line.quantity),
+//             unit_cost: Number(line.unit_price || line.unit_cost || 0),
+//           }),
+//         ),
+//       };
+
+//       await StockDeAllocationService.createTransactional(
+//         client,
+//         companyId,
+//         dispatchPayload,
+//       );
+//     }
+//   }
+
+//   await DebitNoteService.recalculateStatus(client, id);
+// }

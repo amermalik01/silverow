@@ -25,6 +25,7 @@ export interface StockDeAllocationRecord {
 
   batch_no?: string;
   bin_code?: string;
+  serial_no?: string | null;
   expiry_date?: string;
 
   location_id?: string;
@@ -37,6 +38,14 @@ export interface StockDeAllocationRecord {
   available_quantity: number;
 
   unit_cost: number;
+
+  available_quantity_for_edit?: number | string;
+
+  original_quantity?: number | string;
+  already_returned_before_this_dn?: number | string;
+
+  date_received?: string;
+  received_at?: string;
 }
 
 interface Props {
@@ -131,31 +140,6 @@ const normalizeAllocation = (
 
   unit_cost: toNumber(allocation.unit_cost),
 });
-
-// const normalizeAllocation = (
-//   allocation: Partial<StockDeAllocationRecord>,
-// ): StockDeAllocationRecord => ({
-//   id: allocation.id || crypto.randomUUID(),
-
-//   purchase_order_line_id: allocation.purchase_order_line_id,
-//   purchase_invoice_line_id: allocation.purchase_invoice_line_id,
-//   debit_note_line_id: allocation.debit_note_line_id,
-
-//   batch_no: allocation.batch_no || "",
-//   bin_code: allocation.bin_code || "",
-
-//   expiry_date: allocation.expiry_date
-//     ? String(allocation.expiry_date).split("T")[0]
-//     : "",
-
-//   location_id: allocation.location_id || "",
-//   location_name: allocation.location_name || "",
-
-//   allocated_quantity: toNumber(allocation.allocated_quantity),
-//   return_quantity: toNumber(allocation.return_quantity),
-
-//   unit_cost: toNumber(allocation.unit_cost),
-// });
 
 export default function StockDeAllocationModal({
   open,
@@ -300,13 +284,13 @@ export default function StockDeAllocationModal({
           queryParams.set("warehouse_id", warehouseId);
         }
 
-        // if (purchaseInvoiceLineId) {
-        //   queryParams.set("purchase_invoice_line_id", purchaseInvoiceLineId);
-        // }
+        if (purchaseInvoiceLineId) {
+          queryParams.set("purchase_invoice_line_id", purchaseInvoiceLineId);
+        }
 
-        // if (purchaseOrderLineId) {
-        //   queryParams.set("purchase_order_line_id", purchaseOrderLineId);
-        // }
+        if (purchaseOrderLineId) {
+          queryParams.set("purchase_order_line_id", purchaseOrderLineId);
+        }
 
         const requestUrl = `/api/debit-notes/inventory-allocations?${queryParams.toString()}`;
 
@@ -316,11 +300,7 @@ export default function StockDeAllocationModal({
           requiredQuantity: cleanRequiredQty,
         });
 
-        const response = await fetch(requestUrl, {
-          method: "GET",
-          signal: controller.signal,
-          cache: "no-store",
-        });
+        const response = await fetch(requestUrl);
 
         if (!response.ok) {
           throw new Error(
@@ -465,15 +445,7 @@ export default function StockDeAllocationModal({
     hide,
   ]);
 
-  /*
-   * Total quantity selected by user for return.
-   */
-  // const currentTotalReturn = useMemo(() => {
-  //   return allocations.reduce(
-  //     (sum, row) => sum + toNumber(row.return_quantity),
-  //     0,
-  //   );
-  // }, [allocations]);
+
 
   const currentTotalReturn = allocations.reduce(
     (sum, row) => sum + toNumber(row.return_quantity),
@@ -486,9 +458,6 @@ export default function StockDeAllocationModal({
 
   const qtyRemainingToReturn = cleanRequiredQty - currentTotalReturn;
 
-  /*
-   * Update return quantity.
-   */
   const handleQuantityChange = (index: number, value: string | number) => {
     const numericValue = toNumber(value);
 
@@ -517,10 +486,6 @@ export default function StockDeAllocationModal({
         return previous;
       }
 
-      /*
-       * Also prevent total return quantity from exceeding
-       * the debit note quantity.
-       */
       const otherRowsTotal = updated.reduce(
         (sum, allocation, allocationIndex) => {
           if (allocationIndex === index) {
@@ -533,16 +498,10 @@ export default function StockDeAllocationModal({
       );
 
       if (otherRowsTotal + numericValue > cleanRequiredQty) {
-        // const allowed = cleanRequiredQty - otherRowsTotal;
 
         const allowed = Math.max(0, cleanRequiredQty - otherRowsTotal);
 
         toast.error(`Only ${allowed} item(s) can be returned on this line.`);
-
-        // toast.error(
-        //   `Only ${Math.max(0, allowed)} item(s) can be returned on this line.`,
-        // );
-
         return previous;
       }
 
@@ -618,15 +577,6 @@ export default function StockDeAllocationModal({
 
         unit_cost: toNumber(allocation.unit_cost),
       }));
-
-    // const validDeAllocations = allocations
-    //   .filter((allocation) => toNumber(allocation.return_quantity) > 0)
-    //   .map((allocation) => ({
-    //     ...allocation,
-    //     allocated_quantity: toNumber(allocation.allocated_quantity),
-    //     return_quantity: toNumber(allocation.return_quantity),
-    //     unit_cost: toNumber(allocation.unit_cost),
-    //   }));
 
     console.log(
       "[StockDeAllocationModal] Saving de-allocations:",
@@ -759,24 +709,6 @@ export default function StockDeAllocationModal({
         {/* TABLE */}
         <div className="flex-1 min-h-0 p-5 overflow-auto">
           <table className="w-full text-left text-xs border-collapse table-fixed">
-            {/* <thead className="sticky top-0 z-10">
-              <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800">
-                <th className="p-3 w-48">Storage Location</th>
-
-                <th className="p-3 w-48">Batch / Lot No.</th>
-
-                <th className="p-3 w-36">Bin</th>
-
-                <th className="p-3 w-40">Use By Date</th>
-
-                <th className="p-3 w-32 text-right">Original Qty.</th>
-
-                <th className="p-3 w-32 text-right">Return Qty.</th>
-
-                <th className="p-3 text-center w-20">Action</th>
-              </tr>
-            </thead> */}
-
             <thead className="sticky top-0 z-10">
               <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800">
                 <th className="p-3">Storage Location</th>
@@ -822,9 +754,7 @@ export default function StockDeAllocationModal({
                     </td>
 
                     <td className="p-3 font-mono">{row.batch_no || "-"}</td>
-
                     <td className="p-3 font-mono">{row.bin_code || "-"}</td>
-
                     <td className="p-3">{row.expiry_date || "-"}</td>
 
                     <td className="p-3 text-right font-semibold">

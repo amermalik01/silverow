@@ -12,6 +12,7 @@ import {
 } from "@/types/debit-note";
 import { DebitNotePayloadSchema } from "@/lib/validations/debit-note.schema";
 import { StockDeAllocationRecord } from "@/app/components/shared/modals/StockDeAllocationModal";
+import { StockDeAllocationValidationService } from "./stock-deallocation-validation.service";
 
 export class DebitNoteService {
   static async list(companyId: string): Promise<DebitNote[]> {
@@ -409,6 +410,7 @@ export class DebitNoteService {
   }
 
   static async create(
+    client: PoolClient,
     companyId: string,
     rawPayload: unknown,
   ): Promise<DebitNote> {
@@ -418,34 +420,32 @@ export class DebitNoteService {
 
     this.validatePayload(payload);
 
-    const client = await pool.connect();
+    // const client = await pool.connect();
 
-    try {
-      await client.query("BEGIN");
-      const note = payload.debitNote;
+    // try {
+    //   await client.query("BEGIN");
+    const note = payload.debitNote;
 
-      const seqResult = await client.query(
-        `SELECT get_next_sequence($1, $2) AS code`,
-        [companyId, "purchase_return"],
-      );
-      const debitNoteNo = seqResult.rows[0].code;
+    const seqResult = await client.query(
+      `SELECT get_next_sequence($1, $2) AS code`,
+      [companyId, "purchase_return"],
+    );
+    const debitNoteNo = seqResult.rows[0].code;
 
-      const supplierResult = await client.query(
-        `SELECT id FROM parties WHERE id = $1 AND company_id = $2`,
-        [note.supplier_id, companyId],
-      );
-      if (!supplierResult.rows.length) throw new Error("Supplier not found");
+    const supplierResult = await client.query(
+      `SELECT id FROM parties WHERE id = $1 AND company_id = $2`,
+      [note.supplier_id, companyId],
+    );
+    if (!supplierResult.rows.length) throw new Error("Supplier not found");
 
-      const supplierPostingGroupId =
-        note.supplier_posting_group_id ||
-        note.purchase_posting_group_id ||
-        null;
+    const supplierPostingGroupId =
+      note.supplier_posting_group_id || note.purchase_posting_group_id || null;
 
-      const vatBusinessPostingGroupId =
-        note.vat_business_posting_group_id || null;
+    const vatBusinessPostingGroupId =
+      note.vat_business_posting_group_id || null;
 
-      const noteResult = await client.query(
-        `
+    const noteResult = await client.query(
+      `
         INSERT INTO debit_notes (
           company_id, debit_note_no, supplier_id, supplier_no, supplier_name, pay_to_supplier_id, pay_to_supplier_no, 
           pay_to_supplier_name, warehouse_id, currency_id, purchaser, consignment_no, supp_order_no, link_to_so_no, 
@@ -455,184 +455,187 @@ export class DebitNoteService {
           shipment_method, shipping_agent, shipment_ref_no, warehouse_booking_ref_no, supplier_booking_ref_no,
           reason, linked_po, exchange_rate, document_date, reference,
           freight_charges, shipment_date, delivery_date, delivery_time, notes, internal_notes,
-          subtotal, tax_amount, total_amount, status, supplier_posting_group_id, vat_business_posting_group_id, created_at
+          subtotal, tax_amount, total_amount, status, supplier_posting_group_id, vat_business_posting_group_id, apply_to_pi, apply_to_pi_id, created_at
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
           $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36,
-          $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, now()
+          $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, now()
         )
         RETURNING *
         `,
-        [
-          companyId,
-          debitNoteNo,
+      [
+        companyId,
+        debitNoteNo,
 
-          note.supplier_id,
-          note.supplier_no || null,
-          note.supplier_name || null,
+        note.supplier_id,
+        note.supplier_no || null,
+        note.supplier_name || null,
 
-          note.pay_to_supplier_id || null,
-          note.pay_to_supplier_no || null,
-          note.pay_to_supplier_name || null,
+        note.pay_to_supplier_id || null,
+        note.pay_to_supplier_no || null,
+        note.pay_to_supplier_name || null,
 
-          note.warehouse_id || null,
-          note.currency_id || null,
+        note.warehouse_id || null,
+        note.currency_id || null,
 
-          note.purchaser || null,
-          note.consignment_no || null,
-          note.supp_order_no || null,
-          note.link_to_so_no || null,
+        note.purchaser || null,
+        note.consignment_no || null,
+        note.supp_order_no || null,
+        note.link_to_so_no || null,
 
-          note.anonymous_supplier || false,
+        note.anonymous_supplier || false,
 
-          note.order_date || null,
-          note.req_receipt_date || null,
-          note.receipt_date || null,
-          note.expected_date || null,
-          note.invoice_date || null,
-          note.due_date || null,
+        note.order_date || null,
+        note.req_receipt_date || null,
+        note.receipt_date || null,
+        note.expected_date || null,
+        note.invoice_date || null,
+        note.due_date || null,
 
-          note.payable_bank || null,
-          note.payable_bank_id || null,
+        note.payable_bank || null,
+        note.payable_bank_id || null,
 
-          note.payment_terms || null,
-          note.payment_terms_id || null,
+        note.payment_terms || null,
+        note.payment_terms_id || null,
 
-          note.payment_method || null,
-          note.payment_method_id || null,
+        note.payment_method || null,
+        note.payment_method_id || null,
 
-          note.previous_code || null,
-          note.contact || null,
-          note.book_in_phone || null,
-          note.book_in_contact || null,
-          note.book_in_email || null,
+        note.previous_code || null,
+        note.contact || null,
+        note.book_in_phone || null,
+        note.book_in_contact || null,
+        note.book_in_email || null,
 
-          note.shipment_method_id || null,
-          note.shipment_method || null,
+        note.shipment_method_id || null,
+        note.shipment_method || null,
 
-          note.shipping_agent || null,
-          note.shipment_ref_no || null,
-          note.warehouse_booking_ref_no || null,
-          note.supplier_booking_ref_no || null,
+        note.shipping_agent || null,
+        note.shipment_ref_no || null,
+        note.warehouse_booking_ref_no || null,
+        note.supplier_booking_ref_no || null,
 
-          // note.shipment_po_not_req || false,
-          note.reason || null,
-          note.linked_po || null,
+        // note.shipment_po_not_req || false,
+        note.reason || null,
+        note.linked_po || null,
 
-          note.exchange_rate || 1,
+        note.exchange_rate || 1,
 
-          note.document_date || null,
-          note.reference || null,
+        note.document_date || null,
+        note.reference || null,
 
-          note.freight_charges || 0,
+        note.freight_charges || 0,
 
-          note.shipment_date || null,
-          note.delivery_date || null,
-          note.delivery_time || null,
+        note.shipment_date || null,
+        note.delivery_date || null,
+        note.delivery_time || null,
 
-          note.notes || null,
-          note.internal_notes || null,
+        note.notes || null,
+        note.internal_notes || null,
 
-          note.subtotal || 0,
-          note.tax_amount || 0,
-          note.total_amount || 0,
+        note.subtotal || 0,
+        note.tax_amount || 0,
+        note.total_amount || 0,
 
-          note.status || "draft",
+        note.status || "draft",
 
-          supplierPostingGroupId,
-          vatBusinessPostingGroupId,
-        ],
+        supplierPostingGroupId,
+        vatBusinessPostingGroupId,
+
+        note.apply_to_pi || null,
+        note.apply_to_pi_id || null,
+      ],
+    );
+
+    const createdNote = noteResult.rows[0];
+
+    let lineNo = 10000;
+
+    for (const line of payload.lines) {
+      const createdLine = await this.insertLine(
+        client,
+        companyId,
+        createdNote.id,
+        line,
+        lineNo,
       );
 
-      const createdNote = noteResult.rows[0];
+      // if (
+      //   line.line_type === "ITEM" &&
+      //   line.item_id &&
+      //   line.allocations?.length
+      // ) {
 
-      let lineNo = 10000;
+      const itemId = line.item_id;
+      const warehouseId = line.warehouse_id;
 
-      for (const line of payload.lines) {
-        const createdLine = await this.insertLine(
-          client,
-          companyId,
-          createdNote.id,
-          line,
-          lineNo,
-        );
-
-        // if (
-        //   line.line_type === "ITEM" &&
-        //   line.item_id &&
-        //   line.allocations?.length
-        // ) {
-
-        const itemId = line.item_id;
-        const warehouseId = line.warehouse_id;
-
-        if (line.line_type === "ITEM") {
-          if (!itemId) {
-            throw new Error("Item is required for ITEM lines");
-          }
-
-          if (!warehouseId) {
-            throw new Error("Warehouse is required for ITEM lines");
-          }
-
-          if (Number(line.quantity || 0) <= 0) {
-            throw new Error("Item quantity must be greater than zero");
-          }
-
-          if (line.allocations?.length) {
-            if (!createdLine.id) {
-              throw new Error("Debit note line ID is missing");
-            }
-            await this.saveLineAllocations(
-              client,
-              companyId,
-              createdNote.id,
-              createdLine.id,
-              itemId,
-              warehouseId,
-              line.allocations,
-            );
-          }
+      if (line.line_type === "ITEM") {
+        if (!itemId) {
+          throw new Error("Item is required for ITEM lines");
         }
 
-        lineNo += 10000;
+        if (!warehouseId) {
+          throw new Error("Warehouse is required for ITEM lines");
+        }
+
+        if (Number(line.quantity || 0) <= 0) {
+          throw new Error("Item quantity must be greater than zero");
+        }
+
+        if (line.allocations?.length) {
+          if (!createdLine.id) {
+            throw new Error("Debit note line ID is missing");
+          }
+          await this.saveLineAllocations(
+            client,
+            companyId,
+            createdNote.id,
+            createdLine.id,
+            itemId,
+            warehouseId,
+            line.allocations,
+          );
+        }
       }
 
-      if (payload.primary_address) {
-        await this.insertAddress(
-          client,
-          createdNote.id,
-          payload.primary_address,
-          companyId,
-        );
-      }
-
-      if (payload.billing_address) {
-        await this.insertAddress(
-          client,
-          createdNote.id,
-          payload.billing_address,
-          companyId,
-        );
-      }
-      if (payload.shipping_address) {
-        await this.insertAddress(
-          client,
-          createdNote.id,
-          payload.shipping_address,
-          companyId,
-        );
-      }
-
-      await client.query("COMMIT");
-      return createdNote;
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
+      lineNo += 10000;
     }
+
+    if (payload.primary_address) {
+      await this.insertAddress(
+        client,
+        createdNote.id,
+        payload.primary_address,
+        companyId,
+      );
+    }
+
+    if (payload.billing_address) {
+      await this.insertAddress(
+        client,
+        createdNote.id,
+        payload.billing_address,
+        companyId,
+      );
+    }
+    if (payload.shipping_address) {
+      await this.insertAddress(
+        client,
+        createdNote.id,
+        payload.shipping_address,
+        companyId,
+      );
+    }
+
+    // await client.query("COMMIT");
+    return createdNote;
+    // } catch (err) {
+    //   await client.query("ROLLBACK");
+    //   throw err;
+    // } finally {
+    //   // client.release();
+    // }
   }
 
   static async update(
@@ -684,8 +687,9 @@ export class DebitNoteService {
         shipment_date = $43, delivery_date = $44, delivery_time = $45, notes = $46,
         internal_notes = $47, subtotal = $48, tax_amount = $49, total_amount = $50, status = $51,
         supplier_posting_group_id=$52, vat_business_posting_group_id=$53,
+        apply_to_pi=$54, apply_to_pi_id=$55,
         updated_at = now()
-      WHERE id = $54 AND company_id = $55
+      WHERE id = $56 AND company_id = $57
       `,
       [
         note.supplier_id,
@@ -764,6 +768,9 @@ export class DebitNoteService {
         supplierPostingGroupId,
         vatBusinessPostingGroupId,
 
+        note.apply_to_pi || null,
+        note.apply_to_pi_id || null,
+
         id,
         companyId,
       ],
@@ -807,6 +814,20 @@ export class DebitNoteService {
             AND outbound_entry_id IS NULL
           `,
           [existingId, companyId],
+        );
+      } else {
+        // If no incoming lines have IDs (e.g. all invoice lines were replaced entirely)
+        await client.query(
+          `DELETE FROM debit_note_line_allocations 
+            WHERE debit_note_line_id IN (
+              SELECT id FROM debit_note_lines WHERE debit_note_id = $1
+            )`,
+          [id],
+        );
+
+        await client.query(
+          `DELETE FROM debit_note_lines WHERE debit_note_id = $1`,
+          [id],
         );
       }
     }
@@ -874,30 +895,27 @@ export class DebitNoteService {
         }
 
         savedLine = updateLineRes.rows[0];
-
-        // updatedLines.push(updateLineRes.rows[0]);
       } else {
         savedLine = await this.insertLine(client, companyId, id, line, lineNo);
       }
-      // } else {
-      //   const insertedLine = await this.insertLine(
-      //     client,
-      //     companyId,
-      //     id,
-      //     line,
-      //     lineNo,
-      //   );
-      //   updatedLines.push(insertedLine);
-      // }
 
-      if (
-        savedLine.line_type === "ITEM" &&
-        savedLine.item_id &&
-        savedLine.warehouse_id
-      ) {
+      // Handle allocations & validation safely within service boundary
+      if (savedLine.line_type === "ITEM") {
+        if (!savedLine.item_id)
+          throw new Error(`Line ${lineNo / 10000}: Item is required.`);
+        if (!savedLine.warehouse_id)
+          throw new Error(`Line ${lineNo / 10000}: Warehouse is required.`);
+
+        await StockDeAllocationValidationService.validate(client, companyId, {
+          debit_note_line_id: savedLine.id,
+          required_quantity: Number(savedLine.quantity || 0),
+          allocations: line.allocations ?? [],
+        });
+
         if (!savedLine.id) {
           throw new Error("Debit note line ID is missing");
         }
+
         await this.saveLineAllocations(
           client,
           companyId,

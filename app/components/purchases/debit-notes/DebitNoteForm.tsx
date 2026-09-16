@@ -15,6 +15,7 @@ import {
   DebitNoteLine,
   DebitNoteLineUI,
   DebitNoteMasterData,
+  StockDeAllocationRecord,
 } from "@/types/debit-note";
 
 type FetchLinesAPIResponse = {
@@ -34,8 +35,6 @@ import {
   PurchaseInvoiceLookupModal,
   PurchaseInvoiceLookupItem,
 } from "./PurchaseInvoiceLookupModal";
-
-import { StockDeAllocationRecord } from "../../shared/modals/StockDeAllocationModal";
 
 import SupplierShippingLocationsModal from "../purchase-orders/SupplierShippingLocationsModal";
 import { StockReceiveConfirmModal } from "../../shared/modals/StockReceiveConfirmModal";
@@ -188,19 +187,6 @@ export const DebitNoteForm: React.FC<Props> = ({
   const isCompleted = note.status === "completed" || note.status === "POSTED";
   const isFormDisabled = !isEditMode || isCompleted;
 
-  // Check if all line items with quantity > 0 have been received
-  const isFullyDispatched = useMemo(() => {
-    if (lines.length === 0) return false;
-    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
-    if (itemLines.length === 0) return false;
-
-    return itemLines.every((l) => {
-      const qty = Number(l.quantity || 0);
-      const rcvd = Number(l.returned_quantity || 0);
-      return qty > 0 && rcvd >= qty;
-    });
-  }, [lines]);
-
   useEffect(() => {
     if (!id) return;
     show("Fetching Record...");
@@ -214,7 +200,40 @@ export const DebitNoteForm: React.FC<Props> = ({
           console.log("API payload parsed successfully:", actualData);
 
           setNote(actualData.debitNote || actualData.note || {});
-          setLines(actualData.lines || []);
+          // setLines(actualData.lines || []);
+
+          const hydratedLines: DebitNoteLineUI[] = (actualData.lines || []).map(
+            (line: DebitNoteLineUI) => {
+              const allocations = line.allocations ?? [];
+
+              const returnedQuantity = allocations.reduce(
+                (sum, allocation) =>
+                  sum +
+                  Number(
+                    allocation.return_quantity ??
+                      allocation.allocated_quantity ??
+                      0,
+                  ),
+                0,
+              );
+
+              const quantity = Number(line.quantity || 0);
+
+              return {
+                ...line,
+
+                _stableKey:
+                  line._stableKey || line.id || `line-${crypto.randomUUID()}`,
+
+                allocations,
+                initialAllocations: allocations,
+
+                is_allocated: quantity > 0 && returnedQuantity >= quantity,
+              };
+            },
+          );
+
+          setLines(hydratedLines);
 
           setPrimaryAddress(
             actualData.primary_address || { address_type: "primary" },
@@ -274,45 +293,39 @@ export const DebitNoteForm: React.FC<Props> = ({
 
       const data: FetchLinesAPIResponse = await response.json();
 
-      // setLines(data.lines ?? []);
-      // const formattedLines: DebitNoteLineUI[] = (data.lines ?? []).map(
-      //   (line) => {
-      //     const resolvedAllocations: StockDeAllocationRecord[] =
-      //       line.allocations ??
-      //       line.stock_allocations ??
-      //       line.po_line_allocations ??
-      //       [];
-
-      //     const totalAllocated = resolvedAllocations.reduce(
-      //       (sum, allocation) =>
-      //         sum + Number(allocation.allocated_quantity || 0),
-      //       0,
-      //     );
-
-      //     const quantity = Number(line.quantity || 0);
-
-      //     return {
-      //       ...line,
-      //       _stableKey:
-      //         line._stableKey || line.id || `line-${crypto.randomUUID()}`,
-
-      //       allocations: resolvedAllocations,
-      //       initialAllocations: resolvedAllocations,
-
-      //       is_allocated: quantity > 0 && totalAllocated >= quantity,
-      //     };
-
-      //     // return {
-      //     //   ...line,
-      //     //   // Maintain UI state keys for table iteration
-      //     //   _stableKey: line._stableKey || line.id || `line-${line.line_no}`,
-      //     //   allocations: resolvedAllocations,
-      //     //   initialAllocations: resolvedAllocations,
-      //     //   is_allocated: resolvedAllocations.length > 0,
-      //     // };
-      //   },
-      // );
       const formattedLines: DebitNoteLineUI[] = (data.lines ?? []).map(
+        (line) => {
+          const allocations = line.allocations ?? [];
+
+          const returnedQuantity = allocations.reduce(
+            (sum, allocation) =>
+              sum +
+              Number(
+                allocation.return_quantity ??
+                  allocation.allocated_quantity ??
+                  0,
+              ),
+            0,
+          );
+
+          const quantity = Number(line.quantity || 0);
+
+          return {
+            ...line,
+
+            _stableKey:
+              line._stableKey || line.id || `line-${crypto.randomUUID()}`,
+
+            allocations,
+
+            initialAllocations: allocations,
+
+            is_allocated: quantity > 0 && returnedQuantity >= quantity,
+          };
+        },
+      );
+
+      /* const formattedLines: DebitNoteLineUI[] = (data.lines ?? []).map(
         (line) => {
           const resolvedAllocations: StockDeAllocationRecord[] =
             line.allocations ??
@@ -320,9 +333,14 @@ export const DebitNoteForm: React.FC<Props> = ({
             line.po_line_allocations ??
             [];
 
-          const totalAllocated = resolvedAllocations.reduce(
+          const totalReturned = resolvedAllocations.reduce(
             (sum, allocation) =>
-              sum + Number(allocation.allocated_quantity || 0),
+              sum +
+              Number(
+                allocation.return_quantity ??
+                  allocation.allocated_quantity ??
+                  0,
+              ),
             0,
           );
 
@@ -337,16 +355,53 @@ export const DebitNoteForm: React.FC<Props> = ({
             allocations: resolvedAllocations,
             initialAllocations: resolvedAllocations,
 
-            is_allocated: quantity > 0 && totalAllocated >= quantity,
+            is_allocated: quantity > 0 && totalReturned >= quantity,
           };
         },
-      );
+      ); */
 
       setLines(formattedLines);
     } catch (err) {
       console.error("Error refreshing Debit Note lines:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Failed to refresh Debit Note lines.",
+      );
     }
   };
+
+  const getReturnAllocationQuantity = (
+    allocation: StockDeAllocationRecord,
+  ): number => {
+    return Number(
+      allocation.return_quantity ?? allocation.allocated_quantity ?? 0,
+    );
+  };
+
+  const getLineAllocatedReturnQuantity = (line: DebitNoteLineUI): number => {
+    return (line.allocations ?? []).reduce(
+      (sum, allocation) => sum + getReturnAllocationQuantity(allocation),
+      0,
+    );
+  };
+
+    // Check if all line items with quantity > 0 have been received
+  const isFullyDispatched = useMemo(() => {
+    if (lines.length === 0) return false;
+
+    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
+
+    if (itemLines.length === 0) return false;
+
+    return itemLines.every((line) => {
+      const quantity = Number(line.quantity || 0);
+
+      const allocated = getLineAllocatedReturnQuantity(line);
+
+      return quantity > 0 && allocated >= quantity;
+    });
+  }, [lines]);
 
   const selectedCurrency = useMemo(() => {
     return (
@@ -547,6 +602,7 @@ export const DebitNoteForm: React.FC<Props> = ({
           const mappedLines: DebitNoteLineUI[] = fetchedRawLines.map(
             (l: DebitNoteLineUI, idx: number) => ({
               ...l,
+              id: undefined,
 
               _stableKey:
                 l._stableKey ||
@@ -554,8 +610,8 @@ export const DebitNoteForm: React.FC<Props> = ({
                 `invoice-line-${invoice.id}-${idx}-${crypto.randomUUID()}`,
 
               line_no: idx + 1,
-              purchase_invoice_line_id: l.purchase_invoice_line_id || l.id,
-              // purchase_invoice_line_id: l.purchase_invoice_line_id, // Critical for de-allocation
+              purchase_invoice_line_id: l.id || l.purchase_invoice_line_id,
+
               line_type: l.line_type || "ITEM",
 
               item_id: l.item_id,
@@ -582,7 +638,7 @@ export const DebitNoteForm: React.FC<Props> = ({
               discount_amount: Number(l.discount_amount || 0),
 
               original_amount: Number(
-                l.original_amount ||
+                l.original_amount ??
                   Number(l.quantity || 0) * Number(l.unit_cost || 0),
               ),
 
@@ -591,19 +647,21 @@ export const DebitNoteForm: React.FC<Props> = ({
               net_amount: Number(l.net_amount || 0),
               gross_amount: Number(l.gross_amount || 0),
 
-              allocations:
-                l.allocations ??
-                l.stock_allocations ??
-                l.po_line_allocations ??
-                [],
+              // allocations:
+              //   l.allocations ??
+              //   l.stock_allocations ??
+              //   l.po_line_allocations ??
+              //   [],
 
-              initialAllocations:
-                l.initialAllocations ??
-                l.allocations ??
-                l.stock_allocations ??
-                l.po_line_allocations ??
-                [],
+              // initialAllocations:
+              //   l.initialAllocations ??
+              //   l.allocations ??
+              //   l.stock_allocations ??
+              //   l.po_line_allocations ??
+              //   [],
 
+              allocations: [],
+              initialAllocations: [],
               is_allocated: false,
               reserved_quantity: Number(l.reserved_quantity || 0),
             }),
@@ -645,6 +703,97 @@ export const DebitNoteForm: React.FC<Props> = ({
     const errors: string[] = [];
 
     if (lines.length === 0) {
+      errors.push("Debit Note requires at least one line.");
+
+      return errors;
+    }
+
+    lines.forEach((line, index) => {
+      const lineNo = index + 1;
+      const lineType = line.line_type || "ITEM";
+
+      const quantity = Number(line.quantity);
+
+      const unitCost = Number(line.unit_cost);
+
+      if (!Number.isFinite(quantity)) {
+        errors.push(`Line ${lineNo}: Quantity must be numeric.`);
+      }
+
+      if (!Number.isFinite(unitCost)) {
+        errors.push(`Line ${lineNo}: Unit cost must be numeric.`);
+      }
+
+      if (lineType === "ITEM") {
+        if (!line.item_id) {
+          errors.push(`Line ${lineNo}: Please select an item.`);
+        }
+
+        if (!line.warehouse_id) {
+          errors.push(`Line ${lineNo}: Warehouse is required.`);
+        }
+
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
+        }
+
+        if (!Number.isFinite(unitCost) || unitCost < 0) {
+          errors.push(`Line ${lineNo}: Unit cost cannot be negative.`);
+        }
+
+        const allocations = line.allocations ?? [];
+
+        let totalReturn = 0;
+
+        allocations.forEach((allocation, allocationIndex) => {
+          const returnQty = Number(
+            allocation.return_quantity ?? allocation.allocated_quantity ?? 0,
+          );
+
+          if (!allocation.id && !allocation.source_allocation_id) {
+            errors.push(
+              `Line ${lineNo}, allocation ${
+                allocationIndex + 1
+              }: Source stock allocation is required.`,
+            );
+          }
+
+          if (!Number.isFinite(returnQty) || returnQty <= 0) {
+            errors.push(
+              `Line ${lineNo}, allocation ${
+                allocationIndex + 1
+              }: Return quantity must be greater than zero.`,
+            );
+          }
+
+          totalReturn += returnQty;
+        });
+
+        if (Number.isFinite(quantity) && totalReturn > quantity) {
+          errors.push(
+            `Line ${lineNo}: Allocated return quantity ${totalReturn} exceeds line quantity ${quantity}.`,
+          );
+        }
+      } else if (lineType === "GL_ACCOUNT") {
+        if (!line.gl_account_id) {
+          errors.push(`Line ${lineNo}: Please select a G/L account.`);
+        }
+
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
+        }
+      } else {
+        errors.push(`Line ${lineNo}: Invalid line type.`);
+      }
+    });
+
+    return errors;
+  };
+
+  /* const validateLines = (): string[] => {
+    const errors: string[] = [];
+
+    if (lines.length === 0) {
       errors.push("Debit Note require at least one line.");
       return errors;
     }
@@ -680,7 +829,7 @@ export const DebitNoteForm: React.FC<Props> = ({
     });
 
     return errors;
-  };
+  }; */
 
   const validateDates = (): string[] => {
     const errors: string[] = [];
@@ -733,8 +882,13 @@ export const DebitNoteForm: React.FC<Props> = ({
       );
     }
 
-    if (!note.linked_po && !note.linked_po)
+    // if (!note.linked_po && !note.linked_po)
+    //   errors.push("Apply to Purchase Invoice (PI) selection is required.");
+
+    if (!note.apply_to_pi_id) {
       errors.push("Apply to Purchase Invoice (PI) selection is required.");
+    }
+
     if (!currencyConfig.currency_id)
       errors.push("Transactional currency token designation required.");
     // if (lines.length === 0)
@@ -761,10 +915,27 @@ export const DebitNoteForm: React.FC<Props> = ({
       setSaving(true);
       setValidationErrors([]);
 
+      const normalizedLines = lines.map((line) => ({
+        ...line,
+
+        quantity: Number(line.quantity || 0),
+        unit_cost: Number(line.unit_cost || 0),
+
+        allocations: (line.allocations ?? []).map((allocation) => ({
+          ...allocation,
+          id: allocation.source_allocation_id || allocation.id,
+
+          return_quantity: Number(
+            allocation.return_quantity ?? allocation.allocated_quantity ?? 0,
+          ),
+        })),
+      }));
+
       const payload = {
         debitNote: {
           ...note,
           ...currencyConfig,
+
           subtotal: financials.amount,
           tax_amount: financials.vat,
           total_amount: financials.amountInclVat,
@@ -772,7 +943,8 @@ export const DebitNoteForm: React.FC<Props> = ({
         primary_address: primaryAddress,
         billing_address: billingAddress,
         shipping_address: shippingAddress,
-        lines,
+
+        lines: normalizedLines,
       };
 
       const res = await fetch(
@@ -903,18 +1075,54 @@ export const DebitNoteForm: React.FC<Props> = ({
           return;
         }
 
-        const allocations = line.allocations || line.initialAllocations || [];
+        const allocations = line.allocations ?? [];
 
-        const allocatedQuantity = allocations.reduce(
-          (sum, allocation) => sum + Number(allocation.allocated_quantity || 0),
-          0,
-        );
+        const returnedQuantity = getLineAllocatedReturnQuantity(line);
 
-        if (allocatedQuantity !== quantity) {
+        /*
+         * Every ITEM line that is going to be dispatched
+         * must have the complete return quantity allocated.
+         */
+        if (returnedQuantity < quantity) {
           errors.push(
-            `Line ${lineNo}: Stock allocation is incomplete. Allocated ${allocatedQuantity} of ${quantity}.`,
+            `Line ${lineNo}: Stock allocation is incomplete. ` +
+              `Allocated ${returnedQuantity} of ${quantity}.`,
           );
         }
+
+        /*
+         * Do not allow over-allocation.
+         */
+        if (returnedQuantity > quantity) {
+          errors.push(
+            `Line ${lineNo}: Stock allocation ${returnedQuantity} ` +
+              `exceeds return quantity ${quantity}.`,
+          );
+        }
+
+        /*
+         * Every allocation must identify its source
+         * inventory layer.
+         */
+        allocations.forEach((allocation, allocationIndex) => {
+          const qty = getReturnAllocationQuantity(allocation);
+
+          if (qty <= 0) {
+            errors.push(
+              `Line ${lineNo}, allocation ${
+                allocationIndex + 1
+              }: Return quantity must be greater than zero.`,
+            );
+          }
+
+          if (!allocation.id && !allocation.source_allocation_id) {
+            errors.push(
+              `Line ${lineNo}, allocation ${
+                allocationIndex + 1
+              }: Source inventory allocation is missing.`,
+            );
+          }
+        });
       }
 
       if (lineType === "GL_ACCOUNT" && !line.gl_account_id) {
@@ -924,14 +1132,10 @@ export const DebitNoteForm: React.FC<Props> = ({
 
     if (errors.length > 0) {
       setValidationErrors(errors);
-
-      // toast.error("Please complete the Debit Note before continuing.");
-
       return false;
     }
 
     setValidationErrors([]);
-
     return true;
   };
 
@@ -1579,3 +1783,42 @@ export const DebitNoteForm: React.FC<Props> = ({
     </div>
   );
 };
+
+// setLines(data.lines ?? []);
+// const formattedLines: DebitNoteLineUI[] = (data.lines ?? []).map(
+//   (line) => {
+//     const resolvedAllocations: StockDeAllocationRecord[] =
+//       line.allocations ??
+//       line.stock_allocations ??
+//       line.po_line_allocations ??
+//       [];
+
+//     const totalAllocated = resolvedAllocations.reduce(
+//       (sum, allocation) =>
+//         sum + Number(allocation.allocated_quantity || 0),
+//       0,
+//     );
+
+//     const quantity = Number(line.quantity || 0);
+
+//     return {
+//       ...line,
+//       _stableKey:
+//         line._stableKey || line.id || `line-${crypto.randomUUID()}`,
+
+//       allocations: resolvedAllocations,
+//       initialAllocations: resolvedAllocations,
+
+//       is_allocated: quantity > 0 && totalAllocated >= quantity,
+//     };
+
+//     // return {
+//     //   ...line,
+//     //   // Maintain UI state keys for table iteration
+//     //   _stableKey: line._stableKey || line.id || `line-${line.line_no}`,
+//     //   allocations: resolvedAllocations,
+//     //   initialAllocations: resolvedAllocations,
+//     //   is_allocated: resolvedAllocations.length > 0,
+//     // };
+//   },
+// );

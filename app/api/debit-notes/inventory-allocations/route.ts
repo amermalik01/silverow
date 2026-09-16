@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
     const itemId = searchParams.get("item_id");
     const warehouseId = searchParams.get("warehouse_id");
     const debitNoteLineId = searchParams.get("debit_note_line_id");
+    const purchaseInvoiceLineId = searchParams.get("purchase_invoice_line_id");
+    const purchaseOrderLineId = searchParams.get("purchase_order_line_id");
 
     if (!itemId && !debitNoteLineId) {
       return NextResponse.json(

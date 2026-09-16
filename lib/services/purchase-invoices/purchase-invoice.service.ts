@@ -303,10 +303,10 @@ export class PurchaseInvoiceService {
         pil.description,
         pil.quantity,
         pil.unit_cost,
-        pil.tax_percent,
-        pil.tax_amount,
-        pil.net_amount,
-        pil.gross_amount,
+        pol.tax_percent,
+        pol.tax_amount,
+        pol.net_amount,
+        pol.gross_amount,
         COALESCE(pil.warehouse_id, pol.warehouse_id) AS warehouse_id,
 
         -- PO Line details & GL Account resolution
@@ -322,6 +322,7 @@ export class PurchaseInvoiceService {
         pol.vat_business_posting_group_id,
         pol.vat_product_posting_group_id,
         pol.vat_percent,
+        pol.vat_amount,
 
         -- Metadata fallbacks
         COALESCE(pol.item_code, i.item_code) AS item_code,

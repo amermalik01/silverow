@@ -49,35 +49,75 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+
+    if (!body || !body.debitNote || !Array.isArray(body.lines)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid Debit Note payload.",
+        },
+        { status: 400 },
+      );
+    }
+
     const { lines } = body;
 
     await client.query("BEGIN");
 
     // 1. Create base document
-    const createdNote = await DebitNoteService.create(companyId, body);
+    const createdNote = await DebitNoteService.create(client, companyId, body);
 
-    // Runtime check to satisfy strict TypeScript constraints
-    if (!createdNote || !createdNote.id) {
-      throw new Error(
-        "Failed to generate a valid debit note identification sequence.",
-      );
+    if (!createdNote?.id) {
+      throw new Error("Failed to generate Debit Note ID.");
     }
 
     const debitNoteID: string = createdNote.id;
 
     // 2. Fetch the newly created lines to extract their primary key IDs
     const savedLinesResult = await client.query(
-      `SELECT id, item_id, warehouse_id, line_no FROM debit_note_lines 
-       WHERE debit_note_id = $1 AND is_deleted = false ORDER BY line_no`,
-      [debitNoteID],
+      `
+        SELECT
+          id,
+          item_id,
+          warehouse_id,
+          line_no
+        FROM debit_note_lines
+        WHERE debit_note_id = $1
+          AND company_id = $2
+          AND is_deleted = false
+        ORDER BY line_no, id
+        `,
+      [createdNote.id, companyId],
     );
+
+    const savedLines = savedLinesResult.rows;
 
     // 3. Match payload lines to real database IDs and save allocations
     for (let i = 0; i < (lines || []).length; i++) {
       const payloadLine = lines[i];
-      const dbLine = savedLinesResult.rows[i];
+      const dbLine = savedLines[i];
 
-      if (dbLine && payloadLine.allocations?.length > 0) {
+      if (!dbLine) {
+        throw new Error(
+          `Unable to resolve saved Debit Note line ${i + 1}.`,
+        );
+      }
+
+      // if (dbLine && payloadLine.allocations?.length > 0) {
+      if (
+        payloadLine.line_type === "ITEM"
+      ) {
+        if (!dbLine.item_id) {
+          throw new Error(
+            `Line ${i + 1}: Item is required.`,
+          );
+        }
+
+        if (!dbLine.warehouse_id) {
+          throw new Error(
+            `Line ${i + 1}: Warehouse is required.`,
+          );
+        }
         await DebitNoteService.saveLineAllocations(
           client,
           companyId,
@@ -85,7 +125,7 @@ export async function POST(req: NextRequest) {
           dbLine.id,
           dbLine.item_id,
           dbLine.warehouse_id,
-          payloadLine.allocations,
+          payloadLine.allocations ?? [],
         );
       }
     }
