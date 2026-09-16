@@ -284,142 +284,161 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Sales",
             children: [
               {
-                id: "credit-ratings",
-                name: "Credit Ratings",
-                url: `/${slug}/setup/sales/credit_ratings`,
+                id: "setup",
+                name: "Setup",
+                url: `/${slug}/setup/sales`,
               },
-              {
-                id: "segments",
-                name: "Segments",
-                url: `/${slug}/setup/sales/segments`,
-              },
-              {
-                id: "territories",
-                name: "Territories",
-                url: `/${slug}/setup/sales/territories`,
-              },
-              {
-                id: "buying_groups",
-                name: "Buying Groups",
-                url: `/${slug}/setup/sales/buying_groups`,
-              },
-              {
-                id: "classification",
-                name: "Classification",
-                url: `/${slug}/setup/sales/classification`,
-              },
-              {
-                id: "sources_crm",
-                name: "Source Of CRM",
-                url: `/${slug}/setup/sales/sources`,
-              },
-              {
-                id: "ownership_type",
-                name: "Ownership Type",
-                url: `/${slug}/setup/sales/ownership_type`,
-              },
-              {
-                id: "status",
-                name: "Status",
-                url: `/${slug}/setup/sales/status`,
-              },
-              {
-                id: "order_sources",
-                name: "Source Of Order",
-                url: `/${slug}/setup/sales/order_sources`,
-              },
-              {
-                id: "type",
-                name: "CRM Type",
-                url: `/${slug}/setup/sales/type`,
-              },
-              {
-                id: "order_stages",
-                name: "Sales Order Stages",
-                url: `/${slug}/setup/sales/order_stages`,
-              },
-              {
-                id: "credit_note_stages",
-                name: "Credit Note Stages",
-                url: `/${slug}/setup/sales/credit_note_stages`,
-              },
-              {
-                id: "price_offer_method",
-                name: "Price Offer Method",
-                url: `/${slug}/setup/sales/price_offer_method`,
-              },
-              {
-                id: "payment_terms",
-                name: "Payment Terms",
-                url: `/${slug}/setup/sales/payment_terms`,
-              },
-              {
-                id: "payment_method",
-                name: "Payment Method",
-                url: `/${slug}/setup/sales/payment_method`,
-              },
-              {
-                id: "shipment_method",
-                name: "Shipment Method",
-                url: `/${slug}/setup/sales/shipment_method`,
-              },
-            ],
+            ]
+            // children: [
+            //   {
+            //     id: "setup",
+            //     name: "Setup",
+            //     url: `/${slug}/setup/sales`,
+            //   },
+            //   {
+            //     id: "credit-ratings",
+            //     name: "Credit Ratings",
+            //     url: `/${slug}/setup/sales/credit_ratings`,
+            //   },
+            //   {
+            //     id: "segments",
+            //     name: "Segments",
+            //     url: `/${slug}/setup/sales/segments`,
+            //   },
+            //   {
+            //     id: "territories",
+            //     name: "Territories",
+            //     url: `/${slug}/setup/sales/territories`,
+            //   },
+            //   {
+            //     id: "buying_groups",
+            //     name: "Buying Groups",
+            //     url: `/${slug}/setup/sales/buying_groups`,
+            //   },
+            //   {
+            //     id: "classification",
+            //     name: "Classification",
+            //     url: `/${slug}/setup/sales/classification`,
+            //   },
+            //   {
+            //     id: "sources_crm",
+            //     name: "Source Of CRM",
+            //     url: `/${slug}/setup/sales/sources`,
+            //   },
+            //   {
+            //     id: "ownership_type",
+            //     name: "Ownership Type",
+            //     url: `/${slug}/setup/sales/ownership_type`,
+            //   },
+            //   {
+            //     id: "status",
+            //     name: "Status",
+            //     url: `/${slug}/setup/sales/status`,
+            //   },
+            //   {
+            //     id: "order_sources",
+            //     name: "Source Of Order",
+            //     url: `/${slug}/setup/sales/order_sources`,
+            //   },
+            //   {
+            //     id: "type",
+            //     name: "CRM Type",
+            //     url: `/${slug}/setup/sales/type`,
+            //   },
+            //   {
+            //     id: "order_stages",
+            //     name: "Sales Order Stages",
+            //     url: `/${slug}/setup/sales/order_stages`,
+            //   },
+            //   {
+            //     id: "credit_note_stages",
+            //     name: "Credit Note Stages",
+            //     url: `/${slug}/setup/sales/credit_note_stages`,
+            //   },
+            //   {
+            //     id: "price_offer_method",
+            //     name: "Price Offer Method",
+            //     url: `/${slug}/setup/sales/price_offer_method`,
+            //   },
+            //   {
+            //     id: "payment_terms",
+            //     name: "Payment Terms",
+            //     url: `/${slug}/setup/sales/payment_terms`,
+            //   },
+            //   {
+            //     id: "payment_method",
+            //     name: "Payment Method",
+            //     url: `/${slug}/setup/sales/payment_method`,
+            //   },
+            //   {
+            //     id: "shipment_method",
+            //     name: "Shipment Method",
+            //     url: `/${slug}/setup/sales/shipment_method`,
+            //   },
+            // ],
           },
           {
             id: "Purchases",
             name: "Purchases",
             children: [
               {
-                id: "segments",
-                name: "Segments",
-                url: `/${slug}/setup/purchases/segments`,
+                id: "setup",
+                name: "Setup",
+                url: `/${slug}/setup/purchases`,
               },
-              {
-                id: "territories",
-                name: "Territories",
-                url: `/${slug}/setup/purchases/territories`,
-              },
-              {
-                id: "classification",
-                name: "Classification",
-                url: `/${slug}/setup/purchases/classification`,
-              },
-              {
-                id: "selling_groups",
-                name: "Selling Groups",
-                url: `/${slug}/setup/purchases/selling_groups`,
-              },
-              {
-                id: "purchase_order_stages",
-                name: "Purchase Order Stages",
-                url: `/${slug}/setup/purchases/purchase_order_stages`,
-              },
-              {
-                id: "debit_note_stages",
-                name: "Debit Note Stages",
-                url: `/${slug}/setup/purchases/debit_note_stages`,
-              },
-              {
-                id: "price_offer_method",
-                name: "Price Offer Method",
-                url: `/${slug}/setup/purchases/price_offer_method`,
-              },
-              {
-                id: "payment_terms",
-                name: "Payment Terms",
-                url: `/${slug}/setup/purchases/payment_terms`,
-              },
-              {
-                id: "payment_method",
-                name: "Payment Method",
-                url: `/${slug}/setup/purchases/payment_method`,
-              },
-              {
-                id: "shipment_method",
-                name: "Shipment Method",
-                url: `/${slug}/setup/purchases/shipment_method`,
-              },
-            ],
+            ]
+            // children: [
+            //   {
+            //     id: "segments",
+            //     name: "Segments",
+            //     url: `/${slug}/setup/purchases/segments`,
+            //   },
+            //   {
+            //     id: "territories",
+            //     name: "Territories",
+            //     url: `/${slug}/setup/purchases/territories`,
+            //   },
+            //   {
+            //     id: "classification",
+            //     name: "Classification",
+            //     url: `/${slug}/setup/purchases/classification`,
+            //   },
+            //   {
+            //     id: "selling_groups",
+            //     name: "Selling Groups",
+            //     url: `/${slug}/setup/purchases/selling_groups`,
+            //   },
+            //   {
+            //     id: "purchase_order_stages",
+            //     name: "Purchase Order Stages",
+            //     url: `/${slug}/setup/purchases/purchase_order_stages`,
+            //   },
+            //   {
+            //     id: "debit_note_stages",
+            //     name: "Debit Note Stages",
+            //     url: `/${slug}/setup/purchases/debit_note_stages`,
+            //   },
+            //   {
+            //     id: "price_offer_method",
+            //     name: "Price Offer Method",
+            //     url: `/${slug}/setup/purchases/price_offer_method`,
+            //   },
+            //   {
+            //     id: "payment_terms",
+            //     name: "Payment Terms",
+            //     url: `/${slug}/setup/purchases/payment_terms`,
+            //   },
+            //   {
+            //     id: "payment_method",
+            //     name: "Payment Method",
+            //     url: `/${slug}/setup/purchases/payment_method`,
+            //   },
+            //   {
+            //     id: "shipment_method",
+            //     name: "Shipment Method",
+            //     url: `/${slug}/setup/purchases/shipment_method`,
+            //   },
+            // ],
           },
           {
             id: "Warehouse Setup",
