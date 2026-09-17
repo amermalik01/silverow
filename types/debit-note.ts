@@ -6,6 +6,7 @@ export interface DebitNote {
   id?: string;
   company_id?: string;
   debit_note_no?: string;
+  debit_note_invoice_no?: string;
   supplier_id: string;
   supplier_no?: string;
   supplier_name?: string;

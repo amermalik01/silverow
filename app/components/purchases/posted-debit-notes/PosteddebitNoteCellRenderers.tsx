@@ -39,7 +39,7 @@ export function getPostedDebitNoteCellRenderers(slug: string) {
         href={`/${slug}/purchases/posted-debit-notes/${row.id}`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
-        {row.debit_note_no || row.invoice_code || "-"}
+        {row.debit_note_invoice_no || row.debit_note_no ||  row.invoice_code || "-"}
       </Link>
     ),
 

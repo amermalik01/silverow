@@ -85,6 +85,13 @@ export class DebitNotePostingService {
         postingData.exchange_rate || note.exchange_rate || 1,
       );
 
+      // Auto-generate sequence for posted debit invoice_no
+      const seqResult = await client.query(
+        `SELECT get_next_sequence($1, $2) AS code`,
+        [companyId, "posted_purchase_return"],
+      );
+      const invoiceNo = seqResult.rows[0]?.code || `PINV-${Date.now()}`;
+
       const companyRes = await client.query(
         `SELECT inventory_system FROM companies WHERE id = $1`,
         [companyId],
@@ -147,7 +154,7 @@ export class DebitNotePostingService {
               quantity: qty,
               reference_type: "DEBIT_NOTE",
               reference_id: note.id,
-              description: `GRNI return clearing for ${note.debit_note_no}`,
+              description: `GRNI return clearing for ${invoiceNo}`,
             });
           } else {
             // CREDIT: Purchase Expense / Return Account
@@ -161,7 +168,7 @@ export class DebitNotePostingService {
               quantity: qty,
               reference_type: "DEBIT_NOTE",
               reference_id: note.id,
-              description: `Purchase return for ${note.debit_note_no}`,
+              description: `Purchase return for ${invoiceNo}`,
             });
           }
         } else if (line.line_type === "GL_ACCOUNT" || line.gl_account_id) {
@@ -214,7 +221,7 @@ export class DebitNotePostingService {
           party_id: note.supplier_id,
           reference_type: "DEBIT_NOTE",
           reference_id: note.id,
-          description: `Input VAT reversal for ${note.debit_note_no}`,
+          description: `Input VAT reversal for ${invoiceNo}`,
         });
       }
 
@@ -233,7 +240,7 @@ export class DebitNotePostingService {
         party_type: "supplier",
         reference_type: "DEBIT_NOTE",
         reference_id: note.id,
-        description: `Vendor AP liability reduction for ${note.debit_note_no}`,
+        description: `Vendor AP liability reduction for ${invoiceNo}`,
       });
 
       // 6. Validate double-entry balance
@@ -247,7 +254,7 @@ export class DebitNotePostingService {
         journal_type: "DEBIT_NOTE",
         reference: note.debit_note_no,
         source_id: note.id,
-        description: `Posted Debit Note ${note.debit_note_no}`,
+        description: `Posted Debit Note ${invoiceNo}`,
         currency_id: currencyId,
         exchange_rate: exchangeRate,
         created_by: userId || null,
@@ -267,7 +274,7 @@ export class DebitNotePostingService {
         documentNo: note.debit_note_no,
         postingDate,
         dueDate: postingDate,
-        description: `Debit Note ${note.debit_note_no}`,
+        description: `Debit Note ${invoiceNo}`,
         originalAmount: grossTotal, // Positive magnitude // Remove Negative amount to represent AP debit/credit-adjustment
         currencyId,
         exchangeRate,
@@ -278,13 +285,15 @@ export class DebitNotePostingService {
       // 9. Update Debit Note status
       await client.query(
         `UPDATE debit_notes 
-         SET is_posted = true, 
-             posted_at = NOW(), 
+         SET 
+             is_posted = true,
+             debit_note_invoice_no = $1,
+             posted_at = NOW(),
              status = 'posted',
-             notes = COALESCE($3, notes),
+             notes = COALESCE($4, notes),
              updated_at = NOW()
-         WHERE id = $1 AND company_id = $2`,
-        [debitNoteId, companyId, postingData.notes || null],
+         WHERE id = $2 AND company_id = $3`,
+        [invoiceNo || null, debitNoteId, companyId, postingData.notes || null],
       );
 
       if (!isExternalClient) {
@@ -294,6 +303,7 @@ export class DebitNotePostingService {
       return {
         id: note.id,
         debit_note_no: note.debit_note_no,
+        posted_debit_note_no: invoiceNo,
         journalId: journal.id,
       };
     } catch (err) {
