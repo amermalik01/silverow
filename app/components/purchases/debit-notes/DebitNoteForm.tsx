@@ -185,6 +185,7 @@ export const DebitNoteForm: React.FC<Props> = ({
   });
 
   const isCompleted = note.status === "completed" || note.status === "POSTED";
+
   const isFormDisabled = !isEditMode || isCompleted;
 
   useEffect(() => {
@@ -386,22 +387,33 @@ export const DebitNoteForm: React.FC<Props> = ({
     );
   };
 
-    // Check if all line items with quantity > 0 have been received
+  const getLineDispatchedQuantity = (line: DebitNoteLineUI): number => {
+    return Number(
+      line.dispatched_quantity ??
+        line.qty_dispatched ??
+        line.returned_quantity ??
+        0,
+    );
+  };
+
+  // Check if all line items with quantity > 0 have been received
   const isFullyDispatched = useMemo(() => {
+    if (note.is_dispatched) return true;
     if (lines.length === 0) return false;
 
     const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
-
     if (itemLines.length === 0) return false;
 
     return itemLines.every((line) => {
       const quantity = Number(line.quantity || 0);
+      const dispatched = getLineDispatchedQuantity(line);
 
-      const allocated = getLineAllocatedReturnQuantity(line);
+      return quantity > 0 && dispatched >= quantity;
 
-      return quantity > 0 && allocated >= quantity;
+      // const allocated = getLineAllocatedReturnQuantity(line);
+      // return quantity > 0 && allocated >= quantity;
     });
-  }, [lines]);
+  }, [lines, note.is_dispatched]);
 
   const selectedCurrency = useMemo(() => {
     return (
@@ -790,47 +802,6 @@ export const DebitNoteForm: React.FC<Props> = ({
     return errors;
   };
 
-  /* const validateLines = (): string[] => {
-    const errors: string[] = [];
-
-    if (lines.length === 0) {
-      errors.push("Debit Note require at least one line.");
-      return errors;
-    }
-
-    lines.forEach((line, index) => {
-      const lineNo = index + 1;
-      const lineType = line.line_type || "ITEM";
-      const quantity = Number(line.quantity || 0);
-
-      if (lineType === "ITEM") {
-        if (!line.item_id) {
-          errors.push(`Line ${lineNo}: Please select an item.`);
-        }
-
-        if (!line.warehouse_id) {
-          errors.push(`Line ${lineNo}: Warehouse is required.`);
-        }
-
-        if (quantity <= 0) {
-          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
-        }
-      } else if (lineType === "GL_ACCOUNT") {
-        if (!line.gl_account_id) {
-          errors.push(`Line ${lineNo}: Please select a G/L account.`);
-        }
-
-        if (quantity <= 0) {
-          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
-        }
-      } else {
-        errors.push(`Line ${lineNo}: Invalid line type.`);
-      }
-    });
-
-    return errors;
-  }; */
-
   const validateDates = (): string[] => {
     const errors: string[] = [];
 
@@ -891,8 +862,6 @@ export const DebitNoteForm: React.FC<Props> = ({
 
     if (!currencyConfig.currency_id)
       errors.push("Transactional currency token designation required.");
-    // if (lines.length === 0)
-    //   errors.push("Debit notes require at least one line entry.");
 
     errors.push(...validateLines());
     errors.push(...validateDates());
@@ -1642,7 +1611,6 @@ export const DebitNoteForm: React.FC<Props> = ({
                 >
                   Post Invoice
                 </Button>
-
                 <Button
                   type="button"
                   variant="dispatch"
@@ -1783,42 +1751,3 @@ export const DebitNoteForm: React.FC<Props> = ({
     </div>
   );
 };
-
-// setLines(data.lines ?? []);
-// const formattedLines: DebitNoteLineUI[] = (data.lines ?? []).map(
-//   (line) => {
-//     const resolvedAllocations: StockDeAllocationRecord[] =
-//       line.allocations ??
-//       line.stock_allocations ??
-//       line.po_line_allocations ??
-//       [];
-
-//     const totalAllocated = resolvedAllocations.reduce(
-//       (sum, allocation) =>
-//         sum + Number(allocation.allocated_quantity || 0),
-//       0,
-//     );
-
-//     const quantity = Number(line.quantity || 0);
-
-//     return {
-//       ...line,
-//       _stableKey:
-//         line._stableKey || line.id || `line-${crypto.randomUUID()}`,
-
-//       allocations: resolvedAllocations,
-//       initialAllocations: resolvedAllocations,
-
-//       is_allocated: quantity > 0 && totalAllocated >= quantity,
-//     };
-
-//     // return {
-//     //   ...line,
-//     //   // Maintain UI state keys for table iteration
-//     //   _stableKey: line._stableKey || line.id || `line-${line.line_no}`,
-//     //   allocations: resolvedAllocations,
-//     //   initialAllocations: resolvedAllocations,
-//     //   is_allocated: resolvedAllocations.length > 0,
-//     // };
-//   },
-// );

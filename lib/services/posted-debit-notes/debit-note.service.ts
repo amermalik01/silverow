@@ -44,7 +44,8 @@ export class PostedDebitNoteService {
     const SORT_FIELDS: Record<string, string> = {
       supplierCreditNoteDate: "dn.invoice_date",
       invoice_code: "dn.debit_note_no",
-      debitNoteCode: "dn.debit_note_no",
+      debit_note_invoice_no: "dn.debit_note_invoice_no",
+      debit_note_no: "dn.debit_note_no",
       supplierCreditNoteNo: "dn.supplier_cn_no",
       prev_code: "dn.prev_code",
       current_stage: "cos.name",
@@ -69,7 +70,7 @@ export class PostedDebitNoteService {
     };
 
     const orderByColumn =
-      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "dn.debit_note_no";
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "dn.debit_note_invoice_no";
     const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     const queryValues: (string | number)[] = [companyId];
@@ -95,9 +96,9 @@ export class PostedDebitNoteService {
         } else if (colKey === "status") {
           queryValues.push(String(filter.value));
           whereClauses.push(`dn.status::text = $${queryValues.length}`);
-        } else if (colKey === "debitNoteCode" || colKey === "debit_note_no") {
+        } else if (colKey === "debit_note_invoice_no" || colKey === "debit_note_no") {
           queryValues.push(`%${filter.value}%`);
-          whereClauses.push(`dn.debit_note_no ILIKE $${queryValues.length}`);
+          whereClauses.push(`dn.debit_note_invoice_no ILIKE $${queryValues.length}`);
         } else if (colKey === "invoice_code" || colKey === "debit_note_no") {
           queryValues.push(`%${filter.value}%`);
           whereClauses.push(`dn.debit_note_no ILIKE $${queryValues.length}`);

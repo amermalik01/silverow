@@ -147,6 +147,10 @@ export interface DebitNoteLine {
 
   quantity: number;
   returned_quantity?: string | number;
+
+  dispatched_quantity?: string | number;
+  qty_dispatched?: string | number;
+  
   unit_cost: number;
 
   discount_type?: "PERCENT" | "FIXED";

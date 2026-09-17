@@ -32,6 +32,17 @@ const formatAmount = (val?: string | number | null): React.ReactNode => {
 export function getPostedDebitNoteCellRenderers(slug: string) {
   return {
     // Primary Posted Document Code (Main Identifier)
+    debit_note_invoice_no: (
+      row: DebitNote & { debit_note_invoice_no?: string; invoice_code?: string; debit_note_no?: string },
+    ) => (
+      <Link
+        href={`/${slug}/purchases/posted-debit-notes/${row.id}`}
+        className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+      >
+        {row.debit_note_invoice_no || "-"}
+      </Link>
+    ),
+
     debit_note_no: (
       row: DebitNote & { invoice_code?: string; debit_note_no?: string },
     ) => (
@@ -39,7 +50,7 @@ export function getPostedDebitNoteCellRenderers(slug: string) {
         href={`/${slug}/purchases/posted-debit-notes/${row.id}`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
-        {row.debit_note_invoice_no || row.debit_note_no ||  row.invoice_code || "-"}
+        {row.debit_note_no ||  row.invoice_code || "-"}
       </Link>
     ),
 
