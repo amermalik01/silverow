@@ -809,10 +809,20 @@ export default function DebitNoteLines({
           debitNoteLineId={activeDeAllocLine.id}
           purchaseOrderLineId={activeDeAllocLine.purchase_order_line_id}
           purchaseInvoiceLineId={activeDeAllocLine.purchase_invoice_line_id}
+          // initialAllocations={
+          //   activeDeAllocLine.allocations ||
+          //   activeDeAllocLine.initialAllocations ||
+          //   []
+          // }
+
           initialAllocations={
-            activeDeAllocLine.allocations ||
-            activeDeAllocLine.initialAllocations ||
-            []
+            activeDeAllocLine.allocations &&
+            activeDeAllocLine.allocations.length > 0
+              ? activeDeAllocLine.allocations
+              : activeDeAllocLine.initialAllocations &&
+                  activeDeAllocLine.initialAllocations.length > 0
+                ? activeDeAllocLine.initialAllocations
+                : undefined
           }
           itemCode={activeDeAllocLine.item_code}
           itemName={activeDeAllocLine.item_name}

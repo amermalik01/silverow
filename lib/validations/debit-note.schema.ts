@@ -26,7 +26,7 @@ export const DebitNoteAddressSchema = z.object({
   id: looseUuid,
   debit_note_id: looseUuid,
   stage_id: looseUuid,
-  
+
   address_type: z.enum(["primary", "billing", "shipping"]),
 
   contact_name: looseString.superRefine((val, ctx) => {
@@ -97,6 +97,17 @@ export const DebitNoteLineSchema = z
     vat_amount: looseNumber,
     net_amount: looseNumber,
     gross_amount: looseNumber,
+    allocations: z
+      .array(
+        z
+          .object({
+            id: z.string(),
+            return_quantity: z.number().or(z.string()).optional(),
+            allocated_quantity: z.number().or(z.string()).optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
   })
   .superRefine((line, ctx) => {
     if (line.line_type === "ITEM") {
@@ -213,7 +224,7 @@ export const DebitNotePayloadSchema = z.object({
     .array(DebitNoteLineSchema)
     .min(
       1,
-      "Transactional document records must contain at least 1 visual item line entry"
+      "Transactional document records must contain at least 1 visual item line entry",
     ),
   primary_address: DebitNoteAddressSchema.nullable().optional(),
   billing_address: DebitNoteAddressSchema.nullable().optional(),
@@ -441,4 +452,3 @@ export type DebitNoteInput = z.infer<typeof DebitNoteSchema>;
 export type DebitNoteAddressInput = z.infer<typeof DebitNoteAddressSchema>;
 export type DebitNoteLineInput = z.infer<typeof DebitNoteLineSchema>;
 export type DebitNotePayloadInput = z.infer<typeof DebitNotePayloadSchema>; */
-

@@ -93,8 +93,6 @@ interface DBAllocationRecord {
   location_name?: string;
 
   allocated_quantity?: string | number;
-
-  // allocated_quantity: number;
   returned_quantity: number;
 
   return_quantity: number;
@@ -111,35 +109,46 @@ const toNumber = (value: unknown): number => {
 
 const normalizeAllocation = (
   allocation: Partial<StockDeAllocationRecord>,
-): StockDeAllocationRecord => ({
-  id: allocation.id || crypto.randomUUID(),
+): StockDeAllocationRecord => {
+  const allocated = toNumber(
+    allocation.allocated_quantity ??
+      (allocation as Record<string, unknown>).received_quantity,
+  );
+  const returned = toNumber(allocation.returned_quantity);
+  const available =
+    allocation.available_quantity !== undefined
+      ? toNumber(allocation.available_quantity)
+      : Math.max(0, allocated - returned);
 
-  source_allocation_id: allocation.source_allocation_id || allocation.id,
+  return {
+    id: allocation.id || crypto.randomUUID(),
+    source_allocation_id: allocation.source_allocation_id || allocation.id,
 
-  purchase_order_line_id: allocation.purchase_order_line_id,
-  purchase_invoice_line_id: allocation.purchase_invoice_line_id,
-  debit_note_line_id: allocation.debit_note_line_id,
+    purchase_order_line_id: allocation.purchase_order_line_id,
+    purchase_invoice_line_id: allocation.purchase_invoice_line_id,
+    debit_note_line_id: allocation.debit_note_line_id,
 
-  inbound_entry_id: allocation.inbound_entry_id,
+    inbound_entry_id: allocation.inbound_entry_id,
 
-  batch_no: allocation.batch_no || "",
-  bin_code: allocation.bin_code || "",
+    batch_no: allocation.batch_no || "",
+    bin_code: allocation.bin_code || "",
 
-  expiry_date: allocation.expiry_date
-    ? String(allocation.expiry_date).split("T")[0]
-    : "",
+    expiry_date: allocation.expiry_date
+      ? String(allocation.expiry_date).split("T")[0]
+      : "",
 
-  location_id: allocation.location_id || "",
-  location_name: allocation.location_name || "",
+    location_id: allocation.location_id || "",
+    location_name: allocation.location_name || "",
 
-  allocated_quantity: toNumber(allocation.allocated_quantity),
-  returned_quantity: toNumber(allocation.returned_quantity),
+    allocated_quantity: allocated,
+    returned_quantity: returned,
 
-  available_quantity: toNumber(allocation.available_quantity),
-  return_quantity: toNumber(allocation.return_quantity),
+    available_quantity: available,
+    return_quantity: toNumber(allocation.return_quantity),
 
-  unit_cost: toNumber(allocation.unit_cost),
-});
+    unit_cost: toNumber(allocation.unit_cost),
+  };
+};
 
 export default function StockDeAllocationModal({
   open,
@@ -180,39 +189,36 @@ export default function StockDeAllocationModal({
       debitNoteLineId || "",
       purchaseInvoiceLineId || "",
       purchaseOrderLineId || "",
+      itemId || "",
+      warehouseId || "",
       cleanRequiredQty,
     ].join("|");
   }, [
     debitNoteLineId,
     purchaseInvoiceLineId,
     purchaseOrderLineId,
+    itemId,
+    warehouseId,
     cleanRequiredQty,
   ]);
 
   const allocationReference = useMemo(() => {
-    if (debitNoteLineId) {
-      return {
-        type: "debit_note_line_id",
-        id: debitNoteLineId,
-      };
-    }
-
-    if (purchaseInvoiceLineId) {
-      return {
-        type: "purchase_invoice_line_id",
-        id: purchaseInvoiceLineId,
-      };
-    }
-
-    if (purchaseOrderLineId) {
-      return {
-        type: "purchase_order_line_id",
-        id: purchaseOrderLineId,
-      };
-    }
-
+    if (debitNoteLineId)
+      return { type: "debit_note_line_id", id: debitNoteLineId };
+    if (purchaseInvoiceLineId)
+      return { type: "purchase_invoice_line_id", id: purchaseInvoiceLineId };
+    if (purchaseOrderLineId)
+      return { type: "purchase_order_line_id", id: purchaseOrderLineId };
+    if (itemId && warehouseId)
+      return { type: "item_warehouse", id: `${itemId}-${warehouseId}` };
     return null;
-  }, [debitNoteLineId, purchaseInvoiceLineId, purchaseOrderLineId]);
+  }, [
+    debitNoteLineId,
+    purchaseInvoiceLineId,
+    purchaseOrderLineId,
+    itemId,
+    warehouseId,
+  ]);
 
   useEffect(() => {
     if (!open) {
@@ -223,108 +229,62 @@ export default function StockDeAllocationModal({
     }
 
     if (initialAllocations && initialAllocations.length > 0) {
-      console.log(
-        "[StockDeAllocationModal] Initial allocations supplied:",
-        initialAllocations,
-      );
-
       setAllocations(initialAllocations.map(normalizeAllocation));
       loadedRequestKeyRef.current = allocationRequestKey;
       return;
     }
 
-    if (initialAllocations !== undefined) {
-      setAllocations([]);
-    }
+    // if (initialAllocations !== undefined) {
+    //   setAllocations([]);
+    // }
 
     if (!allocationReference) {
       console.warn(
-        "[StockDeAllocationModal] Cannot load allocations. No line reference supplied.",
-        {
-          debitNoteLineId,
-          purchaseInvoiceLineId,
-          purchaseOrderLineId,
-        },
+        "[StockDeAllocationModal] No line or item reference supplied.",
       );
-
       return;
     }
 
-    if (loadedRequestKeyRef.current === allocationRequestKey) {
-      return;
-    }
-
-    if (activeRequestKeyRef.current === allocationRequestKey) {
+    if (
+      loadedRequestKeyRef.current === allocationRequestKey ||
+      activeRequestKeyRef.current === allocationRequestKey
+    ) {
       return;
     }
 
     activeRequestKeyRef.current = allocationRequestKey;
-
     const controller = new AbortController();
-
     let cancelled = false;
 
     const loadAllocations = async () => {
       try {
         setLoading(true);
-
         show("Fetching Stock Allocations...");
 
         const queryParams = new URLSearchParams();
-
-        if (debitNoteLineId) {
+        if (debitNoteLineId)
           queryParams.set("debit_note_line_id", debitNoteLineId);
-        }
-
-        if (itemId) {
-          queryParams.set("item_id", itemId);
-        }
-
-        if (warehouseId) {
-          queryParams.set("warehouse_id", warehouseId);
-        }
-
-        if (purchaseInvoiceLineId) {
+        if (itemId) queryParams.set("item_id", itemId);
+        if (warehouseId) queryParams.set("warehouse_id", warehouseId);
+        if (purchaseInvoiceLineId)
           queryParams.set("purchase_invoice_line_id", purchaseInvoiceLineId);
-        }
-
-        if (purchaseOrderLineId) {
+        if (purchaseOrderLineId)
           queryParams.set("purchase_order_line_id", purchaseOrderLineId);
-        }
 
-        const requestUrl = `/api/debit-notes/inventory-allocations?${queryParams.toString()}`;
-
-        console.log("[StockDeAllocationModal] Loading allocations:", {
-          requestUrl,
-          allocationReference,
-          requiredQuantity: cleanRequiredQty,
-        });
-
-        const response = await fetch(requestUrl);
+        const response = await fetch(
+          `/api/debit-notes/inventory-allocations?${queryParams.toString()}`,
+          // { signal: controller.signal },
+        );
 
         if (!response.ok) {
-          throw new Error(
-            `Allocation API failed with status ${response.status}`,
-          );
+          throw new Error(`Allocation API status ${response.status}`);
         }
 
         const payload = await response.json();
 
-        console.log(
-          "[StockDeAllocationModal] Allocation API response:",
-          payload,
-        );
-
-        if (cancelled || controller.signal.aborted) {
-          return;
-        }
+        if (cancelled || controller.signal.aborted) return;
 
         if (!payload?.success || !Array.isArray(payload?.data)) {
-          console.warn(
-            "[StockDeAllocationModal] Invalid allocation API response:",
-            payload,
-          );
-
           setAllocations([]);
           loadedRequestKeyRef.current = allocationRequestKey;
           return;
@@ -332,56 +292,11 @@ export default function StockDeAllocationModal({
 
         // const mappedAllocations: StockDeAllocationRecord[] = payload.data.map(
         //   (item: DBAllocationRecord) =>
-        //     normalizeAllocation({
-        //       id: item.id,
-
-        //       purchase_order_line_id: item.purchase_order_line_id,
-        //       purchase_invoice_line_id: item.purchase_invoice_line_id,
-        //       debit_note_line_id: item.debit_note_line_id,
-
-        //       batch_no: item.batch_no,
-        //       bin_code: item.bin_code,
-        //       expiry_date: item.expiry_date,
-        //       location_id: item.location_id,
-        //       location_name: item.location_name,
-
-        //       allocated_quantity: Number(item.allocated_quantity),
-        //       return_quantity: 0,
-
-        //       unit_cost: Number(item.unit_cost),
-        //     }),
+        //     normalizeAllocation(item as Partial<StockDeAllocationRecord> & Record<string, unknown>)
         // );
 
-        const mappedAllocations: StockDeAllocationRecord[] = payload.data.map(
-          (item: DBAllocationRecord) =>
-            normalizeAllocation({
-              id: item.id,
-
-              source_allocation_id: item.source_allocation_id || item.id,
-              inbound_entry_id: item.inbound_entry_id,
-              purchase_order_line_id: item.purchase_order_line_id,
-              purchase_invoice_line_id: item.purchase_invoice_line_id,
-
-              // item_id: item.item_id,
-              // warehouse_id: item.warehouse_id,
-
-              batch_no: item.batch_no,
-              bin_code: item.bin_code,
-
-              expiry_date: item.expiry_date,
-
-              location_id: item.location_id,
-              location_name: item.location_name,
-
-              allocated_quantity: Number(item.allocated_quantity || 0),
-              returned_quantity: Number(item.returned_quantity || 0),
-
-              available_quantity: Number(item.available_quantity || 0),
-              return_quantity: Number(item.return_quantity || 0),
-
-              unit_cost: Number(item.unit_cost || 0),
-            }),
-        );
+        const mappedAllocations: StockDeAllocationRecord[] =
+          payload.data.map(normalizeAllocation);
 
         console.log(
           "[StockDeAllocationModal] Normalized allocations:",
@@ -392,27 +307,15 @@ export default function StockDeAllocationModal({
 
         loadedRequestKeyRef.current = allocationRequestKey;
       } catch (error: unknown) {
-        if (error instanceof Error && error.name === "AbortError") {
-          return;
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        console.error(
-          "[StockDeAllocationModal] Failed to load allocations:",
-          error,
-        );
-
+        if (error instanceof Error && error.name === "AbortError") return;
+        if (cancelled) return;
+        console.error("[StockDeAllocationModal] Fetch error:", error);
         toast.error("Could not fetch stock allocations.");
-
         loadedRequestKeyRef.current = null;
       } finally {
         if (activeRequestKeyRef.current === allocationRequestKey) {
           activeRequestKeyRef.current = null;
         }
-
         if (!cancelled) {
           setLoading(false);
           hide();
@@ -425,11 +328,9 @@ export default function StockDeAllocationModal({
     return () => {
       cancelled = true;
       controller.abort();
-
       if (activeRequestKeyRef.current === allocationRequestKey) {
         activeRequestKeyRef.current = null;
       }
-
       hide();
     };
   }, [
@@ -440,12 +341,12 @@ export default function StockDeAllocationModal({
     debitNoteLineId,
     purchaseInvoiceLineId,
     purchaseOrderLineId,
+    itemId,
+    warehouseId,
     cleanRequiredQty,
     show,
     hide,
   ]);
-
-
 
   const currentTotalReturn = allocations.reduce(
     (sum, row) => sum + toNumber(row.return_quantity),
@@ -453,9 +354,7 @@ export default function StockDeAllocationModal({
   );
 
   const variance = currentTotalReturn - cleanRequiredQty;
-
   const isValidAllocation = cleanRequiredQty > 0 && Math.abs(variance) < 0.0001;
-
   const qtyRemainingToReturn = cleanRequiredQty - currentTotalReturn;
 
   const handleQuantityChange = (index: number, value: string | number) => {
@@ -463,57 +362,37 @@ export default function StockDeAllocationModal({
 
     setAllocations((previous) => {
       const updated = [...previous];
-
       const row = updated[index];
-
-      if (!row) {
-        return previous;
-      }
+      if (!row) return previous;
 
       const maxAllowed = toNumber(row.available_quantity);
 
       if (numericValue < 0) {
         toast.error("Return quantity cannot be negative.");
-
         return previous;
       }
 
       if (numericValue > maxAllowed) {
         toast.error(
-          `Cannot return more than the available quantity (${maxAllowed}).`,
+          `Cannot return more than available quantity (${maxAllowed}).`,
         );
-
         return previous;
       }
 
-      const otherRowsTotal = updated.reduce(
-        (sum, allocation, allocationIndex) => {
-          if (allocationIndex === index) {
-            return sum;
-          }
-
-          return sum + toNumber(allocation.return_quantity);
-        },
-        0,
-      );
+      const otherRowsTotal = updated.reduce((sum, alloc, idx) => {
+        return idx === index ? sum : sum + toNumber(alloc.return_quantity);
+      }, 0);
 
       if (otherRowsTotal + numericValue > cleanRequiredQty) {
-
         const allowed = Math.max(0, cleanRequiredQty - otherRowsTotal);
-
         toast.error(`Only ${allowed} item(s) can be returned on this line.`);
         return previous;
       }
 
-      updated[index] = {
-        ...row,
-        return_quantity: numericValue,
-      };
-
+      updated[index] = { ...row, return_quantity: numericValue };
       return updated;
     });
   };
-
   const handleResetRow = (index: number) => {
     setAllocations((previous) => {
       const updated = [...previous];
@@ -534,61 +413,41 @@ export default function StockDeAllocationModal({
   const handleCommitSave = () => {
     if (cleanRequiredQty <= 0) {
       toast.error("Return quantity must be greater than zero.");
-
       return;
     }
 
     if (allocations.length === 0) {
       toast.error("No existing stock allocations were found.");
-
       return;
     }
 
     if (!isValidAllocation) {
       if (currentTotalReturn < cleanRequiredQty) {
         toast.error(
-          `De-allocation incomplete. ${qtyRemainingToReturn} more item(s) need to be returned.`,
+          `De-allocation incomplete. ${qtyRemainingToReturn} remaining.`,
         );
       } else {
-        toast.error(
-          `Return quantity exceeds the required quantity by ${Math.abs(
-            qtyRemainingToReturn,
-          )} item(s).`,
-        );
+        toast.error(`Return quantity exceeds required quantity.`);
       }
-
       return;
     }
 
     const validDeAllocations = allocations
-      .filter((allocation) => toNumber(allocation.return_quantity) > 0)
-      .map((allocation) => ({
-        ...allocation,
-
-        id: allocation.source_allocation_id || allocation.id,
-
-        return_quantity: toNumber(allocation.return_quantity),
-
-        allocated_quantity: toNumber(allocation.allocated_quantity),
-
-        returned_quantity: toNumber(allocation.returned_quantity),
-
-        available_quantity: toNumber(allocation.available_quantity),
-
-        unit_cost: toNumber(allocation.unit_cost),
+      .filter((a) => toNumber(a.return_quantity) > 0)
+      .map((a) => ({
+        ...a,
+        id: a.source_allocation_id || a.id,
+        return_quantity: toNumber(a.return_quantity),
+        allocated_quantity: toNumber(a.allocated_quantity),
+        returned_quantity: toNumber(a.returned_quantity),
+        available_quantity: toNumber(a.available_quantity),
+        unit_cost: toNumber(a.unit_cost),
       }));
-
-    console.log(
-      "[StockDeAllocationModal] Saving de-allocations:",
-      validDeAllocations,
-    );
 
     onSave(validDeAllocations);
   };
 
-  if (!open) {
-    return null;
-  }
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 backdrop-blur-xs">
@@ -622,11 +481,8 @@ export default function StockDeAllocationModal({
             <div className="text-slate-500 dark:text-slate-400 font-medium">
               Item
             </div>
-
             <div className="font-semibold text-slate-900 dark:text-slate-100">
-              {itemCode || "-"}
-
-              {itemName ? ` - ${itemName}` : ""}
+              {itemCode || "-"} {itemName ? `- ${itemName}` : ""}
             </div>
           </div>
 
@@ -634,7 +490,6 @@ export default function StockDeAllocationModal({
             <div className="text-slate-500 dark:text-slate-400 font-medium">
               Warehouse
             </div>
-
             <div className="font-semibold text-slate-900 dark:text-slate-100">
               {warehouseName || "-"}
             </div>
@@ -645,51 +500,22 @@ export default function StockDeAllocationModal({
               <div className="text-xs text-slate-500 dark:text-slate-400">
                 Required Return Qty.
               </div>
-
               <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {cleanRequiredQty}
               </div>
             </div>
-
             <div
-              className={`border rounded p-2 bg-white dark:bg-slate-900 ${
-                qtyRemainingToReturn !== 0
-                  ? "border-red-300 dark:border-red-900 bg-red-50/20 dark:bg-red-950/10"
-                  : "border-green-300 dark:border-green-900"
-              }`}
+              className={`border rounded p-2 bg-white dark:bg-slate-900 ${qtyRemainingToReturn !== 0 ? "border-red-300 dark:border-red-900" : "border-green-300 dark:border-green-900"}`}
             >
-              <div
-                className={`text-xs font-medium ${
-                  qtyRemainingToReturn !== 0
-                    ? "text-red-500 dark:text-red-400"
-                    : "text-green-600 dark:text-green-400"
-                }`}
-              >
-                Qty. Remaining
-              </div>
-
-              <div
-                className={`text-lg font-bold ${
-                  qtyRemainingToReturn !== 0
-                    ? "text-red-600 dark:text-red-400"
-                    : "text-green-600 dark:text-green-400"
-                }`}
-              >
+              <div className="text-xs font-medium">Qty. Remaining</div>
+              <div className="text-lg font-bold">
                 {Math.max(0, qtyRemainingToReturn)}
               </div>
             </div>
-
-            <div
-              className={`border rounded p-2 bg-white dark:bg-slate-900 ${
-                isValidAllocation
-                  ? "border-green-300 dark:border-green-900"
-                  : "border-slate-200 dark:border-slate-800"
-              }`}
-            >
+            <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded p-2">
               <div className="text-xs text-green-600 dark:text-green-400 font-medium">
                 Returning Total
               </div>
-
               <div className="text-lg font-bold text-green-600 dark:text-green-400">
                 {currentTotalReturn}
               </div>
@@ -697,19 +523,212 @@ export default function StockDeAllocationModal({
           </div>
         </div>
 
-        {/* LOADING */}
-        {loading && (
-          <div className="shrink-0 px-5 pt-4">
-            <div className="rounded border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20 px-3 py-2 text-xs text-blue-600 dark:text-blue-400">
-              Loading existing stock allocations...
+        <div className="p-4 overflow-y-auto flex-1 text-xs">
+          {loading ? (
+            <div className="py-8 text-center text-slate-500">
+              Loading allocations...
             </div>
+          ) : allocations.length === 0 ? (
+            <div className="py-8 text-center text-slate-500">
+              No available stock allocations found for this item.
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs border-collapse table-fixed">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                  <th className="p-3">Storage Location</th>
+                  <th className="p-3">Batch / Lot</th>
+                  <th className="p-3">Bin</th>
+                  <th className="p-3">Use By</th>
+                  <th className="p-3 text-right">Original</th>
+                  <th className="p-3 text-right">Already Returned</th>
+                  <th className="p-3 text-right">Available</th>
+                  <th className="p-3 text-right">Return</th>
+                  <th className="p-3 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allocations.map((row, idx) => (
+                  <tr
+                    key={row.id}
+                    className="border-b border-slate-100 dark:border-slate-800"
+                  >
+                    <td className="p-3">
+                      <div className="font-medium text-slate-900 dark:text-slate-100">
+                        {row.location_name || "-"}
+                      </div>
+                    </td>
+
+                    <td className="p-3 font-mono">{row.batch_no || "-"}</td>
+                    <td className="p-3 font-mono">{row.bin_code || "-"}</td>
+                    <td className="p-3">{row.expiry_date || "-"}</td>
+
+                    <td className="p-3 text-right font-semibold">
+                      {row.allocated_quantity}
+                    </td>
+
+                    <td className="p-3 text-right text-amber-600">
+                      {row.returned_quantity}
+                    </td>
+
+                    <td className="p-3 text-right text-emerald-600 font-semibold">
+                      {row.available_quantity}
+                    </td>
+                    <td className="p-2">
+                      <NumericTextInput
+                        value={row.return_quantity}
+                        allowDecimals={false}
+                        min="0"
+                        // max={row.allocated_quantity}
+                        max={row.available_quantity}
+                        disabled={loading}
+                        onChange={(value) => handleQuantityChange(idx, value)}
+                        className={`border rounded p-1.5 w-full text-right bg-white dark:bg-slate-900 font-semibold focus:outline-hidden focus:ring-1 ${
+                          row.return_quantity > 0
+                            ? "border-red-300 dark:border-red-800 focus:ring-red-600"
+                            : "border-slate-200 dark:border-slate-700 focus:ring-green-600"
+                        } disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400`}
+                      />
+                    </td>
+
+                    <td className="p-3 text-center">
+                      {row.return_quantity > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => handleResetRow(idx)}
+                          disabled={loading}
+                          className="text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold transition-colors disabled:opacity-40"
+                          title="Reset return quantity"
+                        >
+                          &#x2715;
+                        </button>
+                      ) : (
+                        <span className="text-slate-300 dark:text-slate-700">
+                          —
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* VALIDATION */}
+        {allocations.length > 0 && (
+          <div className="shrink-0 px-5 pb-4">
+            {isValidAllocation ? (
+              <div className="flex items-center gap-2 rounded border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/20 px-3 py-2 text-xs text-green-700 dark:text-green-400">
+                <Icon icon="lucide:circle-check" className="w-4 h-4" />
+
+                <span>Return quantity is fully allocated. Ready to save.</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 px-3 py-2 text-xs text-red-600 dark:text-red-400">
+                <Icon icon="lucide:triangle-alert" className="w-4 h-4" />
+
+                <span>
+                  {currentTotalReturn < cleanRequiredQty
+                    ? `Select ${qtyRemainingToReturn} more item(s) to complete the return.`
+                    : `Remove ${Math.abs(
+                        qtyRemainingToReturn,
+                      )} item(s) from the return quantity.`}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
-        {/* TABLE */}
-        <div className="flex-1 min-h-0 p-5 overflow-auto">
-          <table className="w-full text-left text-xs border-collapse table-fixed">
-            <thead className="sticky top-0 z-10">
+        {/* FOOTER */}
+        <div className="shrink-0 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2 bg-slate-50 dark:bg-slate-800/50">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleCommitSave}
+            disabled={loading || !isValidAllocation}
+            className={`px-5 py-2 rounded text-xs font-medium text-white ${
+              isValidAllocation
+                ? "bg-red-700 hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-700"
+                : "bg-slate-400 dark:bg-slate-700"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            Return Stock
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// const normalizeAllocation = (
+//   allocation: Partial<StockDeAllocationRecord>,
+// ): StockDeAllocationRecord => ({
+//   id: allocation.id || crypto.randomUUID(),
+
+//   source_allocation_id: allocation.source_allocation_id || allocation.id,
+
+//   purchase_order_line_id: allocation.purchase_order_line_id,
+//   purchase_invoice_line_id: allocation.purchase_invoice_line_id,
+//   debit_note_line_id: allocation.debit_note_line_id,
+
+//   inbound_entry_id: allocation.inbound_entry_id,
+
+//   batch_no: allocation.batch_no || "",
+//   bin_code: allocation.bin_code || "",
+
+//   expiry_date: allocation.expiry_date
+//     ? String(allocation.expiry_date).split("T")[0]
+//     : "",
+
+//   location_id: allocation.location_id || "",
+//   location_name: allocation.location_name || "",
+
+//   allocated_quantity: toNumber(allocation.allocated_quantity),
+//   returned_quantity: toNumber(allocation.returned_quantity),
+
+//   available_quantity: toNumber(allocation.available_quantity),
+//   return_quantity: toNumber(allocation.return_quantity),
+
+//   unit_cost: toNumber(allocation.unit_cost),
+// });
+
+// const mappedAllocations: StockDeAllocationRecord[] = payload.data.map(
+//   (item: DBAllocationRecord) =>
+//     normalizeAllocation({
+//       id: item.id,
+
+//       source_allocation_id: item.source_allocation_id || item.id,
+//       inbound_entry_id: item.inbound_entry_id,
+//       purchase_order_line_id: item.purchase_order_line_id,
+//       purchase_invoice_line_id: item.purchase_invoice_line_id,
+
+//       // item_id: item.item_id,
+//       // warehouse_id: item.warehouse_id,
+
+//       batch_no: item.batch_no,
+//       bin_code: item.bin_code,
+
+//       expiry_date: item.expiry_date,
+
+//       location_id: item.location_id,
+//       location_name: item.location_name,
+
+//       allocated_quantity: Number(item.allocated_quantity || 0),
+//       returned_quantity: Number(item.returned_quantity || 0),
+
+//       available_quantity: Number(item.available_quantity || 0),
+//       return_quantity: Number(item.return_quantity || 0),
+
+//       unit_cost: Number(item.unit_cost || 0),
+//     }),
+// );
+
+/* 
+<thead className="sticky top-0 z-10">
               <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800">
                 <th className="p-3">Storage Location</th>
                 <th className="p-3">Batch / Lot</th>
@@ -807,36 +826,10 @@ export default function StockDeAllocationModal({
                 ))
               )}
             </tbody>
-          </table>
-        </div>
+*/
 
-        {/* VALIDATION */}
-        {allocations.length > 0 && (
-          <div className="shrink-0 px-5 pb-4">
-            {isValidAllocation ? (
-              <div className="flex items-center gap-2 rounded border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/20 px-3 py-2 text-xs text-green-700 dark:text-green-400">
-                <Icon icon="lucide:circle-check" className="w-4 h-4" />
-
-                <span>Return quantity is fully allocated. Ready to save.</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 rounded border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 px-3 py-2 text-xs text-red-600 dark:text-red-400">
-                <Icon icon="lucide:triangle-alert" className="w-4 h-4" />
-
-                <span>
-                  {currentTotalReturn < cleanRequiredQty
-                    ? `Select ${qtyRemainingToReturn} more item(s) to complete the return.`
-                    : `Remove ${Math.abs(
-                        qtyRemainingToReturn,
-                      )} item(s) from the return quantity.`}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* FOOTER */}
-        <div className="shrink-0 bg-slate-50 dark:bg-slate-800/40 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+{
+  /* <div className="shrink-0 bg-slate-50 dark:bg-slate-800/40 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
           <Button
             type="button"
             onClick={onClose}
@@ -857,8 +850,62 @@ export default function StockDeAllocationModal({
           >
             Return Stock
           </Button>
-        </div>
-      </div>
-    </div>
-  );
+        </div> */
 }
+
+/* 
+
+  const handleCommitSave = () => {
+    if (cleanRequiredQty <= 0) {
+      toast.error("Return quantity must be greater than zero.");
+
+      return;
+    }
+
+    if (allocations.length === 0) {
+      toast.error("No existing stock allocations were found.");
+
+      return;
+    }
+
+    if (!isValidAllocation) {
+      if (currentTotalReturn < cleanRequiredQty) {
+        toast.error(
+          `De-allocation incomplete. ${qtyRemainingToReturn} more item(s) need to be returned.`,
+        );
+      } else {
+        toast.error(
+          `Return quantity exceeds the required quantity by ${Math.abs(
+            qtyRemainingToReturn,
+          )} item(s).`,
+        );
+      }
+
+      return;
+    }
+
+    const validDeAllocations = allocations
+      .filter((allocation) => toNumber(allocation.return_quantity) > 0)
+      .map((allocation) => ({
+        ...allocation,
+
+        id: allocation.source_allocation_id || allocation.id,
+
+        return_quantity: toNumber(allocation.return_quantity),
+
+        allocated_quantity: toNumber(allocation.allocated_quantity),
+
+        returned_quantity: toNumber(allocation.returned_quantity),
+
+        available_quantity: toNumber(allocation.available_quantity),
+
+        unit_cost: toNumber(allocation.unit_cost),
+      }));
+
+    console.log(
+      "[StockDeAllocationModal] Saving de-allocations:",
+      validDeAllocations,
+    );
+
+    onSave(validDeAllocations);
+  }; */

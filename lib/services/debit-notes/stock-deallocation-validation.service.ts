@@ -43,7 +43,7 @@ type InventoryAllocationValidationRow = {
 
   batch_no: string | null;
   bin_code: string | null;
-  serial_no: string | null;
+  serial_no?: string | null;
   expiry_date: string | Date | null;
 
   allocated_quantity: number | string | null;
@@ -161,7 +161,6 @@ export class StockDeAllocationValidationService {
 
           ia.batch_no,
           ia.bin_code,
-          ia.serial_no,
           ia.expiry_date,
 
           ia.allocated_quantity,

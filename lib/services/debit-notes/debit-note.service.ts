@@ -644,6 +644,7 @@ export class DebitNoteService {
     id: string,
     rawPayload: unknown,
   ): Promise<DebitNoteLineUI[]> {
+    // console.log('rawPayload ==== ',rawPayload);
     const payload = DebitNotePayloadSchema.parse(
       rawPayload,
     ) as DebitNotePayload;
@@ -815,20 +816,6 @@ export class DebitNoteService {
           `,
           [existingId, companyId],
         );
-      } else {
-        // If no incoming lines have IDs (e.g. all invoice lines were replaced entirely)
-        await client.query(
-          `DELETE FROM debit_note_line_allocations 
-            WHERE debit_note_line_id IN (
-              SELECT id FROM debit_note_lines WHERE debit_note_id = $1
-            )`,
-          [id],
-        );
-
-        await client.query(
-          `DELETE FROM debit_note_lines WHERE debit_note_id = $1`,
-          [id],
-        );
       }
     }
 
@@ -906,10 +893,33 @@ export class DebitNoteService {
         if (!savedLine.warehouse_id)
           throw new Error(`Line ${lineNo / 10000}: Warehouse is required.`);
 
+        let effectiveAllocations = line.allocations;
+
+        // Fallback: If no allocations passed in payload for an existing line, load existing draft allocations from DB
+        if (
+          (!effectiveAllocations || effectiveAllocations.length === 0) &&
+          line.id
+        ) {
+          const existingAllocRes = await client.query(
+            `
+            SELECT 
+              COALESCE(source_allocation_id, id) AS id,
+              allocated_quantity AS return_quantity
+            FROM inventory_allocations
+            WHERE debit_note_line_id = $1 
+              AND company_id = $2 
+              AND outbound_entry_id IS NULL
+            `,
+            [line.id, companyId],
+          );
+
+          effectiveAllocations = existingAllocRes.rows;
+        }
+
         await StockDeAllocationValidationService.validate(client, companyId, {
           debit_note_line_id: savedLine.id,
           required_quantity: Number(savedLine.quantity || 0),
-          allocations: line.allocations ?? [],
+          allocations: effectiveAllocations ?? [],
         });
 
         if (!savedLine.id) {
@@ -1245,14 +1255,6 @@ export class DebitNoteService {
       `,
       [debitNoteLineId, debitNoteId, companyId],
     );
-    // const lineResult = await client.query(
-    //   `
-    //   SELECT COALESCE(returned_quantity, 0) AS returned_quantity, quantity
-    //   FROM debit_note_lines
-    //   WHERE id = $1 AND company_id = $2
-    //   `,
-    //   [debitNoteLineId, companyId],
-    // );
 
     if (!lineResult.rows.length) {
       throw new Error("Debit note line not found");
@@ -1265,9 +1267,6 @@ export class DebitNoteService {
     }
 
     const lineQuantity = Number(line.quantity || 0);
-
-    // const returnedQty = Number(lineResult.rows[0]?.returned_quantity || 0);
-    // if (returnedQty > 0) return;
 
     // 2. Clear existing allocations for unreturned lines
     await client.query(
@@ -1292,11 +1291,11 @@ export class DebitNoteService {
       totalReturnQty += qty;
     }
 
-    if (totalReturnQty > lineQuantity) {
+    if (totalReturnQty > lineQuantity + 0.000001) {
       throw new Error(
         `Return allocation (${totalReturnQty}) exceeds debit note quantity (${lineQuantity})`,
       );
-    } //  + 0.000001
+    }
 
     // 3. Validate total quantity
     // const totalQty = allocations.reduce(
@@ -1339,8 +1338,25 @@ export class DebitNoteService {
       }
 
       // 5. Validate source allocation
-      const sourceResult = await client.query(
+
+      let targetAllocationId = allocation.id;
+
+      // Check if passed ID is a draft debit note allocation row
+      const draftCheck = await client.query(
         `
+        SELECT source_allocation_id 
+        FROM inventory_allocations 
+        WHERE id = $1 AND company_id = $2 AND debit_note_line_id IS NOT NULL
+        `,
+        [allocation.id, companyId],
+      );
+
+      if (draftCheck.rows.length && draftCheck.rows[0].source_allocation_id) {
+        targetAllocationId = draftCheck.rows[0].source_allocation_id;
+      }
+
+      // Now query root received stock allocation using targetAllocationId
+      const sourceQry = `
         SELECT
           ia.id,
 
@@ -1374,14 +1390,24 @@ export class DebitNoteService {
             AND ia.debit_note_line_id IS NULL
             AND ia.source_allocation_id IS NULL
 
-            AND ia.inbound_entry_id IS NOT NULL
+           --  AND ia.inbound_entry_id IS NOT NULL
 
             AND ia.status = 'ACTIVE'
 
         FOR UPDATE
-        `,
-        [allocation.id, companyId, itemId, warehouseId],
-      );
+        `;
+
+      // console.log("sourceQry ==== ", sourceQry);
+      // console.log("targetAllocationId ==== ", targetAllocationId);
+      // console.log("itemId ==== ", itemId);
+      // console.log("warehouseId ==== ", warehouseId);
+
+      const sourceResult = await client.query(sourceQry, [
+        targetAllocationId,
+        companyId,
+        itemId,
+        warehouseId,
+      ]);
 
       /* ia.batch_no,
           ia.bin_code,
