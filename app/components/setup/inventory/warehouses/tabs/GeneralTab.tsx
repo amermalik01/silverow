@@ -459,7 +459,7 @@ export default function GeneralTab({
               <div className="col-span-8">
                 <div className="grid grid-cols-12 items-center gap-2">
                   <MasterDropdown
-                    type="currency"
+                    type="Currency"
                     value={warehouse.currency_id}
                     onChange={(val) => updateField("currency_id", val)}
                     className="border p-2 w-full rounded col-span-4"

@@ -338,7 +338,7 @@ export default function GeneralTab({
                 />
 
                 <MasterDropdown
-                  type="country"
+                  type="Country"
                   value={primaryAddress.country || account.country || "UK"}
                   displayFormat="name"
                   valueKey="code"

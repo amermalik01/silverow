@@ -264,7 +264,7 @@ export default function AddressesTab({
 
                 <div className="col-span-2">
                   <MasterDropdown
-                    type="country"
+                    type="Country"
                     value={a.country || "UK"}
                     displayFormat="name"
                     valueKey="code"

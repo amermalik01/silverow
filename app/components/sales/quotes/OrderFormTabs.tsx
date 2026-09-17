@@ -295,7 +295,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   />
 
                   {/* <MasterDropdown
-                    type="country"
+                    type="Country"
                     value={primaryAddress.country || "United Kingdom"}
                     disabled={isSettingsDisabled}
                     className={inputcolumnDivStyle}
@@ -669,7 +669,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   />
 
                   {/* <MasterDropdown
-                    type="country"
+                    type="Country"
                     value={billingAddress.country || "United Kingdom"}
                     disabled={isSettingsDisabled}
                     className={inputcolumnDivStyle}
@@ -1099,7 +1099,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     value={shippingAddress.country || ""}
                   />
                   {/* <MasterDropdown
-                    type="country"
+                    type="Country"
                     value={shippingAddress.country || "United Kingdom"}
                     disabled={isSettingsDisabled}
                     className={inputcolumnDivStyle}

@@ -183,7 +183,7 @@ export default function GeneralTab({
                 onChange={handleChange}
               />
               <MasterDropdown
-                type="country"
+                type="Country"
                 value={profile?.country_code || "United Kingdom"}
                 onChange={(val) =>
                   setProfile((prev) =>

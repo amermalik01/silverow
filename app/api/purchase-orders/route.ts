@@ -58,7 +58,9 @@ export async function POST(req: NextRequest) {
 
     // 🌟 FIX: Add a runtime check to satisfy strict TypeScript constraints
     if (!createdOrder || !createdOrder.id) {
-      throw new Error("Failed to generate a valid purchase order identification sequence.");
+      throw new Error(
+        "Failed to generate a valid purchase order identification sequence.",
+      );
     }
 
     const purchaseOrderID: string = createdOrder.id;
@@ -110,45 +112,3 @@ export async function POST(req: NextRequest) {
     client.release();
   }
 }
-
-/* export async function POST(req: NextRequest) {
-  try {
-    const companyId = await getCompanyId();
-
-    if (!companyId) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
-      );
-    }
-
-    const body = await req.json();
-
-    const data = await PurchaseOrderService.create(companyId, body);
-
-    return NextResponse.json(
-      {
-        success: true,
-        data,
-      },
-      {
-        status: 201,
-      },
-    );
-  } catch (err) {
-    console.error("Purchase order create error:", err);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          err instanceof Error
-            ? err.message
-            : "Failed to create purchase order",
-      },
-      {
-        status: 500,
-      },
-    );
-  }
-} */

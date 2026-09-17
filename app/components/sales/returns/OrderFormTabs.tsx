@@ -149,7 +149,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   className={`${inputStyle} font-mono`}
                   value={order.customer_no || "Click Select..."}
                 />
-                
+
                 <button
                   type="button"
                   onClick={() => setCustomerModalOpen(true)}
@@ -246,8 +246,15 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   }
                 />
 
-                <MasterDropdown
-                  type="country"
+                <input
+                  type="text"
+                  disabled={isSettingsDisabled}
+                  className={inputcolumnDivStyle}
+                  value={primaryAddress.country || ""}
+                />
+
+                {/* <MasterDropdown
+                  type="Country"
                   value={primaryAddress.country || "United Kingdom"}
                   disabled={isSettingsDisabled}
                   className={inputcolumnDivStyle}
@@ -257,7 +264,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       country: val ?? undefined,
                     })
                   }
-                />
+                /> */}
               </div>
             </div>
           </div>
@@ -584,8 +591,15 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   }
                 />
 
-                <MasterDropdown
-                  type="country"
+                <input
+                  type="text"
+                  disabled={isSettingsDisabled}
+                  className={inputcolumnDivStyle}
+                  value={billingAddress.country || ""}
+                />
+
+                {/* <MasterDropdown
+                  type="Country"
                   value={billingAddress.country || "United Kingdom"}
                   disabled={isSettingsDisabled}
                   className={inputcolumnDivStyle}
@@ -595,7 +609,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       country: val ?? undefined,
                     })
                   }
-                />
+                /> */}
               </div>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">
@@ -822,8 +836,15 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     })
                   }
                 />
-                <MasterDropdown
-                  type="country"
+
+                <input
+                  type="text"
+                  disabled={isSettingsDisabled}
+                  className={inputcolumnDivStyle}
+                  value={shippingAddress.country || ""}
+                />
+                {/* <MasterDropdown
+                  type="Country"
                   value={shippingAddress.country || "United Kingdom"}
                   disabled={isSettingsDisabled}
                   className={inputcolumnDivStyle}
@@ -833,7 +854,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                       country: val ?? undefined,
                     })
                   }
-                />
+                /> */}
               </div>
             </div>
             <div className="grid grid-cols-12 items-center gap-2">

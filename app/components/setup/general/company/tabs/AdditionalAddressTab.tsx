@@ -270,7 +270,7 @@ export default function AdditionalAddressTab() {
                     }
                   />
                   <MasterDropdown
-                    type="country"
+                    type="Country"
                     value={current.country_code || "United Kingdom"}
                     onChange={(val) =>
                       setCurrent((prev) => ({

@@ -379,7 +379,7 @@ export default function BankAccountsTab() {
                     }
                   />
                   <MasterDropdown
-                    type="country"
+                    type="Country"
                     value={current.country_code || "Select Country"}
                     onChange={(val) =>
                       setCurrent((prev) => ({
