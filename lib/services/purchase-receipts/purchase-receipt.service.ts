@@ -73,7 +73,7 @@ export class PurchaseReceiptService {
     const exchangeRate = payload.receipt.exchange_rate;
     const userId = payload.receipt.userId;
 
-    
+    const glLines: JournalLineInput[] = [];
 
     for (const line of payload.lines) {
       if (line.item_id && !line.warehouse_id) {
@@ -81,8 +81,6 @@ export class PurchaseReceiptService {
           `Warehouse identification is required for item ${line.item_id}`,
         );
       }
-
-      const glLines: JournalLineInput[] = [];
 
       const qtyReceived = Number(line.quantity);
       if (qtyReceived <= 0) {
@@ -237,7 +235,6 @@ export class PurchaseReceiptService {
 
       // Build General Ledger Posting Entries (ONLY for PERPETUAL mode)
 
-
       if (inventorySystem === "PERPETUAL") {
         // DR - Inventory Asset (Interim)
         glLines.push({
@@ -293,24 +290,24 @@ export class PurchaseReceiptService {
           description: `GRNI liability for item ${line.item_id}`,
         });
       }
-
-      // 7. Validate GL Balance & Post Journal
-      GLValidationService.validateBalanced(glLines);
-
-      await GLPostingService.postJournal(client, {
-        company_id: companyId,
-        entry_date: receipt.posting_date,
-        source: "PURCHASE",
-        journal_type: "PURCHASE_RECEIPT",
-        reference: receipt.receipt_no,
-        source_id: receipt.id,
-        description: `Posted receipt tracking document: ${receipt.receipt_no}`,
-        currency_id: currencyId,
-        exchange_rate: exchangeRate,
-        created_by: userId || null,
-        lines: glLines,
-      });
     }
+
+    // 7. Validate GL Balance & Post Journal
+    GLValidationService.validateBalanced(glLines);
+
+    await GLPostingService.postJournal(client, {
+      company_id: companyId,
+      entry_date: receipt.posting_date,
+      source: "PURCHASE",
+      journal_type: "PURCHASE_RECEIPT",
+      reference: receipt.receipt_no,
+      source_id: receipt.id,
+      description: `Posted receipt tracking document: ${receipt.receipt_no}`,
+      currency_id: currencyId,
+      exchange_rate: exchangeRate,
+      created_by: userId || null,
+      lines: glLines,
+    });
 
     // 8. Seal Receipt Posting Status
     await client.query(
