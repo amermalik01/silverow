@@ -72,7 +72,8 @@ export class DebitNoteService {
     const whereClauses = [
       "dn.company_id = $1",
       // "dn.status::text != 'completed'",
-      "dn.status::text NOT IN ('completed', 'posted')",
+      "dn.is_posted = false"
+      // "dn.status::text NOT IN ('completed', 'posted')",
     ];
 
     // Dynamic Filters

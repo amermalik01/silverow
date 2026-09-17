@@ -63,7 +63,7 @@ export class SalesOrderService {
       sale_person: "so.salesperson",
       currency_code: "c.code",
       net_amount: "so.subtotal",
-      tax_amount: "so.vat_amount",
+      vat_amount: "so.vat_amount",
       grand_total: "so.total_amount",
       due_date: "so.due_date",
       requested_delivery_date: "so.requested_delivery_date",
@@ -207,7 +207,7 @@ export class SalesOrderService {
         so.dispatch_date,
         so.delivery_date,
         so.subtotal AS net_amount,
-        so.vat_amount AS tax_amount,
+        so.vat_amount AS vat_amount,
         so.total_amount AS grand_total,
         (so.finance_charges > 0) AS finance_charges_exists,
         (so.insurance_charges > 0) AS insurance_charges_exists,
@@ -474,7 +474,7 @@ export class SalesOrderService {
             internal_notes,
 
             subtotal,
-            tax_amount,
+            vat_amount,
             total_amount,
 
             status,
@@ -539,7 +539,7 @@ export class SalesOrderService {
           order.internal_notes,
 
           order.subtotal,
-          order.tax_amount,
+          order.vat_amount,
           order.total_amount,
 
           order.status,
@@ -687,7 +687,7 @@ export class SalesOrderService {
           internal_notes=$32,
 
           subtotal=$33,
-          tax_amount=$34,
+          vat_amount=$34,
           total_amount=$35,
 
           status=$36,
@@ -747,7 +747,7 @@ export class SalesOrderService {
         order.internal_notes,
 
         order.subtotal,
-        order.tax_amount,
+        order.vat_amount,
         order.total_amount,
 
         order.status,
@@ -1286,13 +1286,13 @@ export class SalesOrderService {
       UPDATE sales_orders
       SET
         subtotal = totals.subtotal,
-        tax_amount = totals.tax_amount,
+        vat_amount = totals.vat_amount,
         total_amount = totals.total_amount,
         updated_at = NOW()
       FROM (
         SELECT
           COALESCE(SUM(net_amount), 0) AS subtotal,
-          COALESCE(SUM(vat_amount), 0) AS tax_amount,
+          COALESCE(SUM(vat_amount), 0) AS vat_amount,
           COALESCE(SUM(gross_amount), 0) AS total_amount
         FROM sales_order_lines
         WHERE sales_order_id = $1

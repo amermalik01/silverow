@@ -164,7 +164,7 @@ export async function GET(req: NextRequest, context: Context) {
     // Fetch Header with joined fields
     const orderResult = await pool.query(
       `
-      SELECT so.*, so.vat_amount as tax_amount, p.name AS customer_name
+      SELECT so.*, so.vat_amount as vat_amount, p.name AS customer_name
       FROM sales_orders so
       LEFT JOIN parties p ON p.id = so.customer_id
       WHERE so.company_id = $1 AND so.id = $2
@@ -185,7 +185,7 @@ export async function GET(req: NextRequest, context: Context) {
       SELECT
         sol.*,
         sol.vat_percent as tax_percent,
-        sol.vat_amount as tax_amount,
+        sol.vat_amount as vat_amount,
         sol.line_amount as total_amount,
         i.item_code, i.name AS item_name,
         u.name AS uom_name,

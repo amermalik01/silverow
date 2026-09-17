@@ -78,8 +78,8 @@ export class PostedDebitNoteService {
     // Explicitly filter for completed/posted debit notes
     const whereClauses = [
       "dn.company_id = $1",
-      // "dn.status::text = 'completed'",
-      "dn.status::text IN ('completed', 'posted')",
+      "dn.is_posted = true",
+      // "dn.status::text IN ('completed', 'posted')",
     ];
 
     // Dynamic Filters Processing
@@ -202,6 +202,9 @@ export class PostedDebitNoteService {
       ORDER BY ${orderByColumn} ${orderDirection}, dn.id ASC
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
+
+    // console.log('dataQuery ====',dataQuery);
+    // console.log('dataQueryValues ====',dataQueryValues);
 
     const dataResult = await pool.query(dataQuery, dataQueryValues);
 

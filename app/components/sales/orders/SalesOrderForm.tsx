@@ -109,7 +109,7 @@ export const SalesOrderForm: React.FC<Props> = ({
 
     status: "draft",
     subtotal: 0,
-    tax_amount: 0,
+    vat_amount: 0,
     total_amount: 0,
     invoiced_amount: 0,
 
@@ -500,7 +500,7 @@ export const SalesOrderForm: React.FC<Props> = ({
           ...order,
           ...currencyConfig,
           subtotal: financials.amount,
-          tax_amount: financials.vat,
+          vat_amount: financials.vat,
           total_amount: financials.amountInclVat,
         },
         primary_address: primaryAddress,

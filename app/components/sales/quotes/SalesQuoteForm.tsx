@@ -111,7 +111,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
 
     status: "draft",
     subtotal: 0,
-    tax_amount: 0,
+    vat_amount: 0,
     total_amount: 0,
     // invoiced_amount: 0,
 
@@ -503,7 +503,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
           ...quote,
           ...currencyConfig,
           subtotal: financials.amount,
-          tax_amount: financials.vat,
+          vat_amount: financials.vat,
           total_amount: financials.amountInclVat,
         },
         primary_address: primaryAddress,
@@ -1154,7 +1154,7 @@ export default function SalesQuoteForm({
             original_amount: Number(line.original_amount || 0),
             discount_amount: Number(line.discount_amount || 0),
             net_amount: Number(line.net_amount || 0),
-            tax_amount: Number(line.tax_amount || 0),
+            vat_amount: Number(line.vat_amount || 0),
             total_amount: Number(line.total_amount || 0),
             line_total: Number(line.total_amount || 0),
           }));
@@ -1204,7 +1204,7 @@ export default function SalesQuoteForm({
 
       if (
         Number(line.discount_amount || 0) < 0 ||
-        Number(line.tax_amount || 0) < 0
+        Number(line.vat_amount || 0) < 0
       ) {
         throw new Error(`Line ${lineNo}: Discount/Tax cannot be negative`);
       }
@@ -1226,7 +1226,7 @@ export default function SalesQuoteForm({
     const qty = Number(updated[index].quantity || 0);
     const price = Number(updated[index].unit_price || 0);
     const discount = Number(updated[index].discount_amount || 0);
-    const tax = Number(updated[index].tax_amount || 0);
+    const tax = Number(updated[index].vat_amount || 0);
 
     const base = qty * price;
 

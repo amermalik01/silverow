@@ -75,7 +75,7 @@ export type SalesOrder = {
   reason?: string;
 
   subtotal?: number;
-  tax_amount?: number;
+  vat_amount?: number;
   total_amount?: number;
   invoiced_amount?: number;
 

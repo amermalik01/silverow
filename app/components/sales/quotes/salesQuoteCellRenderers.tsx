@@ -99,8 +99,8 @@ export function getSalesQuoteCellRenderers(slug: string) {
     // Numeric Amounts
     net_amount: (row: SalesQuoteListing) =>
       formatAmount(row.net_amount ?? row.subtotal),
-    tax_amount: (row: SalesQuoteListing) =>
-      formatAmount(row.tax_amount ?? row.vat_amount),
+    vat_amount: (row: SalesQuoteListing) =>
+      formatAmount(row.vat_amount ?? row.vat_amount),
     grand_total: (row: SalesQuoteListing) =>
       formatAmount(row.grand_total ?? row.total_amount),
 

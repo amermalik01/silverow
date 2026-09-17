@@ -935,7 +935,7 @@ export default function SalesQuoteLines({
         original_amount: 0,
         discount_amount: 0,
         net_amount: 0,
-        tax_amount: 0,
+        vat_amount: 0,
         total_amount: 0,
         line_total: 0,
       },
@@ -977,7 +977,7 @@ export default function SalesQuoteLines({
       discount_amount: Number(discountAmount.toFixed(2)),
       original_amount: Number(original.toFixed(2)),
       net_amount: Number(netAmount.toFixed(2)),
-      tax_amount: Number(vatAmount.toFixed(2)), // UI uses tax_amount
+      vat_amount: Number(vatAmount.toFixed(2)), // UI uses vat_amount
       total_amount: Number(lineAmount.toFixed(2)), // UI uses total_amount
       line_total: Number(lineAmount.toFixed(2)), // Support for older code
     } as SalesQuoteLineUI;
@@ -1044,7 +1044,7 @@ export default function SalesQuoteLines({
   //       acc.original += Number(l.original_amount || 0);
   //       acc.discount += Number(l.discount_amount || 0);
   //       acc.net += Number(l.net_amount || 0);
-  //       acc.tax += Number(l.tax_amount || 0);
+  //       acc.tax += Number(l.vat_amount || 0);
   //       acc.total += Number(l.total_amount || 0);
   //       return acc;
   //     },
