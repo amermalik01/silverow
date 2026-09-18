@@ -210,8 +210,11 @@ export interface StockDispatchHeader {
   posting_date: string;
   reference_no?: string;
   notes?: string;
+  currency_id?: string;
+  exchange_rate?: number;
   status?: string;
   is_posted?: boolean;
+  userId?: string;
 }
 
 export interface DebitNoteLineUI extends DebitNoteLine {

@@ -94,6 +94,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
             body.posting_date || new Date().toISOString().split("T")[0],
           reference_no: body.reference,
           notes: body.notes,
+          currency_id: body.currency_id,
+          exchange_rate: body.exchange_rate,
+          userId,
         },
         lines: unfulfilledLines.map((line, idx) => {
           const remainingQty =

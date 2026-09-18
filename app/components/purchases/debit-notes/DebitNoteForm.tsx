@@ -1137,6 +1137,8 @@ export const DebitNoteForm: React.FC<Props> = ({
             note.document_date || new Date().toISOString().split("T")[0],
           reference: note.debit_note_no || note.reference,
           notes: note.notes,
+          currency_id: note.currency_id,
+          exchange_rate: note.exchange_rate,
         },
       };
 
@@ -1187,12 +1189,16 @@ export const DebitNoteForm: React.FC<Props> = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          supplier_id: note.supplier_id,
           supplier_invoice_no: note.debit_note_no || note.reference,
           reference: note.debit_note_no || note.reference,
           invoice_date: note.invoice_date,
           posting_date: note.order_date,
+          dispatch_date: note.invoice_date,
           financials: financials,
-          order: note,
+          currency_id: note.currency_id,
+          exchange_rate: note.exchange_rate,
+          order: note,          
         }),
       });
 

@@ -80,6 +80,11 @@ export class StockDeAllocationService {
     );
 
     const dispatch = dispatchResult.rows[0];
+
+    const currencyId = payload.dispatch.currency_id;
+    const exchangeRate = payload.dispatch.exchange_rate;
+    const userId = payload.dispatch.userId;
+
     const glLines: JournalLineInput[] = [];
 
     // Fetch Inventory System mode setting
@@ -293,6 +298,10 @@ export class StockDeAllocationService {
         reference: dispatch.dispatch_no,
         source_id: dispatch.id,
         description: `Posted stock dispatch return document: ${dispatch.dispatch_no}`,
+
+        currency_id: currencyId,
+        exchange_rate: exchangeRate,
+        created_by: userId || null,
         lines: glLines,
       });
     }
