@@ -1,4 +1,4 @@
-// app/components/setup/SequenceList.tsx
+// app/components/setup/general/company/tabs/SequenceList.tsx
 
 "use client";
 

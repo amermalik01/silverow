@@ -1,7 +1,7 @@
-// app/[slug]/setup/system/company/page.tsx
+// app/[slug]/setup/hr/page.tsx
 
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
-import CompanySetupForm from "@/app/components/setup/general/company/CompanySetupForm";
+import InventorySetupForm from "@/app/components/setup/inventory/InventorySetupForm";
 
 export default function GeneralCompanySetupPage() {
   return (
@@ -9,17 +9,10 @@ export default function GeneralCompanySetupPage() {
       <Breadcrumbs
         items={[
           {
-            label: "Master Setup",
+            label: "Inventory Setup",
           },
         ]}
       />
-      {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <h1 className="text-2xl font-bold  tracking-tight">Master Setup</h1>
-        <p className="text-xs">
-          Administer runtime values, legal localization objects, and business
-          properties.
-        </p>
-      </div> */}
 
       <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="absolute inset-x-0 top-0 h-1 bg-[#103701] dark:bg-emerald-500" />
@@ -50,22 +43,23 @@ export default function GeneralCompanySetupPage() {
 
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-                Master Setup
+                Inventory Setup
               </h1>
 
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Administer runtime values, legal localization objects, and business properties.
-              </p>
+              {/* <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                Configure transaction posting classifications, standard rates,
+                and account mappings.
+              </p> */}
             </div>
           </div>
 
           <div className=" hidden rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400 sm:block">
-            Company Configuration
+            Inventory Configuration
           </div>
         </div>
       </div>
 
-      <CompanySetupForm />
+      <InventorySetupForm />
     </div>
   );
 }

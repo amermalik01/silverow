@@ -527,7 +527,7 @@ export default function JournalForm({
     }
   };
 
-  // const handlePersistAction = async (postToLedger: boolean = false) => {
+
   const handlePersistAction = async (
     postToLedger: boolean = false,
   ): Promise<boolean> => {

@@ -51,7 +51,7 @@ export default function SetupDataGridForm({
   };
 
   return (
-    <div className="p-4">
+    <div className="px-2 py-4">
       <div
         className="
           rounded-xl

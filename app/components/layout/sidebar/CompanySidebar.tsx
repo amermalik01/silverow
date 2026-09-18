@@ -58,13 +58,18 @@ const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  const [manualOpenMenus, setManualOpenMenus] = useState<(string | number)[]>(
-    [],
-  );
+  // const [manualOpenMenus, setManualOpenMenus] = useState<(string | number)[]>(
+  //   [],
+  // );
 
-  const [manualClosedMenus, setManualClosedMenus] = useState<
-    (string | number)[]
-  >([]);
+  // const [manualClosedMenus, setManualClosedMenus] = useState<
+  //   (string | number)[]
+  // >([]);
+
+  const [manualOpenMenu, setManualOpenMenu] = useState<string | number | null>(
+  null,
+);
+
 
   const slug = session?.user?.company_slug;
 
@@ -81,30 +86,42 @@ const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
       )
     : [];
 
-  const openMenus = Array.from(
-    new Set([
-      ...autoOpenMenus.filter((id) => !manualClosedMenus.includes(id)),
-      ...manualOpenMenus,
-    ]),
-  );
+    const openMenus = Array.from(
+  new Set([
+    ...autoOpenMenus,
+    ...(manualOpenMenu != null ? [manualOpenMenu] : []),
+  ]),
+);
 
-  const toggleMenu = (id: string | number) => {
-    setManualOpenMenus((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((item) => item !== id);
-      }
+const toggleMenu = (id: string | number) => {
+  setManualOpenMenu((prev) => (prev === id ? null : id));
+};
 
-      return [...prev, id];
-    });
 
-    setManualClosedMenus((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((item) => item !== id);
-      }
+  // const openMenus = Array.from(
+  //   new Set([
+  //     ...autoOpenMenus.filter((id) => !manualClosedMenus.includes(id)),
+  //     ...manualOpenMenus,
+  //   ]),
+  // );
 
-      return [...prev, id];
-    });
-  };
+  // const toggleMenu = (id: string | number) => {
+  //   setManualOpenMenus((prev) => {
+  //     if (prev.includes(id)) {
+  //       return prev.filter((item) => item !== id);
+  //     }
+
+  //     return [...prev, id];
+  //   });
+
+  //   setManualClosedMenus((prev) => {
+  //     if (prev.includes(id)) {
+  //       return prev.filter((item) => item !== id);
+  //     }
+
+  //     return [...prev, id];
+  //   });
+  // };
 
   const renderItems = (
     items: SidebarItemType[],

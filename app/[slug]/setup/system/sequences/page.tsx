@@ -1,7 +1,7 @@
 // app/[slug]/setup/system/sequences/page.tsx
 
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
-import SequenceList from "@/app/components/setup/system/SequenceList";
+import SequenceList from "@/app/components/setup/general/company/tabs/SequenceList";
 
 export default function SequencePage() {
   return (

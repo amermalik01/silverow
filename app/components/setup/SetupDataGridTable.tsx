@@ -473,7 +473,7 @@ export default function SetupDataGridTable({
           Search
           ===================================================== */}
 
-      <div className="mb-3">
+      <div className="mb-3 mx-2">
         <div className="relative">
           <Icon
             icon="solar:magnifer-linear"
@@ -535,6 +535,7 @@ export default function SetupDataGridTable({
           border
           border-slate-200
           dark:border-slate-700
+          mx-2
         "
       >
         <table
@@ -911,6 +912,7 @@ export default function SetupDataGridTable({
           sm:justify-between
           dark:border-slate-700
           dark:bg-slate-900
+          mx-2
         "
       >
         {/* Page information */}

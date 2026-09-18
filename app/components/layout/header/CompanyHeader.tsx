@@ -49,23 +49,25 @@ interface ManagementMenuItemProps {
   item: MenuItem;
   pathname: string;
   level?: number;
+  defaultOpen?: boolean;
 }
 
 const ManagementMenuItem = ({
   item,
   pathname,
   level = 0,
+  defaultOpen = false,
 }: ManagementMenuItemProps) => {
   const hasChildren = Boolean(item.children?.length);
   const active = isItemActive(item, pathname);
 
-  const [open, setOpen] = useState(active && hasChildren);
+  // const [open, setOpen] = useState(active && hasChildren);
+
+  const [open, setOpen] = useState(defaultOpen || (active && hasChildren));
 
   // useEffect(() => {
-  //   if (active && hasChildren) {
-  //     setOpen(true);
-  //   }
-  // }, [active, hasChildren]);
+  //   setOpen(true);
+  // }, []);
 
   if (item.url) {
     return (
@@ -173,6 +175,8 @@ const CompanyHeader = ({
 
   const managementRef = useRef<HTMLDivElement>(null);
 
+  setTheme("light");
+
   /* =======================================================
       Theme
       ======================================================= */
@@ -274,7 +278,7 @@ const CompanyHeader = ({
             "
           >
             {/* Theme */}
-            <button
+            {/* <button
               type="button"
               onClick={toggleMode}
               className="
@@ -291,7 +295,7 @@ const CompanyHeader = ({
                 }
                 width={20}
               />
-            </button>
+            </button> */}
 
             <Profile />
           </div>
@@ -352,8 +356,7 @@ const CompanyHeader = ({
                     Right Side
                 =============================================== */}
             <div className="flex items-center gap-2">
-              {/* Theme */}
-              <button
+              {/* <button
                 type="button"
                 onClick={toggleMode}
                 className="
@@ -372,8 +375,8 @@ const CompanyHeader = ({
                 />
               </button>
 
-              {/* Notifications */}
-              <Notifications />
+             
+              <Notifications /> */}
 
               {/* =============================================
                       Management Settings
@@ -506,8 +509,16 @@ const CompanyHeader = ({
                               key={item.id ?? item.name}
                               item={item}
                               pathname={pathname}
+                              defaultOpen={item.id === "Settings"}
                             />
                           ))}
+                          {/* {managementItems.map((item) => (
+                            <ManagementMenuItem
+                              key={item.id ?? item.name}
+                              item={item}
+                              pathname={pathname}
+                            />
+                          ))} */}
                         </div>
                       ) : (
                         <div
