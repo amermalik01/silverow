@@ -134,6 +134,33 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       }),
     };
 
+    /* 
+      const receiptPayload: PurchaseReceiptPayload = {
+
+            lines: unfulfilledLines.map((line, idx) => {
+              const remainingQty =
+                Number(line.quantity || 0) - Number(line.received_quantity || 0);
+              const rawCost = Number(line.unit_cost || 0);
+              const totalLineQty = Number(line.quantity || 1);
+              const totalDiscount = Number(line.discount_amount || 0);
+      
+              // Pro-rate discount for remaining quantities
+              const discountPerUnit = totalDiscount / totalLineQty;
+              const netUnitCost = rawCost - discountPerUnit;
+      
+              return {
+                line_no: idx + 1,
+                purchase_order_line_id: line.id, // Persisted DB UUID guaranteed
+                item_id: line.item_id,
+                warehouse_id: line.warehouse_id,
+                quantity: remainingQty,
+                unit_cost: netUnitCost,
+              };
+            }),
+          };
+      
+      */
+
     // 4. Execute Transactional Dispatch (Stock Return & GL Ledger Entries)
     const dispatchResult = await StockDeAllocationService.createTransactional(
       client,

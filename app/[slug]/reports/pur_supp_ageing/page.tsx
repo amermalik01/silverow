@@ -32,11 +32,11 @@ type SummaryRow = {
   currency_code: string;
   total: number;
   total_fcy: number;
-  b0_30: number;
-  b31_60: number;
-  b61_90: number;
-  b91_120: number;
-  b_over_120: number;
+  fcy_b0_30: number;
+  fcy_b31_60: number;
+  fcy_b61_90: number;
+  fcy_b91_120: number;
+  fcy_b_over_120: number;
 };
 
 type DetailedEntry = {
@@ -203,12 +203,12 @@ export default function SupplierAgeingReport() {
         "Supplier No": r.vendor_no,
         Name: r.vendor_name,
         Currency: r.currency_code,
-        Total: r.total,
-        "0 - 30 Days": r.b0_30,
-        "31 - 60 Days": r.b31_60,
-        "61 - 90 Days": r.b61_90,
-        "91 - 120 Days": r.b91_120,
-        "Over 120 Days": r.b_over_120,
+        Total: r.total_fcy,
+        "0 - 30 Days": r.fcy_b0_30,
+        "31 - 60 Days": r.fcy_b31_60,
+        "61 - 90 Days": r.fcy_b61_90,
+        "91 - 120 Days": r.fcy_b91_120,
+        "Over 120 Days": r.fcy_b_over_120,
       }));
       const ws = XLSX.utils.json_to_sheet(rows);
       XLSX.utils.book_append_sheet(workbook, ws, "Ageing Summary");
@@ -462,22 +462,22 @@ export default function SupplierAgeingReport() {
                           {row.currency_code}
                         </td>
                         <td className="p-3 text-right font-bold tabular-nums text-slate-900">
-                          {formatCurrency(row.total)}
+                          {formatCurrency(row.total_fcy)}
                         </td>
                         <td className="p-3 text-right tabular-nums">
-                          {formatCurrency(row.b0_30)}
+                          {formatCurrency(row.fcy_b0_30)}
                         </td>
                         <td className="p-3 text-right tabular-nums">
-                          {formatCurrency(row.b31_60)}
+                          {formatCurrency(row.fcy_b31_60)}
                         </td>
                         <td className="p-3 text-right tabular-nums">
-                          {formatCurrency(row.b61_90)}
+                          {formatCurrency(row.fcy_b61_90)}
                         </td>
                         <td className="p-3 text-right tabular-nums">
-                          {formatCurrency(row.b91_120)}
+                          {formatCurrency(row.fcy_b91_120)}
                         </td>
                         <td className="p-3 text-right tabular-nums">
-                          {formatCurrency(row.b_over_120)}
+                          {formatCurrency(row.fcy_b_over_120)}
                         </td>
                       </tr>
                     ))}
