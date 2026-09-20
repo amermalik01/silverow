@@ -48,6 +48,14 @@ import SalespersonLookupModal, {
 } from "../../shared/modals/SalespersonLookupModal";
 
 import MigrationUploadModal from "@/app/components/migration/MigrationUploadModal";
+import {
+  validatePurchaseOrder,
+  validatePurchaseOrderForStockAction,
+} from "./utils/purchaseOrder.validation";
+import {
+  calculatePurchaseOrderFinancials,
+  isPurchaseOrderFullyReceived,
+} from "./utils/purchaseOrder.calculations";
 
 interface Props {
   slug: string;
@@ -147,43 +155,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     Partial<PurchaseOrderAddress>
   >({ address_type: "shipping" });
 
-  /* const createEmptyPurchaseOrderLine = (): PurchaseOrderLineUI => ({
-    _key: `temp-${Date.now()}-${Math.random()}`,
-    line_type: "ITEM",
-
-    item_id: undefined,
-    item_code: undefined,
-    item_name: undefined,
-
-    description: "",
-    quantity: 1,
-
-    unit_cost: 0,
-    discount_type: "PERCENT",
-    discount_value: 0,
-
-    vat_percent: 0,
-    original_amount: 0,
-    discount_amount: 0,
-    net_amount: 0,
-    vat_amount: 0,
-    gross_amount: 0,
-
-    warehouse_id: undefined,
-    warehouse_code: undefined,
-    warehouse_name: undefined,
-
-    is_allocated: false,
-    received_quantity: 0,
-
-    allocations: [],
-    initialAllocations: [],
-  }); */
-
   const [lines, setLines] = useState<PurchaseOrderLineUI[]>([]);
-  // const [lines, setLines] = useState<PurchaseOrderLineUI[]>(
-  //   id ? [] : [createEmptyPurchaseOrderLine()],
-  // );
 
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
@@ -194,17 +166,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const isFormDisabled = !isEditMode || isCompleted;
 
   // Check if all line items with quantity > 0 have been received
-  const isFullyReceived = useMemo(() => {
-    if (lines.length === 0) return false;
-    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
-    if (itemLines.length === 0) return false;
 
-    return itemLines.every((l) => {
-      const qty = Number(l.quantity || 0);
-      const rcvd = Number(l.received_quantity || 0);
-      return qty > 0 && rcvd >= qty;
-    });
-  }, [lines]);
+  const isFullyReceived = useMemo(
+    () => isPurchaseOrderFullyReceived(lines),
+    [lines],
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -304,36 +270,14 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     );
   }, [currencyConfig.currency_id, masterData]);
 
-  const financials = useMemo(() => {
-    const originalAmount = lines.reduce(
-      (sum, l) =>
-        sum + Number(Number(l.quantity || 0) * Number(l.unit_cost || 0) || 0),
-      0,
-    );
-    const totalDiscount = lines.reduce(
-      (sum, l) => sum + Number(l.discount_amount || 0),
-      0,
-    );
-    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
-    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
-    const amountInclVat = amount + vat;
-
-    const rate =
-      Number(currencyConfig.exchange_rate) > 0
-        ? Number(currencyConfig.exchange_rate)
-        : 1;
-
-    const amountInclVatLCY = Number(amountInclVat) * rate;
-
-    return {
-      originalAmount,
-      totalDiscount,
-      amount,
-      vat,
-      amountInclVat,
-      amountInclVatLCY,
-    };
-  }, [lines, currencyConfig.exchange_rate]);
+  const financials = useMemo(
+    () =>
+      calculatePurchaseOrderFinancials(
+        lines,
+        Number(currencyConfig.exchange_rate),
+      ),
+    [lines, currencyConfig.exchange_rate],
+  );
 
   const hasSelectedLineItem = useMemo(() => {
     return lines.some((line) => {
@@ -525,110 +469,17 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     setOrder((prev) => ({ ...prev, [field]: value }));
   };
 
-  const validateLines = (): string[] => {
-    const errors: string[] = [];
-
-    if (lines.length === 0) {
-      errors.push("Purchase orders require at least one line.");
-      return errors;
-    }
-
-    lines.forEach((line, index) => {
-      const lineNo = index + 1;
-      const lineType = line.line_type || "ITEM";
-      const quantity = Number(line.quantity || 0);
-
-      if (lineType === "ITEM") {
-        if (!line.item_id) {
-          errors.push(`Line ${lineNo}: Please select an item.`);
-        }
-
-        if (!line.warehouse_id) {
-          errors.push(`Line ${lineNo}: Warehouse is required.`);
-        }
-
-        if (quantity <= 0) {
-          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
-        }
-      } else if (lineType === "GL_ACCOUNT") {
-        if (!line.gl_account_id) {
-          errors.push(`Line ${lineNo}: Please select a G/L account.`);
-        }
-
-        if (quantity <= 0) {
-          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
-        }
-      } else {
-        errors.push(`Line ${lineNo}: Invalid line type.`);
-      }
-    });
-
-    return errors;
-  };
-
   const validateForm = (includeLines = true): boolean => {
-    const errors: string[] = [];
-    if (!order.supplier_id) errors.push("Supplier selection is required.");
-
-    // 💥 FIX: Validate Posting Group presence for Tax Matrix calculation
-    if (
-      !order.purchase_posting_group_id &&
-      !order.vat_business_posting_group_id
-    ) {
-      errors.push(
-        "Selected supplier does not have a valid Purchase/VAT Posting Group assigned.",
-      );
-    }
-
-    if (!currencyConfig.currency_id)
-      errors.push("Transactional currency is required.");
-
-    if (includeLines) {
-      errors.push(...validateLines());
-    }
-
-    errors.push(...validateDates());
+    const errors = validatePurchaseOrder(
+      order,
+      lines,
+      currencyConfig.currency_id,
+      includeLines,
+    );
 
     setValidationErrors(errors);
+
     return errors.length === 0;
-  };
-
-  const validateDates = (): string[] => {
-    const errors: string[] = [];
-
-    const orderDate = order.order_date
-      ? new Date(order.order_date).getTime()
-      : null;
-
-    const invoiceDate = order.invoice_date
-      ? new Date(order.invoice_date).getTime()
-      : null;
-
-    const reqReceiptDate = order.req_receipt_date
-      ? new Date(order.req_receipt_date).getTime()
-      : null;
-
-    const receiptDate = order.receipt_date
-      ? new Date(order.receipt_date).getTime()
-      : null;
-
-    if (orderDate && invoiceDate && orderDate > invoiceDate) {
-      errors.push("Order Date cannot be after Invoice Date.");
-    }
-
-    if (orderDate && reqReceiptDate && orderDate > reqReceiptDate) {
-      errors.push("Order Date cannot be after Required Receipt Date.");
-    }
-
-    if (orderDate && receiptDate && orderDate > receiptDate) {
-      errors.push("Order Date cannot be after Receipt Date.");
-    }
-
-    if (reqReceiptDate && receiptDate && reqReceiptDate > receiptDate) {
-      errors.push("Receipt Date cannot be before Required Receipt Date.");
-    }
-
-    return errors;
   };
 
   const savePurchaseOrder = async (
@@ -695,15 +546,7 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       }));
 
       // Re-fetch persisted lines so newly created line IDs are available.
-      const linesRes = await fetch(`/api/purchase-orders/${targetId}/lines`);
-
-      if (linesRes.ok) {
-        const linesData = await linesRes.json();
-
-        if (linesData.lines) {
-          setLines(linesData.lines);
-        }
-      }
+      await fetchLatestLines(targetId);
 
       return targetId;
     } catch (err) {
@@ -719,41 +562,48 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     }
   };
 
+  const fetchLatestLines = async (targetId: string) => {
+    try {
+      const linesRes = await fetch(`/api/purchase-orders/${targetId}/lines`);
+      if (linesRes.ok) {
+        const linesData = await linesRes.json();
+        if (linesData.lines) {
+          setLines(linesData.lines);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to re-fetch PO lines:", err);
+    }
+  };
+
   const handleSave = async () => {
     const targetId = await savePurchaseOrder(false);
 
     if (!targetId) return;
 
     if (id) {
-      // Existing PO: return to view mode
       setIsEditMode(false);
       router.refresh();
     } else {
-      // New PO: move to edit URL
       router.replace(`/${slug}/purchases/purchase-orders/${targetId}/edit`);
     }
   };
 
   const handleImportItems = async () => {
-    // Existing PO
-    if (order.id) {
-      setMigrationPurchaseOrderId(order.id);
-      setShowMigrationModal(true);
-      return;
-    }
+    let targetId = order.id;
 
-    // New PO - save first
-    const targetId = await savePurchaseOrder(true);
-
+    // If this is a new draft PO, persist it first to acquire an ID
     if (!targetId) {
-      return;
+      const savedId = await savePurchaseOrder(true);
+      if (!savedId) return;
+
+      targetId = savedId;
+      setOrder((prev) => ({ ...prev, id: savedId }));
+      setIsEditMode(true);
+      router.replace(`/${slug}/purchases/purchase-orders/${savedId}/edit`);
     }
 
     setMigrationPurchaseOrderId(targetId);
-    setIsEditMode(true);
-
-    router.replace(`/${slug}/purchases/purchase-orders/${targetId}/edit`);
-
     setShowMigrationModal(true);
   };
 
@@ -788,79 +638,11 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   };
 
   const validateBeforeStockAction = (): boolean => {
-    const errors: string[] = [];
+    const errors = validatePurchaseOrderForStockAction(lines);
 
-    if (lines.length === 0) {
-      errors.push("Purchase order has no lines.");
-    } else {
-      // Check whether every line is a G/L Account line
-      const allGLAccountLines = lines.every(
-        (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
-      );
+    setValidationErrors(errors);
 
-      if (allGLAccountLines) {
-        setValidationErrors([]);
-        return true;
-      }
-      const hasItemLines = lines.some(
-        (line) => (line.line_type || "ITEM") === "ITEM",
-      );
-
-      lines.forEach((line, index) => {
-        const lineNo = index + 1;
-        const lineType = line.line_type || "ITEM";
-
-        if (lineType === "ITEM") {
-          const quantity = Number(line.quantity || 0);
-
-          if (!line.item_id) {
-            errors.push(`Line ${lineNo}: Item is required.`);
-            return;
-          }
-
-          if (!line.warehouse_id) {
-            errors.push(`Line ${lineNo}: Warehouse is required.`);
-            return;
-          }
-
-          if (quantity <= 0) {
-            errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
-            return;
-          }
-
-          // Only validate allocation when there are ITEM lines.
-          if (hasItemLines) {
-            const allocations =
-              line.allocations || line.initialAllocations || [];
-
-            const allocatedQuantity = allocations.reduce(
-              (sum, allocation) => sum + Number(allocation.quantity || 0),
-              0,
-            );
-
-            if (allocatedQuantity !== quantity) {
-              errors.push(
-                `Line ${lineNo}: Stock allocation is incomplete. Allocated ${allocatedQuantity} of ${quantity}.`,
-              );
-            }
-          }
-        }
-
-        if (lineType === "GL_ACCOUNT" && !line.gl_account_id) {
-          errors.push(`Line ${lineNo}: G/L account is required.`);
-        }
-      });
-    }
-
-    if (errors.length > 0) {
-      setValidationErrors(errors);
-      // toast.error("Please complete the purchase order before continuing.");
-      return false;
-    }
-
-    setValidationErrors([]);
-
-    return true;
+    return errors.length === 0;
   };
 
   // 1. Separate Handler for Receiving Stock (Physical Intake)
@@ -1519,24 +1301,325 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       />
 
       {showMigrationModal && (
-        <MigrationUploadModal
-          open={showMigrationModal}
-          onClose={() => {
-            setShowMigrationModal(false);
-            setMigrationPurchaseOrderId(null);
-          }}
-          purchaseOrder={{
-            ...order,
-            id: migrationPurchaseOrderId || order.id,
-          }}
-          onCompleted={async () => {
-            await refreshLines();
-
-            setShowMigrationModal(false);
-            setMigrationPurchaseOrderId(null);
-          }}
-        />
+        <>
+          <MigrationUploadModal
+            open={showMigrationModal}
+            onClose={() => {
+              setShowMigrationModal(false);
+              setMigrationPurchaseOrderId(null);
+            }}
+            purchaseOrder={{
+              ...order,
+              id: migrationPurchaseOrderId || order.id,
+            }}
+            onCompleted={async () => {
+              const activeId = migrationPurchaseOrderId || order.id;
+              if (activeId) {
+                await fetchLatestLines(activeId);
+              }
+              setShowMigrationModal(false);
+              setMigrationPurchaseOrderId(null);
+            }}
+          />
+        </>
       )}
     </div>
   );
 };
+
+/* const validateLines = (): string[] => {
+    const errors: string[] = [];
+
+    if (lines.length === 0) {
+      errors.push("Purchase orders require at least one line.");
+      return errors;
+    }
+
+    lines.forEach((line, index) => {
+      const lineNo = index + 1;
+      const lineType = line.line_type || "ITEM";
+      const quantity = Number(line.quantity || 0);
+
+      if (lineType === "ITEM") {
+        if (!line.item_id) {
+          errors.push(`Line ${lineNo}: Please select an item.`);
+        }
+
+        if (!line.warehouse_id) {
+          errors.push(`Line ${lineNo}: Warehouse is required.`);
+        }
+
+        if (quantity <= 0) {
+          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
+        }
+      } else if (lineType === "GL_ACCOUNT") {
+        if (!line.gl_account_id) {
+          errors.push(`Line ${lineNo}: Please select a G/L account.`);
+        }
+
+        if (quantity <= 0) {
+          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
+        }
+      } else {
+        errors.push(`Line ${lineNo}: Invalid line type.`);
+      }
+    });
+
+    return errors;
+  }; */
+
+/* const validateForm = (includeLines = true): boolean => {
+    const errors: string[] = [];
+    if (!order.supplier_id) errors.push("Supplier selection is required.");
+
+    // 💥 FIX: Validate Posting Group presence for Tax Matrix calculation
+    if (
+      !order.purchase_posting_group_id &&
+      !order.vat_business_posting_group_id
+    ) {
+      errors.push(
+        "Selected supplier does not have a valid Purchase/VAT Posting Group assigned.",
+      );
+    }
+
+    if (!currencyConfig.currency_id)
+      errors.push("Transactional currency is required.");
+
+    if (includeLines) {
+      errors.push(...validateLines());
+    }
+
+    errors.push(...validateDates());
+
+    setValidationErrors(errors);
+    return errors.length === 0;
+  }; */
+
+/* const validateDates = (): string[] => {
+    const errors: string[] = [];
+
+    const orderDate = order.order_date
+      ? new Date(order.order_date).getTime()
+      : null;
+
+    const invoiceDate = order.invoice_date
+      ? new Date(order.invoice_date).getTime()
+      : null;
+
+    const reqReceiptDate = order.req_receipt_date
+      ? new Date(order.req_receipt_date).getTime()
+      : null;
+
+    const receiptDate = order.receipt_date
+      ? new Date(order.receipt_date).getTime()
+      : null;
+
+    if (orderDate && invoiceDate && orderDate > invoiceDate) {
+      errors.push("Order Date cannot be after Invoice Date.");
+    }
+
+    if (orderDate && reqReceiptDate && orderDate > reqReceiptDate) {
+      errors.push("Order Date cannot be after Required Receipt Date.");
+    }
+
+    if (orderDate && receiptDate && orderDate > receiptDate) {
+      errors.push("Order Date cannot be after Receipt Date.");
+    }
+
+    if (reqReceiptDate && receiptDate && reqReceiptDate > receiptDate) {
+      errors.push("Receipt Date cannot be before Required Receipt Date.");
+    }
+
+    return errors;
+  }; */
+
+/* const validateBeforeStockAction = (): boolean => {
+    const errors: string[] = [];
+
+    if (lines.length === 0) {
+      errors.push("Purchase order has no lines.");
+    } else {
+      // Check whether every line is a G/L Account line
+      const allGLAccountLines = lines.every(
+        (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
+      );
+
+      if (allGLAccountLines) {
+        setValidationErrors([]);
+        return true;
+      }
+      const hasItemLines = lines.some(
+        (line) => (line.line_type || "ITEM") === "ITEM",
+      );
+
+      lines.forEach((line, index) => {
+        const lineNo = index + 1;
+        const lineType = line.line_type || "ITEM";
+
+        if (lineType === "ITEM") {
+          const quantity = Number(line.quantity || 0);
+
+          if (!line.item_id) {
+            errors.push(`Line ${lineNo}: Item is required.`);
+            return;
+          }
+
+          if (!line.warehouse_id) {
+            errors.push(`Line ${lineNo}: Warehouse is required.`);
+            return;
+          }
+
+          if (quantity <= 0) {
+            errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
+            return;
+          }
+
+          // Only validate allocation when there are ITEM lines.
+          if (hasItemLines) {
+            const allocations =
+              line.allocations || line.initialAllocations || [];
+
+            const allocatedQuantity = allocations.reduce(
+              (sum, allocation) => sum + Number(allocation.quantity || 0),
+              0,
+            );
+
+            if (allocatedQuantity !== quantity) {
+              errors.push(
+                `Line ${lineNo}: Stock allocation is incomplete. Allocated ${allocatedQuantity} of ${quantity}.`,
+              );
+            }
+          }
+        }
+
+        if (lineType === "GL_ACCOUNT" && !line.gl_account_id) {
+          errors.push(`Line ${lineNo}: G/L account is required.`);
+        }
+      });
+    }
+
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      // toast.error("Please complete the purchase order before continuing.");
+      return false;
+    }
+
+    setValidationErrors([]);
+
+    return true;
+  }; */
+
+/* const createEmptyPurchaseOrderLine = (): PurchaseOrderLineUI => ({
+    _key: `temp-${Date.now()}-${Math.random()}`,
+    line_type: "ITEM",
+
+    item_id: undefined,
+    item_code: undefined,
+    item_name: undefined,
+
+    description: "",
+    quantity: 1,
+
+    unit_cost: 0,
+    discount_type: "PERCENT",
+    discount_value: 0,
+
+    vat_percent: 0,
+    original_amount: 0,
+    discount_amount: 0,
+    net_amount: 0,
+    vat_amount: 0,
+    gross_amount: 0,
+
+    warehouse_id: undefined,
+    warehouse_code: undefined,
+    warehouse_name: undefined,
+
+    is_allocated: false,
+    received_quantity: 0,
+
+    allocations: [],
+    initialAllocations: [],
+  }); */
+// {
+//   showMigrationModal && (
+//     <MigrationUploadModal
+//       open={showMigrationModal}
+//       onClose={() => {
+//         setShowMigrationModal(false);
+//         setMigrationPurchaseOrderId(null);
+//       }}
+//       purchaseOrder={{
+//         ...order,
+//         id: migrationPurchaseOrderId || order.id,
+//       }}
+//       onCompleted={async () => {
+//         await refreshLines();
+
+//         setShowMigrationModal(false);
+//         setMigrationPurchaseOrderId(null);
+//       }}
+//     />
+//   );
+// }
+
+// if (activeId) {
+//   // Fetch persisted lines directly using activeId
+//   const linesRes = await fetch(
+//     `/api/purchase-orders/${activeId}/lines`,
+//   );
+//   if (linesRes.ok) {
+//     const linesData = await linesRes.json();
+//     if (linesData.lines) {
+//       setLines(linesData.lines);
+//     }
+//   }
+// }
+// if (refreshLines) {
+//   await refreshLines();
+// }
+// const [lines, setLines] = useState<PurchaseOrderLineUI[]>(
+//   id ? [] : [createEmptyPurchaseOrderLine()],
+// );
+
+/* const isFullyReceived = useMemo(() => {
+    if (lines.length === 0) return false;
+    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
+    if (itemLines.length === 0) return false;
+
+    return itemLines.every((l) => {
+      const qty = Number(l.quantity || 0);
+      const rcvd = Number(l.received_quantity || 0);
+      return qty > 0 && rcvd >= qty;
+    });
+  }, [lines]); */
+/* const financials = useMemo(() => {
+    const originalAmount = lines.reduce(
+      (sum, l) =>
+        sum + Number(Number(l.quantity || 0) * Number(l.unit_cost || 0) || 0),
+      0,
+    );
+    const totalDiscount = lines.reduce(
+      (sum, l) => sum + Number(l.discount_amount || 0),
+      0,
+    );
+    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
+    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
+    const amountInclVat = amount + vat;
+
+    const rate =
+      Number(currencyConfig.exchange_rate) > 0
+        ? Number(currencyConfig.exchange_rate)
+        : 1;
+
+    const amountInclVatLCY = Number(amountInclVat) * rate;
+
+    return {
+      originalAmount,
+      totalDiscount,
+      amount,
+      vat,
+      amountInclVat,
+      amountInclVatLCY,
+    };
+  }, [lines, currencyConfig.exchange_rate]); */

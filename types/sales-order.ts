@@ -8,6 +8,7 @@ export type SalesOrder = {
   id?: string;
   company_id?: string;
   order_no?: string;
+  invoice_no?: string;
   customer_id: string;
   customer_no?: string;
   customer_name?: string;

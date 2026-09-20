@@ -7,6 +7,8 @@ import { useState, useRef, DragEvent } from "react";
 import MigrationPreview from "./MigrationPreview";
 import MigrationResult from "./MigrationResult";
 
+import { toast } from "sonner";
+
 import type {
   MigrationRow,
   MigrationUploadResponse,
@@ -115,11 +117,26 @@ export default function MigrationUploader({
 
       const data: MigrationExecuteResponse = await response.json();
 
+      if (!response.ok) {
+        // throw new Error(data || "Migration execution failed");
+        throw new Error(`Migration execution failed: ${response.statusText}`);
+      }
+
       setResult(data);
 
-      if (data.failed === 0) {
+      // if (data.failed === 0) {
+      //   onCompleted?.();
+      // }
+
+      if (data.failed === 0 || data.success > 0) {
         onCompleted?.();
       }
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message || "Failed to execute migration");
+      }
+
+      return null;
     } finally {
       setLoading(false);
     }

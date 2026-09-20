@@ -7,6 +7,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import NumericTextInput from "@/components/ui/NumericTextInput";
+
 import { useLoader } from "@/app/context/LoaderContext";
 
 import {
@@ -20,24 +24,54 @@ import SalesOrderLines from "./SalesOrderLines";
 import { OrderFormTabs } from "./OrderFormTabs";
 import CustomerLookupModal, { CustomerLookupItem } from "./CustomerLookupModal";
 import CustomerDeliveryLocationModal from "./CustomerDeliveryLocationModal";
-import { Button } from "@/components/ui/button";
 
-import NumericTextInput from "@/components/ui/NumericTextInput";
 import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
-import {
-  PurchaseOrderLookupItem,
-  PurchaseOrderLookupModal,
-} from "../../shared/modals/PurchaseOrderLookupModal";
+
+// import {
+//   PurchaseOrderLookupItem,
+//   PurchaseOrderLookupModal,
+// } from "../../shared/modals/PurchaseOrderLookupModal";
+
 import SalespersonLookupModal, {
   Employee,
 } from "../../shared/modals/SalespersonLookupModal";
-import { PurchaseOrderMultiLookupModal } from "../../shared/modals/PurchaseOrderMultiLookupModal";
+
+// import { PurchaseOrderMultiLookupModal } from "../../shared/modals/PurchaseOrderMultiLookupModal";
+
+import {
+  PurchaseOrderLookupItem,
+  PurchaseOrderMultiLookupModal,
+} from "../../shared/modals/PurchaseOrderMultiLookupModal";
+
+import {
+  validateSalesOrder,
+  validateSalesOrderForStockAction,
+} from "./utils/salesOrder.validation";
+
+import {
+  calculateSalesOrderFinancials,
+  isSalesOrderFullyDispatched,
+} from "./utils/salesOrder.calculations";
+
+import { useSalesOrderState } from "./hooks/useSalesOrderState";
+import { useSalesOrderData } from "./hooks/useSalesOrderData";
+
+// import type {
+//   TabType,
+//   CustomerSelectionSource,
+// } from "./types/salesOrderForm.types";
 
 type Props = {
   slug: string;
   id?: string;
   isReadOnly?: boolean;
+};
+
+type FetchLinesAPIResponse = {
+  lines?: SalesOrderLineUI[];
+  success?: boolean;
+  error?: string;
 };
 
 type TabType = "general" | "invoicing" | "shipping" | "margin" | "attachments";
@@ -55,43 +89,128 @@ export const SalesOrderForm: React.FC<Props> = ({
 
   const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
 
-  const [activeTab, setActiveTab] = useState<TabType>("general");
-  const [saving, setSaving] = useState<boolean>(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const state = useSalesOrderState({
+    id,
+    isReadOnly,
+  });
 
-  const [customerSelectionSource, setCustomerSelectionSource] =
-    useState<CustomerSelectionSource>("general");
-  const [showCustomerChangeModal, setShowCustomerChangeModal] = useState(false);
-  const [customerModalOpen, setCustomerModalOpen] = useState(false);
-  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const {
+    activeTab,
+    setActiveTab,
+
+    saving,
+    setSaving,
+
+    validationErrors,
+    setValidationErrors,
+
+    customerSelectionSource,
+    setCustomerSelectionSource,
+
+    showCustomerChangeModal,
+    setShowCustomerChangeModal,
+
+    customerModalOpen,
+    setCustomerModalOpen,
+
+    locationModalOpen,
+    setLocationModalOpen,
+
+    supplierModalOpen,
+    setSupplierModalOpen,
+
+    POModalOpen,
+    setPOModalOpen,
+
+    SOModalOpen,
+    setSOModalOpen,
+
+    SalespersonModalOpen,
+    setSalespersonModalOpen,
+
+    showMigrationModal,
+    setShowMigrationModal,
+
+    migrationSalesOrderId,
+    setMigrationSalesOrderId,
+
+    isEditMode,
+    setIsEditMode,
+
+    isUpdatingStatus,
+    setIsUpdatingStatus,
+
+    showDispatchModal,
+    setShowDispatchModal,
+
+    showInvoiceModal,
+    setShowInvoiceModal,
+
+    showDispatchAndPostModal,
+    setShowDispatchAndPostModal,
+
+    isPosting,
+    setIsPosting,
+
+    masterData,
+    setMasterData,
+
+    order,
+    setOrder,
+
+    primaryAddress,
+    setPrimaryAddress,
+
+    billingAddress,
+    setBillingAddress,
+
+    shippingAddress,
+    setShippingAddress,
+
+    lines,
+    setLines,
+
+    currencyConfig,
+    setCurrencyConfig,
+  } = state;
+
+  const isUpdateMode = !!id;
+
+  // const [activeTab, setActiveTab] = useState<TabType>("general");
+  // const [saving, setSaving] = useState<boolean>(false);
+  // const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // const [customerSelectionSource, setCustomerSelectionSource] =
+  //   useState<CustomerSelectionSource>("general");
+  // const [showCustomerChangeModal, setShowCustomerChangeModal] = useState(false);
+  // const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  // const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const [SalesPersonModalOpen, setSalesPersonModalOpen] = useState(false);
 
-  const [POModalOpen, setPOModalOpen] = useState(false);
-  const [SOModalOpen, setSOModalOpen] = useState(false);
+  // const [POModalOpen, setPOModalOpen] = useState(false);
+  // const [SOModalOpen, setSOModalOpen] = useState(false);
 
-  // Manage view/edit state locally
-  const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
+  // // Manage view/edit state locally
+  // const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+  // const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
   // Add states for modal control
   const [showShipModal, setShowShipModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [isPosting, setIsPosting] = useState(false);
+  // const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  // const [isPosting, setIsPosting] = useState(false);
   const [isShipping, setIsShipping] = useState(false);
 
-  const [masterData, setMasterData] = useState<SalesOrderMasterData | null>(
-    null,
-  );
+  // const [masterData, setMasterData] = useState<SalesOrderMasterData | null>(
+  //   null,
+  // );
 
-  const isUpdateMode = Boolean(id);
-  const isLoadingStages = !masterData;
+  // const isUpdateMode = Boolean(id);
+  // const isLoadingStages = !masterData;
   const stages = masterData?.stages ?? [];
 
-  // const isUpdateMode = !!id;
-
-  const [order, setOrder] = useState<Partial<SalesOrder>>({
+  /* const [order, setOrder] = useState<Partial<SalesOrder>>({
     order_no: id ? "" : "",
     customer_id: "",
     customer_no: "",
@@ -142,9 +261,59 @@ export const SalesOrderForm: React.FC<Props> = ({
   const [currencyConfig, setCurrencyConfig] = useState({
     currency_id: "",
     exchange_rate: 1,
-  });
+  }); */
+
+  const isLoadingStages = !masterData;
 
   const isCompleted = order.status === "completed" || order.status === "POSTED";
+
+  const isFormDisabled = !isEditMode || isCompleted;
+
+  useSalesOrderData({
+    id,
+
+    setOrder,
+    setLines,
+
+    setPrimaryAddress,
+    setBillingAddress,
+    setShippingAddress,
+
+    setCurrencyConfig,
+    setMasterData,
+
+    show,
+    hide,
+  });
+
+  const isFullyDispatched = useMemo(
+    () => isSalesOrderFullyDispatched(lines),
+    [lines],
+  );
+
+  const selectedCurrency = useMemo(() => {
+    return (
+      masterData?.currencies.find(
+        (currency) => currency.id === currencyConfig.currency_id,
+      ) ?? null
+    );
+  }, [masterData, currencyConfig.currency_id]);
+
+  const financials = useMemo(
+    () =>
+      calculateSalesOrderFinancials(
+        lines,
+        Number(currencyConfig.exchange_rate),
+      ),
+    [lines, currencyConfig.exchange_rate],
+  );
+
+  const hasSelectedLineItem = useMemo(
+    () => lines.some((line) => !!line.item_id || !!line.gl_account_id),
+    [lines],
+  );
+
+  /* const isCompleted = order.status === "completed" || order.status === "POSTED";
   const isFormDisabled = !isEditMode || isCompleted;
 
   // Check if all line items with quantity > 0 have been shipped
@@ -158,7 +327,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       const shipped = Number(l.quantity_shipped || 0);
       return qty > 0 && shipped >= qty;
     });
-  }, [lines]);
+  }, [lines]); */
 
   useEffect(() => {
     if (!id) return;
@@ -214,17 +383,17 @@ export const SalesOrderForm: React.FC<Props> = ({
     loadMasterData();
   }, []);
 
-  const refreshLines = async () => {
-    if (!order.id) return;
+  // const refreshLines = async () => {
+  //   if (!order.id) return;
 
-    const response = await fetch(`/api/sales/sales-orders/${order.id}/lines`);
+  //   const response = await fetch(`/api/sales/sales-orders/${order.id}/lines`);
 
-    const data = await response.json();
+  //   const data = await response.json();
 
-    setLines(data.lines ?? []);
-  };
+  //   setLines(data.lines ?? []);
+  // };
 
-  const selectedCurrency = useMemo(() => {
+  /* const selectedCurrency = useMemo(() => {
     return (
       masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
       null
@@ -266,7 +435,7 @@ export const SalesOrderForm: React.FC<Props> = ({
     return lines.some((line) => {
       return !!line.item_id || !!line.gl_account_id;
     });
-  }, [lines]);
+  }, [lines]); */
 
   const handleGeneralCustomerSelection = () => {
     setCustomerSelectionSource("general");
@@ -294,14 +463,9 @@ export const SalesOrderForm: React.FC<Props> = ({
   };
 
   const handleConfirmCustomerChange = () => {
-    // Remove all existing PO lines.
     setLines([]);
-    // setLines([createEmptyPurchaseOrderLine()]);
-
-    // Close confirmation modal.
     setShowCustomerChangeModal(false);
 
-    // Now allow Customer selection.
     setCustomerModalOpen(true);
     toast.info(
       "Sales order lines have been cleared. Please select a customer.",
@@ -372,6 +536,9 @@ export const SalesOrderForm: React.FC<Props> = ({
       payable_bank: customer.payable_bank || "",
       payment_terms_id: customer.payment_terms || "",
       payment_method_id: customer.payment_method || "",
+
+      // receivable_bank:
+      //   customer.receivable_bank || "",
     }));
 
     if (customer.primary_address) setPrimaryAddress(customer.primary_address);
@@ -426,7 +593,153 @@ export const SalesOrderForm: React.FC<Props> = ({
     setOrder((prev) => ({ ...prev, [field]: value }));
   };
 
-  const validateDates = (): string[] => {
+  const validateForm = (includeLines = true): boolean => {
+    const errors = validateSalesOrder(
+      order,
+      lines,
+      currencyConfig.currency_id,
+      includeLines,
+    );
+
+    setValidationErrors(errors);
+
+    return errors.length === 0;
+  };
+
+  const validateBeforeStockAction = (): boolean => {
+    const errors = validateSalesOrderForStockAction(lines);
+
+    setValidationErrors(errors);
+
+    return errors.length === 0;
+  };
+
+  const refreshLines = async () => {
+    if (!order.id) return;
+
+    try {
+      const response = await fetch(`/api/sales-orders/${order.id}/lines`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch lines: ${response.statusText}`);
+      }
+
+      const data: FetchLinesAPIResponse = await response.json();
+
+      setLines(data.lines ?? []);
+    } catch (error) {
+      console.error("Error refreshing sales order lines:", error);
+    }
+  };
+
+  const saveSalesOrder = async (
+    requireLines = false,
+  ): Promise<string | null> => {
+    if (!validateForm(!requireLines)) {
+      return null;
+    }
+
+    show("Saving...");
+
+    try {
+      setSaving(true);
+
+      setValidationErrors([]);
+
+      const payload = {
+        order: {
+          ...order,
+
+          ...currencyConfig,
+
+          subtotal: financials.amount,
+
+          tax_amount: financials.vat,
+
+          total_amount: financials.amountInclVat,
+        },
+
+        primary_address: primaryAddress,
+
+        billing_address: billingAddress,
+
+        shipping_address: shippingAddress,
+
+        lines,
+
+        allow_empty_lines: requireLines,
+      };
+
+      const response = await fetch(
+        id ? `/api/sales-orders/${id}` : "/api/sales-orders",
+        {
+          method: id ? "PUT" : "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Error writing Sales Order.");
+      }
+
+      const targetId = id || result?.data?.id;
+
+      if (!targetId) {
+        throw new Error("Sales Order was saved but no ID was returned.");
+      }
+
+      toast.success(id ? "Sales Order Updated" : "Sales Order Created");
+
+      setOrder((prev) => ({
+        ...prev,
+
+        ...(result?.data || {}),
+
+        id: targetId,
+      }));
+
+      await fetchLatestLines(targetId);
+
+      return targetId;
+    } catch (error) {
+      if (error instanceof Error) {
+        setValidationErrors([error.message]);
+
+        toast.error(error.message);
+      }
+
+      return null;
+    } finally {
+      setSaving(false);
+
+      hide();
+    }
+  };
+
+  const fetchLatestLines = async (targetId: string) => {
+    try {
+      const response = await fetch(`/api/sales-orders/${targetId}/lines`);
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+
+      if (data.lines) {
+        setLines(data.lines);
+      }
+    } catch (error) {
+      console.error("Failed to re-fetch Sales Order lines:", error);
+    }
+  };
+
+  /* const validateDates = (): string[] => {
     const errors: string[] = [];
 
     const orderDate = order.order_date
@@ -480,74 +793,90 @@ export const SalesOrderForm: React.FC<Props> = ({
 
     setValidationErrors(errors);
     return errors.length === 0;
-  };
+  }; */
 
   const handleSave = async () => {
-    if (!validateForm()) {
-      toast.error("Please resolve validation errors before saving.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
+    const targetId = await saveSalesOrder(false);
 
-    show("Saving Record...");
+    if (!targetId) return;
 
-    try {
-      setSaving(true);
-      setValidationErrors([]);
+    if (id) {
+      setIsEditMode(false);
 
-      const payload = {
-        order: {
-          ...order,
-          ...currencyConfig,
-          subtotal: financials.amount,
-          vat_amount: financials.vat,
-          total_amount: financials.amountInclVat,
-        },
-        primary_address: primaryAddress,
-        billing_address: billingAddress,
-        shipping_address: shippingAddress,
-
-        lines,
-      };
-
-      const res = await fetch(
-        id ? `/api/sales/sales-orders/${id}` : "/api/sales/sales-orders",
-        {
-          method: id ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      const result = await res.json();
-      if (!res.ok)
-        throw new Error(
-          result.error || "Execution error writing back sales records.",
-        );
-
-      toast.success(id ? "Sales Order Updated" : "Sales Order Created");
-      const targetId = id || result?.data?.id;
-
-      if (targetId) {
-        const linesRes = await fetch(`/api/sales/sales-orders/${targetId}/lines`);
-        const linesData = await linesRes.json();
-        if (linesData.lines) setLines(linesData.lines);
-      }
-
-      if (id) {
-        setIsEditMode(false);
-        router.refresh();
-      } else if (result?.data?.id) {
-        router.replace(`/${slug}/sales/sales-orders/${result.data.id}/edit`);
-      }
-    } catch (err) {
-      console.error(err);
-      if (err instanceof Error) setValidationErrors([err.message]);
-    } finally {
-      setSaving(false);
-      hide();
+      router.refresh();
+    } else {
+      router.replace(`/${slug}/sales/orders/${targetId}/edit`);
     }
   };
+
+  // const handleSave = async () => {
+  //   if (!validateForm()) {
+  //     toast.error("Please resolve validation errors before saving.");
+  //     window.scrollTo({ top: 0, behavior: "smooth" });
+  //     return;
+  //   }
+
+  //   show("Saving Record...");
+
+  //   try {
+  //     setSaving(true);
+  //     setValidationErrors([]);
+
+  //     const payload = {
+  //       order: {
+  //         ...order,
+  //         ...currencyConfig,
+  //         subtotal: financials.amount,
+  //         vat_amount: financials.vat,
+  //         total_amount: financials.amountInclVat,
+  //       },
+  //       primary_address: primaryAddress,
+  //       billing_address: billingAddress,
+  //       shipping_address: shippingAddress,
+
+  //       lines,
+  //     };
+
+  //     const res = await fetch(
+  //       id ? `/api/sales/sales-orders/${id}` : "/api/sales/sales-orders",
+  //       {
+  //         method: id ? "PUT" : "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(payload),
+  //       },
+  //     );
+
+  //     const result = await res.json();
+  //     if (!res.ok)
+  //       throw new Error(
+  //         result.error || "Execution error writing back sales records.",
+  //       );
+
+  //     toast.success(id ? "Sales Order Updated" : "Sales Order Created");
+  //     const targetId = id || result?.data?.id;
+
+  //     if (targetId) {
+  //       const linesRes = await fetch(
+  //         `/api/sales/sales-orders/${targetId}/lines`,
+  //       );
+  //       const linesData = await linesRes.json();
+  //       if (linesData.lines) setLines(linesData.lines);
+  //     }
+
+  //     if (id) {
+  //       setIsEditMode(false);
+  //       router.refresh();
+  //     } else if (result?.data?.id) {
+  //       router.replace(`/${slug}/sales/sales-orders/${result.data.id}/edit`);
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     if (err instanceof Error) setValidationErrors([err.message]);
+  //   } finally {
+  //     setSaving(false);
+  //     hide();
+  //   }
+  // };
 
   const handleStageClick = async (targetStage: {
     id: string;
@@ -579,8 +908,222 @@ export const SalesOrderForm: React.FC<Props> = ({
     }
   };
 
-  // 2. Separate Handler for Posting Invoice
+  const handleDispatchStock = async () => {
+    if (!id) return;
+
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
+    setIsPosting(true);
+
+    show("Saving and Dispatching Record...");
+
+    try {
+      toast.loading("Processing stock dispatch...", {
+        id: "action-toast",
+      });
+
+      const response = await fetch(`/api/sales-orders/${id}/dispatch`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          order,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to dispatch stock");
+      }
+
+      toast.success("Stock dispatched successfully!", {
+        id: "action-toast",
+      });
+
+      setShowDispatchModal(false);
+
+      await refreshLines();
+
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error dispatching stock",
+        {
+          id: "action-toast",
+        },
+      );
+    } finally {
+      setIsPosting(false);
+
+      hide();
+    }
+  };
+
+  /*
+   * ------------------------------------------------------------
+   * Dispatch + Post Invoice
+   * ------------------------------------------------------------
+   */
+
+  const handleDispatchAndPost = async () => {
+    if (!id) return;
+
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
+    setIsPosting(true);
+
+    show("Dispatching Stock & Posting Invoice...");
+
+    try {
+      toast.loading("Dispatching stock and posting sales invoice...", {
+        id: "action-toast",
+      });
+
+      const response = await fetch(
+        `/api/sales-orders/${id}/dispatch-and-post`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            customer_invoice_no: order.reference,
+
+            order_date: order.order_date,
+
+            posting_date: order.order_date,
+
+            financials,
+
+            order,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Failed to dispatch stock and post invoice.",
+        );
+      }
+
+      toast.success("Stock dispatched and invoice posted successfully!", {
+        id: "action-toast",
+      });
+
+      setShowDispatchAndPostModal(false);
+
+      router.push(`/${slug}/sales/orders/create`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error processing operation.",
+        {
+          id: "action-toast",
+        },
+      );
+    } finally {
+      setIsPosting(false);
+
+      hide();
+    }
+  };
+
+  const handlePostInvoiceClick = () => {
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
+    if (!order.reference) {
+      toast.error("Please enter a Customer Invoice No. before posting.");
+
+      return;
+    }
+
+    const allGLAccountLines = lines.every(
+      (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
+    );
+
+    if (!isFullyDispatched && !allGLAccountLines) {
+      setShowDispatchAndPostModal(true);
+    } else {
+      setShowInvoiceModal(true);
+    }
+  };
+
   const handlePostInvoice = async () => {
+    if (!id) return;
+
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
+    setIsPosting(true);
+
+    show("Posting Invoice...");
+
+    try {
+      toast.loading("Posting sales invoice...", {
+        id: "action-toast",
+      });
+
+      const response = await fetch(`/api/sales-orders/${id}/post-invoice`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          customer_invoice_no: order.reference,
+
+          order_date: order.order_date,
+
+          posting_date: order.posting_date,
+
+          financials,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to post sales invoice");
+      }
+
+      toast.success("Sales invoice posted!", {
+        id: "action-toast",
+      });
+
+      setShowInvoiceModal(false);
+
+      router.push(`/${slug}/sales/orders/create`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error posting invoice",
+        {
+          id: "action-toast",
+        },
+      );
+    } finally {
+      setIsPosting(false);
+
+      hide();
+    }
+  };
+
+  // 2. Separate Handler for Posting Invoice
+  /* const handlePostInvoice = async () => {
     if (!id) return;
     setIsPosting(true);
 
@@ -619,7 +1162,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       setIsPosting(false);
       hide();
     }
-  };
+  }; */
 
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
@@ -637,7 +1180,9 @@ export const SalesOrderForm: React.FC<Props> = ({
             label: "Sales Orders",
             href: `/${slug}/sales/sales-orders`,
           },
-          { label: order.order_no || "" },
+          {
+            label: order.order_no || order.invoice_no || "",
+          },
         ]}
       />
 
@@ -691,7 +1236,10 @@ export const SalesOrderForm: React.FC<Props> = ({
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() =>
+                  setActiveTab(tab)
+                }
+                // onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap ${
                   activeTab === tab
                     ? "border-emerald-600 text-emerald-600"
@@ -939,10 +1487,27 @@ export const SalesOrderForm: React.FC<Props> = ({
           <div className="flex items-center gap-2">
             {isUpdateMode && (
               <>
-                <Button
+                {/* <Button
                   type="button"
                   variant="post"
                   onClick={() => setShowInvoiceModal(true)}
+                  disabled={isPosting || isCompleted}
+                >
+                  Post Invoice
+                </Button>
+                <Button
+                  type="button"
+                  variant="dispatch"
+                  onClick={() => setShowShipModal(true)}
+                  disabled={isPosting || isFullyDispatched || isCompleted}
+                >
+                  Ship Items
+                </Button> */}
+
+                <Button
+                  type="button"
+                  variant="post"
+                  onClick={handlePostInvoiceClick}
                   disabled={isPosting || isCompleted}
                 >
                   Post Invoice
@@ -951,10 +1516,16 @@ export const SalesOrderForm: React.FC<Props> = ({
                 <Button
                   type="button"
                   variant="dispatch"
-                  onClick={() => setShowShipModal(true)}
+                  onClick={() => {
+                    if (!validateBeforeStockAction()) {
+                      return;
+                    }
+
+                    setShowDispatchModal(true);
+                  }}
                   disabled={isPosting || isFullyDispatched || isCompleted}
                 >
-                  Ship Items
+                  Dispatch Stock
                 </Button>
               </>
             )}
@@ -993,14 +1564,88 @@ export const SalesOrderForm: React.FC<Props> = ({
         </div>
       </div>
 
-      <GeneralConfirmModal
+      {/* <GeneralConfirmModal
         isOpen={showInvoiceModal}
         title="Confirmation"
         message="Are you sure you want to post the invoice for this sales order?"
         onConfirm={handlePostInvoice}
         onCancel={() => setShowInvoiceModal(false)}
         loading={isPosting}
+      /> */}
+
+      {/* ======================================================
+          DISPATCH CONFIRMATION
+          ====================================================== */}
+
+      <GeneralConfirmModal
+        isOpen={
+          showDispatchModal
+        }
+        title="Confirmation"
+        message="Are you sure you want to dispatch the stock?"
+        onConfirm={
+          handleDispatchStock
+        }
+        onCancel={() =>
+          setShowDispatchModal(
+            false,
+          )
+        }
+        loading={isPosting}
       />
+
+      {/* ======================================================
+          POST INVOICE CONFIRMATION
+          ====================================================== */}
+
+      <GeneralConfirmModal
+        isOpen={
+          showInvoiceModal
+        }
+        title="Confirmation"
+        message="Are you sure you want to post this sales order?"
+        onConfirm={
+          handlePostInvoice
+        }
+        onCancel={() =>
+          setShowInvoiceModal(
+            false,
+          )
+        }
+        loading={isPosting}
+      />
+
+      {/* ======================================================
+          DISPATCH + POST
+          ====================================================== */}
+
+      <GeneralConfirmModal
+        isOpen={
+          showDispatchAndPostModal
+        }
+        title="Stock Dispatch Required"
+        message={
+          <>
+            Stock has not been fully
+            dispatched for this order.
+            Would you like to dispatch
+            the remaining stock
+            automatically and post
+            the sales invoice now?
+          </>
+        }
+        onConfirm={
+          handleDispatchAndPost
+        }
+        onCancel={() =>
+          setShowDispatchAndPostModal(
+            false,
+          )
+        }
+        loading={isPosting}
+      />
+
+
 
       <GeneralConfirmModal
         isOpen={showCustomerChangeModal}

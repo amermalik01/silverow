@@ -17,7 +17,21 @@ export default function MigrationPreview({ rows, errors }: Props) {
         Preview ({rows.length} rows)
       </h3>
 
-      <table className="min-w-full table-fixed text-xs">
+      <table className="min-w-full  table-fixed text-left text-xs border-collapse">
+        <colgroup>
+            <col className="w-[40px]" />
+            <col className="w-[80px]" />
+            <col className="w-[130px]" />
+            <col className="w-[80px]" />
+            <col className="w-[150px]" />
+            <col className="w-[90px]" />
+            <col className="w-[90px]" />
+            <col className="w-[90px]" />
+            <col className="w-[100px]" />
+            <col className="w-[100px]" />
+            <col className="w-[100px]" />
+            <col className="w-[100px]" />
+          </colgroup>
         <thead>
           <tr>
             <th className="p-2 border-b w-16">Row</th>
@@ -28,11 +42,11 @@ export default function MigrationPreview({ rows, errors }: Props) {
               </th>
             ))}
 
-            <th className="p-2 border-b text-left w-80">Validation</th>
+            <th className="p-2 border-b text-left">Validation</th>
           </tr>
         </thead>
 
-        <tbody>
+        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
           {rows.slice(0, 20).map((row, index) => {
             const rowErrors = errors[index + 1] ?? [];
 
