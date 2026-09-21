@@ -14,8 +14,6 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-
-    console.log('body ===== ',body);
     const { module: moduleName, purchase_order_id, rows } = body;
 
     if (!purchase_order_id) {
@@ -24,9 +22,6 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-
-    console.log('moduleName ===== ',moduleName);
-    console.log('rows ===== ',rows);
 
     const result = await executeMigration(
       moduleName || "PURCHASE_ORDER_LINES",

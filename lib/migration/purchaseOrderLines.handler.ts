@@ -92,6 +92,19 @@ export const purchaseOrderLinesHandler: MigrationHandler = {
     let failedCount = 0;
     const rowResults: MigrationRowResult[] = [];
 
+    let lineNo = 10000;
+
+    // 1. Fetch Purchase Order Header to obtain Business Posting Group
+    const poHeaderRes = await pool.query(
+      `SELECT vat_business_posting_group_id,supplier_posting_group_id FROM purchase_orders WHERE id = $1 AND company_id = $2 LIMIT 1`,
+      [context.purchase_order_id, context.company_id],
+    );
+
+    const busPostingGroupId =
+      poHeaderRes.rows[0]?.vat_business_posting_group_id ||
+      poHeaderRes.rows[0]?.supplier_posting_group_id ||
+      null;
+
     for (let i = 0; i < validationResults.length; i++) {
       const val = validationResults[i];
 
@@ -106,28 +119,21 @@ export const purchaseOrderLinesHandler: MigrationHandler = {
       >;
 
       try {
-        let vatPercent = norm.vat_rate ?? 0;
+        // let vatPercent = norm.vat_rate ?? 0;
 
-        // Base values common to all line types
         let itemId: string | null = null;
-        let itemCode: string | null = null;
-        let itemName: string | null = null;
         let uomId: string | null = null;
-        let uomName: string | null = null;
         let warehouseId: string | null = null;
-        // let warehouseCode: string | null = null;
-        let warehouseName: string | null = null;
-        let vatProductPostingGroupId: string | null = null;
         let glAccountId: string | null = null;
-        let accountCode: string | null = null;
-        let accountName: string | null = null;
         let lineDescription = norm.description || "";
+        let vatProductGroupId: string | null = null;
 
-        console.log("norm === ", norm);
+        // console.log("norm === ", norm);
+        // console.log("lineNo === ", lineNo);
 
         if (norm.line_type === "ITEM") {
           const itemRes = await pool.query(
-            `SELECT id, item_code, name, vat_rate, base_uom_id, base_uom_name, vat_product_group_id 
+            `SELECT id, item_code, name, description, base_uom_id, vat_product_group_id
              FROM items 
              WHERE company_id = $1 AND item_code = $2 
              LIMIT 1`,
@@ -144,26 +150,18 @@ export const purchaseOrderLinesHandler: MigrationHandler = {
           );
           const warehouse = warehouseRes.rows[0];
 
-          if (norm.vat_rate === undefined) {
-            vatPercent = Number(item?.vat_rate ?? 0);
-          }
+          // if (norm.vat_rate === undefined) {
+          //   vatPercent = Number(item?.vat_rate ?? 0);
+          // }
 
           itemId = item.id;
-          itemCode = item.item_code;
-          itemName = item.name;
           lineDescription = norm.description || item.name;
           uomId = item.base_uom_id;
-          uomName = item.base_uom_name;
           warehouseId = warehouse.id;
-          //   warehouseCode = warehouse.code;
-          //   warehouseName = warehouse.name;
-
-          warehouseName = warehouse.code + " - " + warehouse.name;
-
-          vatProductPostingGroupId = item.vat_product_group_id;
+          vatProductGroupId = item.vat_product_group_id || null;
         } else {
           const glRes = await pool.query(
-            `SELECT id, code, name 
+            `SELECT id, code, name,vat_rate_id
              FROM chart_of_accounts 
              WHERE company_id = $1 AND code = $2 
              LIMIT 1`,
@@ -172,17 +170,58 @@ export const purchaseOrderLinesHandler: MigrationHandler = {
           const glAccount = glRes.rows[0];
 
           glAccountId = glAccount.id;
-          accountCode = glAccount.code;
-          accountName = glAccount.name;
           lineDescription = norm.description || glAccount.name;
+          vatProductGroupId = glAccount?.vat_rate_id || null;
+        }
+
+        // console.log("vatProductGroupId === ", vatProductGroupId);
+
+        // 3. Resolve VAT Percentage from Setup Matrix or Excel Fallback
+
+        // if (norm.vat_rate !== undefined) {
+        //   const validVatRes = await pool.query(
+        //     `SELECT DISTINCT vat_percent
+        //     FROM vat_posting_setup
+        //     WHERE company_id = $1 AND vat_percent = $2 LIMIT 1`,
+        //     [context.company_id, norm.vat_rate],
+        //   );
+
+        //   if ((validVatRes.rowCount ?? 0) === 0) {
+        //     rowErrors.push(
+        //       `Invalid VAT Rate '${norm.vat_rate}%'. Please provide a valid configured VAT rate.`,
+        //     );
+        //   }
+        // }
+
+        let vatPercent = norm.vat_rate ?? 0;
+
+        if (norm.vat_rate === undefined && vatProductGroupId) {
+          // Resolve exact rate based on business + product group setup
+          const vatSetupRes = await pool.query(
+            `SELECT vat_percent 
+             FROM vat_posting_setup 
+             WHERE company_id = $1 
+               AND vat_product_posting_group_id = $2
+               ${busPostingGroupId ? "AND vat_business_posting_group_id = $3" : ""}
+             LIMIT 1`,
+            busPostingGroupId
+              ? [context.company_id, vatProductGroupId, busPostingGroupId]
+              : [context.company_id, vatProductGroupId],
+          );
+
+          if ((vatSetupRes.rowCount ?? 0) > 0) {
+            vatPercent = Number(vatSetupRes.rows[0].vat_percent || 0);
+          }
         }
 
         // Calculations
         const originalAmount = norm.quantity * norm.unit_cost;
+
         const discountAmount =
           norm.discount_type === "PERCENT"
             ? originalAmount * (norm.discount_value / 100)
             : norm.discount_value;
+
         const netAmount = Math.max(0, originalAmount - discountAmount);
         const vatAmount = netAmount * (vatPercent / 100);
         const grossAmount = netAmount + vatAmount;
@@ -192,67 +231,86 @@ export const purchaseOrderLinesHandler: MigrationHandler = {
           INSERT INTO purchase_order_lines (
             company_id,
             purchase_order_id,
+
+            line_no,
             line_type,
+
+            item_id,
+            gl_account_id,
+
+            description,
+
+            warehouse_id,
+            uom_id,
+
             quantity,
+            received_quantity,
+
             unit_cost,
+
             discount_type,
             discount_value,
-            description,
-            received_quantity,
-            vat_percent,
-            original_amount,
             discount_amount,
-            net_amount,
+
+            vat_percent,
             vat_amount,
+
+            net_amount,
             gross_amount,
-            item_id,
-            item_code,
-            item_name,
-            uom_id,
-            uom_name,
-            warehouse_id,
-            warehouse_name,
-            vat_product_posting_group_id,
-            gl_account_id,
-            account_code
+
+            is_deleted,
+
+            created_at
+
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-            $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-            $21, $22, $23, $24, $25
+            $1,$2,$3,$4,
+            $5,$6,$7,$8,
+            $9,$10,$11,$12,
+            $13,$14,$15,$16,
+            $17,$18,$19,
+            false,
+            NOW()
           )
         `;
 
         const insertParams = [
           context.company_id,
           context.purchase_order_id,
+
+          lineNo,
           norm.line_type,
-          norm.quantity,
-          norm.unit_cost,
-          norm.discount_type,
-          norm.discount_value,
-          lineDescription,
+
+          itemId || null,
+          glAccountId || null,
+          lineDescription || null,
+
+          warehouseId || null,
+          uomId || null,
+
+          norm.quantity || 0,
           0, // received_quantity
-          vatPercent,
-          originalAmount,
-          discountAmount,
-          netAmount,
-          vatAmount,
-          grossAmount,
-          itemId,
-          itemCode,
-          itemName,
-          uomId,
-          uomName,
-          warehouseId,
-          warehouseName,
-          vatProductPostingGroupId,
-          glAccountId,
-          accountCode,
+
+          norm.unit_cost || 0,
+
+          norm.discount_type || null,
+          norm.discount_value || 0,
+          discountAmount || 0,
+
+          vatPercent || 0,
+          vatAmount || 0,
+
+          netAmount || 0,
+          grossAmount || 0,
         ];
+
+        // console.log("insertQuery ==== ", insertQuery);
+        // console.log("insertParams ==== ", insertParams);
 
         await pool.query(insertQuery, insertParams);
 
         successCount++;
+        lineNo += 10000;
+
         rowResults.push({
           row: val.row,
           success: true,
@@ -260,6 +318,7 @@ export const purchaseOrderLinesHandler: MigrationHandler = {
         });
       } catch (err) {
         failedCount++;
+
         rowResults.push({
           row: val.row,
           success: false,
@@ -269,16 +328,9 @@ export const purchaseOrderLinesHandler: MigrationHandler = {
               : "Failed to persist line record.",
           ],
         });
-      }
 
-      //   } catch (err: any) {
-      //     failedCount++;
-      //     rowResults.push({
-      //       row: val.row,
-      //       success: false,
-      //       errors: [err?.message || "Failed to persist line record."],
-      //     });
-      //   }
+        // console.log("rowResults === ", rowResults);
+      }
     }
 
     return {
@@ -289,3 +341,53 @@ export const purchaseOrderLinesHandler: MigrationHandler = {
     };
   },
 };
+
+// let itemCode: string | null = null;
+// let itemName: string | null = null;
+// let uomName: string | null = null;
+// let warehouseCode: string | null = null;
+// let warehouseName: string | null = null;
+// let vatProductPostingGroupId: string | null = null;
+// let accountCode: string | null = null;
+// let accountName: string | null = null;
+// itemCode = item.item_code;
+// itemName = item.name;
+// uomName = item.base_uom_name;
+// warehouseCode = warehouse.code;
+// warehouseName = warehouse.name;
+
+// warehouseName = warehouse.code + " - " + warehouse.name;
+
+// vatProductPostingGroupId = item.vat_product_group_id;
+// accountCode = glAccount.code;
+// accountName = glAccount.name;
+
+// company_id,
+// purchase_order_id,
+
+// line_no,
+// line_type,
+
+// item_id,
+// gl_account_id,
+
+// description,
+
+// quantity,
+// unit_cost,
+// discount_type,
+// discount_value,
+// description,
+// received_quantity,
+// vat_percent,
+// original_amount,
+// discount_amount,
+// net_amount,
+// vat_amount,
+// gross_amount,
+
+// uom_id,
+// uom_name,
+// warehouse_id,
+// warehouse_name,
+// vat_product_posting_group_id
