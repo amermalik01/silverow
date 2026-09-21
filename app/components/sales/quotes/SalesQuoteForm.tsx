@@ -51,6 +51,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
   const { show, hide } = useLoader();
 
   const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
+  const [converting, setConverting] = React.useState(false);
 
   const {
     activeTab,
@@ -88,6 +89,8 @@ export const SalesQuoteForm: React.FC<Props> = ({
     currencyConfig,
     setCurrencyConfig,
   } = useSalesQuoteState({ id, isReadOnly, baseCurrencyCode });
+
+  const isUpdateMode = !!id;
 
   const { refreshLines } = useSalesQuoteData({
     id,
@@ -257,6 +260,8 @@ export const SalesQuoteForm: React.FC<Props> = ({
       setSaving(true);
       setValidationErrors([]);
 
+      const isNew = !id || id === "new";
+
       const payload = {
         quote: {
           ...quote,
@@ -271,10 +276,13 @@ export const SalesQuoteForm: React.FC<Props> = ({
         lines,
       };
 
+      // console.log("payload ==== ", payload);
+      // console.log("id ==== ", id);
+
       const res = await fetch(
-        id ? `/api/sales/sales-quotes/${id}` : "/api/sales/sales-quotes",
+        isNew ? "/api/sales/sales-quotes" : `/api/sales/sales-quotes/${id}`,
         {
-          method: id ? "PUT" : "POST",
+          method: isNew ? "POST" : "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
@@ -287,24 +295,83 @@ export const SalesQuoteForm: React.FC<Props> = ({
         );
       }
 
-      toast.success(id ? "Sales Quote Updated" : "Sales Quote Created");
-      const targetId = id || result?.data?.id;
+      toast.success(!isNew ? "Sales Quote Updated" : "Sales Quote Created");
+      const targetId = !isNew ? id : result?.data?.id;
 
       if (targetId) {
         await refreshLines(targetId);
       }
 
-      if (id) {
+      if (!isNew) {
         setIsEditMode(false);
         router.refresh();
       } else if (result?.data?.id) {
-        router.replace(`/${slug}/sales/sales-orders/${result.data.id}/edit`);
+        router.replace(`/${slug}/sales/quotes/${result.data.id}/edit`);
       }
     } catch (err) {
       console.error(err);
       if (err instanceof Error) setValidationErrors([err.message]);
     } finally {
       setSaving(false);
+      hide();
+    }
+  };
+
+  const handleConvertToSalesOrder = async () => {
+    // 1. Check if record exists in DB
+    if (!id || id === "new") {
+      toast.error("Please save the sales quote first before converting.");
+      return;
+    }
+
+    // 2. Validate quote fields and lines
+    const errors = validateSalesQuote(quote, lines, currencyConfig.currency_id);
+    setValidationErrors(errors);
+
+    if (errors.length > 0) {
+      toast.error("Please resolve validation errors before converting.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    show("Converting to Sales Order...");
+
+    try {
+      setConverting(true);
+      setValidationErrors([]);
+
+      const res = await fetch(`/api/sales/sales-quotes/${id}/convert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          result.error || "Failed to convert quote to sales order.",
+        );
+      }
+
+      toast.success(
+        result.message || "Quote successfully converted to Sales Order!",
+      );
+
+      // Redirect to the newly created Sales Order edit/view screen or order list
+      const createdOrderId = result.data?.id;
+      if (createdOrderId) {
+        router.push(`/${slug}/sales/orders/${createdOrderId}/edit`);
+      } else {
+        router.push(`/${slug}/sales/orders`);
+      }
+    } catch (err) {
+      console.error("Conversion Error:", err);
+      if (err instanceof Error) {
+        setValidationErrors([err.message]);
+        toast.error(err.message);
+      }
+    } finally {
+      setConverting(false);
       hide();
     }
   };
@@ -322,7 +389,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
         items={[
           {
             label: "Sales Quote",
-            href: `/${slug}/sales/sales-orders`,
+            href: `/${slug}/sales/quotes`,
           },
           { label: quote.quote_no || "" },
         ]}
@@ -548,6 +615,18 @@ export const SalesQuoteForm: React.FC<Props> = ({
           <div className="flex items-center gap-2">
             {!isCompleted && (
               <>
+                {/* Convert to Sales Order Button */}
+                {id && (
+                  <Button
+                    type="button"
+                    onClick={handleConvertToSalesOrder}
+                    disabled={saving || converting}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-3 py-1.5 rounded flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                  >
+                    <Icon icon="tabler:transform" className="w-4 h-4" />
+                    {converting ? "Converting..." : "Convert to Sales Order"}
+                  </Button>
+                )}
                 {!isEditMode ? (
                   <Button
                     type="button"
@@ -561,7 +640,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
                     type="button"
                     variant="save"
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || converting}
                   >
                     {saving ? "Saving..." : "Save"}
                   </Button>
@@ -573,6 +652,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
               type="button"
               onClick={() => router.push(`/${slug}/sales/orders`)}
               variant="cancel"
+              disabled={converting}
             >
               Cancel
             </Button>
@@ -1118,7 +1198,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
         setIsEditMode(false);
         router.refresh();
       } else if (result?.data?.id) {
-        router.replace(`/${slug}/sales/sales-orders/${result.data.id}/edit`);
+        router.replace(`/${slug}/sales/sales-quotes/${result.data.id}/edit`);
       }
     } catch (err) {
       console.error(err);
@@ -1143,7 +1223,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
         items={[
           {
             label: "Sales Quote",
-            href: `/${slug}/sales/sales-orders`,
+            href: `/${slug}/sales/sales-quotes`,
           },
           { label: quote.quote_no || "" },
         ]}

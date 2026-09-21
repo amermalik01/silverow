@@ -133,7 +133,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       };
 
       
-    console.log('receiptPayload ==== ',receiptPayload);
+    // console.log('receiptPayload ==== ',receiptPayload);
 
       await PurchaseReceiptService.createTransactional(
         client,

@@ -43,7 +43,7 @@ export type SalesQuote = {
   customer_posting_group_id?: string;
   vat_business_posting_group_id?: string;
 
-  order_date: string;
+  order_date?: string;
   posting_date?: string;
   dispatch_date?: string;
   requested_delivery_date?: string;
@@ -58,7 +58,7 @@ export type SalesQuote = {
   currency_code?: string;
   exchange_rate?: string | number;
 
-  quote_date: string;
+  // quote_date: string;
   valid_from?: string;
   valid_until?: string;
 
@@ -381,7 +381,7 @@ export type SalesQuoteListing = {
   stage_name?: string;
   current_stage?: string;
 
-  quote_date: string;
+  // quote_date: string;
   valid_from?: string;
   valid_until?: string;
 

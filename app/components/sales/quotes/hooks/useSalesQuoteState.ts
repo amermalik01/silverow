@@ -37,7 +37,14 @@ export function useSalesQuoteState({
   const [SalesPersonModalOpen, setSalesPersonModalOpen] = useState(false);
   const [POModalOpen, setPOModalOpen] = useState(false);
 
-  const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
+  const isNew = !id || id === "new";
+
+  //   const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
+  const [isEditMode, setIsEditMode] = useState<boolean>(() => {
+    if (isReadOnly) return false;
+    return isNew; // true for new quotes, false for existing ones
+  });
+
   const [masterData, setMasterData] = useState<SalesQuoteMasterData | null>(
     null,
   );

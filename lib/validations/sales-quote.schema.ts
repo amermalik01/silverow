@@ -278,7 +278,7 @@ export const SalesQuoteSchema = z
       .positive("Exchange rate must be greater than 0")
       .default(1),
 
-    quote_date: requiredDate,
+    order_date: requiredDate,
     valid_from: looseString,
     valid_until: looseString,
     requested_delivery_date: looseString,
@@ -401,8 +401,8 @@ export const SalesQuoteSchema = z
       }
     }
 
-    if (quote.quote_date && quote.valid_until) {
-      const quoteDate = new Date(quote.quote_date);
+    if (quote.order_date && quote.valid_until) {
+      const quoteDate = new Date(quote.order_date);
 
       const validUntil = new Date(quote.valid_until);
 
@@ -413,7 +413,7 @@ export const SalesQuoteSchema = z
       ) {
         ctx.addIssue({
           code: "custom",
-          message: "Valid until date cannot be earlier than quote date",
+          message: "Valid until date cannot be earlier than quote/order date",
           path: ["valid_until"],
         });
       }

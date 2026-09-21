@@ -51,7 +51,7 @@ export class SalesQuoteService {
 
     const SORT_FIELDS: Record<string, string> = {
       quote_no: "sq.quote_no",
-      quote_date: "sq.quote_date",
+      // quote_date: "sq.quote_date",
       valid_until: "sq.valid_until",
       customer_no: "sq.customer_no",
       customer_name: "sq.customer_name",
@@ -217,19 +217,20 @@ export class SalesQuoteService {
       await client.query("BEGIN");
       const quote = payload.quote;
 
+      console.log('quote === ',quote);
+
       const seqResult = await client.query(
         `SELECT get_next_sequence($1, $2) AS code`,
-        [companyId, "sales_quote"],
+        [companyId, "sales_quotation"],
       );
       const quoteNo = seqResult.rows[0].code;
 
-      const quoteResult = await client.query(
-        `
+      const insertQry = `
         INSERT INTO sales_quotes (
           company_id, quote_no, customer_id, customer_no, customer_name,
           bill_to_customer_id, bill_to_customer_no, bill_to_customer_name,
           customer_posting_group_id, vat_business_posting_group_id, stage_id,
-          currency_id, exchange_rate, quote_date, order_date, requested_delivery_date,
+          currency_id, exchange_rate, order_date, requested_delivery_date,
           posting_date, dispatch_date, delivery_date, due_date, valid_from, valid_until,
           salesperson_id, salesperson, reference, customer_reference, source_of_quote,
           opportunity_id, contact_id, payment_terms_id, payment_terms, payment_method_id,
@@ -243,70 +244,74 @@ export class SalesQuoteService {
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
           $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
           $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44,
-          $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57
+          $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56
         )
         RETURNING *;
-        `,
-        [
-          companyId,
-          quoteNo,
-          quote.customer_id,
-          quote.customer_no,
-          quote.customer_name,
-          quote.bill_to_customer_id,
-          quote.bill_to_customer_no,
-          quote.bill_to_customer_name,
-          quote.customer_posting_group_id,
-          quote.vat_business_posting_group_id,
-          quote.stage_id,
-          quote.currency_id,
-          quote.exchange_rate || 1.0,
-          quote.quote_date || new Date(),
-          quote.order_date,
-          quote.requested_delivery_date,
-          quote.posting_date,
-          quote.dispatch_date,
-          quote.delivery_date,
-          quote.due_date,
-          quote.valid_from,
-          quote.valid_until,
-          quote.salesperson_id,
-          quote.salesperson,
-          quote.reference,
-          quote.customer_reference,
-          quote.source_of_quote,
-          quote.opportunity_id,
-          quote.contact_id,
-          quote.payment_terms_id,
-          quote.payment_terms,
-          quote.payment_method_id,
-          quote.payment_method,
-          quote.receivable_bank_id,
-          quote.receivable_bank,
-          quote.shipment_method_id,
-          quote.shipment_method,
-          quote.shipping_agent,
-          quote.warehouse_id,
-          quote.warehouse_name,
-          quote.subtotal || 0,
-          quote.discount_amount || 0,
-          quote.freight_charges || 0,
-          quote.finance_charges || 0,
-          quote.insurance_charges || 0,
-          quote.vat_amount || 0,
-          quote.total_amount || 0,
-          quote.status || "draft",
-          quote.anonymous_customer || false,
-          quote.email,
-          quote.contact,
-          quote.phone,
-          quote.notes,
-          quote.internal_notes,
-          quote.terms_and_conditions,
-          quote.footer_text,
-          quote.created_by,
-        ],
-      );
+        `;
+
+      const insertQryParams = [
+        companyId,
+        quoteNo,
+        quote.customer_id,
+        quote.customer_no,
+        quote.customer_name,
+        quote.bill_to_customer_id,
+        quote.bill_to_customer_no,
+        quote.bill_to_customer_name,
+        quote.customer_posting_group_id,
+        quote.vat_business_posting_group_id,
+        quote.stage_id,
+        quote.currency_id,
+        quote.exchange_rate || 1.0,
+        quote.order_date || null,
+        quote.requested_delivery_date || null,
+        quote.posting_date?.trim() ? quote.posting_date : null,
+        quote.dispatch_date || null,
+        quote.delivery_date || null,
+        quote.due_date || null,
+        quote.valid_from,
+        quote.valid_until,
+        quote.salesperson_id,
+        quote.salesperson,
+        quote.reference,
+        quote.customer_reference,
+        quote.source_of_quote,
+        quote.opportunity_id,
+        quote.contact_id,
+        quote.payment_terms_id,
+        quote.payment_terms,
+        quote.payment_method_id,
+        quote.payment_method,
+        quote.receivable_bank_id,
+        quote.receivable_bank,
+        quote.shipment_method_id,
+        quote.shipment_method,
+        quote.shipping_agent,
+        quote.warehouse_id,
+        quote.warehouse_name,
+        quote.subtotal || 0,
+        quote.discount_amount || 0,
+        quote.freight_charges || 0,
+        quote.finance_charges || 0,
+        quote.insurance_charges || 0,
+        quote.vat_amount || 0,
+        quote.total_amount || 0,
+        quote.status || "draft",
+        quote.anonymous_customer || false,
+        quote.email,
+        quote.contact,
+        quote.phone,
+        quote.notes,
+        quote.internal_notes,
+        quote.terms_and_conditions,
+        quote.footer_text,
+        quote.created_by,
+      ];
+
+      // console.log('insertQry ==== ',insertQry);
+      console.log('insertQryParams ==== ',insertQryParams);
+
+      const quoteResult = await client.query(insertQry, insertQryParams);
 
       const createdQuote = quoteResult.rows[0];
       let lineNo = 10000;
@@ -662,7 +667,7 @@ export class SalesQuoteService {
       `
       INSERT INTO sales_quote_addresses
       (
-          sales_order_id,
+          sales_quote_id,
           company_id,
           address_type,
 
@@ -800,20 +805,20 @@ export class SalesQuoteService {
           customer_id = $1, customer_no = $2, customer_name = $3,
           bill_to_customer_id = $4, bill_to_customer_no = $5, bill_to_customer_name = $6,
           customer_posting_group_id = $7, vat_business_posting_group_id = $8, stage_id = $9,
-          currency_id = $10, exchange_rate = $11, quote_date = $12, order_date = $13,
-          requested_delivery_date = $14, posting_date = $15, dispatch_date = $16,
-          delivery_date = $17, due_date = $18, valid_from = $19, valid_until = $20,
-          salesperson_id = $21, salesperson = $22, reference = $23, customer_reference = $24,
-          source_of_quote = $25, opportunity_id = $26, contact_id = $27, payment_terms_id = $28,
-          payment_terms = $29, payment_method_id = $30, payment_method = $31,
-          receivable_bank_id = $32, receivable_bank = $33, shipment_method_id = $34,
-          shipment_method = $35, shipping_agent = $36, warehouse_id = $37, warehouse_name = $38,
-          subtotal = $39, discount_amount = $40, freight_charges = $41,
-          finance_charges = $42, insurance_charges = $43, vat_amount = $44, total_amount = $45,
-          status = $46, anonymous_customer = $47, email = $48, contact = $49, phone = $50,
-          notes = $51, internal_notes = $52, terms_and_conditions = $53, footer_text = $54,
+          currency_id = $10, exchange_rate = $11, order_date = $12,
+          requested_delivery_date = $13, posting_date = $14, dispatch_date = $15,
+          delivery_date = $16, due_date = $17, valid_from = $18, valid_until = $19,
+          salesperson_id = $20, salesperson = $21, reference = $22, customer_reference = $23,
+          source_of_quote = $24, opportunity_id = $25, contact_id = $26, payment_terms_id = $27,
+          payment_terms = $28, payment_method_id = $29, payment_method = $30,
+          receivable_bank_id = $31, receivable_bank = $32, shipment_method_id = $33,
+          shipment_method = $34, shipping_agent = $35, warehouse_id = $36, warehouse_name = $37,
+          subtotal = $38, discount_amount = $39, freight_charges = $40,
+          finance_charges = $41, insurance_charges = $42, vat_amount = $43, total_amount = $44,
+          status = $45, anonymous_customer = $46, email = $47, contact = $48, phone = $49,
+          notes = $50, internal_notes = $51, terms_and_conditions = $52, footer_text = $53,
           updated_at = NOW()
-        WHERE id = $55 AND company_id = $56
+        WHERE id = $54 AND company_id = $55
         RETURNING *;
         `,
         [
@@ -828,7 +833,6 @@ export class SalesQuoteService {
           quote.stage_id,
           quote.currency_id,
           quote.exchange_rate || 1.0,
-          quote.quote_date,
           quote.order_date,
           quote.requested_delivery_date,
           quote.posting_date,

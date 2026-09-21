@@ -44,11 +44,11 @@ export function useSalesQuoteData({
   setMasterData,
 }: UseSalesQuoteDataProps) {
   useEffect(() => {
-    if (!id) return;
+    if (!id || id === "new") return;
 
     showLoader("Fetching Record...");
 
-    fetch(`/api/sales/sales-orders/${id}`)
+    fetch(`/api/sales/sales-quotes/${id}`)
       .then((r) => r.json())
       .then((payload) => {
         hideLoader();
@@ -97,9 +97,9 @@ export function useSalesQuoteData({
   }, []);
 
   const refreshLines = async (quoteId?: string) => {
-    if (!quoteId) return;
+    if (!quoteId || quoteId === "new") return;
 
-    const response = await fetch(`/api/sales/sales-orders/${quoteId}/lines`);
+    const response = await fetch(`/api/sales/sales-quotes/${quoteId}/lines`);
     const data = await response.json();
 
     setLines(data.lines ?? []);
