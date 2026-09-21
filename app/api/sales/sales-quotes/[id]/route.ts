@@ -1,6 +1,69 @@
 // app/api/sales/sales-quotes/[id]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { SalesQuoteService } from "@/lib/services/sales/sales-quote.service";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
+
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
+export async function GET(req: NextRequest, { params }: RouteContext) {
+  try {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+    const { id } = await params;
+
+    const quoteData = await SalesQuoteService.get(companyId, id);
+    if (!quoteData) {
+      return NextResponse.json(
+        { error: "Sales Quote not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: quoteData });
+  } catch (err) {
+    const dbError = err as { code?: string; message?: string };
+    return NextResponse.json(
+      { error: dbError.message || "Failed to retrieve sales quote" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PUT(req: NextRequest, { params }: RouteContext) {
+  try {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+    const { id } = await params;
+
+    const body = await req.json();
+    const updatedQuote = await SalesQuoteService.update(companyId, id, body);
+
+    return NextResponse.json({ success: true, data: updatedQuote });
+  } catch (err) {
+    const dbError = err as { code?: string; message?: string };
+    return NextResponse.json(
+      { error: dbError.message || "Failed to update sales quote" },
+      { status: 500 },
+    );
+  }
+}
+
+/* import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 
@@ -37,7 +100,7 @@ export async function GET(
         ql.warehouse_id,
         ql.quantity,
         ql.unit_price,
-        ql.discount_percent,
+        ql.discount_value,
         ql.tax_percent,
         ql.line_amount as total_amount, 
         ql.created_at,
@@ -113,11 +176,7 @@ export async function PUT(
       const price = Number(line.unit_price ?? 0);
       const taxPercent = Number(line.tax_percent ?? 0);
 
-      /**
-       * Map frontend flexible discounts to DB single column percent:
-       * 1. If it's PERCENT type, use the value directly.
-       * 2. If it's a fixed AMOUNT type, calculate its actual percentage equivalent.
-       */
+
       let computedDiscountPercent = 0;
       const discountValue = Number(line.discount_value ?? 0);
 
@@ -138,7 +197,7 @@ export async function PUT(
         `
         INSERT INTO sales_quote_lines (
           company_id, sales_quote_id, line_no, item_id, gl_account_id, description,
-          warehouse_id, quantity, unit_price, discount_percent, tax_percent, line_amount
+          warehouse_id, quantity, unit_price, discount_value, tax_percent, line_amount
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `,
@@ -171,4 +230,4 @@ export async function PUT(
   } finally {
     client.release();
   }
-}
+} */

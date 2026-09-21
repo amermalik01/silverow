@@ -134,7 +134,6 @@ export const SalesQuoteLineSchema = z
 
     discount_type: z.enum(["PERCENT", "FIXED"]).optional().nullable(),
     discount_value: looseNumber,
-    discount_percent: looseNumber,
     discount_amount: looseNumber,
 
     original_amount: z.union([z.string(), z.number()]).optional().nullable(),

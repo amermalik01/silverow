@@ -1,6 +1,97 @@
 // app/api/sales/sales-quotes/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { SalesQuoteService } from "@/lib/services/sales/sales-quote.service";
+import { FetchParams } from "@/types/table";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
+
+export async function GET(req: NextRequest) {
+  try {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const page = Number(searchParams.get("page")) || 1;
+    const pageSize = Number(searchParams.get("pageSize")) || 20;
+    const search = searchParams.get("search") || "";
+    const sortBy = searchParams.get("sortBy") || undefined;
+    const sortOrder =
+      (searchParams.get("sortOrder") as "asc" | "desc") || undefined;
+
+    // Parse additional JSON filters if provided
+    let filters = {};
+    const filtersParam = searchParams.get("filters");
+    if (filtersParam) {
+      try {
+        filters = JSON.parse(filtersParam);
+      } catch {
+        filters = {};
+      }
+    }
+
+    const fetchParams: FetchParams = {
+      page,
+      pageSize,
+      search,
+      sortBy,
+      sortOrder,
+      filters,
+    };
+
+    const response = await SalesQuoteService.listPaginated(
+      companyId,
+      fetchParams,
+    );
+    return NextResponse.json(response);
+  } catch (err) {
+    const dbError = err as { code?: string; message?: string };
+    return NextResponse.json(
+      { error: dbError.message || "Failed to fetch sales quote" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+    const userId = req.headers.get("x-user-id");
+
+    const body = await req.json();
+
+    // Inject system tracking fields if present
+    if (body.quote && userId) {
+      body.quote.created_by = userId;
+    }
+
+    const createdQuote = await SalesQuoteService.create(companyId, body);
+    return NextResponse.json(
+      { success: true, data: createdQuote },
+      { status: 201 },
+    );
+  } catch (err) {
+    const dbError = err as { code?: string; message?: string };
+    return NextResponse.json(
+      { error: dbError.message || "Failed to create sales quote" },
+      { status: 500 },
+    );
+  }
+}
+
+/* import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { SalesQuotePayload } from "@/types/sales-quote";
@@ -115,4 +206,4 @@ export async function POST(req: NextRequest) {
   } finally {
     client.release();
   }
-}
+} */

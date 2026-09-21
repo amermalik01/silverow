@@ -28,16 +28,9 @@ import CustomerDeliveryLocationModal from "./CustomerDeliveryLocationModal";
 import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
-// import {
-//   PurchaseOrderLookupItem,
-//   PurchaseOrderLookupModal,
-// } from "../../shared/modals/PurchaseOrderLookupModal";
-
 import SalespersonLookupModal, {
   Employee,
 } from "../../shared/modals/SalespersonLookupModal";
-
-// import { PurchaseOrderMultiLookupModal } from "../../shared/modals/PurchaseOrderMultiLookupModal";
 
 import {
   PurchaseOrderLookupItem,
@@ -56,11 +49,6 @@ import {
 
 import { useSalesOrderState } from "./hooks/useSalesOrderState";
 import { useSalesOrderData } from "./hooks/useSalesOrderData";
-
-// import type {
-//   TabType,
-//   CustomerSelectionSource,
-// } from "./types/salesOrderForm.types";
 
 type Props = {
   slug: string;
@@ -176,92 +164,14 @@ export const SalesOrderForm: React.FC<Props> = ({
 
   const isUpdateMode = !!id;
 
-  // const [activeTab, setActiveTab] = useState<TabType>("general");
-  // const [saving, setSaving] = useState<boolean>(false);
-  // const [validationErrors, setValidationErrors] = useState<string[]>([]);
-
-  // const [customerSelectionSource, setCustomerSelectionSource] =
-  //   useState<CustomerSelectionSource>("general");
-  // const [showCustomerChangeModal, setShowCustomerChangeModal] = useState(false);
-  // const [customerModalOpen, setCustomerModalOpen] = useState(false);
-  // const [locationModalOpen, setLocationModalOpen] = useState(false);
-
   const [SalesPersonModalOpen, setSalesPersonModalOpen] = useState(false);
-
-  // const [POModalOpen, setPOModalOpen] = useState(false);
-  // const [SOModalOpen, setSOModalOpen] = useState(false);
-
-  // // Manage view/edit state locally
-  // const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  // const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
   // Add states for modal control
   const [showShipModal, setShowShipModal] = useState(false);
-  // const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  // const [isPosting, setIsPosting] = useState(false);
   const [isShipping, setIsShipping] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // const [masterData, setMasterData] = useState<SalesOrderMasterData | null>(
-  //   null,
-  // );
-
-  // const isUpdateMode = Boolean(id);
-  // const isLoadingStages = !masterData;
   const stages = masterData?.stages ?? [];
-
-  /* const [order, setOrder] = useState<Partial<SalesOrder>>({
-    order_no: id ? "" : "",
-    customer_id: "",
-    customer_no: "",
-    customer_name: "",
-
-    bill_to_customer_id: "",
-    bill_to_customer_no: "",
-    bill_to_customer_name: "",
-
-    order_date: new Date().toISOString().split("T")[0],
-    posting_date: new Date().toISOString().split("T")[0],
-    dispatch_date: new Date().toISOString().split("T")[0],
-    requested_delivery_date: new Date().toISOString().split("T")[0],
-    delivery_date: new Date().toISOString().split("T")[0],
-
-    status: "draft",
-    subtotal: 0,
-    vat_amount: 0,
-    total_amount: 0,
-    invoiced_amount: 0,
-
-    reference: "",
-    notes: "",
-    email: "",
-    salesperson: "",
-    cust_order_no: "",
-    link_to_po: "",
-    sq_no: "",
-    source_of_order: "Others",
-
-    currency_code: baseCurrencyCode,
-  });
-
-  const [primaryAddress, setPrimaryAddress] = useState<
-    Partial<SalesOrderAddress>
-  >({ address_type: "primary" });
-
-  const [billingAddress, setBillingAddress] = useState<
-    Partial<SalesOrderAddress>
-  >({ address_type: "billing" });
-
-  const [shippingAddress, setShippingAddress] = useState<
-    Partial<SalesOrderAddress>
-  >({ address_type: "shipping" });
-
-  const [lines, setLines] = useState<SalesOrderLineUI[]>([]);
-
-  const [currencyConfig, setCurrencyConfig] = useState({
-    currency_id: "",
-    exchange_rate: 1,
-  }); */
 
   const isLoadingStages = !masterData;
 
@@ -312,22 +222,6 @@ export const SalesOrderForm: React.FC<Props> = ({
     () => lines.some((line) => !!line.item_id || !!line.gl_account_id),
     [lines],
   );
-
-  /* const isCompleted = order.status === "completed" || order.status === "POSTED";
-  const isFormDisabled = !isEditMode || isCompleted;
-
-  // Check if all line items with quantity > 0 have been shipped
-  const isFullyDispatched = useMemo(() => {
-    if (lines.length === 0) return false;
-    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
-    if (itemLines.length === 0) return false;
-
-    return itemLines.every((l) => {
-      const qty = Number(l.quantity || 0);
-      const shipped = Number(l.quantity_shipped || 0);
-      return qty > 0 && shipped >= qty;
-    });
-  }, [lines]); */
 
   useEffect(() => {
     if (!id) return;
@@ -382,60 +276,6 @@ export const SalesOrderForm: React.FC<Props> = ({
 
     loadMasterData();
   }, []);
-
-  // const refreshLines = async () => {
-  //   if (!order.id) return;
-
-  //   const response = await fetch(`/api/sales/sales-orders/${order.id}/lines`);
-
-  //   const data = await response.json();
-
-  //   setLines(data.lines ?? []);
-  // };
-
-  /* const selectedCurrency = useMemo(() => {
-    return (
-      masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
-      null
-    );
-  }, [currencyConfig.currency_id, masterData]);
-
-  const financials = useMemo(() => {
-    const originalAmount = lines.reduce(
-      (sum, l) =>
-        sum + Number(Number(l.quantity || 0) * Number(l.unit_price || 0) || 0),
-      0,
-    );
-    const totalDiscount = lines.reduce(
-      (sum, l) => sum + Number(l.discount_amount || 0),
-      0,
-    );
-    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
-    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
-    const amountInclVat = amount + vat;
-
-    const rate =
-      Number(currencyConfig.exchange_rate) > 0
-        ? Number(currencyConfig.exchange_rate)
-        : 1;
-
-    const amountInclVatLCY = Number(amountInclVat) * rate;
-
-    return {
-      originalAmount,
-      totalDiscount,
-      amount,
-      vat,
-      amountInclVat,
-      amountInclVatLCY,
-    };
-  }, [lines, currencyConfig.exchange_rate]);
-
-  const hasSelectedLineItem = useMemo(() => {
-    return lines.some((line) => {
-      return !!line.item_id || !!line.gl_account_id;
-    });
-  }, [lines]); */
 
   const handleGeneralCustomerSelection = () => {
     setCustomerSelectionSource("general");
@@ -618,7 +458,7 @@ export const SalesOrderForm: React.FC<Props> = ({
     if (!order.id) return;
 
     try {
-      const response = await fetch(`/api/sales-orders/${order.id}/lines`);
+      const response = await fetch(`/api/sales/sales-orders/${order.id}/lines`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch lines: ${response.statusText}`);
@@ -649,36 +489,26 @@ export const SalesOrderForm: React.FC<Props> = ({
       const payload = {
         order: {
           ...order,
-
           ...currencyConfig,
-
           subtotal: financials.amount,
-
           tax_amount: financials.vat,
-
           total_amount: financials.amountInclVat,
         },
 
         primary_address: primaryAddress,
-
         billing_address: billingAddress,
-
         shipping_address: shippingAddress,
-
         lines,
-
         allow_empty_lines: requireLines,
       };
 
       const response = await fetch(
-        id ? `/api/sales-orders/${id}` : "/api/sales-orders",
+        id ? `/api/sales/sales-orders/${id}` : "/api/sales/sales-orders",
         {
           method: id ? "PUT" : "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify(payload),
         },
       );
@@ -725,7 +555,7 @@ export const SalesOrderForm: React.FC<Props> = ({
 
   const fetchLatestLines = async (targetId: string) => {
     try {
-      const response = await fetch(`/api/sales-orders/${targetId}/lines`);
+      const response = await fetch(`/api/sales/sales-orders/${targetId}/lines`);
 
       if (!response.ok) return;
 
@@ -738,62 +568,6 @@ export const SalesOrderForm: React.FC<Props> = ({
       console.error("Failed to re-fetch Sales Order lines:", error);
     }
   };
-
-  /* const validateDates = (): string[] => {
-    const errors: string[] = [];
-
-    const orderDate = order.order_date
-      ? new Date(order.order_date).getTime()
-      : null;
-
-    const dispatchDate = order.dispatch_date
-      ? new Date(order.dispatch_date).getTime()
-      : null;
-
-    const deliveryDate = order.delivery_date
-      ? new Date(order.delivery_date).getTime()
-      : null;
-
-    if (orderDate && dispatchDate && orderDate > dispatchDate) {
-      errors.push("Order Date cannot be after Dispatch Date.");
-    }
-
-    if (orderDate && deliveryDate && orderDate > deliveryDate) {
-      errors.push("Order Date cannot be after Delivery Date.");
-    }
-
-    if (dispatchDate && deliveryDate && dispatchDate > deliveryDate) {
-      errors.push("Delivery Date cannot be before Dispatch Date.");
-    }
-
-    return errors;
-  };
-
-  const validateForm = (): boolean => {
-    const errors: string[] = [];
-    if (!order.customer_id) errors.push("Customer selection is required.");
-
-    if (
-      !order.customer_posting_group_id &&
-      !order.vat_business_posting_group_id
-    ) {
-      errors.push(
-        "Selected customer does not have a valid Customer/VAT Posting Group assigned.",
-      );
-    }
-
-    if (!order.order_date) errors.push("Order Date field is mandatory.");
-
-    if (!currencyConfig.currency_id)
-      errors.push("Transactional currency is required.");
-    if (lines.length === 0)
-      errors.push("Sales orders require at least one line item.");
-
-    errors.push(...validateDates());
-
-    setValidationErrors(errors);
-    return errors.length === 0;
-  }; */
 
   const handleSave = async () => {
     const targetId = await saveSalesOrder(false);
@@ -924,7 +698,7 @@ export const SalesOrderForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
-      const response = await fetch(`/api/sales-orders/${id}/dispatch`, {
+      const response = await fetch(`/api/sales/sales-orders/${id}/dispatch`, {
         method: "POST",
 
         headers: {
@@ -988,7 +762,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       });
 
       const response = await fetch(
-        `/api/sales-orders/${id}/dispatch-and-post`,
+        `/api/sales/sales-orders/${id}/dispatch-and-post`,
         {
           method: "POST",
 
@@ -1077,23 +851,26 @@ export const SalesOrderForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
-      const response = await fetch(`/api/sales-orders/${id}/post-invoice`, {
-        method: "POST",
+      const response = await fetch(
+        `/api/sales/sales-orders/${id}/post-invoice`,
+        {
+          method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            customer_invoice_no: order.reference,
+
+            order_date: order.order_date,
+
+            posting_date: order.posting_date,
+
+            financials,
+          }),
         },
-
-        body: JSON.stringify({
-          customer_invoice_no: order.reference,
-
-          order_date: order.order_date,
-
-          posting_date: order.posting_date,
-
-          financials,
-        }),
-      });
+      );
 
       const data = await response.json();
 
@@ -1121,48 +898,6 @@ export const SalesOrderForm: React.FC<Props> = ({
       hide();
     }
   };
-
-  // 2. Separate Handler for Posting Invoice
-  /* const handlePostInvoice = async () => {
-    if (!id) return;
-    setIsPosting(true);
-
-    show("Posting Sales Invoice...");
-
-    try {
-      toast.loading("Posting sales invoice ...", {
-        id: "action-toast",
-      });
-
-      const res = await fetch(`/api/sales/sales-orders/${id}/post-invoice`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer_po_no: order.reference,
-          posting_date: order.posting_date,
-          order_date: order.order_date,
-          financials: financials,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.error || "Failed to post sales invoice");
-
-      toast.success("Sales invoice posted!", { id: "action-toast" });
-      setShowInvoiceModal(false);
-
-      router.push(`/${slug}/sales/orders/new`);
-    } catch (err) {
-      if (err instanceof Error)
-        toast.error(err.message || "Error posting invoice", {
-          id: "action-toast",
-        });
-    } finally {
-      setIsPosting(false);
-      hide();
-    }
-  }; */
 
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
@@ -1236,9 +971,7 @@ export const SalesOrderForm: React.FC<Props> = ({
               <button
                 key={tab}
                 type="button"
-                onClick={() =>
-                  setActiveTab(tab)
-                }
+                onClick={() => setActiveTab(tab)}
                 // onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap ${
                   activeTab === tab
@@ -1578,19 +1311,11 @@ export const SalesOrderForm: React.FC<Props> = ({
           ====================================================== */}
 
       <GeneralConfirmModal
-        isOpen={
-          showDispatchModal
-        }
+        isOpen={showDispatchModal}
         title="Confirmation"
         message="Are you sure you want to dispatch the stock?"
-        onConfirm={
-          handleDispatchStock
-        }
-        onCancel={() =>
-          setShowDispatchModal(
-            false,
-          )
-        }
+        onConfirm={handleDispatchStock}
+        onCancel={() => setShowDispatchModal(false)}
         loading={isPosting}
       />
 
@@ -1599,19 +1324,11 @@ export const SalesOrderForm: React.FC<Props> = ({
           ====================================================== */}
 
       <GeneralConfirmModal
-        isOpen={
-          showInvoiceModal
-        }
+        isOpen={showInvoiceModal}
         title="Confirmation"
         message="Are you sure you want to post this sales order?"
-        onConfirm={
-          handlePostInvoice
-        }
-        onCancel={() =>
-          setShowInvoiceModal(
-            false,
-          )
-        }
+        onConfirm={handlePostInvoice}
+        onCancel={() => setShowInvoiceModal(false)}
         loading={isPosting}
       />
 
@@ -1620,32 +1337,19 @@ export const SalesOrderForm: React.FC<Props> = ({
           ====================================================== */}
 
       <GeneralConfirmModal
-        isOpen={
-          showDispatchAndPostModal
-        }
+        isOpen={showDispatchAndPostModal}
         title="Stock Dispatch Required"
         message={
           <>
-            Stock has not been fully
-            dispatched for this order.
-            Would you like to dispatch
-            the remaining stock
-            automatically and post
-            the sales invoice now?
+            Stock has not been fully dispatched for this order. Would you like
+            to dispatch the remaining stock automatically and post the sales
+            invoice now?
           </>
         }
-        onConfirm={
-          handleDispatchAndPost
-        }
-        onCancel={() =>
-          setShowDispatchAndPostModal(
-            false,
-          )
-        }
+        onConfirm={handleDispatchAndPost}
+        onCancel={() => setShowDispatchAndPostModal(false)}
         loading={isPosting}
       />
-
-
 
       <GeneralConfirmModal
         isOpen={showCustomerChangeModal}
@@ -1709,3 +1413,259 @@ export const SalesOrderForm: React.FC<Props> = ({
     </div>
   );
 };
+
+// const [masterData, setMasterData] = useState<SalesOrderMasterData | null>(
+//   null,
+// );
+
+// const isUpdateMode = Boolean(id);
+// const isLoadingStages = !masterData;
+// const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+// const [isPosting, setIsPosting] = useState(false);
+// const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+// const [POModalOpen, setPOModalOpen] = useState(false);
+// const [SOModalOpen, setSOModalOpen] = useState(false);
+
+// // Manage view/edit state locally
+// const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
+
+// const [activeTab, setActiveTab] = useState<TabType>("general");
+// const [saving, setSaving] = useState<boolean>(false);
+// const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+// import type {
+//   TabType,
+//   CustomerSelectionSource,
+// } from "./types/salesOrderForm.types";
+
+// import {
+//   PurchaseOrderLookupItem,
+//   PurchaseOrderLookupModal,
+// } from "../../shared/modals/PurchaseOrderLookupModal";
+// import { PurchaseOrderMultiLookupModal } from "../../shared/modals/PurchaseOrderMultiLookupModal";
+
+// const [customerSelectionSource, setCustomerSelectionSource] =
+//   useState<CustomerSelectionSource>("general");
+// const [showCustomerChangeModal, setShowCustomerChangeModal] = useState(false);
+// const [customerModalOpen, setCustomerModalOpen] = useState(false);
+// const [locationModalOpen, setLocationModalOpen] = useState(false);
+
+/* const [order, setOrder] = useState<Partial<SalesOrder>>({
+    order_no: id ? "" : "",
+    customer_id: "",
+    customer_no: "",
+    customer_name: "",
+
+    bill_to_customer_id: "",
+    bill_to_customer_no: "",
+    bill_to_customer_name: "",
+
+    order_date: new Date().toISOString().split("T")[0],
+    posting_date: new Date().toISOString().split("T")[0],
+    dispatch_date: new Date().toISOString().split("T")[0],
+    requested_delivery_date: new Date().toISOString().split("T")[0],
+    delivery_date: new Date().toISOString().split("T")[0],
+
+    status: "draft",
+    subtotal: 0,
+    vat_amount: 0,
+    total_amount: 0,
+    invoiced_amount: 0,
+
+    reference: "",
+    notes: "",
+    email: "",
+    salesperson: "",
+    cust_order_no: "",
+    link_to_po: "",
+    sq_no: "",
+    source_of_order: "Others",
+
+    currency_code: baseCurrencyCode,
+  });
+
+  const [primaryAddress, setPrimaryAddress] = useState<
+    Partial<SalesOrderAddress>
+  >({ address_type: "primary" });
+
+  const [billingAddress, setBillingAddress] = useState<
+    Partial<SalesOrderAddress>
+  >({ address_type: "billing" });
+
+  const [shippingAddress, setShippingAddress] = useState<
+    Partial<SalesOrderAddress>
+  >({ address_type: "shipping" });
+
+  const [lines, setLines] = useState<SalesOrderLineUI[]>([]);
+
+  const [currencyConfig, setCurrencyConfig] = useState({
+    currency_id: "",
+    exchange_rate: 1,
+  }); */ // const refreshLines = async () => {
+//   if (!order.id) return;
+
+//   const response = await fetch(`/api/sales/sales-orders/${order.id}/lines`);
+
+//   const data = await response.json();
+
+//   setLines(data.lines ?? []);
+// };
+
+/* const isCompleted = order.status === "completed" || order.status === "POSTED";
+  const isFormDisabled = !isEditMode || isCompleted;
+
+  // Check if all line items with quantity > 0 have been shipped
+  const isFullyDispatched = useMemo(() => {
+    if (lines.length === 0) return false;
+    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
+    if (itemLines.length === 0) return false;
+
+    return itemLines.every((l) => {
+      const qty = Number(l.quantity || 0);
+      const shipped = Number(l.quantity_shipped || 0);
+      return qty > 0 && shipped >= qty;
+    });
+  }, [lines]); */
+
+/* const selectedCurrency = useMemo(() => {
+    return (
+      masterData?.currencies.find((c) => c.id === currencyConfig.currency_id) ??
+      null
+    );
+  }, [currencyConfig.currency_id, masterData]);
+
+  const financials = useMemo(() => {
+    const originalAmount = lines.reduce(
+      (sum, l) =>
+        sum + Number(Number(l.quantity || 0) * Number(l.unit_price || 0) || 0),
+      0,
+    );
+    const totalDiscount = lines.reduce(
+      (sum, l) => sum + Number(l.discount_amount || 0),
+      0,
+    );
+    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
+    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
+    const amountInclVat = amount + vat;
+
+    const rate =
+      Number(currencyConfig.exchange_rate) > 0
+        ? Number(currencyConfig.exchange_rate)
+        : 1;
+
+    const amountInclVatLCY = Number(amountInclVat) * rate;
+
+    return {
+      originalAmount,
+      totalDiscount,
+      amount,
+      vat,
+      amountInclVat,
+      amountInclVatLCY,
+    };
+  }, [lines, currencyConfig.exchange_rate]);
+
+  const hasSelectedLineItem = useMemo(() => {
+    return lines.some((line) => {
+      return !!line.item_id || !!line.gl_account_id;
+    });
+  }, [lines]); */
+
+/* const validateDates = (): string[] => {
+    const errors: string[] = [];
+
+    const orderDate = order.order_date
+      ? new Date(order.order_date).getTime()
+      : null;
+
+    const dispatchDate = order.dispatch_date
+      ? new Date(order.dispatch_date).getTime()
+      : null;
+
+    const deliveryDate = order.delivery_date
+      ? new Date(order.delivery_date).getTime()
+      : null;
+
+    if (orderDate && dispatchDate && orderDate > dispatchDate) {
+      errors.push("Order Date cannot be after Dispatch Date.");
+    }
+
+    if (orderDate && deliveryDate && orderDate > deliveryDate) {
+      errors.push("Order Date cannot be after Delivery Date.");
+    }
+
+    if (dispatchDate && deliveryDate && dispatchDate > deliveryDate) {
+      errors.push("Delivery Date cannot be before Dispatch Date.");
+    }
+
+    return errors;
+  };
+
+  const validateForm = (): boolean => {
+    const errors: string[] = [];
+    if (!order.customer_id) errors.push("Customer selection is required.");
+
+    if (
+      !order.customer_posting_group_id &&
+      !order.vat_business_posting_group_id
+    ) {
+      errors.push(
+        "Selected customer does not have a valid Customer/VAT Posting Group assigned.",
+      );
+    }
+
+    if (!order.order_date) errors.push("Order Date field is mandatory.");
+
+    if (!currencyConfig.currency_id)
+      errors.push("Transactional currency is required.");
+    if (lines.length === 0)
+      errors.push("Sales orders require at least one line item.");
+
+    errors.push(...validateDates());
+
+    setValidationErrors(errors);
+    return errors.length === 0;
+  }; */
+
+
+  // 2. Separate Handler for Posting Invoice
+  /* const handlePostInvoice = async () => {
+    if (!id) return;
+    setIsPosting(true);
+
+    show("Posting Sales Invoice...");
+
+    try {
+      toast.loading("Posting sales invoice ...", {
+        id: "action-toast",
+      });
+
+      const res = await fetch(`/api/sales/sales-orders/${id}/post-invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_po_no: order.reference,
+          posting_date: order.posting_date,
+          order_date: order.order_date,
+          financials: financials,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.error || "Failed to post sales invoice");
+
+      toast.success("Sales invoice posted!", { id: "action-toast" });
+      setShowInvoiceModal(false);
+
+      router.push(`/${slug}/sales/orders/new`);
+    } catch (err) {
+      if (err instanceof Error)
+        toast.error(err.message || "Error posting invoice", {
+          id: "action-toast",
+        });
+    } finally {
+      setIsPosting(false);
+      hide();
+    }
+  }; */

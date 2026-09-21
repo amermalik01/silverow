@@ -40,7 +40,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
               )
             )
             FROM inventory_allocations ia
-            WHERE ia.sales_order_lines = sol.id 
+            WHERE ia.sales_order_line_id = sol.id 
               AND ia.company_id = $1
               AND ia.status = 'ACTIVE'
           ),

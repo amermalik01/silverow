@@ -1061,9 +1061,10 @@ export class SalesOrderService {
     client: PoolClient,
     salesOrderId: string,
   ): Promise<void> {
+    // COALESCE(cancelled_quantity, 0) as cancelled_quantity
     const result = await client.query(
       `
-      SELECT quantity, quantity_shipped, COALESCE(cancelled_quantity, 0) as cancelled_quantity
+      SELECT quantity, quantity_shipped, 0 as cancelled_quantity
       FROM sales_order_lines
       WHERE sales_order_id = $1 AND is_deleted = false AND line_type = 'ITEM'
       `,
@@ -1113,7 +1114,6 @@ export class SalesOrderService {
           quantity - (
             COALESCE(quantity_shipped, 0)
             + $1
-            + COALESCE(cancelled_quantity, 0)
           ),
 
         updated_at = NOW()
@@ -1123,6 +1123,8 @@ export class SalesOrderService {
       [shippedQty, salesOrderLineId],
     );
   }
+
+  // + COALESCE(cancelled_quantity, 0)
 
   static async saveLineAllocations(
     client: PoolClient,

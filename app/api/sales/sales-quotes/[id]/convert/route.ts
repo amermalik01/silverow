@@ -1,6 +1,46 @@
 // app/api/sales/sales-quotes/[id]/convert/route.ts
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { SalesQuoteService } from "@/lib/services/sales/sales-quote.service";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
+
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
+export async function POST(req: NextRequest, { params }: RouteContext) {
+  try {
+    const companyId = await getCompanyId();
+    const userId = req.headers.get("x-user-id") || undefined;
+
+    const { id } = await params;
+
+    if (!companyId || !userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const result = await SalesQuoteService.convertToSalesOrder(
+      companyId,
+      id,
+      userId,
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: "Quote successfully converted to Sales Order",
+      data: result,
+    });
+  } catch (err) {
+    // return NextResponse.json({ error: error.message }, { status: 400 });
+    const dbError = err as { code?: string; message?: string };
+    return NextResponse.json(
+      { error: dbError.message || "Conversion failed" },
+      { status: 500 },
+    );
+  }
+}
+
+/* import { NextResponse } from "next/server";
 
 import { pool } from "@/lib/db";
 
@@ -52,4 +92,4 @@ export async function POST(_: Request, context: Context) {
   } finally {
     client.release();
   }
-}
+} */

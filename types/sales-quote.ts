@@ -16,10 +16,7 @@ export type SalesQuoteConversionStatus =
   | "PARTIALLY_CONVERTED"
   | "FULLY_CONVERTED";
 
-export type SalesQuoteLineType =
-  | "ITEM"
-  | "GL_ACCOUNT"
-  | "COMMENT";
+export type SalesQuoteLineType = "ITEM" | "GL_ACCOUNT" | "COMMENT";
 
 export type SalesQuoteLineStatus =
   | "OPEN"
@@ -27,9 +24,7 @@ export type SalesQuoteLineStatus =
   | "FULLY_CONVERTED"
   | "CANCELLED";
 
-export type SalesQuoteDiscountType =
-  | "PERCENT"
-  | "FIXED";
+export type SalesQuoteDiscountType = "PERCENT" | "FIXED";
 
 export type SalesQuote = {
   id?: string;
@@ -142,7 +137,7 @@ export type SalesQuote = {
   internal_notes?: string;
   terms_and_conditions?: string;
   footer_text?: string;
-  
+
   cust_order_no?: string;
   payable_bank?: string;
   payable_bank_id?: string;
@@ -170,10 +165,7 @@ export type SalesQuote = {
   posted_at?: string;
 };
 
-export type SalesQuoteAddressType =
-  | "primary"
-  | "billing"
-  | "shipping";
+export type SalesQuoteAddressType = "primary" | "billing" | "shipping";
 
 export interface SalesQuoteAddress {
   id?: string;
@@ -207,7 +199,6 @@ export interface SalesQuoteAddress {
   created_at?: string;
   updated_at?: string;
 }
-
 
 export interface SalesQuoteLine {
   _key?: string;
@@ -244,7 +235,6 @@ export interface SalesQuoteLine {
 
   discount_type?: SalesQuoteDiscountType;
   discount_value?: number;
-  discount_percent?: number;
   discount_amount?: number;
 
   original_amount?: string | number;
@@ -260,7 +250,6 @@ export interface SalesQuoteLine {
   gross_amount?: number;
 
   line_status?: SalesQuoteLineStatus;
-
 
   purchase_gl_id?: string;
   sales_gl_id?: string;
@@ -545,376 +534,3 @@ export interface SalesQuoteMasterData {
   paymentMethods: LookupItem[];
   shipmentMethods: LookupItem[];
 }
-
-
-/* export type SalesQuote = {
-  id?: string;
-  company_id?: string;
-  order_no?: string;
-  customer_id: string;
-  customer_no?: string;
-  customer_name?: string;
-
-  bill_to_customer_id: string;
-  bill_to_customer_no?: string;
-  bill_to_customer_name?: string;
-
-  reference?: string;
-
-  stage_id?: string;
-  stage_name?: string;
-  current_stage?: string;
-
-  salesperson?: string;
-  cust_order_no?: string;
-  link_to_po?: string;
-  sq_no?: string;
-
-  currency_id?: string;
-  exchange_rate?: string | number;
-
-  order_date: string;
-  posting_date?: string;
-  dispatch_date?: string;
-  requested_delivery_date?: string;
-  delivery_date?: string;
-
-  payable_bank?: string;
-  payable_bank_id?: string;
-  due_date?: string;
-  payment_terms?: string;
-  payment_terms_id?: string;
-  payment_method?: string;
-  payment_method_id?: string;
-
-  sales_posting_group_id?: string;
-  customer_posting_group_id?: string;
-  vat_business_posting_group_id?: string;
-
-  currency_code?: string;
-  email?: string;
-
-  sales_quote_id?: string;
-  sales_quote_no?: string;
-  anonymous_customer?: boolean;
-
-  internal_notes?: string;
-  notes?: string;
-  shipment_status?: string;
-  source_of_order?: string;
-  invoice_status?: string;
-
-  contact?: string;
-  book_in_phone?: string;
-  book_in_contact?: string;
-  book_in_email?: string;
-
-  shipment_method?: string;
-  shipment_method_id?: string;
-  shipping_agent?: string;
-  shipment_ref_no?: string;
-  warehouse_ref_no?: string;
-  cust_warehouse_ref_no?: string;
-  reason?: string;
-
-  subtotal?: number;
-  tax_amount?: number;
-  total_amount?: number;
-  invoiced_amount?: number;
-
-  finance_charges?: number;
-  insurance_charges?: number;
-  converted_by?: string;
-  freight_charges?: number;
-  shipment_date?: string;
-  delivery_time?: string;
-
-  status?: SalesQuoteStatus;
-
-  created_at?: string;
-  updated_at?: string;
-  posted_at?: string;
-  created_by?: string;
-  updated_by?: string;
-  approved_at?: string;
-  closed_at?: string;
-  cancelled_at?: string;
-  is_posted?: boolean;
-};
-
-export type SalesQuoteAddressType = "primary" | "billing" | "shipping";
-
-export interface SalesQuoteAddress {
-  id?: string;
-  company_id?: string;
-  sales_order_id?: string;
-  address_type: SalesQuoteAddressType;
-  name?: string;
-  company_name?: string;
-  attention?: string;
-  phone?: string;
-  email?: string;
-  address_1?: string;
-  address_2?: string;
-  city?: string;
-  state?: string;
-  county?: string;
-  postcode?: string;
-  country?: string;
-  contact_person?: string;
-  contact_name?: string;
-}
-
-export type SalesQuotePayload = {
-  quote: SalesQuote;
-
-  primary_address?: SalesQuoteAddress;
-  billing_address?: SalesQuoteAddress;
-  shipping_address?: SalesQuoteAddress;
-
-  lines: SalesQuoteLine[];
-  allow_empty_lines: boolean;
-};
-
-export type SalesQuoteLineType = "ITEM" | "GL_ACCOUNT" | "COMMENT";
-
-export interface SalesQuoteLine {
-  _key?: string;
-  id?: string;
-  sales_order_id?: string;
-  sales_quote_line_id?: string;
-  line_no?: number;
-  line_type: SalesQuoteLineType;
-
-
-  item_id?: string;
-  item_code?: string;
-  item_name?: string;
-
-
-  gl_account_id?: string;
-  account_code?: string;
-  account_name?: string;
-
-  description?: string;
-
-  warehouse_id?: string;
-  warehouse_code?: string;
-  warehouse_name?: string;
-  // warehouse_location_id?: string | null;
-  is_allocated?: boolean;
-
-  uom_id?: string;
-  uom_name?: string;
-
-  quantity: number;
-
-  quantity_reserved?: number;
-  quantity_shipped?: number;
-  quantity_invoiced?: number;
-
-  is_deleted?: boolean;
-
-  unit_price: number;
-  discount_type?: "PERCENT" | "FIXED";
-  discount_value?: number;
-  discount_amount?: number;
-  original_amount?: string | number;
-
-  vat_business_posting_group_id?: string;
-  vat_product_posting_group_id?: string;
-
-  vat_percent?: number;
-  vat_amount?: number;
-  net_amount?: number;
-  gross_amount?: number;
-  line_amount?: number;
-  line_total?: number;
-
-  purchase_gl_id?: string;
-  sales_gl_id?: string;
-  inventory_gl_id?: string;
-
-  deleted_at?: string;
-  deleted_by?: string;
-  updated_at?: string;
-}
-
-export interface SalesQuoteLineUI extends SalesQuoteLine {
-  _stableKey?: string;
-  reserved_quantity?: string | number;
-  available_stock?: string | number;
-  is_allocated?: boolean;
-
-  // allocations?: Array<{
-  //   quantity: number;
-  //   [key: string]: unknown;
-  // }>;
-
-  // initialAllocations?: Array<{
-  //   quantity: number;
-  //   [key: string]: unknown;
-  // }>;
-
-  allocations?: PO_StockAllocationRecord[];
-  initialAllocations?: PO_StockAllocationRecord[];
-  stock_allocations?: PO_StockAllocationRecord[];
-  po_line_allocations?: PO_StockAllocationRecord[];
-}
-
-export type SalesQuoteListing = {
-  id?: string;
-  company_id?: string;
-  order_no?: string;
-  customer_id: string;
-  customer_no?: string;
-  customer_name?: string;
-  reference?: string;
-
-  payable_bank?: string;
-  payable_bank_id?: string;
-  due_date?: string;
-  payment_terms?: string;
-  payment_terms_id?: string;
-  payment_method?: string;
-  payment_method_id?: string;
-
-  order_date: string;
-  posting_date?: string;
-  dispatch_date?: string;
-  requested_delivery_date?: string;
-  delivery_date?: string;
-  currency_id?: string;
-  currency_code?: string;  
-  exchange_rate?: string | number;
-  subtotal?: number;
-  vat_amount?: number;
-  discount_amount?: number;
-  total_amount?: number;
-  invoiced_amount?: number;
-  email?: string;
-  salesperson?: string;
-  cust_order_no?: string;
-  link_to_po?: string;
-  sq_no?: string;
-
-  internal_notes?: string;
-  notes?: string;
-  status?: string;
-  shipment_status?: string;
-  source_of_order?: string;
-  invoice_status?: string;
-  created_at?: string;
-  updated_at?: string;
-  sales_quote_id?: string;
-  sales_quote_no?: string;
-  anonymous_customer?: boolean;
-
-  contact?: string;
-  book_in_phone?: string;
-  book_in_contact?: string;
-  book_in_email?: string;
-
-  shipment_method?: string;
-  shipment_method_id?: string;
-  shipping_agent?: string;
-  shipment_ref_no?: string;
-  warehouse_ref_no?: string;
-  cust_warehouse_ref_no?: string;
-  reason?: string;
-
-  finance_charges?: number;
-  insurance_charges?: number;
-  converted_by?: string;
-  freight_charges?: number;
-  shipment_date?: string;
-  delivery_time?: string;
-
-  // --- Display & Data Grid Computed Fields ---
-  sale_order_code?: string;
-  sale_quote_code?: string;
-  prev_code?: string;
-
-  sell_to_cust_no?: string;
-  sell_to_cust_name?: string;
-  sell_to_address?: string;
-  sell_to_address2?: string;
-  sell_to_city?: string;
-  sell_to_county?: string;
-  sell_to_post_code?: string;
-  country_code?: string;
-  sell_to_contact_no?: string;
-  cust_phone?: string;
-  cust_email?: string;
-
-  sale_person?: string;
-  bill_to_posting_group_name?: string;
-  segment?: string;
-
-  offer_date?: string;
-  converted_to_so_on?: string;
-
-  net_amount?: number;
-  tax_amount?: number;
-  grand_total?: number;
-
-  finance_charges_exists?: boolean;
-  insurance_charges_exists?: boolean;
-  proof_of_delivery?: string;
-
-  shipping_agent_code?: string;
-  shipment_method_code?: string;
-  ship_to_address?: string;
-  ship_to_address2?: string;
-  ship_to_city?: string;
-  ship_to_county?: string;
-  ship_to_post_code?: string;
-
-  book_in_tel?: string;
-  comm_book_in_contact?: string;
-  warehouse_booking_ref?: string;
-  customer_warehouse_ref?: string;
-  linked_pos_1?: string;
-  converted_to_so_by_name?: string;
-};
-
-export interface StockAllocationRecord {
-  production_date?: string;
-  use_by_date?: string;
-  date_received?: string;
-  storage_location?: string;
-  cons_no?: string;
-  ref_no?: string;
-  serial_no: string;
-  quantity: number;
-}
-
-export interface LookupItem {
-  id: string;
-  name: string;
-}
-
-export interface PaymentTermLookup extends LookupItem {
-  days: number;
-}
-
-export interface CurrencyLookup {
-  id: string;
-  code: string;
-  name: string;
-  exchange_rate: number;
-}
-
-export interface OrderStageLookup {
-  id: string;
-  name: string;
-  rank: number;
-}
-export interface SalesQuoteMasterData {
-  currencies: CurrencyLookup[];
-  stages: OrderStageLookup[];
-  paymentTerms: PaymentTermLookup[];
-  paymentMethods: LookupItem[];
-  shipmentMethods: LookupItem[];
-} */
-
