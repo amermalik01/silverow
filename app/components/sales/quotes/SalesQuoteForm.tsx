@@ -52,6 +52,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
 
   const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
   const [converting, setConverting] = React.useState(false);
+  const [showConvertModal, setShowConvertModal] = React.useState(false);
 
   const {
     activeTab,
@@ -317,7 +318,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
     }
   };
 
-  const handleConvertToSalesOrder = async () => {
+  /* const handleConvertToSalesOrder = async () => {
     // 1. Check if record exists in DB
     if (!id || id === "new") {
       toast.error("Please save the sales quote first before converting.");
@@ -358,6 +359,69 @@ export const SalesQuoteForm: React.FC<Props> = ({
       );
 
       // Redirect to the newly created Sales Order edit/view screen or order list
+      const createdOrderId = result.data?.id;
+      if (createdOrderId) {
+        router.push(`/${slug}/sales/orders/${createdOrderId}/edit`);
+      } else {
+        router.push(`/${slug}/sales/orders`);
+      }
+    } catch (err) {
+      console.error("Conversion Error:", err);
+      if (err instanceof Error) {
+        setValidationErrors([err.message]);
+        toast.error(err.message);
+      }
+    } finally {
+      setConverting(false);
+      hide();
+    }
+  }; */
+
+  // 1. Validates requirements and triggers confirmation modal
+  const handleInitiateConversion = () => {
+    if (!id || id === "new") {
+      toast.error("Please save the sales quote first before converting.");
+      return;
+    }
+
+    const errors = validateSalesQuote(quote, lines, currencyConfig.currency_id);
+    setValidationErrors(errors);
+
+    if (errors.length > 0) {
+      toast.error("Please resolve validation errors before converting.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    setShowConvertModal(true);
+  };
+
+  // 2. Executes API request after user confirmation
+  const handleConfirmConversion = async () => {
+    setShowConvertModal(false);
+    show("Converting to Sales Order...");
+
+    try {
+      setConverting(true);
+      setValidationErrors([]);
+
+      const res = await fetch(`/api/sales/sales-quotes/${id}/convert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          result.error || "Failed to convert quote to sales order.",
+        );
+      }
+
+      toast.success(
+        result.message || "Quote successfully converted to Sales Order!",
+      );
+
       const createdOrderId = result.data?.id;
       if (createdOrderId) {
         router.push(`/${slug}/sales/orders/${createdOrderId}/edit`);
@@ -619,7 +683,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
                 {id && (
                   <Button
                     type="button"
-                    onClick={handleConvertToSalesOrder}
+                    onClick={handleInitiateConversion}
                     disabled={saving || converting}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-3 py-1.5 rounded flex items-center gap-1.5 transition-colors disabled:opacity-50"
                   >
@@ -650,7 +714,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
 
             <Button
               type="button"
-              onClick={() => router.push(`/${slug}/sales/orders`)}
+              onClick={() => router.push(`/${slug}/sales/quotes`)}
               variant="cancel"
               disabled={converting}
             >
@@ -667,6 +731,15 @@ export const SalesQuoteForm: React.FC<Props> = ({
         onConfirm={handleConfirmCustomerChange}
         onCancel={handleCancelCustomerChange}
         loading={false}
+      />
+
+      <GeneralConfirmModal
+        isOpen={showConvertModal}
+        title="Convert to Sales Order"
+        message="Are you sure you want to convert this Sales Quote into an active Sales Order? This action will update the quote status and create a new Sales Order."
+        onConfirm={handleConfirmConversion}
+        onCancel={() => setShowConvertModal(false)}
+        loading={converting}
       />
 
       {customerModalOpen && (

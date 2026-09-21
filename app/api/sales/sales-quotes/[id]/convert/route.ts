@@ -1,8 +1,10 @@
 // app/api/sales/sales-quotes/[id]/convert/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { SalesQuoteService } from "@/lib/services/sales/sales-quote.service";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
+import { authOptions } from "@/lib/auth";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -11,7 +13,9 @@ type RouteContext = {
 export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
     const companyId = await getCompanyId();
-    const userId = req.headers.get("x-user-id") || undefined;
+    // const userId = req.headers.get("x-user-id") || undefined;
+    const session = await getServerSession(authOptions);
+    const userId = session?.user.id;
 
     const { id } = await params;
 

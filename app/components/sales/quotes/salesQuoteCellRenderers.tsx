@@ -48,7 +48,7 @@ export function getSalesQuoteCellRenderers(slug: string) {
     // Code / Identifier Links
     sale_order_code: (row: SalesQuoteListing) => (
       <Link
-        href={`/${slug}/sales/orders/${row.id}/edit`}
+        href={`/${slug}/sales/quotes/${row.id}/edit`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
         {row.sale_order_code || row.quote_no || "Draft"}
@@ -159,15 +159,15 @@ export function getSalesQuoteCellRenderers(slug: string) {
     //   row.converted_to_so_by_name || row.converted_by || "-",
 
     // Actions Column
-    actions: (row: SalesQuoteListing) => (
-      <div className="flex items-center gap-1.5">
-        <Link
-          href={`/${slug}/sales/orders/${row.id}/edit`}
-          className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          Edit
-        </Link>
-      </div>
-    ),
+    // actions: (row: SalesQuoteListing) => (
+    //   <div className="flex items-center gap-1.5">
+    //     <Link
+    //       href={`/${slug}/sales/quotes/${row.id}/edit`}
+    //       className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+    //     >
+    //       Edit
+    //     </Link>
+    //   </div>
+    // ),
   };
 }

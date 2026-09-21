@@ -279,9 +279,13 @@ export const SalesQuoteSchema = z
       .default(1),
 
     order_date: requiredDate,
+    posting_date: requiredDate,
     valid_from: looseString,
     valid_until: looseString,
     requested_delivery_date: looseString,
+    due_date: looseString,
+    dispatch_date: looseString,
+    delivery_date: looseString,
 
     salesperson_id: looseUuid,
     salesperson: looseString,
