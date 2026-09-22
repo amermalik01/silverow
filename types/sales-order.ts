@@ -1,6 +1,6 @@
 // /types/sales-order.ts
 
-import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
+import { SO_StockAllocationRecord } from "@/app/components/shared/modals/SO_StockAllocationModal";
 
 export type SalesOrderStatus = string;
 
@@ -214,10 +214,10 @@ export interface SalesOrderLineUI extends SalesOrderLine {
   //   [key: string]: unknown;
   // }>;
 
-  allocations?: PO_StockAllocationRecord[];
-  initialAllocations?: PO_StockAllocationRecord[];
-  stock_allocations?: PO_StockAllocationRecord[];
-  po_line_allocations?: PO_StockAllocationRecord[];
+  allocations?: SO_StockAllocationRecord[];
+  initialAllocations?: SO_StockAllocationRecord[];
+  stock_allocations?: SO_StockAllocationRecord[];
+  po_line_allocations?: SO_StockAllocationRecord[];
 }
 
 export type SalesOrderListing = {

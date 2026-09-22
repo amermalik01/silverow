@@ -19,9 +19,9 @@ import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
 
-import PO_StockAllocationModal, {
-  PO_StockAllocationRecord,
-} from "@/app/components/shared/modals/PO_StockAllocationModal";
+import SO_StockAllocationModal, {
+  SO_StockAllocationRecord,
+} from "@/app/components/shared/modals/SO_StockAllocationModal";
 
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
@@ -38,11 +38,8 @@ type Props = {
   lines: SalesOrderLineUI[];
   setLines: React.Dispatch<React.SetStateAction<SalesOrderLineUI[]>>;
   isReadonly?: boolean;
-
   salesOrder: Partial<SalesOrder>;
   refreshLines?: () => Promise<void>;
-
-  // onImportItems?: () => void;
 };
 
 export default function SalesOrderLines({
@@ -51,7 +48,6 @@ export default function SalesOrderLines({
   isReadonly = false,
   salesOrder,
   refreshLines,
-  // onImportItems,
 }: Props) {
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [glModalOpen, setGlModalOpen] = useState(false);
@@ -60,11 +56,9 @@ export default function SalesOrderLines({
   const [glIndex, setGlIndex] = useState<number | null>(null);
 
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
-
   const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
 
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
-
   const [activeAllocationLineId, setActiveAllocationLineId] = useState<
     string | null
   >(null);
@@ -100,14 +94,11 @@ export default function SalesOrderLines({
     account_name: undefined,
 
     description: "",
-
     quantity: 1,
-
     unit_price: 0,
 
     discount_type: "PERCENT",
     discount_value: 0,
-
     vat_percent: 0,
 
     original_amount: 0,
@@ -130,7 +121,6 @@ export default function SalesOrderLines({
     quantity_invoiced: 0,
 
     is_allocated: false,
-
     allocations: [],
     initialAllocations: [],
   });
@@ -141,7 +131,6 @@ export default function SalesOrderLines({
     const original = qty * price;
 
     let discountAmount = 0;
-
     if (line.discount_type === "PERCENT") {
       discountAmount = original * (Number(line.discount_value || 0) / 100);
     } else {
@@ -154,9 +143,7 @@ export default function SalesOrderLines({
     );
 
     const net = Math.max(original - discountAmount, 0);
-
     const vat = net * (Number(line.vat_percent || 0) / 100);
-
     const gross = net + vat;
 
     const currentAllocations =
@@ -219,16 +206,13 @@ export default function SalesOrderLines({
     }
 
     const vatBusinessGroupId = salesOrder.vat_business_posting_group_id || "";
-
     const vatProductGroupId = item.vat_product_group_id || "";
-
     let calculatedVatPercent = 0;
 
     if (vatBusinessGroupId && vatProductGroupId) {
       try {
         const vatParams = new URLSearchParams({
           vat_business_group_id: vatBusinessGroupId,
-
           vat_product_group_id: vatProductGroupId,
         });
 
@@ -238,7 +222,6 @@ export default function SalesOrderLines({
 
         if (vatResponse.ok) {
           const vatData = await vatResponse.json();
-
           calculatedVatPercent = Number(
             vatData.data?.vat_rate ?? vatData.data?.vat_percent ?? 0,
           );
@@ -258,22 +241,17 @@ export default function SalesOrderLines({
       item_name: item.name,
 
       description: item.description || item.name,
-
       unit_price: Number(item.standard_sales_price || 0),
 
       uom_id: item.base_uom_id,
       uom_name: item.base_uom_name,
 
       vat_percent: calculatedVatPercent,
-
       vat_business_posting_group_id: vatBusinessGroupId,
-
       vat_product_posting_group_id: vatProductGroupId,
 
       warehouse_id: defaultWarehouse?.id,
-
       warehouse_code: defaultWarehouse?.code,
-
       warehouse_name: defaultWarehouse?.name,
 
       quantity_reserved: 0,
@@ -282,7 +260,6 @@ export default function SalesOrderLines({
 
       allocations: [],
       initialAllocations: [],
-
       is_allocated: false,
     });
   };
@@ -298,7 +275,6 @@ export default function SalesOrderLines({
       );
 
       setLines((previousLines) => [...previousLines, ...newLines]);
-
       setItemModalOpen(false);
     } catch (error) {
       console.error("Failed to add selected items:", error);
@@ -313,19 +289,15 @@ export default function SalesOrderLines({
     const newLines = accounts.map((account) =>
       calculateLine({
         ...createEmptyLine("GL_ACCOUNT"),
-
         line_type: "GL_ACCOUNT",
-
         gl_account_id: account.id,
         account_code: account.code,
         account_name: account.name,
-
         description: account.name,
       }),
     );
 
     setLines((previousLines) => [...previousLines, ...newLines]);
-
     setGlModalOpen(false);
   };
 
@@ -340,14 +312,12 @@ export default function SalesOrderLines({
 
         if (response.ok) {
           const json = await response.json();
-
           setVatOptions(json.data || []);
         } else {
           setVatOptions([]);
         }
       } catch (error) {
         console.error("Failed to load VAT options:", error);
-
         setVatOptions([]);
       }
     }
@@ -403,121 +373,42 @@ export default function SalesOrderLines({
     }
 
     updated[index] = calculateLine(targetLine);
-
     setLines(updated);
   };
 
-  const changeLineType = (
-    index: number,
-    type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
-  ) => {
-    const updated = [...lines];
-    updated[index] = calculateLine({
-      ...updated[index],
-
-      line_type: type,
-
-      item_id: undefined,
-      item_code: undefined,
-      item_name: undefined,
-
-      gl_account_id: undefined,
-      account_code: undefined,
-      account_name: undefined,
-
-      warehouse_id: undefined,
-      warehouse_code: undefined,
-      warehouse_name: undefined,
-
-      uom_id: undefined,
-      uom_name: undefined,
-
-      allocations: [],
-      initialAllocations: [],
-
-      is_allocated: false,
-
-      quantity: type === "COMMENT" ? 0 : Number(updated[index].quantity || 1),
-
-      unit_price:
-        type === "COMMENT" ? 0 : Number(updated[index].unit_price || 0),
-
-      discount_value:
-        type === "COMMENT" ? 0 : Number(updated[index].discount_value || 0),
-
-      vat_percent:
-        type === "COMMENT" ? 0 : Number(updated[index].vat_percent || 0),
-    });
-
-    setLines(updated);
+  const handleOpenAllocationModal = (lineKey: string) => {
+    setActiveAllocationLineId(lineKey);
+    setIsAllocationModalOpen(true);
   };
 
   const handleSaveAllocations = (
-    allocationsData: PO_StockAllocationRecord[],
+    allocationsData: SO_StockAllocationRecord[],
   ) => {
-    if (!activeAllocationLineId) {
-      return;
-    }
+    if (!activeAllocationLineId) return;
+
     setLines((previousLines) =>
       previousLines.map((line, index) => {
-        const lineKey = line.id || line._key || `temp-sales-line-${index}`;
+        const lineKey = line.id || line._key || `temp-line-${index}`;
 
         if (lineKey !== activeAllocationLineId) {
           return line;
         }
 
-        const totalAllocated = allocationsData.reduce(
-          (sum, allocation) => sum + Number(allocation.quantity || 0),
-          0,
-        );
-
-        const lineQty = Number(line.quantity || 0);
-
-        return {
+        return calculateLine({
           ...line,
-
           allocations: allocationsData,
-
           initialAllocations: allocationsData,
-
-          is_allocated: lineQty > 0 && totalAllocated === lineQty,
-        };
+        });
       }),
     );
 
     setIsAllocationModalOpen(false);
-
     setActiveAllocationLineId(null);
   };
 
   const handleDiscountTypeChange = (index: number, value: string) => {
     updateLine(index, "discount_type", value as "PERCENT" | "FIXED");
   };
-
-  const totals = useMemo(() => {
-    return lines.reduce(
-      (accumulator, line) => {
-        accumulator.original += Number(line.original_amount || 0);
-
-        accumulator.discount += Number(line.discount_amount || 0);
-
-        accumulator.net += Number(line.net_amount || 0);
-
-        accumulator.vat += Number(line.vat_amount || 0);
-
-        accumulator.gross += Number(line.gross_amount || 0);
-
-        return accumulator;
-      },
-      {
-        original: 0,
-        discount: 0,
-        net: 0,
-        vat: 0,
-        gross: 0,
-      },
-    );
-  }, [lines]);
 
   return (
     <div className="space-y-2 w-full text-slate-900 dark:text-slate-100">
@@ -816,9 +707,9 @@ export default function SalesOrderLines({
                   <td className="p-2 text-right font-semibold text-[11px]">
                     {displayVATAmount.toFixed(2)}
                   </td>
-                  <td className="p-2 text-right font-semibold text-[11px]">
+                  {/* <td className="p-2 text-right font-semibold text-[11px]">
                     {displayGrossAmount.toFixed(2)}
-                  </td>
+                  </td> */}
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">
                       {line.line_type === "ITEM" ? (
@@ -888,7 +779,7 @@ export default function SalesOrderLines({
         onClose={() => setItemModalOpen(false)}
         multiple={true}
         // onSelect={() => {}}
-        onSelect={(item) =>  handleMultipleItemSelect([item])}
+        onSelect={(item) => handleMultipleItemSelect([item])}
         onSelectMultiple={handleMultipleItemSelect}
       />
 
@@ -927,6 +818,39 @@ export default function SalesOrderLines({
           setWarehouseIndex(null);
         }}
       />
+
+      {/* Stock Allocation Modal */}
+      {activeAllocationLine && (
+        <SO_StockAllocationModal
+          open={isAllocationModalOpen}
+          isReadonly={
+            isReadonly || Number(activeAllocationLine.quantity_shipped || 0) > 0
+          }
+          onClose={() => {
+            setIsAllocationModalOpen(false);
+            setActiveAllocationLineId(null);
+          }}
+          onSave={handleSaveAllocations}
+          targetQuantity={Number(activeAllocationLine.quantity || 0)}
+          itemId={activeAllocationLine.item_id}
+          itemCode={activeAllocationLine.item_code || ""}
+          itemName={
+            activeAllocationLine.item_name ||
+            activeAllocationLine.description ||
+            ""
+          }
+          warehouseId={activeAllocationLine.warehouse_id}
+          warehouseName={
+            activeAllocationLine.warehouse_name || "Default Warehouse"
+          }
+          uomName={activeAllocationLine.uom_name || "PCS"}
+          initialAllocations={
+            activeAllocationLine.allocations ||
+            activeAllocationLine.initialAllocations ||
+            []
+          }
+        />
+      )}
 
       {/* {isAllocationModalOpen && activeAllocationLine && (
         <PO_StockAllocationModal
@@ -976,290 +900,21 @@ export default function SalesOrderLines({
     </div>
   );
 }
-
-
-      {/* <ItemLookupModal
-        open={itemIndex !== null}
-        onClose={() => setItemIndex(null)}
-        onSelect={async (item: ItemLookupRecord) => {
-          if (itemIndex === null) {
-            return;
-          }
-          const index = itemIndex;
-          const itemLine = await buildItemLine(item);
-          const updated = [...lines];
-          updated[index] = calculateLine({
-            ...updated[index],
-            ...itemLine,
-            id: updated[index].id,
-            _key: updated[index]._key,
-            sales_order_id: updated[index].sales_order_id,
-            line_no: updated[index].line_no,
-
-            line_type: "ITEM",
-
-            item_id: item.id,
-            item_code: item.item_code,
-            item_name: item.name,
-
-            description: item.description || item.name,
-            unit_price: Number(item.standard_sales_price || 0),
-
-            uom_id: item.base_uom_id,
-            uom_name: item.base_uom_name,
-
-            warehouse_id: itemLine.warehouse_id,
-            warehouse_code: itemLine.warehouse_code,
-            warehouse_name: itemLine.warehouse_name,
-
-            vat_percent: itemLine.vat_percent,
-
-            vat_business_posting_group_id:
-              itemLine.vat_business_posting_group_id,
-
-            vat_product_posting_group_id: itemLine.vat_product_posting_group_id,
-
-            allocations: [],
-            initialAllocations: [],
-
-            is_allocated: false,
-          });
-
-          setLines(updated);
-          setItemIndex(null);
-        }}
-      /> */}
-      {/* <GLAccountLookupModal
-        open={glIndex !== null}
-        onClose={() => setGlIndex(null)}
-        onSelect={(account: GLAccountLookupRecord) => {
-          if (glIndex === null) {
-            return;
-          }
-
-          const updated = [...lines];
-
-          updated[glIndex] = calculateLine({
-            ...updated[glIndex],
-
-            line_type: "GL_ACCOUNT",
-            gl_account_id: account.id,
-            account_code: account.code,
-            account_name: account.name,
-            description: account.name,
-
-            item_id: undefined,
-            item_code: undefined,
-            item_name: undefined,
-
-            warehouse_id: undefined,
-            warehouse_code: undefined,
-            warehouse_name: undefined,
-
-            uom_id: undefined,
-            uom_name: undefined,
-
-            allocations: [],
-            initialAllocations: [],
-
-            is_allocated: false,
-          });
-
-          setLines(updated);
-          setGlIndex(null);
-        }}
-      /> */}
-/* "use client";
-
-import { useEffect, useMemo, useState } from "react";
-import { Icon } from "@iconify/react";
-import {
-  SalesOrder,
-  SalesOrderLine,
-  SalesOrderLineUI,
-} from "@/types/sales-order";
-
-import ItemLookupModal, {
-  ItemLookupRecord,
-} from "@/app/components/shared/modals/ItemLookupModal";
-
-import GLAccountLookupModal, {
-  GLAccountLookupRecord,
-} from "@/app/components/shared/modals/GLAccountLookupModal";
-
-import WarehouseLookupModal, {
-  WarehouseLookupRecord,
-} from "@/app/components/shared/modals/WarehouseLookupModal";
-import { Button } from "@/components/ui/button";
-
-type VatPostingOption = {
-  id: string;
-  code: string;
-  description?: string;
-  vat_percent: number;
-  vat_product_group_id?: string;
-};
-
-type Props = {
-  lines: SalesOrderLineUI[];
-  setLines: React.Dispatch<React.SetStateAction<SalesOrderLineUI[]>>;
-  isReadonly?: boolean;
-
-  salesOrder: Partial<SalesOrder>;
-  refreshLines?: () => Promise<void>;
-};
-
-export default function SalesOrderLines({
-  lines,
-  setLines,
-  isReadonly = false,
-  salesOrder,
-  refreshLines,
-}: Props) {
-  const [itemIndex, setItemIndex] = useState<number | null>(null);
-  const [glIndex, setGlIndex] = useState<number | null>(null);
-  const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
-
-  const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
-
-  const addLine = () => {
-    setLines([
-      ...lines,
-      {
-        line_type: "ITEM",
-        quantity: 1,
-        unit_price: 0,
-        discount_type: "PERCENT",
-        discount_value: 0,
-        vat_percent: 0,
-        original_amount: 0,
-        discount_amount: 0,
-        net_amount: 0,
-        vat_amount: 0,
-        gross_amount: 0,
-        quantity_shipped: 0,
-        quantity_invoiced: 0,
-      },
-    ]);
-  };
-
-  useEffect(() => {
-    async function loadVatOptions() {
-      try {
-        const busGroupParam = salesOrder?.vat_business_posting_group_id
-          ? `?vat_business_group_id=${salesOrder.vat_business_posting_group_id}`
-          : "";
-
-        const res = await fetch(`/api/lookups/vat-rates${busGroupParam}`);
-        if (res.ok) {
-          const json = await res.json();
-          setVatOptions(json.data || []);
-        }
-      } catch (err) {
-        console.error("Failed to load VAT options:", err);
-      }
-    }
-
-    loadVatOptions();
-  }, [salesOrder?.vat_business_posting_group_id]);
-
-  const handleVatChange = (index: number, selectedVatOptionId: string) => {
-    const selectedOption = vatOptions.find(
-      (opt) => opt.id === selectedVatOptionId,
-    );
-    const updated = [...lines];
-
-    const vatPercent = selectedOption
-      ? Number(selectedOption.vat_percent || 0)
-      : 0;
-    const vatProductGroupId =
-      selectedOption?.vat_product_group_id || selectedOption?.id || "";
-
-    updated[index] = calculateLine({
-      ...updated[index],
-      vat_percent: vatPercent,
-      vat_product_posting_group_id: vatProductGroupId,
-    });
-
-    setLines(updated);
-  };
-
-  const removeLine = (index: number) => {
-    setLines(lines.filter((_, i) => i !== index));
-  };
-
-  const calculateLine = (line: Partial<SalesOrderLineUI>): SalesOrderLine => {
-    const qty = Number(line.quantity || 0);
-    const price = Number(line.unit_price || 0);
-    const original = qty * price;
-    let discountAmount = 0;
-
-    if (line.discount_type === "PERCENT") {
-      discountAmount = original * (Number(line.discount_value || 0) / 100);
-    } else {
-      discountAmount = Number(line.discount_value || 0);
-    }
-
-    // Net Amount after Discount
-    const net = original - discountAmount;
-    // VAT calculated on Net Amount (after discount)
-    const vat = net * (Number(line.vat_percent || 0) / 100);
-    const gross = net + vat;
-
-    return {
-      ...(line as SalesOrderLineUI),
-      original_amount: original,
-      discount_amount: discountAmount,
-      net_amount: net,
-      vat_amount: vat,
-      gross_amount: gross,
-      line_total: gross,
-    };
-  };
-
-  const updateLine = <K extends keyof SalesOrderLineUI>(
-    index: number,
-    field: K,
-    value: SalesOrderLineUI[K],
-  ) => {
-    const updated = [...lines];
-    updated[index] = { ...updated[index], [field]: value };
-    updated[index] = calculateLine(updated[index]);
-    setLines(updated);
-  };
-
-  const changeLineType = (
-    index: number,
-    type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
-  ) => {
-    const updated = [...lines];
-
-    updated[index] = {
-      ...updated[index],
-      line_type: type,
-      item_id: undefined,
-      item_code: undefined,
-      item_name: undefined,
-      gl_account_id: undefined,
-      account_code: undefined,
-      account_name: undefined,
-      warehouse_id: undefined,
-      warehouse_code: undefined,
-      warehouse_name: undefined,
-    };
-
-    setLines(updated);
-  };
-
-  const totals = useMemo(() => {
+/* 
+const totals = useMemo(() => {
     return lines.reduce(
-      (acc, line) => {
-        acc.original += Number(line.original_amount || 0);
-        acc.discount += Number(line.discount_amount || 0);
-        acc.net += Number(line.net_amount || 0);
-        acc.vat += Number(line.vat_amount || 0);
-        acc.gross += Number(line.gross_amount || 0);
-        return acc;
+      (accumulator, line) => {
+        accumulator.original += Number(line.original_amount || 0);
+
+        accumulator.discount += Number(line.discount_amount || 0);
+
+        accumulator.net += Number(line.net_amount || 0);
+
+        accumulator.vat += Number(line.vat_amount || 0);
+
+        accumulator.gross += Number(line.gross_amount || 0);
+
+        return accumulator;
       },
       {
         original: 0,
@@ -1270,325 +925,88 @@ export default function SalesOrderLines({
       },
     );
   }, [lines]);
+  
 
-  const handleDiscountTypeChange = (index: number, value: string) => {
-    updateLine(index, "discount_type", value as "PERCENT" | "FIXED");
+  const changeLineType = (
+    index: number,
+    type: "ITEM" | "GL_ACCOUNT" | "COMMENT",
+  ) => {
+    const updated = [...lines];
+    updated[index] = calculateLine({
+      ...updated[index],
+
+      line_type: type,
+
+      item_id: undefined,
+      item_code: undefined,
+      item_name: undefined,
+
+      gl_account_id: undefined,
+      account_code: undefined,
+      account_name: undefined,
+
+      warehouse_id: undefined,
+      warehouse_code: undefined,
+      warehouse_name: undefined,
+
+      uom_id: undefined,
+      uom_name: undefined,
+
+      allocations: [],
+      initialAllocations: [],
+
+      is_allocated: false,
+
+      quantity: type === "COMMENT" ? 0 : Number(updated[index].quantity || 1),
+
+      unit_price:
+        type === "COMMENT" ? 0 : Number(updated[index].unit_price || 0),
+
+      discount_value:
+        type === "COMMENT" ? 0 : Number(updated[index].discount_value || 0),
+
+      vat_percent:
+        type === "COMMENT" ? 0 : Number(updated[index].vat_percent || 0),
+    });
+
+    setLines(updated);
   };
+*/
 
-  return (
-    <div className="space-y-2 w-full text-slate-900 dark:text-slate-100">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 px-4">
-          Sales Order Lines
-        </h3>
+/* const handleSaveAllocations = (
+    allocationsData: SO_StockAllocationRecord[],
+  ) => {
+    if (!activeAllocationLineId) {
+      return;
+    }
+    setLines((previousLines) =>
+      previousLines.map((line, index) => {
+        const lineKey = line.id || line._key || `temp-sales-line-${index}`;
 
-        <div className="flex items-center gap-2">
-          {!isReadonly && (
-            <Button type="button" onClick={addLine} variant="add_line">
-              Add Line
-            </Button>
-          )}
-        </div>
-      </div>
+        if (lineKey !== activeAllocationLineId) {
+          return line;
+        }
 
-      <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
-        <table className="w-full text-left text-xs border-collapse table-fixed min-w-[1300px] p-2">
-          <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 capitalize font-semibold text-slate-600 dark:text-slate-400">
-              <th className="p-2 w-[100px]">Type</th>
-              <th className="p-2 w-[120px]">No.</th>
-              <th className="p-2 w-[180px]">Description</th>
-              <th className="p-2 text-right w-[70px]">Qty</th>
-              <th className="p-2 w-[60px]">U.O.M</th>
-              <th className="p-2 w-[150px]">Warehouse</th>
-              <th className="p-2 text-right w-[90px]">Unit Price</th>
-              <th className="p-2 w-[80px]">Disc Type</th>
-              <th className="p-2 text-right w-[80px]">Discount</th>
-              <th className="p-2 text-right w-[90px]">VAT Rate</th>
-              <th className="p-2 text-right w-[95px]">Original Amt</th>
-              <th className="p-2 text-right w-[95px]">Disc Amt</th>
-              <th className="p-2 text-right w-[95px]">Net</th>
-              <th className="p-2 text-right w-[100px]">Gross</th>
-              {!isReadonly && (
-                <th className="p-2 text-center w-[90px]">Action</th>
-              )}
-            </tr>
-          </thead>
+        const totalAllocated = allocationsData.reduce(
+          (sum, allocation) => sum + Number(allocation.quantity || 0),
+          0,
+        );
 
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
-            {lines.length === 0 && (
-              <tr>
-                <td colSpan={14} className="text-center p-8 text-gray-500">
-                  No lines added
-                </td>
-              </tr>
-            )}
+        const lineQty = Number(line.quantity || 0);
 
-            {lines.map((line, index) => {
-              const displayQty = Number(line.quantity || 0);
-              const shippedQty = Number(line.quantity_shipped || 0);
-              const isLineFulfilled = shippedQty > 0;
-              const isLineDisabled = isReadonly || isLineFulfilled;
+        return {
+          ...line,
 
-              const displayUnitPrice = Number(line.unit_price || 0);
-              const displayDiscountValue = Number(line.discount_value || 0);
-              const displayDiscountAmount = Number(line.discount_amount || 0);
-              const displayVatPercent = Number(line.vat_percent || 0);
+          allocations: allocationsData,
 
-              return (
-                <tr
-                  key={index}
-                  className={`border-b transition-colors ${
-                    isLineFulfilled
-                      ? "bg-slate-50/70 dark:bg-slate-800/30"
-                      : "bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
-                  }`}
-                >
-                  <td className="p-2">
-                    <select
-                      value={line.line_type || "ITEM"}
-                      disabled={isLineDisabled}
-                      onChange={(e) =>
-                        changeLineType(
-                          index,
-                          e.target.value as "ITEM" | "GL_ACCOUNT" | "COMMENT",
-                        )
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1.5 w-full  disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      <option value="ITEM">Item</option>
-                      <option value="GL_ACCOUNT">G/L</option>
-                    </select>
-                  </td>
+          initialAllocations: allocationsData,
 
-                  <td className="p-2">
-                    {line.line_type === "ITEM" && (
-                      <button
-                        type="button"
-                        disabled={isLineDisabled}
-                        title={line.item_name}
-                        onClick={() => setItemIndex(index)}
-                        className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-full truncate disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {line.item_code || "Select Item"}
-                      </button>
-                    )}
+          is_allocated: lineQty > 0 && totalAllocated === lineQty,
+        };
+      }),
+    );
 
-                    {line.line_type === "GL_ACCOUNT" && (
-                      <button
-                        type="button"
-                        title={line.account_name}
-                        disabled={isLineDisabled}
-                        onClick={() => setGlIndex(index)}
-                        className="border dark:border-slate-700 rounded px-2 py-1.5 bg-white dark:bg-slate-800 text-left w-full truncate disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {line.account_code || "Select GL"}
-                      </button>
-                    )}
-                  </td>
+    setIsAllocationModalOpen(false);
 
-                  <td className="p-2">
-                    <textarea
-                      value={line.description || ""}
-                      disabled={isLineDisabled}
-                      onChange={(e) =>
-                        updateLine(index, "description", e.target.value)
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-xs disabled:opacity-60 disabled:cursor-not-allowed"
-                      rows={1}
-                    />
-                  </td>
-
-                  <td className="p-2">
-                    <input
-                      type="number"
-                      value={displayQty}
-                      disabled={isLineDisabled || line.line_type === "COMMENT"}
-                      onChange={(e) =>
-                        updateLine(index, "quantity", Number(e.target.value))
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
-                    />
-                  </td>
-
-                  <td className="p-2 text-gray-500">{line.uom_name || "-"}</td>
-
-                  <td className="p-2">
-                    {line.line_type === "ITEM" && (
-                      <div className="space-y-1">
-                        <button
-                          type="button"
-                          disabled={isLineDisabled}
-                          onClick={() => setWarehouseIndex(index)}
-                          className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-xs bg-white dark:bg-slate-800 flex items-center justify-between gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                          <span className="truncate text-left">
-                            {line.warehouse_code || "Select"}
-                          </span>
-                        </button>
-
-                        {!line.warehouse_id && (
-                          <div className="text-red-500 text-[10px]">
-                            Required
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </td>
-
-                  <td className="p-2">
-                    <input
-                      type="number"
-                      value={displayUnitPrice}
-                      disabled={isLineDisabled}
-                      onChange={(e) =>
-                        updateLine(index, "unit_price", Number(e.target.value))
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
-                    />
-                  </td>
-
-                  <td className="p-2">
-                    <select
-                      value={line.discount_type || "PERCENT"}
-                      disabled={isLineDisabled}
-                      onChange={(e) =>
-                        handleDiscountTypeChange(index, e.target.value)
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      <option value="PERCENT">%</option>
-                      <option value="FIXED">Fixed</option>
-                    </select>
-                  </td>
-
-                  <td className="p-2">
-                    <input
-                      type="number"
-                      value={displayDiscountValue}
-                      disabled={isLineDisabled}
-                      onChange={(e) =>
-                        updateLine(
-                          index,
-                          "discount_value",
-                          Number(e.target.value),
-                        )
-                      }
-                      className="border dark:border-slate-700 dark:bg-slate-800 rounded p-1 w-full text-right disabled:opacity-60 disabled:cursor-not-allowed"
-                    />
-                  </td>
-
-                  <td className="p-2">
-                    <select
-                      value={
-                        vatOptions.find(
-                          (opt) =>
-                            opt.vat_product_group_id ===
-                              line.vat_product_posting_group_id ||
-                            opt.id === line.vat_product_posting_group_id ||
-                            opt.vat_percent === displayVatPercent,
-                        )?.id || ""
-                      }
-                      disabled={isLineDisabled || line.line_type === "COMMENT"}
-                      onChange={(e) => handleVatChange(index, e.target.value)}
-                      className="border dark:border-slate-700 dark:bg-slate-800 text-xs rounded p-1.5 w-full bg-white dark:text-slate-100 disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      <option value="">0% (Exempt/Zero)</option>
-                      {vatOptions.map((opt) => (
-                        <option key={opt.id} value={opt.id}>
-                          {opt.code} ({opt.vat_percent}%)
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  <td className="p-2 text-right font-medium ">
-                    {displayDiscountAmount.toFixed(2)}
-                  </td>
-
-                  <td className="p-2 text-right font-medium">
-                    {Number(line.net_amount || 0).toFixed(2)}
-                  </td>
-
-                  <td className="p-2 text-right font-semibold">
-                    {Number(line.gross_amount || 0).toFixed(2)}
-                  </td>
-
-                  {!isReadonly && (
-                    <td className="p-2 text-center">
-                      {!isLineFulfilled && (
-                        <button
-                          type="button"
-                          onClick={() => removeLine(index)}
-                          className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
-                        >
-                          <Icon icon="lucide:x" className="w-4 h-4" />
-                        </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <ItemLookupModal
-        open={itemIndex !== null}
-        onClose={() => setItemIndex(null)}
-        onSelect={(item: ItemLookupRecord) => {
-          if (itemIndex === null) return;
-          const updated = [...lines];
-          updated[itemIndex] = calculateLine({
-            ...updated[itemIndex],
-            line_type: "ITEM",
-            item_id: item.id,
-            item_code: item.item_code,
-            item_name: item.name,
-            description: item.name,
-            unit_price: Number(item.standard_sales_price || 0),
-          });
-          setLines(updated);
-          setItemIndex(null);
-        }}
-      />
-
-      <GLAccountLookupModal
-        open={glIndex !== null}
-        onClose={() => setGlIndex(null)}
-        onSelect={(gl: GLAccountLookupRecord) => {
-          if (glIndex === null) return;
-          const updated = [...lines];
-          updated[glIndex] = calculateLine({
-            ...updated[glIndex],
-            line_type: "GL_ACCOUNT",
-            gl_account_id: gl.id,
-            account_code: gl.code,
-            account_name: gl.name,
-            description: gl.name,
-          });
-          setLines(updated);
-          setGlIndex(null);
-        }}
-      />
-
-      <WarehouseLookupModal
-        open={warehouseIndex !== null}
-        onClose={() => setWarehouseIndex(null)}
-        onSelect={(wh: WarehouseLookupRecord) => {
-          if (warehouseIndex === null) return;
-          const updated = [...lines];
-          updated[warehouseIndex] = {
-            ...updated[warehouseIndex],
-            warehouse_id: wh.id,
-            warehouse_code: wh.code,
-            warehouse_name: wh.name,
-          };
-          setLines(updated);
-          setWarehouseIndex(null);
-        }}
-      />
-    </div>
-  );
-} */
+    setActiveAllocationLineId(null);
+  }; */
