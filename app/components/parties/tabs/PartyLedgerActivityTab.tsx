@@ -113,7 +113,7 @@ export default function PartyLedgerActivityTab({
           return `/${slug}/purchases/purchase-invoices/${targetId}`;
 
         case "sales_order":
-          return `/${slug}/sales/sales-orders/${targetId}`;
+          return `/${slug}/sales/orders/${targetId}`;
 
         case "purchase_order":
           return `/${slug}/purchases/purchase-orders/${targetId}`;
@@ -550,7 +550,7 @@ export default function PartyLedgerActivityTab({
         return `/${slug}/purchases/purchase-invoices/${targetId}`;
 
       case "sales_order":
-        return `/${slug}/sales/sales-orders/${targetId}`;
+        return `/${slug}/sales/orders/${targetId}`;
 
       case "purchase_order":
         return `/${slug}/purchases/purchase-orders/${targetId}`;

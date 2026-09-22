@@ -913,7 +913,7 @@ export const SalesOrderForm: React.FC<Props> = ({
         items={[
           {
             label: "Sales Orders",
-            href: `/${slug}/sales/sales-orders`,
+            href: `/${slug}/sales/orders`,
           },
           {
             label: order.order_no || order.invoice_no || "",
