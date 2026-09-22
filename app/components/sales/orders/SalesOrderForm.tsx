@@ -783,15 +783,17 @@ export const SalesOrderForm: React.FC<Props> = ({
           },
 
           body: JSON.stringify({
+            customer_id: order.customer_id,
             customer_invoice_no: order.reference,
-
+            reference: order.reference,
+            invoice_date: order.posting_date,
+            posting_date: order.dispatch_date,
             order_date: order.order_date,
-
-            posting_date: order.order_date,
-
-            financials,
-
-            order,
+            dispatch_date: order.dispatch_date,
+            financials: financials,
+            currency_id: order.currency_id,
+            exchange_rate: order.exchange_rate,
+            order: order,
           }),
         },
       );
@@ -830,11 +832,11 @@ export const SalesOrderForm: React.FC<Props> = ({
       return;
     }
 
-    if (!order.reference) {
-      toast.error("Please enter a Customer Invoice No. before posting.");
+    // if (!order.reference) {
+    //   toast.error("Please enter a Customer Invoice No. before posting.");
 
-      return;
-    }
+    //   return;
+    // }
 
     const allGLAccountLines = lines.every(
       (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
@@ -873,13 +875,17 @@ export const SalesOrderForm: React.FC<Props> = ({
           },
 
           body: JSON.stringify({
+            customer_id: order.customer_id,
             customer_invoice_no: order.reference,
-
+            reference: order.reference,
+            invoice_date: order.posting_date,
+            posting_date: order.dispatch_date,
             order_date: order.order_date,
-
-            posting_date: order.posting_date,
-
-            financials,
+            dispatch_date: order.dispatch_date,
+            financials: financials,
+            currency_id: order.currency_id,
+            exchange_rate: order.exchange_rate,
+            order: order,
           }),
         },
       );
