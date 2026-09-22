@@ -243,7 +243,7 @@ export type SalesOrderListing = {
   requested_delivery_date?: string;
   delivery_date?: string;
   currency_id?: string;
-  currency_code?: string;  
+  currency_code?: string;
   exchange_rate?: string | number;
   subtotal?: number;
   vat_amount?: number;
@@ -374,4 +374,47 @@ export interface SalesOrderMasterData {
   paymentTerms: PaymentTermLookup[];
   paymentMethods: LookupItem[];
   shipmentMethods: LookupItem[];
+}
+
+export interface SalesDispatchLine {
+  id?: string;
+  sales_order_line_id?: string;
+  line_no?: number;
+  item_id: string;
+  item_code?: string;
+  item_name?: string;
+  description?: string;
+  warehouse_id: string;
+  warehouse_name?: string;
+  location_id?: string;
+  bin_code?: string;
+  batch_no?: string;
+  serial_no?: string;
+  expiry_date?: string;
+  quantity: number;
+  unit_price: number;
+  unit_cost?: number;
+  total_amount?: number;
+}
+
+export interface SalesDispatchHeader {
+  id?: string;
+  dispatch_no?: string;
+  customer_id: string;
+  sales_order_id?: string;
+  warehouse_id?: string;
+  dispatch_date: string;
+  posting_date: string;
+  reference_no?: string;
+  notes?: string;
+  currency_id?: string;
+  exchange_rate?: number;
+  status?: string;
+  is_posted?: boolean;
+  userId?: string;
+}
+
+export interface StockAllocationPayload {
+  dispatch: SalesDispatchHeader;
+  lines: SalesDispatchLine[];
 }

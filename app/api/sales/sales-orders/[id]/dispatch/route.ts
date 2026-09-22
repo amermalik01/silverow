@@ -1,18 +1,18 @@
-// app/api/debit-notes/[id]/dispatch/route.ts
+// app/api/sales/sales-orders/[id]/dispatch/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
-import { StockDeAllocationService } from "@/lib/services/debit-notes/stock-deallocation.service";
-import { DebitNoteService } from "@/lib/services/debit-notes/debit-note.service";
-import { StockDeAllocationPayload } from "@/types/debit-note";
+import { StockAllocationService } from "@/lib/services/sales/stock-allocation.service";
+import { StockAllocationPayload } from "@/types/sales-order";
+import { SalesOrderService } from "@/lib/services/sales/sales-order.service";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
 interface IncomingDispatch {
-  supplier_id: string;
+  customer_id: string;
   warehouse_id?: string;
   dispatch_date?: string;
   posting_date?: string;
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     if (!companyId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -51,8 +51,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
     await client.query("BEGIN");
 
-    // 1. Fetch persistent Debit Note Lines directly from DB with row locks
-    const dnLinesResult = await client.query(
+    // 1. Fetch persistent Sales Order Lines directly from DB with row locks
+    const soLinesResult = await client.query(
       `
       SELECT 
         id,
@@ -61,26 +61,26 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         item_id,
         warehouse_id,
         quantity,
-        returned_quantity,
-        unit_cost,
+        quantity_shipped,
+        unit_price,
         discount_amount
-      FROM debit_note_lines
-      WHERE debit_note_id = $1
+      FROM sales_order_lines
+      WHERE sales_order_id = $1
         AND company_id = $2
         AND COALESCE(is_deleted, false) = false
         AND (line_type = 'ITEM' OR (line_type IS NULL AND item_id IS NOT NULL))
       FOR UPDATE
       `,
-      [id, companyId],
+      [id, companyId]
     );
 
-    const dbLines = dnLinesResult.rows;
+    const dbLines = soLinesResult.rows;
 
-    // 2. Filter for lines that still have remaining quantities to dispatch/return
+    // 2. Filter for lines that still have remaining quantities to ship
     const unfulfilledLines = dbLines.filter((l) => {
       const qty = Number(l.quantity || 0);
-      const ret = Number(l.returned_quantity || 0);
-      return qty - ret > 0;
+      const shipped = Number(l.quantity_shipped || 0);
+      return qty - shipped > 0;
     });
 
     if (!unfulfilledLines.length) {
@@ -89,17 +89,17 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         {
           success: false,
           error:
-            "No open line quantities available to dispatch on this debit note.",
+            "No open line quantities available to dispatch on this sales order.",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    // 3. Map database lines to StockDeAllocationPayload format
-    const payload: StockDeAllocationPayload = {
+    // 3. Map database lines to StockAllocationPayload format
+    const payload: StockAllocationPayload = {
       dispatch: {
-        debit_note_id: id,
-        vendor_id: dispatch.supplier_id,
+        sales_order_id: id,
+        customer_id: dispatch.customer_id,
         warehouse_id:
           dispatch.warehouse_id || unfulfilledLines[0]?.warehouse_id,
         dispatch_date:
@@ -114,74 +114,48 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       },
       lines: unfulfilledLines.map((line, idx) => {
         const remainingQty =
-          Number(line.quantity || 0) - Number(line.returned_quantity || 0);
-        const rawCost = Number(line.unit_cost || 0);
+          Number(line.quantity || 0) - Number(line.quantity_shipped || 0);
+        const rawPrice = Number(line.unit_price || 0);
         const totalLineQty = Number(line.quantity || 1);
         const totalDiscount = Number(line.discount_amount || 0);
 
-        // Pro-rate discount per remaining quantity unit
+        // Pro-rate discount per unit
         const discountPerUnit = totalDiscount / totalLineQty;
-        const netUnitCost = rawCost - discountPerUnit;
+        const netUnitPrice = rawPrice - discountPerUnit;
 
         return {
           line_no: idx + 1,
-          debit_note_line_id: line.id, // DB UUID guaranteed
+          sales_order_line_id: line.id,
           item_id: line.item_id,
           warehouse_id: line.warehouse_id || dispatch.warehouse_id,
           quantity: remainingQty,
-          unit_cost: netUnitCost,
+          unit_price: netUnitPrice,
         };
       }),
     };
 
-    /* 
-      const receiptPayload: PurchaseReceiptPayload = {
-
-            lines: unfulfilledLines.map((line, idx) => {
-              const remainingQty =
-                Number(line.quantity || 0) - Number(line.received_quantity || 0);
-              const rawCost = Number(line.unit_cost || 0);
-              const totalLineQty = Number(line.quantity || 1);
-              const totalDiscount = Number(line.discount_amount || 0);
-      
-              // Pro-rate discount for remaining quantities
-              const discountPerUnit = totalDiscount / totalLineQty;
-              const netUnitCost = rawCost - discountPerUnit;
-      
-              return {
-                line_no: idx + 1,
-                purchase_order_line_id: line.id, // Persisted DB UUID guaranteed
-                item_id: line.item_id,
-                warehouse_id: line.warehouse_id,
-                quantity: remainingQty,
-                unit_cost: netUnitCost,
-              };
-            }),
-          };
-      
-      */
-
-    // 4. Execute Transactional Dispatch (Stock Return & GL Ledger Entries)
-    const dispatchResult = await StockDeAllocationService.createTransactional(
+    // 4. Execute Transactional Stock Allocation & GL Ledger Entries
+    const dispatchResult = await StockAllocationService.createTransactional(
       client,
       companyId,
-      payload,
+      payload
     );
 
-    // 5. Recalculate Debit Note status dynamically
-    await DebitNoteService.recalculateStatus(client, id);
+    // 5. Recalculate Sales Order Status dynamically
+    await SalesOrderService.recalculateStatus(client, id);
 
     await client.query("COMMIT");
     return NextResponse.json({ success: true, dispatchId: dispatchResult.id });
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("Stock dispatch error:", err);
+    console.error("Sales order dispatch error:", err);
     return NextResponse.json(
       {
         success: false,
-        error: err instanceof Error ? err.message : "Failed to dispatch stock",
+        error:
+          err instanceof Error ? err.message : "Failed to dispatch sales order",
       },
-      { status: 500 },
+      { status: 500 }
     );
   } finally {
     client.release();

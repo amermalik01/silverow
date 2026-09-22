@@ -1064,9 +1064,11 @@ export class SalesOrderService {
     // COALESCE(cancelled_quantity, 0) as cancelled_quantity
     const result = await client.query(
       `
-      SELECT quantity, quantity_shipped, 0 as cancelled_quantity
+      SELECT quantity, COALESCE(quantity_shipped, 0) AS quantity_shipped, 0 as cancelled_quantity
       FROM sales_order_lines
-      WHERE sales_order_id = $1 AND is_deleted = false AND line_type = 'ITEM'
+      WHERE sales_order_id = $1 
+        AND COALESCE(is_deleted, false) = false 
+        AND (line_type = 'ITEM' OR (line_type IS NULL AND item_id IS NOT NULL))
       `,
       [salesOrderId],
     );
@@ -1079,23 +1081,62 @@ export class SalesOrderService {
 
     for (const line of lines) {
       const qty = Number(line.quantity || 0);
-      const shipped =
-        Number(line.quantity_shipped || 0) + Number(line.cancelled_quantity);
+      const shipped = Number(line.quantity_shipped || 0);
+      const cancelled = Number(line.cancelled_quantity || 0);
+      const processed = shipped + cancelled;
 
-      if (shipped > 0) partiallyShipped = true;
-      if (shipped < qty) fullyShipped = false;
+      if (processed > 0) {
+        partiallyShipped = true;
+      }
+
+      if (processed < qty) {
+        fullyShipped = false;
+      }
     }
 
-    const status = fullyShipped
-      ? "shipped"
+    const shipmentStatus = fullyShipped
+      ? "SHIPPED"
       : partiallyShipped
-        ? "partial_shipped"
-        : "open";
+      ? "PARTIALLY_SHIPPED"
+      : "PENDING";
+
+    const orderStatus = fullyShipped
+      ? "completed"
+      : partiallyShipped
+      ? "processing"
+      : "open";
+
 
     await client.query(
-      `UPDATE sales_orders SET status = $1, updated_at = NOW() WHERE id = $2`,
-      [status, salesOrderId],
+      `
+      UPDATE sales_orders 
+      SET shipment_status = $1, 
+          status = $2, 
+          updated_at = NOW() 
+      WHERE id = $3
+      `,
+      [shipmentStatus, orderStatus, salesOrderId]
     );
+
+    // for (const line of lines) {
+    //   const qty = Number(line.quantity || 0);
+    //   const shipped =
+    //     Number(line.quantity_shipped || 0) + Number(line.cancelled_quantity);
+
+    //   if (shipped > 0) partiallyShipped = true;
+    //   if (shipped < qty) fullyShipped = false;
+    // }
+
+    // const status = fullyShipped
+    //   ? "shipped"
+    //   : partiallyShipped
+    //     ? "partial_shipped"
+    //     : "open";
+
+    // await client.query(
+    //   `UPDATE sales_orders SET status = $1, updated_at = NOW() WHERE id = $2`,
+    //   [status, salesOrderId],
+    // );
   }
 
   static async updateShippedQuantity(
