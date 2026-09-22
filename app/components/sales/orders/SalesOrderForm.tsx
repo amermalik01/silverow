@@ -812,7 +812,7 @@ export const SalesOrderForm: React.FC<Props> = ({
 
       setShowDispatchAndPostModal(false);
 
-      router.push(`/${slug}/sales/orders/create`);
+      router.push(`/${slug}/sales/orders/new`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Error processing operation.",
@@ -902,7 +902,7 @@ export const SalesOrderForm: React.FC<Props> = ({
 
       setShowInvoiceModal(false);
 
-      router.push(`/${slug}/sales/orders/create`);
+      router.push(`/${slug}/sales/orders/new`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Error posting invoice",

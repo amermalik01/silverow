@@ -3,14 +3,249 @@ import { PoolClient } from "pg";
 import { pool } from "@/lib/db";
 import { FetchParams, FetchResponse } from "@/types/table";
 
-import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
-import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
-import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
-import { JournalLineInput } from "@/types/journal";
-import { SalesInvoice } from "@/types/sales-invoice";
+import {
+  SalesOrder,
+  SalesOrderAddress,
+  SalesOrderLine,
+  SalesOrderPayload,
+} from "@/types/sales-order";
+
+// import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
+// import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
+// import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
+// import { JournalLineInput } from "@/types/journal";
+// import { SalesInvoice } from "@/types/sales-invoice";
 
 export class SalesInvoiceService {
   static async listPaginated(
+    companyId: string,
+    params: FetchParams,
+  ): Promise<FetchResponse<SalesOrder>> {
+    const page = Math.max(1, Number(params.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(params.pageSize) || 20));
+
+    const filters = params.filters || {};
+
+    const search =
+      typeof params.search === "string" ? params.search.trim() : "";
+
+    const sortBy = params.sortBy;
+    const sortOrder =
+      params.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    const offset = (page - 1) * pageSize;
+
+    // Mapping table column keys to DB table columns
+    const SORT_FIELDS: Record<string, string> = {
+      posting_date: "so.posting_date",
+      offer_date: "so.order_date",
+      sale_order_code: "so.order_no",
+      sale_quote_code: "so.sales_quote_no",
+      cust_order_no: "so.cust_order_no",
+      current_stage: "cos.name",
+      sell_to_cust_no: "so.customer_no",
+      sell_to_cust_name: "so.customer_name",
+      sell_to_city: "so.billing_address->>'city'",
+      sale_person: "so.salesperson",
+      currency_code: "c.code",
+      net_amount: "so.subtotal",
+      vat_amount: "so.vat_amount",
+      grand_total: "so.total_amount",
+      due_date: "so.due_date",
+      requested_delivery_date: "so.requested_delivery_date",
+      dispatch_date: "so.dispatch_date",
+      delivery_date: "so.delivery_date",
+      shipment_method_code: "sm.name",
+      ship_to_city: "so.shipping_address->>'city'",
+    };
+
+    const orderByColumn =
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "so.order_no";
+    const orderDirection = sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    const queryValues: (string | number)[] = [companyId];
+    const whereClauses = [
+      "so.company_id = $1",
+      // "so.status::text != 'completed'",
+      "so.is_posted = true",
+    ];
+
+    /* -------------------------------------------------------------------- */
+    /* Global search */
+    /* -------------------------------------------------------------------- */
+    if (search) {
+      queryValues.push(`%${search}%`);
+      const searchParam = `$${queryValues.length}`;
+      whereClauses.push(
+        ` ( so.order_no ILIKE ${searchParam} OR 
+              so.supp_order_no ILIKE ${searchParam} OR 
+              so.supplier_no ILIKE ${searchParam} OR 
+              so.customer_name ILIKE ${searchParam} OR 
+              cos.name ILIKE ${searchParam} OR 
+              c.code ILIKE ${searchParam} OR 
+              sm.name ILIKE ${searchParam} OR 
+              so.purchaser ILIKE ${searchParam} ) `,
+      );
+    }
+
+    // Dynamic Filter Parsing
+    Object.entries(filters).forEach(([colKey, filter]) => {
+      if (!filter) return;
+
+      if (filter.value !== undefined && filter.value !== "") {
+        if (colKey === "currency_code") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`c.code = $${queryValues.length}`);
+        } else if (colKey === "current_stage") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`cos.name = $${queryValues.length}`);
+        } else if (colKey === "status") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`so.status::text = $${queryValues.length}`);
+        } else if (colKey === "sale_order_code") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`so.order_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sell_to_cust_name") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`so.customer_name ILIKE $${queryValues.length}`);
+        } else if (colKey === "cust_order_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`so.cust_order_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sale_person") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`so.salesperson ILIKE $${queryValues.length}`);
+        }
+      }
+
+      // Date & Range Filters
+      if (filter.from !== undefined && filter.from !== "") {
+        queryValues.push(filter.from);
+        const idx = queryValues.length;
+        if (colKey === "posting_date")
+          whereClauses.push(`so.posting_date >= $${idx}::date`);
+        if (colKey === "offer_date")
+          whereClauses.push(`so.order_date >= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`so.subtotal >= $${idx}::numeric`);
+      }
+
+      if (filter.to !== undefined && filter.to !== "") {
+        queryValues.push(filter.to);
+        const idx = queryValues.length;
+        if (colKey === "posting_date")
+          whereClauses.push(`so.posting_date <= $${idx}::date`);
+        if (colKey === "offer_date")
+          whereClauses.push(`so.order_date <= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`so.subtotal <= $${idx}::numeric`);
+      }
+    });
+
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // Shared SQL Join Clause
+    const joinSql = `
+        FROM sales_orders so
+        
+        LEFT JOIN currencies c ON c.id = so.currency_id
+        LEFT JOIN employees e ON (
+          e.company_id = so.company_id AND (
+            e.id::text = so.salesperson OR 
+            e.display_name ILIKE so.salesperson OR
+            CONCAT(e.first_name, ' ', e.last_name) ILIKE so.salesperson
+          )
+        )
+        
+        LEFT JOIN shipment_method sm ON sm.id = so.shipment_method_id
+        LEFT JOIN common_order_stages cos ON cos.id = so.stage_id       
+        LEFT JOIN sales_order_addresses soa 
+            ON soa.sales_order_id = so.id 
+            AND soa.address_type = 'primary'
+        LEFT JOIN sales_order_addresses ship_a 
+            ON ship_a.sales_order_id = so.id 
+            AND ship_a.address_type = 'shipping'
+      `;
+    /* LEFT JOIN common_order_stages cos 
+            ON cos.company_id = so.company_id 
+            AND cos.stage_type = 'sales_order' 
+            AND cos.name ILIKE so.status::text */
+
+    // Total Count Query
+    const countQuery = `SELECT COUNT(DISTINCT so.id) as total ${joinSql} ${whereSql}`;
+    const countResult = await pool.query(countQuery, queryValues);
+    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
+
+    // Paginated Record Set Query
+    const dataQueryValues = [...queryValues, pageSize, offset];
+    const limitIdx = dataQueryValues.length - 1;
+    const offsetIdx = dataQueryValues.length;
+
+    const dataQuery = `
+        SELECT DISTINCT ON (so.id, ${orderByColumn})
+          so.id,
+          so.order_no AS sale_order_code,
+          so.sales_invoice_no,
+          so.sales_quote_no AS sale_quote_code,
+          so.cust_order_no,
+          so.posting_date,
+          so.order_date AS offer_date,
+          so.due_date,
+          so.requested_delivery_date,
+          so.dispatch_date,
+          so.delivery_date,
+          so.subtotal AS net_amount,
+          so.vat_amount AS vat_amount,
+          so.total_amount AS grand_total,
+          (so.finance_charges > 0) AS finance_charges_exists,
+          (so.insurance_charges > 0) AS insurance_charges_exists,
+          so.book_in_phone AS book_in_tel,
+          so.book_in_contact AS comm_book_in_contact,
+          so.book_in_email,
+          so.warehouse_ref_no AS warehouse_booking_ref,
+          so.cust_warehouse_ref_no AS customer_warehouse_ref,
+          so.converted_by AS converted_to_so_by_name,
+          
+          -- Joined Labels & Classifications
+          cos.name AS current_stage,
+          so.customer_no AS sell_to_cust_no,
+          so.customer_name AS sell_to_cust_name,
+          c.code AS currency_code,
+          COALESCE(e.display_name, TRIM(CONCAT(e.first_name, ' ', e.last_name)), so.salesperson) AS sale_person,
+          -- sa.code AS shipping_agent_code,
+          sm.name AS shipment_method_code,
+  
+          -- Primary / Customer Address details
+          soa.address_1 AS customer_address,
+          soa.address_2 AS customer_address2,
+          soa.city AS city,
+          soa.county AS county,
+          soa.postcode AS post_code,
+          soa.country AS country,
+          soa.phone AS phone,
+          soa.email AS email,
+  
+          -- Shipping Address details
+          ship_a.address_1 AS ship_to_address,
+          ship_a.address_2 AS ship_to_address2,
+          ship_a.city AS ship_to_city,
+          ship_a.county AS ship_to_county,
+          ship_a.postcode AS ship_to_post_code
+  
+        ${joinSql}
+        ${whereSql}
+        ORDER BY ${orderByColumn} ${orderDirection}, so.id ASC
+        LIMIT $${limitIdx} OFFSET $${offsetIdx}
+      `;
+
+    const dataResult = await pool.query(dataQuery, dataQueryValues);
+
+    return {
+      data: dataResult.rows,
+      totalRecords,
+    };
+  }
+  /* static async listPaginated(
     companyId: string,
     params: FetchParams,
   ): Promise<FetchResponse<SalesInvoice>> {
@@ -175,13 +410,9 @@ export class SalesInvoiceService {
       data: dataResult.rows,
       totalRecords,
     };
-  }
-  /**
-   * =========================================================
-   * GET AR ACCOUNT
-   * =========================================================
-   */
-  private static async getReceivableAccount(
+  } */
+
+  /* private static async getReceivableAccount(
     client: PoolClient,
     companyId: string,
   ): Promise<string> {
@@ -200,23 +431,15 @@ export class SalesInvoiceService {
     }
 
     return result.rows[0].receivable_account_id;
-  }
-  /**
-   * =========================================================
-   * POST SALES INVOICE
-   * =========================================================
-   */
-  static async postInvoice(
+  } */
+
+  /* static async postInvoice(
     client: PoolClient,
     companyId: string,
     invoiceId: string,
     userId?: string,
   ): Promise<void> {
-    /**
-     * -----------------------------------------------------
-     * LOAD INVOICE HEADER
-     * -----------------------------------------------------
-     */
+
     const invoiceResult = await client.query(
       `
       SELECT *
@@ -231,20 +454,11 @@ export class SalesInvoiceService {
     }
 
     const invoice = invoiceResult.rows[0];
-    /**
-     * -----------------------------------------------------
-     * PREVENT DOUBLE POSTING
-     * -----------------------------------------------------
-     */
+
     if (invoice.is_posted) {
       throw new Error("Sales invoice already posted");
     }
 
-    /**
-     * -----------------------------------------------------
-     * LOAD INVOICE LINES
-     * -----------------------------------------------------
-     */
     const linesResult = await client.query(
       `
       SELECT *
@@ -261,24 +475,12 @@ export class SalesInvoiceService {
       throw new Error("No sales invoice lines found");
     }
 
-    /**
-     * -----------------------------------------------------
-     * GET AR ACCOUNT
-     * -----------------------------------------------------
-     */
     await this.getReceivableAccount(client, companyId);
 
-    /**
-     * -----------------------------------------------------
-     * BUILD GL LINES
-     * -----------------------------------------------------
-     */
     const glLines: JournalLineInput[] = [];
 
     for (const line of lines) {
-      /**
-       * RESOLVE ACCOUNTS
-       */
+
       const accounts = await AccountResolutionService.resolveSalesAccounts(
         client,
         companyId,
@@ -292,11 +494,6 @@ export class SalesInvoiceService {
 
       const totalAmount = baseAmount + vatAmount;
 
-      /**
-       * -----------------------------------------------------
-       * DR: ACCOUNTS RECEIVABLE
-       * -----------------------------------------------------
-       */
       glLines.push({
         account_id: accounts.receivable_account_id,
         debit: totalAmount,
@@ -308,11 +505,6 @@ export class SalesInvoiceService {
         reference_id: invoice.id,
       });
 
-      /**
-       * -----------------------------------------------------
-       * CR: REVENUE
-       * -----------------------------------------------------
-       */
       glLines.push({
         account_id: accounts.sales_account_id,
         debit: 0,
@@ -324,11 +516,6 @@ export class SalesInvoiceService {
         reference_id: invoice.id,
       });
 
-      /**
-       * -----------------------------------------------------
-       * CR: VAT OUTPUT
-       * -----------------------------------------------------
-       */
       if (vatAmount > 0) {
         glLines.push({
           account_id: accounts.vat_account_id,
@@ -343,18 +530,8 @@ export class SalesInvoiceService {
       }
     }
 
-    /**
-     * -----------------------------------------------------
-     * VALIDATION
-     * -----------------------------------------------------
-     */
     GLValidationService.validateBalanced(glLines);
 
-    /**
-     * -----------------------------------------------------
-     * POST TO GL
-     * -----------------------------------------------------
-     */
     const journal = await GLPostingService.postJournal(client, {
       company_id: companyId,
       entry_date: invoice.invoice_date,
@@ -367,11 +544,6 @@ export class SalesInvoiceService {
       lines: glLines,
     });
 
-    /**
-     * -----------------------------------------------------
-     * CREATE CUSTOMER LEDGER ENTRY
-     * -----------------------------------------------------
-     */
 
     await client.query(
       `
@@ -410,11 +582,6 @@ export class SalesInvoiceService {
       ],
     );
 
-    /**
-     * -----------------------------------------------------
-     * MARK POSTED
-     * -----------------------------------------------------
-     */
     await client.query(
       `
       UPDATE sales_invoices
@@ -426,23 +593,15 @@ export class SalesInvoiceService {
       `,
       [invoiceId, journal.id],
     );
-  }
+  } */
 
-  // =========================================================
-  // CREATE SALES INVOICE FROM SALES ORDER
-  // =========================================================
-
-  static async createFromSalesOrder(
+  /*  static async createFromSalesOrder(
     client: PoolClient,
     companyId: string,
     salesOrderId: string,
     userId?: string,
   ) {
-    /**
-     * -----------------------------------------------------
-     * LOAD SALES ORDER
-     * -----------------------------------------------------
-     */
+
     const orderResult = await client.query(
       `
     SELECT *
@@ -459,11 +618,7 @@ export class SalesInvoiceService {
 
     const order = orderResult.rows[0];
 
-    /**
-     * -----------------------------------------------------
-     * LOAD SALES ORDER LINES
-     * -----------------------------------------------------
-     */
+
     const linesResult = await client.query(
       `
       SELECT *
@@ -480,11 +635,7 @@ export class SalesInvoiceService {
       throw new Error("Sales order has no lines");
     }
 
-    /**
-     * -----------------------------------------------------
-     * VALIDATE REMAINING QTY
-     * -----------------------------------------------------
-     */
+
     const invoiceableLines = orderLines.filter((line) => {
       const qty = Number(line.quantity || 0);
 
@@ -497,11 +648,6 @@ export class SalesInvoiceService {
       throw new Error("Sales order fully invoiced");
     }
 
-    /**
-     * -----------------------------------------------------
-     * GENERATE INVOICE NUMBER
-     * -----------------------------------------------------
-     */
     const seqResult = await client.query(
       `
       SELECT get_next_sequence($1,$2) AS code
@@ -511,11 +657,7 @@ export class SalesInvoiceService {
 
     const invoiceNo = seqResult.rows[0].code;
 
-    /**
-     * -----------------------------------------------------
-     * CREATE INVOICE HEADER
-     * -----------------------------------------------------
-     */
+
     const invoiceResult = await client.query(
       `
       INSERT INTO sales_invoices (
@@ -568,11 +710,7 @@ export class SalesInvoiceService {
 
     const invoice = invoiceResult.rows[0];
 
-    /**
-     * -----------------------------------------------------
-     * CREATE INVOICE LINES
-     * -----------------------------------------------------
-     */
+
     let subtotal = 0;
     let taxAmount = 0;
     let totalAmount = 0;
@@ -592,11 +730,7 @@ export class SalesInvoiceService {
       const lineNet = remainingQty * unitPrice - lineDiscount;
       const lineTotal = lineNet + lineTax;
 
-      /**
-       * ---------------------------------------------------
-       * INSERT INVOICE LINE
-       * ---------------------------------------------------
-       */
+ 
       await client.query(
         `
         INSERT INTO sales_invoice_lines (
@@ -655,11 +789,7 @@ export class SalesInvoiceService {
         ],
       );
 
-      /**
-       * ---------------------------------------------------
-       * UPDATE SALES ORDER LINE
-       * ---------------------------------------------------
-       */
+
       await client.query(
         `
         UPDATE sales_order_lines
@@ -680,11 +810,6 @@ export class SalesInvoiceService {
       lineNo += 10000;
     }
 
-    /**
-     * -----------------------------------------------------
-     * UPDATE INVOICE TOTALS
-     * -----------------------------------------------------
-     */
     await client.query(
       `
       UPDATE sales_invoices
@@ -698,11 +823,7 @@ export class SalesInvoiceService {
       [subtotal, taxAmount, totalAmount, invoice.id],
     );
 
-    /**
-     * -----------------------------------------------------
-     * UPDATE SALES ORDER STATUS
-     * -----------------------------------------------------
-     */
+
     const statusResult = await client.query(
       `
       SELECT
@@ -754,160 +875,9 @@ export class SalesInvoiceService {
       [status, salesOrderId],
     );
 
-    /**
-     * -----------------------------------------------------
-     * AUTO POST INVOICE
-     * -----------------------------------------------------
-     */
+
     await this.postInvoice(client, companyId, invoice.id, userId);
 
     return invoice;
-  }
-}
-
-/* static async createFromShipment(
-    client: PoolClient,
-    companyId: string,
-    shipmentId: string,
-    userId?: string,
-  ) {
-    try {
-      await client.query("BEGIN");
-
-      const shipmentRes = await client.query(
-        `
-      SELECT * FROM inventory_shipments
-      WHERE id = $1
-      `,
-        [shipmentId],
-      );
-
-      const shipment = shipmentRes.rows[0];
-
-      if (!shipment) {
-        throw new Error("Shipment not found");
-      }
-
-      const lineRes = await client.query(
-        `
-      SELECT * FROM inventory_shipment_lines
-      WHERE shipment_id = $1
-      `,
-        [shipmentId],
-      );
-
-      const shipmentLines = lineRes.rows;
-
-      const invoiceRes = await client.query(
-        `
-      INSERT INTO sales_invoices (
-        company_id,
-        shipment_id,
-        invoice_date,
-        status
-      )
-      VALUES ($1,$2,now(),'DRAFT')
-      RETURNING *
-      `,
-        [companyId, shipmentId],
-      );
-
-      const invoice = invoiceRes.rows[0];
-
-      const glLines: any[] = [];
-
-      for (const line of shipmentLines) {
-        const invoiceLine = await client.query(
-          `
-        INSERT INTO sales_invoice_lines (
-          sales_invoice_id,
-          item_id,
-          quantity,
-          unit_price,
-          total_amount
-        )
-        VALUES ($1,$2,$3,$4,$5)
-        RETURNING *
-        `,
-          [
-            invoice.id,
-            line.item_id,
-            line.quantity,
-            line.unit_cost,
-            Number(line.quantity) * Number(line.unit_cost),
-          ],
-        );
-
-        const accounts = await AccountResolutionService.resolveSalesAccounts(
-          client,
-          companyId,
-          line.item_id,
-        );
-
-        const amount = Number(line.quantity) * Number(line.unit_cost);
-
-        // *
-        //  * DR: AR (Customer Receivable)
-        
-        glLines.push({
-          account_id: accounts.ar_account_id,
-          debit: amount,
-          credit: 0,
-          reference_type: "SALES_INVOICE",
-          reference_id: invoice.id,
-        });
-
-        // *
-        //  * CR: REVENUE
-        
-        glLines.push({
-          account_id: accounts.revenue_account_id,
-          debit: 0,
-          credit: amount,
-          reference_type: "SALES_INVOICE",
-          reference_id: invoice.id,
-        });
-
-        GLValidationService.validateBalanced(glLines);
-
-        await GLPostingService.postJournal(client, {
-          company_id: companyId,
-          entry_date: new Date().toISOString().split("T")[0],
-          source: "SALES",
-          journal_type: "SALES_INVOICE",
-          reference: invoice.invoice_no,
-          source_id: invoice.id,
-          description: "Sales Invoice Posting",
-          created_by: userId || null,
-          lines: glLines,
-        });
-
-        await client.query(
-          `
-      UPDATE sales_invoices
-      SET status = 'POSTED'
-      WHERE id = $1
-      `,
-          [invoice.id],
-        );
-
-        await client.query(
-          `
-      UPDATE inventory_shipments
-      SET is_invoiced = true
-      WHERE id = $1
-      `,
-          [shipmentId],
-        );
-      }
-
-      await client.query("COMMIT");
-
-      return invoice;
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
   } */
+}

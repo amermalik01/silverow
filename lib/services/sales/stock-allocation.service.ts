@@ -293,8 +293,8 @@ export class StockAllocationService {
             WHERE sol.sales_order_id = so.id
               AND COALESCE(sol.quantity_shipped, 0) < COALESCE(sol.quantity, 0)
               AND COALESCE(sol.is_deleted, false) = false
-          ) THEN 'dispatched'
-          ELSE 'partial_dispatched'
+          ) THEN 'shipped'::sales_order_status_enum
+          ELSE 'partially_shipped'::sales_order_status_enum
         END,
         updated_at = NOW()
         WHERE so.id = $1

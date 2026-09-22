@@ -195,7 +195,137 @@ export type SalesInvoiceLineUI = SalesInvoiceLine & {
   gl_account_id?: string;
 };
 
+
 export type SalesInvoiceListing = {
+  id?: string;
+  company_id?: string;
+  order_no?: string;
+  sales_invoice_no?: string;
+  customer_id: string;
+  customer_no?: string;
+  customer_name?: string;
+  reference?: string;
+
+  payable_bank?: string;
+  payable_bank_id?: string;
+  payment_terms?: string;
+  payment_terms_id?: string;
+  payment_method?: string;
+  payment_method_id?: string;
+
+
+  dispatch_date?: string;
+  delivery_date?: string;
+
+  invoice_date?: string;
+  order_date?: string;
+  due_date?: string;
+  requested_delivery_date?: string;
+  receiptDate?: string;
+  posting_date?: string;
+
+
+  currency_id?: string;
+  currency_code?: string;
+  exchange_rate?: string | number;
+  subtotal?: number;
+  vat_amount?: number;
+  discount_amount?: number;
+  total_amount?: number;
+  invoiced_amount?: number;
+  email?: string;
+  salesperson?: string;
+  cust_order_no?: string;
+  link_to_po?: string;
+  sq_no?: string;
+
+  internal_notes?: string;
+  notes?: string;
+  status?: string;
+  shipment_status?: string;
+  source_of_order?: string;
+  invoice_status?: string;
+  created_at?: string;
+  updated_at?: string;
+  sales_quote_id?: string;
+  sales_quote_no?: string;
+  anonymous_customer?: boolean;
+
+  contact?: string;
+  book_in_phone?: string;
+  book_in_contact?: string;
+  book_in_email?: string;
+
+  shipment_method?: string;
+  shipment_method_id?: string;
+  shipping_agent?: string;
+  shipment_ref_no?: string;
+  warehouse_ref_no?: string;
+  cust_warehouse_ref_no?: string;
+  reason?: string;
+
+  finance_charges?: number;
+  insurance_charges?: number;
+  converted_by?: string;
+  freight_charges?: number;
+  shipment_date?: string;
+  delivery_time?: string;
+
+  // --- Display & Data Grid Computed Fields ---
+  sale_order_code?: string;
+  sale_quote_code?: string;
+  prev_code?: string;
+
+  sell_to_cust_no?: string;
+  sell_to_cust_name?: string;
+  sell_to_address?: string;
+  sell_to_address2?: string;
+  sell_to_city?: string;
+  sell_to_county?: string;
+  sell_to_post_code?: string;
+  country_code?: string;
+  sell_to_contact_no?: string;
+  cust_phone?: string;
+  cust_email?: string;
+
+  sale_person?: string;
+  bill_to_posting_group_name?: string;
+  segment?: string;
+
+  offer_date?: string;
+  converted_to_so_on?: string;
+
+  net_amount?: number;
+  tax_amount?: number;
+  grand_total?: number;
+
+  finance_charges_exists?: boolean;
+  insurance_charges_exists?: boolean;
+  proof_of_delivery?: string;
+
+  shipping_agent_code?: string;
+  shipment_method_code?: string;
+  ship_to_address?: string;
+  ship_to_address2?: string;
+  ship_to_city?: string;
+  ship_to_county?: string;
+  ship_to_post_code?: string;
+
+  customer_address?: string;
+  customer_address2?: string;
+  city?: string;
+  county?: string;
+  post_code?: string;
+
+  book_in_tel?: string;
+  comm_book_in_contact?: string;
+  warehouse_booking_ref?: string;
+  customer_warehouse_ref?: string;
+  linked_pos_1?: string;
+  converted_to_so_by_name?: string;
+};
+
+/* export type SalesInvoiceListing = {
   id?: string;
   company_id?: string;
   invoice_no?: string;
@@ -308,4 +438,4 @@ export type SalesInvoiceListing = {
   comm_book_in_contact?: string;
   warehouse_booking_ref?: string;
   customer_warehouse_ref?: string;
-};
+}; */

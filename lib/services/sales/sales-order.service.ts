@@ -81,6 +81,7 @@ export class SalesOrderService {
     const whereClauses = [
       "so.company_id = $1",
       "so.status::text != 'completed'",
+      "so.is_posted = false",
     ];
 
     /* -------------------------------------------------------------------- */

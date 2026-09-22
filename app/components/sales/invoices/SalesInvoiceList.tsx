@@ -68,13 +68,13 @@ export default function SalesInvoiceList({ slug }: Props) {
           </p>
         </div>
 
-        <Button
+        {/* <Button
           asChild
           size="sm"
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={`/${slug}/sales/invoices/create`}>+ Create</Link>
-        </Button>
+        </Button> */}
       </div>
 
       {/* Main Data Table */}

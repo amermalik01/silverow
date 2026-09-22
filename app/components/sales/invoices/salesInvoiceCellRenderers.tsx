@@ -46,18 +46,20 @@ const formatBoolean = (val?: boolean | null): React.ReactNode => {
 export function getSalesInvoiceCellRenderers(slug: string) {
   return {
     // Code / Identifier Links
-    sales_invoice_code: (row: SalesInvoiceListing) => (
+    sales_invoice_no: (row: SalesInvoiceListing) => (
       <Link
         href={`/${slug}/sales/invoices/${row.id}`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
-        {row.sales_order_no || row.invoice_no || "Draft"}
+        {row.sales_invoice_no || "Draft"}
       </Link>
     ),
+
     sale_order_code: (row: SalesInvoiceListing) =>
-      row.sale_order_code || row.sales_order_no || "-",
-    // sale_quote_code: (row: SalesInvoiceListing) =>
-    //   row.sale_quote_code || row.sales_quote_no || row.sq_no || "-",
+      row.sale_order_code || row.order_no || "-",
+
+    sale_quote_code: (row: SalesInvoiceListing) =>
+      row.sale_quote_code || row.sales_quote_no || row.sq_no || "-",
     cust_order_no: (row: SalesInvoiceListing) => row.cust_order_no || "-",
 
     // Customer Information
@@ -89,11 +91,21 @@ export function getSalesInvoiceCellRenderers(slug: string) {
     payment_terms_code: (row: SalesInvoiceListing) => row.payment_terms || "-",
 
     // Dates
-    posting_date: (row: SalesInvoiceListing) => formatDate(row.posting_date),
-    // document_date: (row: SalesInvoiceListing) =>
-    //   formatDate(row.document_date || row.invoice_date),
+
+    invoice_date: (row: SalesInvoiceListing) => formatDate(row.invoice_date),
+    order_date: (row: SalesInvoiceListing) => formatDate(row.order_date),
     due_date: (row: SalesInvoiceListing) => formatDate(row.due_date),
+    requested_delivery_date: (row: SalesInvoiceListing) =>
+      formatDate(row.requested_delivery_date),
+    receiptDate: (row: SalesInvoiceListing) => formatDate(row.receiptDate),
+    posting_date: (row: SalesInvoiceListing) => formatDate(row.posting_date),
     dispatch_date: (row: SalesInvoiceListing) => formatDate(row.dispatch_date),
+
+    offer_date: (row: SalesInvoiceListing) =>
+      formatDate(row.offer_date || row.order_date),
+    delivery_date: (row: SalesInvoiceListing) => formatDate(row.delivery_date),
+    converted_to_so_on: (row: SalesInvoiceListing) =>
+      formatDate(row.converted_to_so_on),
 
     // Numeric Amounts
     net_amount: (row: SalesInvoiceListing) =>
@@ -126,6 +138,13 @@ export function getSalesInvoiceCellRenderers(slug: string) {
     ship_to_county: (row: SalesInvoiceListing) => row.ship_to_county || "-",
     ship_to_post_code: (row: SalesInvoiceListing) =>
       row.ship_to_post_code || "-",
+
+    customer_address: (row: SalesInvoiceListing) => row.customer_address || "-",
+    customer_address2: (row: SalesInvoiceListing) =>
+      row.customer_address2 || "-",
+    city: (row: SalesInvoiceListing) => row.city || "-",
+    county: (row: SalesInvoiceListing) => row.county || "-",
+    post_code: (row: SalesInvoiceListing) => row.post_code || "-",
 
     // Warehouse & Contacts
     warehouse_booking_ref: (row: SalesInvoiceListing) =>
