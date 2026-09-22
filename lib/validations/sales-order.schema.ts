@@ -26,7 +26,7 @@ export const SalesOrderAddressSchema = z.object({
   id: looseUuid,
   sales_order_id: looseUuid,
   stage_id: looseUuid,
-  
+
   address_type: z.enum(["primary", "billing", "shipping"]),
 
   contact_name: looseString.superRefine((val, ctx) => {
@@ -140,9 +140,15 @@ export const SalesOrderSchema = z.object({
   id: looseUuid,
   company_id: looseUuid,
   order_no: looseString,
+
   customer_id: z.string().uuid("Customer selection is required"),
   customer_no: looseString,
   customer_name: looseString,
+
+  bill_to_customer_id: looseString,
+  bill_to_customer_no: looseString,
+  bill_to_customer_name: looseString,
+
   sales_quote_id: looseUuid,
   sales_quote_no: looseString,
 
@@ -152,7 +158,7 @@ export const SalesOrderSchema = z.object({
   requested_delivery_date: looseString,
   delivery_date: looseString,
   due_date: looseString,
-
+  
   reference: looseString,
   payable_bank: looseString,
   payable_bank_id: looseUuid,
@@ -206,6 +212,9 @@ export const SalesOrderSchema = z.object({
   shipment_status: looseString,
   invoice_status: looseString,
   source_of_order: looseString,
+  customer_posting_group_id: looseString,
+  sales_posting_group_id: looseString,
+  vat_business_posting_group_id: looseString,
 });
 
 export const SalesOrderPayloadSchema = z.object({

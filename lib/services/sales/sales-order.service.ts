@@ -631,14 +631,14 @@ export class SalesOrderService {
       throw new Error("Posted sales order cannot be modified");
     }
 
+
     const customerPostingGroupId =
       order.customer_posting_group_id || order.sales_posting_group_id || null;
 
     const vatBusinessPostingGroupId =
       order.vat_business_posting_group_id || null;
 
-    await client.query(
-      `
+    const updateQry = `
         UPDATE sales_orders
           SET
 
@@ -700,66 +700,71 @@ export class SalesOrderService {
           updated_at=NOW()
 
           WHERE id=$40 AND company_id=$41;
-        `,
-      [
-        order.customer_id,
-        order.customer_no,
-        order.customer_name,
+        `;
 
-        order.bill_to_customer_id,
-        order.bill_to_customer_no,
-        order.bill_to_customer_name,
+    const qryParams = [
+      order.customer_id,
+      order.customer_no,
+      order.customer_name,
 
-        order.salesperson,
-        order.cust_order_no,
-        order.link_to_po,
+      order.bill_to_customer_id,
+      order.bill_to_customer_no,
+      order.bill_to_customer_name,
 
-        order.currency_id,
-        order.exchange_rate,
+      order.salesperson,
+      order.cust_order_no,
+      order.link_to_po,
 
-        order.order_date || null,
-        order.requested_delivery_date || null,
-        order.shipment_date || null,
-        order.posting_date?.trim() ? order.posting_date : null,
-        order.due_date || null,
+      order.currency_id,
+      order.exchange_rate,
 
-        order.reference,
+      order.order_date || null,
+      order.requested_delivery_date || null,
+      order.shipment_date || null,
+      order.posting_date?.trim() ? order.posting_date : null,
+      order.due_date || null,
 
-        order.payable_bank,
-        order.payable_bank_id,
+      order.reference,
 
-        order.payment_terms_id,
-        order.payment_method_id,
+      order.payable_bank,
+      order.payable_bank_id,
 
-        order.contact,
-        order.book_in_phone,
-        order.book_in_contact,
-        order.book_in_email,
+      order.payment_terms_id,
+      order.payment_method_id,
 
-        order.shipment_method_id,
-        order.shipping_agent,
-        order.shipment_ref_no,
-        order.warehouse_ref_no,
+      order.contact,
+      order.book_in_phone,
+      order.book_in_contact,
+      order.book_in_email,
 
-        order.reason,
+      order.shipment_method_id,
+      order.shipping_agent,
+      order.shipment_ref_no,
+      order.warehouse_ref_no,
 
-        order.notes,
-        order.internal_notes,
+      order.reason,
 
-        order.subtotal,
-        order.vat_amount,
-        order.total_amount,
+      order.notes,
+      order.internal_notes,
 
-        order.status,
-        order.anonymous_customer,
+      order.subtotal,
+      order.vat_amount,
+      order.total_amount,
 
-        customerPostingGroupId,
-        vatBusinessPostingGroupId,
+      order.status,
+      order.anonymous_customer,
 
-        id,
-        companyId,
-      ],
-    );
+      customerPostingGroupId,
+      vatBusinessPostingGroupId,
+
+      id,
+      companyId,
+    ];
+
+    // console.log("updateQry ==== ", updateQry);
+    // console.log("qryParams ==== ", qryParams);
+
+    await client.query(updateQry, qryParams);
 
     // Soft delete unlinked line entries
     const existingLinesResult = await client.query(
@@ -1097,15 +1102,14 @@ export class SalesOrderService {
     const shipmentStatus = fullyShipped
       ? "SHIPPED"
       : partiallyShipped
-      ? "PARTIALLY_SHIPPED"
-      : "PENDING";
+        ? "PARTIALLY_SHIPPED"
+        : "PENDING";
 
     const orderStatus = fullyShipped
       ? "completed"
       : partiallyShipped
-      ? "processing"
-      : "open";
-
+        ? "processing"
+        : "open";
 
     await client.query(
       `
@@ -1115,7 +1119,7 @@ export class SalesOrderService {
           updated_at = NOW() 
       WHERE id = $3
       `,
-      [shipmentStatus, orderStatus, salesOrderId]
+      [shipmentStatus, orderStatus, salesOrderId],
     );
 
     // for (const line of lines) {

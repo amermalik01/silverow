@@ -102,7 +102,7 @@ export function validateSalesOrder(
    * Adjust these names if your SalesOrder type uses different
    * field names.
    */
-  if (!order.sales_posting_group_id && !order.vat_business_posting_group_id) {
+  if (!order.customer_posting_group_id && !order.vat_business_posting_group_id) {
     errors.push(
       "Selected customer does not have a valid Sales/VAT Posting Group assigned.",
     );
