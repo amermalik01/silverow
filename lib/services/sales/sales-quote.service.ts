@@ -122,7 +122,25 @@ export class SalesQuoteService {
         sq.*,
         c.code AS currency_code,
         sqa.city AS city,
-        ship_a.city AS ship_to_city
+        ship_a.city AS ship_to_city,
+
+        -- Primary / Customer Address details
+        sqa.address_1 AS customer_address,
+        sqa.address_2 AS customer_address2,
+        sqa.city AS city,
+        sqa.county AS county,
+        sqa.postcode AS post_code,
+        sqa.country AS country,
+        sqa.phone AS phone,
+        sqa.email AS email,
+
+        -- Shipping Address details
+        ship_a.address_1 AS ship_to_address,
+        ship_a.address_2 AS ship_to_address2,
+        ship_a.city AS ship_to_city,
+        ship_a.county AS ship_to_county,
+        ship_a.postcode AS ship_to_post_code
+
       ${joinSql}
       ${whereSql}
       ORDER BY ${orderByColumn} ${sortOrder}, sq.id ASC
@@ -410,6 +428,8 @@ export class SalesQuoteService {
         [companyId, "sales_order"],
       );
       const orderNo = seqResult.rows[0].code;
+
+      // quote.customer_posting_group_id && !quote.vat_business_posting_group_id
 
       // 4. Create Sales Order Header
       const soRes = await client.query(

@@ -47,6 +47,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     }
 
     const body: RequestBody = await req.json();
+
     const { dispatch } = body;
 
     await client.query("BEGIN");

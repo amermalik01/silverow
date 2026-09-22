@@ -72,8 +72,7 @@ export function getSalesQuoteCellRenderers(slug: string) {
     country_code: (row: SalesQuoteListing) => row.country_code || "-",
     sell_to_contact_no: (row: SalesQuoteListing) =>
       row.sell_to_contact_no || row.contact || "-",
-    cust_phone: (row: SalesQuoteListing) =>
-      row.cust_phone || "-",
+    cust_phone: (row: SalesQuoteListing) => row.cust_phone || "-",
     cust_email: (row: SalesQuoteListing) => row.cust_email || row.email || "-",
 
     // Meta & Classifications
@@ -85,12 +84,21 @@ export function getSalesQuoteCellRenderers(slug: string) {
     currency_code: (row: SalesQuoteListing) => row.currency_code || "-",
 
     // Dates
-    // posting_date: (row: SalesQuoteListing) => formatDate(row.posting_date),
-    // offer_date: (row: SalesQuoteListing) =>
-    //   formatDate(row.offer_date || row.order_date),
-    // due_date: (row: SalesQuoteListing) => formatDate(row.due_date),
+    invoice_date: (row: SalesQuoteListing) => formatDate(row.invoice_date),
+    order_date: (row: SalesQuoteListing) => formatDate(row.order_date),
+    due_date: (row: SalesQuoteListing) => formatDate(row.due_date),
     requested_delivery_date: (row: SalesQuoteListing) =>
       formatDate(row.requested_delivery_date),
+    receiptDate: (row: SalesQuoteListing) => formatDate(row.receiptDate),
+    posting_date: (row: SalesQuoteListing) => formatDate(row.posting_date),
+
+    // Dates
+    // posting_date: (row: SalesQuoteListing) => formatDate(row.posting_date),
+    // order_date: (row: SalesQuoteListing) =>
+    //   formatDate(row.order_date || row.order_date),
+    // due_date: (row: SalesQuoteListing) => formatDate(row.due_date),
+    // requested_delivery_date: (row: SalesQuoteListing) =>
+    //   formatDate(row.requested_delivery_date),
     // dispatch_date: (row: SalesQuoteListing) => formatDate(row.dispatch_date),
     // delivery_date: (row: SalesQuoteListing) => formatDate(row.delivery_date),
     converted_to_so_on: (row: SalesQuoteListing) =>
@@ -141,6 +149,12 @@ export function getSalesQuoteCellRenderers(slug: string) {
     ship_to_city: (row: SalesQuoteListing) => row.ship_to_city || "-",
     ship_to_county: (row: SalesQuoteListing) => row.ship_to_county || "-",
     ship_to_post_code: (row: SalesQuoteListing) => row.ship_to_post_code || "-",
+
+    customer_address: (row: SalesQuoteListing) => row.customer_address || "-",
+    customer_address2: (row: SalesQuoteListing) => row.customer_address2 || "-",
+    city: (row: SalesQuoteListing) => row.city || "-",
+    county: (row: SalesQuoteListing) => row.county || "-",
+    post_code: (row: SalesQuoteListing) => row.post_code || "-",
 
     // Warehouse & Contacts
     // book_in_tel: (row: SalesQuoteListing) =>

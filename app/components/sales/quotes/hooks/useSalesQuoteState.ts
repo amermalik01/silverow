@@ -39,11 +39,16 @@ export function useSalesQuoteState({
 
   const isNew = !id || id === "new";
 
+  console.log('isReadOnly ===== ',isReadOnly);
+  console.log('isNew ===== ',isNew);
+
   //   const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
   const [isEditMode, setIsEditMode] = useState<boolean>(() => {
     if (isReadOnly) return false;
     return isNew; // true for new quotes, false for existing ones
   });
+
+  console.log('isEditMode ===== ',isEditMode);
 
   const [masterData, setMasterData] = useState<SalesQuoteMasterData | null>(
     null,

@@ -231,17 +231,23 @@ export type SalesOrderListing = {
 
   payable_bank?: string;
   payable_bank_id?: string;
-  due_date?: string;
   payment_terms?: string;
   payment_terms_id?: string;
   payment_method?: string;
   payment_method_id?: string;
 
-  order_date: string;
-  posting_date?: string;
+
   dispatch_date?: string;
-  requested_delivery_date?: string;
   delivery_date?: string;
+
+  invoice_date?: string;
+  order_date?: string;
+  due_date?: string;
+  requested_delivery_date?: string;
+  receiptDate?: string;
+  posting_date?: string;
+
+
   currency_id?: string;
   currency_code?: string;
   exchange_rate?: string | number;
@@ -327,6 +333,12 @@ export type SalesOrderListing = {
   ship_to_city?: string;
   ship_to_county?: string;
   ship_to_post_code?: string;
+
+  customer_address?: string;
+  customer_address2?: string;
+  city?: string;
+  county?: string;
+  post_code?: string;
 
   book_in_tel?: string;
   comm_book_in_contact?: string;

@@ -811,9 +811,9 @@ export default function SalesQuoteLines({
                   <td className="p-2 text-right font-semibold text-[11px]">
                     {displayVATAmount.toFixed(2)}
                   </td>
-                  <td className="p-2 text-right font-semibold text-[11px]">
+                  {/* <td className="p-2 text-right font-semibold text-[11px]">
                     {displayGrossAmount.toFixed(2)}
-                  </td>
+                  </td> */}
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">
                       {!isLineFulfilled ? (

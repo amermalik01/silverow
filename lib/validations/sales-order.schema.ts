@@ -142,6 +142,7 @@ export const SalesOrderSchema = z.object({
   order_no: looseString,
   customer_id: z.string().uuid("Customer selection is required"),
   customer_no: looseString,
+  customer_name: looseString,
   sales_quote_id: looseUuid,
   sales_quote_no: looseString,
 

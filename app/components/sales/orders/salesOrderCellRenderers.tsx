@@ -85,12 +85,17 @@ export function getSalesOrderCellRenderers(slug: string) {
     currency_code: (row: SalesOrderListing) => row.currency_code || "-",
 
     // Dates
-    posting_date: (row: SalesOrderListing) => formatDate(row.posting_date),
-    offer_date: (row: SalesOrderListing) =>
-      formatDate(row.offer_date || row.order_date),
+
+    invoice_date: (row: SalesOrderListing) => formatDate(row.invoice_date),
+    order_date: (row: SalesOrderListing) => formatDate(row.order_date),
     due_date: (row: SalesOrderListing) => formatDate(row.due_date),
     requested_delivery_date: (row: SalesOrderListing) =>
       formatDate(row.requested_delivery_date),
+    receiptDate: (row: SalesOrderListing) => formatDate(row.receiptDate),
+    posting_date: (row: SalesOrderListing) => formatDate(row.posting_date),
+
+    offer_date: (row: SalesOrderListing) =>
+      formatDate(row.offer_date || row.order_date),
     dispatch_date: (row: SalesOrderListing) => formatDate(row.dispatch_date),
     delivery_date: (row: SalesOrderListing) => formatDate(row.delivery_date),
     converted_to_so_on: (row: SalesOrderListing) =>
@@ -141,6 +146,12 @@ export function getSalesOrderCellRenderers(slug: string) {
     ship_to_city: (row: SalesOrderListing) => row.ship_to_city || "-",
     ship_to_county: (row: SalesOrderListing) => row.ship_to_county || "-",
     ship_to_post_code: (row: SalesOrderListing) => row.ship_to_post_code || "-",
+
+    customer_address: (row: SalesOrderListing) => row.customer_address || "-",
+    customer_address2: (row: SalesOrderListing) => row.customer_address2 || "-",
+    city: (row: SalesOrderListing) => row.city || "-",
+    county: (row: SalesOrderListing) => row.county || "-",
+    post_code: (row: SalesOrderListing) => row.post_code || "-",
 
     // Warehouse & Contacts
     book_in_tel: (row: SalesOrderListing) =>

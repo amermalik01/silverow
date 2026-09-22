@@ -277,9 +277,6 @@ export const SalesQuoteForm: React.FC<Props> = ({
         lines,
       };
 
-      // console.log("payload ==== ", payload);
-      // console.log("id ==== ", id);
-
       const res = await fetch(
         isNew ? "/api/sales/sales-quotes" : `/api/sales/sales-quotes/${id}`,
         {
@@ -577,16 +574,17 @@ export const SalesQuoteForm: React.FC<Props> = ({
           <div className="space-y-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
               <div>
-                <span className="text-xs font-semibold text-slate-500">
+                <span className="text-xs font-semibold text-slate-500 col">
                   Conversion Rate
                 </span>
               </div>
+              <div>
               <NumericTextInput
                 value={Number(currencyConfig.exchange_rate) || 1}
                 allowDecimals={true}
                 decimalScale={6}
                 disabled={isFormDisabled}
-                className={`${inputStyle} font-mono text-end`}
+                className={`${inputStyle} font-mono max-w-[100px] text-end`}
                 onChange={(val) =>
                   setCurrencyConfig({
                     ...currencyConfig,
@@ -594,6 +592,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
                   })
                 }
               />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2 items-center">
               <span className="text-xs font-semibold text-slate-500">

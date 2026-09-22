@@ -698,16 +698,28 @@ export const SalesOrderForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
+      const payload = {
+        dispatch: {
+          customer_id: order.customer_id,
+          warehouse_id: null, // pass if available on header
+          dispatch_date:
+            order.order_date || new Date().toISOString().split("T")[0],
+          posting_date:
+            order.posting_date || new Date().toISOString().split("T")[0],
+          reference: order.reference,
+          notes: order.notes,
+          currency_id: order.currency_id,
+          exchange_rate: order.exchange_rate,
+        },
+      };
+
       const response = await fetch(`/api/sales/sales-orders/${id}/dispatch`, {
         method: "POST",
 
         headers: {
           "Content-Type": "application/json",
         },
-
-        body: JSON.stringify({
-          order,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -1122,19 +1134,21 @@ export const SalesOrderForm: React.FC<Props> = ({
                   Conversion Rate
                 </span>
               </div>
-              <NumericTextInput
-                value={Number(currencyConfig.exchange_rate) || 1}
-                allowDecimals={true}
-                decimalScale={6}
-                disabled={isFormDisabled}
-                className={`${inputStyle} font-mono text-end`}
-                onChange={(val) =>
-                  setCurrencyConfig({
-                    ...currencyConfig,
-                    exchange_rate: Number(val) || 1,
-                  })
-                }
-              />
+              <div>
+                <NumericTextInput
+                  value={Number(currencyConfig.exchange_rate) || 1}
+                  allowDecimals={true}
+                  decimalScale={6}
+                  disabled={isFormDisabled}
+                  className={`${inputStyle} font-mono text-end`}
+                  onChange={(val) =>
+                    setCurrencyConfig({
+                      ...currencyConfig,
+                      exchange_rate: Number(val) || 1,
+                    })
+                  }
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2 items-center">
               <span className="text-xs font-semibold text-slate-500">
@@ -1627,9 +1641,8 @@ export const SalesOrderForm: React.FC<Props> = ({
     return errors.length === 0;
   }; */
 
-
-  // 2. Separate Handler for Posting Invoice
-  /* const handlePostInvoice = async () => {
+// 2. Separate Handler for Posting Invoice
+/* const handlePostInvoice = async () => {
     if (!id) return;
     setIsPosting(true);
 

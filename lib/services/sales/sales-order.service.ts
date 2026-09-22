@@ -227,9 +227,9 @@ export class SalesOrderService {
         -- sa.code AS shipping_agent_code,
         sm.name AS shipment_method_code,
 
-        -- Primary / Supplier Address details
-        soa.address_1 AS supplier_address,
-        soa.address_2 AS supplier_address2,
+        -- Primary / Customer Address details
+        soa.address_1 AS customer_address,
+        soa.address_2 AS customer_address2,
         soa.city AS city,
         soa.county AS county,
         soa.postcode AS post_code,

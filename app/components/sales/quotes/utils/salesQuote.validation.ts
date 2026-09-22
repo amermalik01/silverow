@@ -43,12 +43,9 @@ export function validateSalesQuote(
     errors.push("Customer selection is required.");
   }
 
-  if (
-    !quote.customer_posting_group_id &&
-    !quote.vat_business_posting_group_id
-  ) {
+  if (!quote.customer_posting_group_id && !quote.vat_business_posting_group_id) {
     errors.push(
-      "Selected customer does not have a valid Customer/VAT Posting Group assigned.",
+      "Selected customer does not have a valid Sales/VAT Posting Group assigned.",
     );
   }
 

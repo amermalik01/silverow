@@ -385,7 +385,12 @@ export type SalesQuoteListing = {
   valid_from?: string;
   valid_until?: string;
 
+  invoice_date?: string;
+  order_date?: string;
+  due_date?: string;
   requested_delivery_date?: string;
+  receiptDate?: string;
+  posting_date?: string;
 
   currency_id?: string;
   currency_code?: string;
@@ -496,6 +501,12 @@ export type SalesQuoteListing = {
   ship_to_city?: string;
   ship_to_county?: string;
   ship_to_post_code?: string;
+
+  customer_address?: string;
+  customer_address2?: string;
+  city?: string;
+  county?: string;
+  post_code?: string;
 
   book_in_tel?: string;
   comm_book_in_contact?: string;
