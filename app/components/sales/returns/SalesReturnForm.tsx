@@ -1,4 +1,4 @@
-// app/components/sales/orders/SalesOrderForm.tsx
+// /app/components/sales/returns/SalesReturnForm.tsx
 
 "use client";
 
@@ -10,20 +10,17 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
-
 import { useLoader } from "@/app/context/LoaderContext";
 
 import {
-  SalesOrder,
-  SalesOrderAddress,
-  SalesOrderLineUI,
-  SalesOrderMasterData,
-} from "@/types/sales-order";
+  SalesReturn,
+  SalesReturnAddress,
+  SalesReturnLineUI,
+  SalesReturnMasterData,
+} from "@/types/sales-return";
 
-import SalesOrderLines from "./SalesOrderLines";
-import { OrderFormTabs } from "./OrderFormTabs";
-import CustomerLookupModal, { CustomerLookupItem } from "./CustomerLookupModal";
-import CustomerDeliveryLocationModal from "./CustomerDeliveryLocationModal";
+import SalesReturnLines from "./SalesReturnLines";
+import { ReturnFormTabs } from "./ReturnFormTabs";
 
 import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
@@ -38,17 +35,18 @@ import {
 } from "../../shared/modals/PurchaseOrderMultiLookupModal";
 
 import {
-  validateSalesOrder,
-  validateSalesOrderForStockAction,
-} from "./utils/salesOrder.validation";
+  validateSalesReturn,
+  validateSalesReturnForPosting,
+} from "./utils/salesReturn.validation";
 
-import {
-  calculateSalesOrderFinancials,
-  isSalesOrderFullyDispatched,
-} from "./utils/salesOrder.calculations";
+import { calculateSalesReturnFinancials } from "./utils/salesReturn.calculations";
 
-import { useSalesOrderState } from "./hooks/useSalesOrderState";
-import { useSalesOrderData } from "./hooks/useSalesOrderData";
+import { useSalesReturnState } from "./hooks/useSalesReturnState";
+import { useSalesReturnData } from "./hooks/useSalesReturnData";
+import CustomerLookupModal, {
+  CustomerLookupItem,
+} from "../orders/CustomerLookupModal";
+import CustomerDeliveryLocationModal from "../orders/CustomerDeliveryLocationModal";
 
 type Props = {
   slug: string;
@@ -57,16 +55,16 @@ type Props = {
 };
 
 type FetchLinesAPIResponse = {
-  lines?: SalesOrderLineUI[];
+  lines?: SalesReturnLineUI[];
   success?: boolean;
   error?: string;
 };
 
-type TabType = "general" | "invoicing" | "shipping" | "margin" | "attachments";
-
 type CustomerSelectionSource = "general" | "invoicing" | "shipping_agent";
 
-export const SalesOrderForm: React.FC<Props> = ({
+type TabType = "general" | "invoicing" | "shipping" | "attachments";
+
+export const SalesReturnForm: React.FC<Props> = ({
   slug,
   id,
   isReadOnly = false,
@@ -77,7 +75,7 @@ export const SalesOrderForm: React.FC<Props> = ({
 
   const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
 
-  const state = useSalesOrderState({
+  const state = useSalesReturnState({
     id,
     isReadOnly,
   });
@@ -104,23 +102,11 @@ export const SalesOrderForm: React.FC<Props> = ({
     locationModalOpen,
     setLocationModalOpen,
 
-    supplierModalOpen,
-    setSupplierModalOpen,
-
     POModalOpen,
     setPOModalOpen,
 
-    SOModalOpen,
-    setSOModalOpen,
-
     SalespersonModalOpen,
     setSalespersonModalOpen,
-
-    showMigrationModal,
-    setShowMigrationModal,
-
-    migrationSalesOrderId,
-    setMigrationSalesOrderId,
 
     isEditMode,
     setIsEditMode,
@@ -128,14 +114,14 @@ export const SalesOrderForm: React.FC<Props> = ({
     isUpdatingStatus,
     setIsUpdatingStatus,
 
-    showDispatchModal,
-    setShowDispatchModal,
+    showReceiveModal,
+    setShowReceiveModal,
 
-    showInvoiceModal,
-    setShowInvoiceModal,
+    // showCreditModal,
+    // setShowCreditModal,
 
-    showDispatchAndPostModal,
-    setShowDispatchAndPostModal,
+    // showReceiveAndCreditModal,
+    // setShowReceiveAndCreditModal,
 
     isPosting,
     setIsPosting,
@@ -143,8 +129,8 @@ export const SalesOrderForm: React.FC<Props> = ({
     masterData,
     setMasterData,
 
-    order,
-    setOrder,
+    returnOrder,
+    setReturnOrder,
 
     primaryAddress,
     setPrimaryAddress,
@@ -175,31 +161,10 @@ export const SalesOrderForm: React.FC<Props> = ({
 
   const isLoadingStages = !masterData;
 
-  const isCompleted = order.status === "completed" || order.status === "POSTED";
+  const isCompleted =
+    returnOrder.status === "completed" || returnOrder.status === "POSTED";
 
   const isFormDisabled = !isEditMode || isCompleted;
-
-  useSalesOrderData({
-    id,
-
-    setOrder,
-    setLines,
-
-    setPrimaryAddress,
-    setBillingAddress,
-    setShippingAddress,
-
-    setCurrencyConfig,
-    setMasterData,
-
-    show,
-    hide,
-  });
-
-  const isFullyDispatched = useMemo(
-    () => isSalesOrderFullyDispatched(lines),
-    [lines],
-  );
 
   const selectedCurrency = useMemo(() => {
     return (
@@ -211,7 +176,7 @@ export const SalesOrderForm: React.FC<Props> = ({
 
   const financials = useMemo(
     () =>
-      calculateSalesOrderFinancials(
+      calculateSalesReturnFinancials(
         lines,
         Number(currencyConfig.exchange_rate),
       ),
@@ -223,19 +188,32 @@ export const SalesOrderForm: React.FC<Props> = ({
     [lines],
   );
 
+  useSalesReturnData({
+    id,
+    setReturnOrder,
+    setLines,
+    setPrimaryAddress,
+    setBillingAddress,
+    setShippingAddress,
+    setCurrencyConfig,
+    setMasterData,
+    show,
+    hide,
+  });
+
   useEffect(() => {
     if (!id) return;
 
-    show("Fetching Record...");
+    show("Fetching Return Record...");
 
-    fetch(`/api/sales/sales-orders/${id}`)
+    fetch(`/api/sales/returns/${id}`)
       .then((r) => r.json())
       .then((payload) => {
         hide();
         if (payload && payload.success && payload.data) {
           const actualData = payload.data;
 
-          setOrder(actualData.order || {});
+          setReturnOrder(actualData.returnOrder || {});
           setLines(actualData.lines || []);
 
           setPrimaryAddress(
@@ -250,27 +228,26 @@ export const SalesOrderForm: React.FC<Props> = ({
           );
 
           setCurrencyConfig({
-            currency_id: actualData.order?.currency_id || "",
-            exchange_rate: actualData.order?.exchange_rate || 1,
+            currency_id: actualData.returnOrder?.currency_id || "",
+            exchange_rate: actualData.returnOrder?.exchange_rate || 1,
           });
         }
       })
       .catch((err) =>
-        console.error("Error hydrating historical sales order matrix:", err),
+        console.error("Error hydrating sales return record:", err),
       );
   }, [id]);
 
   useEffect(() => {
     async function loadMasterData() {
       try {
-        const res = await fetch("/api/sales/sales-orders/master-data");
+        const res = await fetch("/api/sales/returns/master-data");
         if (!res.ok) throw new Error();
 
         const data = await res.json();
-
         setMasterData(data);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load master data:", err);
       }
     }
 
@@ -305,10 +282,9 @@ export const SalesOrderForm: React.FC<Props> = ({
   const handleConfirmCustomerChange = () => {
     setLines([]);
     setShowCustomerChangeModal(false);
-
     setCustomerModalOpen(true);
     toast.info(
-      "Sales order lines have been cleared. Please select a customer.",
+      "Credit note lines have been cleared. Please select a customer.",
     );
   };
 
@@ -318,11 +294,7 @@ export const SalesOrderForm: React.FC<Props> = ({
 
   const handleCustomerSelect = (customer: CustomerLookupItem) => {
     if (customerSelectionSource === "invoicing") {
-      // --------------------------------------------
-      // INVOICING TAB
-      // Only update Pay To Customer + Billing Address
-      // --------------------------------------------
-      setOrder((prev) => ({
+      setReturnOrder((prev) => ({
         ...prev,
         bill_to_customer_id: customer.id,
         bill_to_customer_no: customer.customer_code,
@@ -330,14 +302,12 @@ export const SalesOrderForm: React.FC<Props> = ({
       }));
 
       if (customer.billing_address) setBillingAddress(customer.billing_address);
-
       setCustomerModalOpen(false);
       return;
     }
 
-    // Shipping Agent
     if (customerSelectionSource === "shipping_agent") {
-      setOrder((prev) => ({
+      setReturnOrder((prev) => ({
         ...prev,
         shipping_agent: `${customer.customer_code} - ${customer.name}`,
       }));
@@ -346,12 +316,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       return;
     }
 
-    // --------------------------------------------
-    // GENERAL TAB
-    // Full customer selection
-    // --------------------------------------------
-
-    setOrder((prev) => ({
+    setReturnOrder((prev) => ({
       ...prev,
       customer_id: customer.id,
       customer_no: customer.customer_code,
@@ -367,18 +332,12 @@ export const SalesOrderForm: React.FC<Props> = ({
       vat_business_posting_group_id: customer.posting_group || "",
 
       anonymous_customer: customer.anonymous_customer ?? false,
-      salesperson_code: customer.salesperson_code || "",
+      salesperson: customer.salesperson_code || "",
 
-      contact_person: customer.finance_contact_person || "",
-      // email: customer.email || "",
-      phone: customer.phone || "",
-
-      payable_bank: customer.payable_bank || "",
+      contact: customer.finance_contact_person || "",
+      receivable_bank: customer.payable_bank || "",
       payment_terms_id: customer.payment_terms || "",
       payment_method_id: customer.payment_method || "",
-
-      // receivable_bank:
-      //   customer.receivable_bank || "",
     }));
 
     if (customer.primary_address) setPrimaryAddress(customer.primary_address);
@@ -399,102 +358,98 @@ export const SalesOrderForm: React.FC<Props> = ({
     setCustomerModalOpen(false);
   };
 
-  const handlePurchaseOrderSelection = () => {
-    setPOModalOpen(true);
-  };
-
   const handleSelectPurchaseOrders = (
     selectedOrders: PurchaseOrderLookupItem[],
   ) => {
     const codes = selectedOrders.map((o) => o.order_no).join(", ");
-    setOrder((prev) => ({
+    setReturnOrder((prev) => ({
       ...prev,
-      linked_po: codes,
+      link_to_po: codes,
     }));
     setPOModalOpen(false);
+  };
+
+  const handleSalesPersonSelect = (emp: Employee) => {
+    setReturnOrder((prev) => ({
+      ...prev,
+      salesperson: `${emp.employee_code}-${emp.display_name}`,
+    }));
+    setSalespersonModalOpen(false);
+  };
+
+  const handlePurchaseOrderSelection = () => {
+    setPOModalOpen(true);
   };
 
   const handleSalesPersonSelection = () => {
     setSalesPersonModalOpen(true);
   };
 
-  const handleSalesPersonSelect = (emp: Employee) => {
-    setOrder((prev) => ({
-      ...prev,
-      salesperson: emp.employee_code + "-" + emp.display_name,
-    }));
-    setSalesPersonModalOpen(false);
-  };
-
-  const updateOrderField = <K extends keyof SalesOrder>(
+  const updateReturnField = <K extends keyof SalesReturn>(
     field: K,
-    value: SalesOrder[K],
+    value: SalesReturn[K],
   ) => {
-    setOrder((prev) => ({ ...prev, [field]: value }));
+    setReturnOrder((prev) => ({ ...prev, [field]: value }));
   };
 
   const validateForm = (includeLines = true): boolean => {
-    const errors = validateSalesOrder(
-      order,
+    const errors = validateSalesReturn(
+      returnOrder,
       lines,
       currencyConfig.currency_id,
       includeLines,
     );
 
     setValidationErrors(errors);
-
     return errors.length === 0;
   };
 
-  const validateBeforeStockAction = (): boolean => {
-    const errors = validateSalesOrderForStockAction(lines);
+  const validateBeforePosting = (): boolean => {
+    const errors = validateSalesReturnForPosting(lines);
 
     setValidationErrors(errors);
-
     return errors.length === 0;
   };
 
   const refreshLines = async () => {
-    if (!order.id) return;
+    if (!returnOrder.id) return;
 
     try {
-      const response = await fetch(`/api/sales/sales-orders/${order.id}/lines`);
-
+      const response = await fetch(
+        `/api/sales/returns/${returnOrder.id}/lines`,
+      );
       if (!response.ok) {
         throw new Error(`Failed to fetch lines: ${response.statusText}`);
       }
 
       const data: FetchLinesAPIResponse = await response.json();
-
       setLines(data.lines ?? []);
     } catch (error) {
-      console.error("Error refreshing sales order lines:", error);
+      console.error("Error refreshing sales return lines:", error);
     }
   };
 
-  const saveSalesOrder = async (
+  const saveSalesReturn = async (
     requireLines = false,
   ): Promise<string | null> => {
     if (!validateForm(!requireLines)) {
       return null;
     }
 
-    show("Saving...");
+    show("Saving Return...");
 
     try {
       setSaving(true);
-
       setValidationErrors([]);
 
       const payload = {
-        order: {
-          ...order,
+        returnOrder: {
+          ...returnOrder,
           ...currencyConfig,
           subtotal: financials.amount,
-          tax_amount: financials.vat,
+          vat_amount: financials.vat,
           total_amount: financials.amountInclVat,
         },
-
         primary_address: primaryAddress,
         billing_address: billingAddress,
         shipping_address: shippingAddress,
@@ -503,7 +458,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       };
 
       const response = await fetch(
-        id ? `/api/sales/sales-orders/${id}` : "/api/sales/sales-orders",
+        id ? `/api/sales/returns/${id}` : "/api/sales/returns",
         {
           method: id ? "PUT" : "POST",
           headers: {
@@ -516,22 +471,20 @@ export const SalesOrderForm: React.FC<Props> = ({
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Error writing Sales Order.");
+        throw new Error(result.error || "Error saving Credit Note.");
       }
 
       const targetId = id || result?.data?.id;
 
       if (!targetId) {
-        throw new Error("Sales Order was saved but no ID was returned.");
+        throw new Error("Credit Note saved, but no ID was returned.");
       }
 
-      toast.success(id ? "Sales Order Updated" : "Sales Order Created");
+      toast.success(id ? "Credit Note Updated" : "Credit Note Created");
 
-      setOrder((prev) => ({
+      setReturnOrder((prev) => ({
         ...prev,
-
         ...(result?.data || {}),
-
         id: targetId,
       }));
 
@@ -541,126 +494,52 @@ export const SalesOrderForm: React.FC<Props> = ({
     } catch (error) {
       if (error instanceof Error) {
         setValidationErrors([error.message]);
-
         toast.error(error.message);
       }
-
       return null;
     } finally {
       setSaving(false);
-
       hide();
     }
   };
 
   const fetchLatestLines = async (targetId: string) => {
     try {
-      const response = await fetch(`/api/sales/sales-orders/${targetId}/lines`);
-
+      const response = await fetch(`/api/sales/returns/${targetId}/lines`);
       if (!response.ok) return;
 
       const data = await response.json();
-
       if (data.lines) {
         setLines(data.lines);
       }
     } catch (error) {
-      console.error("Failed to re-fetch Sales Order lines:", error);
+      console.error("Failed to re-fetch Credit Note lines:", error);
     }
   };
 
   const handleSave = async () => {
-    const targetId = await saveSalesOrder(false);
+    const targetId = await saveSalesReturn(false);
 
     if (!targetId) return;
 
     if (id) {
       setIsEditMode(false);
-
       router.refresh();
     } else {
-      router.replace(`/${slug}/sales/orders/${targetId}/edit`);
+      router.replace(`/${slug}/sales/returns/${targetId}/edit`);
     }
   };
-
-  // const handleSave = async () => {
-  //   if (!validateForm()) {
-  //     toast.error("Please resolve validation errors before saving.");
-  //     window.scrollTo({ top: 0, behavior: "smooth" });
-  //     return;
-  //   }
-
-  //   show("Saving Record...");
-
-  //   try {
-  //     setSaving(true);
-  //     setValidationErrors([]);
-
-  //     const payload = {
-  //       order: {
-  //         ...order,
-  //         ...currencyConfig,
-  //         subtotal: financials.amount,
-  //         vat_amount: financials.vat,
-  //         total_amount: financials.amountInclVat,
-  //       },
-  //       primary_address: primaryAddress,
-  //       billing_address: billingAddress,
-  //       shipping_address: shippingAddress,
-
-  //       lines,
-  //     };
-
-  //     const res = await fetch(
-  //       id ? `/api/sales/sales-orders/${id}` : "/api/sales/sales-orders",
-  //       {
-  //         method: id ? "PUT" : "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify(payload),
-  //       },
-  //     );
-
-  //     const result = await res.json();
-  //     if (!res.ok)
-  //       throw new Error(
-  //         result.error || "Execution error writing back sales records.",
-  //       );
-
-  //     toast.success(id ? "Sales Order Updated" : "Sales Order Created");
-  //     const targetId = id || result?.data?.id;
-
-  //     if (targetId) {
-  //       const linesRes = await fetch(
-  //         `/api/sales/sales-orders/${targetId}/lines`,
-  //       );
-  //       const linesData = await linesRes.json();
-  //       if (linesData.lines) setLines(linesData.lines);
-  //     }
-
-  //     if (id) {
-  //       setIsEditMode(false);
-  //       router.refresh();
-  //     } else if (result?.data?.id) {
-  //       router.replace(`/${slug}/sales/sales-orders/${result.data.id}/edit`);
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //     if (err instanceof Error) setValidationErrors([err.message]);
-  //   } finally {
-  //     setSaving(false);
-  //     hide();
-  //   }
-  // };
 
   const handleStageClick = async (targetStage: {
     id: string;
     name: string;
   }) => {
-    if (!id || isUpdatingStatus || order.stage_id === targetStage.id) return;
+    if (!id || isUpdatingStatus || returnOrder.stage_id === targetStage.id)
+      return;
 
     setIsUpdatingStatus(true);
     try {
-      const response = await fetch(`/api/sales/sales-orders/${id}/stage`, {
+      const response = await fetch(`/api/sales/returns/${id}/stage`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage_id: targetStage.id }),
@@ -669,7 +548,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to update stage");
 
-      setOrder((prev) => ({ ...prev, stage_id: targetStage.id }));
+      setReturnOrder((prev) => ({ ...prev, stage_id: targetStage.id }));
       toast.success(`Moved to stage: ${targetStage.name}`);
       router.refresh();
     } catch (error) {
@@ -682,237 +561,63 @@ export const SalesOrderForm: React.FC<Props> = ({
     }
   };
 
-  const handleDispatchStock = async () => {
+  const handlePostCreditNoteClick = () => {
+    if (!validateBeforePosting()) return;
+    // setShowCreditModal(true);
+  };
+
+  const handlePostCreditNote = async () => {
     if (!id) return;
 
-    if (!validateBeforeStockAction()) {
-      return;
-    }
+    if (!validateBeforePosting()) return;
 
     setIsPosting(true);
-
-    show("Saving and Dispatching Record...");
+    show("Posting Credit Note...");
 
     try {
-      toast.loading("Processing stock dispatch...", {
+      toast.loading("Posting credit note...", {
         id: "action-toast",
       });
 
-      const payload = {
-        dispatch: {
-          customer_id: order.customer_id,
-          warehouse_id: null, // pass if available on header
-          dispatch_date:
-            order.order_date || new Date().toISOString().split("T")[0],
-          posting_date:
-            order.posting_date || new Date().toISOString().split("T")[0],
-          reference: order.reference,
-          notes: order.notes,
-          currency_id: order.currency_id,
-          exchange_rate: order.exchange_rate,
-        },
-      };
-
-      const response = await fetch(`/api/sales/sales-orders/${id}/dispatch`, {
+      const response = await fetch(`/api/sales/returns/${id}/post`, {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          customer_id: returnOrder.customer_id,
+          reference: returnOrder.reference,
+          posting_date:
+            returnOrder.posting_date || new Date().toISOString().split("T")[0],
+          credit_note_date: returnOrder.credit_note_date,
+          financials: financials,
+          currency_id: returnOrder.currency_id,
+          exchange_rate: returnOrder.exchange_rate,
+          returnOrder: returnOrder,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to dispatch stock");
+        throw new Error(data.error || "Failed to post Credit Note");
       }
 
-      toast.success("Stock dispatched successfully!", {
+      toast.success("Credit Note posted successfully!", {
         id: "action-toast",
       });
 
-      setShowDispatchModal(false);
-
-      await refreshLines();
-
-      router.refresh();
+      //   setShowCreditModal(false);
+      router.push(`/${slug}/sales/returns/new`);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Error dispatching stock",
+        error instanceof Error ? error.message : "Error posting credit note",
         {
           id: "action-toast",
         },
       );
     } finally {
       setIsPosting(false);
-
-      hide();
-    }
-  };
-
-  /*
-   * ------------------------------------------------------------
-   * Dispatch + Post Invoice
-   * ------------------------------------------------------------
-   */
-
-  const handleDispatchAndPost = async () => {
-    if (!id) return;
-
-    if (!validateBeforeStockAction()) {
-      return;
-    }
-
-    setIsPosting(true);
-
-    show("Dispatching Stock & Posting Invoice...");
-
-    try {
-      toast.loading("Dispatching stock and posting sales invoice...", {
-        id: "action-toast",
-      });
-
-      const response = await fetch(
-        `/api/sales/sales-orders/${id}/dispatch-and-post`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            customer_id: order.customer_id,
-            customer_invoice_no: order.reference,
-            reference: order.reference,
-            invoice_date: order.posting_date,
-            posting_date: order.dispatch_date,
-            order_date: order.order_date,
-            dispatch_date: order.dispatch_date,
-            financials: financials,
-            currency_id: order.currency_id,
-            exchange_rate: order.exchange_rate,
-            order: order,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Failed to dispatch stock and post invoice.",
-        );
-      }
-
-      toast.success("Stock dispatched and invoice posted successfully!", {
-        id: "action-toast",
-      });
-
-      setShowDispatchAndPostModal(false);
-
-      router.push(`/${slug}/sales/orders/new`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Error processing operation.",
-        {
-          id: "action-toast",
-        },
-      );
-    } finally {
-      setIsPosting(false);
-
-      hide();
-    }
-  };
-
-  const handlePostInvoiceClick = () => {
-    if (!validateBeforeStockAction()) {
-      return;
-    }
-
-    // if (!order.reference) {
-    //   toast.error("Please enter a Customer Invoice No. before posting.");
-
-    //   return;
-    // }
-
-    const allGLAccountLines = lines.every(
-      (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
-    );
-
-    if (!isFullyDispatched && !allGLAccountLines) {
-      setShowDispatchAndPostModal(true);
-    } else {
-      setShowInvoiceModal(true);
-    }
-  };
-
-  const handlePostInvoice = async () => {
-    if (!id) return;
-
-    if (!validateBeforeStockAction()) {
-      return;
-    }
-
-    setIsPosting(true);
-
-    show("Posting Invoice...");
-
-    try {
-      toast.loading("Posting sales invoice...", {
-        id: "action-toast",
-      });
-
-      const response = await fetch(
-        `/api/sales/sales-orders/${id}/post-invoice`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            customer_id: order.customer_id,
-            customer_invoice_no: order.reference,
-            reference: order.reference,
-            invoice_date: order.posting_date,
-            posting_date: order.dispatch_date,
-            order_date: order.order_date,
-            dispatch_date: order.dispatch_date,
-            financials: financials,
-            currency_id: order.currency_id,
-            exchange_rate: order.exchange_rate,
-            order: order,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to post sales invoice");
-      }
-
-      toast.success("Sales invoice posted!", {
-        id: "action-toast",
-      });
-
-      setShowInvoiceModal(false);
-
-      router.push(`/${slug}/sales/orders/new`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Error posting invoice",
-        {
-          id: "action-toast",
-        },
-      );
-    } finally {
-      setIsPosting(false);
-
       hide();
     }
   };
@@ -930,20 +635,23 @@ export const SalesOrderForm: React.FC<Props> = ({
       <Breadcrumbs
         items={[
           {
-            label: "Sales Orders",
-            href: `/${slug}/sales/orders`,
+            label: "Credit Notes",
+            href: `/${slug}/sales/returns`,
           },
           {
-            label: order.order_no || order.invoice_no || "",
+            label:
+              returnOrder.credit_note_no ||
+              returnOrder.posted_credit_note_no ||
+              "New Credit Note",
           },
         ]}
       />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <h1 className="text-2xl font-bold px-4">Sales Order</h1>
-        {order.order_no && (
+        <h1 className="text-2xl font-bold px-4">Credit Note</h1>
+        {returnOrder.credit_note_no && (
           <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 rounded text-xs font-mono">
-            {`Order No. ${order.order_no}`}
+            {`CN No. ${returnOrder.credit_note_no}`}
           </div>
         )}
       </div>
@@ -965,7 +673,7 @@ export const SalesOrderForm: React.FC<Props> = ({
         <div className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Icon icon="tabler:lock" className="w-4 h-4 text-emerald-600" />
-            This Sales Order is <strong>Completed / Fully Posted</strong> and
+            This Credit Note is <strong>Completed / Fully Posted</strong> and
             cannot be edited.
           </span>
           <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded text-[10px] capitalize font-bold tracking-wider">
@@ -978,19 +686,12 @@ export const SalesOrderForm: React.FC<Props> = ({
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-200 pb-2 mb-4">
           <div className="flex flex-1 gap-2 overflow-x-auto no-scrollbar">
             {(
-              [
-                "general",
-                "invoicing",
-                "shipping",
-                "margin",
-                "attachments",
-              ] as TabType[]
+              ["general", "invoicing", "shipping", "attachments"] as TabType[]
             ).map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
-                // onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap ${
                   activeTab === tab
                     ? "border-emerald-600 text-emerald-600"
@@ -1007,7 +708,7 @@ export const SalesOrderForm: React.FC<Props> = ({
             (() => {
               // Find current stage index in the sorted stages array
               const currentStageIndex = stages.findIndex(
-                (s) => s.id === order.stage_id,
+                (s) => s.id === returnOrder.stage_id,
               );
 
               return (
@@ -1044,9 +745,9 @@ export const SalesOrderForm: React.FC<Props> = ({
                           key={stage.id}
                           onClick={() => handleStageClick(stage)}
                           className={`px-3.5 py-1.5 flex items-center gap-1.5 transition-all duration-150 ease-in-out cursor-pointer hover:brightness-95
-                                      ${isFirst ? "rounded-l-md" : ""} 
-                                      ${isLast ? "rounded-r-md" : ""} 
-                                      ${buttonStyles}`}
+                                            ${isFirst ? "rounded-l-md" : ""} 
+                                            ${isLast ? "rounded-r-md" : ""} 
+                                            ${buttonStyles}`}
                         >
                           {isPassed && (
                             <Icon
@@ -1074,9 +775,9 @@ export const SalesOrderForm: React.FC<Props> = ({
             })()}
         </div>
 
-        <OrderFormTabs
+        <ReturnFormTabs
           activeTab={activeTab}
-          order={order}
+          returnOrder={returnOrder}
           primaryAddress={primaryAddress}
           setPrimaryAddress={setPrimaryAddress}
           billingAddress={billingAddress}
@@ -1086,11 +787,10 @@ export const SalesOrderForm: React.FC<Props> = ({
           currencyConfig={currencyConfig}
           setCurrencyConfig={setCurrencyConfig}
           masterData={masterData}
-          updateField={updateOrderField}
+          updateField={updateReturnField}
           onGeneralCustomerSelect={handleGeneralCustomerSelection}
           onInvoicingCustomerSelect={handleInvoicingCustomerSelection}
           setLocationModalOpen={setLocationModalOpen}
-          onPurchaseOrderSelect={handlePurchaseOrderSelection}
           onShippingAgentSelect={handleShippingAgentSelection}
           setSalesPersonModalOpen={handleSalesPersonSelection}
           labelStyle={labelStyle}
@@ -1101,11 +801,11 @@ export const SalesOrderForm: React.FC<Props> = ({
       </div>
 
       <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <SalesOrderLines
+        <SalesReturnLines
           lines={lines}
           setLines={setLines}
           isReadonly={isFormDisabled}
-          salesOrder={order}
+          salesReturn={returnOrder}
           refreshLines={refreshLines}
         />
 
@@ -1116,9 +816,9 @@ export const SalesOrderForm: React.FC<Props> = ({
                 placeholder="Add Internal Notes"
                 disabled={isReadOnly}
                 className={`${inputStyle} font-mono`}
-                value={order.internal_notes || ""}
+                value={returnOrder.internal_notes || ""}
                 onChange={(e) =>
-                  updateOrderField("internal_notes", e.target.value)
+                  updateReturnField("internal_notes", e.target.value)
                 }
               />
             </div>
@@ -1127,8 +827,8 @@ export const SalesOrderForm: React.FC<Props> = ({
                 placeholder="Add External Notes"
                 disabled={isReadOnly}
                 className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-slate-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
-                value={order.notes || ""}
-                onChange={(e) => updateOrderField("notes", e.target.value)}
+                value={returnOrder.notes || ""}
+                onChange={(e) => updateReturnField("notes", e.target.value)}
               />
             </div>
           </div>
@@ -1238,34 +938,34 @@ export const SalesOrderForm: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {isUpdateMode && (
-              <>
-
-                <Button
-                  type="button"
-                  variant="post"
-                  onClick={handlePostInvoiceClick}
-                  disabled={isPosting || isCompleted}
-                >
-                  Post Invoice
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="dispatch"
-                  onClick={() => {
-                    if (!validateBeforeStockAction()) {
-                      return;
-                    }
-
-                    setShowDispatchModal(true);
-                  }}
-                  disabled={isPosting || isFullyDispatched || isCompleted}
-                >
-                  Dispatch Stock
-                </Button>
-              </>
-            )}
+            {/* {isUpdateMode && (
+                      <>
+        
+                        <Button
+                          type="button"
+                          variant="post"
+                          onClick={handlePostInvoiceClick}
+                          disabled={isPosting || isCompleted}
+                        >
+                          Post Invoice
+                        </Button>
+        
+                        <Button
+                          type="button"
+                          variant="dispatch"
+                          onClick={() => {
+                            if (!validateBeforeStockAction()) {
+                              return;
+                            }
+        
+                            setShowDispatchModal(true);
+                          }}
+                          disabled={isPosting || isFullyDispatched || isCompleted}
+                        >
+                          Dispatch Stock
+                        </Button>
+                      </>
+                    )} */}
 
             {!isCompleted && (
               <>
@@ -1301,59 +1001,7 @@ export const SalesOrderForm: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* <GeneralConfirmModal
-        isOpen={showInvoiceModal}
-        title="Confirmation"
-        message="Are you sure you want to post the invoice for this sales order?"
-        onConfirm={handlePostInvoice}
-        onCancel={() => setShowInvoiceModal(false)}
-        loading={isPosting}
-      /> */}
-
-      {/* ======================================================
-          DISPATCH CONFIRMATION
-          ====================================================== */}
-
-      <GeneralConfirmModal
-        isOpen={showDispatchModal}
-        title="Confirmation"
-        message="Are you sure you want to dispatch the stock?"
-        onConfirm={handleDispatchStock}
-        onCancel={() => setShowDispatchModal(false)}
-        loading={isPosting}
-      />
-
-      {/* ======================================================
-          POST INVOICE CONFIRMATION
-          ====================================================== */}
-
-      <GeneralConfirmModal
-        isOpen={showInvoiceModal}
-        title="Confirmation"
-        message="Are you sure you want to post this sales order?"
-        onConfirm={handlePostInvoice}
-        onCancel={() => setShowInvoiceModal(false)}
-        loading={isPosting}
-      />
-
-      {/* ======================================================
-          DISPATCH + POST
-          ====================================================== */}
-
-      <GeneralConfirmModal
-        isOpen={showDispatchAndPostModal}
-        title="Stock Dispatch Required"
-        message={
-          <>
-            Stock has not been fully dispatched for this order. Would you like
-            to dispatch the remaining stock automatically and post the sales
-            invoice now?
-          </>
-        }
-        onConfirm={handleDispatchAndPost}
-        onCancel={() => setShowDispatchAndPostModal(false)}
-        loading={isPosting}
-      />
+      {/* Modals */}
 
       <GeneralConfirmModal
         isOpen={showCustomerChangeModal}
@@ -1378,8 +1026,8 @@ export const SalesOrderForm: React.FC<Props> = ({
           onClose={() => setPOModalOpen(false)}
           onSelectOrders={handleSelectPurchaseOrders}
           selectedOrderNos={
-            order.link_to_po
-              ? order.link_to_po.split(",").map((s) => s.trim())
+            returnOrder.link_to_po
+              ? returnOrder.link_to_po.split(",").map((s) => s.trim())
               : []
           }
         />
@@ -1396,7 +1044,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       {locationModalOpen && (
         <CustomerDeliveryLocationModal
           open={locationModalOpen}
-          customerId={order.customer_id}
+          customerId={returnOrder.customer_id}
           onClose={() => setLocationModalOpen(false)}
           onSelect={(selectedLocation) => {
             setShippingAddress({
@@ -1414,6 +1062,53 @@ export const SalesOrderForm: React.FC<Props> = ({
           }}
         />
       )}
+
+      {/* ======================================================
+          DISPATCH CONFIRMATION
+          ====================================================== */}
+
+      {/* <GeneralConfirmModal
+        isOpen={showDispatchModal}
+        title="Confirmation"
+        message="Are you sure you want to dispatch the stock?"
+        onConfirm={handleDispatchStock}
+        onCancel={() => setShowDispatchModal(false)}
+        loading={isPosting}
+      /> */}
+
+      {/* ======================================================
+          POST INVOICE CONFIRMATION
+          ====================================================== */}
+
+      {/* <GeneralConfirmModal
+        isOpen={showCreditModal}
+        title="Confirmation"
+        message="Are you sure you want to post this Credit Note?"
+        onConfirm={handlePostCreditNote}
+        onCancel={() => setShowCreditModal(false)}
+        loading={isPosting}
+      /> */}
+
+      {/* ======================================================
+          DISPATCH + POST
+          ====================================================== */}
+
+      {/* <GeneralConfirmModal
+        isOpen={showDispatchAndPostModal}
+        title="Stock Dispatch Required"
+        message={
+          <>
+            Stock has not been fully dispatched for this order. Would you like
+            to dispatch the remaining stock automatically and post the sales
+            invoice now?
+          </>
+        }
+        onConfirm={handleDispatchAndPost}
+        onCancel={() => setShowDispatchAndPostModal(false)}
+        loading={isPosting}
+      /> */}
     </div>
   );
 };
+
+export default SalesReturnForm;

@@ -20,6 +20,9 @@ import { salesQuotesConfig } from "./sales-quotes";
 import { salesOrdersConfig } from "./sales-orders";
 import { salesInvoicesConfig } from "./sales-invoices";
 
+import { creditNoteConfig } from "./credit-note";
+import { postedCreditNoteConfig } from "./posted-credit-note";
+
 import { itemColumnsConfig } from "./Items";
 import { EmployeeConfig } from "./Employee";
 
@@ -38,6 +41,9 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   sales_quotes: salesQuotesConfig,
   sales_orders: salesOrdersConfig,
   sales_invoices: salesInvoicesConfig,
+
+  credit_note: creditNoteConfig,
+  posted_credit_note: postedCreditNoteConfig,
 
   supplier_journals: journalsColumnsConfig,
   customer_journals: journalsColumnsConfig,

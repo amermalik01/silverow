@@ -1,8 +1,8 @@
-// utils/salesOrder.calculations.ts
+// /app/components/sales/returns/utils/salesReturn.calculations.ts
 
-import { SalesOrderLineUI, SalesOrderMasterData } from "@/types/sales-order";
+import { SalesReturnLineUI, SalesReturnMasterData } from "@/types/sales-return";
 
-export interface SalesOrderFinancials {
+export interface SalesReturnFinancials {
   originalAmount: number;
   totalDiscount: number;
   amount: number;
@@ -10,10 +10,11 @@ export interface SalesOrderFinancials {
   amountInclVat: number;
   amountInclVatLCY: number;
 }
-export function calculateSalesOrderFinancials(
-  lines: SalesOrderLineUI[],
+
+export function calculateSalesReturnFinancials(
+  lines: SalesReturnLineUI[],
   exchangeRate: number,
-): SalesOrderFinancials {
+): SalesReturnFinancials {
   const originalAmount = lines.reduce(
     (sum, line) =>
       sum +
@@ -51,7 +52,7 @@ export function calculateSalesOrderFinancials(
 }
 
 export function getSelectedCurrency(
-  masterData: SalesOrderMasterData | null,
+  masterData: SalesReturnMasterData | null,
   currencyId: string,
 ) {
   return (
@@ -59,8 +60,9 @@ export function getSelectedCurrency(
     null
   );
 }
-export function isSalesOrderFullyDispatched(
-  lines: SalesOrderLineUI[],
+
+export function isSalesReturnFullyReceived(
+  lines: SalesReturnLineUI[],
 ): boolean {
   if (lines.length === 0) return false;
 
@@ -72,12 +74,12 @@ export function isSalesOrderFullyDispatched(
 
   return itemLines.every((line) => {
     const quantity = Number(line.quantity || 0);
-    const dispatchedQuantity = Number(line.quantity_shipped || 0);
+    const receivedQuantity = Number(line.returned_quantity || 0);
 
-    return quantity > 0 && dispatchedQuantity >= quantity;
+    return quantity > 0 && receivedQuantity >= quantity;
   });
 }
 
-export function hasSelectedLineItem(lines: SalesOrderLineUI[]): boolean {
+export function hasSelectedLineItem(lines: SalesReturnLineUI[]): boolean {
   return lines.some((line) => !!line.item_id || !!line.gl_account_id);
 }

@@ -95,14 +95,10 @@ export function validateSalesOrder(
   if (!order.customer_id) {
     errors.push("Customer selection is required.");
   }
-
-  /**
-   * Sales Order normally requires Sales/VAT posting groups.
-   *
-   * Adjust these names if your SalesOrder type uses different
-   * field names.
-   */
-  if (!order.customer_posting_group_id && !order.vat_business_posting_group_id) {
+  if (
+    !order.customer_posting_group_id &&
+    !order.vat_business_posting_group_id
+  ) {
     errors.push(
       "Selected customer does not have a valid Sales/VAT Posting Group assigned.",
     );
@@ -121,17 +117,6 @@ export function validateSalesOrder(
   return errors;
 }
 
-/**
- * Validation used before stock dispatch / invoice posting.
- *
- * ITEM lines must have:
- * - item
- * - warehouse
- * - positive quantity
- * - complete stock allocation
- *
- * GL_ACCOUNT lines don't require stock allocation.
- */
 export function validateSalesOrderForStockAction(
   lines: SalesOrderLineUI[],
 ): string[] {

@@ -1,6 +1,6 @@
 // /app/components/sales/returns/SalesReturnFormView.tsx
 
-"use client";
+/* "use client";
 
 import React, { useCallback, useState, useMemo, useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -528,19 +528,7 @@ export default function SalesReturnFormView({
                 </span>
               </div>
               <div>
-                {/* <input
-                  type="number"
-                  // step="any"
-                  step="0.01"
-                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
-                  value={Number(currencyConfig.exchange_rate).toFixed(2) ?? ""}
-                  onChange={(e) =>
-                    setCurrencyConfig({
-                      ...currencyConfig,
-                      exchange_rate: parseFloat(e.target.value) || 1,
-                    })
-                  }
-                /> */}
+
 
                 <NumericTextInput
                   value={Number(currencyConfig.exchange_rate) || 1}
@@ -644,7 +632,7 @@ export default function SalesReturnFormView({
         onSelect={handleCustomerSelect}
       />
 
-      {/* Modal to Select Location */}
+
       <CustomerDeliveryLocationModal
         open={locationModalOpen}
         customerId={returnOrder.customer_id}
@@ -666,70 +654,5 @@ export default function SalesReturnFormView({
       />
     </div>
   );
-}
+} */
 
-{
-  /* <div className="flex justify-between items-center border-t dark:border-slate-800 pt-4">
-        <Button
-          type="button"
-          onClick={() => router.push(`/${slug}/sales/returns`)}
-          variant="cancel"
-        >
-          Cancel and Return
-        </Button>
-
-        <div className="flex gap-3">
-          {id &&
-            returnOrder.credit_status !== "CREDITED" &&
-            returnOrder.status !== "CANCELLED" && (
-              <Button
-                type="button"
-                disabled={saving}
-                onClick={async () => {
-                  if (
-                    !confirm(
-                      "Convert this authorized sales return into a finalized Credit Note?",
-                    )
-                  )
-                    return;
-                  try {
-                    setSaving(true);
-                    const res = await fetch(
-                      `/api/sales/sales-returns/${id}/convert-to-credit-note`,
-                      { method: "POST" },
-                    );
-                    const data = await res.json();
-                    if (!res.ok)
-                      throw new Error(data.error || "Conversion failure.");
-
-                    toast.success("Sales Credit Note generated safely.");
-                    router.push(
-                      `/${slug}/sales/credit-notes/${data.credit_note_id}`,
-                    );
-                  } catch (err) {
-                    toast.error(
-                      err instanceof Error
-                        ? err.message
-                        : "Conversion aborted.",
-                    );
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition disabled:opacity-50"
-              >
-                Issue Credit Note
-              </Button>
-            )}
-
-          <Button
-            type="button"
-            disabled={saving}
-            onClick={save}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-xs font-medium transition shadow disabled:opacity-50"
-          >
-            {saving ? "Processing..." : "Save Return Order"}
-          </Button>
-        </div>
-      </div> */
-}

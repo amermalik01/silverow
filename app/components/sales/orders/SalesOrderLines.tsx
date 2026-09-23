@@ -851,8 +851,12 @@ export default function SalesOrderLines({
           }
         />
       )}
+    </div>
+  );
+}
 
-      {/* {isAllocationModalOpen && activeAllocationLine && (
+{
+  /* {isAllocationModalOpen && activeAllocationLine && (
         <PO_StockAllocationModal
           key={`sales-allocation-row-${activeAllocationLine._stableKey}`}
           open={isAllocationModalOpen}
@@ -896,9 +900,7 @@ export default function SalesOrderLines({
             handleSaveAllocations(allocationsPayload)
           }
         />
-      )} */}
-    </div>
-  );
+      )} */
 }
 /* 
 const totals = useMemo(() => {
