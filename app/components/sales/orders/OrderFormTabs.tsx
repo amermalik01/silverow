@@ -402,7 +402,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
 
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle} title="Sales Quote/Order No.">
+                <label className={labelStyle} title="Sales Quote No.">
                   SQ No.
                 </label>
                 <input
@@ -415,6 +415,21 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   }
                 />
               </div>
+
+              {order.is_posted && (
+                <div className="grid grid-cols-12 items-center gap-2">
+                  <label className={labelStyle} title="Sales Order No.">
+                    SO No.
+                  </label>
+                  <input
+                    type="text"
+                    className={inputStyle}
+                    disabled
+                    readOnly
+                    value={order.order_no || ""}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Column 4 */}

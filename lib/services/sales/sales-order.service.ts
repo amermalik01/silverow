@@ -262,7 +262,8 @@ export class SalesOrderService {
   static async get(companyId: string, id: string) {
     const orderResult = await pool.query(
       `
-      SELECT so.*,      
+      SELECT so.*,
+        so.sales_invoice_no AS invoice_no,
         pt.name AS payment_terms,
         pm.name AS payment_method,
         sm.name AS shipment_method

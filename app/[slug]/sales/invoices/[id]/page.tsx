@@ -1,5 +1,5 @@
 // /app/[slug]/sales/invoices/[id]/page.tsx
-import SalesInvoiceDetail from "@/app/components/sales/invoices/SalesInvoiceDetail";
+import { SalesInvoiceForm } from "@/app/components/sales/invoices/SalesInvoiceForm";
 
 type PageProps = {
   params: Promise<{
@@ -11,9 +11,5 @@ type PageProps = {
 export default async function SalesInvoicePage({ params }: PageProps) {
   const { slug, id } = await params;
 
-  return (
-    <div className="min-h-screen bg-gray-50/30 py-8">
-      <SalesInvoiceDetail slug={slug} invoiceId={id} />
-    </div>
-  );
+  return <SalesInvoiceForm slug={slug} id={id} />;
 }
