@@ -315,7 +315,7 @@ export class SalesReturnService {
     );
 
     return {
-      invoice: returnHeaderResult.rows[0],
+      return: returnHeaderResult.rows[0],
       lines: linesResult.rows,
       primary_address:
         addressResult.rows.find((x) => x.address_type === "primary") || null,

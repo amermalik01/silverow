@@ -218,7 +218,7 @@ export const SalesReturnForm: React.FC<Props> = ({
         if (payload && payload.success && payload.data) {
           const actualData = payload.data;
 
-          setReturnOrder(actualData.returnOrder || {});
+          setReturnOrder(actualData.return || {});
           setLines(actualData.lines || []);
 
           setPrimaryAddress(
