@@ -19,6 +19,10 @@ import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
 
+import PO_StockAllocationModal, {
+  PO_StockAllocationRecord,
+} from "@/app/components/shared/modals/PO_StockAllocationModal";
+
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 
@@ -54,12 +58,55 @@ export default function SalesReturnLines({
   const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
   const [vatOptions, setVatOptions] = useState<VatPostingOption[]>([]);
 
+  const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
+  const [activeAllocationLineId, setActiveAllocationLineId] = useState<
+    string | null
+  >(null);
+
   const linesWithKeys = useMemo(() => {
     return lines.map((line, idx) => ({
       ...line,
       _stableKey: line.id || line._key || `temp-return-line-${idx}`,
     }));
   }, [lines]);
+
+  const activeAllocationLine = useMemo(() => {
+    if (!activeAllocationLineId) return null;
+    return (
+      linesWithKeys.find((l) => l._stableKey === activeAllocationLineId) || null
+    );
+  }, [activeAllocationLineId, linesWithKeys]);
+
+  const handleSaveAllocations = (
+    allocationsData: PO_StockAllocationRecord[],
+  ) => {
+    if (!activeAllocationLineId) return;
+
+    setLines((prev) =>
+      prev.map((line, index) => {
+        const lineKey = line.id || line._key || `temp-return-line-${index}`;
+        if (lineKey !== activeAllocationLineId) return line;
+
+        const totalAllocated = allocationsData.reduce(
+          (sum, a) => sum + Number(a.quantity || 0),
+          0,
+        );
+        const lineQty = Number(line.quantity || 0);
+
+        return {
+          ...line,
+          allocations: allocationsData,
+          initialAllocations: allocationsData,
+          is_allocated: lineQty > 0 && totalAllocated === lineQty,
+        };
+      }),
+    );
+
+    setIsAllocationModalOpen(false);
+    setActiveAllocationLineId(null);
+  };
+
+  
 
   const createEmptyLine = (
     lineType: "ITEM" | "GL_ACCOUNT" | "COMMENT",
@@ -138,10 +185,10 @@ export default function SalesReturnLines({
     };
   };
 
-  const addItemLine = () => {
-    if (isReadonly) return;
-    setItemModalOpen(true);
-  };
+  // const addItemLine = () => {
+  //   if (isReadonly) return;
+  //   setItemModalOpen(true);
+  // };
 
   const addGLLine = () => {
     if (isReadonly) return;
@@ -370,14 +417,14 @@ export default function SalesReturnLines({
         </h3>
 
         <div className="flex items-center gap-2">
-          <Button
+          {/* <Button
             type="button"
             onClick={addItemLine}
             variant="add_line"
             disabled={isReadonly}
           >
             Select Item
-          </Button>
+          </Button> */}
 
           <Button
             type="button"
@@ -460,6 +507,19 @@ export default function SalesReturnLines({
               const displayNetAmount = Number(line.net_amount || 0);
               const displayVATAmount = Number(line.vat_amount || 0);
               const displayVatPercent = Number(line.vat_percent || 0);
+
+              const currentAllocations = line.allocations || [];
+              const totalAllocated = currentAllocations.reduce(
+                (sum, a) => sum + Number(a.quantity || 0),
+                0,
+              );
+              const isFullyAllocated =
+                displayQty > 0 && totalAllocated === displayQty;
+              const isPartiallyAllocated =
+                totalAllocated > 0 && totalAllocated < displayQty;
+              const isStockReceived = receivedQty > 0;
+
+              const isAllocationDisabled = !line.item_id || !line.warehouse_id;
 
               return (
                 <tr
@@ -649,6 +709,40 @@ export default function SalesReturnLines({
 
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">
+
+                      {line.line_type === "ITEM" ? (
+                        <button
+                          type="button"
+                          disabled={isAllocationDisabled}
+                          onClick={() => {
+                            setActiveAllocationLineId(line._stableKey);
+                            setIsAllocationModalOpen(true);
+                          }}
+                          className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                            isStockReceived
+                              ? "text-amber-500"
+                              : isFullyAllocated || line.is_allocated
+                                ? "text-emerald-500"
+                                : isPartiallyAllocated
+                                  ? "text-amber-500"
+                                  : "text-indigo-500"
+                          }`}
+                          title={
+                            isStockReceived
+                              ? `Stock Received (${receivedQty}/${displayQty})`
+                              : isFullyAllocated || line.is_allocated
+                                ? "Allocated Stock (Complete)"
+                                : isPartiallyAllocated
+                                  ? `Partially Allocated (${totalAllocated}/${displayQty})`
+                                  : "Not Allocated"
+                          }
+                        >
+                          <Icon icon="tabler:box-seam" className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <div className="w-4 h-4" />
+                      )}
+
                       {!isLineFulfilled ? (
                         <button
                           type="button"
@@ -716,6 +810,31 @@ export default function SalesReturnLines({
           setWarehouseIndex(null);
         }}
       />
+
+      {isAllocationModalOpen && activeAllocationLine && (
+        <PO_StockAllocationModal
+          key={`allocation-row-${activeAllocationLine._stableKey}`}
+          open={isAllocationModalOpen}
+          isReadonly={isReadonly}
+          onClose={() => {
+            setIsAllocationModalOpen(false);
+            setActiveAllocationLineId(null);
+          }}
+          targetQuantity={Number(activeAllocationLine.quantity || 0)}
+          itemId={activeAllocationLine.item_id || ""}
+          itemCode={activeAllocationLine.item_code || ""}
+          itemName={activeAllocationLine.item_name || ""}
+          warehouseId={activeAllocationLine.warehouse_id || ""}
+          warehouseName={activeAllocationLine.warehouse_name || ""}
+          uomName={activeAllocationLine.uom_name || ""}
+          initialAllocations={
+            activeAllocationLine.allocations ||
+            activeAllocationLine.initialAllocations ||
+            []
+          }
+          onSave={handleSaveAllocations}
+        />
+      )}
     </div>
   );
 }

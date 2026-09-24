@@ -94,24 +94,24 @@ export async function POST(req: NextRequest) {
     );
 
     // 3. Match payload lines to real database IDs and save allocations
-    // if (lines && Array.isArray(lines)) {
-    //   for (let i = 0; i < lines.length; i++) {
-    //     const payloadLine = lines[i];
-    //     const dbLine = savedLinesResult.rows[i];
+    if (lines && Array.isArray(lines)) {
+      for (let i = 0; i < lines.length; i++) {
+        const payloadLine = lines[i];
+        const dbLine = savedLinesResult.rows[i];
 
-    //     if (dbLine && payloadLine.allocations?.length > 0) {
-    //       await SalesReturnService.saveLineAllocations(
-    //         client,
-    //         companyId,
-    //         SalesReturnService,
-    //         dbLine.id,
-    //         dbLine.item_id,
-    //         dbLine.warehouse_id,
-    //         payloadLine.allocations,
-    //       );
-    //     }
-    //   }
-    // }
+        if (dbLine && payloadLine.allocations?.length > 0) {
+          await SalesReturnService.saveLineAllocations(
+            client,
+            companyId,
+            salesReturnID,
+            dbLine.id,
+            dbLine.item_id,
+            dbLine.warehouse_id,
+            payloadLine.allocations,
+          );
+        }
+      }
+    }
 
     await client.query("COMMIT");
     return NextResponse.json(

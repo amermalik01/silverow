@@ -32,13 +32,23 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
             SELECT json_agg(
               json_build_object(
                 'id', ia.id,
+                'source_allocation_id', ia.source_allocation_id,
                 'location_id', ia.warehouse_location_id,
+                'location_code', wl.code,
+                'location_name', wl.title,
                 'quantity', ia.allocated_quantity,
+                'return_quantity', ia.allocated_quantity,
+                'unit_cost', ia.unit_cost,
                 'batch_no', ia.batch_no,
+                'serial_no', ia.bin_code,
+                'bin_code', ia.bin_code,
                 'expiry_date', ia.expiry_date
               )
             )
             FROM inventory_allocations ia
+            LEFT JOIN warehouse_locations wl 
+              ON wl.id = ia.warehouse_location_id 
+             AND wl.company_id = $1
             WHERE ia.credit_note_line_id = cnl.id 
               AND ia.company_id = $1
               AND ia.status = 'ACTIVE'

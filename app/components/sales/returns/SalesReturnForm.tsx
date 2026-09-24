@@ -171,6 +171,19 @@ export const SalesReturnForm: React.FC<Props> = ({
 
   const isFormDisabled = !isEditMode || isCompleted;
 
+  useSalesReturnData({
+    id,
+    setReturnOrder,
+    setLines,
+    setPrimaryAddress,
+    setBillingAddress,
+    setShippingAddress,
+    setCurrencyConfig,
+    setMasterData,
+    show,
+    hide,
+  });
+
   const selectedCurrency = useMemo(() => {
     return (
       masterData?.currencies.find(
@@ -193,20 +206,7 @@ export const SalesReturnForm: React.FC<Props> = ({
     [lines],
   );
 
-  useSalesReturnData({
-    id,
-    setReturnOrder,
-    setLines,
-    setPrimaryAddress,
-    setBillingAddress,
-    setShippingAddress,
-    setCurrencyConfig,
-    setMasterData,
-    show,
-    hide,
-  });
-
-  useEffect(() => {
+  /* useEffect(() => {
     if (!id) return;
 
     show("Fetching Return Record...");
@@ -257,7 +257,7 @@ export const SalesReturnForm: React.FC<Props> = ({
     }
 
     loadMasterData();
-  }, []);
+  }, []); */
 
   const handleGeneralCustomerSelection = () => {
     setCustomerSelectionSource("general");
@@ -607,7 +607,9 @@ export const SalesReturnForm: React.FC<Props> = ({
 
   const fetchLatestLines = async (targetId: string) => {
     try {
-      const response = await fetch(`/api/sales/sales-returns/${targetId}/lines`);
+      const response = await fetch(
+        `/api/sales/sales-returns/${targetId}/lines`,
+      );
       if (!response.ok) return;
 
       const data = await response.json();

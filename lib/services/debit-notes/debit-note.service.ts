@@ -72,7 +72,7 @@ export class DebitNoteService {
     const whereClauses = [
       "dn.company_id = $1",
       // "dn.status::text != 'completed'",
-      "dn.is_posted = false"
+      "dn.is_posted = false",
       // "dn.status::text NOT IN ('completed', 'posted')",
     ];
 
@@ -1298,34 +1298,8 @@ export class DebitNoteService {
       );
     }
 
-    // 3. Validate total quantity
-    // const totalQty = allocations.reduce(
-    //   (sum, alloc) =>
-    //     sum + Number(alloc.return_quantity ?? alloc.allocated_quantity ?? 0),
-    //   0,
-    // );
-
-    // const lineQty = Number(lineResult.rows[0].quantity || 0);
-
-    // if (totalQty > lineQty) {
-    //   throw new Error(
-    //     `Return allocation (${totalQty}) exceeds debit note quantity (${lineQty})`,
-    //   );
-    // }
-
-    // 4. Insert fresh allocation records
+    // 3. Insert fresh allocation records
     for (const allocation of allocations) {
-      // const allocatedQty = Number(
-      //   alloc.return_quantity ?? alloc.allocated_quantity ?? 0,
-      // );
-      // if (allocatedQty <= 0) continue;
-
-      // if (!alloc.id) {
-      //   throw new Error(
-      //     "Return allocation must reference the original inventory allocation",
-      //   );
-      // }
-
       const returnQty = Number(allocation.return_quantity || 0);
 
       if (returnQty <= 0) {
@@ -1338,8 +1312,7 @@ export class DebitNoteService {
         );
       }
 
-      // 5. Validate source allocation
-
+      // 4. Validate source allocation
       let targetAllocationId = allocation.id;
 
       // Check if passed ID is a draft debit note allocation row
@@ -1398,30 +1371,12 @@ export class DebitNoteService {
         FOR UPDATE
         `;
 
-      // console.log("sourceQry ==== ", sourceQry);
-      // console.log("targetAllocationId ==== ", targetAllocationId);
-      // console.log("itemId ==== ", itemId);
-      // console.log("warehouseId ==== ", warehouseId);
-
       const sourceResult = await client.query(sourceQry, [
         targetAllocationId,
         companyId,
         itemId,
         warehouseId,
       ]);
-
-      /* ia.batch_no,
-          ia.bin_code,
-          ia.expiry_date,
-          ia.unit_cost,
-          ia.allocated_quantity,
-
-          COALESCE((
-            SELECT SUM(r.allocated_quantity)
-            FROM inventory_allocations r
-            WHERE r.source_allocation_id = ia.id
-              AND r.status = 'ACTIVE'
-          ), 0) AS already_returned */
 
       if (!sourceResult.rows.length) {
         throw new Error(
@@ -1466,19 +1421,7 @@ export class DebitNoteService {
         );
       }
 
-      // const originalQty = Number(source.allocated_quantity);
-      // const alreadyReturned = Number(source.already_returned);
-
-      // const availableToReturn = originalQty - alreadyReturned;
-
-      // if (allocatedQty > availableToReturn) {
-      //   throw new Error(
-      //     `Cannot return ${allocatedQty} units from allocation ${source.id}. ` +
-      //       `Only ${availableToReturn} units are available.`,
-      //   );
-      // }
-
-      // 6. Create draft DN allocation
+      // 5. Create draft DN allocation
 
       await client.query(
         `
@@ -1533,17 +1476,6 @@ export class DebitNoteService {
           source.unit_cost,
 
           returnQty * Number(source.unit_cost || 0),
-
-          // debitNoteLineId,
-          // itemId,
-          // warehouseId,
-          // alloc.location_id || null,
-          // alloc.batch_no || null,
-          // alloc.bin_code || null,
-          // alloc.expiry_date === "" ? null : alloc.expiry_date || null,
-          // allocatedQty,
-          // 0,
-          // 0,
         ],
       );
     }

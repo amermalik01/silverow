@@ -6,6 +6,7 @@ import { FetchParams, FetchResponse } from "@/types/table";
 import {
   SalesReturn,
   SalesReturnAddress,
+  SalesReturnDeAllocationRecord,
   SalesReturnLine,
   SalesReturnPayload,
 } from "@/types/sales-return";
@@ -277,7 +278,36 @@ export class SalesReturnService {
         wl.code AS location_code,
         wl.title AS location_name,
 
-        u.name AS uom_name
+        u.name AS uom_name,
+
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', ia.id,
+                'source_allocation_id', ia.source_allocation_id,
+                'location_id', ia.warehouse_location_id,
+                'location_code', ia_wl.code,
+                'location_name', ia_wl.title,
+                'quantity', ia.allocated_quantity,
+                'return_quantity', ia.allocated_quantity,
+                'unit_cost', ia.unit_cost,
+                'batch_no', ia.batch_no,
+                'serial_no', ia.bin_code,
+                'bin_code', ia.bin_code,
+                'expiry_date', ia.expiry_date
+              )
+            )
+            FROM inventory_allocations ia
+            LEFT JOIN warehouse_locations ia_wl 
+              ON ia_wl.id = ia.warehouse_location_id 
+             AND ia_wl.company_id = $2
+            WHERE ia.credit_note_line_id = cnl.id 
+              AND ia.company_id = $2
+              AND ia.status = 'ACTIVE'
+          ),
+          '[]'::json
+        ) AS allocations
 
       FROM credit_note_lines cnl
       LEFT JOIN items i ON cnl.item_id = i.id AND i.company_id = $2
@@ -286,7 +316,7 @@ export class SalesReturnService {
       LEFT JOIN warehouse_locations wl ON cnl.warehouse_id = wl.warehouse_id AND cnl.warehouse_location_id = wl.id AND w.company_id = $2
       LEFT JOIN uoms u ON cnl.uom_id = u.id AND u.company_id = $2
 
-      WHERE cnl.credit_note_id = $1 AND COALESCE(cnl.is_deleted, false) = false
+      WHERE cnl.credit_note_id = $1 AND cnl.company_id = $2 AND COALESCE(cnl.is_deleted, false) = false
       ORDER BY cnl.line_no
       `,
       [id, companyId],
@@ -721,6 +751,9 @@ export class SalesReturnService {
       companyId,
     ];
 
+    // console.log('updateQry ==== ',updateQry);
+    // console.log('qryParams ==== ',qryParams);
+
     await client.query(updateQry, qryParams);
 
     // Soft delete unlinked line entries
@@ -764,7 +797,7 @@ export class SalesReturnService {
             discount_type = $14,
             discount_value = $15,
             discount_amount = $16,
-            vat_percent = $18,
+            vat_percent = $17,
             vat_amount = $18,
             net_amount = $19,
             gross_amount = $20,
@@ -1114,6 +1147,223 @@ export class SalesReturnService {
       `,
       [shipmentStatus, returnStatus, creditNoteId],
     );
+  }
+
+
+  static async saveLineAllocations(
+    client: PoolClient,
+    companyId: string,
+    creditNoteId: string,
+    creditNoteLineId: string,
+    itemId: string,
+    warehouseId: string,
+    allocations: SalesReturnDeAllocationRecord[],
+  ): Promise<void> {
+    // 1. Lock check: Protect allocations if stock has already been physically received back
+    const lineResult = await client.query(
+      `
+      SELECT
+        id,
+        quantity,
+        COALESCE(returned_quantity, 0) AS returned_quantity
+      FROM credit_note_lines
+      WHERE id = $1
+        AND credit_note_id = $2
+        AND company_id = $3
+        AND is_deleted = false
+      FOR UPDATE
+      `,
+      [creditNoteLineId, creditNoteId, companyId],
+    );
+
+    if (!lineResult.rows.length) {
+      throw new Error("Credit note line not found");
+    }
+
+    const line = lineResult.rows[0];
+
+    // If stock has already been processed into inventory, keep allocation records locked
+    if (Number(line.returned_quantity || 0) > 0) {
+      return;
+    }
+
+    const lineQuantity = Number(line.quantity || 0);
+
+    // 2. Clear unposted draft allocations for this credit note line
+    await client.query(
+      `
+      DELETE FROM inventory_allocations
+      WHERE credit_note_line_id = $1 
+        AND company_id = $2 
+        AND inbound_entry_id IS NULL
+      `,
+      [creditNoteLineId, companyId],
+    );
+
+    if (!allocations || !allocations.length) return;
+
+    // Validate total quantity requested across all allocation lines
+    let totalReturnQty = 0;
+    for (const allocation of allocations) {
+      const qty = Number(allocation.return_quantity || 0);
+      if (qty < 0) {
+        throw new Error("Return quantity cannot be negative");
+      }
+      totalReturnQty += qty;
+    }
+
+    if (totalReturnQty > lineQuantity + 0.000001) {
+      throw new Error(
+        `Return allocation quantity (${totalReturnQty}) exceeds credit note line quantity (${lineQuantity})`,
+      );
+    }
+
+    // 3. Process each return allocation
+    for (const allocation of allocations) {
+      const returnQty = Number(allocation.return_quantity || 0);
+
+      if (returnQty <= 0) {
+        continue;
+      }
+
+      if (!allocation.id) {
+        throw new Error(
+          "Each return allocation must reference a source outbound sales allocation",
+        );
+      }
+
+      // 4. Resolve source allocation ID (handling draft edits gracefully)
+      let targetAllocationId = allocation.id;
+
+      const draftCheck = await client.query(
+        `
+        SELECT source_allocation_id 
+        FROM inventory_allocations 
+        WHERE id = $1 
+          AND company_id = $2 
+          AND credit_note_line_id IS NOT NULL
+        `,
+        [allocation.id, companyId],
+      );
+
+      if (draftCheck.rows.length && draftCheck.rows[0].source_allocation_id) {
+        targetAllocationId = draftCheck.rows[0].source_allocation_id;
+      }
+
+      // 5. Query root outbound sales allocation record
+      const sourceQry = `
+        SELECT
+          ia.id,
+          ia.company_id,
+          ia.item_id,
+          ia.warehouse_id,
+          ia.warehouse_location_id,
+          ia.outbound_entry_id,
+          ia.sales_order_line_id,
+          ia.sales_invoice_line_id,
+          ia.batch_no,
+          ia.bin_code,
+          ia.expiry_date,
+          ia.allocated_quantity,
+          ia.unit_cost,
+          ia.status
+        FROM inventory_allocations ia
+        WHERE ia.id = $1
+          AND ia.company_id = $2
+          AND ia.item_id = $3
+          AND ia.warehouse_id = $4
+          AND ia.credit_note_line_id IS NULL
+          AND ia.source_allocation_id IS NULL
+          AND ia.status = 'ACTIVE'
+        FOR UPDATE
+      `;
+
+      const sourceResult = await client.query(sourceQry, [
+        targetAllocationId,
+        companyId,
+        itemId,
+        warehouseId,
+      ]);
+
+      if (!sourceResult.rows.length) {
+        throw new Error(
+          `Source sales allocation ${allocation.id} not found or is not a valid outbound allocation record`,
+        );
+      }
+
+      const source = sourceResult.rows[0];
+
+      // 6. Check quantity already returned against this specific outbound allocation
+      const returnedResult = await client.query(
+        `
+        SELECT COALESCE(SUM(allocated_quantity), 0) AS returned_quantity
+        FROM inventory_allocations
+        WHERE source_allocation_id = $1
+          AND company_id = $2
+          AND status = 'ACTIVE'
+          AND credit_note_line_id IS NOT NULL
+        `,
+        [source.id, companyId],
+      );
+
+      const alreadyReturned = Number(
+        returnedResult.rows[0]?.returned_quantity || 0,
+      );
+
+      const originalQty = Number(source.allocated_quantity || 0);
+      const availableQty = originalQty - alreadyReturned;
+
+      if (returnQty > availableQty + 0.000001) {
+        const identifier = source.bin_code || source.batch_no || "selected line";
+        throw new Error(
+          `Cannot return ${returnQty} units for ${identifier}. Only ${Math.max(0, availableQty)} units remain eligible for return.`,
+        );
+      }
+
+      // 7. Insert draft Credit Note allocation row
+      await client.query(
+        `
+        INSERT INTO inventory_allocations (
+          company_id,
+          outbound_entry_id,
+          inbound_entry_id,
+          credit_note_line_id,
+          source_allocation_id,
+          sales_order_line_id,
+          sales_invoice_line_id,
+          item_id,
+          warehouse_id,
+          warehouse_location_id,
+          batch_no,
+          bin_code,
+          expiry_date,
+          allocated_quantity,
+          unit_cost,
+          total_cost,
+          allocation_method,
+          status
+        )
+        VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'FIFO', 'ACTIVE')
+        `,
+        [
+          companyId,
+          source.outbound_entry_id,
+          creditNoteLineId,
+          source.id,
+          source.sales_order_line_id,
+          source.sales_invoice_line_id,
+          source.item_id,
+          source.warehouse_id,
+          source.warehouse_location_id,
+          source.batch_no,
+          source.bin_code,
+          source.expiry_date,
+          returnQty,
+          source.unit_cost,
+          returnQty * Number(source.unit_cost || 0),
+        ],
+      );
+    }
   }
 }
 

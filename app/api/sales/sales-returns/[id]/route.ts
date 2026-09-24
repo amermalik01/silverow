@@ -81,24 +81,24 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     );
 
     // 2. Iterate safely using line order indexes to sync stock allocations
-    // if (lines && Array.isArray(lines)) {
-    //   for (let i = 0; i < lines.length; i++) {
-    //     const payloadLine = lines[i];
-    //     const matchedDbLine = dbLines[i];
+    if (lines && Array.isArray(lines)) {
+      for (let i = 0; i < lines.length; i++) {
+        const payloadLine = lines[i];
+        const matchedDbLine = dbLines[i];
 
-    //     if (matchedDbLine && payloadLine.allocations) {
-    //       await SalesReturnService.saveLineAllocations(
-    //         client,
-    //         companyId,
-    //         id,
-    //         matchedDbLine.id,
-    //         matchedDbLine.item_id,
-    //         matchedDbLine.warehouse_id,
-    //         payloadLine.allocations || [],
-    //       );
-    //     }
-    //   }
-    // }
+        if (matchedDbLine && payloadLine.allocations) {
+          await SalesReturnService.saveLineAllocations(
+            client,
+            companyId,
+            id,
+            matchedDbLine.id,
+            matchedDbLine.item_id,
+            matchedDbLine.warehouse_id,
+            payloadLine.allocations || [],
+          );
+        }
+      }
+    }
 
     await client.query("COMMIT");
     return NextResponse.json({ success: true });

@@ -1,5 +1,7 @@
 // types/sales-return.ts
 
+import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
+
 export type SalesReturnStatus = string;
 
 export type SalesReturn = {
@@ -203,10 +205,10 @@ export interface SalesReturnLineUI extends SalesReturnLine {
   available_stock?: string | number;
   is_allocated?: boolean;
 
-  // allocations?: SO_StockAllocationRecord[];
-  // initialAllocations?: SO_StockAllocationRecord[];
-  // stock_allocations?: SO_StockAllocationRecord[];
-  // po_line_allocations?: SO_StockAllocationRecord[];
+  allocations?: PO_StockAllocationRecord[];
+  initialAllocations?: PO_StockAllocationRecord[];
+  stock_allocations?: PO_StockAllocationRecord[];
+  po_line_allocations?: PO_StockAllocationRecord[];
 }
 
 export interface LookupItem {
@@ -366,3 +368,13 @@ export type SalesReturnListing = {
   linked_pos_1?: string;
   converted_to_so_by_name?: string;
 };
+
+
+export interface SalesReturnDeAllocationRecord {
+  id?: string;                   // ID of the source allocation (or existing draft return allocation)
+  return_quantity: number;        // Quantity being returned
+  location_id?: string | null;
+  batch_no?: string | null;
+  serial_no?: string | null;
+  expiry_date?: string | null;
+}
