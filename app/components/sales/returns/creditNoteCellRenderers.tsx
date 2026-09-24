@@ -30,20 +30,26 @@ const formatAmount = (val?: string | number | null): React.ReactNode => {
 
 const formatStatusBadge = (status?: string | null): React.ReactNode => {
   if (!status) return "-";
-  
+
   const statusUpper = status.toUpperCase();
-  let badgeClass = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+  let badgeClass =
+    "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
 
   if (["POSTED", "PAID", "CREDITED", "COMPLETED"].includes(statusUpper)) {
-    badgeClass = "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
+    badgeClass =
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
   } else if (["DRAFT", "PENDING", "UNINVOICED"].includes(statusUpper)) {
-    badgeClass = "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800";
+    badgeClass =
+      "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800";
   } else if (["CANCELLED", "REJECTED", "VOID"].includes(statusUpper)) {
-    badgeClass = "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800";
+    badgeClass =
+      "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800";
   }
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${badgeClass}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${badgeClass}`}
+    >
       {status}
     </span>
   );
@@ -54,7 +60,7 @@ export function getCreditNoteCellRenderers(slug: string, isPosted = false) {
     // Identifier Links & Numbers
     credit_note_no: (row: SalesReturn) => (
       <Link
-        href={`/${slug}/sales/credit-notes/${row.id}${isPosted ? "/view" : "/edit"}`}
+        href={`/${slug}/sales/returns/${row.id}${!isPosted ? "/edit" : "/view"}`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
         {row.credit_note_no || "Draft"}
@@ -62,7 +68,7 @@ export function getCreditNoteCellRenderers(slug: string, isPosted = false) {
     ),
     posted_credit_note_no: (row: SalesReturn) => (
       <Link
-        href={`/${slug}/sales/credit-notes/${row.id}/view`}
+        href={`/${slug}/sales/returns/${row.id}`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
         {row.posted_credit_note_no || "-"}
@@ -79,17 +85,19 @@ export function getCreditNoteCellRenderers(slug: string, isPosted = false) {
     customer_no: (row: SalesReturn) => row.customer_no || "-",
     customer_name: (row: SalesReturn) => row.customer_name || "-",
     bill_to_customer_no: (row: SalesReturn) => row.bill_to_customer_no || "-",
-    bill_to_customer_name: (row: SalesReturn) => row.bill_to_customer_name || "-",
+    bill_to_customer_name: (row: SalesReturn) =>
+      row.bill_to_customer_name || "-",
     contact: (row: SalesReturn) => row.contact || "-",
     email: (row: SalesReturn) => row.email || "-",
 
     // Statuses & Classifications
     status: (row: SalesReturn) => formatStatusBadge(row.status),
     credit_status: (row: SalesReturn) => formatStatusBadge(row.credit_status),
-    shipment_status: (row: SalesReturn) => formatStatusBadge(row.shipment_status),
+    shipment_status: (row: SalesReturn) =>
+      formatStatusBadge(row.shipment_status),
     invoice_status: (row: SalesReturn) => formatStatusBadge(row.invoice_status),
     salesperson: (row: SalesReturn) => row.salesperson || "-",
-    currency_id: (row: SalesReturn) => row.currency_id ||  "GBP",
+    currency_id: (row: SalesReturn) => row.currency_id || "GBP",
 
     // Dates
     posting_date: (row: SalesReturn) => formatDate(row.posting_date),
@@ -97,7 +105,8 @@ export function getCreditNoteCellRenderers(slug: string, isPosted = false) {
     order_date: (row: SalesReturn) => formatDate(row.order_date),
     receipt_date: (row: SalesReturn) => formatDate(row.receipt_date),
     dispatch_date: (row: SalesReturn) => formatDate(row.dispatch_date),
-    requested_delivery_date: (row: SalesReturn) => formatDate(row.requested_delivery_date),
+    requested_delivery_date: (row: SalesReturn) =>
+      formatDate(row.requested_delivery_date),
     delivery_date: (row: SalesReturn) => formatDate(row.delivery_date),
     due_date: (row: SalesReturn) => formatDate(row.due_date),
     created_at: (row: SalesReturn) => formatDate(row.created_at),
@@ -109,7 +118,8 @@ export function getCreditNoteCellRenderers(slug: string, isPosted = false) {
     discount_amount: (row: SalesReturn) => formatAmount(row.discount_amount),
     freight_charges: (row: SalesReturn) => formatAmount(row.freight_charges),
     finance_charges: (row: SalesReturn) => formatAmount(row.finance_charges),
-    insurance_charges: (row: SalesReturn) => formatAmount(row.insurance_charges),
+    insurance_charges: (row: SalesReturn) =>
+      formatAmount(row.insurance_charges),
     vat_amount: (row: SalesReturn) => formatAmount(row.vat_amount),
     total_amount: (row: SalesReturn) => formatAmount(row.total_amount),
     credited_amount: (row: SalesReturn) => formatAmount(row.credited_amount),
@@ -123,7 +133,8 @@ export function getCreditNoteCellRenderers(slug: string, isPosted = false) {
     shipping_agent: (row: SalesReturn) => row.shipping_agent || "-",
     shipment_ref_no: (row: SalesReturn) => row.shipment_ref_no || "-",
     warehouse_ref_no: (row: SalesReturn) => row.warehouse_ref_no || "-",
-    cust_warehouse_ref_no: (row: SalesReturn) => row.cust_warehouse_ref_no || "-",
+    cust_warehouse_ref_no: (row: SalesReturn) =>
+      row.cust_warehouse_ref_no || "-",
 
     // Logistics & Book-In Contacts
     book_in_phone: (row: SalesReturn) => row.book_in_phone || "-",

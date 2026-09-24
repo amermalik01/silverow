@@ -64,7 +64,7 @@ export function useSalesReturnData({
       show("Fetching Record...");
 
       try {
-        const response = await fetch(`/api/sales/returns/${id}`);
+        const response = await fetch(`/api/sales/sales-returns/${id}`);
 
         const payload = await response.json();
 
@@ -122,7 +122,7 @@ export function useSalesReturnData({
   useEffect(() => {
     async function loadMasterData() {
       try {
-        const response = await fetch("/api/sales/returns/master-data");
+        const response = await fetch("/api/sales/sales-orders/master-data");
 
         if (!response.ok) {
           throw new Error("Failed to load master data");

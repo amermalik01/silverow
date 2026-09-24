@@ -31,7 +31,7 @@ export default function SalesReturnList({ slug }: Props) {
   const fetchCreditNotes = async (
     params: FetchParams,
   ): Promise<FetchResponse<SalesReturn>> => {
-    const res = await fetch("/api/sales/returns/listing", {
+    const res = await fetch("/api/sales/sales-returns/listing", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -89,7 +89,7 @@ export default function SalesReturnList({ slug }: Props) {
 
       <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
         <DataTable<SalesReturn>
-          moduleKey="sales_credit_notes"
+          moduleKey="credit_note"
           fetchApi={fetchCreditNotes}
           columnsConfigApi={columnsConfigApi}
           renderRowCell={renderRowCell}

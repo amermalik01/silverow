@@ -100,7 +100,7 @@ export class SalesReturnService {
         } else if (colKey === "sales_invoice") {
           queryValues.push(`%${filter.value}%`);
           whereClauses.push(`cn.sales_invoice ILIKE $${queryValues.length}`);
-        } else if (colKey === "sell_to_cust_name") {
+        } else if (colKey === "customer_name") {
           queryValues.push(`%${filter.value}%`);
           whereClauses.push(`cn.customer_name ILIKE $${queryValues.length}`);
         } else if (colKey === "cust_return_no") {
@@ -175,8 +175,8 @@ export class SalesReturnService {
     const dataQuery = `
       SELECT DISTINCT ON (cn.id, ${orderByColumn})
         cn.id,
-        cn.credit_note_no AS sale_order_code,
-        cn.sales_invoice AS invoice_no,
+        cn.credit_note_no,
+        cn.sales_invoice,
         cn.cust_return_no,
         cn.cust_order_no,
         cn.posting_date,
@@ -199,8 +199,8 @@ export class SalesReturnService {
         
         -- Joined Labels & Classifications
         cos.name AS current_stage,
-        cn.customer_no AS sell_to_cust_no,
-        cn.customer_name AS sell_to_cust_name,
+        cn.customer_no,
+        cn.customer_name,
         c.code AS currency_code,
         COALESCE(e.display_name, TRIM(CONCAT(e.first_name, ' ', e.last_name)), cn.salesperson) AS sale_person,
         sm.name AS shipment_method_code,
