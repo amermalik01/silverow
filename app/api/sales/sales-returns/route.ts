@@ -3,198 +3,133 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
-import { SalesReturnPayload } from "@/types/sales-return";
 import { SalesReturnService } from "@/lib/services/sales/sales-return.service";
 
-export async function GET(request: NextRequest) {
-  const client = await pool.connect();
+export async function GET(req: NextRequest) {
   try {
     const companyId = await getCompanyId();
+
     if (!companyId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
-    const { searchParams } = request.nextUrl;
-    const search = searchParams.get("search") || "";
-    const status = searchParams.get("status") || "ALL";
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.max(1, parseInt(searchParams.get("limit") || "10", 10));
+    const { searchParams } = new URL(req.url);
+    const page = searchParams.get("page");
+    const pageSize = searchParams.get("pageSize");
+    const search = searchParams.get("search");
 
-    const result = await SalesReturnService.getList(client, {
-      companyId,
-      search,
-      status,
-      page,
-      limit,
-    });
+    // If pagination parameters are present, call listPaginated; otherwise fall back to list
+    if (page || pageSize || search) {
+      const data = await SalesReturnService.listPaginated(companyId, {
+        page: Number(page) || 1,
+        pageSize: Number(pageSize) || 20,
+        search: search || "",
+      });
+
+      return NextResponse.json({
+        success: true,
+        ...data,
+      });
+    }
+
+    const data = await SalesReturnService.listPaginated(companyId, {});
 
     return NextResponse.json({
       success: true,
-      ...result,
+      data: data.data,
+      totalRecords: data.totalRecords,
     });
-  } catch (error) {
-    console.error("Failed to fetch commercial returns directory:", error);
+  } catch (err) {
+    console.error("Sales return list error:", err);
+
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
+      {
+        success: false,
+        error: "Failed to load sales returns",
+      },
+      {
+        status: 500,
+      },
     );
-  } finally {
-    client.release();
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   const client = await pool.connect();
   try {
     const companyId = await getCompanyId();
     if (!companyId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
-    const payload = (await request.json()) as SalesReturnPayload;
+    const body = await req.json();
+    const { lines } = body;
 
     await client.query("BEGIN");
 
-    const seqResult = await client.query(
-      `SELECT get_next_sequence($1, $2) AS code`,
-      [companyId, "sales_return"],
-    );
-    const returnNo: string = seqResult.rows[0]?.code || `SR-${Date.now()}`;
+    // 1. Create base document shell and lines
+    const createdReturn = await SalesReturnService.create(companyId, body);
 
-    const salesReturn = await SalesReturnService.create(
-      client,
-      companyId,
-      payload,
-      returnNo,
-    );
-
-    await client.query("COMMIT");
-    return NextResponse.json({
-      success: true,
-      id: salesReturn.id,
-      return_no: salesReturn.return_no,
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Aborted creating sales return:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Database transaction rejected" },
-      { status: 500 },
-    );
-  } finally {
-    client.release();
-  }
-}
-
-/* import { NextRequest, NextResponse } from "next/server";
-import { pool } from "@/lib/db";
-import { getCompanyId } from "@/lib/auth/getCompanyId";
-import { SalesReturnService } from "@/lib/services/sales/sales-return.service";
-
-interface IncomingRequestLine {
-  lineNo: number;
-  lineType: "ITEM" | "GL_ACCOUNT";
-  itemId?: string | null;
-  glAccountId?: string | null;
-  warehouseId?: string | null;
-  description?: string | null;
-  quantity: number;
-  unitPrice: number;
-  discountAmount: number;
-  vatPercent: number;
-}
-
-export async function GET(request: NextRequest) {
-  const client = await pool.connect();
-  try {
-    const companyId = await getCompanyId();
-    if (!companyId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!createdReturn || !createdReturn.id) {
+      throw new Error(
+        "Failed to generate a valid sales return identification sequence.",
+      );
     }
 
-    const { searchParams } = request.nextUrl;
+    const salesReturnID: string = createdReturn.id;
 
-    const search = searchParams.get("search") || "";
-    const status = searchParams.get("status") || "ALL";
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.max(1, parseInt(searchParams.get("limit") || "10", 10));
+    // 2. Fetch newly created lines to extract their primary key IDs
+    const savedLinesResult = await client.query(
+      `SELECT id, item_id, warehouse_id, line_no 
+       FROM credit_note_lines 
+       WHERE credit_note_id = $1 AND COALESCE(is_deleted, false) = false 
+       ORDER BY line_no`,
+      [salesReturnID],
+    );
 
-    const result = await SalesReturnService.getList(client, {
-      companyId,
-      search,
-      status,
-      page,
-      limit,
-    });
+    // 3. Match payload lines to real database IDs and save allocations
+    // if (lines && Array.isArray(lines)) {
+    //   for (let i = 0; i < lines.length; i++) {
+    //     const payloadLine = lines[i];
+    //     const dbLine = savedLinesResult.rows[i];
 
-    return NextResponse.json({
-      success: true,
-      ...result,
-    });
-  } catch (error) {
-    console.error("Failed to fetch commercial returns directory:", error);
+    //     if (dbLine && payloadLine.allocations?.length > 0) {
+    //       await SalesReturnService.saveLineAllocations(
+    //         client,
+    //         companyId,
+    //         SalesReturnService,
+    //         dbLine.id,
+    //         dbLine.item_id,
+    //         dbLine.warehouse_id,
+    //         payloadLine.allocations,
+    //       );
+    //     }
+    //   }
+    // }
+
+    await client.query("COMMIT");
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { success: true, data: createdReturn },
+      { status: 201 },
+    );
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Sales return create error:", err);
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          err instanceof Error ? err.message : "Failed to create sales return",
+      },
       { status: 500 },
     );
   } finally {
     client.release();
   }
 }
-
-export async function POST(request: Request) {
-  const client = await pool.connect();
-  try {
-    const companyId = await getCompanyId();
-    if (!companyId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-
-    // 1. Sanitize incoming text variations to prevent FK Constraint failures
-    const sanitizedInvoiceId =
-      body.salesInvoiceId && body.salesInvoiceId.trim() !== ""
-        ? body.salesInvoiceId
-        : null;
-
-    // Execute inside an isolated database transactional envelope
-    await client.query("BEGIN");
-
-    const result = await SalesReturnService.create(client, {
-      companyId: companyId,
-      customerId: body.customerId,
-      salesInvoiceId: sanitizedInvoiceId, // Pass sanitized null or valid UUID string here
-      returnDate: body.returnDate,
-      currencyId: body.currencyId,
-      exchangeRate: Number(body.exchangeRate || 1.0),
-      notes: body.notes || null,
-      lines: body.lines.map((line: IncomingRequestLine) => ({
-        ...line,
-        // Make sure row references also transform empty strings to null safely
-        itemId: line.itemId && line.itemId.trim() !== "" ? line.itemId : null,
-        glAccountId:
-          line.glAccountId && line.glAccountId.trim() !== ""
-            ? line.glAccountId
-            : null,
-        warehouseId:
-          line.warehouseId && line.warehouseId.trim() !== ""
-            ? line.warehouseId
-            : null,
-        description: line.description || null,
-      })),
-    });
-
-    await client.query("COMMIT");
-    return NextResponse.json({ success: true, ...result });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Aborted creating sales return:", error);
-    return NextResponse.json(
-      { error: "Database transaction rejected" },
-      { status: 500 },
-    );
-  } finally {
-    client.release();
-  }
-} */

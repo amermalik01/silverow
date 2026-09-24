@@ -47,6 +47,10 @@ import CustomerLookupModal, {
   CustomerLookupItem,
 } from "../orders/CustomerLookupModal";
 import CustomerDeliveryLocationModal from "../orders/CustomerDeliveryLocationModal";
+import {
+  SalesInvoiceLookupItem,
+  SalesInvoiceLookupModal,
+} from "./SalesInvoiceLookupModal";
 
 type Props = {
   slug: string;
@@ -151,6 +155,7 @@ export const SalesReturnForm: React.FC<Props> = ({
   const isUpdateMode = !!id;
 
   const [SalesPersonModalOpen, setSalesPersonModalOpen] = useState(false);
+  const [SIModalOpen, setSIModalOpen] = useState(false);
 
   // Add states for modal control
   const [showShipModal, setShowShipModal] = useState(false);
@@ -206,7 +211,7 @@ export const SalesReturnForm: React.FC<Props> = ({
 
     show("Fetching Return Record...");
 
-    fetch(`/api/sales/returns/${id}`)
+    fetch(`/api/sales/sales-returns/${id}`)
       .then((r) => r.json())
       .then((payload) => {
         hide();
@@ -241,7 +246,7 @@ export const SalesReturnForm: React.FC<Props> = ({
   useEffect(() => {
     async function loadMasterData() {
       try {
-        const res = await fetch("/api/sales/returns/master-data");
+        const res = await fetch("/api/sales/sales-orders/master-data");
         if (!res.ok) throw new Error();
 
         const data = await res.json();
@@ -385,6 +390,103 @@ export const SalesReturnForm: React.FC<Props> = ({
     setSalesPersonModalOpen(true);
   };
 
+  const handleSelectSalesInvoice = async (invoice: SalesInvoiceLookupItem) => {
+    setReturnOrder((prev) => ({
+      ...prev,
+      sales_invoice: invoice.sales_invoice_no,
+      sales_invoice_id: invoice.id,
+    }));
+    setSIModalOpen(false);
+
+    // Fetch Lines from selected Sales Invoice to allocate stock quantities
+    try {
+      show("Fetching invoice lines...");
+      const res = await fetch(`/api/sales/sales-orders/${invoice.id}`);
+      const payload = await res.json();
+      hide();
+
+      if (payload?.success && payload.data) {
+        const {
+          lines: fetchedRawLines,
+          primary_address,
+          billing_address,
+          shipping_address,
+        } = payload.data;
+
+        // Hydrate header addresses if available from PO
+        if (primary_address) setPrimaryAddress(primary_address);
+        if (billing_address) setBillingAddress(billing_address);
+        if (shipping_address) setShippingAddress(shipping_address);
+
+        if (Array.isArray(fetchedRawLines)) {
+          const mappedLines: SalesReturnLineUI[] = fetchedRawLines.map(
+            (l: SalesReturnLineUI, idx: number) => ({
+              ...l,
+              id: undefined,
+
+              _stableKey:
+                l._stableKey ||
+                l.id ||
+                `invoice-line-${invoice.id}-${idx}-${crypto.randomUUID()}`,
+
+              line_no: idx + 1,
+              sales_invoice_line_id: l.id || l.sales_invoice_line_id,
+
+              line_type: l.line_type || "ITEM",
+
+              item_id: l.item_id,
+              item_code: l.item_code || "",
+              item_name: l.item_name || l.description || "",
+
+              description: l.description || "",
+
+              warehouse_id: l.warehouse_id || "",
+              warehouse_name: l.warehouse_name || "",
+              //   warehouse_location_id: l.warehouse_location_id,
+
+              uom_id: l.uom_id || "",
+              uom_name: l.uom_name || "",
+
+              gl_account_id: l.gl_account_id,
+              account_code: l.account_code,
+
+              quantity: Number(l.quantity || 0),
+              unit_price: Number(l.unit_price || 0),
+
+              discount_type: l.discount_type || "PERCENT",
+              discount_value: Number(l.discount_value || 0),
+              discount_amount: Number(l.discount_amount || 0),
+
+              original_amount: Number(
+                l.original_amount ??
+                  Number(l.quantity || 0) * Number(l.unit_price || 0),
+              ),
+
+              vat_percent: Number(l.vat_percent || 0),
+              vat_amount: Number(l.vat_amount || 0),
+              net_amount: Number(l.net_amount || 0),
+              gross_amount: Number(l.gross_amount || 0),
+
+              allocations: [],
+              initialAllocations: [],
+              is_allocated: false,
+              returned_quantity: Number(l.returned_quantity || 0),
+            }),
+          );
+
+          setLines(mappedLines);
+          toast.success(
+            `Imported ${mappedLines.length} line items from Sales Invoice ${invoice.sales_invoice_no}`,
+          );
+        }
+      }
+    } catch (err) {
+      hide();
+      console.error("Failed to load Sales invoice lines:", err);
+      toast.error("Error populating lines from Sales invoice.");
+    }
+  };
+
   const updateReturnField = <K extends keyof SalesReturn>(
     field: K,
     value: SalesReturn[K],
@@ -416,7 +518,7 @@ export const SalesReturnForm: React.FC<Props> = ({
 
     try {
       const response = await fetch(
-        `/api/sales/returns/${returnOrder.id}/lines`,
+        `/api/sales/sales-returns/${returnOrder.id}/lines`,
       );
       if (!response.ok) {
         throw new Error(`Failed to fetch lines: ${response.statusText}`);
@@ -458,7 +560,7 @@ export const SalesReturnForm: React.FC<Props> = ({
       };
 
       const response = await fetch(
-        id ? `/api/sales/returns/${id}` : "/api/sales/returns",
+        id ? `/api/sales/sales-returns/${id}` : "/api/sales/sales-returns",
         {
           method: id ? "PUT" : "POST",
           headers: {
@@ -505,7 +607,7 @@ export const SalesReturnForm: React.FC<Props> = ({
 
   const fetchLatestLines = async (targetId: string) => {
     try {
-      const response = await fetch(`/api/sales/returns/${targetId}/lines`);
+      const response = await fetch(`/api/sales/sales-returns/${targetId}/lines`);
       if (!response.ok) return;
 
       const data = await response.json();
@@ -539,7 +641,7 @@ export const SalesReturnForm: React.FC<Props> = ({
 
     setIsUpdatingStatus(true);
     try {
-      const response = await fetch(`/api/sales/returns/${id}/stage`, {
+      const response = await fetch(`/api/sales/sales-returns/${id}/stage`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage_id: targetStage.id }),
@@ -579,7 +681,7 @@ export const SalesReturnForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
-      const response = await fetch(`/api/sales/returns/${id}/post`, {
+      const response = await fetch(`/api/sales/sales-returns/${id}/post`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -791,6 +893,7 @@ export const SalesReturnForm: React.FC<Props> = ({
           onGeneralCustomerSelect={handleGeneralCustomerSelection}
           onInvoicingCustomerSelect={handleInvoicingCustomerSelection}
           setLocationModalOpen={setLocationModalOpen}
+          setSIModalOpen={setSIModalOpen}
           onShippingAgentSelect={handleShippingAgentSelection}
           setSalesPersonModalOpen={handleSalesPersonSelection}
           labelStyle={labelStyle}
@@ -1062,6 +1165,15 @@ export const SalesReturnForm: React.FC<Props> = ({
           }}
         />
       )}
+
+      <SalesInvoiceLookupModal
+        isOpen={SIModalOpen}
+        onClose={() => setSIModalOpen(false)}
+        customerId={returnOrder.customer_id}
+        customerCode={returnOrder.customer_no}
+        customerName={returnOrder.customer_name}
+        onSelectInvoice={handleSelectSalesInvoice}
+      />
 
       {/* ======================================================
           DISPATCH CONFIRMATION

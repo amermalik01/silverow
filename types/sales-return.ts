@@ -21,6 +21,7 @@ export type SalesReturn = {
   vat_business_posting_group_id?: string;
 
   sales_invoice_id?: string;
+  sales_invoice?: string;
   stage_id?: string;
   stage_name?: string;
   current_stage?: string;
@@ -33,6 +34,7 @@ export type SalesReturn = {
   salesperson?: string;
   cust_return_no?: string;
   cust_order_no?: string;
+  consignment_no?: string;
 
   credit_note_date: string;
   posting_date?: string;

@@ -75,6 +75,7 @@ interface ReturnFormTabsProps {
   onGeneralCustomerSelect: () => void;
   onInvoicingCustomerSelect: () => void;
   setLocationModalOpen: (open: boolean) => void;
+  setSIModalOpen?: (open: boolean) => void;
 
   //   onPurchaseOrderSelect: () => void;
   onShippingAgentSelect: () => void;
@@ -103,6 +104,7 @@ export const ReturnFormTabs: React.FC<ReturnFormTabsProps> = ({
   onGeneralCustomerSelect,
   onInvoicingCustomerSelect,
   setLocationModalOpen,
+  setSIModalOpen,
 
   //   onPurchaseOrderSelect,
   onShippingAgentSelect,
@@ -375,22 +377,50 @@ export const ReturnFormTabs: React.FC<ReturnFormTabsProps> = ({
                   }
                 />
               </div>
-              {/* 
 
               <div className="grid grid-cols-12 items-center gap-2">
-                <label className={labelStyle} title="Original Sales Order No.">
-                  Original SO No.
+                <label className={labelStyle} title="Consignment No.">
+                  Cons. No.
                 </label>
                 <input
                   type="text"
                   className={inputStyle}
                   disabled={isReadOnly}
-                  value={returnOrder.original_order_no || ""}
+                  value={returnOrder.consignment_no || ""}
                   onChange={(e) =>
-                    updateField("original_order_no", e.target.value)
+                    updateField("consignment_no", e.target.value)
                   }
                 />
-              </div> */}
+              </div>
+
+              <div className="grid grid-cols-12 items-center gap-2">
+                <label className={labelStyle} title="Apply to Sales Invoice">
+                  Apply to SI
+                </label>
+                <div className="col-span-8 flex gap-1">
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
+                    className={`${inputStyle} font-mono`}
+                    placeholder="Select SI..."
+                    value={
+                      returnOrder.sales_invoice || returnOrder.link_to_po || ""
+                    }
+                  />
+                  {/* sales_invoice_id */}
+                  <button
+                    type="button"
+                    disabled={isReadOnly}
+                    onClick={() => {
+                      if (setSIModalOpen) setSIModalOpen(true);
+                    }}
+                    className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  >
+                    <Icon icon="tabler:external-link" className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
               {returnOrder.is_posted && (
                 <div className="grid grid-cols-12 items-center gap-2">
@@ -510,7 +540,7 @@ export const ReturnFormTabs: React.FC<ReturnFormTabsProps> = ({
                     readOnly
                     disabled
                     className={`${inputStyle} font-mono`}
-                    value={returnOrder.customer_no || "Click Select..."}
+                    value={returnOrder.bill_to_customer_no || "Click Select..."}
                   />
                   <button
                     type="button"
@@ -530,7 +560,7 @@ export const ReturnFormTabs: React.FC<ReturnFormTabsProps> = ({
                   type="text"
                   disabled={isSettingsDisabled}
                   className={inputStyle}
-                  value={returnOrder.customer_name || ""}
+                  value={returnOrder.bill_to_customer_name || ""}
                 />
               </div>
               <div className="grid grid-cols-12 items-center gap-2">

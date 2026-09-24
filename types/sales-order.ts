@@ -25,6 +25,7 @@ export type SalesOrder = {
 
   salesperson?: string;
   cust_order_no?: string;
+  consignment_no?: string;
   link_to_po?: string;
   sq_no?: string;
 

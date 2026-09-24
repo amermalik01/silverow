@@ -402,6 +402,21 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
               </div>
 
               <div className="grid grid-cols-12 items-center gap-2">
+                <label className={labelStyle} title="Consignment No.">
+                  Cons. No.
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  disabled={isReadOnly}
+                  value={order.consignment_no || ""}
+                  onChange={(e) =>
+                    updateField("consignment_no", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-12 items-center gap-2">
                 <label className={labelStyle} title="Sales Quote No.">
                   SQ No.
                 </label>

@@ -176,6 +176,8 @@ export const SalesOrderSchema = z.object({
   email: looseString,
   salesperson: looseString,
   cust_order_no: looseString,
+  consignment_no: looseString,
+  
   link_to_po: looseString,
   sq_no: looseString,
 

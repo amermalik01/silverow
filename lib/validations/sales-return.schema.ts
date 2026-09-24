@@ -170,6 +170,8 @@ export const SalesReturnSchema = z.object({
   cust_return_no: looseString,
   link_to_cm: looseString,
   cust_order_no: looseString,
+  consignment_no: looseString,
+  
   link_to_po: looseString,
   sq_no: looseString,
 

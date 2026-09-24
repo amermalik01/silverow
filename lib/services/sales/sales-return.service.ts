@@ -1,8 +1,1123 @@
-// /lib/services/sales/sales-return.service.ts
-
 // lib/services/sales/sales-return.service.ts
 
 import { PoolClient } from "pg";
+import { pool } from "@/lib/db";
+import { FetchParams, FetchResponse } from "@/types/table";
+import {
+  SalesReturn,
+  SalesReturnAddress,
+  SalesReturnLine,
+  SalesReturnPayload,
+} from "@/types/sales-return";
+
+export class SalesReturnService {
+  /**
+   * List paginated Sales Returns (Credit Notes)
+   */
+  static async listPaginated(
+    companyId: string,
+    params: FetchParams,
+  ): Promise<FetchResponse<SalesReturn>> {
+    const page = Math.max(1, Number(params.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(params.pageSize) || 20));
+    const filters = params.filters || {};
+    const search =
+      typeof params.search === "string" ? params.search.trim() : "";
+
+    const sortBy = params.sortBy;
+    const sortOrder =
+      params.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    const offset = (page - 1) * pageSize;
+
+    // Mapping table column keys to DB table columns
+    const SORT_FIELDS: Record<string, string> = {
+      posting_date: "cn.posting_date",
+      credit_note_date: "cn.credit_note_date",
+      credit_note_no: "cn.credit_note_no",
+      sales_invoice: "cn.sales_invoice",
+      cust_return_no: "cn.cust_return_no",
+      cust_order_no: "cn.cust_order_no",
+      current_stage: "cos.name",
+      sell_to_cust_no: "cn.customer_no",
+      sell_to_cust_name: "cn.customer_name",
+      sell_to_city: "cn.billing_address->>'city'",
+      sale_person: "cn.salesperson",
+      currency_code: "c.code",
+      net_amount: "cn.subtotal",
+      vat_amount: "cn.vat_amount",
+      grand_total: "cn.total_amount",
+      due_date: "cn.due_date",
+      requested_delivery_date: "cn.requested_delivery_date",
+      dispatch_date: "cn.dispatch_date",
+      delivery_date: "cn.delivery_date",
+      shipment_method_code: "sm.name",
+    };
+
+    const orderByColumn =
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "cn.credit_note_no";
+    const orderDirection = sortOrder === "ASC" ? "ASC" : "DESC";
+
+    const queryValues: (string | number)[] = [companyId];
+    const whereClauses = [
+      "cn.company_id = $1",
+      "cn.status::text != 'completed'",
+      "cn.is_posted = false",
+    ];
+
+    if (search) {
+      queryValues.push(`%${search}%`);
+      const searchParam = `$${queryValues.length}`;
+      whereClauses.push(
+        ` ( cn.credit_note_no ILIKE ${searchParam} OR 
+            cn.sales_invoice ILIKE ${searchParam} OR 
+            cn.customer_no ILIKE ${searchParam} OR 
+            cn.customer_name ILIKE ${searchParam} OR 
+            cos.name ILIKE ${searchParam} OR 
+            c.code ILIKE ${searchParam} OR 
+            sm.name ILIKE ${searchParam} OR 
+            cn.salesperson ILIKE ${searchParam} ) `,
+      );
+    }
+
+    // Dynamic Filter Parsing
+    Object.entries(filters).forEach(([colKey, filter]) => {
+      if (!filter) return;
+
+      if (filter.value !== undefined && filter.value !== "") {
+        if (colKey === "currency_code") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`c.code = $${queryValues.length}`);
+        } else if (colKey === "current_stage") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`cos.name = $${queryValues.length}`);
+        } else if (colKey === "status") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`cn.status::text = $${queryValues.length}`);
+        } else if (colKey === "credit_note_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.credit_note_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sales_invoice") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.sales_invoice ILIKE $${queryValues.length}`);
+        } else if (colKey === "sell_to_cust_name") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.customer_name ILIKE $${queryValues.length}`);
+        } else if (colKey === "cust_return_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.cust_return_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sale_person") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.salesperson ILIKE $${queryValues.length}`);
+        }
+      }
+
+      // Date & Range Filters
+      if (filter.from !== undefined && filter.from !== "") {
+        queryValues.push(filter.from);
+        const idx = queryValues.length;
+        if (colKey === "posting_date")
+          whereClauses.push(`cn.posting_date >= $${idx}::date`);
+        if (colKey === "credit_note_date")
+          whereClauses.push(`cn.credit_note_date >= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`cn.subtotal >= $${idx}::numeric`);
+      }
+
+      if (filter.to !== undefined && filter.to !== "") {
+        queryValues.push(filter.to);
+        const idx = queryValues.length;
+        if (colKey === "posting_date")
+          whereClauses.push(`cn.posting_date <= $${idx}::date`);
+        if (colKey === "credit_note_date")
+          whereClauses.push(`cn.credit_note_date <= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`cn.subtotal <= $${idx}::numeric`);
+      }
+    });
+
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // Shared SQL Join Clause
+    const joinSql = `
+      FROM credit_notes cn
+      
+      LEFT JOIN currencies c ON c.id = cn.currency_id
+      LEFT JOIN employees e ON (
+        e.company_id = cn.company_id AND (
+          e.id::text = cn.salesperson OR 
+          e.display_name ILIKE cn.salesperson OR
+          CONCAT(e.first_name, ' ', e.last_name) ILIKE cn.salesperson
+        )
+      )
+      
+      LEFT JOIN shipment_method sm ON sm.id = cn.shipment_method_id
+      LEFT JOIN common_order_stages cos ON cos.id = cn.stage_id       
+      LEFT JOIN credit_note_addresses cna 
+          ON cna.credit_note_id = cn.id 
+          AND cna.address_type = 'primary'
+      LEFT JOIN credit_note_addresses ship_a 
+          ON ship_a.credit_note_id = cn.id 
+          AND ship_a.address_type = 'shipping'
+    `;
+
+    // Total Count Query
+    const countQuery = `SELECT COUNT(DISTINCT cn.id) as total ${joinSql} ${whereSql}`;
+    const countResult = await pool.query(countQuery, queryValues);
+    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
+
+    // Paginated Record Set Query
+    const dataQueryValues = [...queryValues, pageSize, offset];
+    const limitIdx = dataQueryValues.length - 1;
+    const offsetIdx = dataQueryValues.length;
+
+    const dataQuery = `
+      SELECT DISTINCT ON (cn.id, ${orderByColumn})
+        cn.id,
+        cn.credit_note_no AS sale_order_code,
+        cn.sales_invoice AS invoice_no,
+        cn.cust_return_no,
+        cn.cust_order_no,
+        cn.posting_date,
+        cn.credit_note_date AS offer_date,
+        cn.due_date,
+        cn.requested_delivery_date,
+        cn.dispatch_date,
+        cn.delivery_date,
+        cn.subtotal AS net_amount,
+        cn.vat_amount AS vat_amount,
+        cn.total_amount AS grand_total,
+        (cn.finance_charges > 0) AS finance_charges_exists,
+        (cn.insurance_charges > 0) AS insurance_charges_exists,
+        cn.book_in_phone AS book_in_tel,
+        cn.book_in_contact AS comm_book_in_contact,
+        cn.book_in_email,
+        cn.warehouse_ref_no AS warehouse_booking_ref,
+        cn.cust_warehouse_ref_no AS customer_warehouse_ref,
+        cn.converted_by AS converted_to_so_by_name,
+        
+        -- Joined Labels & Classifications
+        cos.name AS current_stage,
+        cn.customer_no AS sell_to_cust_no,
+        cn.customer_name AS sell_to_cust_name,
+        c.code AS currency_code,
+        COALESCE(e.display_name, TRIM(CONCAT(e.first_name, ' ', e.last_name)), cn.salesperson) AS sale_person,
+        sm.name AS shipment_method_code,
+
+        -- Primary / Customer Address details
+        cna.address_1 AS customer_address,
+        cna.address_2 AS customer_address2,
+        cna.city AS city,
+        cna.county AS county,
+        cna.postcode AS post_code,
+        cna.country AS country,
+        cna.phone AS phone,
+        cna.email AS email,
+
+        -- Shipping Address details
+        ship_a.address_1 AS ship_to_address,
+        ship_a.address_2 AS ship_to_address2,
+        ship_a.city AS ship_to_city,
+        ship_a.county AS ship_to_county,
+        ship_a.postcode AS ship_to_post_code
+
+      ${joinSql}
+      ${whereSql}
+      ORDER BY ${orderByColumn} ${orderDirection}, cn.id ASC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `;
+
+    const dataResult = await pool.query(dataQuery, dataQueryValues);
+
+    return {
+      data: dataResult.rows,
+      totalRecords,
+    };
+  }
+
+  /**
+   * Get a single Credit Note with lines and addresses
+   */
+  static async get(companyId: string, id: string) {
+    const returnHeaderResult = await pool.query(
+      `
+      SELECT cn.*,
+        cn.sales_invoice AS invoice_no,
+        pt.name AS payment_terms,
+        pm.name AS payment_method,
+        sm.name AS shipment_method
+      FROM credit_notes cn
+      LEFT JOIN payment_terms pt ON pt.id = cn.payment_terms_id
+      LEFT JOIN payment_method pm ON pm.id = cn.payment_method_id
+      LEFT JOIN shipment_method sm ON sm.id = cn.shipment_method_id
+      WHERE cn.id = $1 AND cn.company_id = $2
+      `,
+      [id, companyId],
+    );
+
+    if (!returnHeaderResult.rows.length) return null;
+
+    const linesResult = await pool.query(
+      `
+      SELECT 
+        cnl.*, 
+        (cnl.quantity - COALESCE(cnl.returned_quantity, 0)) AS remaining_quantity,
+        
+        i.item_code,
+        i.name AS item_name,        
+
+        gl.code AS account_code,
+        gl.name AS account_name,        
+
+        w.code AS warehouse_code,
+        w.name AS warehouse_name,
+
+        cnl.warehouse_location_id AS location_id,
+        wl.code AS location_code,
+        wl.title AS location_name,
+
+        u.name AS uom_name
+
+      FROM credit_note_lines cnl
+      LEFT JOIN items i ON cnl.item_id = i.id AND i.company_id = $2
+      LEFT JOIN chart_of_accounts gl ON cnl.gl_account_id = gl.id AND gl.company_id = $2
+      LEFT JOIN warehouses w ON cnl.warehouse_id = w.id AND w.company_id = $2
+      LEFT JOIN warehouse_locations wl ON cnl.warehouse_id = wl.warehouse_id AND cnl.warehouse_location_id = wl.id AND w.company_id = $2
+      LEFT JOIN uoms u ON cnl.uom_id = u.id AND u.company_id = $2
+
+      WHERE cnl.credit_note_id = $1 AND COALESCE(cnl.is_deleted, false) = false
+      ORDER BY cnl.line_no
+      `,
+      [id, companyId],
+    );
+
+    const addressResult = await pool.query(
+      `SELECT
+          id,
+          address_type,
+          name,
+          attention,
+          contact_name,
+          contact_person,
+          phone,
+          email,
+          address_1,
+          address_2,
+          city,
+          state,
+          county,
+          postcode,
+          country
+        FROM credit_note_addresses
+        WHERE credit_note_id = $1`,
+      [id],
+    );
+
+    return {
+      invoice: returnHeaderResult.rows[0],
+      lines: linesResult.rows,
+      primary_address:
+        addressResult.rows.find((x) => x.address_type === "primary") || null,
+      billing_address:
+        addressResult.rows.find((x) => x.address_type === "billing") || null,
+      shipping_address:
+        addressResult.rows.find((x) => x.address_type === "shipping") || null,
+    };
+  }
+
+  /**
+   * Create a new Sales Return / Credit Note
+   */
+  static async create(
+    companyId: string,
+    rawPayload: unknown,
+  ): Promise<SalesReturn> {
+    const payload = rawPayload as SalesReturnPayload;
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+      const returnDoc = payload.returnOrder;
+
+      // Generate sequence number for credit note
+      const seqResult = await client.query(
+        `SELECT get_next_sequence($1, $2) AS code`,
+        [companyId, "sales_return"],
+      );
+      const creditNoteNo = seqResult.rows[0].code;
+
+      const customerResult = await client.query(
+        `SELECT id FROM parties WHERE id = $1 AND company_id = $2`,
+        [returnDoc.customer_id, companyId],
+      );
+      if (!customerResult.rows.length) throw new Error("Customer not found");
+
+      const customerPostingGroupId =
+        returnDoc.customer_posting_group_id ||
+        returnDoc.sales_posting_group_id ||
+        null;
+
+      const vatBusinessPostingGroupId =
+        returnDoc.vat_business_posting_group_id || null;
+
+      const returnResult = await client.query(
+        `
+          INSERT INTO credit_notes (
+            company_id,
+            credit_note_no,
+
+            customer_id,
+            customer_no,
+            customer_name,
+
+            bill_to_customer_id,
+            bill_to_customer_no,
+            bill_to_customer_name,
+
+            salesperson,
+            cust_order_no,
+            cust_return_no,
+            consignment_no,
+            link_to_po,
+            sales_invoice_id,
+            sales_invoice,
+
+            currency_id,
+            exchange_rate,
+
+            credit_note_date,
+            requested_delivery_date,
+            dispatch_date,
+            posting_date,
+            due_date,
+
+            reference,
+
+            receivable_bank,
+            receivable_bank_id,
+
+            payment_terms_id,
+            payment_method_id,
+
+            contact,
+            book_in_phone,
+            book_in_contact,
+            book_in_email,
+
+            shipment_method_id,
+            shipping_agent,
+            shipment_ref_no,
+            warehouse_ref_no,
+
+            reason,
+
+            notes,
+            internal_notes,
+
+            subtotal,
+            vat_amount,
+            total_amount,
+
+            status,
+            anonymous_customer,
+
+            customer_posting_group_id,
+            vat_business_posting_group_id,
+
+            created_at
+          )
+          VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+            $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+            $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+            $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
+            $41, $42, $43, $44, $45, NOW()
+          )
+          RETURNING *;
+        `,
+        [
+          companyId,
+          creditNoteNo,
+
+          returnDoc.customer_id,
+          returnDoc.customer_no,
+          returnDoc.customer_name,
+
+          returnDoc.customer_id,
+          returnDoc.customer_no,
+          returnDoc.customer_name,
+
+          returnDoc.salesperson,
+          returnDoc.cust_order_no,
+          returnDoc.reason || null, // mapped to cust_return_no if needed
+          null, // consignment_no
+          returnDoc.link_to_po,
+          returnDoc.sales_invoice_id || null,
+          returnDoc.sales_invoice || null,
+
+          returnDoc.currency_id,
+          returnDoc.exchange_rate || 1.0,
+
+          returnDoc.credit_note_date || null,
+          returnDoc.requested_delivery_date || null,
+          returnDoc.dispatch_date || null,
+          returnDoc.posting_date?.trim() ? returnDoc.posting_date : null,
+          returnDoc.due_date || null,
+
+          returnDoc.reference,
+
+          returnDoc.receivable_bank,
+          returnDoc.receivable_bank_id,
+
+          returnDoc.payment_terms_id,
+          returnDoc.payment_method_id,
+
+          returnDoc.contact,
+          returnDoc.book_in_phone,
+          returnDoc.book_in_contact,
+          returnDoc.book_in_email,
+
+          returnDoc.shipment_method_id,
+          returnDoc.shipping_agent,
+          returnDoc.shipment_ref_no,
+          returnDoc.warehouse_ref_no,
+
+          returnDoc.reason,
+
+          returnDoc.notes,
+          returnDoc.internal_notes,
+
+          returnDoc.subtotal || 0,
+          returnDoc.vat_amount || 0,
+          returnDoc.total_amount || 0,
+
+          returnDoc.status || "draft",
+          returnDoc.anonymous_customer || false,
+
+          customerPostingGroupId,
+          vatBusinessPostingGroupId,
+        ],
+      );
+
+      const createdReturn = returnResult.rows[0];
+      let lineNo = 10000;
+
+      for (const line of payload.lines) {
+        const entriesWithUndefined = Object.entries(line).map(
+          ([key, value]) => [key, value === null ? undefined : value],
+        );
+
+        const sanitizedLine = Object.fromEntries(
+          entriesWithUndefined,
+        ) as SalesReturnLine;
+
+        await this.insertLine(
+          client,
+          companyId,
+          createdReturn.id,
+          sanitizedLine,
+          lineNo,
+        );
+        lineNo += 10000;
+      }
+
+      if (payload.primary_address) {
+        await this.insertAddress(
+          client,
+          createdReturn.id,
+          payload.primary_address,
+          companyId,
+        );
+      }
+      if (payload.billing_address) {
+        await this.insertAddress(
+          client,
+          createdReturn.id,
+          payload.billing_address,
+          companyId,
+        );
+      }
+      if (payload.shipping_address) {
+        await this.insertAddress(
+          client,
+          createdReturn.id,
+          payload.shipping_address,
+          companyId,
+        );
+      }
+
+      await client.query("COMMIT");
+      return createdReturn;
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Update an existing Sales Return / Credit Note
+   */
+  static async update(
+    client: PoolClient,
+    companyId: string,
+    id: string,
+    rawPayload: unknown,
+  ): Promise<
+    { id: string; item_id: string; warehouse_id: string; line_no: number }[]
+  > {
+    const payload = rawPayload as SalesReturnPayload;
+    const returnDoc = payload.returnOrder;
+
+    const existingResult = await client.query(
+      `SELECT status, is_posted FROM credit_notes WHERE id = $1 AND company_id = $2`,
+      [id, companyId],
+    );
+
+    if (!existingResult.rows.length) {
+      throw new Error("Credit note not found");
+    }
+
+    if (
+      existingResult.rows[0].is_posted ||
+      existingResult.rows[0].status === "posted"
+    ) {
+      throw new Error("Posted credit note cannot be modified");
+    }
+
+    const customerPostingGroupId =
+      returnDoc.customer_posting_group_id ||
+      returnDoc.sales_posting_group_id ||
+      null;
+
+    const vatBusinessPostingGroupId =
+      returnDoc.vat_business_posting_group_id || null;
+
+    const updateQry = `
+      UPDATE credit_notes
+      SET
+        customer_id = $1,
+        customer_no = $2,
+        customer_name = $3,
+
+        bill_to_customer_id = $4,
+        bill_to_customer_no = $5,
+        bill_to_customer_name = $6,
+
+        salesperson = $7,
+        cust_order_no = $8,
+        cust_return_no = $9,
+        link_to_po = $10,
+        sales_invoice_id = $11,
+        sales_invoice = $12,
+
+        currency_id = $13,
+        exchange_rate = $14,
+
+        credit_note_date = $15,
+        requested_delivery_date = $16,
+        dispatch_date = $17,
+        posting_date = $18,
+        due_date = $19,
+
+        reference = $20,
+
+        receivable_bank = $21,
+        receivable_bank_id = $22,
+
+        payment_terms_id = $23,
+        payment_method_id = $24,
+
+        contact = $25,
+        book_in_phone = $26,
+        book_in_contact = $27,
+        book_in_email = $28,
+
+        shipment_method_id = $29,
+        shipping_agent = $30,
+        shipment_ref_no = $31,
+        warehouse_ref_no = $32,
+
+        reason = $33,
+
+        notes = $34,
+        internal_notes = $35,
+
+        subtotal = $36,
+        vat_amount = $37,
+        total_amount = $38,
+
+        status = $39,
+        anonymous_customer = $40,
+
+        customer_posting_group_id = $41,
+        vat_business_posting_group_id = $42,
+
+        updated_at = NOW()
+      WHERE id = $43 AND company_id = $44;
+    `;
+
+    const qryParams = [
+      returnDoc.customer_id,
+      returnDoc.customer_no,
+      returnDoc.customer_name,
+
+      returnDoc.bill_to_customer_id || returnDoc.customer_id,
+      returnDoc.bill_to_customer_no || returnDoc.customer_no,
+      returnDoc.bill_to_customer_name || returnDoc.customer_name,
+
+      returnDoc.salesperson,
+      returnDoc.cust_order_no,
+      returnDoc.reason || null,
+      returnDoc.link_to_po,
+      returnDoc.sales_invoice_id || null,
+      returnDoc.sales_invoice || null,
+
+      returnDoc.currency_id,
+      returnDoc.exchange_rate || 1.0,
+
+      returnDoc.credit_note_date || null,
+      returnDoc.requested_delivery_date || null,
+      returnDoc.dispatch_date || null,
+      returnDoc.posting_date?.trim() ? returnDoc.posting_date : null,
+      returnDoc.due_date || null,
+
+      returnDoc.reference,
+
+      returnDoc.receivable_bank,
+      returnDoc.receivable_bank_id,
+
+      returnDoc.payment_terms_id,
+      returnDoc.payment_method_id,
+
+      returnDoc.contact,
+      returnDoc.book_in_phone,
+      returnDoc.book_in_contact,
+      returnDoc.book_in_email,
+
+      returnDoc.shipment_method_id,
+      returnDoc.shipping_agent,
+      returnDoc.shipment_ref_no,
+      returnDoc.warehouse_ref_no,
+
+      returnDoc.reason,
+
+      returnDoc.notes,
+      returnDoc.internal_notes,
+
+      returnDoc.subtotal || 0,
+      returnDoc.vat_amount || 0,
+      returnDoc.total_amount || 0,
+
+      returnDoc.status || "draft",
+      returnDoc.anonymous_customer || false,
+
+      customerPostingGroupId,
+      vatBusinessPostingGroupId,
+
+      id,
+      companyId,
+    ];
+
+    await client.query(updateQry, qryParams);
+
+    // Soft delete unlinked line entries
+    const existingLinesResult = await client.query(
+      `SELECT id FROM credit_note_lines WHERE credit_note_id = $1 AND COALESCE(is_deleted, false) = false`,
+      [id],
+    );
+    const existingLineIds = existingLinesResult.rows.map((x) => x.id);
+    const incomingLineIds = payload.lines.map((x) => x.id).filter(Boolean);
+
+    for (const existingId of existingLineIds) {
+      if (!incomingLineIds.includes(existingId)) {
+        await client.query(
+          `UPDATE credit_note_lines SET is_deleted = true, updated_at = NOW() WHERE id = $1`,
+          [existingId],
+        );
+      }
+    }
+
+    // Upsert lines
+    let lineNo = 10000;
+    for (const line of payload.lines) {
+      if (line.id) {
+        await client.query(
+          `
+          UPDATE credit_note_lines
+          SET
+            line_type = $1,
+            item_id = $2,
+            item_code = $3,
+            item_name = $4,
+            gl_account_id = $5,
+            account_code = $6,
+            description = $7,
+            warehouse_id = $8,
+            warehouse_name = $9,
+            uom_id = $10,
+            uom_name = $11,
+            quantity = $12,
+            unit_price = $13,
+            discount_type = $14,
+            discount_value = $15,
+            discount_amount = $16,
+            vat_percent = $18,
+            vat_amount = $18,
+            net_amount = $19,
+            gross_amount = $20,
+            line_amount = $21,
+            line_no = $22,
+            updated_at = NOW()
+          WHERE id = $23
+          `,
+          [
+            line.line_type || "ITEM",
+            line.item_id || null,
+            line.item_code || null,
+            line.item_name || null,
+            line.gl_account_id || null,
+            line.account_code || null,
+            line.description || null,
+            line.warehouse_id || null,
+            line.warehouse_name || null,
+            line.uom_id || null,
+            line.uom_name || null,
+            line.quantity || 0,
+            line.unit_price || 0,
+            line.discount_type || null,
+            line.discount_value || 0,
+            line.discount_amount || 0,
+            line.vat_percent || 0,
+            line.vat_amount || 0,
+            line.net_amount || 0,
+            line.gross_amount || 0,
+            line.line_amount || line.net_amount || 0,
+            lineNo,
+            line.id,
+          ],
+        );
+      } else {
+        const entriesWithUndefined = Object.entries(line).map(
+          ([key, value]) => [key, value === null ? undefined : value],
+        );
+
+        const sanitizedLine = Object.fromEntries(
+          entriesWithUndefined,
+        ) as SalesReturnLine;
+
+        await this.insertLine(client, companyId, id, sanitizedLine, lineNo);
+      }
+      lineNo += 10000;
+    }
+
+    // Refresh addresses
+    await client.query(
+      `DELETE FROM credit_note_addresses WHERE credit_note_id = $1`,
+      [id],
+    );
+
+    if (payload.primary_address) {
+      await this.insertAddress(client, id, payload.primary_address, companyId);
+    }
+    if (payload.billing_address) {
+      await this.insertAddress(client, id, payload.billing_address, companyId);
+    }
+    if (payload.shipping_address) {
+      await this.insertAddress(client, id, payload.shipping_address, companyId);
+    }
+
+    await this.recalculateStatus(client, id);
+
+    const finalLines = await client.query<{
+      id: string;
+      item_id: string;
+      warehouse_id: string;
+      line_no: number;
+    }>(
+      `SELECT id, item_id, warehouse_id, line_no 
+       FROM credit_note_lines 
+       WHERE credit_note_id = $1 AND COALESCE(is_deleted, false) = false 
+       ORDER BY line_no`,
+      [id],
+    );
+
+    return finalLines.rows;
+  }
+
+  /**
+   * Delete a Sales Return / Credit Note shell
+   */
+  static async delete(companyId: string, id: string): Promise<void> {
+    const existing = await pool.query(
+      `SELECT status, is_posted FROM credit_notes WHERE id = $1 AND company_id = $2`,
+      [id, companyId],
+    );
+
+    if (!existing.rows.length) {
+      throw new Error("Credit note not found");
+    }
+
+    if (
+      existing.rows[0].is_posted ||
+      existing.rows[0].status === "posted" ||
+      existing.rows[0].status === "completed" ||
+      existing.rows[0].status === "processing"
+    ) {
+      throw new Error(
+        "Cannot delete document shell while historical ledger or inventory entries remain linked.",
+      );
+    }
+
+    const result = await pool.query(
+      `DELETE FROM credit_notes WHERE id = $1 AND company_id = $2`,
+      [id, companyId],
+    );
+
+    if (!result.rowCount) {
+      throw new Error("Credit note not found");
+    }
+  }
+
+  /**
+   * Insert line entry into credit_note_lines
+   */
+  static async insertLine(
+    client: PoolClient,
+    companyId: string,
+    creditNoteId: string,
+    line: SalesReturnLine,
+    lineNo: number,
+  ): Promise<void> {
+    await client.query(
+      `
+      INSERT INTO credit_note_lines (
+        company_id,
+        credit_note_id,
+        sales_invoice_line_id,
+
+        line_no,
+        line_type,
+
+        item_id,
+        item_code,
+        item_name,
+        gl_account_id,
+        account_code,
+
+        description,
+
+        warehouse_id,
+        warehouse_name,
+
+        uom_id,
+        uom_name,
+
+        quantity,
+        returned_quantity,
+
+        unit_price,
+
+        discount_type,
+        discount_value,
+        discount_amount,
+
+        vat_percent,
+        vat_amount,
+
+        net_amount,
+        gross_amount,
+        line_amount,
+
+        is_deleted,
+
+        created_at
+      )
+      VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15,
+        $16, $17, $18, $19, $20,
+        $21, $22, $23, $24, $25,
+        $26,
+        false,
+        NOW()
+      )
+      `,
+      [
+        companyId,
+        creditNoteId,
+        line.sales_invoice_line_id || null, // maps to sales_invoice_line_id
+        lineNo,
+        line.line_type || "ITEM",
+
+        line.item_id || null,
+        line.item_code || null,
+        line.item_name || null,
+        line.gl_account_id || null,
+        line.account_code || null,
+
+        line.description || null,
+
+        line.warehouse_id || null,
+        line.warehouse_name || null,
+
+        line.uom_id || null,
+        line.uom_name || null,
+
+        line.quantity || 0,
+        0, // initial returned_quantity
+
+        line.unit_price || 0,
+
+        line.discount_type || null,
+        line.discount_value || 0,
+        line.discount_amount || 0,
+
+        line.vat_percent || 0,
+        line.vat_amount || 0,
+
+        line.net_amount || 0,
+        line.gross_amount || 0,
+        line.line_amount || line.net_amount || 0,
+      ],
+    );
+  }
+
+  /**
+   * Insert credit note address details
+   */
+  private static async insertAddress(
+    client: PoolClient,
+    creditNoteId: string,
+    address: SalesReturnAddress,
+    companyId: string,
+  ): Promise<void> {
+    await client.query(
+      `
+      INSERT INTO credit_note_addresses (
+        credit_note_id,
+        company_id,
+        address_type,
+
+        name,
+        attention,
+
+        phone,
+        email,
+
+        address_1,
+        address_2,
+
+        city,
+        state,
+        county,
+
+        postcode,
+        country,
+
+        contact_person,
+        contact_name
+      )
+      VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15, $16
+      )
+      `,
+      [
+        creditNoteId,
+        companyId,
+        address.address_type,
+
+        address.name,
+        address.attention,
+
+        address.phone,
+        address.email,
+
+        address.address_1,
+        address.address_2,
+
+        address.city,
+        address.state,
+        address.county,
+
+        address.postcode,
+        address.country,
+
+        address.contact_person,
+        address.contact_name,
+      ],
+    );
+  }
+
+  /**
+   * Recalculate status for credit notes
+   */
+  static async recalculateStatus(
+    client: PoolClient,
+    creditNoteId: string,
+  ): Promise<void> {
+    const result = await client.query(
+      `
+      SELECT quantity, COALESCE(returned_quantity, 0) AS returned_quantity, COALESCE(cancelled_quantity, 0) as cancelled_quantity
+      FROM credit_note_lines
+      WHERE credit_note_id = $1 
+        AND COALESCE(is_deleted, false) = false 
+        AND (line_type = 'ITEM' OR (line_type IS NULL AND item_id IS NOT NULL))
+      `,
+      [creditNoteId],
+    );
+
+    const lines = result.rows;
+    if (!lines.length) return;
+
+    let fullyProcessed = true;
+    let partiallyProcessed = false;
+
+    for (const line of lines) {
+      const qty = Number(line.quantity || 0);
+      const returned = Number(line.returned_quantity || 0);
+      const cancelled = Number(line.cancelled_quantity || 0);
+      const processed = returned + cancelled;
+
+      if (processed > 0) {
+        partiallyProcessed = true;
+      }
+
+      if (processed < qty) {
+        fullyProcessed = false;
+      }
+    }
+
+    const shipmentStatus = fullyProcessed
+      ? "RECEIVED"
+      : partiallyProcessed
+        ? "PARTIALLY_RECEIVED"
+        : "PENDING";
+
+    const returnStatus = fullyProcessed
+      ? "completed"
+      : partiallyProcessed
+        ? "processing"
+        : "open";
+
+    await client.query(
+      `
+      UPDATE credit_notes 
+      SET shipment_status = $1, 
+          status = $2, 
+          updated_at = NOW() 
+      WHERE id = $3
+      `,
+      [shipmentStatus, returnStatus, creditNoteId],
+    );
+  }
+}
+
+/* import { PoolClient } from "pg";
 import { SalesReturnAddress, SalesReturnPayload } from "@/types/sales-return";
 import { SalesReturnPayloadSchema } from "@/lib/validations/sales-return.schema";
 
@@ -15,9 +1130,6 @@ export interface SalesReturnListFilter {
 }
 
 export class SalesReturnService {
-  /**
-   * GET PAGINATED LISTING
-   */
   static async getList(client: PoolClient, filters: SalesReturnListFilter) {
     const {
       companyId,
@@ -84,9 +1196,6 @@ export class SalesReturnService {
     };
   }
 
-  /**
-   * GET SINGLE RECORD WITH LINES & ADDRESSES
-   */
   static async getById(client: PoolClient, id: string, companyId: string) {
     const headerResult = await client.query(
       `SELECT sr.*, sr.tax_amount as tax_amount, p.name as customer_name, si.invoice_no as original_invoice_no
@@ -143,9 +1252,6 @@ export class SalesReturnService {
     };
   }
 
-  /**
-   * CREATE TRANSACTIONAL RETURN DOCUMENT
-   */
   static async create(
     client: PoolClient,
     companyId: string,
@@ -289,21 +1395,33 @@ export class SalesReturnService {
     }
 
     if (payload.primary_address) {
-      await this.insertAddress(client, companyId, salesReturn.id, payload.primary_address);
+      await this.insertAddress(
+        client,
+        companyId,
+        salesReturn.id,
+        payload.primary_address,
+      );
     }
     if (payload.billing_address) {
-      await this.insertAddress(client, companyId, salesReturn.id, payload.billing_address);
+      await this.insertAddress(
+        client,
+        companyId,
+        salesReturn.id,
+        payload.billing_address,
+      );
     }
     if (payload.shipping_address) {
-      await this.insertAddress(client, companyId, salesReturn.id, payload.shipping_address);
+      await this.insertAddress(
+        client,
+        companyId,
+        salesReturn.id,
+        payload.shipping_address,
+      );
     }
 
     return salesReturn;
   }
 
-  /**
-   * UPDATE TRANSACTIONAL RETURN DOCUMENT
-   */
   static async update(
     client: PoolClient,
     companyId: string,
@@ -404,8 +1522,14 @@ export class SalesReturnService {
       ],
     );
 
-    await client.query(`DELETE FROM sales_return_lines WHERE sales_return_id = $1`, [id]);
-    await client.query(`DELETE FROM sales_return_addresses WHERE sales_return_id = $1`, [id]);
+    await client.query(
+      `DELETE FROM sales_return_lines WHERE sales_return_id = $1`,
+      [id],
+    );
+    await client.query(
+      `DELETE FROM sales_return_addresses WHERE sales_return_id = $1`,
+      [id],
+    );
 
     for (const line of payload.lines) {
       const qty = Number(line.quantity || 0);
@@ -466,9 +1590,6 @@ export class SalesReturnService {
     return { id, returnNo: existing.return_no };
   }
 
-  /**
-   * DELETE RETURN DOCUMENT
-   */
   static async delete(client: PoolClient, id: string, companyId: string) {
     const orderResult = await client.query(
       `SELECT * FROM sales_returns WHERE company_id = $1 AND id = $2`,
@@ -489,9 +1610,18 @@ export class SalesReturnService {
       throw new Error("Cannot delete posted or credited sales return document");
     }
 
-    await client.query(`DELETE FROM sales_return_addresses WHERE sales_return_id = $1`, [id]);
-    await client.query(`DELETE FROM sales_return_lines WHERE sales_return_id = $1`, [id]);
-    const result = await client.query(`DELETE FROM sales_returns WHERE id = $1 AND company_id = $2 RETURNING id`, [id, companyId]);
+    await client.query(
+      `DELETE FROM sales_return_addresses WHERE sales_return_id = $1`,
+      [id],
+    );
+    await client.query(
+      `DELETE FROM sales_return_lines WHERE sales_return_id = $1`,
+      [id],
+    );
+    const result = await client.query(
+      `DELETE FROM sales_returns WHERE id = $1 AND company_id = $2 RETURNING id`,
+      [id, companyId],
+    );
 
     return result.rowCount ? result.rowCount > 0 : false;
   }
@@ -524,679 +1654,4 @@ export class SalesReturnService {
       ],
     );
   }
-
-  /**
-   * =========================================================
-   * POST CREDIT NOTE (LOCK, JOURNALIZE, & ARCHIVE HISTORIC)
-   * =========================================================
-   */
-  /* static async post(
-    client: PoolClient,
-    id: string,
-    companyId: string,
-    userId?: string,
-  ) {
-
-    const returnResult = await client.query(
-      `SELECT * FROM sales_returns WHERE id = $1 AND company_id = $2`,
-      [id, companyId],
-    );
-
-    if (!returnResult.rows.length) {
-      throw new Error("Credit Note draft record not found.");
-    }
-
-    const draftReturn = returnResult.rows[0];
-
-    if (draftReturn.status === "POSTED") {
-      throw new Error("This Credit Note has already been posted to ledgers.");
-    }
-
-    const linesResult = await client.query(
-      `SELECT * FROM sales_return_lines WHERE sales_return_id = $1 ORDER BY line_no ASC`,
-      [id],
-    );
-
-    const draftLines = linesResult.rows;
-
-    if (!draftLines.length) {
-      throw new Error("Credit Note draft has no valid allocation rows.");
-    }
-
-    const seqResult = await client.query(
-      `SELECT get_next_sequence($1, $2) AS code`,
-      [companyId, "credit_note"],
-    );
-    const creditNoteNo = seqResult.rows[0].code;
-
-    const postedHeaderResult = await client.query(
-      `INSERT INTO public.posted_sales_returns (
-        company_id, credit_note_no, source_return_no, customer_id, 
-        sales_invoice_id, posting_date, currency_id, exchange_rate,
-        subtotal, tax_amount, total_amount, notes, posted_by, posted_at
-      ) VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, $7, $8, $9, $10, $11, $12, NOW())
-      RETURNING *`,
-      [
-        companyId,
-        creditNoteNo,
-        draftReturn.return_no,
-        draftReturn.customer_id,
-        draftReturn.sales_invoice_id || null,
-        draftReturn.currency_id || null,
-        Number(draftReturn.exchange_rate || 1),
-        0, // Temporary values updated after parsing elements
-        0,
-        0,
-        draftReturn.notes || null,
-        userId || null,
-      ],
-    );
-
-    const postedHeader = postedHeaderResult.rows[0];
-
-    let totalSubtotal = 0;
-    let totalTaxAmount = 0;
-    let totalGrossAmount = 0;
-    const glLines: JournalLineInput[] = [];
-
-    for (const line of draftLines) {
-      const qty = Number(line.quantity || 0);
-      const unitPrice = Number(line.unit_price || 0);
-      const discount = Number(line.discount_amount || 0);
-      const vatPercent = Number(line.vat_percent || 0);
-
-      const lineNet = qty * unitPrice - discount;
-      const lineTax = lineNet * (vatPercent / 100);
-      const lineTotal = lineNet + lineTax;
-
-      // Persist directly to immutable historical entries schema
-      await client.query(
-        `INSERT INTO public.posted_sales_return_lines (
-          company_id, posted_sales_return_id, line_no, line_type,
-          item_id, gl_account_id, warehouse_id, description,
-          quantity, unit_price, discount_amount, vat_percent, vat_amount, line_total
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-        [
-          companyId,
-          postedHeader.id,
-          line.line_no,
-          line.line_type,
-          line.item_id || null,
-          line.gl_account_id || null,
-          line.warehouse_id || null,
-          line.description || null,
-          qty,
-          unitPrice,
-          discount,
-          vatPercent,
-          lineTax,
-          lineTotal,
-        ],
-      );
-
-      const accounts = await AccountResolutionService.resolveSalesAccounts(
-        client,
-        companyId,
-        line.item_id,
-      );
-
-
-      // DR: Revenue / Adjustments Balance
-      glLines.push({
-        account_id: line.gl_account_id || accounts.sales_account_id,
-        debit: lineNet,
-        credit: 0,
-        item_id: line.item_id || null,
-        quantity: qty,
-        unit_cost: unitPrice,
-        reference_type: "CREDIT_NOTE",
-        reference_id: postedHeader.id,
-      });
-
-      // DR: Tax Balance
-      if (lineTax > 0) {
-        glLines.push({
-          account_id: accounts.vat_account_id,
-          debit: lineTax,
-          credit: 0,
-          item_id: line.item_id || null,
-          quantity: qty,
-          unit_cost: unitPrice,
-          reference_type: "CREDIT_NOTE",
-          reference_id: postedHeader.id,
-        });
-      }
-
-      // CR: Accounts Receivable
-      glLines.push({
-        account_id: accounts.receivable_account_id,
-        debit: 0,
-        credit: lineTotal,
-        item_id: line.item_id || null,
-        quantity: qty,
-        unit_cost: unitPrice,
-        reference_type: "CREDIT_NOTE",
-        reference_id: postedHeader.id,
-      });
-
-      totalSubtotal += lineNet;
-      totalTaxAmount += lineTax;
-      totalGrossAmount += lineTotal;
-    }
-
-
-    GLValidationService.validateBalanced(glLines);
-
-    const journal = await GLPostingService.postJournal(client, {
-      company_id: companyId,
-      entry_date: postedHeader.posting_date,
-      source: "SALES",
-      journal_type: "CREDIT_NOTE",
-      reference: postedHeader.credit_note_no,
-      source_id: postedHeader.id,
-      description: `Posted Credit Note adjustment voucher ${postedHeader.credit_note_no}`,
-      created_by: userId || null,
-      lines: glLines,
-    });
-
-
-    await client.query(
-      `UPDATE public.posted_sales_returns
-       SET subtotal = $1, tax_amount = $2, total_amount = $3, journal_entry_id = $4
-       WHERE id = $5`,
-      [
-        totalSubtotal,
-        totalTaxAmount,
-        totalGrossAmount,
-        journal.id,
-        postedHeader.id,
-      ],
-    );
-
-
-    const subLedgerResult = await client.query(
-      `INSERT INTO customer_ledger_entries (
-        company_id, customer_id, document_type, document_id, document_no,
-        posting_date, description, original_amount, remaining_amount,
-        currency_id, is_open, journal_entry_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11)
-      RETURNING id`,
-      [
-        companyId,
-        draftReturn.customer_id,
-        "CREDIT_NOTE",
-        postedHeader.id,
-        postedHeader.credit_note_no,
-        postedHeader.posting_date,
-        `Credit Note Reversal Ref: ${draftReturn.return_no}`,
-        -Math.abs(totalGrossAmount), // Stored as negative value to net down AR balances
-        -Math.abs(totalGrossAmount),
-        draftReturn.currency_id || null,
-        journal.id,
-      ],
-    );
-
-    const creditNoteLedgerEntryId = subLedgerResult.rows[0].id;
-
-
-    if (draftReturn.sales_invoice_id) {
-      // Find the open ledger record of the target invoice to apply against
-      const invoiceLedgerResult = await client.query(
-        `SELECT id, remaining_amount FROM customer_ledger_entries 
-         WHERE document_type = 'SALES_INVOICE' AND document_id = $1 AND is_open = true`,
-        [draftReturn.sales_invoice_id],
-      );
-
-      if (invoiceLedgerResult.rows.length > 0) {
-        const invLedger = invoiceLedgerResult.rows[0];
-        const invoiceRemaining = Number(invLedger.remaining_amount);
-
-        // Amount calculation threshold rule mapping
-        const amountToApply = Math.min(invoiceRemaining, totalGrossAmount);
-
-        if (amountToApply > 0) {
-          // Log reference to matching ledger allocations
-          await client.query(
-            `INSERT INTO public.customer_ledger_applications (
-              company_id, applied_by_entry_id, applied_to_entry_id, amount_applied, applied_at
-            ) VALUES ($1, $2, $3, $4, NOW())`,
-            [companyId, creditNoteLedgerEntryId, invLedger.id, amountToApply],
-          );
-
-          // Net down target invoice balance allocation
-          await client.query(
-            `UPDATE customer_ledger_entries
-             SET remaining_amount = remaining_amount - $1,
-                 is_open = CASE WHEN (remaining_amount - $1) <= 0 THEN false ELSE true END
-             WHERE id = $2`,
-            [amountToApply, invLedger.id],
-          );
-
-          // Net down this credit note's open status balance asset application
-          await client.query(
-            `UPDATE customer_ledger_entries
-             SET remaining_amount = remaining_amount + $1,
-                 is_open = CASE WHEN (remaining_amount + $1) >= 0 THEN false ELSE true END
-             WHERE id = $2`,
-            [amountToApply, creditNoteLedgerEntryId],
-          );
-        }
-      }
-    }
-
-
-    await client.query(
-      `UPDATE sales_returns
-       SET status = 'POSTED', posted_at = NOW(), updated_at = NOW()
-       WHERE id = $1`,
-      [id],
-    );
-
-    return {
-      returnNo: draftReturn.return_no,
-      creditNoteNo: postedHeader.credit_note_no,
-    };
-  } */
-
-  /**
-   * =========================================================
-   * RETRIEVE HISTORICAL POSTED LEDGER ENTRIES (WITH COUNTS)
-   * =========================================================
-   */
-  /* static async listPosted(
-    client: PoolClient,
-    companyId: string,
-    filters: PostedListFilterOptions,
-  ) {
-    let baseWhere = `WHERE psr.company_id = $1`;
-    const queryParams: (string | number | boolean)[] = [companyId];
-    let paramIndex = 2;
-
-    if (filters.customerId) {
-      baseWhere += ` AND psr.customer_id = $${paramIndex}`;
-      queryParams.push(filters.customerId);
-      paramIndex++;
-    }
-
-    if (filters.search) {
-      baseWhere += ` AND (psr.credit_note_no ILIKE $${paramIndex} OR psr.source_return_no ILIKE $${paramIndex} OR psr.notes ILIKE $${paramIndex})`;
-      queryParams.push(`%${filters.search}%`);
-      paramIndex++;
-    }
-
-    // 1. Query Total Math Metrics for Frontend Pagination Components
-    const countQuery = `
-      SELECT COUNT(DISTINCT psr.id)::int as total 
-      FROM public.posted_sales_returns psr
-      ${baseWhere}
-    `;
-    const countResult = await client.query(countQuery, queryParams);
-    const totalRecords = countResult.rows[0]?.total || 0;
-
-    // 2. Query Paginated Core Relational Data Payload
-    const dataQuery = `
-      SELECT 
-        psr.id,
-        psr.credit_note_no,
-        psr.source_return_no,
-        psr.posting_date,
-        psr.subtotal,
-        psr.tax_amount,
-        psr.total_amount,
-        psr.journal_entry_id,
-        psr.notes,
-        c.name as customer_name,
-        curr.code as currency_code
-      FROM public.posted_sales_returns psr
-      LEFT JOIN customers c ON psr.customer_id = c.id
-      LEFT JOIN currencies curr ON psr.currency_id = curr.id
-      ${baseWhere}
-      GROUP BY psr.id, c.name, curr.code
-      ORDER BY psr.posted_at DESC
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-    `;
-
-    queryParams.push(filters.limit);
-    queryParams.push(filters.offset);
-
-    const dataResult = await client.query(dataQuery, queryParams);
-
-    return {
-      records: dataResult.rows,
-      total: totalRecords,
-    };
-  } */
-}
-/* import { PoolClient } from "pg";
-import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
-import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
-import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
-import { JournalLineInput } from "@/types/journal";
-
-export interface SalesReturnListFilter {
-  companyId: string;
-  search?: string;
-  status?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface CreateSalesReturnInput {
-  companyId: string;
-  customerId: string;
-  salesInvoiceId?: string | null;
-  returnDate: string;
-  currencyId: string;
-  exchangeRate: number;
-  notes?: string | null;
-  lines: {
-    lineNo: number;
-    lineType: "ITEM" | "GL_ACCOUNT";
-    itemId?: string | null;
-    glAccountId?: string | null;
-    warehouseId?: string | null;
-    description?: string | null;
-    quantity: number;
-    unitPrice: number;
-    discountAmount: number;
-    vatPercent: number;
-  }[];
-}
-
-export interface PostedListFilterOptions {
-  customerId?: string;
-  search?: string;
-  limit: number;
-  offset: number;
-}
-
-export class SalesReturnService {
-
-  static async getList(client: PoolClient, filters: SalesReturnListFilter) {
-    const {
-      companyId,
-      search = "",
-      status = "ALL",
-      page = 1,
-      limit = 10,
-    } = filters;
-    const offset = (page - 1) * limit;
-
-    const queryParams: (string | number | boolean)[] = [companyId];
-    let whereClause = "WHERE sr.company_id = $1";
-
-    if (search) {
-      queryParams.push(`%${search}%`);
-      whereClause += ` AND (sr.return_no ILIKE $${queryParams.length} OR p.name ILIKE $${queryParams.length})`;
-    }
-
-    if (status !== "ALL") {
-      queryParams.push(status);
-      whereClause += ` AND sr.status = $${queryParams.length}`;
-    }
-
-    // 1. Total count execution
-    const countResult = await client.query(
-      `
-      SELECT COUNT(*) 
-      FROM sales_returns sr
-      LEFT JOIN parties p ON p.id = sr.customer_id
-      ${whereClause}
-      `,
-      queryParams,
-    );
-    const totalRecords = parseInt(countResult.rows[0].count, 10);
-
-    // 2. Data payload window execution
-    queryParams.push(limit, offset);
-    const dataQuery = `
-      SELECT 
-        sr.id,
-        sr.return_no,
-        sr.return_date,
-        sr.total_amount,
-        sr.status,
-        p.name as customer_name,
-        si.invoice_no as original_invoice_no
-      FROM sales_returns sr
-      LEFT JOIN parties p ON p.id = sr.customer_id
-      LEFT JOIN sales_invoices si ON si.id = sr.sales_invoice_id
-      ${whereClause}
-      ORDER BY sr.return_date DESC, sr.return_no DESC
-      LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length}
-    `;
-
-    const dataResult = await client.query(dataQuery, queryParams);
-
-    return {
-      returns: dataResult.rows,
-      pagination: {
-        page,
-        limit,
-        totalRecords,
-        totalPages: Math.ceil(totalRecords / limit),
-      },
-    };
-  }
-
-
-  static async getById(client: PoolClient, id: string, companyId: string) {
-    const headerResult = await client.query(
-      `SELECT sr.*, p.name as customer_name, si.invoice_no as original_invoice_no
-       FROM sales_returns sr
-       LEFT JOIN parties p ON p.id = sr.customer_id
-       LEFT JOIN sales_invoices si ON si.id = sr.sales_invoice_id
-       WHERE sr.id = $1 AND sr.company_id = $2`,
-      [id, companyId],
-    );
-
-    if (!headerResult.rows.length) return null;
-
-    const linesResult = await client.query(
-      `SELECT srl.*, i.name as item_name, i.item_code, coa.name as account_name, coa.code as account_code, w.name as warehouse_name
-       FROM sales_return_lines srl
-       LEFT JOIN items i ON i.id = srl.item_id
-       LEFT JOIN chart_of_accounts coa ON coa.id = srl.gl_account_id
-       LEFT JOIN warehouses w ON w.id = srl.warehouse_id
-       WHERE srl.sales_return_id = $1 AND srl.company_id = $2
-       ORDER BY srl.line_no ASC`,
-      [id, companyId],
-    );
-
-    return {
-      invoice: headerResult.rows[0], // using key 'invoice' to mirror detail UI structure matches
-      lines: linesResult.rows,
-    };
-  }
-
-
-  static async create(client: PoolClient, input: CreateSalesReturnInput) {
-    let subtotal = 0;
-    let totalVat = 0;
-
-    const computedLines = input.lines.map((line) => {
-      const lineSubtotal = line.quantity * line.unitPrice - line.discountAmount;
-      const lineVat = lineSubtotal * (line.vatPercent / 100);
-      const lineTotal = lineSubtotal + lineVat;
-
-      subtotal += lineSubtotal;
-      totalVat += lineVat;
-
-      return { ...line, lineTotal, vatAmount: lineVat };
-    });
-
-    const totalAmount = subtotal + totalVat;
-
-    const countRes = await client.query(
-      `SELECT COUNT(*) FROM sales_returns WHERE company_id = $1`,
-      [input.companyId],
-    );
-    const nextSeq = String(parseInt(countRes.rows[0].count, 10) + 1).padStart(
-      5,
-      "0",
-    );
-    const returnNo = `SR-${new Date(input.returnDate).getFullYear()}-${nextSeq}`;
-
-    // Modified Header execution statement injecting multi-currency variables
-    const headerRes = await client.query(
-      `INSERT INTO sales_returns (
-      company_id, return_no, customer_id, sales_invoice_id, return_date,
-      currency_id, exchange_rate, subtotal, tax_amount, total_amount, status, notes
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'OPEN', $11)
-     RETURNING id`,
-      [
-        input.companyId,
-        returnNo,
-        input.customerId,
-        input.salesInvoiceId || null,
-        input.returnDate,
-        input.currencyId,
-        input.exchangeRate,
-        subtotal,
-        totalVat,
-        totalAmount,
-        input.notes || null,
-      ],
-    );
-
-    const salesReturnId = headerRes.rows[0].id;
-
-    for (const line of computedLines) {
-      await client.query(
-        `INSERT INTO sales_return_lines (
-        company_id, sales_return_id, line_no, line_type, item_id, gl_account_id,
-        warehouse_id, description, quantity, unit_price, discount_amount,
-        vat_percent, vat_amount, line_total
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-        [
-          input.companyId,
-          salesReturnId,
-          line.lineNo,
-          line.lineType,
-          line.itemId || null,
-          line.glAccountId || null,
-          line.warehouseId || null,
-          line.description || null,
-          line.quantity,
-          line.unitPrice,
-          line.discountAmount,
-          line.vatPercent,
-          line.vatAmount,
-          line.lineTotal,
-        ],
-      );
-    }
-
-    return { id: salesReturnId, returnNo };
-  }
-
-
-  static async update(
-    client: PoolClient,
-    id: string,
-    input: CreateSalesReturnInput,
-  ) {
-    // 1. Recalculate line totals securely on the backend
-    let subtotal = 0;
-    let totalVat = 0;
-
-    const computedLines = input.lines.map((line) => {
-      const lineSubtotal = line.quantity * line.unitPrice - line.discountAmount;
-      const lineVat = lineSubtotal * (line.vatPercent / 100);
-      const lineTotal = lineSubtotal + lineVat;
-
-      subtotal += lineSubtotal;
-      totalVat += lineVat;
-
-      return { ...line, lineTotal, vatAmount: lineVat };
-    });
-
-    const totalAmount = subtotal + totalVat;
-
-    // 2. Update the parent Header record
-    const headerResult = await client.query(
-      `UPDATE sales_returns 
-       SET customer_id = $1, 
-           sales_invoice_id = $2, 
-           return_date = $3,
-           currency_id = $4, 
-           exchange_rate = $5, 
-           subtotal = $6, 
-           tax_amount = $7, 
-           total_amount = $8, 
-           notes = $9,
-           updated_at = NOW()
-       WHERE id = $10 AND company_id = $11
-       RETURNING return_no`,
-      [
-        input.customerId,
-        input.salesInvoiceId || null,
-        input.returnDate,
-        input.currencyId,
-        input.exchangeRate,
-        subtotal,
-        totalVat,
-        totalAmount,
-        input.notes || null,
-        id,
-        input.companyId,
-      ],
-    );
-
-    if (!headerResult.rows.length) {
-      throw new Error("Target return record not found or unauthorized.");
-    }
-
-    // 3. Clear existing child lines to cleanly process row updates/removals
-    await client.query(
-      `DELETE FROM sales_return_lines WHERE sales_return_id = $1 AND company_id = $2`,
-      [id, input.companyId],
-    );
-
-    // 4. Re-insert the updated line item matrix
-    for (const line of computedLines) {
-      await client.query(
-        `INSERT INTO sales_return_lines (
-          company_id, sales_return_id, line_no, line_type, item_id, gl_account_id,
-          warehouse_id, description, quantity, unit_price, discount_amount,
-          vat_percent, vat_amount, line_total
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-        [
-          input.companyId,
-          id,
-          line.lineNo,
-          line.lineType,
-          line.itemId || null,
-          line.glAccountId || null,
-          line.warehouseId || null,
-          line.description || null,
-          line.quantity,
-          line.unitPrice,
-          line.discountAmount,
-          line.vatPercent,
-          line.vatAmount,
-          line.lineTotal,
-        ],
-      );
-    }
-
-    return { id, returnNo: headerResult.rows[0].return_no };
-  }
-
-  static async delete(client: PoolClient, id: string, companyId: string) {
-    // Foreign key cascading might handle this, but explicit cleanup guarantees execution safety
-    await client.query(
-      `DELETE FROM sales_return_lines WHERE sales_return_id = $1 AND company_id = $2`,
-      [id, companyId],
-    );
-
-    const result = await client.query(
-      `DELETE FROM sales_returns WHERE id = $1 AND company_id = $2 RETURNING id`,
-      [id, companyId],
-    );
-
-    return result.rowCount ? result.rowCount > 0 : false;
-  }
-
-  
 } */

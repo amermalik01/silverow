@@ -441,6 +441,7 @@ export class SalesOrderService {
 
             salesperson,
             cust_order_no,
+            consignment_no,
             link_to_po,
 
             currency_id,
@@ -488,7 +489,7 @@ export class SalesOrderService {
             created_at
           )
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
-          $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, NOW()
+          $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, 42, NOW()
           )
           RETURNING *;
         `,
@@ -506,6 +507,7 @@ export class SalesOrderService {
 
           order.salesperson,
           order.cust_order_no,
+          order.consignment_no,
           order.link_to_po,
 
           order.currency_id,
@@ -699,9 +701,11 @@ export class SalesOrderService {
           customer_posting_group_id=$38,
           vat_business_posting_group_id=$39,
 
+          consignment_no=$40
+
           updated_at=NOW()
 
-          WHERE id=$40 AND company_id=$41;
+          WHERE id=$41 AND company_id=$42;
         `;
 
     const qryParams = [
@@ -758,6 +762,8 @@ export class SalesOrderService {
 
       customerPostingGroupId,
       vatBusinessPostingGroupId,
+
+      order.consignment_no,
 
       id,
       companyId,
