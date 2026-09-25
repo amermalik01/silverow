@@ -68,8 +68,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         unit_price,
         discount_amount,
         line_type
-      FROM sales_return_lines
-      WHERE sales_return_id = $1
+      FROM credit_note_lines
+      WHERE credit_note_id = $1
         AND company_id = $2
         AND COALESCE(is_deleted, false) = false
         AND (line_type = 'ITEM' OR (line_type IS NULL AND item_id IS NOT NULL))

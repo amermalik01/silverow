@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
       (cr.subtotal * cr.exchange_rate) AS amount_excluding_vat,
       (cr.tax_amount * cr.exchange_rate) AS vat_amount,
       (cr.total_amount * cr.exchange_rate) AS amount_including_vat
-    FROM public.posted_sales_returns cr
+    FROM public.credit_notes cr
     LEFT JOIN public.customers cust ON cr.customer_id = cust.id
     LEFT JOIN public.employees emp ON cr.posted_by = emp.id
     WHERE cr.company_id = $1
