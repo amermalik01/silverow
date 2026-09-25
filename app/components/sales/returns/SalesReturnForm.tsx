@@ -39,7 +39,10 @@ import {
   validateSalesReturnForPosting,
 } from "./utils/salesReturn.validation";
 
-import { calculateSalesReturnFinancials } from "./utils/salesReturn.calculations";
+import {
+  calculateSalesReturnFinancials,
+  isSalesReturnFullyReceived,
+} from "./utils/salesReturn.calculations";
 
 import { useSalesReturnState } from "./hooks/useSalesReturnState";
 import { useSalesReturnData } from "./hooks/useSalesReturnData";
@@ -51,6 +54,7 @@ import {
   SalesInvoiceLookupItem,
   SalesInvoiceLookupModal,
 } from "./SalesInvoiceLookupModal";
+import { StockReceiveConfirmModal } from "../../shared/modals/StockReceiveConfirmModal";
 
 type Props = {
   slug: string;
@@ -121,11 +125,11 @@ export const SalesReturnForm: React.FC<Props> = ({
     showReceiveModal,
     setShowReceiveModal,
 
-    // showCreditModal,
-    // setShowCreditModal,
+    showCreditNoteModal,
+    setShowCreditNoteModal,
 
-    // showReceiveAndCreditModal,
-    // setShowReceiveAndCreditModal,
+    showReceiveAndPostModal,
+    setShowReceiveAndPostModal,
 
     isPosting,
     setIsPosting,
@@ -206,58 +210,10 @@ export const SalesReturnForm: React.FC<Props> = ({
     [lines],
   );
 
-  /* useEffect(() => {
-    if (!id) return;
-
-    show("Fetching Return Record...");
-
-    fetch(`/api/sales/sales-returns/${id}`)
-      .then((r) => r.json())
-      .then((payload) => {
-        hide();
-        if (payload && payload.success && payload.data) {
-          const actualData = payload.data;
-
-          setReturnOrder(actualData.return || {});
-          setLines(actualData.lines || []);
-
-          setPrimaryAddress(
-            actualData.primary_address || { address_type: "primary" },
-          );
-
-          setBillingAddress(
-            actualData.billing_address || { address_type: "billing" },
-          );
-          setShippingAddress(
-            actualData.shipping_address || { address_type: "shipping" },
-          );
-
-          setCurrencyConfig({
-            currency_id: actualData.returnOrder?.currency_id || "",
-            exchange_rate: actualData.returnOrder?.exchange_rate || 1,
-          });
-        }
-      })
-      .catch((err) =>
-        console.error("Error hydrating sales return record:", err),
-      );
-  }, [id]);
-
-  useEffect(() => {
-    async function loadMasterData() {
-      try {
-        const res = await fetch("/api/sales/sales-orders/master-data");
-        if (!res.ok) throw new Error();
-
-        const data = await res.json();
-        setMasterData(data);
-      } catch (err) {
-        console.error("Failed to load master data:", err);
-      }
-    }
-
-    loadMasterData();
-  }, []); */
+  const isFullyReceived = useMemo(
+    () => isSalesReturnFullyReceived(lines),
+    [lines],
+  );
 
   const handleGeneralCustomerSelection = () => {
     setCustomerSelectionSource("general");
@@ -621,6 +577,14 @@ export const SalesReturnForm: React.FC<Props> = ({
     }
   };
 
+  const validateBeforeStockAction = (): boolean => {
+    const errors = validateSalesReturnForPosting(lines);
+
+    setValidationErrors(errors);
+
+    return errors.length === 0;
+  };
+
   const handleSave = async () => {
     const targetId = await saveSalesReturn(false);
 
@@ -667,7 +631,7 @@ export const SalesReturnForm: React.FC<Props> = ({
 
   const handlePostCreditNoteClick = () => {
     if (!validateBeforePosting()) return;
-    // setShowCreditModal(true);
+    setShowCreditNoteModal(true);
   };
 
   const handlePostCreditNote = async () => {
@@ -711,7 +675,7 @@ export const SalesReturnForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
-      //   setShowCreditModal(false);
+      setShowCreditNoteModal(false);
       router.push(`/${slug}/sales/returns/new`);
     } catch (error) {
       toast.error(
@@ -722,6 +686,235 @@ export const SalesReturnForm: React.FC<Props> = ({
       );
     } finally {
       setIsPosting(false);
+      hide();
+    }
+  };
+
+  const handleReceiveStock = async () => {
+    if (!id) return;
+
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
+    setIsPosting(true);
+
+    show("Saving and Receiving Record...");
+
+    try {
+      toast.loading("Processing stock receive...", {
+        id: "action-toast",
+      });
+
+      const payload = {
+        receive: {
+          customer_id: returnOrder.customer_id,
+          warehouse_id: null, // pass if available on header
+          dispatch_date:
+            returnOrder.order_date || new Date().toISOString().split("T")[0],
+          posting_date:
+            returnOrder.posting_date || new Date().toISOString().split("T")[0],
+          reference: returnOrder.reference,
+          notes: returnOrder.notes,
+          currency_id: returnOrder.currency_id,
+          exchange_rate: returnOrder.exchange_rate,
+        },
+      };
+
+      const response = await fetch(`/api/sales/sales-orders/${id}/receive`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to receive stock");
+      }
+
+      toast.success("Stock received successfully!", {
+        id: "action-toast",
+      });
+
+      setShowReceiveModal(false);
+
+      await refreshLines();
+
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error receiving stock",
+        {
+          id: "action-toast",
+        },
+      );
+    } finally {
+      setIsPosting(false);
+
+      hide();
+    }
+  };
+
+  /*
+   * ------------------------------------------------------------
+   * Receive + Post Invoice
+   * ------------------------------------------------------------
+   */
+
+  const handleReceiveAndPost = async () => {
+    if (!id) return;
+
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
+    setIsPosting(true);
+
+    show("Receiving Stock & Posting Invoice...");
+
+    try {
+      toast.loading("Receiving stock and posting sales invoice...", {
+        id: "action-toast",
+      });
+
+      const response = await fetch(
+        `/api/sales/sales-orders/${id}/receive-and-post`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            customer_id: returnOrder.customer_id,
+            customer_invoice_no: returnOrder.reference,
+            reference: returnOrder.reference,
+            invoice_date: returnOrder.posting_date,
+            posting_date: returnOrder.dispatch_date,
+            order_date: returnOrder.order_date,
+            dispatch_date: returnOrder.dispatch_date,
+            financials: financials,
+            currency_id: returnOrder.currency_id,
+            exchange_rate: returnOrder.exchange_rate,
+            order: returnOrder,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Failed to receive stock and post invoice.",
+        );
+      }
+
+      toast.success("Stock received and invoice posted successfully!", {
+        id: "action-toast",
+      });
+
+      setShowReceiveAndPostModal(false);
+
+      router.push(`/${slug}/sales/orders/new`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error processing operation.",
+        {
+          id: "action-toast",
+        },
+      );
+    } finally {
+      setIsPosting(false);
+
+      hide();
+    }
+  };
+
+  const handlePostInvoiceClick = () => {
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
+    const allGLAccountLines = lines.every(
+      (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
+    );
+
+    if (!isFullyReceived && !allGLAccountLines) {
+      setShowReceiveAndPostModal(true);
+    } else {
+      setShowCreditNoteModal(true);
+    }
+  };
+
+  const handlePostInvoice = async () => {
+    if (!id) return;
+
+    if (!validateBeforeStockAction()) {
+      return;
+    }
+
+    setIsPosting(true);
+
+    show("Posting Invoice...");
+
+    try {
+      toast.loading("Posting sales invoice...", {
+        id: "action-toast",
+      });
+
+      const response = await fetch(
+        `/api/sales/sales-orders/${id}/post-invoice`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            customer_id: returnOrder.customer_id,
+            customer_invoice_no: returnOrder.reference,
+            reference: returnOrder.reference,
+            invoice_date: returnOrder.posting_date,
+            posting_date: returnOrder.dispatch_date,
+            order_date: returnOrder.order_date,
+            dispatch_date: returnOrder.dispatch_date,
+            financials: financials,
+            currency_id: returnOrder.currency_id,
+            exchange_rate: returnOrder.exchange_rate,
+            order: returnOrder,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to post sales invoice");
+      }
+
+      toast.success("Sales invoice posted!", {
+        id: "action-toast",
+      });
+
+      setShowCreditNoteModal(false);
+
+      router.push(`/${slug}/sales/orders/new`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error posting invoice",
+        {
+          id: "action-toast",
+        },
+      );
+    } finally {
+      setIsPosting(false);
+
       hide();
     }
   };
@@ -1030,47 +1223,46 @@ export const SalesReturnForm: React.FC<Props> = ({
           <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />{" "}
-              Partially Reserved
+              Pending Allocation
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
-              Reserved Stock
+              Allocated Stock
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />{" "}
-              Dispatched Stock
+              Stock Received
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* {isUpdateMode && (
-                      <>
-        
-                        <Button
-                          type="button"
-                          variant="post"
-                          onClick={handlePostInvoiceClick}
-                          disabled={isPosting || isCompleted}
-                        >
-                          Post Invoice
-                        </Button>
-        
-                        <Button
-                          type="button"
-                          variant="dispatch"
-                          onClick={() => {
-                            if (!validateBeforeStockAction()) {
-                              return;
-                            }
-        
-                            setShowDispatchModal(true);
-                          }}
-                          disabled={isPosting || isFullyDispatched || isCompleted}
-                        >
-                          Dispatch Stock
-                        </Button>
-                      </>
-                    )} */}
+            {isUpdateMode && (
+              <>
+                <Button
+                  type="button"
+                  variant="post"
+                  onClick={handlePostInvoiceClick}
+                  disabled={isPosting || isCompleted}
+                >
+                  Post Invoice
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="dispatch"
+                  onClick={() => {
+                    if (!validateBeforeStockAction()) {
+                      return;
+                    }
+
+                    setShowReceiveModal(true);
+                  }}
+                  disabled={isPosting || isFullyReceived || isCompleted}
+                >
+                  Receive Stock
+                </Button>
+              </>
+            )}
 
             {!isCompleted && (
               <>
@@ -1178,49 +1370,48 @@ export const SalesReturnForm: React.FC<Props> = ({
       />
 
       {/* ======================================================
-          DISPATCH CONFIRMATION
+          Receive CONFIRMATION
           ====================================================== */}
 
-      {/* <GeneralConfirmModal
-        isOpen={showDispatchModal}
+      <StockReceiveConfirmModal
+        isOpen={showReceiveModal}
         title="Confirmation"
-        message="Are you sure you want to dispatch the stock?"
-        onConfirm={handleDispatchStock}
-        onCancel={() => setShowDispatchModal(false)}
+        message="Are you sure you want to receive the stock?"
+        onConfirm={handleReceiveStock}
+        onCancel={() => setShowReceiveModal(false)}
         loading={isPosting}
-      /> */}
+      />
 
       {/* ======================================================
           POST INVOICE CONFIRMATION
           ====================================================== */}
 
-      {/* <GeneralConfirmModal
-        isOpen={showCreditModal}
+      <GeneralConfirmModal
+        isOpen={showCreditNoteModal}
         title="Confirmation"
         message="Are you sure you want to post this Credit Note?"
         onConfirm={handlePostCreditNote}
-        onCancel={() => setShowCreditModal(false)}
+        onCancel={() => setShowCreditNoteModal(false)}
         loading={isPosting}
-      /> */}
+      />
 
       {/* ======================================================
-          DISPATCH + POST
+          Receive + POST
           ====================================================== */}
 
-      {/* <GeneralConfirmModal
-        isOpen={showDispatchAndPostModal}
-        title="Stock Dispatch Required"
+      <GeneralConfirmModal
+        isOpen={showReceiveAndPostModal}
+        title="Stock Receipt Required"
         message={
           <>
-            Stock has not been fully dispatched for this order. Would you like
-            to dispatch the remaining stock automatically and post the sales
-            invoice now?
+            Stock has not been received for this order. Would you like to
+            receive the stock automatically and post the Credit Note?
           </>
         }
-        onConfirm={handleDispatchAndPost}
-        onCancel={() => setShowDispatchAndPostModal(false)}
+        onConfirm={handleReceiveAndPost}
+        onCancel={() => setShowReceiveAndPostModal(false)}
         loading={isPosting}
-      /> */}
+      />
     </div>
   );
 };
