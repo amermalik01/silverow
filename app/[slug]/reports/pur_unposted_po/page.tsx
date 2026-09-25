@@ -311,7 +311,7 @@ export default function UnpostedPurchaseOrdersReport() {
           {/* Mandatory Date Bounds */}
           <div className="flex flex-col gap-1">
             <label className="font-semibold text-slate-200">
-              Date Range Bounds <span className="text-red-400">*</span>
+              Date Range <span className="text-red-400">*</span>
             </label>
             <div className="flex gap-2">
               <DatePicker
@@ -345,10 +345,10 @@ export default function UnpostedPurchaseOrdersReport() {
             </div>
           </div>
 
-          {/* Report Type Evaluation */}
+          {/* Report Type */}
           <div className="flex flex-col gap-1">
             <label className="font-semibold text-slate-200">
-              Report Type Evaluation
+              Report Type
             </label>
             <select
               value={reportType}

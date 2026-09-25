@@ -153,7 +153,7 @@ export default function UnpostedSalesOrdersReport() {
           {/* Date Parameters Section */}
           <div className="flex flex-col gap-1">
             <label className="font-semibold text-slate-200">
-              Date Range Bounds
+              Date Range
             </label>
             <div className="flex gap-2">
               <DatePicker
@@ -170,25 +170,13 @@ export default function UnpostedSalesOrdersReport() {
                 maxDate={new Date()}
                 className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-              {/* <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="w-full bg-white text-slate-800 rounded px-2 py-1.5 focus:outline-none"
-              />
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="w-full bg-white text-slate-800 rounded px-2 py-1.5 focus:outline-none"
-              /> */}
             </div>
           </div>
 
-          {/* Report Type Evaluation Options Dropdown Row */}
+          {/* Report Type Options Dropdown Row */}
           <div className="flex flex-col gap-1">
             <label className="font-semibold text-slate-200">
-              Report Type Evaluation
+              Report Type
             </label>
             <select
               value={reportType}

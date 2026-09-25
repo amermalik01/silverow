@@ -1,4 +1,4 @@
-// app/[slug]/reports/pur_supp_act/page.tsx
+// app/[slug]/reports/fin_cust_act/page.tsx
 
 "use client";
 
@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import { Icon } from "@iconify/react";
 
-import SupplierLookupModal, {
-  SupplierLookupItem,
-} from "@/app/components/shared/modals/SupplierLookupModal";
+import CustomerLookupModal, {
+  CustomerLookupItem,
+} from "@/app/components/shared/modals/CustomerLookupModal";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfDay } from "date-fns";
@@ -44,7 +44,7 @@ type ReportLineItem = {
   on_hold_reason: string;
 };
 
-export default function SupplierActivityReport() {
+export default function CustomerActivityReport() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
   const [loading, setLoading] = useState(false);
@@ -58,11 +58,11 @@ export default function SupplierActivityReport() {
   const [reportType, setReportType] = useState("By Posting Date");
   const [documentType, setDocumentType] = useState("All");
 
-  const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
-  const [, setSelectedSuppliers] = useState<SupplierLookupItem[]>([]);
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+  const [, setSelectedCustomers] = useState<CustomerLookupItem[]>([]);
 
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
-  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
 
   const handleGenerateReport = async () => {
     if (!fromDate || !toDate) {
@@ -82,12 +82,12 @@ export default function SupplierActivityReport() {
       queryParams.append("reportType", reportType);
       queryParams.append("documentType", documentType);
 
-      if (selectedSupplierIds.length > 0) {
-        queryParams.append("supplierIds", selectedSupplierIds.join(","));
+      if (selectedCustomerIds.length > 0) {
+        queryParams.append("customerIds", selectedCustomerIds.join(","));
       }
 
       const res = await fetch(
-        `/api/reports/supplier-activity?${queryParams.toString()}`,
+        `/api/reports/customer-activity?${queryParams.toString()}`,
       );
       if (!res.ok) throw new Error("Failed generating activity report");
 
@@ -105,8 +105,8 @@ export default function SupplierActivityReport() {
     setToDate(startOfDay(new Date()));
     setReportType("By Posting Date");
     setDocumentType("All");
-    setSelectedSupplierIds([]);
-    setSelectedSuppliers([]);
+    setSelectedCustomerIds([]);
+    setSelectedCustomers([]);
     setReportData([]);
     setValidationError(null);
   };
@@ -148,8 +148,8 @@ export default function SupplierActivityReport() {
       "Posting Date",
       "Doc Type",
       "Doc No",
-      "Supplier No",
-      "Supplier Name",
+      "Customer No",
+      "Customer Name",
       // "Description",
       "Due Date",
       "CCY",
@@ -185,7 +185,7 @@ export default function SupplierActivityReport() {
     link.setAttribute("href", encodedUri);
     link.setAttribute(
       "download",
-      `Supplier_Activity_Report_${format(new Date(), "yyyyMMdd")}.csv`,
+      `Customer_Activity_Report_${format(new Date(), "yyyyMMdd")}.csv`,
     );
     document.body.appendChild(link);
     link.click();
@@ -200,8 +200,8 @@ export default function SupplierActivityReport() {
       "Posting Date": formatDate(row.posting_date),
       "Doc Type": row.document_type,
       "Doc No": row.document_no,
-      "Supplier No": row.vendor_no,
-      "Supplier Name": row.vendor_name,
+      "Customer No": row.vendor_no,
+      "Customer Name": row.vendor_name,
       // Description: row.description,
       "Due Date": formatDate(row.due_date),
       CCY: row.currency_code,
@@ -216,10 +216,10 @@ export default function SupplierActivityReport() {
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Supplier Activity");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customer Activity");
     XLSX.writeFile(
       workbook,
-      `Supplier_Activity_Report_${format(new Date(), "yyyyMMdd")}.xlsx`,
+      `Customer_Activity_Report_${format(new Date(), "yyyyMMdd")}.xlsx`,
     );
     setExportMenuOpen(false);
   };
@@ -229,7 +229,7 @@ export default function SupplierActivityReport() {
       <Breadcrumbs
         items={[
           { label: "All Reports", href: `/${slug}/reports` },
-          { label: "Supplier Activity Report" },
+          { label: "Customer Activity Report" },
         ]}
       />
 
@@ -328,18 +328,18 @@ export default function SupplierActivityReport() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div className="flex flex-col gap-1">
             <label className="font-semibold text-slate-200">
-              Select Supplier(s)
+              Select Customer(s)
             </label>
             <div
               className="relative cursor-pointer"
-              onClick={() => setSupplierModalOpen(true)}
+              onClick={() => setCustomerModalOpen(true)}
             >
               <input
                 readOnly
-                placeholder="All Suppliers Selected"
+                placeholder="All Customers Selected"
                 value={
-                  selectedSupplierIds.length
-                    ? `${selectedSupplierIds.length} Supplier(s) selected`
+                  selectedCustomerIds.length
+                    ? `${selectedCustomerIds.length} Customer(s) selected`
                     : ""
                 }
                 className="w-full bg-white text-slate-800 rounded px-2 py-1.5 pr-8 focus:outline-none cursor-pointer select-none"
@@ -357,7 +357,7 @@ export default function SupplierActivityReport() {
         <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <FileText className="text-emerald-700 h-5 w-5" /> Supplier
+              <FileText className="text-emerald-700 h-5 w-5" /> Customer
               Activity Report
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -408,8 +408,8 @@ export default function SupplierActivityReport() {
                 <th className="p-3">Posting Date</th>
                 <th className="p-3">Doc Type</th>
                 <th className="p-3">Doc No</th>
-                <th className="p-3">Supplier No</th>
-                <th className="p-3 min-w-[150px]">Supplier Name</th>
+                <th className="p-3">Customer No</th>
+                <th className="p-3 min-w-[150px]">Customer Name</th>
                 {/* <th className="p-3">Description</th> */}
                 <th className="p-3">Due Date</th>
                 <th className="p-3 text-center">CCY</th>
@@ -436,7 +436,7 @@ export default function SupplierActivityReport() {
                     colSpan={13}
                     className="p-12 text-center font-sans text-xs text-slate-400 italic"
                   >
-                    No supplier activity entries found within specified
+                    No customer activity entries found within specified
                     constraint bounds.
                   </td>
                 </tr>
@@ -605,14 +605,14 @@ export default function SupplierActivityReport() {
         )}
       </div>
 
-      <SupplierLookupModal
-        open={supplierModalOpen}
-        onClose={() => setSupplierModalOpen(false)}
+      <CustomerLookupModal
+        open={customerModalOpen}
+        onClose={() => setCustomerModalOpen(false)}
         multiple={true}
-        onSelect={(supplier) => setSelectedSuppliers([supplier])}
-        onSelectMultiple={(suppliers) => {
-          setSelectedSuppliers(suppliers);
-          setSelectedSupplierIds(suppliers.map((s) => s.id));
+        onSelect={(customer) => setSelectedCustomers([customer])}
+        onSelectMultiple={(customers) => {
+          setSelectedCustomers(customers);
+          setSelectedCustomerIds(customers.map((s) => s.id));
         }}
       />
     </div>

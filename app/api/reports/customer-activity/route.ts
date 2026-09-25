@@ -1,4 +1,4 @@
-// app/api/reports/supplier-activity/route.ts
+// app/api/reports/customer-activity/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     const toDate = searchParams.get("toDate");
     const reportType = searchParams.get("reportType") || "By Posting Date";
     const documentType = searchParams.get("documentType") || "All";
-    const supplierIdsParam = searchParams.get("supplierIds");
+    const customerIdsParam = searchParams.get("customerIds");
 
     if (!fromDate || !toDate) {
       return NextResponse.json(
@@ -96,15 +96,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    if (supplierIdsParam) {
-      const supplierIds = supplierIdsParam
+    if (customerIdsParam) {
+      const customerIds = customerIdsParam
         .split(",")
         .map((id) => id.trim())
         .filter(Boolean);
-      if (supplierIds.length > 0) {
-        queryParams.push(supplierIds);
+      if (customerIds.length > 0) {
+        queryParams.push(customerIds);
         whereConditions.push(
-          `combined.vendor_id = ANY($${queryParams.length}::uuid[])`,
+          `combined.customer_id = ANY($${queryParams.length}::uuid[])`,
         );
       }
     }
@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
         SELECT 
           e.id,
           e.company_id,
-          e.vendor_id,
+          e.customer_id,
           e.posting_date,
           e.due_date,
           e.document_type,
@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
           e.on_hold,
           e.on_hold_reason,
           e.created_at
-        FROM vendor_ledger_entries e
+        FROM customer_ledger_entries e
 
         UNION ALL
 
@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
         SELECT 
           gl.id,
           gl.company_id,
-          gl.party_id AS vendor_id,
+          gl.party_id AS customer_id,
           gl.posting_date,
           gl.posting_date AS due_date,
           'FX_VARIANCE' AS document_type,
@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
           '' AS on_hold_reason,
           gl.posted_at AS created_at
         FROM gl_ledger_entries gl
-        WHERE gl.party_type::text = 'supplier' AND gl.source_type::text = 'FX_VARIANCE'
+        WHERE gl.party_type::text = 'customer' AND gl.source_type::text = 'FX_VARIANCE'
       )
       SELECT 
         combined.id,
@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
         combined.document_type,
         combined.document_no,
         combined.description,
-        p.supplier_code AS vendor_no,
+        p.customer_code AS vendor_no,
         p.name AS vendor_name,
         COALESCE(c.code, 'GBP') AS currency_code,
         combined.exchange_rate,
@@ -178,7 +178,7 @@ export async function GET(req: NextRequest) {
         combined.on_hold_reason,
         combined.created_at
       FROM combined_activity combined
-      LEFT JOIN parties p ON p.id = combined.vendor_id
+      LEFT JOIN parties p ON p.id = combined.customer_id
       LEFT JOIN currencies c ON c.id = combined.currency_id
       WHERE ${whereConditions.join(" AND ")}
       ORDER BY combined.posting_date DESC, combined.created_at DESC
@@ -213,7 +213,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to generate Supplier Activity Report data" },
+      { error: "Failed to generate Customer Activity Report data" },
       { status: 500 },
     );
   }
