@@ -695,7 +695,7 @@ export const SalesInvoiceForm: React.FC<Props> = ({
           onClose={() => setShowNavigateModal(false)}
           documentNo={order.invoice_no}
           documentTitle="Sales Invoice"
-          fetchEndpoint={`/api/purchase-invoices/${id}/posted-entries`}
+          fetchEndpoint={`/api/sales/sales-invoices/${id}/posted-entries`}
         />
       )}
     </div>

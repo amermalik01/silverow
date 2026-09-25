@@ -40,7 +40,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
       // Fetch related sales shipments/dispatches if applicable
       const shipmentsRes = await client.query(
-        `SELECT id FROM sales_shipments 
+        `SELECT id FROM stock_dispatches 
          WHERE sales_order_id = $1 AND company_id = $2`,
         [salesOrderId, companyId],
       ).catch(() => ({ rows: [] })); // Fallback if sales_shipments table is omitted
@@ -82,6 +82,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
           )
         ORDER BY gle.transaction_id ASC;
       `;
+
+    //   console.log('query ==== ',query);
+    //   console.log('targetSourceIds ==== ',targetSourceIds);
+    //   console.log('companyId ==== ',companyId);
 
       const result = await client.query(query, [targetSourceIds, companyId]);
 
