@@ -701,7 +701,7 @@ export class SalesOrderService {
           customer_posting_group_id=$38,
           vat_business_posting_group_id=$39,
 
-          consignment_no=$40
+          consignment_no=$40,
 
           updated_at=NOW()
 

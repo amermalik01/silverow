@@ -721,7 +721,7 @@ export const SalesReturnForm: React.FC<Props> = ({
         },
       };
 
-      const response = await fetch(`/api/sales/sales-orders/${id}/receive`, {
+      const response = await fetch(`/api/sales/sales-returns/${id}/receive`, {
         method: "POST",
 
         headers: {
@@ -782,7 +782,7 @@ export const SalesReturnForm: React.FC<Props> = ({
       });
 
       const response = await fetch(
-        `/api/sales/sales-orders/${id}/receive-and-post`,
+        `/api/sales/sales-returns/${id}/receive-and-post`,
         {
           method: "POST",
 
@@ -868,7 +868,7 @@ export const SalesReturnForm: React.FC<Props> = ({
       });
 
       const response = await fetch(
-        `/api/sales/sales-orders/${id}/post-invoice`,
+        `/api/sales/sales-returns/${id}/post-invoice`,
         {
           method: "POST",
 
