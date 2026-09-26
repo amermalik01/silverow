@@ -711,11 +711,12 @@ export default function SalesOrderLines({
                     {displayGrossAmount.toFixed(2)}
                   </td> */}
                   <td className="p-2 text-center">
+                    {/*  || isLineDisabled */}
                     <div className="flex items-center justify-center gap-2">
                       {line.line_type === "ITEM" ? (
                         <button
                           type="button"
-                          disabled={isAllocationDisabled || isLineDisabled}
+                          disabled={isAllocationDisabled}
                           onClick={() => {
                             setActiveAllocationLineId(line._stableKey || null);
                             setIsAllocationModalOpen(true);
