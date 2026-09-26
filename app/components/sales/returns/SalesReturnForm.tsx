@@ -1289,7 +1289,7 @@ export const SalesReturnForm: React.FC<Props> = ({
 
             <Button
               type="button"
-              onClick={() => router.push(`/${slug}/sales/orders`)}
+              onClick={() => router.push(`/${slug}/sales/returns`)}
               variant="cancel"
             >
               Cancel

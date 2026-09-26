@@ -1,4 +1,4 @@
-// /app/components/sales/returns/creditNoteCellRenderers.tsx
+// /app/components/sales/returns/postedCreditNoteCellRenderers.tsx
 
 import React from "react";
 import Link from "next/link";
@@ -55,25 +55,28 @@ const formatStatusBadge = (status?: string | null): React.ReactNode => {
   );
 };
 
-export function getCreditNoteCellRenderers(slug: string, isPosted = false) {
+export function getPostedCreditNoteCellRenderers(
+  slug: string,
+  isPosted = false,
+) {
   return {
-    // Identifier Links & Numbers
+    // Identifier Links & Numbers 
     credit_note_no: (row: SalesReturn) => (
       <Link
-        href={`/${slug}/sales/returns/${row.id}${!isPosted ? "/edit" : "/view"}`}
+        href={`/${slug}/sales/posted-credit-notes/${row.id}`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
         {row.credit_note_no || "Draft"}
       </Link>
     ),
-    // posted_credit_note_no: (row: SalesReturn) => (
-    //   <Link
-    //     href={`/${slug}/sales/returns/${row.id}`}
-    //     className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
-    //   >
-    //     {row.posted_credit_note_no || "-"}
-    //   </Link>
-    // ),
+    posted_credit_note_no: (row: SalesReturn) => (
+      <Link
+        href={`/${slug}/sales/posted-credit-notes/${row.id}`}
+        className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+      >
+        {row.posted_credit_note_no || "-"}
+      </Link>
+    ),
     reference: (row: SalesReturn) => row.reference || "-",
     cust_return_no: (row: SalesReturn) => row.cust_return_no || "-",
     cust_order_no: (row: SalesReturn) => row.cust_order_no || "-",

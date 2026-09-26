@@ -1,5 +1,4 @@
 // lib/services/sales/sales-return-receipt.service.ts
-// lib/services/sales/sales-return-receipt.service.ts
 
 import { pool } from "@/lib/db";
 import { PoolClient } from "pg";

@@ -1365,4 +1365,235 @@ export class SalesReturnService {
       );
     }
   }
+
+
+  /**
+   * List paginated Posted Sales Returns (Credit Notes)
+   */
+  static async listPaginatedPosted(
+    companyId: string,
+    params: FetchParams,
+  ): Promise<FetchResponse<SalesReturn>> {
+    const page = Math.max(1, Number(params.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(params.pageSize) || 20));
+    const filters = params.filters || {};
+    const search =
+      typeof params.search === "string" ? params.search.trim() : "";
+
+    const sortBy = params.sortBy;
+    const sortOrder =
+      params.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    const offset = (page - 1) * pageSize;
+
+    // Mapping table column keys to DB table columns
+    const SORT_FIELDS: Record<string, string> = {
+      posting_date: "cn.posting_date",
+      credit_note_date: "cn.credit_note_date",
+      credit_note_no: "cn.credit_note_no",
+      posted_credit_note_no: "cn.posted_credit_note_no",
+      sales_invoice: "cn.sales_invoice",
+      cust_return_no: "cn.cust_return_no",
+      cust_order_no: "cn.cust_order_no",
+      current_stage: "cos.name",
+      sell_to_cust_no: "cn.customer_no",
+      sell_to_cust_name: "cn.customer_name",
+      sell_to_city: "cn.billing_address->>'city'",
+      sale_person: "cn.salesperson",
+      currency_code: "c.code",
+      net_amount: "cn.subtotal",
+      vat_amount: "cn.vat_amount",
+      grand_total: "cn.total_amount",
+      due_date: "cn.due_date",
+      requested_delivery_date: "cn.requested_delivery_date",
+      dispatch_date: "cn.dispatch_date",
+      delivery_date: "cn.delivery_date",
+      shipment_method_code: "sm.name",
+    };
+
+    const orderByColumn =
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "cn.posted_credit_note_no";
+    const orderDirection = sortOrder === "ASC" ? "ASC" : "DESC";
+
+    const queryValues: (string | number)[] = [companyId];
+    const whereClauses = [
+      "cn.company_id = $1",
+      "cn.is_posted = true",
+    ];
+
+    if (search) {
+      queryValues.push(`%${search}%`);
+      const searchParam = `$${queryValues.length}`;
+      whereClauses.push(
+        ` ( cn.credit_note_no ILIKE ${searchParam} OR 
+            cn.posted_credit_note_no ILIKE ${searchParam} OR 
+            cn.sales_invoice ILIKE ${searchParam} OR 
+            cn.customer_no ILIKE ${searchParam} OR 
+            cn.customer_name ILIKE ${searchParam} OR 
+            cos.name ILIKE ${searchParam} OR 
+            c.code ILIKE ${searchParam} OR 
+            sm.name ILIKE ${searchParam} OR 
+            cn.salesperson ILIKE ${searchParam} ) `,
+      );
+    }
+
+    // Dynamic Filter Parsing
+    Object.entries(filters).forEach(([colKey, filter]) => {
+      if (!filter) return;
+
+      if (filter.value !== undefined && filter.value !== "") {
+        if (colKey === "currency_code") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`c.code = $${queryValues.length}`);
+        } else if (colKey === "current_stage") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`cos.name = $${queryValues.length}`);
+        } else if (colKey === "status") {
+          queryValues.push(String(filter.value));
+          whereClauses.push(`cn.status::text = $${queryValues.length}`);
+        } else if (colKey === "credit_note_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.credit_note_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "posted_credit_note_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.posted_credit_note_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sales_invoice") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.sales_invoice ILIKE $${queryValues.length}`);
+        } else if (colKey === "customer_name") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.customer_name ILIKE $${queryValues.length}`);
+        } else if (colKey === "cust_return_no") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.cust_return_no ILIKE $${queryValues.length}`);
+        } else if (colKey === "sale_person") {
+          queryValues.push(`%${filter.value}%`);
+          whereClauses.push(`cn.salesperson ILIKE $${queryValues.length}`);
+        }
+      }
+
+      // Date & Range Filters
+      if (filter.from !== undefined && filter.from !== "") {
+        queryValues.push(filter.from);
+        const idx = queryValues.length;
+        if (colKey === "posting_date")
+          whereClauses.push(`cn.posting_date >= $${idx}::date`);
+        if (colKey === "credit_note_date")
+          whereClauses.push(`cn.credit_note_date >= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`cn.subtotal >= $${idx}::numeric`);
+      }
+
+      if (filter.to !== undefined && filter.to !== "") {
+        queryValues.push(filter.to);
+        const idx = queryValues.length;
+        if (colKey === "posting_date")
+          whereClauses.push(`cn.posting_date <= $${idx}::date`);
+        if (colKey === "credit_note_date")
+          whereClauses.push(`cn.credit_note_date <= $${idx}::date`);
+        if (colKey === "net_amount")
+          whereClauses.push(`cn.subtotal <= $${idx}::numeric`);
+      }
+    });
+
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // Shared SQL Join Clause
+    const joinSql = `
+      FROM credit_notes cn
+      
+      LEFT JOIN currencies c ON c.id = cn.currency_id
+      LEFT JOIN employees e ON (
+        e.company_id = cn.company_id AND (
+          e.id::text = cn.salesperson OR 
+          e.display_name ILIKE cn.salesperson OR
+          CONCAT(e.first_name, ' ', e.last_name) ILIKE cn.salesperson
+        )
+      )
+      
+      LEFT JOIN shipment_method sm ON sm.id = cn.shipment_method_id
+      LEFT JOIN common_order_stages cos ON cos.id = cn.stage_id       
+      LEFT JOIN credit_note_addresses cna 
+          ON cna.credit_note_id = cn.id 
+          AND cna.address_type = 'primary'
+      LEFT JOIN credit_note_addresses ship_a 
+          ON ship_a.credit_note_id = cn.id 
+          AND ship_a.address_type = 'shipping'
+    `;
+
+    // Total Count Query
+    const countQuery = `SELECT COUNT(DISTINCT cn.id) as total ${joinSql} ${whereSql}`;
+    const countResult = await pool.query(countQuery, queryValues);
+    const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
+
+    // Paginated Record Set Query
+    const dataQueryValues = [...queryValues, pageSize, offset];
+    const limitIdx = dataQueryValues.length - 1;
+    const offsetIdx = dataQueryValues.length;
+
+    const dataQuery = `
+      SELECT DISTINCT ON (cn.id, ${orderByColumn})
+        cn.id,
+        cn.credit_note_no,
+        cn.posted_credit_note_no,
+        cn.sales_invoice,
+        cn.cust_return_no,
+        cn.cust_order_no,
+        cn.posting_date,
+        cn.credit_note_date AS offer_date,
+        cn.due_date,
+        cn.requested_delivery_date,
+        cn.dispatch_date,
+        cn.delivery_date,
+        cn.subtotal AS net_amount,
+        cn.vat_amount AS vat_amount,
+        cn.total_amount AS grand_total,
+        (cn.finance_charges > 0) AS finance_charges_exists,
+        (cn.insurance_charges > 0) AS insurance_charges_exists,
+        cn.book_in_phone AS book_in_tel,
+        cn.book_in_contact AS comm_book_in_contact,
+        cn.book_in_email,
+        cn.warehouse_ref_no AS warehouse_booking_ref,
+        cn.cust_warehouse_ref_no AS customer_warehouse_ref,
+        cn.converted_by AS converted_to_so_by_name,
+        
+        -- Joined Labels & Classifications
+        cos.name AS current_stage,
+        cn.customer_no,
+        cn.customer_name,
+        c.code AS currency_code,
+        COALESCE(e.display_name, TRIM(CONCAT(e.first_name, ' ', e.last_name)), cn.salesperson) AS sale_person,
+        sm.name AS shipment_method_code,
+
+        -- Primary / Customer Address details
+        cna.address_1 AS customer_address,
+        cna.address_2 AS customer_address2,
+        cna.city AS city,
+        cna.county AS county,
+        cna.postcode AS post_code,
+        cna.country AS country,
+        cna.phone AS phone,
+        cna.email AS email,
+
+        -- Shipping Address details
+        ship_a.address_1 AS ship_to_address,
+        ship_a.address_2 AS ship_to_address2,
+        ship_a.city AS ship_to_city,
+        ship_a.county AS ship_to_county,
+        ship_a.postcode AS ship_to_post_code
+
+      ${joinSql}
+      ${whereSql}
+      ORDER BY ${orderByColumn} ${orderDirection}, cn.id ASC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `;
+
+    const dataResult = await pool.query(dataQuery, dataQueryValues);
+
+    return {
+      data: dataResult.rows,
+      totalRecords,
+    };
+  }
 }

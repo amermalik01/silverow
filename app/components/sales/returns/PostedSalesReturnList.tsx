@@ -9,15 +9,15 @@ import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
 
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/app/components/DataTable/DataTable";
-import { getCreditNoteCellRenderers } from "./creditNoteCellRenderers";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+import { getPostedCreditNoteCellRenderers } from "./postedCreditNoteCellRenderers";
 
 type Props = {
   slug: string;
 };
 
 export default function PostedSalesReturnList({ slug }: Props) {
-  const cellRenderers = useMemo(() => getCreditNoteCellRenderers(slug), [slug]);
+  const cellRenderers = useMemo(() => getPostedCreditNoteCellRenderers(slug), [slug]);
 
   const renderRowCell = useCallback(
     (row: SalesReturn, columnKey: string) => {
@@ -28,10 +28,10 @@ export default function PostedSalesReturnList({ slug }: Props) {
     [cellRenderers],
   );
 
-  const fetchCreditNotes = async (
+  const fetchPostedCreditNotes = async (
     params: FetchParams,
   ): Promise<FetchResponse<SalesReturn>> => {
-    const res = await fetch("/api/sales/sales-returns/listing", {
+    const res = await fetch("/api/sales/posted-sales-returns/listing", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -65,7 +65,7 @@ export default function PostedSalesReturnList({ slug }: Props) {
       <Breadcrumbs
         items={[
           {
-            label: "Credit Notes",
+            label: "Posted Credit Notes",
           },
         ]}
       />
@@ -81,8 +81,8 @@ export default function PostedSalesReturnList({ slug }: Props) {
 
       <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
         <DataTable<SalesReturn>
-          moduleKey="credit_note"
-          fetchApi={fetchCreditNotes}
+          moduleKey="posted_credit_note"
+          fetchApi={fetchPostedCreditNotes}
           columnsConfigApi={columnsConfigApi}
           renderRowCell={renderRowCell}
           enableRowSelection={true}
