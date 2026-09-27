@@ -1,6 +1,6 @@
 // app/[slug]/finance/item-journal/page.tsx
 
-import JournalList from "@/app/components/finance/journals/JournalList";
+import ItemJournalList from "@/app/components/finance/journals/ItemJournalList";
 
 export default async function ItemJournalPage({
   params,
@@ -10,18 +10,16 @@ export default async function ItemJournalPage({
   const { slug } = await params;
 
   return (
-    <div className="space-y-6 ">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <h1 className="text-2xl font-bold">Finance / Item Journal</h1>
-      </div>
-
-      {/* <JournalList
-        slug={slug}
-        title="Item Journals"
-        journalType="item"
-        apiBase="/api/finance/item-journal"
-        createPath={`/${slug}/finance/item-journal/create`}
-      /> */}
-    </div>
+    <ItemJournalList
+      slug={slug}
+      title="Item Journals"
+      moduleKey="item_journals"
+      sourceType="ITEM"
+      createPath={`/${slug}/finance/item-journal/create`}
+    />
   );
 }
+/* 
+      journalType="item"
+      apiBase="/api/finance/item-journal" 
+      createPath={`/${slug}/finance/general-journal/create`}*/
