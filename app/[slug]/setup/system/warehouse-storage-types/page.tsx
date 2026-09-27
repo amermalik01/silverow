@@ -1,6 +1,6 @@
 // app/[slug]/setup/system/warehouse-storage-types/page.tsx
 
-import StorageTypes from "@/app/components/setup/inventory/warehouses/storage-types/StorageTypes";
+/* import StorageTypes from "@/app/components/setup/inventory/warehouses/storage-types/StorageTypes";
 
 export default function StorageTypesPage() {
   return (
@@ -14,4 +14,4 @@ export default function StorageTypesPage() {
       <StorageTypes />
     </div>
   );
-}
+} */

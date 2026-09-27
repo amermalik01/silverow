@@ -513,7 +513,6 @@ export default function JournalForm({
   };
 
   const handlePostJournal = async () => {
-
     setIsPosting(true);
 
     try {
@@ -526,7 +525,6 @@ export default function JournalForm({
       setIsPosting(false);
     }
   };
-
 
   const handlePersistAction = async (
     postToLedger: boolean = false,
@@ -697,7 +695,6 @@ export default function JournalForm({
       }
 
       return true;
-
     } catch (err) {
       if (err instanceof Error) setErrorMsg(err.message);
       return false;
@@ -754,31 +751,10 @@ export default function JournalForm({
             />
           </div>
 
-          {/* <div className="flex items-center gap-2">
-          <span className="font-medium text-zinc-600 shrink-0">
-            Header Desc.
-          </span>
-          <input
-            type="text"
-            disabled={formDisabled}
-            placeholder="Global transaction remarks..."
-            className="border p-1 px-2 rounded w-full text-zinc-700 outline-none bg-white"
-            value={metadata.description}
-            onChange={(e) =>
-              setMetadata({ ...metadata, description: e.target.value })
-            }
-          />
-        </div> */}
           <div className="flex justify-end gap-2">
             {!formDisabled && (
               <div className="flex justify-start">
-                <Button
-                  type="button"
-                  // variant="outline"
-                  onClick={addLineRow}
-                  // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-                  variant="add_line"
-                >
+                <Button type="button" onClick={addLineRow} variant="add_line">
                   Add Line
                 </Button>
               </div>
@@ -977,24 +953,6 @@ export default function JournalForm({
                     </td>
 
                     <td className="p-1.5">
-                      {/* <input
-                      type="number"
-                      step="0.01"
-                      disabled={debitDisabled}
-                      value={line.debit || ""}
-                      onChange={(e) =>
-                        handleLineChange(
-                          index,
-                          "debit",
-                          parseFloat(e.target.value) || 0,
-                        )
-                      }
-                      className={`w-full border p-1 rounded text-right font-mono ${
-                        debitDisabled
-                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-                          : "bg-white"
-                      }`}
-                    /> */}
                       <NumericTextInput
                         value={Number(line.debit)}
                         allowDecimals
@@ -1011,25 +969,6 @@ export default function JournalForm({
                       />
                     </td>
                     <td className="p-1.5">
-                      {/* <input
-                      type="number"
-                      step="0.01"
-                      disabled={creditDisabled}
-                      value={line.credit || ""}
-                      onChange={(e) =>
-                        handleLineChange(
-                          index,
-                          "credit",
-                          parseFloat(e.target.value) || 0,
-                        )
-                      }
-                      className={`w-full border p-1 rounded text-right font-mono ${
-                        creditDisabled
-                          ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-                          : "bg-white"
-                      }`}
-                    /> */}
-
                       <NumericTextInput
                         value={Number(line.credit)}
                         allowDecimals
@@ -1047,21 +986,6 @@ export default function JournalForm({
                     </td>
 
                     <td className="p-1.5">
-                      {/* <input
-                      type="number"
-                      step="0.01"
-                      disabled={!line.currency_id || formDisabled}
-                      value={line.currency_id ? line.exchange_rate : 1}
-                      onChange={(e) =>
-                        handleLineChange(
-                          index,
-                          "exchange_rate",
-                          parseFloat(e.target.value) || 1.0,
-                        )
-                      }
-                      className="w-full border p-1 rounded text-center bg-zinc-50 font-mono"
-                    /> */}
-
                       <NumericTextInput
                         value={Number(
                           line.currency_id ? line.exchange_rate : 1,
@@ -1134,16 +1058,6 @@ export default function JournalForm({
                                 ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                                 : "bg-zinc-100 text-zinc-700  hover:bg-zinc-200"
                             } `}
-
-                            //   className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                            //   totalLineAllocated > 0
-                            //     ? "text-amber-500"
-                            //     : isFullyAllocated || line.is_allocated
-                            //       ? "text-emerald-500"
-                            //       : isPartiallyAllocated
-                            //         ? "text-amber-500"
-                            //         : "text-indigo-500"
-                            // }`}
                           >
                             <Icon icon="tabler:box-seam" className="w-4 h-4" />
                           </Button>
@@ -1204,7 +1118,6 @@ export default function JournalForm({
                   type="button"
                   onClick={() => setShowNavigateModal(true)}
                   variant="add_line"
-                  // className="px-5 font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2 disabled:opacity-50"
                 >
                   Navigate
                 </Button>
@@ -1344,12 +1257,6 @@ export default function JournalForm({
         )}
 
         {isPosted && journalId && (
-          // <PostedTransactionsModal
-          //   isOpen={showNavigateModal}
-          //   onClose={() => setShowNavigateModal(false)}
-          //   journalId={journalId}
-          //   journalNo={metadata.entry_no}
-          // />
           <PostedTransactionsModal
             isOpen={showNavigateModal}
             onClose={() => setShowNavigateModal(false)}
@@ -1370,101 +1277,4 @@ export default function JournalForm({
       </div>
     </div>
   );
-}
-
-// const sanitizedLines = lines.map((line) => {
-//   const rate = Number(line.exchange_rate || 1.0);
-//   const amt = line.debit > 0 ? line.debit : line.credit;
-//   const convertedAmount = Number((amt * rate).toFixed(2));
-
-//   return {
-//     posting_date: line.posting_date,
-//     document_type: line.document_type,
-//     document_no: line.document_no,
-//     account_id: line.account_id || null,
-//     party_id: line.party_id || null,
-//     party_type:
-//       line.transaction_type === "gl_no" ? null : line.transaction_type,
-//     currency_id: line.currency_id || null,
-//     exchange_rate: rate,
-//     debit: line.debit,
-//     credit: line.credit,
-//     currency_amount: convertedAmount,
-//     description: line.description || metadata.description || "",
-//     reference_id: line.balancing_account_id || null,
-//     reference_type: line.balancing_account_id ? "G/L Account" : null,
-//     allocations: line.allocations || [],
-//   };
-// });
-
-// const payload = {
-//   entry_date: metadata.entry_date,
-//   reference: metadata.reference,
-//   description: metadata.description,
-//   lines: sanitizedLines,
-//   is_posted: postToLedger,
-// };
-
-{
-  /* 🌟 INLINE JOURNAL ALLOCATION MODAL */
-}
-{
-  /* {allocationModalIndex !== null && activeAllocationLine && (
-        <AllocateJournalPaymentModal
-          isOpen={true}
-          onClose={() => setAllocationModalIndex(null)}
-          partyId={activeAllocationLine.party_id}
-          partyType={journalType === "supplier" ? "supplier" : "customer"}
-          documentType={activeAllocationLine.document_type}
-          paymentAmount={
-            activeAllocationLine.debit > 0
-              ? activeAllocationLine.debit
-              : activeAllocationLine.credit
-          }
-          initialAllocations={activeAllocationLine.allocations || []}
-          onApplyAllocations={(allocations) => {
-            handleLineChange(allocationModalIndex, "allocations", allocations);
-          }}
-        />
-      )} */
-}
-{
-  /* <div className="flex justify-end gap-2 pt-2">
-        {!formDisabled && (
-          <>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={loading}
-              onClick={() => handlePersistAction(false)}
-              className="px-5 font-semibold shadow-sm"
-            >
-              Save Draft
-            </Button>
-            <Button
-              type="button"
-              disabled={
-                loading ||
-                (!isBalanced && lines.every((l) => !l.balancing_account_id))
-              }
-              onClick={() => handlePersistAction(true)}
-              className="px-5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm disabled:opacity-40"
-            >
-              {loading ? "Posting..." : "Post Journal"}
-            </Button>
-          </>
-        )}
-
-        {isPosted && (
-          <Button
-            type="button"
-            onClick={() => setShowNavigateModal(true)}
-            className="px-3.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
-          >
-            Navigate
-          </Button>
-        )}
-
-
-      </div> */
 }

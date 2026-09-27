@@ -58,18 +58,9 @@ const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  // const [manualOpenMenus, setManualOpenMenus] = useState<(string | number)[]>(
-  //   [],
-  // );
-
-  // const [manualClosedMenus, setManualClosedMenus] = useState<
-  //   (string | number)[]
-  // >([]);
-
   const [manualOpenMenu, setManualOpenMenu] = useState<string | number | null>(
-  null,
-);
-
+    null,
+  );
 
   const slug = session?.user?.company_slug;
 
@@ -86,42 +77,16 @@ const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
       )
     : [];
 
-    const openMenus = Array.from(
-  new Set([
-    ...autoOpenMenus,
-    ...(manualOpenMenu != null ? [manualOpenMenu] : []),
-  ]),
-);
+  const openMenus = Array.from(
+    new Set([
+      ...autoOpenMenus,
+      ...(manualOpenMenu != null ? [manualOpenMenu] : []),
+    ]),
+  );
 
-const toggleMenu = (id: string | number) => {
-  setManualOpenMenu((prev) => (prev === id ? null : id));
-};
-
-
-  // const openMenus = Array.from(
-  //   new Set([
-  //     ...autoOpenMenus.filter((id) => !manualClosedMenus.includes(id)),
-  //     ...manualOpenMenus,
-  //   ]),
-  // );
-
-  // const toggleMenu = (id: string | number) => {
-  //   setManualOpenMenus((prev) => {
-  //     if (prev.includes(id)) {
-  //       return prev.filter((item) => item !== id);
-  //     }
-
-  //     return [...prev, id];
-  //   });
-
-  //   setManualClosedMenus((prev) => {
-  //     if (prev.includes(id)) {
-  //       return prev.filter((item) => item !== id);
-  //     }
-
-  //     return [...prev, id];
-  //   });
-  // };
+  const toggleMenu = (id: string | number) => {
+    setManualOpenMenu((prev) => (prev === id ? null : id));
+  };
 
   const renderItems = (
     items: SidebarItemType[],
@@ -151,13 +116,20 @@ const toggleMenu = (id: string | number) => {
       const rowClassName = ` relative flex w-full items-center rounded-md transition-all duration-150 group ${collapsed ? "justify-center px-0 py-2.5" : "gap-2.5 px-2 py-2"}
           ${isSelected ? "bg-slate-900/50 font-semibold text-emerald-400" : isActive ? "bg-slate-800/40 text-white" : "text-slate-300"} hover:bg-slate-800/60 hover:text-white `;
 
-      const iconName = item.icon || "solar:widget-2-linear";
+      // const iconName = item.icon || "solar:widget-2-linear";
+      const iconName =
+        item.icon ||
+        (hasChildren
+          ? "solar:folder-with-files-linear"
+          : "solar:record-circle-linear");
 
       const icon = (
         <Icon
           icon={iconName}
-          width={18}
-          height={18}
+          width={level === 0 ? 18 : 16}
+          height={level === 0 ? 18 : 16}
+          // width={18}
+          // height={18}
           className={` shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
         />
       );
@@ -292,6 +264,39 @@ const toggleMenu = (id: string | number) => {
 };
 
 export default CompanySidebar;
+
+// const [manualOpenMenus, setManualOpenMenus] = useState<(string | number)[]>(
+//   [],
+// );
+
+// const [manualClosedMenus, setManualClosedMenus] = useState<
+//   (string | number)[]
+// >([]);
+
+// const openMenus = Array.from(
+//   new Set([
+//     ...autoOpenMenus.filter((id) => !manualClosedMenus.includes(id)),
+//     ...manualOpenMenus,
+//   ]),
+// );
+
+// const toggleMenu = (id: string | number) => {
+//   setManualOpenMenus((prev) => {
+//     if (prev.includes(id)) {
+//       return prev.filter((item) => item !== id);
+//     }
+
+//     return [...prev, id];
+//   });
+
+//   setManualClosedMenus((prev) => {
+//     if (prev.includes(id)) {
+//       return prev.filter((item) => item !== id);
+//     }
+
+//     return [...prev, id];
+//   });
+// };
 
 /* "use client";
 

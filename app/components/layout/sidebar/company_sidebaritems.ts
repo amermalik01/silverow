@@ -50,31 +50,37 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         name: "Finance",
         id: "Finance",
-        icon: "solar:shield-keyhole-minimalistic-linear",
+        // icon: "solar:shield-keyhole-minimalistic-linear",
+        icon: "solar:wallet-money-linear",
         children: [
           {
             id: "Chart of Accounts",
             name: "Chart of Accounts",
+            icon: "solar:book-2-linear",
             url: `/${slug}/finance/chart-of-accounts`,
           },
           {
             id: "General Journals",
             name: "General Journals",
+            icon: "solar:notebook-linear",
             url: `/${slug}/finance/general-journal`,
           },
           {
             id: "Customer Journals",
             name: "Customer Journals",
+            icon: "solar:users-group-rounded-linear",
             url: `/${slug}/finance/customer-journal`,
           },
           {
             id: "Supplier Journals",
             name: "Supplier Journals",
+            icon: "solar:buildings-2-linear",
             url: `/${slug}/finance/supplier-journal`,
           },
           {
             id: "Item Journals",
             name: "Item Journals",
+             icon: "solar:box-linear",
             url: `/${slug}/finance/item-journal`,
           },
         ],
@@ -83,47 +89,56 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Sales",
         name: "Sales",
-        icon: "solar:shield-keyhole-minimalistic-linear",
+        // icon: "solar:shield-keyhole-minimalistic-linear",
+        icon: "solar:cart-large-2-linear",
         children: [
           {
             id: "CRM",
             name: "CRM",
+            icon: "solar:users-group-rounded-linear",
             url: `/${slug}/sales/crm`,
           },
           {
             id: "Customers",
             name: "Customers",
+            icon: "solar:user-rounded-linear",
             url: `/${slug}/sales/customer`,
           },
 
           {
             id: "Sales Quotes",
             name: "Sales Quotes",
+            icon: "solar:document-text-linear",
             url: `/${slug}/sales/quotes`,
           },
           {
             id: "Sales Orders",
             name: "Sales Orders",
+            icon: "solar:clipboard-list-linear",
             url: `/${slug}/sales/orders`,
           },
           {
             id: "Sales Invoices",
             name: "Sales Invoices",
+            icon: "solar:bill-list-linear",
             url: `/${slug}/sales/invoices`,
           },
           {
             id: "Credit Notes",
             name: "Credit Notes",
+            icon: "solar:bill-cross-linear",
             url: `/${slug}/sales/returns`,
           },
           {
             id: "Posted Credit Notes",
             name: "Posted Credit Notes",
+            icon: "solar:bill-check-linear",
             url: `/${slug}/sales/posted-credit-notes`,
           },
           {
             id: "Support Tickets",
             name: "Support Tickets",
+            icon: "solar:chat-round-dots-linear",
             url: `/${slug}/sales/support-ticket`,
           },
         ],
@@ -137,32 +152,38 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
           {
             id: "SRM",
             name: "SRM",
+            icon: "solar:handshake-linear",
             url: `/${slug}/purchases/srm`,
           },
           {
             id: "Suppliers",
             name: "Suppliers",
+            icon: "solar:buildings-2-linear",
             url: `/${slug}/purchases/supplier`,
           },
 
           {
             id: "Purchase Orders",
             name: "Purchase Orders",
+            icon: "solar:clipboard-list-linear",
             url: `/${slug}/purchases/purchase-orders`,
           },
           {
             id: "Purchase Invoices",
             name: "Purchase Invoices",
+            icon: "solar:bill-list-linear",
             url: `/${slug}/purchases/purchase-invoices`,
           },
           {
             id: "Debit Notes",
             name: "Debit Notes",
+            icon: "solar:bill-cross-linear",
             url: `/${slug}/purchases/debit-notes`,
           },
           {
             id: "Posted Debit Notes",
             name: "Posted Debit Notes",
+            icon: "solar:bill-check-linear",
             url: `/${slug}/purchases/posted-debit-notes`,
           },
         ],
@@ -171,16 +192,19 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Inventory",
         name: "Inventory",
-        icon: "solar:shield-keyhole-minimalistic-linear",
+        // icon: "solar:shield-keyhole-minimalistic-linear",
+        icon: "solar:box-minimalistic-linear",
         children: [
           {
             id: "Items",
             name: "Items",
+            icon: "solar:box-linear",
             url: `/${slug}/inventory/items`,
           },
           {
             id: "Transfer Stock",
             name: "Transfer Stock",
+            icon: "solar:transfer-horizontal-linear",
             url: `/${slug}/inventory/transfer-stock`,
           },
         ],
@@ -189,11 +213,13 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Reports",
         name: "Reports",
-        icon: "solar:shield-keyhole-minimalistic-linear",
+        // icon: "solar:shield-keyhole-minimalistic-linear",
+        icon: "solar:chart-2-linear",
         children: [
           {
             id: "All Reports",
             name: "All Reports",
+            icon: "solar:chart-square-linear",
             url: `/${slug}/reports`,
           },
         ],
@@ -202,31 +228,37 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Human Resources",
         name: "Human Resources",
-        icon: "solar:shield-keyhole-minimalistic-linear",
+        // icon: "solar:shield-keyhole-minimalistic-linear",
+        icon: "solar:users-group-two-rounded-linear",
         children: [
           {
             id: "Employees",
             name: "Employees",
+            icon: "solar:user-id-linear",
             url: `/${slug}/hr/employees`,
           },
           {
             id: "Departments",
             name: "Departments",
+            icon: "solar:buildings-linear",
             url: `/${slug}/hr/departments`,
           },
           {
             id: "Designations",
             name: "Designations",
+             icon: "solar:medal-star-linear",
             url: `/${slug}/hr/designations`,
           },
           {
             id: "Leaves",
             name: "Leaves",
+            icon: "solar:calendar-mark-linear",
             url: `/${slug}/hr/leaves`,
           },
           {
             id: "Attendance",
             name: "Attendance",
+            icon: "solar:clock-circle-linear",
             url: `/${slug}/hr/attendance`,
           },
         ],
@@ -240,54 +272,63 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Settings",
         name: "Settings",
-        icon: "solar:shield-keyhole-minimalistic-linear",
+        // icon: "solar:shield-keyhole-minimalistic-linear",
+        icon: "solar:settings-linear",
         children: [
           {
             id: "General",
             name: "General",
+            icon: "solar:buildings-linear",
             url: `/${slug}/setup/system/company`,
           },
           {
             id: "Finance",
             name: "Finance",
+            icon: "solar:wallet-money-linear",
             url: `/${slug}/setup/finance`,
           },
           {
             id: "Sales",
             name: "Sales",
+            icon: "solar:cart-large-2-linear",
             url: `/${slug}/setup/sales`,
           },
           {
             id: "Purchases",
             name: "Purchases",
+            icon: "solar:cart-large-minimalistic-linear",
             url: `/${slug}/setup/purchases`,
           },
           {
             id: "Warehouse Setup",
             name: "Warehouse Setup",
-            children: [
-              {
-                id: "Warehouse",
-                name: "Warehouse",
-                url: `/${slug}/setup/inventory/warehouses`,
-              },
-              {
-                id: "Storage Types",
-                name: "Storage Types",
-                url: `/${slug}/setup/system/warehouse-storage-types`,
-              },
-            ],
+            icon: "solar:warehouse-linear",
+            url: `/${slug}/setup/inventory/warehouses`,
+            // children: [
+            //   {
+            //     id: "Warehouse",
+            //     name: "Warehouse",
+            //     url: `/${slug}/setup/inventory/warehouses`,
+            //   },
+            //   {
+            //     id: "Storage Types",
+            //     name: "Storage Types",
+            //     url: `/${slug}/setup/system/warehouse-storage-types`,
+            //   },
+            // ],
           },
 
           {
             id: "Inventory Setup",
             name: "Inventory Setup",
+            icon: "solar:box-minimalistic-linear",
             url: `/${slug}/setup/inventory`,
           },
 
           {
             id: "Human Resources",
             name: "Human Resources",
+            icon: "solar:users-group-two-rounded-linear",
             url: `/${slug}/setup/hr`,
           },
         ],

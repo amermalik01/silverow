@@ -1,4 +1,5 @@
 // app/components/setup/inventory/tabs/categories.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";

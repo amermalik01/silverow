@@ -9,11 +9,14 @@ import { Icon } from "@iconify/react";
 import BrandsTab from "./tabs/brands";
 import CategoriesTab from "./tabs/categories";
 import UOMTab from "./tabs/UOM";
+// import StorageTypes from "./warehouses/storage-types/StorageTypes";
+import StorageTypesTab from "./tabs/storage_types";
 
 type TabType =
   | "brands"
   | "categories"
-  | "uom";
+  | "uom"
+  | "storage_types";
 
 const tabs: {
   id: TabType;
@@ -35,7 +38,14 @@ const tabs: {
     label: "UOM",
     icon: "solar:table-linear",
   },
+  {
+    id: "storage_types",
+    label: "Warehouse Storage Types",
+    icon: "solar:table-linear",
+  },
 ];
+
+
 
 export default function InventorySetupForm() {
   const [activeTab, setActiveTab] = useState<TabType>("brands");
@@ -167,6 +177,7 @@ export default function InventorySetupForm() {
         {activeTab === "brands" && <BrandsTab />}
         {activeTab === "categories" && <CategoriesTab />}
         {activeTab === "uom" && <UOMTab />}
+        {activeTab === "storage_types" && <StorageTypesTab />}
       </div>
     </div>
   );

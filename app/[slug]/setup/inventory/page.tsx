@@ -1,4 +1,4 @@
-// app/[slug]/setup/hr/page.tsx
+// app/[slug]/setup/inventory/page.tsx
 
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 import InventorySetupForm from "@/app/components/setup/inventory/InventorySetupForm";
