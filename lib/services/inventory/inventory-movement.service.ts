@@ -11,6 +11,7 @@ export type InventoryTransactionType =
   | "TRANSFER"
   | "ADJUSTMENT"
   | "PRODUCTION_OUTPUT"
+  | "ITEM_JOURNAL"
   | "PRODUCTION_CONSUMPTION";
 
 export type InventoryMovementLineInput = {
@@ -206,10 +207,21 @@ export class InventoryMovementService {
     // 1. Find the transaction lines to reverse out stock snapshot counters
     const existingLines = await client.query(
       `
-      SELECT tl.item_id, tl.warehouse_id, tl.location_id, tl.quantity, tl.unit_cost, tl.batch_no, tl.serial_no
+      SELECT
+        t.company_id,
+        tl.item_id,
+        tl.warehouse_id,
+        tl.location_id,
+        tl.quantity,
+        tl.unit_cost,
+        tl.batch_no,
+        tl.serial_no
       FROM inventory_transaction_lines tl
-      JOIN inventory_transactions t ON t.id = tl.transaction_id
-      WHERE t.reference_id = $1 AND t.reference_type = $2
+      INNER JOIN inventory_transactions t
+        ON t.id = tl.transaction_id
+      WHERE t.reference_id = $1
+        AND t.reference_type = $2
+      ORDER BY tl.line_no ASC
       `,
       [referenceId, referenceType],
     );

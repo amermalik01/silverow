@@ -2,8 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
-import { pool } from "@/lib/db";
-import { ItemJournalService } from "@/lib/services/item-journal.service";
+import { ItemJournalService } from "@/lib/services/item-journal/item-journal.service";
 
 export async function GET(
   req: NextRequest,
@@ -11,86 +10,32 @@ export async function GET(
 ) {
   try {
     const companyId = await getCompanyId();
-    if (!companyId)
+
+    if (!companyId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { id } = await params;
 
-    const headerResult = await pool.query(
-      `SELECT * FROM journal_entries WHERE id = $1 AND company_id = $2`,
-      [id, companyId],
-    );
-
-    if (headerResult.rows.length === 0) {
+    if (!id) {
       return NextResponse.json(
-        { error: "Inventory adjustment voucher not found" },
-        { status: 404 },
+        { error: "Item journal ID is required." },
+        { status: 400 },
       );
     }
 
-    // Pull individual ledger row segments
-    const linesResult = await pool.query(
-      `
-      SELECT l.*, a.code as account_code, a.name as account_name
-      FROM journal_entry_lines l
-      JOIN chart_of_accounts a ON a.id = l.account_id
-      WHERE l.journal_id = $1
-      ORDER BY l.id ASC
-      `,
-      [id],
-    );
+    const result = await ItemJournalService.getById(companyId, id);
 
-    // 🌟 Grab inventory movement rows to map batch and serial records back onto lines
-    const allocationsResult = await pool.query(
-      `
-      SELECT item_id, warehouse_id, location_id, batch_no, serial_no, 
-             ABS(quantity) as quantity, date_received, prod_date, expiry_date
-      FROM inventory_movements
-      WHERE reference_id = $1 AND movement_type = 'ITEM_JOURNAL'
-      `,
-      [id],
-    );
+    return NextResponse.json(result);
+  } catch (error: unknown) {
+    console.error("Get Item Journal Exception:", error);
 
-    // Nest historical stock entries inside their respective line row blocks
-    const linesWithAllocations = linesResult.rows.map((line) => {
-      const associatedAllocations = allocationsResult.rows
-        .filter(
-          (alloc) =>
-            alloc.item_id === line.item_id &&
-            alloc.warehouse_id === line.warehouse_id &&
-            alloc.location_id === line.location_id,
-        )
-        .map((alloc) => ({
-          date_received: alloc.date_received
-            ? alloc.date_received.toISOString().split("T")[0]
-            : "",
-          prod_date: alloc.prod_date
-            ? alloc.prod_date.toISOString().split("T")[0]
-            : "",
-          expiry_date: alloc.expiry_date
-            ? alloc.expiry_date.toISOString().split("T")[0]
-            : "",
-          batch_no: alloc.batch_no || "",
-          serial_no: alloc.serial_no || "",
-          quantity: Number(alloc.quantity || 0),
-        }));
+    const message =
+      error instanceof Error ? error.message : "Failed to read item journal.";
 
-      return {
-        ...line,
-        allocations: associatedAllocations,
-      };
-    });
+    const status = message === "Item journal not found" ? 404 : 500;
 
-    return NextResponse.json({
-      journal: headerResult.rows[0],
-      lines: linesWithAllocations,
-    });
-  } catch (err) {
-    console.error("Get Individual Item Entry Exception:", err);
-    return NextResponse.json(
-      { error: "Failed to read specific voucher elements" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -100,120 +45,85 @@ export async function PUT(
 ) {
   try {
     const companyId = await getCompanyId();
-    if (!companyId)
+
+    if (!companyId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const { id } = await params;
-    const body = await req.json();
-
-    // 🌟 Route changes dynamically through ItemJournalService to overwrite tracking maps safely
-    await ItemJournalService.update(companyId, id, {
-      entry_date: body.entry_date,
-      reference: body.reference,
-      description: body.description,
-      lines: body.lines,
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    const dbError = err as { code?: string; message?: string };
-    console.error("Update Item Adjustment Exception:", err);
-    return NextResponse.json(
-      {
-        error:
-          dbError.message ||
-          "Failed to update target inventory adjustments list matrix",
-      },
-      { status: 500 },
-    );
-  }
-}
-
-/* import { NextRequest, NextResponse } from "next/server";
-import { getCompanyId } from "@/lib/auth/getCompanyId";
-import { pool } from "@/lib/db";
-import { JournalService } from "@/lib/services/journal.service";
-
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const companyId = await getCompanyId();
-    if (!companyId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { id } = await params;
 
-    const headerResult = await pool.query(
-      `SELECT * FROM journal_entries WHERE id = $1 AND company_id = $2`,
-      [id, companyId],
-    );
-
-    if (headerResult.rows.length === 0) {
+    if (!id) {
       return NextResponse.json(
-        { error: "Inventory adjustment voucher not found" },
-        { status: 404 },
+        { error: "Item journal ID is required." },
+        { status: 400 },
       );
     }
 
-    // Pull splitting rows, linking the item catalog names for display references
-    const linesResult = await pool.query(
-      `
-      SELECT l.*, a.code as account_code, a.name as account_name
-      FROM journal_entry_lines l
-      JOIN chart_of_accounts a ON a.id = l.account_id
-      WHERE l.journal_id = $1
-      ORDER BY l.id ASC
-      `,
-      [id],
-    );
+    const body: unknown = await req.json();
 
-    return NextResponse.json({
-      journal: headerResult.rows[0],
-      lines: linesResult.rows,
-    });
-  } catch (err) {
-    console.error("Get Individual Item Entry Exception:", err);
-    return NextResponse.json(
-      { error: "Failed to read specific voucher elements" },
-      { status: 500 },
-    );
-  }
-}
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { error: "Invalid request body." },
+        { status: 400 },
+      );
+    }
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const companyId = await getCompanyId();
-    if (!companyId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const input = body as Record<string, unknown>;
 
-    const { id } = await params;
-    const body = await req.json();
+    if (!Array.isArray(input.lines)) {
+      return NextResponse.json(
+        { error: "lines must be an array." },
+        { status: 400 },
+      );
+    }
 
-    const balancedPayload = {
-      entry_date: body.entry_date,
-      source: "ITEM_JOURNAL" as const,
-      reference: body.reference,
-      description: body.description,
-      lines: body.lines,
+    const payload = {
+      entry_date: String(input.entry_date || ""),
+
+      reference: input.reference == null ? undefined : String(input.reference),
+
+      description:
+        input.description == null ? undefined : String(input.description),
+
+      is_posted: false,
+
+      lines: input.lines,
     };
 
-    await JournalService.update(companyId, id, balancedPayload);
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    const dbError = err as { code?: string; message?: string };
-    console.error("Update Item Adjustment Exception:", err);
-    return NextResponse.json(
-      {
-        error:
-          dbError.message ||
-          "Failed to update target inventory adjustments list matrix",
-      },
-      { status: 500 },
-    );
+    /**
+     * ItemJournalService.update() itself verifies:
+     *
+     * - journal exists
+     * - journal is ITEM_JOURNAL
+     * - journal is not posted
+     * - payload is valid
+     * - old lines are removed
+     * - old allocations are removed
+     * - replacement lines are inserted
+     * - replacement allocations are inserted
+     */
+    const result = await ItemJournalService.update(companyId, id, payload);
+
+    return NextResponse.json({
+      success: true,
+      journal: result,
+    });
+  } catch (error: unknown) {
+    console.error("Update Item Journal Exception:", error);
+
+    const message =
+      error instanceof Error ? error.message : "Failed to update item journal.";
+
+    let status = 400;
+
+    if (message === "Item journal not found") {
+      status = 404;
+    } else if (message === "Posted item journal cannot be modified") {
+      status = 409;
+    } else if (message === "Target journal is not an item journal") {
+      status = 400;
+    }
+
+    return NextResponse.json({ error: message }, { status });
   }
-} */
+}

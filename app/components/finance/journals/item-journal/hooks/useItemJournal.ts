@@ -12,7 +12,6 @@ import { useLoader } from "@/app/context/LoaderContext";
 import type {
   ItemJournalFormProps,
   ItemJournalLineRow,
-  ItemJournalTransactionType,
   JournalMetadata,
   LocationOption,
   WarehouseOption,
@@ -130,13 +129,28 @@ export function useItemJournal({
         }
 
         if (!journalId) {
+          setIsPosted(false);
+          setIsEditing(true);
           return;
         }
 
+        /**
+         * Existing journal.
+         */
         const response = await fetch(`${apiBase}/${journalId}`);
 
         if (!response.ok) {
-          throw new Error("Failed to load item journal.");
+          let message = "Failed to load item journal.";
+
+          try {
+            const payload = await response.json();
+
+            message = payload?.error || payload?.message || message;
+          } catch {
+            // Ignore invalid JSON response.
+          }
+
+          throw new Error(message);
         }
 
         const data = await response.json();
@@ -147,7 +161,11 @@ export function useItemJournal({
 
         const journal = data.journal ?? data.data?.journal ?? data;
 
-        setIsPosted(Boolean(journal?.is_posted));
+        const posted = Boolean(journal?.is_posted);
+
+        setIsPosted(posted);
+
+        setIsEditing(!posted && !readOnly);
 
         const entryDate = normalizeDate(journal?.entry_date) || today();
 
@@ -560,8 +578,6 @@ export function useItemJournal({
     [],
   );
 
-
-
   const handleModalSelection = useCallback(
     (selectedRecord: GLAccountLookupRecord) => {
       if (!activeModal) {
@@ -638,6 +654,10 @@ export function useItemJournal({
           const sanitizedAllocations = allocationsData
             .map((allocation) => ({
               ...allocation,
+              location_id: allocation.location_id
+                ? String(allocation.location_id)
+                : line.location_id,
+
               quantity: Number(allocation.quantity || 0),
             }))
             .filter((allocation) => allocation.quantity > 0);
@@ -707,8 +727,30 @@ export function useItemJournal({
         if (postToLedger) {
           const allocatedQuantity = getAllocationTotal(line.allocations);
 
+          const journalQuantity = Number(line.quantity || 0);
+
+          if (allocatedQuantity !== journalQuantity) {
+            return `Line ${lineNumber}: Stock allocation must equal the journal quantity before posting.`;
+          }
+
           if (allocatedQuantity !== Number(line.quantity || 0)) {
             return `Line ${lineNumber}: Stock allocation must equal the journal quantity before posting.`;
+          }
+
+          for (
+            let allocationIndex = 0;
+            allocationIndex < line.allocations.length;
+            allocationIndex++
+          ) {
+            const allocation = line.allocations[allocationIndex];
+
+            if (!allocation.location_id) {
+              return `Line ${lineNumber}: Allocation ${allocationIndex + 1} is missing a location.`;
+            }
+
+            if (Number(allocation.quantity || 0) <= 0) {
+              return `Line ${lineNumber}: Allocation ${allocationIndex + 1} must have a quantity greater than zero.`;
+            }
           }
         }
       }
@@ -718,11 +760,13 @@ export function useItemJournal({
     [metadata.entry_date, lines],
   );
 
+  // postToLedger: boolean
   const buildApiPayload = useCallback(
-    (postToLedger: boolean) => ({
+    () => ({
       entry_date: metadata.entry_date,
 
-      is_posted: postToLedger,
+      // is_posted: postToLedger,
+      is_posted: false,
 
       source: "ITEM",
 
@@ -736,13 +780,10 @@ export function useItemJournal({
         item_description: line.item_description,
 
         warehouse_id: line.warehouse_id,
-
         warehouse_code: line.warehouse_code,
-
         warehouse_name: line.warehouse_name,
 
         location_id: line.location_id,
-
         location_name: line.location_name,
 
         quantity: Number(line.quantity || 0),
@@ -754,20 +795,15 @@ export function useItemJournal({
         amount: Number(line.amount || 0),
 
         balancing_account_id: line.balancing_account_id,
-
         balancing_display_name: line.balancing_display_name,
 
         allocations: line.allocations.map((allocation) => ({
+          location_id: allocation.location_id || line.location_id,
           date_received: allocation.date_received,
-
           prod_date: allocation.prod_date,
-
           expiry_date: allocation.expiry_date,
-
           batch_no: allocation.batch_no,
-
           serial_no: allocation.serial_no,
-
           quantity: Number(allocation.quantity || 0),
         })),
       })),
@@ -775,7 +811,325 @@ export function useItemJournal({
     [metadata.entry_date, lines],
   );
 
+  const saveDraft = useCallback(async (): Promise<boolean> => {
+    if (loading) {
+      return false;
+    }
+
+    setErrorMsg(null);
+
+    const validationError = validateBeforeSave(false);
+
+    if (validationError) {
+      setErrorMsg(validationError);
+
+      toast.error(validationError);
+
+      return false;
+    }
+
+    setLoading(true);
+
+    try {
+      show("Saving Draft...");
+
+      const payload = buildApiPayload();
+
+      const response = await fetch(
+        journalId ? `${apiBase}/${journalId}` : apiBase,
+        {
+          method: journalId ? "PUT" : "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(payload),
+        },
+      );
+
+      let responsePayload: ApiResponse | null = null;
+
+      try {
+        responsePayload = (await response.json()) as ApiResponse;
+      } catch {
+        responsePayload = null;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          responsePayload?.message ||
+            responsePayload?.error ||
+            "Failed to save item journal.",
+        );
+      }
+
+      toast.success("Item journal saved successfully.");
+
+      router.push(redirectPath);
+
+      return true;
+    } catch (error: unknown) {
+      console.error("Failed to save item journal:", error);
+
+      const message =
+        error instanceof Error ? error.message : "Failed to save item journal.";
+
+      setErrorMsg(message);
+
+      toast.error(message);
+
+      return false;
+    } finally {
+      setLoading(false);
+      hide();
+    }
+  }, [
+    loading,
+    validateBeforeSave,
+    buildApiPayload,
+    journalId,
+    apiBase,
+    router,
+    redirectPath,
+    show,
+    hide,
+  ]);
+
+  const postJournal = useCallback(async (): Promise<boolean> => {
+    if (loading) {
+      return false;
+    }
+
+    setErrorMsg(null);
+
+    const validationError = validateBeforeSave(true);
+
+    if (validationError) {
+      setErrorMsg(validationError);
+
+      toast.error(validationError);
+
+      return false;
+    }
+
+    setLoading(true);
+
+    try {
+      show("Saving Journal...");
+
+      const payload = buildApiPayload();
+
+      /**
+       * -----------------------------------------------------
+       * 1. Save/update the current draft first.
+       * -----------------------------------------------------
+       */
+      const saveResponse = await fetch(
+        journalId ? `${apiBase}/${journalId}` : apiBase,
+        {
+          method: journalId ? "PUT" : "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(payload),
+        },
+      );
+
+      let savePayload: ApiResponse | null = null;
+
+      try {
+        savePayload = (await saveResponse.json()) as ApiResponse;
+      } catch {
+        savePayload = null;
+      }
+
+      if (!saveResponse.ok) {
+        throw new Error(
+          savePayload?.message ||
+            savePayload?.error ||
+            "Failed to save item journal before posting.",
+        );
+      }
+
+      /**
+       * -----------------------------------------------------
+       * 2. Determine the journal ID.
+       *
+       * For a new journal the POST response should
+       * contain the created journal.
+       * -----------------------------------------------------
+       */
+      const savedJournal =
+        (savePayload as Record<string, unknown> | null)?.journal ??
+        (savePayload as Record<string, unknown> | null)?.data ??
+        savePayload;
+
+      const savedJournalRecord = savedJournal as Record<string, unknown> | null;
+
+      const id = journalId || String(savedJournalRecord?.id || "");
+
+      if (!id) {
+        throw new Error(
+          "Item journal was saved but no journal ID was returned.",
+        );
+      }
+
+      /**
+       * -----------------------------------------------------
+       * 3. Actual posting.
+       *
+       * This is intentionally NOT PUT /:id.
+       * It uses the dedicated posting route.
+       * -----------------------------------------------------
+       */
+      show("Posting Journal...");
+
+      const postResponse = await fetch(`${apiBase}/${id}/post`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      let postPayload: ApiResponse | null = null;
+
+      try {
+        postPayload = (await postResponse.json()) as ApiResponse;
+      } catch {
+        postPayload = null;
+      }
+
+      if (!postResponse.ok) {
+        throw new Error(
+          postPayload?.message ||
+            postPayload?.error ||
+            "Failed to post item journal.",
+        );
+      }
+
+      setIsPosted(true);
+      setIsEditing(false);
+
+      toast.success("Item journal posted successfully.");
+
+      router.push(redirectPath);
+
+      return true;
+    } catch (error: unknown) {
+      console.error("Failed to post item journal:", error);
+
+      const message =
+        error instanceof Error ? error.message : "Failed to post item journal.";
+
+      setErrorMsg(message);
+
+      toast.error(message);
+
+      return false;
+    } finally {
+      setLoading(false);
+      hide();
+    }
+  }, [
+    loading,
+    validateBeforeSave,
+    buildApiPayload,
+    journalId,
+    apiBase,
+    router,
+    redirectPath,
+    show,
+    hide,
+  ]);
+
   const handleSaveOrPost = useCallback(
+    async (postToLedger = false): Promise<boolean> => {
+      if (postToLedger) {
+        return postJournal();
+      }
+
+      return saveDraft();
+    },
+    [postJournal, saveDraft],
+  );
+
+  return {
+    loading,
+
+    isPosted,
+
+    errorMsg,
+
+    isEditing,
+
+    setIsEditing,
+
+    setErrorMsg,
+
+    metadata,
+
+    lines,
+
+    locations,
+
+    warehouses,
+
+    formDisabled,
+
+    activeAllocationLine,
+
+    isAllocationModalOpen,
+
+    itemActiveModal,
+
+    activeModal,
+
+    warehouseIndex,
+
+    locationIndex,
+
+    setItemActiveModal,
+
+    setActiveModal,
+
+    setWarehouseIndex,
+
+    setLocationIndex,
+
+    setIsAllocationModalOpen,
+
+    setActiveAllocationLineId,
+
+    handleLineChange,
+
+    addLineRow,
+
+    removeLineRow,
+
+    handleMultipleItemSelect,
+
+    handleWarehouseSelect,
+
+    handleLocationSelect,
+
+    handleModalSelection,
+
+    handleOpenAllocation,
+
+    handleSaveAllocations,
+
+    handleSaveOrPost,
+
+    saveDraft,
+
+    postJournal,
+  };
+
+  /* const handleSaveOrPost = useCallback(
     async (postToLedger = false): Promise<boolean> => {
       if (loading) {
         return false;
@@ -867,54 +1221,54 @@ export function useItemJournal({
       show,
       hide,
     ],
-  );
+  ); */
 
-  return {
-    loading,
-    isPosted,
-    errorMsg,
-    isEditing,
+  // return {
+  //   loading,
+  //   isPosted,
+  //   errorMsg,
+  //   isEditing,
 
-    setIsEditing,
-    setErrorMsg,
+  //   setIsEditing,
+  //   setErrorMsg,
 
-    metadata,
-    lines,
-    locations,
-    warehouses,
+  //   metadata,
+  //   lines,
+  //   locations,
+  //   warehouses,
 
-    formDisabled,
+  //   formDisabled,
 
-    activeAllocationLine,
+  //   activeAllocationLine,
 
-    isAllocationModalOpen,
+  //   isAllocationModalOpen,
 
-    itemActiveModal,
-    activeModal,
+  //   itemActiveModal,
+  //   activeModal,
 
-    warehouseIndex,
-    locationIndex,
+  //   warehouseIndex,
+  //   locationIndex,
 
-    setItemActiveModal,
-    setActiveModal,
-    setWarehouseIndex,
-    setLocationIndex,
+  //   setItemActiveModal,
+  //   setActiveModal,
+  //   setWarehouseIndex,
+  //   setLocationIndex,
 
-    setIsAllocationModalOpen,
-    setActiveAllocationLineId,
+  //   setIsAllocationModalOpen,
+  //   setActiveAllocationLineId,
 
-    handleLineChange,
-    addLineRow,
-    removeLineRow,
+  //   handleLineChange,
+  //   addLineRow,
+  //   removeLineRow,
 
-    handleMultipleItemSelect,
-    handleWarehouseSelect,
-    handleLocationSelect,
-    handleModalSelection,
+  //   handleMultipleItemSelect,
+  //   handleWarehouseSelect,
+  //   handleLocationSelect,
+  //   handleModalSelection,
 
-    handleOpenAllocation,
-    handleSaveAllocations,
+  //   handleOpenAllocation,
+  //   handleSaveAllocations,
 
-    handleSaveOrPost,
-  };
+  //   handleSaveOrPost,
+  // };
 }
