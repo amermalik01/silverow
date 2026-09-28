@@ -275,7 +275,7 @@ export async function PUT(req: Request, { params }: Props) {
         toCleanOrNull(validatedAccount.payable_bank),
         toCleanOrNull(validatedAccount.gl_account_receivable),
         toCleanOrNull(validatedAccount.gl_account_payable),
-        toCleanOrNull(validatedAccount.posting_group) || "UK",
+        toCleanOrNull(validatedAccount.posting_group),//  || "UK"
         toCleanOrNull(validatedAccount.finance_charge),
         validatedAccount.has_finance_charge ?? false,
         toCleanOrNull(validatedAccount.insurance_charge),

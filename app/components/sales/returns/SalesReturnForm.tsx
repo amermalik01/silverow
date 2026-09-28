@@ -277,6 +277,17 @@ export const SalesReturnForm: React.FC<Props> = ({
       return;
     }
 
+    const customerPostingGroup = customer.posting_group?.trim();
+
+    if (!customerPostingGroup) {
+      const errorMessage = `Posting group does not exist for customer "${customer.name}". Please assign a posting group to the customer.`;
+
+      setValidationErrors([errorMessage]);
+      toast.error(errorMessage);
+
+      return;
+    }
+
     // Find customer's payment terms in master data
     const selectedPaymentTerm = masterData?.paymentTerms.find(
       (term) => String(term.id) === String(customer.payment_terms),
@@ -294,7 +305,10 @@ export const SalesReturnForm: React.FC<Props> = ({
     // Calculate due date based on order date + payment term days
     const calculatedDueDate =
       returnOrder.credit_note_date && selectedPaymentTerm
-        ? calculateDueDate(returnOrder.credit_note_date, selectedPaymentTerm.days)
+        ? calculateDueDate(
+            returnOrder.credit_note_date,
+            selectedPaymentTerm.days,
+          )
         : returnOrder.due_date;
 
     setReturnOrder((prev) => ({
@@ -1133,7 +1147,7 @@ export const SalesReturnForm: React.FC<Props> = ({
             <div>
               <textarea
                 placeholder="Add Internal Notes"
-                disabled={isReadOnly}
+                disabled={isFormDisabled}
                 className={`${inputStyle} font-mono`}
                 value={returnOrder.internal_notes || ""}
                 onChange={(e) =>
@@ -1144,7 +1158,7 @@ export const SalesReturnForm: React.FC<Props> = ({
             <div className="col-span-2">
               <textarea
                 placeholder="Add External Notes"
-                disabled={isReadOnly}
+                disabled={isFormDisabled}
                 className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-slate-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
                 value={returnOrder.notes || ""}
                 onChange={(e) => updateReturnField("notes", e.target.value)}

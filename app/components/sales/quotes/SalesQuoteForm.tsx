@@ -184,6 +184,17 @@ export const SalesQuoteForm: React.FC<Props> = ({
       return;
     }
 
+    const customerPostingGroup = customer.posting_group?.trim();
+
+    if (!customerPostingGroup) {
+      const errorMessage = `Posting group does not exist for customer "${customer.name}". Please assign a posting group to the customer.`;
+
+      setValidationErrors([errorMessage]);
+      toast.error(errorMessage);
+
+      return;
+    }
+
     // Find customer's payment terms in master data
     const selectedPaymentTerm = masterData?.paymentTerms.find(
       (term) => String(term.id) === String(customer.payment_terms),
@@ -573,7 +584,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
             <div>
               <textarea
                 placeholder="Add Internal Notes"
-                disabled={isReadOnly}
+                disabled={isFormDisabled}
                 className={`${inputStyle} font-mono`}
                 value={quote.internal_notes || ""}
                 onChange={(e) =>
@@ -584,7 +595,7 @@ export const SalesQuoteForm: React.FC<Props> = ({
             <div className="col-span-2">
               <textarea
                 placeholder="Add External Notes"
-                disabled={isReadOnly}
+                disabled={isFormDisabled}
                 className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-slate-100 dark:bg-slate-800/80 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
                 value={quote.notes || ""}
                 onChange={(e) => updateOrderField("notes", e.target.value)}
