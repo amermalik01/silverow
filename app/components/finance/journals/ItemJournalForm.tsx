@@ -1,925 +1,1508 @@
-//  app/components/finance/journals/ItemJournalForm.tsx
+// app/components/finance/journals/ItemJournalForm.tsx
 
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Trash2, Plus } from "lucide-react";
-import { Icon } from "@iconify/react";
+import React from "react";
 
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+
+import type { ItemJournalFormProps } from "./item-journal/types";
+
+import { useItemJournal } from "./item-journal/hooks/useItemJournal";
+
+import ItemJournalHeader from "./item-journal/components/ItemJournalHeader";
+import ItemJournalToolbar from "./item-journal/components/ItemJournalToolbar";
+import ItemJournalTable from "./item-journal/components/ItemJournalTable";
+import ItemJournalFooter from "./item-journal/components/ItemJournalFooter";
+import ItemJournalModals from "./item-journal/components/ItemJournalModals";
+
+export default function ItemJournalForm(props: ItemJournalFormProps) {
+  const { journalId, redirectPath, readOnly = false } = props;
+
+  const journal = useItemJournal(props);
+
+  const {
+    loading,
+    isPosted,
+    errorMsg,
+    isEditing,
+
+    setIsEditing,
+
+    metadata,
+    lines,
+    locations,
+
+    formDisabled,
+
+    activeAllocationLine,
+
+    isAllocationModalOpen,
+
+    itemActiveModal,
+    activeModal,
+
+    warehouseIndex,
+
+    setItemActiveModal,
+    setActiveModal,
+    setWarehouseIndex,
+    setLocationIndex,
+
+    setIsAllocationModalOpen,
+    setActiveAllocationLineId,
+
+    handleLineChange,
+    addLineRow,
+    removeLineRow,
+
+    handleMultipleItemSelect,
+    handleWarehouseSelect,
+    handleLocationSelect,
+    handleModalSelection,
+
+    handleOpenAllocation,
+    handleSaveAllocations,
+
+    handleSaveOrPost,
+  } = journal;
+
+  return (
+    <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          {
+            label: "Item Journals",
+            href: redirectPath,
+          },
+          {
+            label: metadata.entry_no || "New Journal",
+          },
+        ]}
+      />
+
+      <ItemJournalHeader
+        isPosted={isPosted}
+        journalId={journalId}
+        readOnly={readOnly}
+        isEditing={isEditing}
+        onEdit={() => setIsEditing(true)}
+      />
+
+      <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
+        {errorMsg && (
+          <div className="p-3 bg-red-100 text-red-800 rounded font-medium text-sm border border-red-200">
+            {errorMsg}
+          </div>
+        )}
+
+        <ItemJournalToolbar
+          entryNo={metadata.entry_no}
+          formDisabled={formDisabled}
+          onAddLine={addLineRow}
+        />
+
+        <ItemJournalTable
+          lines={lines}
+          locations={locations}
+          formDisabled={formDisabled}
+          onLineChange={handleLineChange}
+          onOpenItem={(index) =>
+            setItemActiveModal({
+              index,
+              type: "item",
+              target: "item",
+            })
+          }
+          onOpenWarehouse={(index) => setWarehouseIndex(index)}
+          // onLocationChange={(index, location) => {
+          //   setLocationIndex(index);
+          //   handleLocationSelect(location);
+          // }}
+          onLocationChange={(index, location) => {
+            handleLocationSelect(index, location);
+          }}
+          onLocationFocus={(index) => setLocationIndex(index)}
+          onOpenGL={(index) =>
+            setActiveModal({
+              index,
+              type: "balancing_account",
+              target: "gl",
+            })
+          }
+          onOpenAllocation={handleOpenAllocation}
+          onRemove={removeLineRow}
+        />
+
+        <ItemJournalFooter
+          formDisabled={formDisabled}
+          loading={loading}
+          onPost={() => void handleSaveOrPost(true)}
+          onSave={() => void handleSaveOrPost(false)}
+          onCancel={() => window.location.assign(redirectPath)}
+        />
+      </div>
+
+      <ItemJournalModals
+        itemModalOpen={itemActiveModal !== null}
+        glModalOpen={activeModal !== null}
+        warehouseModalOpen={warehouseIndex !== null}
+        allocationModalOpen={isAllocationModalOpen}
+        activeAllocationLine={activeAllocationLine}
+        formDisabled={formDisabled}
+        onCloseItem={() => setItemActiveModal(null)}
+        onItemSelect={(item) => void handleMultipleItemSelect([item])}
+        onCloseGL={() => setActiveModal(null)}
+        onGLSelect={handleModalSelection}
+        onCloseWarehouse={() => setWarehouseIndex(null)}
+        onWarehouseSelect={handleWarehouseSelect}
+        onCloseAllocation={() => {
+          setIsAllocationModalOpen(false);
+
+          setActiveAllocationLineId(null);
+        }}
+        onSaveAllocation={handleSaveAllocations}
+      />
+    </div>
+  );
+}
+
+/* "use client";
+
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import ItemLookupModal, {
-  ItemLookupRecord,
-} from "../../shared/modals/ItemLookupModal";
-import StockAllocationModal, {
-  StockAllocationRecord,
-} from "../../shared/modals/StockAllocationModal";
+import { Icon } from "@iconify/react";
 import { toast } from "sonner";
+
+import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 
-interface Account {
-  id: string;
-  code: string;
-  name: string;
-}
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+import { useLoader } from "@/app/context/LoaderContext";
 
-interface Currency {
-  id: string;
-  code: string;
-  name: string;
-  is_base: boolean;
-}
+import ItemLookupModal, {
+  ItemLookupRecord,
+} from "../../shared/modals/ItemLookupModal";
 
-interface Warehouse {
-  id: string;
-  name: string;
-}
+import StockAllocationModal, {
+  StockAllocationRecord,
+} from "../../shared/modals/StockAllocationModal";
 
-interface StorageLocation {
-  id: string;
-  warehouse_id: string;
-  title: string;
-  code: string | null;
-}
-interface ItemJournalLineRow {
-  local_key: string;
-  postingDate: string;
-  transaction_type: "Positive Entry" | "Negative Entry";
+import GLAccountLookupModal, {
+  GLAccountLookupRecord,
+} from "../../shared/modals/GLAccountLookupModal";
+
+import WarehouseLookupModal, {
+  WarehouseLookupRecord,
+} from "../../shared/modals/WarehouseLookupModal";
+
+
+export type ItemJournalTransactionType = "Positive Entry" | "Negative Entry";
+
+export type StockStatus = "allocated" | "partial" | "unallocated";
+
+type ApiResponse = {
+  message?: string;
+  error?: string;
+  data?: unknown;
+};
+
+export type ItemJournalLineRow = {
+  _stableKey: string;
+
+  posting_date: string;
+  transaction_type: ItemJournalTransactionType;
+
   item_id: string;
-  item_code: string;
+  item_no: string;
   item_description: string;
+
   warehouse_id: string;
+  warehouse_code: string;
+  warehouse_name: string;
+
   location_id: string;
+  location_name: string;
+
   quantity: number;
   uom: string;
+
   cost_per_unit: number;
   amount: number;
-  account_id: string;
+
+  balancing_account_id: string;
+  balancing_display_name: string;
 
   allocations: StockAllocationRecord[];
+  initialAllocations?: StockAllocationRecord[];
+
+  stock_status: StockStatus;
   is_allocated: boolean;
-}
+};
 
-interface RawBackendJournalLine {
+type WarehouseOption = {
   id: string;
-  postingDate: string;
-  account_id: string;
-  debit: string | number;
-  credit: string | number;
-  item_id?: string | null;
-  item_code?: string | null;
-  item_description?: string | null;
-  warehouse_id?: string | null;
-  location_id?: string | null;
-  quantity?: string | number | null;
-  uom?: string | null;
-  cost_per_unit?: string | number | null;
-}
+  name: string;
+};
 
-interface ApiResponsePayload {
-  journal: {
-    entry_date?: string;
-    reference?: string | null;
-    description?: string | null;
-    is_posted?: boolean;
-  };
-  lines?: RawBackendJournalLine[];
-}
+type LocationOption = {
+  id: string;
+  name: string;
+  warehouse_id: string;
+};
 
-interface Props {
-  slug: string;
+type Props = {
+  slug?: string;
   journalId?: string;
   apiBase: string;
   redirectPath: string;
-}
+  readOnly?: boolean;
+};
+
+
+const today = () => {
+  return new Date().toISOString().split("T")[0];
+};
+
+const createStableKey = () => {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `line-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+const normalizeDate = (value?: string | null) => {
+  if (!value) return "";
+
+  return String(value).split("T")[0];
+};
+
+const calculateAmount = (quantity: number, cost: number) => {
+  return Number((Number(quantity || 0) * Number(cost || 0)).toFixed(2));
+};
+
+const getAllocationTotal = (
+  allocations: StockAllocationRecord[] = [],
+): number => {
+  return allocations.reduce(
+    (sum, allocation) => sum + Number(allocation.quantity || 0),
+    0,
+  );
+};
+
+const getStockStatus = (
+  quantity: number,
+  allocations: StockAllocationRecord[] = [],
+): StockStatus => {
+  const lineQuantity = Number(quantity || 0);
+  const allocatedQuantity = getAllocationTotal(allocations);
+
+  if (lineQuantity <= 0 || allocatedQuantity <= 0) {
+    return "unallocated";
+  }
+
+  if (allocatedQuantity >= lineQuantity) {
+    return "allocated";
+  }
+
+  return "partial";
+};
 
 export default function ItemJournalForm({
+  slug,
   journalId,
   apiBase,
   redirectPath,
+  readOnly = false,
 }: Props) {
   const router = useRouter();
+  const { show, hide } = useLoader();
 
-  // Status states
   const [loading, setLoading] = useState(false);
-  const [isPosting, setIsPosting] = useState(false);
   const [isPosted, setIsPosted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Lookup data states
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [isEditing, setIsEditing] = useState<boolean>(!journalId);
 
-  // Location cache linked to unique local row keys
-  const [rowLocationsCache, setRowLocationsCache] = useState<
-    Record<string, StorageLocation[]>
-  >({});
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
+  const [locations, setLocations] = useState<LocationOption[]>([]);
 
-  // Modals state management
-  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-  const [activeItemRowKey, setActiveItemRowKey] = useState<string | null>(null);
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
-  const [activeAllocationRowKey, setActiveAllocationRowKey] = useState<
+
+  const [activeAllocationLineId, setActiveAllocationLineId] = useState<
     string | null
   >(null);
-  // Header metadata fields
+
+  const [activeModal, setActiveModal] = useState<{
+    index: number;
+    type: "balancing_account";
+    target: "gl";
+  } | null>(null);
+
+  const [itemActiveModal, setItemActiveModal] = useState<{
+    index: number;
+    type: "item";
+    target: "item";
+  } | null>(null);
+
+  const [warehouseIndex, setWarehouseIndex] = useState<number | null>(null);
+
+  const [locationIndex, setLocationIndex] = useState<number | null>(null);
+
   const [metadata, setMetadata] = useState({
-    // entry_date: new Date().toISOString().split("T")[0],
-    reference: "",
-    description: "",
+    entry_no: "",
+    entry_date: today(),
   });
 
-  // Default row helper
-  const createBlankRow = (): ItemJournalLineRow => ({
-    local_key: Math.random().toString(36).substring(2, 9),
-    postingDate: new Date().toISOString().split("T")[0],
-    transaction_type: "Positive Entry",
-    item_id: "",
-    item_code: "",
-    item_description: "",
-    warehouse_id: "",
-    location_id: "",
-    quantity: 0,
-    uom: "Pcs",
-    cost_per_unit: 0,
-    amount: 0,
-    account_id: "",
-    allocations: [],
-    is_allocated: false,
-  });
+  const createInitialRow = useCallback(
+    (overrides: Partial<ItemJournalLineRow> = {}): ItemJournalLineRow => {
+      const quantity = Number(overrides.quantity || 0);
+      const cost = Number(overrides.cost_per_unit || 0);
 
-  const [lines, setLines] = useState<ItemJournalLineRow[]>([createBlankRow()]);
+      return {
+        _stableKey: createStableKey(),
 
-  // --- Initial Dictionaries Load Hydration ---
+        posting_date: metadata.entry_date || today(),
+
+        transaction_type: "Negative Entry",
+
+        item_id: "",
+        item_no: "",
+        item_description: "",
+
+        warehouse_id: "",
+        warehouse_code: "",
+        warehouse_name: "",
+
+        location_id: "",
+        location_name: "",
+
+        quantity: 0,
+        uom: "Pcs",
+
+        cost_per_unit: 0,
+        amount: 0,
+
+        balancing_account_id: "",
+        balancing_display_name: "",
+
+        allocations: [],
+        initialAllocations: [],
+
+        stock_status: "unallocated",
+        is_allocated: false,
+
+        ...overrides,
+
+        quantity,
+        cost_per_unit: cost,
+        amount: calculateAmount(quantity, cost),
+      };
+    },
+    [metadata.entry_date],
+  );
+
+  const [lines, setLines] = useState<ItemJournalLineRow[]>(() => [
+    createInitialRow(),
+  ]);
+
+  const formDisabled = readOnly || isPosted || !isEditing || loading;
+
+  const activeAllocationLine = useMemo(() => {
+    if (!activeAllocationLineId) return null;
+
+    return (
+      lines.find((line) => line._stableKey === activeAllocationLineId) || null
+    );
+  }, [activeAllocationLineId, lines]);
+
   useEffect(() => {
-    const loadCoreLookups = async () => {
+    let cancelled = false;
+
+    const fetchMasterData = async () => {
+      setLoading(true);
+      setErrorMsg(null);
+
       try {
-        setLoading(true);
-        setErrorMsg(null);
+        show("Loading data...");
 
-        const [accountRes, whRes, currencyRes] = await Promise.all([
-          fetch(`/api/lookups/gl-accounts?all=true`),
-          fetch(`/api/lookups/warehouses`),
-          fetch(`/api/parties/currencies`),
-        ]);
+        const requests = [
+          fetch("/api/inventory/warehouses"),
+          fetch("/api/inventory/locations"),
+        ] as const;
 
-        const [accountData, whData, currencyData] = await Promise.all([
-          accountRes.json(),
-          whRes.json(),
-          currencyRes.ok ? currencyRes.json() : Promise.resolve([]),
-        ]);
+        const [warehouseResponse, locationResponse] =
+          await Promise.all(requests);
 
-        setAccounts(accountData.data || []);
-        setWarehouses(whData.data || []);
-        setCurrencies(currencyData || []);
+        if (!cancelled) {
+          if (warehouseResponse.ok) {
+            const warehousePayload = await warehouseResponse.json();
 
-        // Rehydrate transactional record variables if an ID exists
-        if (journalId) {
-          const detailRes = await fetch(`${apiBase}/${journalId}`);
-          if (!detailRes.ok)
-            throw new Error("Failed to load historical record voucher context");
+            const warehouseData = Array.isArray(warehousePayload)
+              ? warehousePayload
+              : (warehousePayload.data ?? []);
 
-          const data: ApiResponsePayload = await detailRes.json();
-          setIsPosted(!!data.journal.is_posted);
+            setWarehouses(warehouseData);
+          }
 
-          setMetadata({
-            // entry_date: data.journal.entry_date?.split("T")[0] || "",
-            reference: data.journal.reference || "",
-            description: data.journal.description || "",
-          });
+          if (locationResponse.ok) {
+            const locationPayload = await locationResponse.json();
 
-          if (data.lines && data.lines.length > 0) {
-            const structuralLines: ItemJournalLineRow[] = [];
-            const initialLocationCaches: Record<string, StorageLocation[]> = {};
+            const locationData = Array.isArray(locationPayload)
+              ? locationPayload
+              : (locationPayload.data ?? []);
 
-            for (let i = 0; i < data.lines.length; i++) {
-              const l = data.lines[i];
-              if (l.item_id) {
-                const isPositive = Number(l.debit) > 0;
-                const associatedOffset = data.lines.find(
-                  (o) =>
-                    o.id !== l.id &&
-                    Math.abs(Number(o.debit) - Number(l.credit)) < 0.01,
-                );
-
-                const generatedKey = Math.random().toString(36).substring(2, 9);
-
-                structuralLines.push({
-                  local_key: generatedKey,
-                  postingDate: l.postingDate
-                    ? l.postingDate.split("T")[0]
-                    : new Date().toISOString().split("T")[0],
-                  transaction_type: isPositive
-                    ? "Positive Entry"
-                    : "Negative Entry",
-                  item_id: l.item_id,
-                  item_code: l.item_code || "",
-                  item_description: l.item_description || "",
-                  warehouse_id: l.warehouse_id || "",
-                  location_id: l.location_id || "",
-                  quantity: Number(l.quantity || 0),
-                  uom: l.uom || "Pcs",
-                  cost_per_unit: Number(l.cost_per_unit || 0),
-                  amount: isPositive ? Number(l.debit) : Number(l.credit),
-                  account_id:
-                    l.account_id || associatedOffset?.account_id || "",
-                  allocations: [],
-                  is_allocated: false,
-                });
-
-                // Fetch location listings for existing rows immediately
-                if (l.warehouse_id) {
-                  const locRes = await fetch(
-                    `/api/lookups/locations?warehouse_id=${l.warehouse_id}`,
-                  );
-                  if (locRes.ok) {
-                    const locPayload = await locRes.json();
-                    initialLocationCaches[generatedKey] = locPayload.data || [];
-                  }
-                }
-              }
-            }
-
-            if (structuralLines.length > 0) {
-              setRowLocationsCache(initialLocationCaches);
-              setLines(structuralLines);
-            }
+            setLocations(locationData);
           }
         }
-      } catch (err) {
-        console.error("Hydration runtime issue:", err);
-        setErrorMsg("Failed to synchronize component schema records.");
+
+        if (journalId) {
+          const response = await fetch(`${apiBase}/${journalId}`);
+
+          if (!response.ok) {
+            throw new Error("Failed to load item journal.");
+          }
+
+          const data = await response.json();
+
+          if (cancelled) return;
+
+          const journal = data.journal ?? data.data?.journal ?? data;
+
+          setIsPosted(Boolean(journal?.is_posted));
+
+          setMetadata({
+            entry_no: journal?.entry_no || "",
+            entry_date: normalizeDate(journal?.entry_date) || today(),
+          });
+
+          const apiLines = data.lines ?? data.data?.lines ?? [];
+
+          if (Array.isArray(apiLines) && apiLines.length > 0) {
+            const normalizedLines: ItemJournalLineRow[] = apiLines.map(
+              (rawLine: Partial<ItemJournalLineRow> & Record<string, any>) => {
+                const quantity = Number(rawLine.quantity || 0);
+                const cost = Number(rawLine.cost_per_unit || 0);
+
+                const allocations: StockAllocationRecord[] = Array.isArray(
+                  rawLine.allocations,
+                )
+                  ? rawLine.allocations
+                  : Array.isArray(rawLine.initialAllocations)
+                    ? rawLine.initialAllocations
+                    : [];
+
+                const status = getStockStatus(quantity, allocations);
+
+                return {
+                  _stableKey: createStableKey(),
+
+                  posting_date:
+                    normalizeDate(rawLine.posting_date) ||
+                    normalizeDate(journal?.entry_date) ||
+                    today(),
+
+                  transaction_type:
+                    rawLine.transaction_type === "Positive Entry"
+                      ? "Positive Entry"
+                      : "Negative Entry",
+
+                  item_id: String(rawLine.item_id || ""),
+                  item_no: String(rawLine.item_no || rawLine.item_code || ""),
+                  item_description: String(
+                    rawLine.item_description || rawLine.item_name || "",
+                  ),
+
+                  warehouse_id: String(rawLine.warehouse_id || ""),
+                  warehouse_code: String(rawLine.warehouse_code || ""),
+                  warehouse_name: String(rawLine.warehouse_name || ""),
+
+                  location_id: String(rawLine.location_id || ""),
+                  location_name: String(rawLine.location_name || ""),
+
+                  quantity,
+                  uom: String(rawLine.uom || rawLine.uom_name || "Pcs"),
+
+                  cost_per_unit: cost,
+                  amount: calculateAmount(quantity, cost),
+
+                  balancing_account_id: String(
+                    rawLine.balancing_account_id || "",
+                  ),
+                  balancing_display_name: String(
+                    rawLine.balancing_display_name || "",
+                  ),
+
+                  allocations,
+                  initialAllocations: allocations,
+
+                  stock_status: status,
+                  is_allocated:
+                    status === "allocated" || Boolean(rawLine.is_allocated),
+                };
+              },
+            );
+
+            setLines(normalizedLines);
+          } else {
+            setLines([createInitialRow()]);
+          }
+        }
+      } catch (error) {
+        console.error("Failed loading Item Journal data:", error);
+
+        if (!cancelled) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Failed to load item journal.";
+
+          setErrorMsg(message);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          hide();
+        }
       }
     };
 
-    loadCoreLookups();
-  }, [journalId, apiBase]);
+    fetchMasterData();
 
-  // 🌟 REACTIVE REFETCH HANDLER FOR LOCATIONS
-  const fetchLocationsForSpecificRow = async (
-    rowIndex: string,
-    warehouseId: string,
-  ) => {
+    return () => {
+      cancelled = true;
+      hide();
+    };
+  }, [journalId, apiBase, show, hide, createInitialRow]);
+
+  const loadLocations = async (warehouseId: string) => {
     if (!warehouseId) {
-      setRowLocationsCache((prev) => ({ ...prev, [rowIndex]: [] }));
+      setLocations([]);
       return;
     }
+
     try {
-      const res = await fetch(
-        `/api/lookups/locations?warehouse_id=${warehouseId}`,
+      const response = await fetch(
+        `/api/lookups/locations?warehouse_id=${encodeURIComponent(
+          warehouseId,
+        )}`,
       );
-      if (res.ok) {
-        const payload = await res.json();
-        setRowLocationsCache((prev) => ({
-          ...prev,
-          [rowIndex]: payload.data || [],
-        }));
+
+      if (!response.ok) {
+        throw new Error("Failed to load warehouse locations.");
       }
-    } catch (err) {
-      console.error("Failed pulling targeted location indices:", err);
+
+      const payload = await response.json();
+
+      const data: LocationOption[] = Array.isArray(payload)
+        ? payload
+        : (payload.data ?? []);
+
+      setLocations(data);
+    } catch (error) {
+      console.error("Failed to load locations:", error);
+      toast.error("Failed to load warehouse locations.");
     }
   };
 
-  const handleSaveAllocations = (allocationsData: StockAllocationRecord[]) => {
-    if (!activeAllocationRowKey) return;
+  const handleLineChange = (
+    index: number,
+    field: keyof ItemJournalLineRow,
+    value: string | number,
+  ) => {
+    if (formDisabled) return;
 
-    setLines((prev) =>
-      prev.map((line) => {
-        if (line.local_key !== activeAllocationRowKey) return line;
-        const totalAllocated = allocationsData.reduce(
-          (sum, a) => sum + a.quantity,
-          0,
+    setLines((previous) =>
+      previous.map((existingLine, lineIndex) => {
+        if (lineIndex !== index) return existingLine;
+
+        const updatedLine: ItemJournalLineRow = {
+          ...existingLine,
+          [field]: value,
+        } as ItemJournalLineRow;
+
+        if (field === "quantity" || field === "cost_per_unit") {
+          const quantity =
+            field === "quantity"
+              ? Number(value || 0)
+              : Number(updatedLine.quantity || 0);
+
+          const cost =
+            field === "cost_per_unit"
+              ? Number(value || 0)
+              : Number(updatedLine.cost_per_unit || 0);
+
+          updatedLine.quantity = quantity;
+          updatedLine.cost_per_unit = cost;
+          updatedLine.amount = calculateAmount(quantity, cost);
+
+          const allocationTotal = getAllocationTotal(updatedLine.allocations);
+
+          if (allocationTotal > quantity) {
+            updatedLine.allocations = [];
+            updatedLine.initialAllocations = [];
+            updatedLine.stock_status = "unallocated";
+            updatedLine.is_allocated = false;
+          } else {
+            updatedLine.stock_status = getStockStatus(
+              quantity,
+              updatedLine.allocations,
+            );
+
+            updatedLine.is_allocated = updatedLine.stock_status === "allocated";
+          }
+        }
+
+        return updatedLine;
+      }),
+    );
+  };
+
+  const addLineRow = () => {
+    if (formDisabled) return;
+
+    setLines((previous) => [...previous, createInitialRow()]);
+  };
+
+  const removeLineRow = (index: number) => {
+    if (formDisabled) return;
+
+    setLines((previous) => {
+      if (previous.length <= 1) {
+        return [createInitialRow()];
+      }
+
+      return previous.filter((_, lineIndex) => lineIndex !== index);
+    });
+  };
+
+  const buildItemLine = async (
+    item: ItemLookupRecord,
+  ): Promise<ItemJournalLineRow> => {
+    let defaultWarehouse: {
+      id?: string;
+      code?: string;
+      name?: string;
+    } | null = null;
+
+    try {
+      const response = await fetch(
+        `/api/lookups/default-warehouse?item_id=${encodeURIComponent(item.id)}`,
+      );
+
+      if (response.ok) {
+        const payload = await response.json();
+        defaultWarehouse = payload.data ?? payload;
+      }
+    } catch (error) {
+      console.error("Failed to fetch default warehouse:", error);
+    }
+
+    const unitCost = Number(item.standard_cost || 0);
+
+    return createInitialRow({
+      item_id: String(item.id || ""),
+      item_no: item.item_code || "",
+      item_description: item.description || item.name || "",
+
+      cost_per_unit: unitCost,
+
+      uom: item.base_uom_name || "Pcs",
+
+      warehouse_id: defaultWarehouse?.id || "",
+      warehouse_code: defaultWarehouse?.code || "",
+      warehouse_name: defaultWarehouse?.name || "",
+
+      allocations: [],
+      initialAllocations: [],
+      stock_status: "unallocated",
+      is_allocated: false,
+    });
+  };
+
+  const handleMultipleItemSelect = async (items: ItemLookupRecord[]) => {
+    if (!items.length) {
+      setItemActiveModal(null);
+      return;
+    }
+
+    try {
+      show("Loading item information...");
+
+      const newLines = await Promise.all(
+        items.map((item) => buildItemLine(item)),
+      );
+
+      if (itemActiveModal !== null) {
+        const targetIndex = itemActiveModal.index;
+
+        setLines((previous) =>
+          previous.map((line, index) =>
+            index === targetIndex ? newLines[0] : line,
+          ),
         );
+      } else {
+        setLines((previous) => [...previous, ...newLines]);
+      }
+
+      const selectedWarehouseId = newLines[0]?.warehouse_id || "";
+
+      if (selectedWarehouseId) {
+        await loadLocations(selectedWarehouseId);
+      }
+    } catch (error) {
+      console.error("Failed to add selected items:", error);
+
+      toast.error("Failed to load selected item.");
+    } finally {
+      hide();
+      setItemActiveModal(null);
+    }
+  };
+
+  const handleWarehouseSelect = async (warehouse: WarehouseLookupRecord) => {
+    if (warehouseIndex === null) return;
+
+    const targetIndex = warehouseIndex;
+
+    setLines((previous) =>
+      previous.map((line, index) => {
+        if (index !== targetIndex) return line;
+
         return {
           ...line,
-          allocations: allocationsData,
-          is_allocated: totalAllocated === line.quantity,
+
+          warehouse_id: String(warehouse.id || ""),
+          warehouse_code: warehouse.code || "",
+          warehouse_name: warehouse.name || "",
+
+          location_id: "",
+          location_name: "",
+
+          allocations: [],
+          initialAllocations: [],
+          stock_status: "unallocated",
+          is_allocated: false,
+        };
+      }),
+    );
+
+    await loadLocations(String(warehouse.id || ""));
+
+    setWarehouseIndex(null);
+  };
+
+  const handleLocationSelect = (location: LocationOption) => {
+    if (locationIndex === null) return;
+
+    const targetIndex = locationIndex;
+
+    setLines((previous) =>
+      previous.map((line, index) => {
+        if (index !== targetIndex) return line;
+
+        return {
+          ...line,
+
+          location_id: String(location.id || ""),
+          location_name: location.name || "",
+        };
+      }),
+    );
+
+    setLocationIndex(null);
+  };
+
+  const handleModalSelection = (selectedRecord: GLAccountLookupRecord) => {
+    if (!activeModal) return;
+
+    const targetIndex = activeModal.index;
+
+    setLines((previous) =>
+      previous.map((line, index) => {
+        if (index !== targetIndex) return line;
+
+        return {
+          ...line,
+
+          balancing_account_id: selectedRecord.id,
+
+          balancing_display_name: selectedRecord.code
+            ? `${selectedRecord.code} - ${selectedRecord.name}`
+            : selectedRecord.name,
+        };
+      }),
+    );
+
+    setActiveModal(null);
+  };
+
+  const handleOpenAllocation = (line: ItemJournalLineRow) => {
+    if (formDisabled) return;
+
+    if (!line.item_id) {
+      toast.error("Please select an item first.");
+      return;
+    }
+
+    if (!line.warehouse_id) {
+      toast.error("Please select a warehouse first.");
+      return;
+    }
+
+    if (Number(line.quantity || 0) <= 0) {
+      toast.error("Please enter a quantity first.");
+      return;
+    }
+
+    setActiveAllocationLineId(line._stableKey);
+    setIsAllocationModalOpen(true);
+  };
+
+  const handleSaveAllocations = (allocationsData: StockAllocationRecord[]) => {
+    if (!activeAllocationLineId) return;
+
+    setLines((previous) =>
+      previous.map((line) => {
+        if (line._stableKey !== activeAllocationLineId) {
+          return line;
+        }
+
+        const quantity = Number(line.quantity || 0);
+
+        const sanitizedAllocations = allocationsData
+          .map((allocation) => ({
+            ...allocation,
+            quantity: Number(allocation.quantity || 0),
+          }))
+          .filter((allocation) => allocation.quantity > 0);
+
+        const status = getStockStatus(quantity, sanitizedAllocations);
+
+        return {
+          ...line,
+
+          allocations: sanitizedAllocations,
+          initialAllocations: sanitizedAllocations,
+
+          stock_status: status,
+          is_allocated: status === "allocated",
         };
       }),
     );
 
     setIsAllocationModalOpen(false);
-    setActiveAllocationRowKey(null);
+    setActiveAllocationLineId(null);
   };
 
-  // Extract base currency symbol
-  const baseCurrencyCode = currencies.find((c) => c.is_base)?.code || "GBP";
-
-  // Compute absolute cumulative value summary ($Amount = Qty * Unit Cost)
-  const totalBatchValuation = lines.reduce(
-    (sum, line) => sum + (line.amount || 0),
-    0,
-  );
-
-  const activeAllocationLine = lines.find(
-    (l) => l.local_key === activeAllocationRowKey,
-  );
-
-  // --- Grid Matrix Mutator Event Handlers ---
-
-  const handleLineChange = <K extends keyof ItemJournalLineRow>(
-    key: string,
-    field: K,
-    value: ItemJournalLineRow[K],
-  ) => {
-    if (isPosted) return;
-    setLines((prev) =>
-      prev.map((line) => {
-        if (line.local_key !== key) return line;
-        const updated = { ...line, [field]: value };
-
-        if (field === "quantity" || field === "cost_per_unit") {
-          updated.amount =
-            Number(updated.quantity || 0) * Number(updated.cost_per_unit || 0);
-        }
-        return updated;
-      }),
-    );
-  };
-
-  const handleModalItemSelect = (selectedItem: ItemLookupRecord) => {
-    if (!activeItemRowKey) return;
-
-    setLines((prev) =>
-      prev.map((line) => {
-        if (line.local_key !== activeItemRowKey) return line;
-        const cost = Number(selectedItem.standard_cost || 0);
-        return {
-          ...line,
-          item_id: selectedItem.id,
-          item_code: selectedItem.item_code,
-          item_description: selectedItem.name,
-          cost_per_unit: cost,
-          amount: line.quantity * cost,
-        };
-      }),
-    );
-
-    setIsItemModalOpen(false);
-    setActiveItemRowKey(null);
-  };
-
-  const addLineRow = () => {
-    if (isPosted) return;
-    setLines((prev) => [...prev, createBlankRow()]);
-  };
-
-  const removeLineRow = (key: string) => {
-    if (isPosted || lines.length <= 1) return;
-    setLines((prev) => prev.filter((l) => l.local_key !== key));
-    setRowLocationsCache((prev) => {
-      const updated = { ...prev };
-      delete updated[key];
-      return updated;
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (isPosted) return;
-    setErrorMsg(null);
-
-    const hasInvalidEntries = lines.some(
-      (l) =>
-        !l.item_id ||
-        !l.warehouse_id ||
-        !l.location_id ||
-        l.quantity <= 0 ||
-        !l.account_id ||
-        !l.postingDate,
-    );
-
-    if (hasInvalidEntries) {
-      setErrorMsg(
-        "Validation Error: Ensure Item, Warehouse, Bin Location, Offset Account and positive quantities are populated.",
-      );
-      return;
+  const validateBeforeSave = (postToLedger: boolean): string | null => {
+    if (!metadata.entry_date) {
+      return "Journal date is required.";
     }
 
-    try {
-      setLoading(true);
+    if (!lines.length) {
+      return "At least one journal line is required.";
+    }
 
-      // const payload = {
-      //   ...metadata,
-      //   is_item_journal: true,
-      //   lines,
-      // };
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index];
+      const lineNumber = index + 1;
 
-      const payload = {
-        entry_date: new Date().toISOString().split("T")[0], // metadata.entry_date || metadata.postingDate ||
-        reference: metadata.reference || "",
-        description: metadata.description || "",
-        is_item_journal: true,
-        lines: lines.map((line) => ({
-          ...line,
-          // Ensure transaction_type, quantities, and numeric values pass clearly
-          quantity: Number(line.quantity),
-          cost_per_unit: Number(line.cost_per_unit || 0),
-          amount: Number(line.amount || 0),
-        })),
-      };
-
-      const method = journalId ? "PUT" : "POST";
-      const url = journalId ? `${apiBase}/${journalId}` : apiBase;
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(
-          errData.error || "Failed database ledger ingestion routine.",
-        );
+      if (!line.item_id) {
+        return `Line ${lineNumber}: Item is required.`;
       }
 
-      toast.success("Draft Saved Successfully", {
-        className: "bg-emerald-600 text-white border-emerald-700",
-      });
+      if (!line.warehouse_id) {
+        return `Line ${lineNumber}: Warehouse is required.`;
+      }
 
-      router.push(redirectPath);
-      router.refresh();
-    } catch (err) {
-      if (err instanceof Error) setErrorMsg(err.message);
-    } finally {
-      setLoading(false);
+      if (!line.location_id) {
+        return `Line ${lineNumber}: Location is required.`;
+      }
+
+      if (Number(line.quantity || 0) <= 0) {
+        return `Line ${lineNumber}: Quantity must be greater than zero.`;
+      }
+
+      if (Number(line.cost_per_unit || 0) < 0) {
+        return `Line ${lineNumber}: Cost per unit cannot be negative.`;
+      }
+
+      if (!line.balancing_account_id) {
+        return `Line ${lineNumber}: Balancing G/L account is required.`;
+      }
+      if (postToLedger) {
+        const allocatedQuantity = getAllocationTotal(line.allocations);
+
+        if (allocatedQuantity !== Number(line.quantity || 0)) {
+          return `Line ${lineNumber}: Stock allocation must equal the journal quantity before posting.`;
+        }
+      }
     }
+
+    return null;
   };
 
-  const handlePostJournal = async () => {
-    if (!journalId) {
-      toast.warning("Draft verification required", {
-        description:
-          "Please save the item journal as a draft before attempting to post.",
-        className: "bg-amber-500 text-white border-amber-600 !important",
-        descriptionClassName: "text-amber-100",
-      });
-      return;
+  const buildApiPayload = (postToLedger: boolean) => {
+    return {
+      entry_date: metadata.entry_date,
+
+      is_posted: postToLedger,
+
+      source: "ITEM",
+
+      lines: lines.map((line) => ({
+        posting_date: line.posting_date,
+        transaction_type: line.transaction_type,
+
+        item_id: line.item_id,
+        item_no: line.item_no,
+        item_description: line.item_description,
+
+        warehouse_id: line.warehouse_id,
+        warehouse_code: line.warehouse_code,
+        warehouse_name: line.warehouse_name,
+
+        location_id: line.location_id,
+        location_name: line.location_name,
+
+        quantity: Number(line.quantity || 0),
+        uom: line.uom,
+
+        cost_per_unit: Number(line.cost_per_unit || 0),
+
+        amount: Number(line.amount || 0),
+
+        balancing_account_id: line.balancing_account_id,
+
+        balancing_display_name: line.balancing_display_name,
+
+        allocations: line.allocations.map((allocation) => ({
+          date_received: allocation.date_received,
+
+          prod_date: allocation.prod_date,
+
+          expiry_date: allocation.expiry_date,
+
+          batch_no: allocation.batch_no,
+
+          serial_no: allocation.serial_no,
+
+          quantity: Number(allocation.quantity || 0),
+        })),
+      })),
+    };
+  };
+
+  const handleSaveOrPost = async (
+    postToLedger: boolean = false,
+  ): Promise<boolean> => {
+    if (loading) return false;
+
+    setErrorMsg(null);
+
+    const validationError = validateBeforeSave(postToLedger);
+
+    if (validationError) {
+      setErrorMsg(validationError);
+      toast.error(validationError);
+      return false;
     }
 
-    const confirmPost = window.confirm(
-      "Are you sure you want to post this item journal? This will lock the ledger and commit all batch/serial inventory movements.",
-    );
-    if (!confirmPost) return;
-
-    setIsPosting(true);
+    setLoading(true);
 
     try {
+      show(postToLedger ? "Posting Journal..." : "Saving Draft...");
+
+      const payload = buildApiPayload(postToLedger);
+
       const response = await fetch(
-        `/api/finance/item-journal/${journalId}/post`,
+        journalId ? `${apiBase}/${journalId}` : apiBase,
         {
-          method: "POST",
+          method: journalId ? "PUT" : "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify(payload),
         },
       );
 
-      const data = await response.json();
+      let responsePayload: ApiResponse | null = null;
+
+      try {
+        responsePayload = (await response.json()) as ApiResponse;
+      } catch {
+        responsePayload = null;
+      }
 
       if (!response.ok) {
         throw new Error(
-          data.error || "Failed to finalize ledger posting entries.",
+          responsePayload?.message ||
+            responsePayload?.error ||
+            "Failed to submit item journal.",
         );
       }
 
-      toast.success("Journal Posted Successfully!", {
-        description:
-          "Financial ledgers locked and inventory sub-ledger tracking registers updated.",
-        className: "bg-emerald-600 text-white border-emerald-700",
-        descriptionClassName: "text-emerald-100",
-      });
-      setIsPosted(true);
+      toast.success(
+        postToLedger
+          ? "Item journal posted successfully."
+          : "Item journal saved successfully.",
+      );
 
-      // Optional callback to refresh parent components/catalogs
-      // if (onPostSuccess) onPostSuccess();
+      router.push(redirectPath);
 
-      router.refresh();
-    } catch (err) {
-      console.error("Posting Error:", err);
+      return true;
+    } catch (error: unknown) {
+      console.error("Failed to save item journal:", error);
 
-      toast.error("Ledger Posting Failed", {
-        description:
-          err instanceof Error
-            ? err.message
-            : "An unexpected execution error occurred.",
-        className: "bg-rose-600 text-white border-rose-700",
-        descriptionClassName: "text-rose-100",
-      });
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to submit item journal.";
+
+      setErrorMsg(message);
+      toast.error(message);
+
+      return false;
     } finally {
-      setIsPosting(false);
+      setLoading(false);
+      hide();
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* HEADER SECTION METADATA ACTION BAR */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+      <Breadcrumbs
+        items={[
+          {
+            label: "Item Journals",
+            href: redirectPath,
+          },
+          {
+            label: metadata.entry_no || "New Journal",
+          },
+        ]}
+      />
+
+      <div className="flex justify-between items-center bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            Item Journal Voucher {journalId ? `#${journalId}` : "(New Draft)"}
-            {isPosted && (
-              <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded border dark:border-slate-700">
-                Posted
-              </span>
-            )}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Synchronize warehouse registers and configure balanced inventory
-            ledger corrections.
-          </p>
+          <h2 className="text-xl font-semibold">Item Journal</h2>
+
+          {isPosted && (
+            <span className="inline-flex mt-1 text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-1 rounded">
+              Posted
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
-          {!isPosted ? (
-            <>
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading || isPosting}
-                variant="save"
-                // className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
-              >
-                {loading ? "Saving..." : "Save Draft"}
-              </Button>
-              <Button
-                type="button"
-                onClick={handlePostJournal}
-                disabled={loading || isPosting || !journalId}
-                variant="post"
-                // className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {isPosting ? "Posting..." : "Post Journal"}
-              </Button>
-            </>
-          ) : (
+        {journalId && !readOnly && !isPosted && !isEditing && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsEditing(true)}
+          >
+            Edit
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
+        {errorMsg && (
+          <div className="p-3 bg-red-100 text-red-800 rounded font-medium text-sm border border-red-200">
+            {errorMsg}
+          </div>
+        )}
+
+        <div className="flex justify-between items-center bg-zinc-50 dark:bg-slate-800 p-3 rounded border border-zinc-200 dark:border-slate-700">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium text-zinc-600 dark:text-zinc-300">
+              Journal No.
+            </span>
+
+            <input
+              type="text"
+              readOnly
+              className="border bg-zinc-100 dark:bg-slate-700 p-1 px-2 rounded w-36 font-bold outline-none text-zinc-700 dark:text-zinc-100 text-sm"
+              value={metadata.entry_no || "Draft"}
+            />
+          </div>
+
+          {!formDisabled && (
             <Button
               type="button"
-              onClick={() => router.push(redirectPath)}
-              variant="cancel"
+              onClick={addLineRow}
+              className="bg-emerald-700 hover:bg-emerald-800 text-white"
             >
-              Back to Catalog
+              + Add Line
             </Button>
           )}
         </div>
-      </div>
 
-      {/* ERROR RIBBONS */}
-      {errorMsg && (
-        <div className="p-3 text-xs bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 rounded-lg">
-          {errorMsg}
-        </div>
-      )}
+        <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
+          <table className="w-full table-fixed text-left text-xs border-collapse min-w-[1550px]">
+            <colgroup>
+              <col className="w-[120px]" />
+              <col className="w-[130px]" />
+              <col className="w-[120px]" />
+              <col className="w-[180px]" />
+              <col className="w-[160px]" />
+              <col className="w-[160px]" />
+              <col className="w-[90px]" />
+              <col className="w-[80px]" />
+              <col className="w-[110px]" />
+              <col className="w-[110px]" />
+              <col className="w-[190px]" />
+              <col className="w-[80px]" />
+              <col className="w-[80px]" />
+            </colgroup>
 
-      {/* COMPACT HEAD METADATA ROW PANEL */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg shadow-sm">
-        {/* <div>
-          <label className="block text-[11px] font-bold capitalize tracking-wider text-slate-400 dark:text-slate-500 mb-1">
-            Posting Date *
-          </label>
-          <input
-            type="date"
-            disabled={isPosted}
-            value={metadata.entry_date}
-            onChange={(e) =>
-              setMetadata({ ...metadata, entry_date: e.target.value })
-            }
-            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
-          />
-        </div> */}
-
-        <div>
-          <label className="block text-[11px] font-bold capitalize tracking-wider text-slate-400 dark:text-slate-500 mb-1">
-            Journal No.
-          </label>
-          <input
-            type="text"
-            disabled
-            value={journalId ? `#${journalId}` : "Auto-Generated on Save"}
-            className="w-full border border-slate-200 dark:border-slate-800 p-2 rounded text-xs bg-slate-50 dark:bg-slate-950 font-mono text-slate-400 dark:text-slate-500 outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[11px] font-bold capitalize tracking-wider text-slate-400 dark:text-slate-500 mb-1">
-            Document Reference No.
-          </label>
-          <input
-            type="text"
-            disabled={isPosted}
-            value={metadata.reference}
-            onChange={(e) =>
-              setMetadata({ ...metadata, reference: e.target.value })
-            }
-            placeholder="e.g. ADJ-STK-002"
-            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
-          />
-        </div>
-        <div>
-          <label className="block text-[11px] font-bold capitalize tracking-wider text-slate-400 dark:text-slate-500 mb-1">
-            Narration / Memo Description
-          </label>
-          <input
-            type="text"
-            disabled={isPosted}
-            value={metadata.description}
-            onChange={(e) =>
-              setMetadata({ ...metadata, description: e.target.value })
-            }
-            placeholder="Reconciliation adjustment note..."
-            className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded text-xs bg-white dark:bg-slate-900 outline-none text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
-          />
-        </div>
-      </div>
-
-      {/* MATRIX TABLE WORKSPACE CONTAINER */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse table-fixed min-w-[1450px]">
             <thead>
-              <tr className="border-b bg-slate-50/70 dark:bg-slate-800/40 text-[11px] capitalize tracking-wider font-bold text-slate-500 dark:text-slate-400">
-                <th className="p-2 w-36">Posting Date *</th>
-                <th className="p-2 w-36">Type</th>
-                <th className="p-2 w-44">Item Code *</th>
-                <th className="p-2 min-w-[180px]">Description</th>
-                <th className="p-2 w-40">Warehouse *</th>
-                <th className="p-2 w-40">Location *</th>
-                <th className="p-2 w-24 text-right">Qty *</th>
-                <th className="p-2 w-16 text-center">UOM</th>
-                <th className="p-2 w-28 text-right">Unit Cost</th>
-                <th className="p-2 w-32 text-right">Amount</th>
-                <th className="p-2 w-52">G/L Account Offset *</th>
-                <th className="p-2 text-center w-16">Action</th>
+              <tr className="bg-zinc-50 dark:bg-slate-800 border-b border-zinc-200 dark:border-slate-700 text-zinc-600 dark:text-zinc-300 font-semibold">
+                <th className="p-2">Posting Date</th>
+
+                <th className="p-2">Transaction Type</th>
+
+                <th className="p-2">Item No.</th>
+
+                <th className="p-2">Item Description</th>
+
+                <th className="p-2">Warehouse</th>
+
+                <th className="p-2">Location</th>
+
+                <th className="p-2">Qty.</th>
+
+                <th className="p-2">U.O.M</th>
+
+                <th className="p-2">Cost Per Unit</th>
+
+                <th className="p-2">Amount</th>
+
+                <th className="p-2">Balancing G/L</th>
+
+                <th className="p-2 text-center">Stock</th>
+
+                <th className="p-2 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {lines.map((line) => {
-                const activeRowLocations =
-                  rowLocationsCache[line.local_key] || [];
+
+            <tbody className="divide-y divide-zinc-200 dark:divide-slate-800">
+              {lines.length === 0 && (
+                <tr>
+                  <td colSpan={13} className="text-center p-8 text-gray-500">
+                    No lines added
+                  </td>
+                </tr>
+              )}
+
+              {lines.map((line, index) => {
+                const displayQty = Number(line.quantity || 0);
+
+                const displayUnitCost = Number(line.cost_per_unit || 0);
+
+                const displayAmount = Number(line.amount || 0);
+
+                const allocatedQty = getAllocationTotal(line.allocations);
+
+                const allocationStatus = getStockStatus(
+                  displayQty,
+                  line.allocations,
+                );
+
+                const lineLocations = locations.filter(
+                  (location) =>
+                    !line.warehouse_id ||
+                    location.warehouse_id === line.warehouse_id,
+                );
 
                 return (
                   <tr
-                    key={line.local_key}
-                    className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/10"
+                    key={line._stableKey}
+                    className="hover:bg-zinc-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
-                    <td className="p-1">
-                      <input
-                        type="date"
-                        disabled={isPosted}
-                        value={line.postingDate}
-                        onChange={(e) =>
+    
+                    <td className="p-2 align-top">
+                      <DatePicker
+                        disabled={formDisabled}
+                        value={
+                          line.posting_date
+                            ? new Date(line.posting_date)
+                            : undefined
+                        }
+                        onChange={(date) =>
                           handleLineChange(
-                            line.local_key,
-                            "postingDate",
-                            e.target.value,
+                            index,
+                            "posting_date",
+                            date ? date.toISOString().split("T")[0] : "",
                           )
                         }
-                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
                       />
                     </td>
 
-                    {/* TRANSACTION ENTRY TYPE */}
-                    <td className="p-1">
+
+                    <td className="p-2 align-top">
                       <select
-                        disabled={isPosted}
+                        disabled={formDisabled}
                         value={line.transaction_type}
-                        onChange={(e) =>
+                        onChange={(event) =>
                           handleLineChange(
-                            line.local_key,
+                            index,
                             "transaction_type",
-                            e.target.value as
-                              | "Positive Entry"
-                              | "Negative Entry",
+                            event.target.value as ItemJournalTransactionType,
                           )
                         }
-                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
+                        className="w-full border border-zinc-300 dark:border-slate-700 rounded p-1 text-xs outline-none bg-white dark:bg-slate-800"
                       >
-                        <option value="Positive Entry">Positive (+)</option>
-                        <option value="Negative Entry">Negative (-)</option>
+                        <option value="Positive Entry">Positive Entry</option>
+
+                        <option value="Negative Entry">Negative Entry</option>
                       </select>
                     </td>
 
-                    {/* ITEM LOOKUP CODE CELL */}
-                    <td className="p-1">
-                      <div className="flex items-center gap-1 bg-transparent rounded group/cell">
+    
+                    <td className="p-2 align-top">
+                      <div className="flex gap-1">
                         <input
                           type="text"
                           readOnly
-                          value={line.item_code}
-                          placeholder="Find Item..."
-                          className="w-full bg-transparent p-1.5 text-xs font-mono text-slate-900 dark:text-white border-none outline-none truncate"
+                          placeholder="Select Item..."
+                          value={line.item_no}
+                          className="w-full border p-1 rounded bg-zinc-50 dark:bg-slate-800 text-zinc-700 dark:text-zinc-200 font-mono text-[11px] outline-none truncate"
                         />
-                        {!isPosted && (
-                          <Button
-                            type="button"
-                            onClick={() => {
-                              setActiveItemRowKey(line.local_key);
-                              setIsItemModalOpen(true);
-                            }}
-                            className="mr-1 px-1.5 py-0.5 text-[10px] bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600 dark:text-slate-400 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
-                          >
-                            Find
-                          </Button>
-                        )}
-                      </div>
-                    </td>
 
-                    {/* READONLY SYSTEM NAME DESCRIPTION */}
-                    <td className="p-1">
-                      <input
-                        type="text"
-                        disabled
-                        value={line.item_description}
-                        placeholder="--"
-                        className="w-full bg-transparent p-1.5 text-xs text-slate-400 dark:text-slate-500 border-none truncate"
-                      />
-                    </td>
-
-                    {/* WAREHOUSE ALLOCATION NODES */}
-                    <td className="p-1">
-                      <select
-                        disabled={isPosted}
-                        value={line.warehouse_id}
-                        onChange={(e) => {
-                          const nextWhId = e.target.value;
-                          handleLineChange(
-                            line.local_key,
-                            "warehouse_id",
-                            nextWhId,
-                          );
-                          handleLineChange(line.local_key, "location_id", "");
-                          fetchLocationsForSpecificRow(
-                            line.local_key,
-                            nextWhId,
-                          );
-                        }}
-                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
-                      >
-                        <option value="">Select Whse</option>
-                        {warehouses.map((w) => (
-                          <option key={w.id} value={w.id}>
-                            {w.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* CONDITIONAL STRATEGIC LOCATION BINS */}
-                    <td className="p-1">
-                      <select
-                        disabled={isPosted || !line.warehouse_id}
-                        value={line.location_id}
-                        onChange={(e) =>
-                          handleLineChange(
-                            line.local_key,
-                            "location_id",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded disabled:opacity-40"
-                      >
-                        <option value="">Select Loc.</option>
-                        {activeRowLocations.map((loc) => (
-                          <option key={loc.id} value={loc.id}>
-                            {loc.title} {loc.code ? `(${loc.code})` : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* PIECE QUANTITY INPUT MATRIX */}
-                    <td className="p-1">
-                      {/* <input
-                        type="number"
-                        min="0"
-                        disabled={isPosted}
-                        value={line.quantity || ""}
-                        onChange={(e) =>
-                          handleLineChange(
-                            line.local_key,
-                            "quantity",
-                            parseFloat(e.target.value) || 0,
-                          )
-                        }
-                        placeholder="0"
-                        className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
-                      /> */}
-
-                      <NumericTextInput
-                        placeholder="0"
-                        min="0"
-                        value={Number(line.quantity)}
-                        allowDecimals={false}
-                        onChange={(val) =>
-                          handleLineChange(line.local_key, "quantity", val)
-                        }
-                        className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
-                      />
-                    </td>
-
-                    {/* UNIT STANDARD MEASUREMENT METRIC DISPLAY */}
-                    <td className="p-1 text-center text-xs font-medium text-slate-400 dark:text-slate-500">
-                      {line.uom}
-                    </td>
-
-                    {/* COST VALUATION MODIFIER */}
-                    <td className="p-1">
-                      <NumericTextInput
-                        placeholder="0"
-                        min="0"
-                        allowDecimals
-                        decimalScale={2}
-                        disabled={isPosted}
-                        value={Number(line.cost_per_unit)}
-                        onChange={(val) =>
-                          handleLineChange(line.local_key, "cost_per_unit", val)
-                        }
-                        className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
-                      />
-                      {/* <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        disabled={isPosted}
-                        value={line.cost_per_unit || ""}
-                        onChange={(e) =>
-                          handleLineChange(
-                            line.local_key,
-                            "cost_per_unit",
-                            parseFloat(e.target.value) || 0,
-                          )
-                        }
-                        placeholder="0.00"
-                        className="w-full bg-transparent p-1.5 text-xs text-right font-mono text-slate-900 dark:text-white border-none outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
-                      /> */}
-                    </td>
-
-                    {/* SUM TOTAL MATRIX RECALCULATION DISPLAY ROW */}
-                    <td className="p-1.5 text-right font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
-                      {line.amount.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-
-                    {/* SUB-LEDGER BALANCING INTEGRATION CONTROL */}
-                    <td className="p-1">
-                      <select
-                        disabled={isPosted}
-                        value={line.account_id}
-                        onChange={(e) =>
-                          handleLineChange(
-                            line.local_key,
-                            "account_id",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full border-none bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:bg-white dark:focus:bg-slate-800 rounded"
-                      >
-                        <option value="">Select Offset Account</option>
-                        {accounts.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.code} - {a.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* DESTRUCTIVE MUTATOR ACTION ICONS */}
-                    <td className="p-1 text-center align-middle">
-                      <div className="flex items-center justify-center gap-1.5">
                         <Button
                           type="button"
-                          disabled={!line.item_id || !line.warehouse_id}
-                          onClick={() => {
-                            setActiveAllocationRowKey(line.local_key);
-                            setIsAllocationModalOpen(true);
-                          }}
-                          className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-20"
-                          title="Lot/Serial Allocations"
+                          disabled={formDisabled}
+                          onClick={() =>
+                            setItemActiveModal({
+                              index,
+                              type: "item",
+                              target: "item",
+                            })
+                          }
+                          className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
                         >
-                          <span
-                            className={`inline-block w-2 h-2 rounded-full ${line.is_allocated ? "bg-emerald-500" : "bg-rose-500"}`}
+                          <Icon
+                            icon="tabler:external-link"
+                            className="w-4 h-4"
                           />
                         </Button>
-                        {!isPosted && (
-                          <Button
-                            type="button"
-                            onClick={() => removeLineRow(line.local_key)}
-                            disabled={lines.length <= 1}
-                            className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
-                            // className="p-1 rounded text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 disabled:opacity-20 text-xs transition"
-                          >
-                            <Icon icon="lucide:x" className="w-4 h-4" />
-                            {/* ✕ */}
-                          </Button>
-                        )}
                       </div>
+                    </td>
+
+                    <td className="p-2 align-top">
+                      <input
+                        type="text"
+                        value={line.item_description}
+                        disabled={formDisabled}
+                        onChange={(event) =>
+                          handleLineChange(
+                            index,
+                            "item_description",
+                            event.target.value,
+                          )
+                        }
+                        className="w-full border border-zinc-300 dark:border-slate-700 rounded p-1 text-xs outline-none bg-white dark:bg-slate-800"
+                      />
+                    </td>
+
+                    <td className="p-2 align-top">
+                      <button
+                        type="button"
+                        disabled={formDisabled}
+                        title={
+                          line.warehouse_name
+                            ? `${line.warehouse_code || ""} - ${line.warehouse_name}`
+                            : "Select warehouse"
+                        }
+                        onClick={() => setWarehouseIndex(index)}
+                        className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-[11px] bg-white dark:bg-slate-800 flex items-center justify-between gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {!line.warehouse_id ? (
+                          <span className="text-red-500">
+                            Warehouse required
+                          </span>
+                        ) : (
+                          <span className="truncate text-left">
+                            {line.warehouse_code
+                              ? `${line.warehouse_code} - `
+                              : ""}
+                            {line.warehouse_name}
+                          </span>
+                        )}
+
+                        <Icon
+                          icon="tabler:search"
+                          className="w-4 h-4 shrink-0"
+                        />
+                      </button>
+                    </td>
+
+     
+                    <td className="p-2 align-top">
+                      <select
+                        disabled={formDisabled || !line.warehouse_id}
+                        value={line.location_id}
+                        onChange={(event) => {
+                          const selected = lineLocations.find(
+                            (location) => location.id === event.target.value,
+                          );
+
+                          if (selected) {
+                            handleLocationSelect(selected);
+                          }
+                        }}
+                        onFocus={() => {
+                          setLocationIndex(index);
+                        }}
+                        className="w-full border border-zinc-300 dark:border-slate-700 rounded p-1.5 text-xs outline-none bg-white dark:bg-slate-800 disabled:opacity-60"
+                      >
+                        <option value="">
+                          {line.warehouse_id
+                            ? "Select Location"
+                            : "Select Warehouse"}
+                        </option>
+
+                        {lineLocations.map((location) => (
+                          <option key={location.id} value={location.id}>
+                            {location.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+
+                    <td className="p-2 align-top">
+                      <NumericTextInput
+                        value={displayQty}
+                        allowDecimals={false}
+                        disabled={formDisabled}
+                        onChange={(value) =>
+                          handleLineChange(index, "quantity", String(value))
+                        }
+                        className="w-full border p-1 rounded text-right font-mono bg-white dark:bg-slate-800"
+                      />
+                    </td>
+
+   
+                    <td className="p-2 align-top">
+                      <input
+                        type="text"
+                        value={line.uom}
+                        disabled={formDisabled}
+                        onChange={(event) =>
+                          handleLineChange(index, "uom", event.target.value)
+                        }
+                        className="w-full border border-zinc-300 dark:border-slate-700 rounded p-1 text-xs text-center bg-white dark:bg-slate-800"
+                      />
+                    </td>
+
+      
+                    <td className="p-2 align-top">
+                      <NumericTextInput
+                        value={displayUnitCost}
+                        allowDecimals
+                        decimalScale={2}
+                        disabled={formDisabled}
+                        onChange={(value) =>
+                          handleLineChange(
+                            index,
+                            "cost_per_unit",
+                            String(value),
+                          )
+                        }
+                        className="w-full border p-1 rounded text-right font-mono bg-white dark:bg-slate-800"
+                      />
+                    </td>
+
+   
+                    <td className="p-2 align-top">
+                      <NumericTextInput
+                        value={displayAmount}
+                        allowDecimals
+                        decimalScale={2}
+                        disabled
+                        onChange={() => {}}
+                        className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-right text-[11px] disabled:opacity-60"
+                      />
+                    </td>
+
+
+                    <td className="p-2 align-top">
+                      <div className="flex gap-1">
+                        <input
+                          type="text"
+                          readOnly
+                          placeholder="Select G/L..."
+                          value={line.balancing_display_name || ""}
+                          className="w-full border p-1 rounded bg-zinc-50 dark:bg-slate-800 text-zinc-700 dark:text-zinc-200 font-mono text-[11px] outline-none truncate"
+                        />
+
+                        <Button
+                          type="button"
+                          disabled={formDisabled}
+                          onClick={() =>
+                            setActiveModal({
+                              index,
+                              type: "balancing_account",
+                              target: "gl",
+                            })
+                          }
+                          className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                        >
+                          <Icon
+                            icon="tabler:external-link"
+                            className="w-4 h-4"
+                          />
+                        </Button>
+                      </div>
+                    </td>
+
+ 
+                    <td className="p-2 text-center align-top">
+                      <button
+                        type="button"
+                        disabled={formDisabled}
+                        onClick={() => handleOpenAllocation(line)}
+                        className={`inline-flex items-center justify-center p-1.5 rounded transition-colors ${
+                          allocationStatus === "allocated"
+                            ? "text-emerald-600 hover:bg-emerald-50"
+                            : allocationStatus === "partial"
+                              ? "text-amber-500 hover:bg-amber-50"
+                              : "text-red-500 hover:bg-red-50"
+                        } disabled:opacity-40 disabled:cursor-not-allowed`}
+                        title={
+                          allocationStatus === "allocated"
+                            ? `Allocated (${allocatedQty}/${displayQty})`
+                            : allocationStatus === "partial"
+                              ? `Partially allocated (${allocatedQty}/${displayQty})`
+                              : "Not allocated"
+                        }
+                      >
+                        <Icon icon="tabler:box-seam" className="w-5 h-5" />
+                      </button>
+
+                      <div className="text-[9px] text-slate-400 mt-0.5">
+                        {allocatedQty}/{displayQty}
+                      </div>
+                    </td>
+
+    
+                    <td className="p-2 text-center align-top">
+                      <button
+                        type="button"
+                        disabled={formDisabled || lines.length <= 1}
+                        onClick={() => removeLineRow(index)}
+                        className="text-red-600 hover:text-red-800 p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Remove line"
+                      >
+                        <Icon icon="lucide:x" className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 );
@@ -928,86 +1511,127 @@ export default function ItemJournalForm({
           </table>
         </div>
 
-        {/* 
-<Button
-              type="button"
-              onClick={addLineRow}
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            >
-              + Add Voucher Entry Line
-            </Button> */}
-        {/* BOTTOM MATRIX CONTROLS ACTION RIBBON */}
-        <div className="p-2 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-          {!isPosted ? (
+
+        <div className="flex flex-col lg:flex-row justify-between gap-4 pt-2">
+
+          <div className="flex items-center gap-4 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+              <span>Unallocated</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+              <span>Partial</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+              <span>Allocated</span>
+            </div>
+          </div>
+
+
+          <div className="flex items-center gap-2">
+            {!formDisabled && (
+              <>
+                <Button
+                  type="button"
+                  onClick={() => handleSaveOrPost(true)}
+                  className="bg-emerald-700 hover:bg-emerald-800 text-white"
+                  disabled={loading}
+                >
+                  {loading ? "Processing..." : "Post Journal"}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSaveOrPost(false)}
+                  disabled={loading}
+                >
+                  Save
+                </Button>
+              </>
+            )}
+
             <Button
               type="button"
-              onClick={addLineRow}
-              variant="add_line"
-              // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+              variant="outline"
+              onClick={() => router.push(redirectPath)}
+              disabled={loading}
             >
-              Add Line
+              Cancel
             </Button>
-          ) : (
-            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium px-2">
-              Voucher ledger entries locked.
-            </span>
-          )}
-
-          {/* REALTIME AGGREGATED RUNNING BALANCE MATRIX FIELD */}
-          <div className="flex items-center gap-2 text-xs pr-4">
-            <span className="font-semibold text-slate-500 dark:text-slate-400">
-              Total Adjustment Batch Value:
-            </span>
-            <span className="font-mono font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-900 px-2 py-1 rounded border dark:border-slate-700 shadow-sm">
-              {baseCurrencyCode}{" "}
-              {totalBatchValuation.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </span>
           </div>
         </div>
       </div>
 
-      {isItemModalOpen && (
+
+      {itemActiveModal?.target === "item" && (
         <ItemLookupModal
-          open={isItemModalOpen}
-          onClose={() => {
-            setIsItemModalOpen(false);
-            setActiveItemRowKey(null);
-          }}
-          onSelect={handleModalItemSelect}
+          open={true}
+          onClose={() => setItemActiveModal(null)}
+          onSelect={(item) => handleMultipleItemSelect([item])}
         />
       )}
 
-      {isAllocationModalOpen &&
-        activeAllocationRowKey &&
-        activeAllocationLine && (
-          <StockAllocationModal
-            key={`allocation-row-${activeAllocationRowKey}`}
-            open={isAllocationModalOpen}
-            onClose={() => {
-              setIsAllocationModalOpen(false);
-              setActiveAllocationRowKey(null);
-            }}
-            targetQuantity={activeAllocationLine.quantity}
-            itemCode={activeAllocationLine.item_code}
-            itemName={activeAllocationLine.item_description}
-            warehouseName={
-              warehouses.find((w) => w.id === activeAllocationLine.warehouse_id)
-                ?.name || ""
-            }
-            locationName={
-              (rowLocationsCache[activeAllocationRowKey] || []).find(
-                (l) => l.id === activeAllocationLine.location_id,
-              )?.title || ""
-            }
-            initialAllocations={activeAllocationLine.allocations || []}
-            onSave={(allocationsPayload) =>
-              handleSaveAllocations(allocationsPayload)
-            }
-          />
-        )}
+
+
+      {activeModal?.target === "gl" && (
+        <GLAccountLookupModal
+          open={true}
+          onClose={() => setActiveModal(null)}
+          onSelect={(record: GLAccountLookupRecord) =>
+            handleModalSelection(record)
+          }
+        />
+      )}
+
+
+      <WarehouseLookupModal
+        open={warehouseIndex !== null}
+        onClose={() => setWarehouseIndex(null)}
+        onSelect={handleWarehouseSelect}
+      />
+
+
+
+      {isAllocationModalOpen && activeAllocationLine && (
+        <StockAllocationModal
+          key={activeAllocationLine._stableKey}
+          open={isAllocationModalOpen}
+          isReadonly={formDisabled}
+          onClose={() => {
+            setIsAllocationModalOpen(false);
+            setActiveAllocationLineId(null);
+          }}
+          targetQuantity={Number(activeAllocationLine.quantity || 0)}
+          itemId={activeAllocationLine.item_id || ""}
+          itemCode={activeAllocationLine.item_no || ""}
+          itemName={activeAllocationLine.item_description || ""}
+          warehouseId={activeAllocationLine.warehouse_id || ""}
+          warehouseName={activeAllocationLine.warehouse_name || ""}
+          locationId={activeAllocationLine.location_id || ""}
+          locationName={activeAllocationLine.location_name || ""}
+          uomName={activeAllocationLine.uom || ""}
+          initialAllocations={(
+            activeAllocationLine.allocations ||
+            activeAllocationLine.initialAllocations ||
+            []
+          ).map((allocation) => ({
+            location_id: allocation.location_id || "",
+            location_name: allocation.location_name || "",
+            date_received: String(allocation.date_received || ""),
+            prod_date: String(allocation.prod_date || ""),
+            expiry_date: String(allocation.expiry_date || ""),
+            batch_no: String(allocation.batch_no || ""),
+            serial_no: String(allocation.serial_no || ""),
+            quantity: Number(allocation.quantity || 0),
+          }))}
+          onSave={handleSaveAllocations}
+        />
+      )}
     </div>
   );
-}
+} */

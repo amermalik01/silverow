@@ -166,7 +166,7 @@ export default function PO_StockAllocationModal({
           <div className="flex items-center gap-2">
             <Icon icon="tabler:building-warehouse" className="text-xl" />
             <h2 className="text-lg font-semibold tracking-wide text-white">
-              Stock Allocation - Purchase Intake Pipeline ({itemCode})
+              Stock Allocation - ({itemCode})
             </h2>
           </div>
           <button
@@ -376,7 +376,7 @@ export default function PO_StockAllocationModal({
                   <td className="p-2">
                     <input
                       type="text"
-                      placeholder="Lot / Batch No"
+                      placeholder="Batch No."
                       value={newRowInput.batch_no}
                       disabled={isReadonly}
                       onChange={(e) =>
@@ -391,7 +391,7 @@ export default function PO_StockAllocationModal({
                   <td className="p-2">
                     <input
                       type="text"
-                      placeholder="Serial Tracking"
+                      placeholder="Serial No."
                       value={newRowInput.serial_no}
                       disabled={isReadonly}
                       onChange={(e) =>
