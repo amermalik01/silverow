@@ -178,7 +178,7 @@ export async function GET(req: NextRequest) {
             'country', pa.country,
             'contact_person', fs.finance_contact_person,
             'phone', pa.phone,
-            'email', pa.email
+            'email', COALESCE(pa.email, fs.email)
           )
           ELSE NULL 
         END as primary_address,

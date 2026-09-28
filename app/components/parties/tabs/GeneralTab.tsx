@@ -111,6 +111,29 @@ export default function GeneralTab({
     setAccount((prev) => ({ ...prev, [key]: value }));
   };
 
+  // const setWebsiteLink = (value: string) => {
+  //   const webAddress = value.trim();
+
+  //   if (!webAddress) {
+  //     updateField("website", "");
+  //     return;
+  //   }
+
+  //   const normalized = webAddress.includes("://")
+  //     ? webAddress
+  //     : `http://${webAddress}`;
+
+  //   updateField("website", normalized);
+  // };
+
+  const normalizeWebsite = (value: string): string => {
+    const trimmed = value.trim();
+
+    if (!trimmed) return "";
+
+    return trimmed.includes("://") ? trimmed : `http://${trimmed}`;
+  };
+
   const updatePrimaryAddress = (
     field: keyof PartyAddressDraft,
     value: unknown,
@@ -397,6 +420,9 @@ export default function GeneralTab({
                 type="text"
                 value={account.website || ""}
                 onChange={(e) => updateField("website", e.target.value)}
+                onBlur={(e) => {
+                  updateField("website", normalizeWebsite(e.target.value));
+                }}
                 className={getInputClass("general.website")}
                 placeholder="https://..."
                 disabled={isReadonly}

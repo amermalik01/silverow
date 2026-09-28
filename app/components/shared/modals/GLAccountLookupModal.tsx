@@ -45,7 +45,7 @@ export default function GLAccountLookupModal({
 
   // Pagination state
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(100);
   const [pagination, setPagination] = useState({
     total: 0,
     totalPages: 1,

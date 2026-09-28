@@ -277,6 +277,26 @@ export const SalesReturnForm: React.FC<Props> = ({
       return;
     }
 
+    // Find customer's payment terms in master data
+    const selectedPaymentTerm = masterData?.paymentTerms.find(
+      (term) => String(term.id) === String(customer.payment_terms),
+    );
+
+    const calculateDueDate = (orderDate: string, days = 0) => {
+      if (!orderDate) return "";
+
+      const date = new Date(orderDate);
+      date.setDate(date.getDate() + Number(days));
+
+      return date.toISOString().split("T")[0];
+    };
+
+    // Calculate due date based on order date + payment term days
+    const calculatedDueDate =
+      returnOrder.credit_note_date && selectedPaymentTerm
+        ? calculateDueDate(returnOrder.credit_note_date, selectedPaymentTerm.days)
+        : returnOrder.due_date;
+
     setReturnOrder((prev) => ({
       ...prev,
       customer_id: customer.id,
@@ -298,6 +318,7 @@ export const SalesReturnForm: React.FC<Props> = ({
       contact: customer.finance_contact_person || "",
       receivable_bank: customer.payable_bank || "",
       payment_terms_id: customer.payment_terms || "",
+      due_date: calculatedDueDate,
       payment_method_id: customer.payment_method || "",
     }));
 

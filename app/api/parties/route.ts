@@ -410,7 +410,7 @@ export async function POST(req: Request) {
               a.country,
               a.postcode,
               a.phone || null,
-              a.email || null,
+              a.email || validatedAccount.email || null,
               !!a.is_primary,
               !!a.is_billing,
               !!a.is_shipping,

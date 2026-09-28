@@ -346,6 +346,26 @@ export const SalesOrderForm: React.FC<Props> = ({
       return;
     }
 
+    // Find customer's payment terms in master data
+    const selectedPaymentTerm = masterData?.paymentTerms.find(
+      (term) => String(term.id) === String(customer.payment_terms),
+    );
+
+    const calculateDueDate = (orderDate: string, days = 0) => {
+      if (!orderDate) return "";
+
+      const date = new Date(orderDate);
+      date.setDate(date.getDate() + Number(days));
+
+      return date.toISOString().split("T")[0];
+    };
+
+    // Calculate due date based on order date + payment term days
+    const calculatedDueDate =
+      order.order_date && selectedPaymentTerm
+        ? calculateDueDate(order.order_date, selectedPaymentTerm.days)
+        : order.due_date;
+
     // --------------------------------------------
     // GENERAL TAB
     // Full customer selection
@@ -367,7 +387,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       vat_business_posting_group_id: customer.posting_group || "",
 
       anonymous_customer: customer.anonymous_customer ?? false,
-      salesperson_code: customer.salesperson_code || "",
+      salesperson: customer.salesperson_code || "",
 
       contact_person: customer.finance_contact_person || "",
       // email: customer.email || "",
@@ -375,6 +395,7 @@ export const SalesOrderForm: React.FC<Props> = ({
 
       payable_bank: customer.payable_bank || "",
       payment_terms_id: customer.payment_terms || "",
+      due_date: calculatedDueDate,
       payment_method_id: customer.payment_method || "",
 
       // receivable_bank:

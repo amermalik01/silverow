@@ -34,6 +34,9 @@ export async function GET(req: NextRequest) {
           p.currency_id,
           p.vat_reg_no,
           p.anonymous_customer,
+
+          p.assign_person_id,
+          p.assign_person AS salesperson_code,
           
           -- Finance & Ledger Columns
           p.finance_contact_person,
@@ -170,7 +173,7 @@ export async function GET(req: NextRequest) {
             'postcode', pa.postcode,
             'country', pa.country,
             'phone', pa.phone,
-            'email', pa.email
+            'email', COALESCE(pa.email, fc.email)
           )
           ELSE NULL 
         END as primary_address,

@@ -139,18 +139,28 @@ export default function PartyForm({
   };
 
   const handleSubmit = async () => {
-
     if (!handleFormSubmissionValidation()) return;
     setLoading(true);
 
     const activeContacts = contacts.filter(
       (c) => c.name && c.name.trim() !== "",
     );
-    const activeAddresses = addresses.filter(
-      (a) =>
-        (a.address_1 && a.address_1.trim() !== "") ||
-        (a.city && a.city.trim() !== ""),
-    );
+    // const activeAddresses = addresses.filter(
+    //   (a) =>
+    //     (a.address_1 && a.address_1.trim() !== "") ||
+    //     (a.city && a.city.trim() !== ""),
+    // );
+
+    const activeAddresses = addresses
+      .filter(
+        (a) =>
+          (a.address_1 && a.address_1.trim() !== "") ||
+          (a.city && a.city.trim() !== ""),
+      )
+      .map((a) => ({
+        ...a,
+        email: a.email?.trim() || account.email?.trim() || "",
+      }));
 
     try {
       const res = await fetch("/api/parties", {
@@ -177,7 +187,9 @@ export default function PartyForm({
             setActiveTab("locations");
           }
         } else {
-          setFormErrors({ global: payload.error || "Persistence operation processing error." });
+          setFormErrors({
+            global: payload.error || "Persistence operation processing error.",
+          });
         }
         return;
       }

@@ -184,6 +184,26 @@ export const SalesQuoteForm: React.FC<Props> = ({
       return;
     }
 
+    // Find customer's payment terms in master data
+    const selectedPaymentTerm = masterData?.paymentTerms.find(
+      (term) => String(term.id) === String(customer.payment_terms),
+    );
+
+    const calculateDueDate = (orderDate: string, days = 0) => {
+      if (!orderDate) return "";
+
+      const date = new Date(orderDate);
+      date.setDate(date.getDate() + Number(days));
+
+      return date.toISOString().split("T")[0];
+    };
+
+    // Calculate due date based on order date + payment term days
+    const calculatedDueDate =
+      quote.order_date && selectedPaymentTerm
+        ? calculateDueDate(quote.order_date, selectedPaymentTerm.days)
+        : quote.due_date;
+
     setQuote((prev) => ({
       ...prev,
       customer_id: customer.id,
@@ -196,11 +216,12 @@ export const SalesQuoteForm: React.FC<Props> = ({
       customer_posting_group_id: customer.posting_group || "",
       vat_business_posting_group_id: customer.posting_group || "",
       anonymous_customer: customer.anonymous_customer ?? false,
-      salesperson_code: customer.salesperson_code || "",
+      salesperson: customer.salesperson_code || "",
       contact_person: customer.finance_contact_person || "",
       phone: customer.phone || "",
       payable_bank: customer.payable_bank || "",
       payment_terms_id: customer.payment_terms || "",
+      due_date: calculatedDueDate,
       payment_method_id: customer.payment_method || "",
     }));
 
@@ -579,19 +600,19 @@ export const SalesQuoteForm: React.FC<Props> = ({
                 </span>
               </div>
               <div>
-              <NumericTextInput
-                value={Number(currencyConfig.exchange_rate) || 1}
-                allowDecimals={true}
-                decimalScale={6}
-                disabled={isFormDisabled}
-                className={`${inputStyle} font-mono max-w-[100px] text-end`}
-                onChange={(val) =>
-                  setCurrencyConfig({
-                    ...currencyConfig,
-                    exchange_rate: Number(val) || 1,
-                  })
-                }
-              />
+                <NumericTextInput
+                  value={Number(currencyConfig.exchange_rate) || 1}
+                  allowDecimals={true}
+                  decimalScale={6}
+                  disabled={isFormDisabled}
+                  className={`${inputStyle} font-mono max-w-[100px] text-end`}
+                  onChange={(val) =>
+                    setCurrencyConfig({
+                      ...currencyConfig,
+                      exchange_rate: Number(val) || 1,
+                    })
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 items-center">
