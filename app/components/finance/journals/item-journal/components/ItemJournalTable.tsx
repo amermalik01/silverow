@@ -58,8 +58,7 @@ export default function ItemJournalTable({
           <col className="w-[110px]" />
           <col className="w-[110px]" />
           <col className="w-[190px]" />
-          {/* <col className="w-[80px]" /> */}
-          <col className="w-[160px]" />
+          <col className="w-[100px]" />
         </colgroup>
 
         <thead>
@@ -70,12 +69,11 @@ export default function ItemJournalTable({
             <th className="p-2">Item Description</th>
             <th className="p-2">Warehouse</th>
             <th className="p-2">Location</th>
-            <th className="p-2">Qty.</th>
-            <th className="p-2">U.O.M</th>
-            <th className="p-2">Cost Per Unit</th>
+            <th className="p-2 text-right">Qty</th>
+            <th className="p-2">UOM</th>
+            <th className="p-2 text-right">Unit Price</th>
             <th className="p-2">Amount</th>
             <th className="p-2">Balancing G/L</th>
-            {/* <th className="p-2 text-center">Stock</th> */}
             <th className="p-2 text-center">Action</th>
           </tr>
         </thead>

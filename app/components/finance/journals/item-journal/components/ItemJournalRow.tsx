@@ -193,7 +193,7 @@ export default function ItemJournalRow({
 
           {lineLocations.map((location) => (
             <option key={location.id} value={location.id}>
-              {location.name}
+              {location.title}
             </option>
           ))}
         </select>
@@ -276,13 +276,21 @@ export default function ItemJournalRow({
               type="button"
               disabled={formDisabled}
               onClick={() => onOpenAllocation(line)}
-              className={`inline-flex items-center justify-center p-1.5 rounded transition-colors ${
+              // className={`inline-flex items-center justify-center p-1.5 rounded transition-colors ${
+              //   allocationStatus === "allocated"
+              //     ? "text-emerald-600 hover:bg-emerald-50"
+              //     : allocationStatus === "partial"
+              //       ? "text-amber-500 hover:bg-amber-50"
+              //       : "text-red-500 hover:bg-red-50"
+              // } disabled:opacity-40 disabled:cursor-not-allowed`}
+
+              className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                 allocationStatus === "allocated"
                   ? "text-emerald-600 hover:bg-emerald-50"
                   : allocationStatus === "partial"
                     ? "text-amber-500 hover:bg-amber-50"
                     : "text-red-500 hover:bg-red-50"
-              } disabled:opacity-40 disabled:cursor-not-allowed`}
+              }`}
               title={
                 allocationStatus === "allocated"
                   ? `Allocated (${allocatedQty}/${displayQty})`
@@ -291,20 +299,21 @@ export default function ItemJournalRow({
                     : "Not allocated"
               }
             >
-              <Icon icon="tabler:box-seam" className="w-5 h-5" />
+              <Icon icon="tabler:box-seam" className="w-4 h-4" />
             </button>
 
-            <div className="text-[9px] text-slate-400 mt-0.5">
+            {/* <div className="text-[9px] text-slate-400 mt-0.5">
               {allocatedQty}/{displayQty}
-            </div>
+            </div> */}
           </div>
 
           <button
             type="button"
             disabled={formDisabled || totalLines <= 1}
             onClick={() => onRemove(index)}
-            className="text-red-600 hover:text-red-800 p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed"
+            // className="text-red-600 hover:text-red-800 p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed"
             title="Remove line"
+            className="text-red-600 hover:text-red-800 p-1 rounded font-medium bg-slate-100  dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200"
           >
             <Icon icon="lucide:x" className="w-4 h-4" />
           </button>

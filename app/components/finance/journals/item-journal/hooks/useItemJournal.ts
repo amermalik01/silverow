@@ -550,7 +550,7 @@ export function useItemJournal({
           return {
             ...line,
             location_id: String(location.id || ""),
-            location_name: location.name || "",
+            location_name: location.title || "",
           };
         }),
       );
@@ -560,34 +560,7 @@ export function useItemJournal({
     [],
   );
 
-  /* const handleLocationSelect = useCallback(
-    (location: LocationOption) => {
-      if (locationIndex === null) {
-        return;
-      }
 
-      const targetIndex = locationIndex;
-
-      setLines((previous) =>
-        previous.map((line, index) => {
-          if (index !== targetIndex) {
-            return line;
-          }
-
-          return {
-            ...line,
-
-            location_id: String(location.id || ""),
-
-            location_name: location.name || "",
-          };
-        }),
-      );
-
-      setLocationIndex(null);
-    },
-    [locationIndex],
-  ); */
 
   const handleModalSelection = useCallback(
     (selectedRecord: GLAccountLookupRecord) => {

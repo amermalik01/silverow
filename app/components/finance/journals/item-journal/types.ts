@@ -55,7 +55,7 @@ export type WarehouseOption = {
 
 export type LocationOption = {
   id: string;
-  name: string;
+  title: string;
   warehouse_id: string;
 };
 
