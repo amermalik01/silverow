@@ -9,6 +9,7 @@ import type { Party } from "@/types/erp";
 import GLAccountLookupModal, {
   GLAccountLookupRecord,
 } from "@/app/components/shared/modals/GLAccountLookupModal";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Option = {
   id: string | number;
@@ -152,7 +153,7 @@ export default function FinanceTab({
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-2 items-center">
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Contact Person
             </label>
@@ -245,6 +246,78 @@ export default function FinanceTab({
                 }
                 disabled={isReadonly}
                 className={getInputClass("finance.finance_alt_email")}
+              />
+            </div>
+          </div> */}
+
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Company Reg. No.
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                disabled={isReadonly}
+                placeholder="Company Reg. No."
+                value={account.comp_reg_no ?? 0}
+                onChange={(e) => updateField("comp_reg_no", e.target.value)}
+                className={getInputClass("general.comp_reg_no")}
+              />
+            </div>
+          </div> */}
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Posting Group <span className="text-red-500">*</span>
+            </label>
+            <div className="col-span-2">
+              <select
+                value={account.posting_group || ""}
+                onChange={(e) => updateField("posting_group", e.target.value)}
+                disabled={isReadonly || loading}
+                className={getInputClass("finance.posting_group")}
+              >
+                <option value="">Select Posting Group</option>
+                {masterData.postingGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {account.is_customer && (
+            <>
+              <div className="grid grid-cols-3 gap-2 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  VAT No.
+                </label>
+                <div className="col-span-2">
+                  <input
+                    type="text"
+                    value={account.vat_reg_no || ""}
+                    onChange={(e) => updateField("vat_reg_no", e.target.value)}
+                    disabled={isReadonly}
+                    className={getInputClass("finance.vat_reg_no")}
+                  />
+                </div>
+              </div>
+
+              
+            </>
+          )}
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Company Reg. No.
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                value={account.company_reg_no || ""}
+                onChange={(e) => updateField("company_reg_no", e.target.value)}
+                disabled={isReadonly}
+                className={getInputClass("finance.company_reg_no")}
               />
             </div>
           </div>
@@ -392,23 +465,6 @@ export default function FinanceTab({
             <>
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Company Reg. No.
-                </label>
-                <div className="col-span-2">
-                  <input
-                    type="text"
-                    value={account.company_reg_no || ""}
-                    onChange={(e) =>
-                      updateField("company_reg_no", e.target.value)
-                    }
-                    disabled={isReadonly}
-                    className={getInputClass("finance.company_reg_no")}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Supplier VAT No.
                 </label>
                 <div className="col-span-2">
@@ -519,6 +575,22 @@ export default function FinanceTab({
 
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Credit Limit
+                </label>
+                <div className="col-span-2">
+                  <NumericTextInput
+                    allowDecimals
+                    decimalScale={2}
+                    value={Number(account.credit_limit) || 0}
+                    onChange={(val) => updateField("credit_limit", Number(val))}
+                    disabled={isReadonly}
+                    className={getInputClass("general.credit_limit")}
+                  />
+                </div>
+              </div>
+
+              {/* <div className="grid grid-cols-3 gap-2 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Finance Charge
                 </label>
                 <div className="col-span-2 flex items-center gap-2">
@@ -567,45 +639,9 @@ export default function FinanceTab({
                     className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  VAT No.
-                </label>
-                <div className="col-span-2">
-                  <input
-                    type="text"
-                    value={account.vat_reg_no || ""}
-                    onChange={(e) => updateField("vat_reg_no", e.target.value)}
-                    disabled={isReadonly}
-                    className={getInputClass("finance.vat_reg_no")}
-                  />
-                </div>
-              </div>
+              </div> */}
             </>
           )}
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Posting Group <span className="text-red-500">*</span>
-            </label>
-            <div className="col-span-2">
-              <select
-                value={account.posting_group || ""}
-                onChange={(e) => updateField("posting_group", e.target.value)}
-                disabled={isReadonly || loading}
-                className={getInputClass("finance.posting_group")}
-              >
-                <option value="">Select Posting Group</option>
-                {masterData.postingGroups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
 
           {!isCustomer && (
             <div className="grid grid-cols-3 gap-2 items-center">
@@ -718,35 +754,40 @@ export default function FinanceTab({
                 />
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Bank Name
-              </label>
-              <div className="col-span-2">
-                <input
-                  type="text"
-                  value={account.bank_name || ""}
-                  onChange={(e) => updateField("bank_name", e.target.value)}
-                  disabled={isReadonly}
-                  className={getInputClass("finance.bank_name")}
-                />
-              </div>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            &nbsp;
+          </h3>
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Bank Name
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                value={account.bank_name || ""}
+                onChange={(e) => updateField("bank_name", e.target.value)}
+                disabled={isReadonly}
+                className={getInputClass("finance.bank_name")}
+              />
             </div>
+          </div>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Bank Address
-              </label>
-              <div className="col-span-2">
-                <input
-                  type="text"
-                  value={account.bank_address || ""}
-                  onChange={(e) => updateField("bank_address", e.target.value)}
-                  disabled={isReadonly}
-                  className={getInputClass("finance.bank_address")}
-                />
-              </div>
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Bank Address
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                value={account.bank_address || ""}
+                onChange={(e) => updateField("bank_address", e.target.value)}
+                disabled={isReadonly}
+                className={getInputClass("finance.bank_address")}
+              />
             </div>
           </div>
         </div>

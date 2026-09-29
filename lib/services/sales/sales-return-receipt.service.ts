@@ -38,7 +38,7 @@ export class SalesReturnReceiptService {
   ) {
     // 1. Generate Return Receipt Sequence Number (e.g. SRR-000001)
     const receiptNoRes = await client.query(
-      `SELECT 'SRR-' || LPAD(NEXTVAL('sales_return_receipt_no_seq')::text, 6, '0') AS receipt_no`
+      `SELECT 'SRR-' || LPAD(NEXTVAL('stock_receipt_no_seq')::text, 6, '0') AS receipt_no`
     );
     const receiptNo =
       payload.receipt.reference_no || receiptNoRes.rows[0]?.receipt_no;

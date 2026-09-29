@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
             pa.city ILIKE '%' || $2 || '%' OR
             pa.postcode ILIKE '%' || $2 || '%'
           )
-        ORDER BY p.name ASC
+        ORDER BY p.customer_code DESC
         LIMIT $3 OFFSET $4
       ),
       ranked_primary_addresses AS (
@@ -211,7 +211,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN ranked_primary_addresses pa ON pa.party_id = fc.id AND pa.rn = 1
       LEFT JOIN ranked_billing_addresses ba ON ba.party_id = fc.id AND ba.rn = 1
       LEFT JOIN ranked_shipping_addresses sa ON sa.party_id = fc.id AND sa.rn = 1
-      ORDER BY fc.name ASC;
+      ORDER BY fc.customer_code DESC;
     `;
 
     const result = await pool.query(queryText, [

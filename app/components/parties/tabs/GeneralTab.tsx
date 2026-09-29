@@ -431,50 +431,9 @@ export default function GeneralTab({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Assign Person
-            </label>
-            <div className="col-span-2 flex gap-1">
-              <input
-                type="text"
-                readOnly
-                value={account.assign_person || "Select Person..."}
-                className={getInputClass("general.assign_person")}
-              />
-              <button
-                type="button"
-                disabled={isReadonly}
-                onClick={() => setSalespersonModalOpen(true)}
-                className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-              >
-                <Icon icon="tabler:external-link" className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          
 
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Status <span className="text-red-500">*</span>
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={isReadonly}
-                value={account.status || "active"}
-                onChange={(e) =>
-                  updateField("status", e.target.value as Party["status"])
-                }
-                className={getInputClass("general.status")}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="prospect">Prospect</option>
-                <option value="suspended">Suspended</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               VAT Reg No.
             </label>
@@ -488,54 +447,9 @@ export default function GeneralTab({
                 disabled={isReadonly}
               />
             </div>
-          </div>
+          </div> */}
 
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Segment
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={isReadonly}
-                value={account.segment_id || ""}
-                onChange={(e) => updateField("segment_id", e.target.value)}
-                className={getInputClass("general.segment_id")}
-              >
-                <option value="">Select Segment...</option>
-                {segments.map((seg) => (
-                  <option key={seg.id} value={seg.id}>
-                    {seg.name}
-                  </option>
-                ))}
-              </select>
-
-              {errors["general.segment_id"] && (
-                <p className="text-red-500 text-xs mt-0.5">
-                  {errors["general.segment_id"]}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Territory
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={isReadonly}
-                value={account.territory_id || ""}
-                onChange={(e) => updateField("territory_id", e.target.value)}
-                className={getInputClass("general.territory_id")}
-              >
-                <option value="">Select Territory...</option>
-                {territories.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          
         </div>
 
         <div className="space-y-2">
@@ -587,7 +501,7 @@ export default function GeneralTab({
             </div>
           </div>
 
-          {(account.is_customer || account.is_crm_lead) && (
+          {/* {(account.is_customer || account.is_crm_lead) && (
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Credit Rating
@@ -610,23 +524,13 @@ export default function GeneralTab({
                 </select>
               </div>
             </div>
-          )}
-          {account.is_customer && (
+          )} */}
+          {/* {account.is_customer && (
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Credit Limit
               </label>
               <div className="col-span-2">
-                {/* <input
-                  type="number"
-                  disabled={isReadonly}
-                  value={account.credit_limit ?? 0}
-                  onChange={(e) =>
-                    updateField("credit_limit", Number(e.target.value))
-                  }
-                  className={getInputClass("general.credit_limit")}
-                /> */}
-
                 <NumericTextInput
                   allowDecimals
                   decimalScale={2}
@@ -637,7 +541,7 @@ export default function GeneralTab({
                 />
               </div>
             </div>
-          )}
+          )} */}
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Currency <span className="text-red-500">*</span>
@@ -653,6 +557,53 @@ export default function GeneralTab({
                 {currencies.map((curr) => (
                   <option key={curr.id} value={curr.id}>
                     {curr.code} - {curr.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Segment
+            </label>
+            <div className="col-span-2">
+              <select
+                disabled={isReadonly}
+                value={account.segment_id || ""}
+                onChange={(e) => updateField("segment_id", e.target.value)}
+                className={getInputClass("general.segment_id")}
+              >
+                <option value="">Select Segment...</option>
+                {segments.map((seg) => (
+                  <option key={seg.id} value={seg.id}>
+                    {seg.name}
+                  </option>
+                ))}
+              </select>
+
+              {errors["general.segment_id"] && (
+                <p className="text-red-500 text-xs mt-0.5">
+                  {errors["general.segment_id"]}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Territory
+            </label>
+            <div className="col-span-2">
+              <select
+                disabled={isReadonly}
+                value={account.territory_id || ""}
+                onChange={(e) => updateField("territory_id", e.target.value)}
+                className={getInputClass("general.territory_id")}
+              >
+                <option value="">Select Territory...</option>
+                {territories.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
                   </option>
                 ))}
               </select>
@@ -684,7 +635,7 @@ export default function GeneralTab({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 items-center">
+              {/* <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   No. Of Employee(s)
                 </label>
@@ -716,9 +667,9 @@ export default function GeneralTab({
                     />
                   </div>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="grid grid-cols-3 gap-2 items-center">
+              {/* <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Company Reg. No.
                 </label>
@@ -748,9 +699,9 @@ export default function GeneralTab({
                     className={getInputClass("general.date_of_inc")}
                   />
                 </div>
-              </div>
+              </div> */}
 
-              <div className="grid grid-cols-3 gap-2 items-center">
+              {/* <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Sales Status
                 </label>
@@ -813,11 +764,60 @@ export default function GeneralTab({
                     ))}
                   </select>
                 </div>
-              </div>
+              </div> */}
             </>
           )}
 
           <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              {account.is_customer
+                ? "Salesperson"
+                : account.is_supplier
+                  ? "Purchaser"
+                  : "Assign Person"}
+            </label>
+            <div className="col-span-2 flex gap-1">
+              <input
+                type="text"
+                readOnly
+                value={account.assign_person || "Select Person..."}
+                className={getInputClass("general.assign_person")}
+              />
+              <button
+                type="button"
+                disabled={isReadonly}
+                onClick={() => setSalespersonModalOpen(true)}
+                className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+              >
+                <Icon icon="tabler:external-link" className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Status <span className="text-red-500">*</span>
+            </label>
+            <div className="col-span-2">
+              <select
+                disabled={isReadonly}
+                value={account.status || "active"}
+                onChange={(e) =>
+                  updateField("status", e.target.value as Party["status"])
+                }
+                className={getInputClass("general.status")}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="prospect">Prospect</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+          </div>
+
+          
+
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               {account.is_crm_lead || account.is_customer
                 ? "Buying Group"
@@ -861,67 +861,11 @@ export default function GeneralTab({
                 ))}
               </select>
             </div>
-          </div>
-
-          {/* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Business Posting Group <span className="text-red-500">*</span>
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={isReadonly}
-                value={
-                  (account.is_customer
-                    ? account.sales_posting_group_id
-                    : account.purchase_posting_group_id) || ""
-                }
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (account.is_customer) {
-                    updateField("sales_posting_group_id", val);
-                  } else {
-                    updateField("purchase_posting_group_id", val);
-                  }
-                }}
-                className={
-                  getInputClass(
-                    account.is_customer
-                      ? "general.sales_posting_group_id"
-                      : "general.purchase_posting_group_id",
-                  ) || getInputClass("general.posting_group_id")
-                }
-              >
-                <option value="">Select Ledger Control Profile...</option>
-                {account.is_customer
-                  ? salesPostingGroups.map((pg) => (
-                      <option key={pg.id} value={pg.id}>
-                        {pg.name}
-                      </option>
-                    ))
-                  : purchasePostingGroups.map((pg) => (
-                      <option key={pg.id} value={pg.id}>
-                        {pg.name}
-                      </option>
-                    ))}
-              </select>
-
-              {account.is_customer &&
-                errors?.["general.sales_posting_group_id"] && (
-                  <span className="text-xs text-red-500 mt-1 block">
-                    {errors["general.sales_posting_group_id"]}
-                  </span>
-                )}
-
-              {!account.is_customer &&
-                errors?.["general.purchase_posting_group_id"] && (
-                  <span className="text-xs text-red-500 mt-1 block">
-                    {errors["general.purchase_posting_group_id"]}
-                  </span>
-                )}
-            </div>
           </div> */}
 
-          <div className="grid grid-cols-3 gap-2 items-center">
+          
+
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Additional Information
             </label>
@@ -937,7 +881,7 @@ export default function GeneralTab({
                 className={getInputClass("general.additional_information")}
               />
             </div>
-          </div>
+          </div> */}
 
           {account.is_supplier && (
             <div className="grid grid-cols-3 gap-2 items-center">
@@ -1046,7 +990,7 @@ export default function GeneralTab({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 items-center">
+            {/* <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Direct Line
               </label>
@@ -1061,7 +1005,7 @@ export default function GeneralTab({
                   className={getInputClass("primaryContact.phone")}
                 />
               </div>
-            </div>
+            </div> */}
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Mobile

@@ -682,7 +682,7 @@ export const SalesReturnForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
-      const response = await fetch(`/api/sales/sales-returns/${id}/post`, {
+      const response = await fetch(`/api/sales/sales-returns/${id}/post-invoice`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

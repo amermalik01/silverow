@@ -121,7 +121,7 @@ export class SalesReturnPostingService {
       // Auto-generate sequence for posted credit note number
       const seqResult = await client.query(
         `SELECT get_next_sequence($1, $2) AS code`,
-        [companyId, "sales_credit_note"],
+        [companyId, "posted_sales_return"],
       );
       const postedCreditNoteNo = seqResult.rows[0]?.code || `SCRN-${Date.now()}`;
 
