@@ -43,22 +43,73 @@ export default function MasterDropdown({
   const options = useMaster(type);
 
   useEffect(() => {
-    if (value || !defaultFilter || options.length === 0) return;
-
-    const item = options.find(defaultFilter);
-
-    if (item) {
-      const selectedVal = valueKey === "code" ? item.code || item.id : item.id;
-      onChange(selectedVal);
+    // Master data has not arrived yet.
+    if (options.length === 0) {
+      return;
     }
-  }, [value, options, defaultFilter, onChange, valueKey]);
+
+    /*
+     * Check whether the current value actually exists
+     * in the loaded options.
+     */
+    const currentValueExists = options.some((item) => {
+      const optionValue = valueKey === "code" ? item.code || item.id : item.id;
+
+      return String(optionValue) === String(value ?? "");
+    });
+
+    /*
+     * If the parent already supplied a valid value,
+     * preserve it.
+     */
+    if (currentValueExists) {
+      return;
+    }
+
+    /*
+     * No valid current value.
+     * Find the requested default.
+     */
+    if (!defaultFilter) {
+      return;
+    }
+
+    const defaultItem = options.find(defaultFilter);
+
+    if (!defaultItem) {
+      return;
+    }
+
+    const selectedValue =
+      valueKey === "code" ? defaultItem.code || defaultItem.id : defaultItem.id;
+
+    /*
+     * Only update when we actually have a value.
+     */
+    if (selectedValue) {
+      onChange(String(selectedValue));
+    }
+  }, [options, value, defaultFilter, onChange, valueKey]);
+
+  // useEffect(() => {
+  //   if (value || !defaultFilter || options.length === 0) return;
+
+  //   const item = options.find(defaultFilter);
+
+  //   if (item) {
+  //     const selectedVal = valueKey === "code" ? item.code || item.id : item.id;
+  //     onChange(selectedVal);
+  //   }
+  // }, [value, options, defaultFilter, onChange, valueKey]);
 
   const renderLabel = (opt: MasterItem) => {
     switch (displayFormat) {
       case "name":
         return opt.name;
+
       case "both":
         return opt.code ? `${opt.code} - ${opt.name}` : opt.name;
+        
       case "code":
       default:
         return opt.code || opt.name;
@@ -72,10 +123,12 @@ export default function MasterDropdown({
       onChange={(e) => onChange(e.target.value ? e.target.value : null)}
       className={className}
     >
-      <option value="" className="capitalize">{type}</option>
+      <option value="" className="capitalize">
+        {type}
+      </option>
 
       {options.map((opt) => {
-        const optionValue = valueKey === "code" ? (opt.code || opt.id) : opt.id;
+        const optionValue = valueKey === "code" ? opt.code || opt.id : opt.id;
         return (
           <option key={opt.id} value={optionValue}>
             {renderLabel(opt)}

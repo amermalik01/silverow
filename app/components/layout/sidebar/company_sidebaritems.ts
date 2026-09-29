@@ -152,7 +152,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
           {
             id: "SRM",
             name: "SRM",
-            icon: "solar:handshake-linear",
+            // icon: "solar:handshake-linear",
+            icon: "solar:buildings-linear",
             url: `/${slug}/purchases/srm`,
           },
           {

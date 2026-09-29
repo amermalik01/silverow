@@ -362,7 +362,7 @@ export default function GeneralTab({
 
                 <MasterDropdown
                   type="Country"
-                  value={primaryAddress.country || account.country || "UK"}
+                  value={primaryAddress.country || account.country || ""} //  || "United Kingdom"
                   displayFormat="name"
                   valueKey="code"
                   onChange={(val) => {
@@ -371,6 +371,7 @@ export default function GeneralTab({
                   }}
                   className={getInputClass("general.country")}
                   disabled={isReadonly}
+                  // defaultFilter={(item) => item.country_id === 225}
                   defaultFilter={(item) =>
                     item.code === "UK" || item.country_id === 225
                   }
