@@ -16,6 +16,14 @@ type Option = {
   name: string;
 };
 
+export type CompanyCurrency = {
+  id: string;
+  code: string;
+  name: string;
+  exchange_rate: string | number;
+  is_base: boolean;
+};
+
 type OptionBank = {
   id: string | number;
   bank_name: string;
@@ -33,6 +41,7 @@ type Props = {
   setAccount: React.Dispatch<React.SetStateAction<Partial<Party>>>;
   isReadonly?: boolean;
   errors?: Record<string, string>;
+  currencies?: CompanyCurrency[];
 };
 
 export default function FinanceTab({
@@ -40,6 +49,7 @@ export default function FinanceTab({
   setAccount,
   isReadonly = false,
   errors = {},
+  currencies = [],
 }: Props) {
   const [masterData, setMasterData] = useState<MasterData>({
     postingGroups: [],
@@ -153,118 +163,6 @@ export default function FinanceTab({
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <div className="space-y-3">
-          {/* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Contact Person
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={account.finance_contact_person || ""}
-                onChange={(e) =>
-                  updateField("finance_contact_person", e.target.value)
-                }
-                disabled={isReadonly}
-                className={getInputClass("finance.finance_contact_person")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Email
-            </label>
-            <div className="col-span-2">
-              <input
-                type="email"
-                placeholder="e.g. myname@example.com"
-                value={account.finance_email || ""}
-                onChange={(e) => updateField("finance_email", e.target.value)}
-                disabled={isReadonly}
-                className={getInputClass("finance.finance_email")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Telephone
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={account.finance_phone || ""}
-                onChange={(e) => updateField("finance_phone", e.target.value)}
-                disabled={isReadonly}
-                className={getInputClass("finance.finance_phone")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Fax
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={account.finance_fax || ""}
-                onChange={(e) => updateField("finance_fax", e.target.value)}
-                disabled={isReadonly}
-                className={getInputClass("finance.finance_fax")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Alt. Contact Person
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={account.finance_alt_contact || ""}
-                onChange={(e) =>
-                  updateField("finance_alt_contact", e.target.value)
-                }
-                disabled={isReadonly}
-                className={getInputClass("finance.finance_alt_contact")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Alt. Contact Email
-            </label>
-            <div className="col-span-2">
-              <input
-                type="email"
-                value={account.finance_alt_email || ""}
-                onChange={(e) =>
-                  updateField("finance_alt_email", e.target.value)
-                }
-                disabled={isReadonly}
-                className={getInputClass("finance.finance_alt_email")}
-              />
-            </div>
-          </div> */}
-
-          {/* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Company Reg. No.
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                disabled={isReadonly}
-                placeholder="Company Reg. No."
-                value={account.comp_reg_no ?? 0}
-                onChange={(e) => updateField("comp_reg_no", e.target.value)}
-                className={getInputClass("general.comp_reg_no")}
-              />
-            </div>
-          </div> */}
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -303,8 +201,6 @@ export default function FinanceTab({
                   />
                 </div>
               </div>
-
-              
             </>
           )}
           <div className="grid grid-cols-3 gap-2 items-center">
@@ -589,6 +485,27 @@ export default function FinanceTab({
                 </div>
               </div>
 
+              <div className="grid grid-cols-3 gap-2 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Currency <span className="text-red-500">*</span>
+                </label>
+                <div className="col-span-2">
+                  <select
+                    disabled={isReadonly}
+                    value={account.currency_id || ""}
+                    onChange={(e) => updateField("currency_id", e.target.value)}
+                    className={getInputClass("general.currency_id")}
+                  >
+                    <option value="">Select Currency...</option>
+                    {currencies.map((curr) => (
+                      <option key={curr.id} value={curr.id}>
+                        {curr.code} - {curr.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               {/* <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Finance Charge
@@ -802,3 +719,116 @@ export default function FinanceTab({
     </div>
   );
 }
+
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Contact Person
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                value={account.finance_contact_person || ""}
+                onChange={(e) =>
+                  updateField("finance_contact_person", e.target.value)
+                }
+                disabled={isReadonly}
+                className={getInputClass("finance.finance_contact_person")}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Email
+            </label>
+            <div className="col-span-2">
+              <input
+                type="email"
+                placeholder="e.g. myname@example.com"
+                value={account.finance_email || ""}
+                onChange={(e) => updateField("finance_email", e.target.value)}
+                disabled={isReadonly}
+                className={getInputClass("finance.finance_email")}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Telephone
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                value={account.finance_phone || ""}
+                onChange={(e) => updateField("finance_phone", e.target.value)}
+                disabled={isReadonly}
+                className={getInputClass("finance.finance_phone")}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Fax
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                value={account.finance_fax || ""}
+                onChange={(e) => updateField("finance_fax", e.target.value)}
+                disabled={isReadonly}
+                className={getInputClass("finance.finance_fax")}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Alt. Contact Person
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                value={account.finance_alt_contact || ""}
+                onChange={(e) =>
+                  updateField("finance_alt_contact", e.target.value)
+                }
+                disabled={isReadonly}
+                className={getInputClass("finance.finance_alt_contact")}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Alt. Contact Email
+            </label>
+            <div className="col-span-2">
+              <input
+                type="email"
+                value={account.finance_alt_email || ""}
+                onChange={(e) =>
+                  updateField("finance_alt_email", e.target.value)
+                }
+                disabled={isReadonly}
+                className={getInputClass("finance.finance_alt_email")}
+              />
+            </div>
+          </div> */}
+
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Company Reg. No.
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                disabled={isReadonly}
+                placeholder="Company Reg. No."
+                value={account.comp_reg_no ?? 0}
+                onChange={(e) => updateField("comp_reg_no", e.target.value)}
+                className={getInputClass("general.comp_reg_no")}
+              />
+            </div>
+          </div> */}

@@ -75,24 +75,30 @@ export const Login = () => {
 
   const modules = [
     {
-      icon: "streamline:money-graph-analytics-business-product-graph-data-chart-analysis",
+      // icon: "streamline:money-graph-analytics-business-product-graph-data-chart-analysis",
+      icon: "solar:wallet-money-linear",
       title: "Finance",
     },
     {
-      icon: "hugeicons:sale-tag-01",
+      // icon: "hugeicons:sale-tag-01",
+      icon: "solar:cart-large-2-linear",
       title: "Sales",
     },
     {
-      icon: "bx:purchase-tag-alt",
+      // icon: "bx:purchase-tag-alt",
+      icon: "solar:shield-keyhole-minimalistic-linear",
       title: "Purchases",
     },
     {
-      icon: "carbon:inventory-management",
+      // icon: "carbon:inventory-management",
+      icon: "solar:box-minimalistic-linear",
       title: "Inventory",
     },
     {
-      icon: "material-symbols:mail-outline-rounded",
-      title: "Mail",
+      // icon: "material-symbols:mail-outline-rounded",
+      icon: "solar:users-group-two-rounded-linear",
+      title: "Human Resources",
+      // title: "Mail",
     },
   ];
 

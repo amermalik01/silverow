@@ -253,9 +253,9 @@ export default function GeneralTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
         <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2 items-center">
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               {account.is_customer
                 ? "Customer No."
@@ -279,7 +279,7 @@ export default function GeneralTab({
                 }
               />
             </div>
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -431,7 +431,26 @@ export default function GeneralTab({
             </div>
           </div>
 
-          
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Status <span className="text-red-500">*</span>
+            </label>
+            <div className="col-span-2">
+              <select
+                disabled={isReadonly}
+                value={account.status || "active"}
+                onChange={(e) =>
+                  updateField("status", e.target.value as Party["status"])
+                }
+                className={getInputClass("general.status")}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="prospect">Prospect</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+          </div>
 
           {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -448,8 +467,6 @@ export default function GeneralTab({
               />
             </div>
           </div> */}
-
-          
         </div>
 
         <div className="space-y-2">
@@ -542,7 +559,7 @@ export default function GeneralTab({
               </div>
             </div>
           )} */}
-          <div className="grid grid-cols-3 gap-2 items-center">
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Currency <span className="text-red-500">*</span>
             </label>
@@ -561,7 +578,7 @@ export default function GeneralTab({
                 ))}
               </select>
             </div>
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -794,27 +811,6 @@ export default function GeneralTab({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Status <span className="text-red-500">*</span>
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={isReadonly}
-                value={account.status || "active"}
-                onChange={(e) =>
-                  updateField("status", e.target.value as Party["status"])
-                }
-                className={getInputClass("general.status")}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="prospect">Prospect</option>
-                <option value="suspended">Suspended</option>
-              </select>
-            </div>
-          </div>
-
           
 
           {/* <div className="grid grid-cols-3 gap-2 items-center">
@@ -862,8 +858,6 @@ export default function GeneralTab({
               </select>
             </div>
           </div> */}
-
-          
 
           {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">

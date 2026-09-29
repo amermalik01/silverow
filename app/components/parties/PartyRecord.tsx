@@ -123,6 +123,19 @@ export default function PartyRecord({
         if (currencyRes.ok) {
           const currencyData = await currencyRes.json();
           setCurrencies(currencyData);
+
+          setAccount((prev) => {
+            if (!prev.currency_id) {
+              const gbpCurrency = currencyData.find(
+                (c: CompanyCurrency) =>
+                  c.code?.toUpperCase() === "GBP" || c.is_base,
+              );
+              if (gbpCurrency) {
+                return { ...prev, currency_id: gbpCurrency.id };
+              }
+            }
+            return prev;
+          });
         }
 
         if (summaryRes.ok) {
@@ -427,6 +440,7 @@ export default function PartyRecord({
               setAccount={setAccount}
               isReadonly={effectiveReadonly}
               errors={formErrors}
+              currencies={currencies}
             />
           )}
 

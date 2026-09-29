@@ -32,9 +32,6 @@ export default function PartyForm({
   redirectPath,
 }: Props) {
   const router = useRouter();
-  // const [activeTab, setActiveTab] = useState<
-  //   "general" | "contacts" | "locations"
-  // >("general");
 
   const [activeTab, setActiveTab] = useState("general");
 
@@ -62,6 +59,19 @@ export default function PartyForm({
         if (res.ok) {
           const data = await res.json();
           setCurrencies(data);
+
+          setAccount((prev) => {
+            if (!prev.currency_id) {
+              const gbpCurrency = data.find(
+                (c: CompanyCurrency) =>
+                  c.code?.toUpperCase() === "GBP" || c.is_base,
+              );
+              if (gbpCurrency) {
+                return { ...prev, currency_id: gbpCurrency.id };
+              }
+            }
+            return prev;
+          });
         }
       } catch (err) {
         console.error("Error fetching system currencies client side:", err);
@@ -145,11 +155,6 @@ export default function PartyForm({
     const activeContacts = contacts.filter(
       (c) => c.name && c.name.trim() !== "",
     );
-    // const activeAddresses = addresses.filter(
-    //   (a) =>
-    //     (a.address_1 && a.address_1.trim() !== "") ||
-    //     (a.city && a.city.trim() !== ""),
-    // );
 
     const activeAddresses = addresses
       .filter(
@@ -176,7 +181,6 @@ export default function PartyForm({
       const payload = await res.json();
 
       if (!res.ok) {
-        // Map field-specific errors returned from API to state
         if (payload.field) {
           setFormErrors({ [payload.field]: payload.error });
           if (payload.field.startsWith("general.")) {
@@ -193,21 +197,12 @@ export default function PartyForm({
         }
         return;
       }
-      // if (!res.ok)
-      //   throw new Error(
-      //     payload.error || "Persistence operation processing error.",
-      //   );
-
-      // console.log('payload === ',payload);
 
       if (payload.id) {
         router.replace(`${redirectPath}/${payload.id}/edit`);
       } else {
         router.replace(`${redirectPath}`);
       }
-
-      // router.push(redirectPath);
-      // router.refresh();
     } catch (err) {
       if (err instanceof Error)
         setFormErrors({
@@ -222,17 +217,6 @@ export default function PartyForm({
 
   return (
     <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
-      {/* <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-            {title}
-          </h1>
-          <p className="text-xs text-slate-500">
-            Configure corporate identity configuration metrics securely.
-          </p>
-        </div>
-      </div> */}
-
       {Object.keys(formErrors).length > 0 && (
         <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
           <p className="font-semibold mb-1">
@@ -254,33 +238,6 @@ export default function PartyForm({
           </ul>
         </div>
       )}
-
-      {/* <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800">
-        {(["general", "contacts", "locations"] as const).map((tab) => {
-          const matchingTabErrors = Object.keys(formErrors).some((k) =>
-            k.startsWith(`${tab}.`),
-          );
-          return (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`capitalize px-4 py-2.5 text-xs font-medium transition-all relative top-[1px] ${
-                activeTab === tab
-                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 font-semibold"
-                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-              }`}
-            >
-              {tab}
-              {matchingTabErrors && (
-                <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-red-500 text-white rounded-full font-bold">
-                  !
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div> */}
 
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
         {tabs.map((tab) => {
