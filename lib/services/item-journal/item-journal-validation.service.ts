@@ -258,11 +258,11 @@ export class ItemJournalValidationService {
      * A serial number normally represents one physical unit.
      * Therefore a serial allocation cannot contain quantity > 1.
      */
-    if (allocation.serial_no && quantity > 1) {
-      throw new Error(
-        `Line ${lineNo}, allocation ${allocationNo}: Serial-numbered stock cannot have quantity greater than 1.`,
-      );
-    }
+    // if (allocation.serial_no && quantity > 1) {
+    //   throw new Error(
+    //     `Line ${lineNo}, allocation ${allocationNo}: Serial-numbered stock cannot have quantity greater than 1.`,
+    //   );
+    // }
   }
 
   /**

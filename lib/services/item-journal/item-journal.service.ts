@@ -40,6 +40,12 @@ export class ItemJournalService {
     try {
       await client.query("BEGIN");
 
+      const seqResult = await client.query(
+        `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
+        [companyId, "item_journal"],
+      );
+      const sequenceCode = seqResult.rows[0].sequence_code;
+
       const normalized = ItemJournalValidationService.normalizePayload(payload);
 
       /**
@@ -56,6 +62,7 @@ export class ItemJournalService {
       const journal = await this.createJournalHeader(
         client,
         companyId,
+        sequenceCode,
         normalized,
       );
 
@@ -347,12 +354,14 @@ export class ItemJournalService {
   private static async createJournalHeader(
     client: PoolClient,
     companyId: string,
+    entryNo: string,
     payload: ItemJournalPayload,
   ) {
     const result = await client.query(
       `
       INSERT INTO journal_entries (
         company_id,
+        entry_no,
         entry_date,
         reference,
         description,
@@ -366,6 +375,7 @@ export class ItemJournalService {
         $2,
         $3,
         $4,
+        $5,
         'ITEM_JOURNAL',
         false,
         NOW(),
@@ -375,6 +385,7 @@ export class ItemJournalService {
       `,
       [
         companyId,
+        entryNo,
         payload.entry_date,
         payload.reference || null,
         payload.description || null,
