@@ -14,7 +14,7 @@ export default async function ItemJournalPage({
       slug={slug}
       title="Item Journals"
       moduleKey="item_journals"
-      sourceType="ITEM"
+      sourceType="ITEM_JOURNAL"
       createPath={`/${slug}/finance/item-journal/create`}
     />
   );

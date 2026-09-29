@@ -54,7 +54,9 @@ export function useItemJournal({
 
   const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
 
-  const [locations, setLocations] = useState<LocationOption[]>([]);
+  const [locationsByWarehouse, setLocationsByWarehouse] = useState<
+    Record<string, LocationOption[]>
+  >({});
 
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
 
@@ -93,6 +95,40 @@ export function useItemJournal({
     );
   }, [activeAllocationLineId, lines]);
 
+  const fetchLocationsForWarehouse = useCallback(
+    async (warehouseId: string): Promise<LocationOption[]> => {
+      if (!warehouseId) {
+        return [];
+      }
+
+      try {
+        const response = await fetch(
+          `/api/lookups/locations?warehouse_id=${encodeURIComponent(
+            warehouseId,
+          )}`,
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to load locations.");
+        }
+
+        const payload = await response.json();
+
+        const data = Array.isArray(payload) ? payload : (payload.data ?? []);
+
+        return data;
+      } catch (error) {
+        console.error(
+          `Failed to load locations for warehouse ${warehouseId}:`,
+          error,
+        );
+
+        return [];
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -103,10 +139,16 @@ export function useItemJournal({
       try {
         show("Loading data...");
 
-        const [warehouseResponse, locationResponse] = await Promise.all([
-          fetch("/api/inventory/warehouses"),
-          fetch("/api/inventory/locations"),
-        ]);
+        // const [warehouseResponse, locationResponse] = await Promise.all([
+        //   fetch("/api/inventory/warehouses"),
+        //   fetch(
+        //     `/api/lookups/locations?warehouse_id=${encodeURIComponent(
+        //       warehouseId,
+        //     )}`,
+        //   ),
+        // ]);
+
+        const warehouseResponse = await fetch("/api/inventory/warehouses");
 
         if (cancelled) {
           return;
@@ -120,23 +162,12 @@ export function useItemJournal({
           setWarehouses(data);
         }
 
-        if (locationResponse.ok) {
-          const payload = await locationResponse.json();
-
-          const data = Array.isArray(payload) ? payload : (payload.data ?? []);
-
-          setLocations(data);
-        }
-
         if (!journalId) {
           setIsPosted(false);
           setIsEditing(true);
           return;
         }
 
-        /**
-         * Existing journal.
-         */
         const response = await fetch(`${apiBase}/${journalId}`);
 
         if (!response.ok) {
@@ -257,6 +288,33 @@ export function useItemJournal({
             },
           );
 
+          const warehouseIds = Array.from(
+            new Set(
+              normalizedLines.map((line) => line.warehouse_id).filter(Boolean),
+            ),
+          );
+
+          const locationResults = await Promise.all(
+            warehouseIds.map(async (warehouseId) => {
+              const locations = await fetchLocationsForWarehouse(warehouseId);
+
+              return {
+                warehouseId,
+                locations,
+              };
+            }),
+          );
+
+          if (!cancelled) {
+            const locationMap: Record<string, LocationOption[]> = {};
+
+            for (const result of locationResults) {
+              locationMap[result.warehouseId] = result.locations;
+            }
+
+            setLocationsByWarehouse(locationMap);
+          }
+
           setLines(normalizedLines);
         } else {
           setLines([createInitialRow(entryDate)]);
@@ -288,39 +346,6 @@ export function useItemJournal({
     };
   }, [journalId, apiBase, show, hide]);
 
-  const loadLocations = useCallback(
-    async (warehouseId: string): Promise<void> => {
-      if (!warehouseId) {
-        setLocations([]);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `/api/lookups/locations?warehouse_id=${encodeURIComponent(
-            warehouseId,
-          )}`,
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to load warehouse locations.");
-        }
-
-        const payload = await response.json();
-
-        const data: LocationOption[] = Array.isArray(payload)
-          ? payload
-          : (payload.data ?? []);
-
-        setLocations(data);
-      } catch (error: unknown) {
-        console.error("Failed to load locations:", error);
-
-        toast.error("Failed to load warehouse locations.");
-      }
-    },
-    [],
-  );
 
   const handleLineChange = useCallback(
     (
@@ -495,11 +520,26 @@ export function useItemJournal({
           setLines((previous) => [...previous, ...newLines]);
         }
 
-        const selectedWarehouseId = newLines[0]?.warehouse_id || "";
+        const warehouseIds = Array.from(
+          new Set(newLines.map((line) => line.warehouse_id).filter(Boolean)),
+        );
 
-        if (selectedWarehouseId) {
-          await loadLocations(selectedWarehouseId);
-        }
+        const locationResults = await Promise.all(
+          warehouseIds.map(async (warehouseId) => ({
+            warehouseId,
+            locations: await fetchLocationsForWarehouse(warehouseId),
+          })),
+        );
+
+        setLocationsByWarehouse((previous) => {
+          const updated = { ...previous };
+
+          for (const result of locationResults) {
+            updated[result.warehouseId] = result.locations;
+          }
+
+          return updated;
+        });
       } catch (error: unknown) {
         console.error("Failed to add selected items:", error);
 
@@ -509,7 +549,7 @@ export function useItemJournal({
         setItemActiveModal(null);
       }
     },
-    [itemActiveModal, buildItemLine, loadLocations, show, hide],
+    [itemActiveModal, buildItemLine, fetchLocationsForWarehouse, show, hide],
   );
 
   const handleWarehouseSelect = useCallback(
@@ -532,9 +572,7 @@ export function useItemJournal({
             ...line,
 
             warehouse_id: warehouseId,
-
             warehouse_code: warehouse.code || "",
-
             warehouse_name: warehouse.name || "",
 
             location_id: "",
@@ -542,19 +580,25 @@ export function useItemJournal({
 
             allocations: [],
             initialAllocations: [],
-
             stock_status: "unallocated",
-
             is_allocated: false,
           };
         }),
       );
 
-      await loadLocations(warehouseId);
+      if (warehouseId) {
+        const warehouseLocations =
+          await fetchLocationsForWarehouse(warehouseId);
+
+        setLocationsByWarehouse((previous) => ({
+          ...previous,
+          [warehouseId]: warehouseLocations,
+        }));
+      }
 
       setWarehouseIndex(null);
     },
-    [warehouseIndex, loadLocations],
+    [warehouseIndex, fetchLocationsForWarehouse],
   );
 
   const handleLocationSelect = useCallback(
@@ -1059,216 +1103,46 @@ export function useItemJournal({
 
   return {
     loading,
-
     isPosted,
-
     errorMsg,
-
     isEditing,
 
     setIsEditing,
-
     setErrorMsg,
 
     metadata,
-
     lines,
 
-    locations,
-
+    locationsByWarehouse,
     warehouses,
 
     formDisabled,
 
     activeAllocationLine,
-
     isAllocationModalOpen,
-
     itemActiveModal,
-
     activeModal,
-
     warehouseIndex,
-
     locationIndex,
 
     setItemActiveModal,
-
     setActiveModal,
-
     setWarehouseIndex,
-
     setLocationIndex,
-
     setIsAllocationModalOpen,
-
     setActiveAllocationLineId,
 
     handleLineChange,
-
     addLineRow,
-
     removeLineRow,
-
     handleMultipleItemSelect,
-
     handleWarehouseSelect,
-
     handleLocationSelect,
-
     handleModalSelection,
-
     handleOpenAllocation,
-
     handleSaveAllocations,
-
     handleSaveOrPost,
-
     saveDraft,
-
     postJournal,
   };
-
-  /* const handleSaveOrPost = useCallback(
-    async (postToLedger = false): Promise<boolean> => {
-      if (loading) {
-        return false;
-      }
-
-      setErrorMsg(null);
-
-      const validationError = validateBeforeSave(postToLedger);
-
-      if (validationError) {
-        setErrorMsg(validationError);
-
-        toast.error(validationError);
-
-        return false;
-      }
-
-      setLoading(true);
-
-      try {
-        show(postToLedger ? "Posting Journal..." : "Saving Draft...");
-
-        const payload = buildApiPayload(postToLedger);
-
-        const response = await fetch(
-          journalId ? `${apiBase}/${journalId}` : apiBase,
-          {
-            method: journalId ? "PUT" : "POST",
-
-            headers: {
-              "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify(payload),
-          },
-        );
-
-        let responsePayload: ApiResponse | null = null;
-
-        try {
-          responsePayload = (await response.json()) as ApiResponse;
-        } catch {
-          responsePayload = null;
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            responsePayload?.message ||
-              responsePayload?.error ||
-              "Failed to submit item journal.",
-          );
-        }
-
-        toast.success(
-          postToLedger
-            ? "Item journal posted successfully."
-            : "Item journal saved successfully.",
-        );
-
-        router.push(redirectPath);
-
-        return true;
-      } catch (error: unknown) {
-        console.error("Failed to save item journal:", error);
-
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to submit item journal.";
-
-        setErrorMsg(message);
-
-        toast.error(message);
-
-        return false;
-      } finally {
-        setLoading(false);
-        hide();
-      }
-    },
-    [
-      loading,
-      validateBeforeSave,
-      buildApiPayload,
-      journalId,
-      apiBase,
-      router,
-      redirectPath,
-      show,
-      hide,
-    ],
-  ); */
-
-  // return {
-  //   loading,
-  //   isPosted,
-  //   errorMsg,
-  //   isEditing,
-
-  //   setIsEditing,
-  //   setErrorMsg,
-
-  //   metadata,
-  //   lines,
-  //   locations,
-  //   warehouses,
-
-  //   formDisabled,
-
-  //   activeAllocationLine,
-
-  //   isAllocationModalOpen,
-
-  //   itemActiveModal,
-  //   activeModal,
-
-  //   warehouseIndex,
-  //   locationIndex,
-
-  //   setItemActiveModal,
-  //   setActiveModal,
-  //   setWarehouseIndex,
-  //   setLocationIndex,
-
-  //   setIsAllocationModalOpen,
-  //   setActiveAllocationLineId,
-
-  //   handleLineChange,
-  //   addLineRow,
-  //   removeLineRow,
-
-  //   handleMultipleItemSelect,
-  //   handleWarehouseSelect,
-  //   handleLocationSelect,
-  //   handleModalSelection,
-
-  //   handleOpenAllocation,
-  //   handleSaveAllocations,
-
-  //   handleSaveOrPost,
-  // };
 }

@@ -48,6 +48,7 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   supplier_journals: journalsColumnsConfig,
   customer_journals: journalsColumnsConfig,
   general_journals: journalsColumnsConfig,
+  item_journals: journalsColumnsConfig,
 
   parties: partyColumnsConfig,
 

@@ -31,7 +31,7 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
 
     metadata,
     lines,
-    locations,
+    locationsByWarehouse,
 
     formDisabled,
 
@@ -89,7 +89,7 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
         onEdit={() => setIsEditing(true)}
       />
 
-      <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
+      <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm px-4 py-6">
         {errorMsg && (
           <div className="p-3 bg-red-100 text-red-800 rounded font-medium text-sm border border-red-200">
             {errorMsg}
@@ -104,7 +104,8 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
 
         <ItemJournalTable
           lines={lines}
-          locations={locations}
+          // locations={locations}
+          locationsByWarehouse={locationsByWarehouse}
           formDisabled={formDisabled}
           onLineChange={handleLineChange}
           onOpenItem={(index) =>

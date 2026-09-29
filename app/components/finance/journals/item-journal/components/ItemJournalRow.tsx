@@ -117,14 +117,14 @@ export default function ItemJournalRow({
             readOnly
             placeholder="Select Item..."
             value={line.item_no}
-            className="w-full border p-1 rounded bg-zinc-50 dark:bg-slate-800 text-zinc-700 dark:text-zinc-200 font-mono text-[11px] outline-none truncate"
+            className="w-full border p-1 rounded bg-zinc-50 dark:bg-slate-800 text-zinc-700 dark:text-zinc-200 font-mono text-xs outline-none truncate"
           />
 
           <Button
             type="button"
             disabled={formDisabled}
             onClick={() => onOpenItem(index)}
-            className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+            className="px-2 h-7 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
           >
             <Icon icon="tabler:external-link" className="w-4 h-4" />
           </Button>
@@ -262,7 +262,7 @@ export default function ItemJournalRow({
             type="button"
             disabled={formDisabled}
             onClick={() => onOpenGL(index)}
-            className="px-2 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+            className="px-2 h-7 bg-slate-100 hover:bg-slate-300 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
           >
             <Icon icon="tabler:external-link" className="w-4 h-4" />
           </Button>

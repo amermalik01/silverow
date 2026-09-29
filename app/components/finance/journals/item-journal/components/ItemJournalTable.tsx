@@ -10,7 +10,9 @@ import ItemJournalRow from "./ItemJournalRow";
 
 type Props = {
   lines: ItemJournalLineRow[];
-  locations: LocationOption[];
+  // locations: LocationOption[];
+  locationsByWarehouse: Record<string, LocationOption[]>;
+
   formDisabled: boolean;
 
   onLineChange: (
@@ -32,7 +34,7 @@ type Props = {
 
 export default function ItemJournalTable({
   lines,
-  locations,
+  locationsByWarehouse,
   formDisabled,
   onLineChange,
   onOpenItem,
@@ -47,18 +49,18 @@ export default function ItemJournalTable({
     <div className="w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm">
       <table className="w-full table-fixed text-left text-xs border-collapse min-w-[1550px]">
         <colgroup>
-          <col className="w-[120px]" />
-          <col className="w-[130px]" />
-          <col className="w-[120px]" />
-          <col className="w-[180px]" />
+          <col className="w-[105px]" />
+          <col className="w-[125px]" />
+          <col className="w-[110px]" />
+          <col className="w-[170px]" />
           <col className="w-[160px]" />
           <col className="w-[160px]" />
-          <col className="w-[90px]" />
+          <col className="w-[60px]" />
           <col className="w-[80px]" />
-          <col className="w-[110px]" />
-          <col className="w-[110px]" />
-          <col className="w-[190px]" />
-          <col className="w-[100px]" />
+          <col className="w-[80px]" />
+          <col className="w-[80px]" />
+          <col className="w-[170px]" />
+          <col className="w-[60px]" />
         </colgroup>
 
         <thead>
@@ -92,7 +94,12 @@ export default function ItemJournalTable({
               key={line._stableKey}
               line={line}
               index={index}
-              locations={locations}
+              // locations={locations}
+              locations={
+                line.warehouse_id
+                  ? (locationsByWarehouse[line.warehouse_id] ?? [])
+                  : []
+              }
               formDisabled={formDisabled}
               totalLines={lines.length}
               onLineChange={onLineChange}

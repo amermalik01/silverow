@@ -16,7 +16,7 @@ type Props = {
   slug?: string;
   title: string;
   moduleKey: string;
-  sourceType: "ITEM";
+  sourceType: "ITEM_JOURNAL";
   createPath: string;
 };
 
@@ -45,7 +45,7 @@ export default function ItemJournalList({
   // Fetch API callback bound to current status tab & source type
   const fetchJournals = useCallback(
     async (params: FetchParams): Promise<FetchResponse<JournalRecord>> => {
-      const res = await fetch("/api/finance/journals/listing", {
+      const res = await fetch("/api/finance/item-journal/listing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

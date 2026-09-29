@@ -27,7 +27,127 @@ interface ItemJournalAllocationRow {
   status: string;
 }
 
+export interface ColumnFilter {
+  value?: string | number | boolean | null;
+  matchMode?: string;
+}
+
+export type TableColumnFilters = Record<
+  string,
+  ColumnFilter | string | number | undefined
+>;
+
+export interface ItemJournalListFilters {
+  status?: "posted" | "unposted";
+  source: string;
+  page?: number;
+  limit?: number;
+  filters?: TableColumnFilters;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
 export class ItemJournalService {
+  static async list(companyId: string, filters: ItemJournalListFilters) {
+    const page = filters.page || 1;
+    const limit = filters.limit || 50;
+    const offset = (page - 1) * limit;
+
+    const values: (string | number)[] = [companyId, filters.source];
+    let whereConditions = `WHERE j.company_id = $1 AND j.source = $2`;
+
+    if (filters.status === "posted") {
+      whereConditions += ` AND j.is_posted = true`;
+    } else if (filters.status === "unposted") {
+      whereConditions += ` AND j.is_posted = false`;
+    }
+
+    // Dynamic Column Filtering support safely typed without 'any'
+    if (filters.filters) {
+      // Allowed column whitelist to prevent SQL injection via keys
+      const allowedColumns = new Set([
+        "entry_no",
+        "entry_date",
+        "posted_at",
+        "reference",
+        "description",
+        "posted_by",
+      ]);
+
+      Object.entries(filters.filters).forEach(([colKey, filterVal]) => {
+        if (
+          !allowedColumns.has(colKey) ||
+          filterVal === undefined ||
+          filterVal === null
+        ) {
+          return;
+        }
+
+        // Handle both simple primitive values and { value: "..." } objects from PrimeReact/DataTables
+        const extractedValue =
+          typeof filterVal === "object" && "value" in filterVal
+            ? filterVal.value
+            : filterVal;
+
+        if (
+          extractedValue !== undefined &&
+          extractedValue !== null &&
+          extractedValue !== ""
+        ) {
+          values.push(`%${String(extractedValue)}%`);
+          whereConditions += ` AND j.${colKey}::text ILIKE $${values.length}`;
+        }
+      });
+    }
+
+    // Dynamic Sorting safely guarded
+    const validSortColumns: Record<string, string> = {
+      entry_no: "j.entry_no",
+      entry_date: "j.entry_date",
+      posted_at: "j.posted_at",
+    };
+    const sortColumn = validSortColumns[filters.sortBy || ""] || "j.entry_no";
+    const orderDirection =
+      filters.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    // 1. Fetch total count matching active filters
+    const countQuery = `SELECT COUNT(*)::int AS total FROM journal_entries j ${whereConditions}`;
+    const countResult = await pool.query<{ total: number }>(countQuery, values);
+    const total = countResult.rows[0]?.total || 0;
+
+    // 2. Fetch paginated data
+    values.push(limit, offset);
+    const dataQuery = `
+        SELECT 
+          j.id,
+          j.entry_no,
+          j.entry_date,
+          j.posted_at,
+          j.reference,
+          j.description,
+          j.is_posted,
+          j.posted_by
+        FROM journal_entries j
+        ${whereConditions}
+        ORDER BY ${sortColumn} ${orderDirection}
+        LIMIT $${values.length - 1} OFFSET $${values.length}
+      `;
+
+    // console.log("dataQuery ==== ", dataQuery);
+    // console.log("values ==== ", values);
+
+    const result = await pool.query(dataQuery, values);
+
+    return {
+      rows: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
   /**
    * Create a new Item Journal draft.
    *
@@ -292,16 +412,21 @@ export class ItemJournalService {
         ia.item_id,
         ia.warehouse_id,
         ia.warehouse_location_id AS location_id,
+        wl.title AS location_name,
         ia.batch_no,
-        ia.serial_no,
-        ia.expiry_date,
+        ia.bin_code AS serial_no,
+        -- ia.expiry_date,
         ia.allocated_quantity AS quantity,
         ia.unit_cost,
         ia.total_cost,
-        ia.status
+        ia.status,
+        TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
+        TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_shipped
       FROM inventory_allocations ia
+      LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
+      INNER JOIN journal_entry_lines jel ON ia.journal_line_id = jel.id
       WHERE ia.company_id = $1
-        AND ia.journal_id = $2
+        AND jel.journal_id = $2
       ORDER BY ia.created_at ASC
       `,
       [companyId, journalId],
@@ -316,7 +441,11 @@ export class ItemJournalService {
         location_id: row.location_id ? String(row.location_id) : null,
         batch_no: row.batch_no ? String(row.batch_no) : null,
         serial_no: row.serial_no ? String(row.serial_no) : null,
-        expiry_date: row.expiry_date ? String(row.expiry_date) : null,
+        // expiry_date: row.expiry_date ? String(row.expiry_date) : null,
+        date_shipped: row.date_shipped || "",
+        prod_date: "",
+        expiry_date: row.expiry_date || "",
+
         quantity: Number(row.quantity || 0),
         unit_cost: Number(row.unit_cost || 0),
         total_cost: Number(row.total_cost || 0),
@@ -365,6 +494,7 @@ export class ItemJournalService {
         entry_date,
         reference,
         description,
+        journal_type,
         source,
         is_posted,
         created_at,
@@ -376,6 +506,7 @@ export class ItemJournalService {
         $3,
         $4,
         $5,
+        'ITEM_JOURNAL',
         'ITEM_JOURNAL',
         false,
         NOW(),
@@ -429,18 +560,16 @@ export class ItemJournalService {
         credit,
 
         item_id,
-        item_code,
-        item_description,
+        description,
 
         warehouse_id,
         location_id,
 
         quantity,
         uom,
-        cost_per_unit,
+        unit_cost,
 
-        created_at,
-        updated_at
+        created_at
       )
       VALUES (
         $1,
@@ -460,9 +589,7 @@ export class ItemJournalService {
 
         $12,
         $13,
-        $14,
 
-        NOW(),
         NOW()
       )
       RETURNING *
@@ -477,7 +604,6 @@ export class ItemJournalService {
         credit,
 
         line.item_id,
-        line.item_no,
         line.item_description,
 
         line.warehouse_id,
@@ -523,7 +649,8 @@ export class ItemJournalService {
         `
         INSERT INTO inventory_allocations (
           company_id,
-          journal_id,
+          outbound_entry_id,
+          inbound_entry_id,
           journal_line_id,
 
           item_id,
@@ -531,7 +658,7 @@ export class ItemJournalService {
           warehouse_location_id,
 
           batch_no,
-          serial_no,
+          bin_code,
           expiry_date,
 
           allocated_quantity,
@@ -539,34 +666,34 @@ export class ItemJournalService {
           total_cost,
 
           status,
-          created_at,
-          updated_at
+          created_at
         )
         VALUES (
           $1,
           $2,
           $3,
-
           $4,
+
           $5,
           $6,
-
           $7,
+
           $8,
           $9,
-
           $10,
+
           $11,
           $12,
+          $13,
 
           'ALLOCATED',
-          NOW(),
           NOW()
         )
         `,
         [
           companyId,
-          journalId,
+          null,
+          null, // journalId,
           journalLineId,
 
           line.item_id,
