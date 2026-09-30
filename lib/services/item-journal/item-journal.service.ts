@@ -274,7 +274,10 @@ export class ItemJournalService {
       await client.query(
         `
         DELETE FROM inventory_allocations
-        WHERE journal_id = $1
+        WHERE journal_line_id IN (
+          SELECT id 
+          FROM journal_entry_lines 
+          WHERE journal_id = $1 AND company_id = $2)
           AND company_id = $2
         `,
         [journalId, companyId],
