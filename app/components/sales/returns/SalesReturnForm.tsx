@@ -411,63 +411,66 @@ export const SalesReturnForm: React.FC<Props> = ({
 
         if (Array.isArray(fetchedRawLines)) {
           const mappedLines: SalesReturnLineUI[] = fetchedRawLines.map(
-            (l: SalesReturnLineUI, idx: number) => ({
-              ...l,
-              id: undefined,
+            (l: SalesReturnLineUI, idx: number) => {
+              const originalQty = Number(l.quantity || 0);
+              const lineAllocations = Array.isArray(l.allocations)
+                ? l.allocations
+                : [];
 
-              _stableKey:
-                l._stableKey ||
-                l.id ||
-                `invoice-line-${invoice.id}-${idx}-${crypto.randomUUID()}`,
+              return {
+                ...l,
+                id: undefined,
+                _stableKey:
+                  l._stableKey ||
+                  `invoice-line-${invoice.id}-${idx}-${crypto.randomUUID()}`,
+                line_no: idx + 1,
+                sales_invoice_line_id: l.id || l.sales_invoice_line_id,
+                line_type: l.line_type || "ITEM",
 
-              line_no: idx + 1,
-              sales_invoice_line_id: l.id || l.sales_invoice_line_id,
+                item_id: l.item_id,
+                item_code: l.item_code || "",
+                item_name: l.item_name || l.description || "",
+                description: l.description || "",
 
-              line_type: l.line_type || "ITEM",
+                warehouse_id: l.warehouse_id || "",
+                warehouse_name: l.warehouse_name || "",
+                uom_id: l.uom_id || "",
+                uom_name: l.uom_name || "",
 
-              item_id: l.item_id,
-              item_code: l.item_code || "",
-              item_name: l.item_name || l.description || "",
+                gl_account_id: l.gl_account_id,
+                account_code: l.account_code,
 
-              description: l.description || "",
+                // Quantity Controls
+                quantity: originalQty,
+                max_invoice_qty: originalQty, // Store maximum allowed from Sales Invoice
+                unit_price: Number(l.unit_price || 0),
 
-              warehouse_id: l.warehouse_id || "",
-              warehouse_name: l.warehouse_name || "",
-              //   warehouse_location_id: l.warehouse_location_id,
+                discount_type: l.discount_type || "PERCENT",
+                discount_value: Number(l.discount_value || 0),
+                discount_amount: Number(l.discount_amount || 0),
 
-              uom_id: l.uom_id || "",
-              uom_name: l.uom_name || "",
+                original_amount: Number(
+                  l.original_amount ?? originalQty * Number(l.unit_price || 0),
+                ),
 
-              gl_account_id: l.gl_account_id,
-              account_code: l.account_code,
+                vat_percent: Number(l.vat_percent || 0),
+                vat_amount: Number(l.vat_amount || 0),
+                net_amount: Number(l.net_amount || 0),
+                gross_amount: Number(l.gross_amount || 0),
 
-              quantity: Number(l.quantity || 0),
-              unit_price: Number(l.unit_price || 0),
-
-              discount_type: l.discount_type || "PERCENT",
-              discount_value: Number(l.discount_value || 0),
-              discount_amount: Number(l.discount_amount || 0),
-
-              original_amount: Number(
-                l.original_amount ??
-                  Number(l.quantity || 0) * Number(l.unit_price || 0),
-              ),
-
-              vat_percent: Number(l.vat_percent || 0),
-              vat_amount: Number(l.vat_amount || 0),
-              net_amount: Number(l.net_amount || 0),
-              gross_amount: Number(l.gross_amount || 0),
-
-              allocations: [],
-              initialAllocations: [],
-              is_allocated: false,
-              returned_quantity: Number(l.returned_quantity || 0),
-            }),
+                // Tracking & Allocation hydration
+                original_invoice_allocations: lineAllocations,
+                allocations: lineAllocations,
+                initialAllocations: lineAllocations,
+                is_allocated: lineAllocations.length > 0,
+                returned_quantity: 0,
+              };
+            },
           );
 
           setLines(mappedLines);
           toast.success(
-            `Imported ${mappedLines.length} line items from Sales Invoice ${invoice.sales_invoice_no}`,
+            `Imported ${mappedLines.length} line items with batch tracking from Invoice ${invoice.sales_invoice_no}`,
           );
         }
       }
@@ -682,23 +685,27 @@ export const SalesReturnForm: React.FC<Props> = ({
         id: "action-toast",
       });
 
-      const response = await fetch(`/api/sales/sales-returns/${id}/post-invoice`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/sales/sales-returns/${id}/post-invoice`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customer_id: returnOrder.customer_id,
+            reference: returnOrder.reference,
+            posting_date:
+              returnOrder.posting_date ||
+              new Date().toISOString().split("T")[0],
+            credit_note_date: returnOrder.credit_note_date,
+            financials: financials,
+            currency_id: returnOrder.currency_id,
+            exchange_rate: returnOrder.exchange_rate,
+            returnOrder: returnOrder,
+          }),
         },
-        body: JSON.stringify({
-          customer_id: returnOrder.customer_id,
-          reference: returnOrder.reference,
-          posting_date:
-            returnOrder.posting_date || new Date().toISOString().split("T")[0],
-          credit_note_date: returnOrder.credit_note_date,
-          financials: financials,
-          currency_id: returnOrder.currency_id,
-          exchange_rate: returnOrder.exchange_rate,
-          returnOrder: returnOrder,
-        }),
-      });
+      );
 
       const data = await response.json();
 
@@ -1452,3 +1459,62 @@ export const SalesReturnForm: React.FC<Props> = ({
 };
 
 export default SalesReturnForm;
+
+// if (Array.isArray(fetchedRawLines)) {
+//   const mappedLines: SalesReturnLineUI[] = fetchedRawLines.map(
+//     (l: SalesReturnLineUI, idx: number) => ({
+//       ...l,
+//       id: undefined,
+
+//       _stableKey:
+//         l._stableKey ||
+//         l.id ||
+//         `invoice-line-${invoice.id}-${idx}-${crypto.randomUUID()}`,
+
+//       line_no: idx + 1,
+//       sales_invoice_line_id: l.id || l.sales_invoice_line_id,
+
+//       line_type: l.line_type || "ITEM",
+
+//       item_id: l.item_id,
+//       item_code: l.item_code || "",
+//       item_name: l.item_name || l.description || "",
+//       description: l.description || "",
+
+//       warehouse_id: l.warehouse_id || "",
+//       warehouse_name: l.warehouse_name || "",
+//       uom_id: l.uom_id || "",
+//       uom_name: l.uom_name || "",
+
+//       gl_account_id: l.gl_account_id,
+//       account_code: l.account_code,
+
+//       quantity: Number(l.quantity || 0),
+//       unit_price: Number(l.unit_price || 0),
+
+//       discount_type: l.discount_type || "PERCENT",
+//       discount_value: Number(l.discount_value || 0),
+//       discount_amount: Number(l.discount_amount || 0),
+
+//       original_amount: Number(
+//         l.original_amount ??
+//           Number(l.quantity || 0) * Number(l.unit_price || 0),
+//       ),
+
+//       vat_percent: Number(l.vat_percent || 0),
+//       vat_amount: Number(l.vat_amount || 0),
+//       net_amount: Number(l.net_amount || 0),
+//       gross_amount: Number(l.gross_amount || 0),
+
+//       allocations: [],
+//       initialAllocations: [],
+//       is_allocated: false,
+//       returned_quantity: Number(l.returned_quantity || 0),
+//     }),
+//   );
+
+//   setLines(mappedLines);
+//   toast.success(
+//     `Imported ${mappedLines.length} line items from Sales Invoice ${invoice.sales_invoice_no}`,
+//   );
+// }

@@ -19,12 +19,17 @@ import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
 
-import PO_StockAllocationModal, {
-  PO_StockAllocationRecord,
-} from "@/app/components/shared/modals/PO_StockAllocationModal";
+// import PO_StockAllocationModal, {
+//   PO_StockAllocationRecord,
+// } from "@/app/components/shared/modals/PO_StockAllocationModal";
+
+import SalesReturn_StockAllocationModal, {
+  ReturnAllocationRecord,
+} from "@/app/components/shared/modals/SalesReturn_StockAllocationModal";
 
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+import { toast } from "sonner";
 
 type VatPostingOption = {
   id: string;
@@ -77,9 +82,23 @@ export default function SalesReturnLines({
     );
   }, [activeAllocationLineId, linesWithKeys]);
 
-  const handleSaveAllocations = (
-    allocationsData: PO_StockAllocationRecord[],
-  ) => {
+  const handleQuantityChange = (index: number, newQty: number) => {
+    const line = lines[index];
+    const maxAllowed = line.max_invoice_qty;
+
+    // Enforce limit if linked to a Sales Invoice
+    if (maxAllowed !== undefined && newQty > maxAllowed) {
+      toast.error(
+        `Quantity cannot exceed sales invoice quantity of ${maxAllowed}`,
+      );
+      updateLine(index, "quantity", maxAllowed);
+      return;
+    }
+
+    updateLine(index, "quantity", newQty);
+  };
+
+  const handleSaveAllocations = (allocationsData: ReturnAllocationRecord[]) => {
     if (!activeAllocationLineId) return;
 
     setLines((prev) =>
@@ -105,8 +124,6 @@ export default function SalesReturnLines({
     setIsAllocationModalOpen(false);
     setActiveAllocationLineId(null);
   };
-
-  
 
   const createEmptyLine = (
     lineType: "ITEM" | "GL_ACCOUNT" | "COMMENT",
@@ -184,11 +201,6 @@ export default function SalesReturnLines({
       line_total: gross,
     };
   };
-
-  // const addItemLine = () => {
-  //   if (isReadonly) return;
-  //   setItemModalOpen(true);
-  // };
 
   const addGLLine = () => {
     if (isReadonly) return;
@@ -589,9 +601,16 @@ export default function SalesReturnLines({
                       value={displayQty}
                       allowDecimals={false}
                       disabled={isLineDisabled || line.line_type === "COMMENT"}
+                      onChange={(value) => handleQuantityChange(index, value)}
+                      className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-right text-[11px] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    {/* <NumericTextInput
+                      value={displayQty}
+                      allowDecimals={false}
+                      disabled={isLineDisabled || line.line_type === "COMMENT"}
                       onChange={(value) => updateLine(index, "quantity", value)}
                       className="border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1.5 w-full text-[11px] text-right disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    />
+                    /> */}
                   </td>
 
                   <td className="p-2">
@@ -709,7 +728,6 @@ export default function SalesReturnLines({
 
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">
-
                       {line.line_type === "ITEM" ? (
                         <button
                           type="button"
@@ -812,6 +830,70 @@ export default function SalesReturnLines({
       />
 
       {isAllocationModalOpen && activeAllocationLine && (
+        <SalesReturn_StockAllocationModal
+          key={`return-allocation-${activeAllocationLine._stableKey}`}
+          open={isAllocationModalOpen}
+          isReadonly={isReadonly}
+          onClose={() => {
+            setIsAllocationModalOpen(false);
+            setActiveAllocationLineId(null);
+          }}
+          targetQuantity={Number(activeAllocationLine.quantity || 0)}
+          maxAllowedQuantity={
+            activeAllocationLine.max_invoice_qty ??
+            Number(activeAllocationLine.quantity || 0)
+          }
+          itemId={activeAllocationLine.item_id || ""}
+          itemCode={activeAllocationLine.item_code || ""}
+          itemName={activeAllocationLine.item_name || ""}
+          warehouseId={activeAllocationLine.warehouse_id || ""}
+          warehouseName={activeAllocationLine.warehouse_name || ""}
+          uomName={activeAllocationLine.uom_name || ""}
+          originalInvoiceAllocations={
+            activeAllocationLine.original_invoice_allocations || []
+          }
+          initialAllocations={
+            activeAllocationLine.allocations ||
+            activeAllocationLine.initialAllocations ||
+            []
+          }
+          onSave={handleSaveAllocations}
+        />
+      )}
+    </div>
+  );
+}
+
+// const handleSaveAllocations = (
+//   allocationsData: PO_StockAllocationRecord[],
+// ) => {
+//   if (!activeAllocationLineId) return;
+
+//   setLines((prev) =>
+//     prev.map((line, index) => {
+//       const lineKey = line.id || line._key || `temp-return-line-${index}`;
+//       if (lineKey !== activeAllocationLineId) return line;
+
+//       const totalAllocated = allocationsData.reduce(
+//         (sum, a) => sum + Number(a.quantity || 0),
+//         0,
+//       );
+//       const lineQty = Number(line.quantity || 0);
+
+//       return {
+//         ...line,
+//         allocations: allocationsData,
+//         initialAllocations: allocationsData,
+//         is_allocated: lineQty > 0 && totalAllocated === lineQty,
+//       };
+//     }),
+//   );
+
+//   setIsAllocationModalOpen(false);
+//   setActiveAllocationLineId(null);
+// };
+
+/* {isAllocationModalOpen && activeAllocationLine && (
         <PO_StockAllocationModal
           key={`allocation-row-${activeAllocationLine._stableKey}`}
           open={isAllocationModalOpen}
@@ -834,7 +916,4 @@ export default function SalesReturnLines({
           }
           onSave={handleSaveAllocations}
         />
-      )}
-    </div>
-  );
-}
+      )} */

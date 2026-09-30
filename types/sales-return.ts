@@ -1,6 +1,7 @@
 // types/sales-return.ts
 
 import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
+import { ReturnAllocationRecord } from "@/app/components/shared/modals/SalesReturn_StockAllocationModal";
 
 export type SalesReturnStatus = string;
 
@@ -197,19 +198,33 @@ export interface SalesReturnLine {
 
   vat_business_posting_group_id?: string;
   vat_product_posting_group_id?: string;
+
+  allocations?: ReturnAllocationRecord[];
 }
 
 export interface SalesReturnLineUI extends SalesReturnLine {
   _stableKey?: string;
+  max_invoice_qty?: number;
   reserved_quantity?: string | number;
   available_stock?: string | number;
   is_allocated?: boolean;
 
-  allocations?: PO_StockAllocationRecord[];
-  initialAllocations?: PO_StockAllocationRecord[];
-  stock_allocations?: PO_StockAllocationRecord[];
-  po_line_allocations?: PO_StockAllocationRecord[];
+  initialAllocations?: ReturnAllocationRecord[];
+  original_invoice_allocations?: ReturnAllocationRecord[];
 }
+// export interface SalesReturnLineUI extends SalesReturnLine {
+//   _stableKey?: string;  
+//   max_invoice_qty?: number;
+//   reserved_quantity?: string | number;
+//   available_stock?: string | number;
+//   is_allocated?: boolean;
+
+//   allocations?: ReturnAllocationRecord[];
+//   initialAllocations?: ReturnAllocationRecord[];
+//   stock_allocations?: PO_StockAllocationRecord[];
+//   po_line_allocations?: PO_StockAllocationRecord[];
+//   original_invoice_allocations?: ReturnAllocationRecord[];
+// }
 
 export interface LookupItem {
   id: string;
