@@ -142,16 +142,17 @@ export class ItemJournalPostingService {
             l.debit,
             l.credit,
             l.item_id,
-            l.item_code,
-            l.item_description,
+            i.item_code,
+            l.description AS item_description,
             l.warehouse_id,
             l.location_id,
             l.quantity,
             l.uom,
-            l.cost_per_unit,
+            l.unit_cost AS cost_per_unit,
             l.line_no,
             l.created_at
           FROM journal_entry_lines l
+          LEFT JOIN items i ON i.id = l.item_id
           WHERE l.journal_id = $1
             AND l.company_id = $2
           ORDER BY
@@ -175,7 +176,7 @@ export class ItemJournalPostingService {
         `
           SELECT
             ia.id,
-            ia.journal_id,
+            -- ia.journal_id,
             ia.journal_line_id,
             ia.item_id,
             ia.warehouse_id,
@@ -183,15 +184,18 @@ export class ItemJournalPostingService {
             ia.allocated_quantity,
             ia.unit_cost,
             ia.total_cost,
-            ia.date_received,
-            ia.prod_date,
+            -- ia.date_received,
+            -- ia.prod_date,
             ia.expiry_date,
             ia.batch_no,
-            ia.serial_no,
+            ia.bin_code AS serial_no,
             ia.status,
             ia.created_at
           FROM inventory_allocations ia
-          WHERE ia.journal_id = $1
+          WHERE ia.journal_line_id IN (
+                SELECT id 
+                FROM journal_entry_lines 
+                WHERE journal_id = $1 AND company_id = $2)
             AND ia.company_id = $2
           ORDER BY
             ia.created_at ASC
@@ -267,7 +271,10 @@ export class ItemJournalPostingService {
         SET
           status = 'POSTED',
           updated_at = NOW()
-        WHERE journal_id = $1
+        WHERE journal_line_id IN (
+          SELECT id 
+          FROM journal_entry_lines 
+          WHERE journal_id = $1 AND company_id = $2)
           AND company_id = $2
         `,
         [journalId, companyId],

@@ -393,9 +393,12 @@ export class ItemJournalService {
       `
       SELECT
         l.*,
+        i.item_code,
+        i.name AS item_name,
         a.code AS account_code,
         a.name AS account_name
       FROM journal_entry_lines l
+      LEFT JOIN items i ON i.id = l.item_id
       LEFT JOIN chart_of_accounts a
         ON a.id = l.account_id
       WHERE l.journal_id = $1
