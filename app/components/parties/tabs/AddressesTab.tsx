@@ -73,7 +73,7 @@ export default function AddressesTab({
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
         <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider">
-          Location(s)
+          Locations
         </h3>
 
         {!isReadonly && (
@@ -218,7 +218,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">State / Province</label>
+                <label className="text-xs font-medium">County</label>
                 <div className="col-span-2">
                   <input
                     type="text"

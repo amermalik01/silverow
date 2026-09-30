@@ -200,9 +200,9 @@ export const PartySchema = z.object({
   // 🟢 E-Document Generation Flags
   e_reminder: z.boolean().default(false),
   e_statement: z.boolean().default(false),
-  e_invoice: z.boolean().default(false),
-  e_purchase_order: z.boolean().default(false),
-  e_debit_note: z.boolean().default(false),
+  e_invoice: z.boolean().default(true),
+  e_purchase_order: z.boolean().default(true),
+  e_debit_note: z.boolean().default(true),
   e_remittance_advice: z.boolean().default(false),
 
   // 🟢 Bank Account Details
@@ -213,6 +213,7 @@ export const PartySchema = z.object({
   bank_iban: looseString,
   bank_name: looseString,
   bank_address: looseString,
+  bank_address_2: looseString,
 });
 
 /* .superRefine((data, ctx) => {

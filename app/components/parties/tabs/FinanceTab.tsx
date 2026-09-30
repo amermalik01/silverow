@@ -101,6 +101,15 @@ export default function FinanceTab({
     setAccount((prev) => ({ ...prev, [key]: value }));
   };
 
+  useEffect(() => {
+    setAccount((prev) => ({
+      ...prev,
+      e_invoice: prev.e_invoice ?? true,
+      e_purchase_order: prev.e_purchase_order ?? true,
+      e_debit_note: prev.e_debit_note ?? true,
+    }));
+  }, [setAccount]);
+
   const isCustomer = !!account.is_customer;
   const activeGlField = isCustomer
     ? "gl_account_receivable"
@@ -163,7 +172,6 @@ export default function FinanceTab({
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <div className="space-y-3">
-
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Posting Group <span className="text-red-500">*</span>
@@ -278,6 +286,18 @@ export default function FinanceTab({
                   <label className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                     <input
                       type="checkbox"
+                      checked={!!account.e_invoice}
+                      onChange={(e) =>
+                        updateField("e_invoice", e.target.checked)
+                      }
+                      disabled={isReadonly}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    E-Invoice
+                  </label>
+                  <label className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
                       checked={!!account.e_reminder}
                       onChange={(e) =>
                         updateField("e_reminder", e.target.checked)
@@ -298,18 +318,6 @@ export default function FinanceTab({
                       className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
                     E-Statement
-                  </label>
-                  <label className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={!!account.e_invoice}
-                      onChange={(e) =>
-                        updateField("e_invoice", e.target.checked)
-                      }
-                      disabled={isReadonly}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    E-Invoice
                   </label>
                 </>
               ) : (
@@ -707,6 +715,21 @@ export default function FinanceTab({
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Bank Address Line 2
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                value={account.bank_address_2 || ""}
+                onChange={(e) => updateField("bank_address_2", e.target.value)}
+                disabled={isReadonly}
+                className={getInputClass("finance.bank_address_2")}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -720,7 +743,8 @@ export default function FinanceTab({
   );
 }
 
-          {/* <div className="grid grid-cols-3 gap-2 items-center">
+{
+  /* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Contact Person
             </label>
@@ -815,9 +839,11 @@ export default function FinanceTab({
                 className={getInputClass("finance.finance_alt_email")}
               />
             </div>
-          </div> */}
+          </div> */
+}
 
-          {/* <div className="grid grid-cols-3 gap-2 items-center">
+{
+  /* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Company Reg. No.
             </label>
@@ -831,4 +857,5 @@ export default function FinanceTab({
                 className={getInputClass("general.comp_reg_no")}
               />
             </div>
-          </div> */}
+          </div> */
+}

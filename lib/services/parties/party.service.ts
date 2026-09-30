@@ -111,6 +111,7 @@ export type PartyRecord = {
   bank_iban?: string | null;
   bank_name?: string | null;
   bank_address?: string | null;
+  bank_address_2?: string | null;
 
   created_at: string | Date;
   updated_at: string | Date;
@@ -287,6 +288,7 @@ export class PartyService {
           p.bank_iban,
           p.bank_name,
           p.bank_address,
+          p.bank_address_2,
           p.created_at,
           p.updated_at,
           pc.name AS primaryc_name,

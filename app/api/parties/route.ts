@@ -265,7 +265,7 @@ export async function POST(req: Request) {
 
           
           -- Bank Account Details
-          bank_account_name, bank_sort_code, bank_account_no, bank_swift_bic, bank_iban, bank_name, bank_address,
+          bank_account_name, bank_sort_code, bank_account_no, bank_swift_bic, bank_iban, bank_name, bank_address, bank_address_2,
 
           created_at, updated_at
         ) VALUES (
@@ -276,7 +276,7 @@ export async function POST(req: Request) {
           $41, $42, $43, $44, $45, $46, $47, $48, $49, $50,
           $51, $52, $53, $54, $55, $56, $57, $58, $59, $60,
           $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, 
-          $71, $72, now(), now()
+          $71, $72, $73, now(), now()
         ) RETURNING *
       `;
 
@@ -359,6 +359,7 @@ export async function POST(req: Request) {
         toCleanOrNull(validatedAccount.bank_iban),
         toCleanOrNull(validatedAccount.bank_name),
         toCleanOrNull(validatedAccount.bank_address),
+        toCleanOrNull(validatedAccount.bank_address_2),
       ];
 
       const partyResult = await client.query(partyInsertQuery, partyValues);

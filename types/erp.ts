@@ -147,4 +147,5 @@ export type PartyDraft = {
   bank_iban?: string | null;
   bank_name?: string | null;
   bank_address?: string | null;
+  bank_address_2?: string | null;
 };

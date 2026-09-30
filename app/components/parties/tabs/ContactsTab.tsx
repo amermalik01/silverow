@@ -64,7 +64,7 @@ export default function ContactsTab({
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
         <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider">
-          Contact(s)
+          Contacts
         </h3>
         {!isReadonly && (
           <Button type="button" onClick={addContactRow} variant="add_line">
@@ -221,7 +221,7 @@ export default function ContactsTab({
               </div>
             </div>
 
-            <div className="xl:col-span-2 grid grid-cols-6 gap-3 items-start">
+            {/* <div className="xl:col-span-2 grid grid-cols-6 gap-3 items-start">
               <label className="text-xs font-medium col-span-1 pt-2">
                 Notes
               </label>
@@ -233,7 +233,7 @@ export default function ContactsTab({
                 onChange={(e) => updateContactRow(idx, "notes", e.target.value)}
                 className={getInputClass(`contacts.${idx}.notes`, "col-span-5")}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       ))}

@@ -216,8 +216,9 @@ export async function PUT(req: Request, { params }: Props) {
           bank_iban = $65,
           bank_name = $66,
           bank_address = $67,
+          bank_address_2 = $68,
           updated_at = NOW()
-        WHERE id = $68 AND company_id = $69
+        WHERE id = $69 AND company_id = $70
         RETURNING id;
       `;
 
@@ -298,6 +299,7 @@ export async function PUT(req: Request, { params }: Props) {
         toCleanOrNull(validatedAccount.bank_iban),
         toCleanOrNull(validatedAccount.bank_name),
         toCleanOrNull(validatedAccount.bank_address),
+        toCleanOrNull(validatedAccount.bank_address_2),
 
         // Record & Tenant Keys ($68 - $69)
         id,

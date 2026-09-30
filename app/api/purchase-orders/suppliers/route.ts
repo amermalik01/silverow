@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
           p.bank_iban,
           p.bank_name,
           p.bank_address,
+          p.bank_address_2,
 
           pa.city,
           pa.postcode,

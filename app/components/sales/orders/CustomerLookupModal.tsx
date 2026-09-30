@@ -60,6 +60,7 @@ export type CustomerLookupItem = {
   bank_iban?: string;
   bank_name?: string;
   bank_address?: string;
+  bank_address_2?: string;
 
   primary_address?: CustomerAddress | null;
   billing_address?: CustomerAddress | null;

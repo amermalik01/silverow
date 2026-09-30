@@ -64,6 +64,7 @@ export type SupplierLookupItem = {
   bank_iban?: string;
   bank_name?: string;
   bank_address?: string;
+  bank_address_2?: string;
 
   primary_address?: SupplierAddress | null;
   billing_address?: SupplierAddress | null;

@@ -104,6 +104,12 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             icon: "solar:user-rounded-linear",
             url: `/${slug}/sales/customer`,
           },
+          {
+            id: "OpportunityCycle",
+            name: "Opportunity Cycle",
+            icon: "solar:user-rounded-linear",
+            url: `/${slug}/sales/customer`,
+          },      
 
           {
             id: "Sales Quotes",
@@ -118,8 +124,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             url: `/${slug}/sales/orders`,
           },
           {
-            id: "Sales Invoices",
-            name: "Sales Invoices",
+            id: "Posted Sales Invoices",
+            name: "Posted Sales Invoices",
             icon: "solar:bill-list-linear",
             url: `/${slug}/sales/invoices`,
           },
@@ -170,8 +176,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             url: `/${slug}/purchases/purchase-orders`,
           },
           {
-            id: "Purchase Invoices",
-            name: "Purchase Invoices",
+            id: "Posted Purchase Invoices",
+            name: "Posted Purchase Invoices",
             icon: "solar:bill-list-linear",
             url: `/${slug}/purchases/purchase-invoices`,
           },

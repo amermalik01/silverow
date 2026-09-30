@@ -431,7 +431,7 @@ export default function GeneralTab({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 items-center">
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Status <span className="text-red-500">*</span>
             </label>
@@ -450,7 +450,7 @@ export default function GeneralTab({
                 <option value="suspended">Suspended</option>
               </select>
             </div>
-          </div>
+          </div> */}
 
           {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -470,53 +470,7 @@ export default function GeneralTab({
         </div>
 
         <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Location Type
-            </label>
-            <div className="col-span-2">
-              <div className="flex flex-wrap gap-4 text-xs font-medium p-2 mb-1">
-                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={!!primaryAddress.is_billing}
-                    onChange={(e) =>
-                      updatePrimaryAddress("is_billing", e.target.checked)
-                    }
-                    disabled={isReadonly}
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />{" "}
-                  Billing
-                </label>
-                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={!!primaryAddress.is_shipping}
-                    onChange={(e) =>
-                      updatePrimaryAddress("is_shipping", e.target.checked)
-                    }
-                    disabled={isReadonly}
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />{" "}
-                  Shipping
-                </label>
-                {account.is_supplier && (
-                  <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={!!primaryAddress.is_collection}
-                      onChange={(e) =>
-                        updatePrimaryAddress("is_collection", e.target.checked)
-                      }
-                      disabled={isReadonly}
-                      className="rounded text-blue-600 focus:ring-blue-500"
-                    />{" "}
-                    Collection
-                  </label>
-                )}
-              </div>
-            </div>
-          </div>
+          
 
           {/* {(account.is_customer || account.is_crm_lead) && (
             <div className="grid grid-cols-3 gap-2 items-center">
@@ -579,6 +533,100 @@ export default function GeneralTab({
               </select>
             </div>
           </div> */}
+
+          
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Location Type
+            </label>
+            <div className="col-span-2">
+              <div className="flex flex-wrap gap-4 text-xs font-medium p-2 mb-1">
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={!!primaryAddress.is_billing}
+                    onChange={(e) =>
+                      updatePrimaryAddress("is_billing", e.target.checked)
+                    }
+                    disabled={isReadonly}
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />{" "}
+                  Billing
+                </label>
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={!!primaryAddress.is_shipping}
+                    onChange={(e) =>
+                      updatePrimaryAddress("is_shipping", e.target.checked)
+                    }
+                    disabled={isReadonly}
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />{" "}
+                  Shipping
+                </label>
+                {account.is_supplier && (
+                  <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={!!primaryAddress.is_collection}
+                      onChange={(e) =>
+                        updatePrimaryAddress("is_collection", e.target.checked)
+                      }
+                      disabled={isReadonly}
+                      className="rounded text-blue-600 focus:ring-blue-500"
+                    />{" "}
+                    Collection
+                  </label>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {account.is_customer && (
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300" title="Used for editable settings in Orders">
+                Anonymous Customer
+              </label>
+
+              <div className="col-span-2">
+                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
+                  <input
+                    type="checkbox"
+                    disabled={isReadonly}
+                    checked={!!account.anonymous_customer}
+                    onChange={(e) =>
+                      updateField("anonymous_customer", e.target.checked)
+                    }
+                    className={getInputClass("general.anonymous_customer")}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {account.is_supplier && (
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Anonymous Supplier
+              </label>
+
+              <div className="col-span-2">
+                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
+                  <input
+                    type="checkbox"
+                    disabled={isReadonly}
+                    checked={!!account.anonymous_supplier}
+                    onChange={(e) =>
+                      updateField("anonymous_supplier", e.target.checked)
+                    }
+                    className={getInputClass("general.anonymous_supplier")}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -877,49 +925,11 @@ export default function GeneralTab({
             </div>
           </div> */}
 
-          {account.is_supplier && (
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Anonymous Supplier
-              </label>
+          
 
-              <div className="col-span-2">
-                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
-                  <input
-                    type="checkbox"
-                    disabled={isReadonly}
-                    checked={!!account.anonymous_supplier}
-                    onChange={(e) =>
-                      updateField("anonymous_supplier", e.target.checked)
-                    }
-                    className={getInputClass("general.anonymous_supplier")}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+          
 
-          {account.is_customer && (
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Anonymous Customer
-              </label>
-
-              <div className="col-span-2">
-                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
-                  <input
-                    type="checkbox"
-                    disabled={isReadonly}
-                    checked={!!account.anonymous_customer}
-                    onChange={(e) =>
-                      updateField("anonymous_customer", e.target.checked)
-                    }
-                    className={getInputClass("general.anonymous_customer")}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+          
         </div>
       </div>
 
