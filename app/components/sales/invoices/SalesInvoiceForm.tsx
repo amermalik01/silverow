@@ -367,7 +367,8 @@ export const SalesInvoiceForm: React.FC<Props> = ({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <h1 className="text-2xl font-bold px-4">Sales Invoice</h1>
         {order.invoice_no && (
-          <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 rounded text-xs font-mono">
+          // <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 rounded text-xs font-mono">
+          <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-[16px] font-bold border border-emerald-200 dark:border-emerald-900">
             {`Invoice No. ${order.invoice_no}`}
           </div>
         )}

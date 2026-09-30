@@ -834,7 +834,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         <h1 className="text-2xl font-bold px-4">{`Purchase Order`}</h1>
 
         {order.order_no && (
-          <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
+          // <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
+          <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-[16px] font-bold border border-emerald-200 dark:border-emerald-900">
             {`Order No. ${order.order_no || order.invoice_no || ""}`}
           </div>
         )}

@@ -268,7 +268,8 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
       />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <h1 className="text-2xl font-bold px-4">Debit Note</h1>
-        <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded">
+        {/* <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded"> */}
+        <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-[16px] font-bold border border-emerald-200 dark:border-emerald-900">
           Debit Note No. {note.debit_note_no || ""}
         </div>
       </div>
