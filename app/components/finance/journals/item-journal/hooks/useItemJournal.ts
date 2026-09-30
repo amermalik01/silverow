@@ -29,6 +29,7 @@ import {
   normalizeDate,
   today,
 } from "../utils";
+
 import { GLAccountLookupRecord } from "@/app/components/shared/modals/GLAccountLookupModal";
 import { StockAllocationRecord } from "@/app/components/shared/modals/StockAllocationModal";
 import { WarehouseLookupRecord } from "@/app/components/shared/modals/WarehouseLookupModal";
@@ -116,7 +117,19 @@ export function useItemJournal({
 
         const data = Array.isArray(payload) ? payload : (payload.data ?? []);
 
-        return data;
+        return data.map((location: Record<string, unknown>) => ({
+          id: String(location.id ?? ""),
+          title: String(
+            location.title ??
+              location.name ??
+              location.location_name ??
+              location.code ??
+              "",
+          ),
+          warehouse_id: String(location.warehouse_id ?? warehouseId),
+        }));
+
+        // return data;
       } catch (error) {
         console.error(
           `Failed to load locations for warehouse ${warehouseId}:`,
@@ -139,32 +152,66 @@ export function useItemJournal({
       try {
         show("Loading data...");
 
-        // const [warehouseResponse, locationResponse] = await Promise.all([
-        //   fetch("/api/inventory/warehouses"),
-        //   fetch(
-        //     `/api/lookups/locations?warehouse_id=${encodeURIComponent(
-        //       warehouseId,
-        //     )}`,
-        //   ),
-        // ]);
-
         const warehouseResponse = await fetch("/api/inventory/warehouses");
 
-        if (cancelled) {
-          return;
-        }
+        let warehouseOptions: WarehouseOption[] = [];
 
         if (warehouseResponse.ok) {
-          const payload = await warehouseResponse.json();
+          const warehousePayload = await warehouseResponse.json();
 
-          const data = Array.isArray(payload) ? payload : (payload.data ?? []);
+          const warehouseData = Array.isArray(warehousePayload)
+            ? warehousePayload
+            : Array.isArray(warehousePayload?.data)
+              ? warehousePayload.data
+              : [];
 
-          setWarehouses(data);
+          warehouseOptions = warehouseData.map(
+            (warehouse: Record<string, unknown>) => ({
+              id: String(warehouse.id ?? ""),
+              name: String(
+                warehouse.name ??
+                  warehouse.title ??
+                  warehouse.warehouse_name ??
+                  "",
+              ),
+              code: String(
+                warehouse.code ??
+                  warehouse.warehouse_code ??
+                  "",
+              ),
+            }),
+          );
+
+          if (!cancelled) {
+            setWarehouses(warehouseOptions);
+          }
         }
 
+        const warehouseMap = new Map<string, WarehouseOption>(
+          warehouseOptions.map((warehouse) => [
+            String(warehouse.id),
+            warehouse,
+          ]),
+        );
+
+        // if (cancelled) {
+        //   return;
+        // }
+
+        // if (warehouseResponse.ok) {
+        //   const payload = await warehouseResponse.json();
+
+        //   const data = Array.isArray(payload) ? payload : (payload.data ?? []);
+
+        //   setWarehouses(data);
+        // }
+
         if (!journalId) {
-          setIsPosted(false);
-          setIsEditing(true);
+          if (!cancelled) {
+            setIsPosted(false);
+            setIsEditing(true);
+          }
+
           return;
         }
 
@@ -185,6 +232,9 @@ export function useItemJournal({
         }
 
         const data = await response.json();
+
+        console.log("ITEM JOURNAL LOAD RESPONSE:", data);
+        console.log("ITEM JOURNAL LINES:", data.lines ?? data.data?.lines);
 
         if (cancelled) {
           return;
@@ -207,12 +257,54 @@ export function useItemJournal({
 
         const apiLines = data.lines ?? data.data?.lines ?? [];
 
-        if (Array.isArray(apiLines) && apiLines.length > 0) {
+        if (
+          !Array.isArray(apiLines) ||
+          apiLines.length === 0
+        ) {
+          setLines([createInitialRow(entryDate)]);
+          return;
+        }
+
+        // if (Array.isArray(apiLines) && apiLines.length > 0) {
           const normalizedLines: ItemJournalLineRow[] = apiLines.map(
             (rawLine: Record<string, unknown>) => {
+
+              const getString = (key: string): string => {
+                const value = rawLine[key];
+
+                return value === null ||
+                  value === undefined
+                  ? ""
+                  : String(value);
+              };
               const quantity = Number(rawLine.quantity || 0);
 
-              const cost = Number(rawLine.cost_per_unit || 0);
+              const cost = Number(
+                rawLine.cost_per_unit ?? rawLine.unit_cost ?? 0,
+              );
+
+              const warehouseId = getString("warehouse_id");
+
+              const warehouse = warehouseMap.get(warehouseId);
+
+              const debit = Number(
+                rawLine.debit ?? 0,
+              );
+
+              const credit = Number(
+                rawLine.credit ?? 0,
+              );
+
+              const transactionType =
+                getString("transaction_type") ===
+                "Positive Entry"
+                  ? "Positive Entry"
+                  : getString("transaction_type") ===
+                      "Negative Entry"
+                    ? "Negative Entry"
+                    : debit > credit
+                      ? "Positive Entry"
+                      : "Negative Entry";
 
               const rawAllocations = rawLine.allocations;
 
@@ -228,13 +320,28 @@ export function useItemJournal({
 
               const status = getStockStatus(quantity, allocations);
 
-              const getString = (key: string): string => {
-                const value = rawLine[key];
+              const accountId =
+                getString("balancing_account_id") ||
+                getString("account_id");
 
-                return value === null || value === undefined
-                  ? ""
-                  : String(value);
-              };
+              const accountCode =
+                getString("account_code");
+
+              const accountName =
+                getString("account_name");
+
+              const balancingDisplayName =
+                getString(
+                  "balancing_display_name",
+                ) ||
+                (accountCode && accountName
+                  ? `${accountCode} - ${accountName}`
+                  : accountName ||
+                    accountCode ||
+                    "");
+
+                    const locationId =
+                getString("location_id");
 
               return {
                 _stableKey: createStableKey(),
@@ -243,25 +350,26 @@ export function useItemJournal({
                   normalizeDate(getString("posting_date")) || entryDate,
 
                 transaction_type:
-                  getString("transaction_type") === "Positive Entry"
-                    ? "Positive Entry"
-                    : "Negative Entry",
+                  transactionType,
 
                 item_id: getString("item_id"),
-
                 item_no: getString("item_no") || getString("item_code"),
-
                 item_description:
-                  getString("item_description") || getString("item_name"),
+                  getString("item_description") || getString("description"),
 
-                warehouse_id: getString("warehouse_id"),
+                // warehouse_id: getString("warehouse_id"),
+                // warehouse_code: getString("warehouse_code"),
+                // warehouse_name: getString("warehouse_name"),
 
-                warehouse_code: getString("warehouse_code"),
+                warehouse_id: warehouseId,
 
-                warehouse_name: getString("warehouse_name"),
+                warehouse_code:
+                  getString("warehouse_code") || warehouse?.code || "",
+
+                warehouse_name:
+                  getString("warehouse_name") || warehouse?.name || "",
 
                 location_id: getString("location_id"),
-
                 location_name: getString("location_name"),
 
                 quantity,
@@ -272,14 +380,14 @@ export function useItemJournal({
 
                 amount: calculateAmount(quantity, cost),
 
-                balancing_account_id: getString("balancing_account_id"),
+                balancing_account_id:
+                  accountId,
 
-                balancing_display_name: getString("balancing_display_name"),
+                balancing_display_name:
+                  balancingDisplayName,
 
                 allocations,
-
                 initialAllocations: allocations,
-
                 stock_status: status,
 
                 is_allocated:
@@ -316,9 +424,9 @@ export function useItemJournal({
           }
 
           setLines(normalizedLines);
-        } else {
-          setLines([createInitialRow(entryDate)]);
-        }
+        // } else {
+        //   setLines([createInitialRow(entryDate)]);
+        // }
       } catch (error: unknown) {
         console.error("Failed loading Item Journal data:", error);
 
@@ -345,7 +453,6 @@ export function useItemJournal({
       hide();
     };
   }, [journalId, apiBase, show, hide]);
-
 
   const handleLineChange = useCallback(
     (
