@@ -441,9 +441,9 @@ export default function FinanceTab({
             <>
               <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Payment
+                  Payment Terms
                 </label>
-                <div className="col-span-2 flex gap-2">
+                <div className="col-span-2 ">{/* col-span-2 flex gap-2 */}
                   <select
                     value={account.payment_terms || ""}
                     onChange={(e) =>
@@ -459,6 +459,29 @@ export default function FinanceTab({
                       </option>
                     ))}
                   </select>
+                  {/* <select
+                    value={account.payment_method || ""}
+                    onChange={(e) =>
+                      updateField("payment_method", e.target.value)
+                    }
+                    disabled={isReadonly || loading}
+                    className={getInputClass("finance.payment_method")}
+                  >
+                    <option value="">Select Payment Method</option>
+                    {masterData.paymentMethods.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.name}
+                      </option>
+                    ))}
+                  </select> */}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Payment Method
+                </label>
+                <div className="col-span-2">
                   <select
                     value={account.payment_method || ""}
                     onChange={(e) =>
