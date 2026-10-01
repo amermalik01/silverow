@@ -31,9 +31,13 @@ import {
 } from "../utils";
 
 import { GLAccountLookupRecord } from "@/app/components/shared/modals/GLAccountLookupModal";
-import { StockAllocationRecord } from "@/app/components/shared/modals/StockAllocationModal";
 import { WarehouseLookupRecord } from "@/app/components/shared/modals/WarehouseLookupModal";
 import { ItemLookupRecord } from "@/app/components/shared/modals/ItemLookupModal";
+
+import {
+  StockAllocationRecord,
+  StockSequenceRecord,
+} from "@/app/components/shared/modals/StockAllocationModal";
 
 export function useItemJournal({
   journalId,
@@ -99,6 +103,56 @@ export function useItemJournal({
       lines.find((line) => line._stableKey === activeAllocationLineId) || null
     );
   }, [activeAllocationLineId, lines]);
+
+  const [existingSequences, setExistingSequences] = useState<
+    StockSequenceRecord[]
+  >([]);
+
+  // const existingSequences = useMemo<StockSequenceRecord[]>(() => {
+  //   const sequences = new Map<string, StockSequenceRecord>();
+
+  //   for (const line of lines) {
+  //     if (line._stableKey === activeAllocationLineId) {
+  //       continue;
+  //     }
+
+  //     for (const allocation of line.allocations ?? []) {
+  //       const sequenceNo = String(allocation.sequence_no ?? "").trim();
+
+  //       if (!sequenceNo) {
+  //         continue;
+  //       }
+
+  //       const key = [
+  //         allocation.location_id,
+  //         sequenceNo,
+  //         allocation.batch_no,
+  //         allocation.serial_no,
+  //       ].join("|");
+
+  //       if (!sequences.has(key)) {
+  //         sequences.set(key, {
+  //           location_id: String(allocation.location_id ?? ""),
+  //           location_name: String(allocation.location_name ?? ""),
+
+  //           batch_no: String(allocation.batch_no ?? ""),
+  //           sequence_no: sequenceNo,
+  //           serial_no: String(allocation.serial_no ?? ""),
+
+  //           date_received: String(allocation.date_received ?? ""),
+  //           prod_date: String(allocation.prod_date ?? ""),
+  //           expiry_date: String(allocation.expiry_date ?? ""),
+
+  //           available_quantity: Number(
+  //             allocation.available_quantity ?? allocation.quantity ?? 0,
+  //           ),
+  //         });
+  //       }
+  //     }
+  //   }
+
+  //   return Array.from(sequences.values());
+  // }, [lines, activeAllocationLineId]);
 
   const fetchLocationsForWarehouse = useCallback(
     async (warehouseId: string): Promise<LocationOption[]> => {
@@ -737,7 +791,7 @@ export function useItemJournal({
   );
 
   const handleOpenAllocation = useCallback(
-    (line: ItemJournalLineRow) => {
+    async (line: ItemJournalLineRow) => {
       // if (formDisabled) {
       //   return;
       // }
@@ -1205,6 +1259,8 @@ export function useItemJournal({
 
     locationsByWarehouse,
     warehouses,
+
+    existingSequences,
 
     formDisabled,
 

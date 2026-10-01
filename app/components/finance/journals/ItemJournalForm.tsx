@@ -51,6 +51,8 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
 
     warehouseIndex,
 
+    existingSequences,
+
     setItemActiveModal,
     setActiveModal,
     setWarehouseIndex,
@@ -75,11 +77,15 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
   } = journal;
 
   const handlePostClick = () => {
+
+    if (formDisabled || isPosting || loading) {
+      return;
+    }
     setShowPostConfirmModal(true);
   };
 
   const handlePostJournal = async () => {
-    if (isPosting || loading) {
+    if (isPosting || loading || formDisabled) {
       return;
     }
 
@@ -183,6 +189,7 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
         allocationModalOpen={isAllocationModalOpen}
         activeAllocationLine={activeAllocationLine}
         formDisabled={formDisabled}
+        existingSequences={existingSequences}
         onCloseItem={() => setItemActiveModal(null)}
         onItemSelect={(item) => void handleMultipleItemSelect([item])}
         onCloseGL={() => setActiveModal(null)}
@@ -191,7 +198,6 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
         onWarehouseSelect={handleWarehouseSelect}
         onCloseAllocation={() => {
           setIsAllocationModalOpen(false);
-
           setActiveAllocationLineId(null);
         }}
         onSaveAllocation={handleSaveAllocations}

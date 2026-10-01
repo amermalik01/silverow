@@ -20,6 +20,7 @@ import WarehouseLookupModal, {
 
 import StockAllocationModal, {
   StockAllocationRecord,
+  StockSequenceRecord,
 } from "@/app/components/shared/modals/StockAllocationModal";
 
 type Props = {
@@ -31,6 +32,10 @@ type Props = {
   activeAllocationLine: ItemJournalLineRow | null;
 
   formDisabled: boolean;
+
+  // existingSequences: string[];
+
+  existingSequences?: StockSequenceRecord[];
 
   onCloseItem: () => void;
   onItemSelect: (item: ItemLookupRecord) => void;
@@ -52,6 +57,7 @@ export default function ItemJournalModals({
   allocationModalOpen,
   activeAllocationLine,
   formDisabled,
+  existingSequences = [],
   onCloseItem,
   onItemSelect,
   onCloseGL,
@@ -83,6 +89,7 @@ export default function ItemJournalModals({
           open={allocationModalOpen}
           isReadonly={formDisabled}
           onClose={onCloseAllocation}
+          onSave={onSaveAllocation}
           targetQuantity={Number(activeAllocationLine.quantity || 0)}
           itemId={activeAllocationLine.item_id || ""}
           itemCode={activeAllocationLine.item_no || ""}
@@ -92,6 +99,8 @@ export default function ItemJournalModals({
           locationId={activeAllocationLine.location_id || ""}
           locationName={activeAllocationLine.location_name || ""}
           uomName={activeAllocationLine.uom || ""}
+          transactionType={activeAllocationLine.transaction_type}
+          existingSequences={existingSequences}
           initialAllocations={(
             activeAllocationLine.allocations ||
             activeAllocationLine.initialAllocations ||
@@ -108,12 +117,17 @@ export default function ItemJournalModals({
             expiry_date: String(allocation.expiry_date || ""),
 
             batch_no: String(allocation.batch_no || ""),
+            sequence_no: String(allocation.sequence_no || ""),
 
             serial_no: String(allocation.serial_no || ""),
 
             quantity: Number(allocation.quantity || 0),
+
+            available_quantity:
+              allocation.available_quantity === undefined
+                ? undefined
+                : Number(allocation.available_quantity || 0),
           }))}
-          onSave={onSaveAllocation}
         />
       )}
     </>
