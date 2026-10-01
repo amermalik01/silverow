@@ -153,7 +153,6 @@ export default function StockAllocationModal({
     () => getTotalAllocated(allocations),
     [allocations],
   );
-  
 
   const safeTargetQuantity = Math.max(0, Number(targetQuantity || 0));
 
@@ -669,54 +668,8 @@ export default function StockAllocationModal({
                   </button>
                 </td>
               </tr>
-            </tbody>
-          </table>
-        </div>
 
-        {!canSave && !isReadonly && (
-          <div className="px-5 pb-3">
-            <div className="rounded border border-amber-200 bg-amber-50 text-amber-800 px-3 py-2 text-xs">
-              Allocate the remaining <strong>{qtyToAllocate}</strong>{" "}
-              {uomName || "units"} before saving the allocation.
-            </div>
-          </div>
-        )}
-
-        {canSave && !isReadonly && (
-          <div className="px-5 pb-3">
-            <div className="rounded border border-green-200 bg-green-50 text-green-800 px-3 py-2 text-xs">
-              Allocation is complete. Total allocated quantity matches the
-              journal quantity.
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="bg-slate-50 dark:bg-slate-800/40 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
-          <Button
-            type="button"
-            onClick={handleCommitSave}
-            disabled={!canSave || isReadonly}
-            variant="save"
-          >
-            Save Allocation
-          </Button>
-
-          <Button
-            type="button"
-            onClick={onClose}
-            className="border border-slate-200 dark:border-slate-700 px-4 py-2 rounded text-xs hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors"
-          >
-            Close
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-{
-  /*  <tr className="bg-slate-50/60 dark:bg-slate-800/20">
+              {/*  <tr className="bg-slate-50/60 dark:bg-slate-800/20">
                 <td className="p-2">
                   <DatePicker
                     value={
@@ -838,7 +791,51 @@ export default function StockAllocationModal({
                     +
                   </button>
                 </td>
-              </tr> */
+              </tr> */}
+            </tbody>
+          </table>
+        </div>
+
+        {!canSave && !isReadonly && (
+          <div className="px-5 pb-3">
+            <div className="rounded border border-amber-200 bg-amber-50 text-amber-800 px-3 py-2 text-xs">
+              Allocate the remaining <strong>{qtyToAllocate}</strong>{" "}
+              {uomName || "units"} before saving the allocation.
+            </div>
+          </div>
+        )}
+
+        {canSave && !isReadonly && (
+          <div className="px-5 pb-3">
+            <div className="rounded border border-green-200 bg-green-50 text-green-800 px-3 py-2 text-xs">
+              Allocation is complete. Total allocated quantity matches the
+              journal quantity.
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="bg-slate-50 dark:bg-slate-800/40 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+          <Button
+            type="button"
+            onClick={handleCommitSave}
+            disabled={!canSave || isReadonly}
+            variant="save"
+          >
+            Save Allocation
+          </Button>
+
+          <Button
+            type="button"
+            onClick={onClose}
+            className="border border-slate-200 dark:border-slate-700 px-4 py-2 rounded text-xs hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors"
+          >
+            Close
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // const [newRowInput, setNewRowInput] = useState({

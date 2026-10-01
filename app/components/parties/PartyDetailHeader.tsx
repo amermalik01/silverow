@@ -203,12 +203,12 @@ export default function PartyDetailHeader({
                   </div>
 
                   <div className="mt-1.5 text-base font-bold tracking-tight text-amber-950 dark:text-amber-100">
-                    {formatFCY(outstandingBalance, currencyCode)}
+                    {formatFCY(outstandingBalance, currencyCode)} LCY {lcyFormatter.format(lcyBalance || 0)}
                   </div>
 
-                  <div className="mt-0.5 text-[10px] font-medium text-amber-700/70 dark:text-amber-300/70">
+                  {/* <div className="mt-0.5 text-[10px] font-medium text-amber-700/70 dark:text-amber-300/70">
                     LCY {lcyFormatter.format(lcyBalance || 0)}
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-amber-600 shadow-sm dark:bg-amber-900/40 dark:text-amber-400">
@@ -232,9 +232,9 @@ export default function PartyDetailHeader({
                     {openEntriesCount}
                   </div>
 
-                  <div className="mt-0.5 text-[10px] font-medium text-blue-700/70 dark:text-blue-300/70">
+                  {/* <div className="mt-0.5 text-[10px] font-medium text-blue-700/70 dark:text-blue-300/70">
                     Outstanding entries
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-blue-600 shadow-sm dark:bg-blue-900/40 dark:text-blue-400">
@@ -258,9 +258,9 @@ export default function PartyDetailHeader({
                     {formatFCY(Number(party.credit_limit) || 0, currencyCode)}
                   </div>
 
-                  <div className="mt-0.5 text-[10px] font-medium text-violet-700/70 dark:text-violet-300/70">
+                  {/* <div className="mt-0.5 text-[10px] font-medium text-violet-700/70 dark:text-violet-300/70">
                     Available credit ceiling
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-violet-600 shadow-sm dark:bg-violet-900/40 dark:text-violet-400">
