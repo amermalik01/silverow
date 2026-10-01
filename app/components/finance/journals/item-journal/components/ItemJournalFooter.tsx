@@ -9,17 +9,22 @@ import { Button } from "@/components/ui/button";
 type Props = {
   formDisabled: boolean;
   loading: boolean;
+  isPosted: boolean;
+
   onPost: () => void;
   onSave: () => void;
   onCancel: () => void;
+  onNavigate: () => void;
 };
 
 export default function ItemJournalFooter({
   formDisabled,
   loading,
+  isPosted,
   onPost,
   onSave,
   onCancel,
+  onNavigate,
 }: Props) {
   return (
     <div className="flex flex-col lg:flex-row justify-between gap-4 pt-2">
@@ -41,7 +46,12 @@ export default function ItemJournalFooter({
       </div>
 
       <div className="flex items-center gap-2">
-        {!formDisabled && (
+        {isPosted && (
+          <Button type="button" onClick={onNavigate} variant="add_line">
+            Navigate
+          </Button>
+        )}
+        {!formDisabled && !isPosted && (
           <>
             <Button
               type="button"

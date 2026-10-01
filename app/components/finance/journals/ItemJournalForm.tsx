@@ -2,7 +2,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
@@ -16,8 +16,15 @@ import ItemJournalTable from "./item-journal/components/ItemJournalTable";
 import ItemJournalFooter from "./item-journal/components/ItemJournalFooter";
 import ItemJournalModals from "./item-journal/components/ItemJournalModals";
 
+import { PostedTransactionsModal } from "../posted-entries/PostedTransactionsModal";
+import { GeneralConfirmModal } from "../../shared/modals/GeneralConfirmModal";
+
 export default function ItemJournalForm(props: ItemJournalFormProps) {
   const { journalId, redirectPath, readOnly = false } = props;
+
+  const [showNavigateModal, setShowNavigateModal] = useState(false);
+  const [showPostConfirmModal, setShowPostConfirmModal] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   const journal = useItemJournal(props);
 
@@ -67,6 +74,33 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
     handleSaveOrPost,
   } = journal;
 
+  const handlePostClick = () => {
+    setShowPostConfirmModal(true);
+  };
+
+  const handlePostJournal = async () => {
+    if (isPosting || loading) {
+      return;
+    }
+
+    setIsPosting(true);
+
+    try {
+      const success = await handleSaveOrPost(true);
+
+      if (success) {
+        // Keep the user on this page.
+        // The hook already sets:
+        // isPosted = true
+        // isEditing = false
+
+        setShowPostConfirmModal(false);
+      }
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Breadcrumbs
@@ -104,7 +138,6 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
 
         <ItemJournalTable
           lines={lines}
-          // locations={locations}
           locationsByWarehouse={locationsByWarehouse}
           formDisabled={formDisabled}
           onLineChange={handleLineChange}
@@ -134,9 +167,12 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
         <ItemJournalFooter
           formDisabled={formDisabled}
           loading={loading}
-          onPost={() => void handleSaveOrPost(true)}
+          isPosted={isPosted}
+          onPost={handlePostClick}
+          // onPost={() => void handleSaveOrPost(true)}
           onSave={() => void handleSaveOrPost(false)}
           onCancel={() => window.location.assign(redirectPath)}
+          onNavigate={() => setShowNavigateModal(true)}
         />
       </div>
 
@@ -159,6 +195,29 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
           setActiveAllocationLineId(null);
         }}
         onSaveAllocation={handleSaveAllocations}
+      />
+
+      {isPosted && (
+        <PostedTransactionsModal
+          isOpen={showNavigateModal}
+          onClose={() => setShowNavigateModal(false)}
+          documentNo={metadata.entry_no}
+          documentTitle="Journal"
+          fetchEndpoint={`/api/finance/item-journal/${journalId}/posted-entries`}
+        />
+      )}
+
+      <GeneralConfirmModal
+        isOpen={showPostConfirmModal}
+        title="Confirmation"
+        message="Are you sure you want to post this Journal?"
+        onConfirm={handlePostJournal}
+        onCancel={() => {
+          if (!isPosting) {
+            setShowPostConfirmModal(false);
+          }
+        }}
+        loading={isPosting || loading}
       />
     </div>
   );

@@ -494,29 +494,3 @@ export class GLPostingService {
   }
 }
 
-// await client.query(
-//   `
-//   INSERT INTO gl_ledger_entries (
-//     company_id, account_id, source_journal_id, entry_no, posting_date,
-//     source_type, reference, description, debit, credit,
-//     party_type, party_id, document_no, posted_by, posted_at
-//   )
-//   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
-//   `,
-//   [
-//     data.company_id,
-//     resolvedAccountId,
-//     journalId,
-//     entryNo,
-//     data.entry_date,
-//     data.source,
-//     data.reference || null,
-//     leg.description,
-//     leg.debit,
-//     leg.credit,
-//     subLedgerPartyType || null,
-//     leg.party_id,
-//     data.reference || entryNo,
-//     data.created_by || null,
-//   ],
-// );

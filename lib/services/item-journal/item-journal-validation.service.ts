@@ -15,6 +15,7 @@ export interface StockAllocationRecord {
 }
 
 export interface ItemJournalLineInput {
+  journal_line_id?: string;
   posting_date?: string;
 
   transaction_type: "Positive Entry" | "Negative Entry";

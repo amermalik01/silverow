@@ -274,7 +274,7 @@ export default function ItemJournalRow({
           <div>
             <button
               type="button"
-              disabled={formDisabled}
+              // disabled={formDisabled}
               onClick={() => onOpenAllocation(line)}
               // className={`inline-flex items-center justify-center p-1.5 rounded transition-colors ${
               //   allocationStatus === "allocated"
@@ -292,11 +292,13 @@ export default function ItemJournalRow({
                     : "text-red-500 hover:bg-red-50"
               }`}
               title={
-                allocationStatus === "allocated"
-                  ? `Allocated (${allocatedQty}/${displayQty})`
-                  : allocationStatus === "partial"
-                    ? `Partially allocated (${allocatedQty}/${displayQty})`
-                    : "Not allocated"
+                formDisabled
+                  ? "View stock allocation"
+                  : allocationStatus === "allocated"
+                    ? `Allocated (${allocatedQty}/${displayQty})`
+                    : allocationStatus === "partial"
+                      ? `Partially allocated (${allocatedQty}/${displayQty})`
+                      : "Not allocated"
               }
             >
               <Icon icon="tabler:box-seam" className="w-4 h-4" />

@@ -53,6 +53,10 @@ export function useItemJournal({
 
   const [isEditing, setIsEditing] = useState<boolean>(!journalId);
 
+  const [currentJournalId, setCurrentJournalId] = useState<string | null>(
+    journalId || null,
+  );
+
   const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
 
   const [locationsByWarehouse, setLocationsByWarehouse] = useState<
@@ -174,11 +178,7 @@ export function useItemJournal({
                   warehouse.warehouse_name ??
                   "",
               ),
-              code: String(
-                warehouse.code ??
-                  warehouse.warehouse_code ??
-                  "",
-              ),
+              code: String(warehouse.code ?? warehouse.warehouse_code ?? ""),
             }),
           );
 
@@ -233,8 +233,8 @@ export function useItemJournal({
 
         const data = await response.json();
 
-        console.log("ITEM JOURNAL LOAD RESPONSE:", data);
-        console.log("ITEM JOURNAL LINES:", data.lines ?? data.data?.lines);
+        // console.log("ITEM JOURNAL LOAD RESPONSE:", data);
+        // console.log("ITEM JOURNAL LINES:", data.lines ?? data.data?.lines);
 
         if (cancelled) {
           return;
@@ -257,173 +257,149 @@ export function useItemJournal({
 
         const apiLines = data.lines ?? data.data?.lines ?? [];
 
-        if (
-          !Array.isArray(apiLines) ||
-          apiLines.length === 0
-        ) {
+        if (!Array.isArray(apiLines) || apiLines.length === 0) {
           setLines([createInitialRow(entryDate)]);
           return;
         }
 
         // if (Array.isArray(apiLines) && apiLines.length > 0) {
-          const normalizedLines: ItemJournalLineRow[] = apiLines.map(
-            (rawLine: Record<string, unknown>) => {
+        const normalizedLines: ItemJournalLineRow[] = apiLines.map(
+          (rawLine: Record<string, unknown>) => {
+            const getString = (key: string): string => {
+              const value = rawLine[key];
 
-              const getString = (key: string): string => {
-                const value = rawLine[key];
+              return value === null || value === undefined ? "" : String(value);
+            };
+            const quantity = Number(rawLine.quantity || 0);
 
-                return value === null ||
-                  value === undefined
-                  ? ""
-                  : String(value);
-              };
-              const quantity = Number(rawLine.quantity || 0);
+            const cost = Number(
+              rawLine.cost_per_unit ?? rawLine.unit_cost ?? 0,
+            );
 
-              const cost = Number(
-                rawLine.cost_per_unit ?? rawLine.unit_cost ?? 0,
-              );
+            const warehouseId = getString("warehouse_id");
 
-              const warehouseId = getString("warehouse_id");
+            const warehouse = warehouseMap.get(warehouseId);
 
-              const warehouse = warehouseMap.get(warehouseId);
+            const debit = Number(rawLine.debit ?? 0);
 
-              const debit = Number(
-                rawLine.debit ?? 0,
-              );
+            const credit = Number(rawLine.credit ?? 0);
 
-              const credit = Number(
-                rawLine.credit ?? 0,
-              );
+            const transactionType =
+              getString("transaction_type") === "Positive Entry"
+                ? "Positive Entry"
+                : getString("transaction_type") === "Negative Entry"
+                  ? "Negative Entry"
+                  : debit > credit
+                    ? "Positive Entry"
+                    : "Negative Entry";
 
-              const transactionType =
-                getString("transaction_type") ===
-                "Positive Entry"
-                  ? "Positive Entry"
-                  : getString("transaction_type") ===
-                      "Negative Entry"
-                    ? "Negative Entry"
-                    : debit > credit
-                      ? "Positive Entry"
-                      : "Negative Entry";
+            const rawAllocations = rawLine.allocations;
 
-              const rawAllocations = rawLine.allocations;
+            const rawInitialAllocations = rawLine.initialAllocations;
 
-              const rawInitialAllocations = rawLine.initialAllocations;
+            const allocations: StockAllocationRecord[] = Array.isArray(
+              rawAllocations,
+            )
+              ? (rawAllocations as StockAllocationRecord[])
+              : Array.isArray(rawInitialAllocations)
+                ? (rawInitialAllocations as StockAllocationRecord[])
+                : [];
 
-              const allocations: StockAllocationRecord[] = Array.isArray(
-                rawAllocations,
-              )
-                ? (rawAllocations as StockAllocationRecord[])
-                : Array.isArray(rawInitialAllocations)
-                  ? (rawInitialAllocations as StockAllocationRecord[])
-                  : [];
+            const status = getStockStatus(quantity, allocations);
 
-              const status = getStockStatus(quantity, allocations);
+            const accountId =
+              getString("balancing_account_id") || getString("account_id");
 
-              const accountId =
-                getString("balancing_account_id") ||
-                getString("account_id");
+            const accountCode = getString("account_code");
 
-              const accountCode =
-                getString("account_code");
+            const accountName = getString("account_name");
 
-              const accountName =
-                getString("account_name");
+            const balancingDisplayName =
+              getString("balancing_display_name") ||
+              (accountCode && accountName
+                ? `${accountCode} - ${accountName}`
+                : accountName || accountCode || "");
 
-              const balancingDisplayName =
-                getString(
-                  "balancing_display_name",
-                ) ||
-                (accountCode && accountName
-                  ? `${accountCode} - ${accountName}`
-                  : accountName ||
-                    accountCode ||
-                    "");
+            const locationId = getString("location_id");
 
-                    const locationId =
-                getString("location_id");
+            return {
+              _stableKey: createStableKey(),
 
-              return {
-                _stableKey: createStableKey(),
+              posting_date:
+                normalizeDate(getString("posting_date")) || entryDate,
 
-                posting_date:
-                  normalizeDate(getString("posting_date")) || entryDate,
+              transaction_type: transactionType,
 
-                transaction_type:
-                  transactionType,
+              item_id: getString("item_id"),
+              item_no: getString("item_no") || getString("item_code"),
+              item_description:
+                getString("item_description") || getString("description"),
 
-                item_id: getString("item_id"),
-                item_no: getString("item_no") || getString("item_code"),
-                item_description:
-                  getString("item_description") || getString("description"),
+              // warehouse_id: getString("warehouse_id"),
+              // warehouse_code: getString("warehouse_code"),
+              // warehouse_name: getString("warehouse_name"),
 
-                // warehouse_id: getString("warehouse_id"),
-                // warehouse_code: getString("warehouse_code"),
-                // warehouse_name: getString("warehouse_name"),
+              warehouse_id: warehouseId,
 
-                warehouse_id: warehouseId,
+              warehouse_code:
+                getString("warehouse_code") || warehouse?.code || "",
 
-                warehouse_code:
-                  getString("warehouse_code") || warehouse?.code || "",
+              warehouse_name:
+                getString("warehouse_name") || warehouse?.name || "",
 
-                warehouse_name:
-                  getString("warehouse_name") || warehouse?.name || "",
+              location_id: getString("location_id"),
+              location_name: getString("location_name"),
 
-                location_id: getString("location_id"),
-                location_name: getString("location_name"),
+              quantity,
 
-                quantity,
+              uom: getString("uom") || getString("uom_name") || "Pcs",
 
-                uom: getString("uom") || getString("uom_name") || "Pcs",
+              cost_per_unit: cost,
 
-                cost_per_unit: cost,
+              amount: calculateAmount(quantity, cost),
 
-                amount: calculateAmount(quantity, cost),
+              balancing_account_id: accountId,
 
-                balancing_account_id:
-                  accountId,
+              balancing_display_name: balancingDisplayName,
 
-                balancing_display_name:
-                  balancingDisplayName,
+              allocations,
+              initialAllocations: allocations,
+              stock_status: status,
 
-                allocations,
-                initialAllocations: allocations,
-                stock_status: status,
+              is_allocated:
+                status === "allocated" || Boolean(rawLine.is_allocated),
+            };
+          },
+        );
 
-                is_allocated:
-                  status === "allocated" || Boolean(rawLine.is_allocated),
-              };
-            },
-          );
+        const warehouseIds = Array.from(
+          new Set(
+            normalizedLines.map((line) => line.warehouse_id).filter(Boolean),
+          ),
+        );
 
-          const warehouseIds = Array.from(
-            new Set(
-              normalizedLines.map((line) => line.warehouse_id).filter(Boolean),
-            ),
-          );
+        const locationResults = await Promise.all(
+          warehouseIds.map(async (warehouseId) => {
+            const locations = await fetchLocationsForWarehouse(warehouseId);
 
-          const locationResults = await Promise.all(
-            warehouseIds.map(async (warehouseId) => {
-              const locations = await fetchLocationsForWarehouse(warehouseId);
+            return {
+              warehouseId,
+              locations,
+            };
+          }),
+        );
 
-              return {
-                warehouseId,
-                locations,
-              };
-            }),
-          );
+        if (!cancelled) {
+          const locationMap: Record<string, LocationOption[]> = {};
 
-          if (!cancelled) {
-            const locationMap: Record<string, LocationOption[]> = {};
-
-            for (const result of locationResults) {
-              locationMap[result.warehouseId] = result.locations;
-            }
-
-            setLocationsByWarehouse(locationMap);
+          for (const result of locationResults) {
+            locationMap[result.warehouseId] = result.locations;
           }
 
-          setLines(normalizedLines);
+          setLocationsByWarehouse(locationMap);
+        }
+
+        setLines(normalizedLines);
         // } else {
         //   setLines([createInitialRow(entryDate)]);
         // }
@@ -762,9 +738,9 @@ export function useItemJournal({
 
   const handleOpenAllocation = useCallback(
     (line: ItemJournalLineRow) => {
-      if (formDisabled) {
-        return;
-      }
+      // if (formDisabled) {
+      //   return;
+      // }
 
       if (!line.item_id) {
         toast.error("Please select an item first.");
@@ -785,7 +761,8 @@ export function useItemJournal({
 
       setIsAllocationModalOpen(true);
     },
-    [formDisabled],
+    [],
+    // [formDisabled],
   );
 
   const handleSaveAllocations = useCallback(
@@ -1120,6 +1097,10 @@ export function useItemJournal({
 
       const savedJournalRecord = savedJournal as Record<string, unknown> | null;
 
+      if (journalId) {
+        setCurrentJournalId(journalId);
+      }
+
       const id = journalId || String(savedJournalRecord?.id || "");
 
       if (!id) {
@@ -1127,6 +1108,8 @@ export function useItemJournal({
           "Item journal was saved but no journal ID was returned.",
         );
       }
+
+      setCurrentJournalId(id);
 
       /**
        * -----------------------------------------------------

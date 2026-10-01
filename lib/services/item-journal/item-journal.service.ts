@@ -666,6 +666,8 @@ export class ItemJournalService {
           batch_no,
           bin_code,
           expiry_date,
+          date_received,
+          prod_date,
 
           allocated_quantity,
           unit_cost,
@@ -692,6 +694,9 @@ export class ItemJournalService {
           $12,
           $13,
 
+          $14,
+          $15,
+
           'ALLOCATED',
           NOW()
         )
@@ -711,6 +716,8 @@ export class ItemJournalService {
           allocation.serial_no || null,
 
           allocation.expiry_date || null,
+          allocation.date_received || null,
+          allocation.prod_date || null,
 
           quantity,
           unitCost,

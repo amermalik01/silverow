@@ -1,12 +1,12 @@
 // lib/services/item-journal/item-journal-posting.service.ts
 
 import { PoolClient } from "pg";
-
 import { pool } from "@/lib/db";
-
-import { InventoryMovementService } from "@/lib/services/inventory/inventory-movement.service";
-
 import { validateLedgerPostingDate } from "@/lib/validations/postingGate";
+import { UnifiedInventoryEngineService } from "@/lib/services/inventory/unified-inventory-engine.service";
+import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
+
+import { GLJournalSource } from "@/lib/services/gl/gl-posting.service";
 
 import {
   ItemJournalLineInput,
@@ -122,6 +122,9 @@ export class ItemJournalPostingService {
       if (journal.is_posted) {
         throw new Error("Item journal has already been posted");
       }
+      /**
+       * 2. Posting date validation.
+       */
 
       const postingDate = this.formatDate(journal.entry_date);
 
@@ -132,6 +135,10 @@ export class ItemJournalPostingService {
           gateCheck.reason || "The journal date is locked for posting.",
         );
       }
+
+      /**
+       * 3. Load journal lines.
+       */
 
       const linesResult = await client.query<ItemJournalDbLine>(
         `
@@ -167,16 +174,14 @@ export class ItemJournalPostingService {
       }
 
       /**
-       * -----------------------------------------------------
-       * 5. Load allocations.
-       * -----------------------------------------------------
+       * 4. Load allocations.
        */
 
       const allocationsResult = await client.query<ItemJournalAllocationDbRow>(
         `
           SELECT
             ia.id,
-            -- ia.journal_id,
+            jel.journal_id,
             ia.journal_line_id,
             ia.item_id,
             ia.warehouse_id,
@@ -184,14 +189,15 @@ export class ItemJournalPostingService {
             ia.allocated_quantity,
             ia.unit_cost,
             ia.total_cost,
-            -- ia.date_received,
-            -- ia.prod_date,
+            ia.date_received,
+            ia.prod_date,
             ia.expiry_date,
             ia.batch_no,
             ia.bin_code AS serial_no,
             ia.status,
             ia.created_at
           FROM inventory_allocations ia
+          LEFT JOIN journal_entry_lines as jel ON ia.journal_line_id = jel.id
           WHERE ia.journal_line_id IN (
                 SELECT id 
                 FROM journal_entry_lines 
@@ -204,7 +210,7 @@ export class ItemJournalPostingService {
       );
 
       /**
-       * 6. Convert DB rows into posting lines.
+       * 5. Convert DB rows into posting lines.
        */
       const postingLines = this.buildPostingLines(
         linesResult.rows,
@@ -212,7 +218,7 @@ export class ItemJournalPostingService {
       );
 
       /**
-       * 7. Validate the complete posting payload.
+       * 6. Validate complete journal posting payload.
        */
       const payload = {
         entry_date: postingDate,
@@ -223,68 +229,183 @@ export class ItemJournalPostingService {
       ItemJournalValidationService.validateForPosting(payload);
 
       /**
-       * 8. Convert to inventory movements.
+       * 7. Post inventory using the SAME unified inventory engine
+       *    used by Purchase Receipt.
        */
-      const movementLines = this.transformToMovementLines(postingLines);
 
-      if (!movementLines.length) {
-        throw new Error("No valid inventory movements were generated.");
+      for (const line of postingLines) {
+        const quantity = Number(line.quantity || 0);
+
+        if (quantity <= 0) {
+          throw new Error(
+            `Item journal line for item ${line.item_id} must have a quantity greater than zero.`,
+          );
+        }
+        const isPositive = line.transaction_type === "Positive Entry";
+
+        const allocations = line.allocations || [];
+
+        if (allocations.length > 0) {
+          let allocatedTotal = 0;
+
+          for (const allocation of allocations) {
+            const allocationQty = Number(allocation.quantity || 0);
+
+            if (allocationQty <= 0) {
+              continue;
+            }
+
+            allocatedTotal += allocationQty;
+
+            const locationId =
+              allocation.location_id || line.location_id || null;
+
+            const stockLine = {
+              item_id: line.item_id,
+              warehouse_id: line.warehouse_id,
+
+              location_id: locationId,
+
+              batch_no: allocation.batch_no || null,
+              serial_no: allocation.serial_no || null,
+              expiry_date: allocation.expiry_date || null,
+
+              quantity: allocationQty,
+
+              unit_cost: Number(line.cost_per_unit || 0),
+
+              reference_type: "ITEM_JOURNAL",
+              reference_id: journalId,
+              reference_line_id: line.journal_line_id || null,
+            };
+
+            if (isPositive) {
+              await UnifiedInventoryEngineService.processInboundStock(
+                client,
+                companyId,
+                postingDate,
+                "ITEM_JOURNAL_IN",
+                stockLine,
+              );
+            } else {
+              await UnifiedInventoryEngineService.processOutboundStock(
+                client,
+                companyId,
+                postingDate,
+                "ITEM_JOURNAL_OUT",
+                stockLine,
+              );
+            }
+          }
+
+          /**
+           * Prevent partially allocated journal lines from
+           * silently changing inventory.
+           */
+          if (
+            Number(allocatedTotal.toFixed(6)) !== Number(quantity.toFixed(6))
+          ) {
+            throw new Error(
+              `Item journal line for item ${line.item_id} has allocated quantity ${allocatedTotal}, but journal quantity is ${quantity}.`,
+            );
+          }
+        } else {
+          const stockLine = {
+            item_id: line.item_id,
+            warehouse_id: line.warehouse_id,
+
+            location_id: line.location_id || null,
+
+            batch_no: null,
+            serial_no: null,
+            expiry_date: null,
+
+            quantity,
+
+            unit_cost: Number(line.cost_per_unit || 0),
+
+            reference_type: "ITEM_JOURNAL",
+            reference_id: journalId,
+
+            reference_line_id: line.journal_line_id || null,
+          };
+
+          if (isPositive) {
+            await UnifiedInventoryEngineService.processInboundStock(
+              client,
+              companyId,
+              postingDate,
+              "ITEM_JOURNAL_IN",
+              stockLine,
+            );
+          } else {
+            await UnifiedInventoryEngineService.processOutboundStock(
+              client,
+              companyId,
+              postingDate,
+              "ITEM_JOURNAL_OUT",
+              stockLine,
+            );
+          }
+        }
       }
 
       /**
-       * 9. Post inventory transaction.
+       * 8. Mark allocations as POSTED.
        *
-       * InventoryMovementService is expected to:
+       * NOTE:
+       * The Unified Inventory Engine creates its own
+       * inventory_allocations rows for OUT transactions.
        *
-       * - update inventory balances
-       * - validate stock availability for OUT movements
-       * - create inventory transaction header
-       * - create inventory transaction lines
-       *
-       * Everything is using the SAME pg transaction.
+       * Therefore this update is only for existing Item Journal
+       * allocation records belonging to the journal.
        */
-      await InventoryMovementService.postTransaction(client, {
-        company_id: companyId,
 
-        transaction_type: "ITEM_JOURNAL",
-
-        posting_date: postingDate,
-
-        reference_type: "ITEM_JOURNAL",
-
-        reference_id: journalId,
-
-        created_by: userId || null,
-
-        lines: movementLines,
-      });
-
-      /**
-       * 10. Mark allocations as posted.
-       *
-       * If your inventory_allocations table uses another
-       * status convention, change these values here.
-       */
       await client.query(
         `
         UPDATE inventory_allocations
         SET
-          status = 'POSTED',
-          updated_at = NOW()
+          status = 'POSTED'
         WHERE journal_line_id IN (
-          SELECT id 
-          FROM journal_entry_lines 
-          WHERE journal_id = $1 AND company_id = $2)
-          AND company_id = $2
+          SELECT id
+          FROM journal_entry_lines
+          WHERE journal_id = $1
+            AND company_id = $2
+        )
+        AND company_id = $2
         `,
         [journalId, companyId],
       );
 
       /**
-       * 11. Finalize the financial journal.
+       * 9. Create GL ledger entries for the Item Journal.
        *
-       * The WHERE is_posted = false condition protects
-       * against an unexpected concurrent update.
+       * Item Journal itself is already represented by journal_entries.
+       * Therefore we do NOT create another journal_entries header here.
+       *
+       * Positive Entry:
+       *   DR Inventory
+       *   CR Balancing Account
+       *
+       * Negative Entry:
+       *   DR Balancing Account
+       *   CR Inventory
+       */
+      await this.createGlLedgerEntries(
+        client,
+        companyId,
+        journalId,
+        journal.entry_no,
+        journal.reference,
+        journal.currency_id,
+        Number(journal.exchange_rate || 1),
+        postingDate,
+        postingLines,
+        userId,
+      );
+
+      /**
+       * 9. Finalize journal.
        */
       const updateResult = await client.query(
         `
@@ -363,13 +484,6 @@ export class ItemJournalPostingService {
 
       const allocations = allocationMap.get(String(line.id)) || [];
 
-      /**
-       * ItemJournalLineInput requires location_id to be a string.
-       *
-       * Do not convert a missing location to undefined here.
-       * Posting an inventory line without a location should fail
-       * explicitly rather than creating invalid posting data.
-       */
       const locationId = line.location_id;
 
       if (!locationId) {
@@ -385,27 +499,20 @@ export class ItemJournalPostingService {
       }
 
       return {
+        journal_line_id: line.id,
         posting_date: undefined,
 
         transaction_type: isPositive ? "Positive Entry" : "Negative Entry",
 
         item_id: line.item_id,
-
         item_no: line.item_code || "",
-
         item_description: line.item_description || "",
 
         warehouse_id: line.warehouse_id,
-
-        /**
-         * ItemJournalLineInput requires string.
-         */
         location_id: locationId,
 
         quantity,
-
         uom: line.uom || "Pcs",
-
         cost_per_unit: costPerUnit,
 
         amount,
@@ -427,78 +534,17 @@ export class ItemJournalPostingService {
 
             return {
               location_id: allocationLocationId,
-
               date_received: this.formatOptionalDate(allocation.date_received),
-
               prod_date: this.formatOptionalDate(allocation.prod_date),
-
               expiry_date: this.formatOptionalDate(allocation.expiry_date),
-
               batch_no: allocation.batch_no ?? undefined,
-
               serial_no: allocation.serial_no ?? undefined,
-
               quantity: Number(allocation.allocated_quantity || 0),
             };
           },
         ),
       };
     });
-  }
-
-  /**
-   * =========================================================
-   * TRANSFORM TO INVENTORY MOVEMENTS
-   * =========================================================
-   */
-  private static transformToMovementLines(lines: ItemJournalLineInput[]) {
-    const movementLines: Array<{
-      item_id: string;
-      warehouse_id: string;
-      location_id: string | null;
-      quantity: number;
-      unit_cost: number;
-      movement_direction: "IN" | "OUT";
-      batch_no: string | null;
-      serial_no: string | null;
-      expiry_date: string | null;
-    }> = [];
-
-    for (const line of lines) {
-      const isPositive = line.transaction_type === "Positive Entry";
-
-      const allocations = line.allocations || [];
-
-      for (const allocation of allocations) {
-        const quantity = Number(allocation.quantity || 0);
-
-        if (quantity <= 0) {
-          continue;
-        }
-
-        movementLines.push({
-          item_id: line.item_id,
-
-          warehouse_id: line.warehouse_id,
-
-          location_id: allocation.location_id || line.location_id || null,
-
-          quantity,
-
-          unit_cost: Number(line.cost_per_unit || 0),
-
-          movement_direction: isPositive ? "IN" : "OUT",
-
-          batch_no: allocation.batch_no || null,
-
-          serial_no: allocation.serial_no || null,
-
-          expiry_date: allocation.expiry_date || null,
-        });
-      }
-    }
-
-    return movementLines;
   }
 
   private static formatOptionalDate(
@@ -518,9 +564,6 @@ export class ItemJournalPostingService {
       return undefined;
     }
 
-    /**
-     * Already YYYY-MM-DD.
-     */
     if (/^\d{4}-\d{2}-\d{2}$/.test(stringValue)) {
       return stringValue;
     }
@@ -534,11 +577,6 @@ export class ItemJournalPostingService {
     return date.toISOString().split("T")[0];
   }
 
-  /**
-   * =========================================================
-   * FORMAT POSTING DATE
-   * =========================================================
-   */
   private static formatDate(value: unknown): string {
     if (value instanceof Date) {
       return value.toISOString().split("T")[0];
@@ -546,9 +584,6 @@ export class ItemJournalPostingService {
 
     const stringValue = String(value || "");
 
-    /**
-     * PostgreSQL DATE normally arrives as YYYY-MM-DD.
-     */
     if (/^\d{4}-\d{2}-\d{2}$/.test(stringValue)) {
       return stringValue;
     }
@@ -561,82 +596,634 @@ export class ItemJournalPostingService {
 
     return date.toISOString().split("T")[0];
   }
-}
 
-/**
- * Convert Item Journal lines into InventoryMovementService lines.
- */
-/* private static transformToMovementLines(lines: ItemJournalLineInput[]) {
-    const movementLines: Array<{
-      item_id: string;
-      warehouse_id: string;
-      location_id: string | null;
-      quantity: number;
-      unit_cost: number;
-      movement_direction: "IN" | "OUT";
-      batch_no: string | null;
-      serial_no: string | null;
-      expiry_date: string | null;
-    }> = [];
+  private static async insertGlLedgerEntry(
+    client: PoolClient,
+    params: {
+      companyId: string;
+      accountId: string;
 
-    for (const line of lines) {
+      sourceJournalId: string;
+
+      entryNo: string;
+      postingDate: string;
+
+      sourceType: GLJournalSource;
+
+      reference?: string | null;
+      description?: string | null;
+
+      debit: number;
+      credit: number;
+
+      currencyId?: string | null;
+      exchangeRate?: number | null;
+
+      debitFcy?: number;
+      creditFcy?: number;
+
+      sourceDocumentId?: string | null;
+      sourceDocumentNo?: string | null;
+
+      partyType?: string | null;
+      partyId?: string | null;
+
+      documentNo?: string | null;
+      postedBy?: string | null;
+    },
+  ): Promise<void> {
+    await client.query(
+      `
+      INSERT INTO gl_ledger_entries (
+        company_id,
+        account_id,
+
+        source_journal_id,
+        entry_no,
+        posting_date,
+        source_type,
+
+        reference,
+        description,
+
+        debit,
+        credit,
+
+        currency_id,
+        exchange_rate,
+        debit_fcy,
+        credit_fcy,
+
+        source_document_id,
+        source_document_no,
+
+        party_type,
+        party_id,
+
+        document_no,
+        posted_by,
+        posted_at
+      )
+      VALUES (
+        $1,
+        $2,
+
+        $3,
+        $4,
+        $5,
+        $6,
+
+        $7,
+        $8,
+
+        $9,
+        $10,
+
+        $11,
+        $12,
+        $13,
+        $14,
+
+        $15,
+        $16,
+
+        $17,
+        $18,
+
+        $19,
+        $20,
+        NOW()
+      )
+    `,
+      [
+        params.companyId,
+        params.accountId,
+
+        params.sourceJournalId,
+        params.entryNo,
+        params.postingDate,
+        params.sourceType,
+
+        params.reference ?? null,
+        params.description ?? null,
+
+        Number(params.debit || 0),
+        Number(params.credit || 0),
+
+        params.currencyId ?? null,
+        Number(params.exchangeRate ?? 1),
+
+        Number(params.debitFcy || 0),
+        Number(params.creditFcy || 0),
+
+        params.sourceDocumentId ?? null,
+        params.sourceDocumentNo ?? null,
+
+        params.partyType ?? null,
+        params.partyId ?? null,
+
+        params.documentNo ?? null,
+        params.postedBy ?? null,
+      ],
+    );
+  }
+
+  private static async createGlLedgerEntries(
+    client: PoolClient,
+    companyId: string,
+    journalId: string,
+    entryNo: string,
+    reference: string | null,
+    currencyId: string | null,
+    exchangeRate: number,
+    postingDate: string,
+    postingLines: ItemJournalLineInput[],
+    userId?: string,
+  ) {
+    for (const line of postingLines) {
+      const amount = Number(line.amount || 0);
+
+      if (amount <= 0) {
+        throw new Error(
+          `Item journal line ${line.journal_line_id} must have an amount greater than zero.`,
+        );
+      }
+
+      if (!line.item_id) {
+        throw new Error(
+          `Item journal line ${line.journal_line_id} is missing an item.`,
+        );
+      }
+
+      if (!line.balancing_account_id) {
+        throw new Error(
+          `Item journal line ${line.journal_line_id} is missing a balancing account.`,
+        );
+      }
+
+      /**
+       * Resolve the inventory account for this item.
+       *
+       * This uses the same account-resolution mechanism already
+       * used by Purchase Receipt.
+       */
+      const accounts = await AccountResolutionService.resolvePurchaseAccounts(
+        client,
+        companyId,
+        line.item_id,
+      );
+
+      const inventoryAccountId = accounts.inventory_account_id;
+
+      if (!inventoryAccountId) {
+        throw new Error(
+          `Inventory account is not configured for item ${line.item_id}.`,
+        );
+      }
+
+      const quantity = Number(line.quantity || 0);
+      const unitCost = Number(line.cost_per_unit || 0);
+
+      const calculatedAmount = Number((quantity * unitCost).toFixed(2));
+
+      if (Math.abs(calculatedAmount - amount) > 0.01) {
+        throw new Error(
+          `Item journal line ${line.journal_line_id} has an amount of ${amount}, ` +
+            `but quantity ${quantity} × unit cost ${unitCost} = ${calculatedAmount}.`,
+        );
+      }
+
       const isPositive = line.transaction_type === "Positive Entry";
 
-      const allocations = line.allocations || [];
+      const amountFcy =
+        exchangeRate === 0
+          ? amount
+          : Number((amount / exchangeRate).toFixed(2));
 
-      for (const allocation of allocations) {
-        const quantity = Number(allocation.quantity || 0);
+      /**
+       * Positive Entry:
+       *
+       * DR Inventory
+       * CR Balancing Account
+       */
+      if (isPositive) {
+        await this.insertGlLedgerEntry(client, {
+          companyId,
+          accountId: inventoryAccountId,
 
-        if (quantity <= 0) {
-          continue;
-        }
+          sourceJournalId: journalId,
 
-        movementLines.push({
-          item_id: line.item_id,
+          entryNo,
+          postingDate,
 
-          warehouse_id: line.warehouse_id,
+          sourceType: "INVENTORY",
 
-          location_id: allocation.location_id || line.location_id || null,
+          reference: reference || entryNo,
 
-          quantity,
+          description: `Inventory adjustment - positive entry for item ${line.item_id}`,
 
-          unit_cost: Number(line.cost_per_unit || 0),
+          debit: amount,
+          credit: 0,
 
-          movement_direction: isPositive ? "IN" : "OUT",
+          currencyId: currencyId,
+          exchangeRate,
 
-          batch_no: allocation.batch_no || null,
+          debitFcy: amountFcy,
+          creditFcy: 0,
 
-          serial_no: allocation.serial_no || null,
+          sourceDocumentId: journalId,
+          sourceDocumentNo: entryNo,
 
-          expiry_date: allocation.expiry_date || null,
+          documentNo: entryNo,
+
+          postedBy: userId || null,
+        });
+
+        await this.insertGlLedgerEntry(client, {
+          companyId,
+          accountId: line.balancing_account_id,
+
+          sourceJournalId: journalId,
+
+          entryNo,
+          postingDate,
+
+          sourceType: "INVENTORY",
+
+          reference: reference || entryNo,
+
+          description: `Balancing entry - positive inventory adjustment for item ${line.item_id}`,
+
+          debit: 0,
+          credit: amount,
+
+          currencyId: currencyId,
+          exchangeRate,
+
+          debitFcy: 0,
+          creditFcy: amountFcy,
+
+          sourceDocumentId: journalId,
+          sourceDocumentNo: entryNo,
+
+          documentNo: entryNo,
+
+          postedBy: userId || null,
+        });
+      } else {
+        /**
+         * Negative Entry:
+         *
+         * DR Balancing Account
+         * CR Inventory
+         */
+        await this.insertGlLedgerEntry(client, {
+          companyId,
+          accountId: line.balancing_account_id,
+
+          sourceJournalId: journalId,
+
+          entryNo,
+          postingDate,
+
+          sourceType: "INVENTORY",
+
+          reference: reference || entryNo,
+
+          description: `Balancing entry - negative inventory adjustment for item ${line.item_id}`,
+
+          debit: amount,
+          credit: 0,
+
+          currencyId: currencyId,
+          exchangeRate,
+
+          debitFcy: amountFcy,
+          creditFcy: 0,
+
+          sourceDocumentId: journalId,
+          sourceDocumentNo: entryNo,
+
+          documentNo: entryNo,
+
+          postedBy: userId || null,
+        });
+
+        await this.insertGlLedgerEntry(client, {
+          companyId,
+          accountId: inventoryAccountId,
+
+          sourceJournalId: journalId,
+
+          entryNo,
+          postingDate,
+
+          sourceType: "INVENTORY",
+
+          reference: reference || entryNo,
+
+          description: `Inventory adjustment - negative entry for item ${line.item_id}`,
+
+          debit: 0,
+          credit: amount,
+
+          currencyId: currencyId,
+          exchangeRate,
+
+          debitFcy: 0,
+          creditFcy: amountFcy,
+
+          sourceDocumentId: journalId,
+          sourceDocumentNo: entryNo,
+
+          documentNo: entryNo,
+
+          postedBy: userId || null,
         });
       }
     }
+  }
+}
 
-    return movementLines;
-  } */
+// const movementLines = this.transformToMovementLines(postingLines);
+
+// if (!movementLines.length) {
+//   throw new Error("No valid inventory movements were generated.");
+// }
+
+// await InventoryMovementService.postTransaction(client, {
+//   company_id: companyId,
+
+//   transaction_type: "ITEM_JOURNAL",
+
+//   posting_date: postingDate,
+
+//   reference_type: "ITEM_JOURNAL",
+
+//   reference_id: journalId,
+
+//   created_by: userId || null,
+
+//   lines: movementLines,
+// });
 
 /**
- * Normalize a PostgreSQL date/timestamp into YYYY-MM-DD.
+ * =========================================================
+ * TRANSFORM TO INVENTORY MOVEMENTS
+ * =========================================================
  */
-/* private static formatDate(value: unknown): string {
-    if (value instanceof Date) {
-      return value.toISOString().split("T")[0];
-    }
+//  private static transformToMovementLines(lines: ItemJournalLineInput[]) {
+//   const movementLines: Array<{
+//     item_id: string;
+//     warehouse_id: string;
+//     location_id: string | null;
+//     quantity: number;
+//     unit_cost: number;
+//     movement_direction: "IN" | "OUT";
+//     batch_no: string | null;
+//     serial_no: string | null;
+//     expiry_date: string | null;
+//   }> = [];
 
-    const stringValue = String(value || "");
+//   for (const line of lines) {
+//     const isPositive = line.transaction_type === "Positive Entry";
 
-    
-    if (/^\d{4}-\d{2}-\d{2}$/.test(stringValue)) {
-      return stringValue;
-    }
+//     const allocations = line.allocations || [];
 
-    const date = new Date(stringValue);
+//     for (const allocation of allocations) {
+//       const quantity = Number(allocation.quantity || 0);
 
-    if (Number.isNaN(date.getTime())) {
-      throw new Error("Invalid Item Journal posting date.");
-    }
+//       if (quantity <= 0) {
+//         continue;
+//       }
 
-    return date.toISOString().split("T")[0];
-  } 
-}*/
+//       movementLines.push({
+//         item_id: line.item_id,
+
+//         warehouse_id: line.warehouse_id,
+
+//         location_id: allocation.location_id || line.location_id || null,
+
+//         quantity,
+
+//         unit_cost: Number(line.cost_per_unit || 0),
+
+//         movement_direction: isPositive ? "IN" : "OUT",
+
+//         batch_no: allocation.batch_no || null,
+
+//         serial_no: allocation.serial_no || null,
+
+//         expiry_date: allocation.expiry_date || null,
+//       });
+//     }
+//   }
+
+//   return movementLines;
+// }
+// private static getJournalLineIdForPostingLine(
+//     line: ItemJournalLineInput,
+//     dbLines: ItemJournalDbLine[],
+//   ): string {
+//     const match = dbLines.find(
+//       (dbLine) =>
+//         dbLine.item_id === line.item_id &&
+//         dbLine.warehouse_id === line.warehouse_id &&
+//         String(dbLine.quantity || 0) === String(line.quantity || 0),
+//     );
+
+//     if (!match) {
+//       throw new Error(
+//         `Unable to resolve journal line ID for item ${line.item_id}.`,
+//       );
+//     }
+
+//     return match.id;
+//   }
+// private static async insertGlLedgerEntry(
+//   client: PoolClient,
+//   params: {
+//     companyId: string;
+//     accountId: string;
+//     postingDate: string;
+//     debit: number;
+//     credit: number;
+//     itemId?: string | null;
+//     warehouseId?: string | null;
+//     quantity?: number | null;
+//     unitCost?: number | null;
+//     referenceType: string;
+//     referenceId: string;
+//     referenceLineId?: string | null;
+//     description?: string;
+//     createdBy?: string;
+//   },
+// ) {
+//   await client.query(
+//     `
+//     INSERT INTO gl_ledger_entries (
+//       company_id,
+//       account_id,
+//       posting_date,
+//       debit,
+//       credit,
+//       item_id,
+//       warehouse_id,
+//       quantity,
+//       unit_cost,
+//       reference_type,
+//       reference_id,
+//       reference_line_id,
+//       description,
+//       created_by
+//     )
+//     VALUES (
+//       $1, $2, $3, $4, $5,
+//       $6, $7, $8, $9,
+//       $10, $11, $12, $13, $14
+//     )
+//   `,
+//     [
+//       params.companyId,
+//       params.accountId,
+//       params.postingDate,
+//       params.debit,
+//       params.credit,
+//       params.itemId || null,
+//       params.warehouseId || null,
+//       params.quantity ?? null,
+//       params.unitCost ?? null,
+//       params.referenceType,
+//       params.referenceId,
+//       params.referenceLineId || null,
+//       params.description || null,
+//       params.createdBy || null,
+//     ],
+//   );
+// }
+
+// private static async insertGlLedgerEntry(
+//   client: PoolClient,
+//   params: {
+//     companyId: string;
+//     accountId: string;
+
+//     postingDate: string;
+
+//     debit: number;
+//     credit: number;
+
+//     sourceJournalId?: string | null;
+
+//     entryNo: string;
+//     sourceType: string;
+//     reference?: string | null;
+//     description?: string | null;
+
+//     currencyId?: string | null;
+//     exchangeRate?: number | null;
+
+//     debitFcy?: number;
+//     creditFcy?: number;
+
+//     sourceDocumentId?: string | null;
+//     sourceDocumentNo?: string | null;
+
+//     partyType?: string | null;
+//     partyId?: string | null;
+
+//     documentNo?: string | null;
+//     postedBy?: string | null;
+//   },
+// ) {
+//   await client.query(
+//     `
+//   INSERT INTO gl_ledger_entries (
+//     company_id,
+//     account_id,
+//     source_journal_id,
+//     entry_no,
+//     posting_date,
+//     source_type,
+//     reference,
+//     description,
+
+//     debit,
+//     credit,
+
+//     currency_id,
+//     exchange_rate,
+//     debit_fcy,
+//     credit_fcy,
+
+//     source_document_id,
+//     source_document_no,
+
+//     party_type,
+//     party_id,
+
+//     document_no,
+//     posted_by,
+//     posted_at
+//   )
+//   VALUES (
+//     $1,
+//     $2,
+//     $3,
+//     $4,
+//     $5,
+//     $6,
+//     $7,
+//     $8,
+
+//     $9,
+//     $10,
+
+//     $11,
+//     $12,
+//     $13,
+//     $14,
+
+//     $15,
+//     $16,
+
+//     $17,
+//     $18,
+
+//     $19,
+//     $20,
+//     NOW()
+//   )
+//   `,
+//     [
+//       params.companyId,
+//       params.accountId,
+
+//       params.sourceJournalId || null,
+
+//       params.entryNo,
+//       params.postingDate,
+//       params.sourceType,
+//       params.reference || null,
+//       params.description || null,
+
+//       Number(params.debit || 0),
+//       Number(params.credit || 0),
+
+//       params.currencyId || null,
+//       Number(params.exchangeRate || 1),
+
+//       Number(params.debitFcy || 0),
+//       Number(params.creditFcy || 0),
+
+//       params.sourceDocumentId || null,
+//       params.sourceDocumentNo || null,
+
+//       params.partyType || null,
+//       params.partyId || null,
+
+//       params.documentNo || null,
+//       params.postedBy || null,
+//     ],
+//   );
+// }
