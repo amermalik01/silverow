@@ -17,12 +17,14 @@ type Props = {
   module: string;
   recordId: string;
   readonly?: boolean;
+  errors: Record<string, string>;
 };
 
 export default function NotesTab({
   module,
   recordId,
   readonly = false,
+  errors,
 }: Props) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +51,10 @@ export default function NotesTab({
   }, [loadNotes]);
 
   const handleSave = async () => {
+    if (!(note.length > 0)) {
+      alert("Add notes");
+      return false;
+    }
     try {
       setSaving(true);
       const res = await fetch("/api/notes", {
@@ -72,21 +78,21 @@ export default function NotesTab({
       {!readonly && (
         <div className="lg:col-span-1 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-3 bg-slate-50/50 dark:bg-slate-900/50">
           <h3 className="font-semibold text-xs text-slate-400 capitalize tracking-wider">
-            Internal Activity Journal
+            Notes
           </h3>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="border border-slate-200 dark:border-slate-800 p-3 rounded-lg w-full text-xs bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-slate-100"
             rows={4}
-            placeholder="Log conversation minutes, compliance milestones or remarks..."
+            placeholder="Add Notes..."
           />
           <Button
             onClick={handleSave}
-            disabled={saving || !note.trim()}
-            variant="post"
+            disabled={saving} //  || !note.trim()
+            variant="add_line"
           >
-            {saving ? "Posting..." : "Append Note Entry"}
+            {saving ? "Posting..." : "Add Notes"}
           </Button>
         </div>
       )}

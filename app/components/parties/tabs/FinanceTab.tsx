@@ -211,6 +211,28 @@ export default function FinanceTab({
               </div>
             </>
           )}
+
+          
+          {!isCustomer && (
+            <>
+              <div className="grid grid-cols-3 gap-2 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Supplier VAT No.
+                </label>
+                <div className="col-span-2">
+                  <input
+                    type="text"
+                    value={account.supplier_vat_no || ""}
+                    onChange={(e) =>
+                      updateField("supplier_vat_no", e.target.value)
+                    }
+                    disabled={isReadonly}
+                    className={getInputClass("finance.supplier_vat_no")}
+                  />
+                </div>
+              </div>
+            </>
+          )}
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Company Reg. No.
@@ -225,56 +247,6 @@ export default function FinanceTab({
               />
             </div>
           </div>
-
-          {!isCustomer && (
-            <>
-              <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Payment Terms
-                </label>
-                <div className="col-span-2">
-                  <select
-                    value={account.payment_terms || ""}
-                    onChange={(e) =>
-                      updateField("payment_terms", e.target.value)
-                    }
-                    disabled={isReadonly || loading}
-                    className={getInputClass("finance.payment_terms")}
-                  >
-                    <option value="">Select Payment Terms</option>
-                    {masterData.paymentTerms.map((term) => (
-                      <option key={term.id} value={term.id}>
-                        {term.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Payment Method
-                </label>
-                <div className="col-span-2">
-                  <select
-                    value={account.payment_method || ""}
-                    onChange={(e) =>
-                      updateField("payment_method", e.target.value)
-                    }
-                    disabled={isReadonly || loading}
-                    className={getInputClass("finance.payment_method")}
-                  >
-                    <option value="">Select Payment Method</option>
-                    {masterData.paymentMethods.map((pm) => (
-                      <option key={pm.id} value={pm.id}>
-                        {pm.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </>
-          )}
 
           <div className="grid grid-cols-3 gap-2 items-center pt-2">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -365,26 +337,6 @@ export default function FinanceTab({
         </div>
 
         <div className="space-y-3">
-          {!isCustomer && (
-            <>
-              <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Supplier VAT No.
-                </label>
-                <div className="col-span-2">
-                  <input
-                    type="text"
-                    value={account.supplier_vat_no || ""}
-                    onChange={(e) =>
-                      updateField("supplier_vat_no", e.target.value)
-                    }
-                    disabled={isReadonly}
-                    className={getInputClass("finance.supplier_vat_no")}
-                  />
-                </div>
-              </div>
-            </>
-          )}
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -436,6 +388,58 @@ export default function FinanceTab({
               </div>
             </div>
           </div>
+
+          
+
+          {!isCustomer && (
+            <>
+              <div className="grid grid-cols-3 gap-2 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Payment Terms
+                </label>
+                <div className="col-span-2">
+                  <select
+                    value={account.payment_terms || ""}
+                    onChange={(e) =>
+                      updateField("payment_terms", e.target.value)
+                    }
+                    disabled={isReadonly || loading}
+                    className={getInputClass("finance.payment_terms")}
+                  >
+                    <option value="">Select Payment Terms</option>
+                    {masterData.paymentTerms.map((term) => (
+                      <option key={term.id} value={term.id}>
+                        {term.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Payment Method
+                </label>
+                <div className="col-span-2">
+                  <select
+                    value={account.payment_method || ""}
+                    onChange={(e) =>
+                      updateField("payment_method", e.target.value)
+                    }
+                    disabled={isReadonly || loading}
+                    className={getInputClass("finance.payment_method")}
+                  >
+                    <option value="">Select Payment Method</option>
+                    {masterData.paymentMethods.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
 
           {isCustomer && (
             <>

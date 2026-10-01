@@ -13,7 +13,7 @@ import FinanceTab from "./tabs/FinanceTab";
 
 import ContactsTab from "./tabs/ContactsTab";
 import AddressesTab from "./tabs/AddressesTab";
-import OpportunityCycleTab from "./tabs/OpportunityCycleTab";
+// import OpportunityCycleTab from "./tabs/OpportunityCycleTab";
 // import ActivitiesTab from "../shared/ActivitiesTab";
 import PartyLedgerActivityTab from "./tabs/PartyLedgerActivityTab";
 import NotesTab from "../shared/NotesTab";
@@ -284,9 +284,9 @@ export default function PartyRecord({
     account.is_crm_lead ||
     account.is_customer;
 
-  if (isCrmOrCustomer) {
-    tabs.splice(3, 0, "opportunities");
-  }
+  // if (isCrmOrCustomer) {
+  //   tabs.splice(3, 0, "opportunities");
+  // }
 
   tabs.push("activities", "notes", "attachments");
 
@@ -486,6 +486,7 @@ export default function PartyRecord({
               module={module}
               recordId={id}
               readonly={effectiveReadonly}
+              errors={formErrors}
             />
           )}
           {activeTab === "attachments" && (
