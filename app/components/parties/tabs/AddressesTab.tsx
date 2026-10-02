@@ -76,11 +76,11 @@ export default function AddressesTab({
           Locations
         </h3>
 
-        {!isReadonly && (
-          <Button type="button" onClick={addAddressRow} variant="add_line">
+        {/* {!isReadonly && ( */}
+          <Button type="button" onClick={addAddressRow} variant="add_line" disabled={isReadonly}>
             Add Location
           </Button>
-        )}
+        {/* )} */}
       </div>
 
       {addresses.length === 0 && (

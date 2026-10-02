@@ -201,11 +201,12 @@ export default function AttachmentsTab({
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {!readonly && (
+        {/* {!readonly && ( */}
           <div className=" lg:col-span-1 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-1 text-center transition-all hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 ">
             {" "}
             <UploadDropzone
               className="custom-attachment"
+              disabled = {readonly}
               endpoint="attachmentUploader"
               input={{ module, recordId }}
               config={{ mode: "auto" }}
@@ -245,7 +246,7 @@ export default function AttachmentsTab({
                   "transition-all",
                   "duration-200",
                   // Normal state
-                  !uploading && !uploadComplete
+                  !uploading && !uploadComplete && !readonly
                     ? "bg-blue-600 hover:bg-blue-700"
                     : "",
                   // Uploading state
@@ -267,7 +268,7 @@ export default function AttachmentsTab({
               }}
             />{" "}
           </div>
-        )}
+        {/* )} */}
 
         <div className="lg:col-span-2 space-y-2">
           {loading ? (

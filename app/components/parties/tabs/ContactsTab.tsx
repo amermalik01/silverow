@@ -66,11 +66,11 @@ export default function ContactsTab({
         <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider">
           Contacts
         </h3>
-        {!isReadonly && (
-          <Button type="button" onClick={addContactRow} variant="add_line">
+        {/* {!isReadonly && ( */}
+          <Button type="button" onClick={addContactRow} variant="add_line" disabled={isReadonly}>
             Add Contact
           </Button>
-        )}
+        {/* )} */}
       </div>
 
       {contacts.length === 0 && (
