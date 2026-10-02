@@ -395,16 +395,17 @@ export class SalesOrderService {
   }
 
   static async create(
+    client: PoolClient,
     companyId: string,
     rawPayload: unknown,
   ): Promise<SalesOrder> {
     const payload = SalesOrderPayloadSchema.parse(
       rawPayload,
     ) as SalesOrderPayload;
-    const client = await pool.connect();
+    // const client = await pool.connect();
 
-    try {
-      await client.query("BEGIN");
+    // try {
+      // await client.query("BEGIN");
       const order = payload.order;
 
       const seqResult = await client.query(
@@ -489,7 +490,7 @@ export class SalesOrderService {
             created_at
           )
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
-          $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, 42, NOW()
+          $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, NOW()
           )
           RETURNING *;
         `,
@@ -601,14 +602,14 @@ export class SalesOrderService {
         );
       }
 
-      await client.query("COMMIT");
+      // await client.query("COMMIT");
       return createdOrder;
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
+    // } catch (err) {
+    //   await client.query("ROLLBACK");
+    //   throw err;
+    // } finally {
+    //   client.release();
+    // }
   }
 
   static async update(

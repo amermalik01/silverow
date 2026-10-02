@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     await client.query("BEGIN");
 
     // 1. Create base document
-    const createdOrder = await SalesOrderService.create(companyId, body);
+    const createdOrder = await SalesOrderService.create(client,companyId, body);
 
     if (!createdOrder || !createdOrder.id) {
       throw new Error(
