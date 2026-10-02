@@ -1,5 +1,4 @@
 // app/components/shared/modals/SO_StockAllocationModal.tsx
-// app/components/shared/modals/SO_StockAllocationModal.tsx
 
 "use client";
 
@@ -8,46 +7,96 @@ import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { Icon } from "@iconify/react";
 
+// export type SO_StockAllocationRecord = {
+//   location_id: string;
+//   location_name: string;
+//   date_received?: string;
+//   prod_date?: string;
+//   expiry_date?: string;
+//   batch_no?: string;
+//   bin_code?: string;
+//   serial_no?: string;
+//   quantity: number;
+//   available_qty?: number;
+// };
+
 export type SO_StockAllocationRecord = {
+  source_allocation_id: string;
+
+  inbound_entry_id?: string | null;
+
   location_id: string;
   location_name: string;
+
   date_received?: string;
   prod_date?: string;
   expiry_date?: string;
+
   batch_no?: string;
   bin_code?: string;
   serial_no?: string;
+
   quantity: number;
   available_qty?: number;
+
+  unit_cost?: number;
 };
 
 type RawStockBatch = {
   id?: string;
+  source_allocation_id: string;
+  inbound_entry_id?: string | null;
+
   location_id: string;
   location_name: string;
+
   date_received?: string;
   prod_date?: string;
   expiry_date?: string;
+
   batch_no?: string;
   bin_code?: string;
   serial_no?: string;
+
   available_qty?: number;
   available_quantity?: number;
-  [key: string]: unknown;
+
+  unit_cost?: number | string | null;
 };
+
+// type AvailableStockBatch = {
+//   id: string;
+//   source_allocation_id?: string;
+//   location_id: string;
+//   location_name: string;
+//   date_received?: string;
+//   prod_date?: string;
+//   expiry_date?: string;
+//   batch_no?: string;
+//   bin_code?: string;
+//   serial_no?: string;
+//   available_qty: number;
+// };
 
 type AvailableStockBatch = {
   id: string;
-  source_allocation_id?: string;
+  source_allocation_id: string;
+
+  inbound_entry_id?: string | null;
+
   location_id: string;
   location_name: string;
+
   date_received?: string;
   prod_date?: string;
   expiry_date?: string;
+
   batch_no?: string;
   bin_code?: string;
   serial_no?: string;
+
   available_qty: number;
+  unit_cost?: number;
 };
 
 type Props = {
@@ -63,6 +112,7 @@ type Props = {
   warehouseName: string;
   uomName?: string;
   initialAllocations?: SO_StockAllocationRecord[];
+  salesOrderId?: string;
 };
 
 export default function SO_StockAllocationModal({
@@ -78,16 +128,22 @@ export default function SO_StockAllocationModal({
   warehouseName,
   uomName = "Pcs",
   initialAllocations = [],
+  salesOrderId,
 }: Props) {
-  const [availableBatches, setAvailableBatches] = useState<AvailableStockBatch[]>([]);
+  const [availableBatches, setAvailableBatches] = useState<
+    AvailableStockBatch[]
+  >([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Track allocations in state keyed by batch.id
-  const [allocationsMap, setAllocationsMap] = useState<Record<string, number>>({});
+  const [allocationsMap, setAllocationsMap] = useState<Record<string, number>>(
+    {},
+  );
 
   // Unique key generator using batch.id
   const getBatchKey = (batch: AvailableStockBatch, index: number) =>
-    batch.id || `${batch.location_id}_${batch.batch_no || ""}_${batch.bin_code || ""}_${index}`;
+    batch.id ||
+    `${batch.location_id}_${batch.batch_no || ""}_${batch.bin_code || ""}_${index}`;
 
   // Fetch stock batches and normalize response fields
   useEffect(() => {
@@ -96,27 +152,67 @@ export default function SO_StockAllocationModal({
     const fetchStockBatches = async () => {
       setIsLoading(true);
       try {
+        const params = new URLSearchParams({
+          item_id: itemId,
+          warehouse_id: warehouseId,
+        });
+
+        if (salesOrderId) {
+          params.set("sales_order_id", salesOrderId);
+        }
+
         const res = await fetch(
-          `/api/sales/sales-orders/available-batches?item_id=${itemId}&warehouse_id=${warehouseId}`
+          `/api/sales/sales-orders/available-batches?${params.toString()}`,
         );
+
+        // const res = await fetch(
+        //   `/api/sales/sales-orders/available-batches?item_id=${itemId}&warehouse_id=${warehouseId}&sales_order_id=${salesOrderId}`,
+        // );
         if (!res.ok) return;
 
         const payload = await res.json();
         const rawBatches: RawStockBatch[] = payload.data ?? [];
 
         // Normalize available_quantity -> available_qty & guarantee unique ID
-        const mappedBatches: AvailableStockBatch[] = rawBatches.map((b, idx) => ({
-          id: b.id || `batch_${b.location_id}_${b.batch_no || ""}_${b.bin_code || ""}_${idx}`,
-          location_id: b.location_id,
-          location_name: b.location_name,
-          date_received: b.date_received,
-          prod_date: b.prod_date,
-          expiry_date: b.expiry_date,
-          batch_no: b.batch_no,
-          bin_code: b.bin_code,
-          serial_no: b.serial_no,
-          available_qty: Number(b.available_qty ?? b.available_quantity ?? 0),
-        }));
+        // const mappedBatches: AvailableStockBatch[] = rawBatches.map((b, idx) => ({
+        //   id: b.id || `batch_${b.location_id}_${b.batch_no || ""}_${b.bin_code || ""}_${idx}`,
+        //   location_id: b.location_id,
+        //   location_name: b.location_name,
+        //   date_received: b.date_received,
+        //   prod_date: b.prod_date,
+        //   expiry_date: b.expiry_date,
+        //   batch_no: b.batch_no,
+        //   bin_code: b.bin_code,
+        //   serial_no: b.serial_no,
+        //   available_qty: Number(b.available_qty ?? b.available_quantity ?? 0),
+        // }));
+
+        const mappedBatches: AvailableStockBatch[] = rawBatches.map(
+          (b, idx) => ({
+            id:
+              b.id ||
+              `batch_${b.location_id}_${b.batch_no || ""}_${b.bin_code || ""}_${idx}`,
+
+            source_allocation_id: b.source_allocation_id,
+
+            inbound_entry_id: b.inbound_entry_id ?? undefined,
+
+            location_id: b.location_id,
+            location_name: b.location_name,
+
+            date_received: b.date_received,
+            prod_date: b.prod_date,
+            expiry_date: b.expiry_date,
+
+            batch_no: b.batch_no,
+            bin_code: b.bin_code,
+            serial_no: b.serial_no,
+
+            available_qty: Number(b.available_quantity ?? b.available_qty ?? 0),
+
+            unit_cost: Number(b.unit_cost ?? 0),
+          }),
+        );
 
         setAvailableBatches(mappedBatches);
       } catch (err) {
@@ -135,11 +231,15 @@ export default function SO_StockAllocationModal({
       const initialMap: Record<string, number> = {};
 
       initialAllocations.forEach((alloc) => {
+        // const matchingBatch = availableBatches.find(
+        //   (b) =>
+        //     b.location_id === alloc.location_id &&
+        //     (b.batch_no || "") === (alloc.batch_no || "") &&
+        //     (b.bin_code || "") === (alloc.bin_code || ""),
+        // );
+
         const matchingBatch = availableBatches.find(
-          (b) =>
-            b.location_id === alloc.location_id &&
-            (b.batch_no || "") === (alloc.batch_no || "") &&
-            (b.bin_code || "") === (alloc.bin_code || "")
+          (b) => b.source_allocation_id === alloc.source_allocation_id,
         );
 
         if (matchingBatch) {
@@ -153,7 +253,7 @@ export default function SO_StockAllocationModal({
 
   const totalAllocated = Object.values(allocationsMap).reduce(
     (sum, qty) => sum + (qty || 0),
-    0
+    0,
   );
 
   const qtyToAllocate = Math.max(0, targetQuantity - totalAllocated);
@@ -165,7 +265,7 @@ export default function SO_StockAllocationModal({
 
     const maxAllowedForThisRow = Math.min(
       batch.available_qty,
-      qtyToAllocate + currentAllocated
+      qtyToAllocate + currentAllocated,
     );
 
     const safeValue = Math.max(0, Math.min(rawVal || 0, maxAllowedForThisRow));
@@ -210,7 +310,7 @@ export default function SO_StockAllocationModal({
   // Auto Allocate descending by available_qty
   const handleAutoAllocateDescending = () => {
     const sortedBatches = [...availableBatches].sort(
-      (a, b) => b.available_qty - a.available_qty
+      (a, b) => b.available_qty - a.available_qty,
     );
 
     let remainingNeeded = targetQuantity;
@@ -270,16 +370,25 @@ export default function SO_StockAllocationModal({
 
       if (allocatedQty > 0) {
         records.push({
+          source_allocation_id: batch.source_allocation_id,
+
+          inbound_entry_id: batch.inbound_entry_id,
+
           location_id: batch.location_id,
           location_name: batch.location_name,
+
           date_received: batch.date_received,
           prod_date: batch.prod_date,
           expiry_date: batch.expiry_date,
+
           batch_no: batch.batch_no,
           bin_code: batch.bin_code,
           serial_no: batch.serial_no,
+
           quantity: allocatedQty,
           available_qty: batch.available_qty,
+
+          unit_cost: batch.unit_cost,
         });
       }
     });
@@ -293,11 +402,13 @@ export default function SO_StockAllocationModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-lg shadow-2xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-800">
-        
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-3.5 bg-[#103701] dark:bg-[#262F3C] text-white">
           <div className="flex items-center gap-2.5">
-            <Icon icon="tabler:boxes" className="text-xl text-emerald-400 dark:text-slate-300" />
+            <Icon
+              icon="tabler:boxes"
+              className="text-xl text-emerald-400 dark:text-slate-300"
+            />
             <h2 className="text-sm font-semibold tracking-wide text-white uppercase">
               Stock Allocation &mdash; {itemCode}
             </h2>
@@ -314,13 +425,17 @@ export default function SO_StockAllocationModal({
         {/* Summary Header Bar */}
         <div className="p-4 grid grid-cols-1 lg:grid-cols-5 gap-4 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 text-xs">
           <div className="space-y-0.5">
-            <div className="text-slate-500 dark:text-slate-400 font-medium">Item Details</div>
+            <div className="text-slate-500 dark:text-slate-400 font-medium">
+              Item Details
+            </div>
             <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
               {itemCode} - {itemName}
             </div>
           </div>
           <div className="space-y-0.5">
-            <div className="text-slate-500 dark:text-slate-400 font-medium">Warehouse</div>
+            <div className="text-slate-500 dark:text-slate-400 font-medium">
+              Warehouse
+            </div>
             <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
               {warehouseName}
             </div>
@@ -332,7 +447,10 @@ export default function SO_StockAllocationModal({
                 Target Qty
               </div>
               <div className="text-base font-bold text-slate-800 dark:text-slate-100">
-                {targetQuantity} <span className="text-xs font-normal text-slate-400">{uomName}</span>
+                {targetQuantity}{" "}
+                <span className="text-xs font-normal text-slate-400">
+                  {uomName}
+                </span>
               </div>
             </div>
 
@@ -359,7 +477,10 @@ export default function SO_StockAllocationModal({
                     : "text-emerald-600 dark:text-emerald-400"
                 }`}
               >
-                {qtyToAllocate} <span className="text-xs font-normal opacity-80">{uomName}</span>
+                {qtyToAllocate}{" "}
+                <span className="text-xs font-normal opacity-80">
+                  {uomName}
+                </span>
               </div>
             </div>
 
@@ -368,7 +489,10 @@ export default function SO_StockAllocationModal({
                 Allocated Total
               </div>
               <div className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                {totalAllocated} <span className="text-xs font-normal text-slate-400">{uomName}</span>
+                {totalAllocated}{" "}
+                <span className="text-xs font-normal text-slate-400">
+                  {uomName}
+                </span>
               </div>
             </div>
           </div>
@@ -387,7 +511,10 @@ export default function SO_StockAllocationModal({
                 variant="outline"
                 className="h-7 px-3 text-xs bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 gap-1.5"
               >
-                <Icon icon="tabler:sort-descending-numbers" className="text-sm text-emerald-600" />
+                <Icon
+                  icon="tabler:sort-descending-numbers"
+                  className="text-sm text-emerald-600"
+                />
                 Descending Order (High Qty First)
               </Button>
             </div>
@@ -433,7 +560,10 @@ export default function SO_StockAllocationModal({
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {availableBatches.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                    <td
+                      colSpan={8}
+                      className="p-6 text-center text-slate-400 italic"
+                    >
                       {isLoading
                         ? "Loading stock data..."
                         : "No available stock batches found for this item in selected warehouse."}
@@ -447,7 +577,7 @@ export default function SO_StockAllocationModal({
 
                     const maxAllowedForThisRow = Math.min(
                       batch.available_qty,
-                      qtyToAllocate + currentAllocated
+                      qtyToAllocate + currentAllocated,
                     );
 
                     return (
@@ -463,7 +593,10 @@ export default function SO_StockAllocationModal({
                           <input
                             type="checkbox"
                             checked={isAllocated}
-                            disabled={isReadonly || (qtyToAllocate === 0 && !isAllocated)}
+                            disabled={
+                              isReadonly ||
+                              (qtyToAllocate === 0 && !isAllocated)
+                            }
                             onChange={() => handleCheckboxToggle(batch)}
                             className="rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500 cursor-pointer disabled:opacity-40"
                           />
@@ -477,8 +610,12 @@ export default function SO_StockAllocationModal({
                         <td className="p-2.5 font-mono text-slate-700 dark:text-slate-300">
                           {batch.bin_code || batch.serial_no || "-"}
                         </td>
-                        <td className="p-2.5 text-slate-500">{batch.date_received || "-"}</td>
-                        <td className="p-2.5 text-slate-500">{batch.expiry_date || "-"}</td>
+                        <td className="p-2.5 text-slate-500">
+                          {batch.date_received || "-"}
+                        </td>
+                        <td className="p-2.5 text-slate-500">
+                          {batch.expiry_date || "-"}
+                        </td>
                         <td className="p-2.5 text-right font-semibold text-slate-800 dark:text-slate-200">
                           {batch.available_qty}
                         </td>
@@ -488,13 +625,18 @@ export default function SO_StockAllocationModal({
                             allowDecimals={false}
                             min="0"
                             max={String(maxAllowedForThisRow)}
-                            disabled={isReadonly || (qtyToAllocate === 0 && !isAllocated)}
+                            disabled={
+                              isReadonly ||
+                              (qtyToAllocate === 0 && !isAllocated)
+                            }
                             className={`border rounded px-2 py-1 w-full text-right font-semibold text-xs focus:outline-hidden focus:ring-1 ${
                               isAllocated
                                 ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
                                 : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                             }`}
-                            onChange={(val) => handleQtyInputChange(batch, Number(val))}
+                            onChange={(val) =>
+                              handleQtyInputChange(batch, Number(val))
+                            }
                           />
                         </td>
                       </tr>
@@ -511,11 +653,13 @@ export default function SO_StockAllocationModal({
           <div className="text-xs text-slate-500 dark:text-slate-400">
             {qtyToAllocate > 0 ? (
               <span className="text-amber-600 dark:text-amber-400 font-medium">
-                Remaining quantity of {qtyToAllocate} {uomName} must be allocated before saving.
+                Remaining quantity of {qtyToAllocate} {uomName} must be
+                allocated before saving.
               </span>
             ) : (
               <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
-                <Icon icon="tabler:circle-check-filled" /> Target allocation quantity fully satisfied.
+                <Icon icon="tabler:circle-check-filled" /> Target allocation
+                quantity fully satisfied.
               </span>
             )}
           </div>

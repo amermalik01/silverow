@@ -188,7 +188,7 @@ export const PartySchema = z.object({
   gl_account_payable_code: looseString,
   gl_account_payable_name: looseString,
   
-  posting_group: looseString.default("UK"),
+  posting_group: looseString,//looseString.default("UK"),
 
   finance_charge: looseString,
   has_finance_charge: z.boolean().default(false),

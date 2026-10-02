@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
       FROM items i
       LEFT JOIN uoms u ON u.id = i.base_uom_id
       ${where}
-      ORDER BY i.item_code ASC
+      ORDER BY i.item_code DESC
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
 

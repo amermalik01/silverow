@@ -316,16 +316,25 @@ export class SalesOrderService {
       `
       SELECT
           ia.id,
+          ia.source_allocation_id,
+          ia.inbound_entry_id,
+
           ia.sales_order_line_id,
           ia.item_id,
           ia.warehouse_id,
           ia.warehouse_location_id AS location_id,
+
           wl.title AS location_name,
           ia.allocated_quantity AS quantity,
+
           ia.batch_no,
           ia.bin_code,
+
           TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
-          TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_shipped
+          TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_received,
+
+          ia.unit_cost
+
       FROM inventory_allocations ia
       LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
       INNER JOIN sales_order_lines sol ON ia.sales_order_line_id = sol.id
@@ -338,15 +347,36 @@ export class SalesOrderService {
       const lineAllocations = allocationsResult.rows
         .filter((alloc) => alloc.sales_order_line_id === line.id)
         .map((alloc) => ({
-          date_shipped: alloc.date_shipped || "",
+
+          source_allocation_id: alloc.source_allocation_id,
+
+          inbound_entry_id: alloc.inbound_entry_id,
+
+          date_received: alloc.date_received || "",
           prod_date: "",
+
           expiry_date: alloc.expiry_date || "",
+
           batch_no: alloc.batch_no || "",
           serial_no: alloc.bin_code || "",
+          bin_code: alloc.bin_code || "",
 
           location_id: alloc.location_id || "",
           location_name: alloc.location_name || "",
+
           quantity: Number(alloc.quantity) || 0,
+
+          unit_cost: Number(alloc.unit_cost) || 0,
+
+          // date_shipped: alloc.date_shipped || "",
+          // prod_date: "",
+          // expiry_date: alloc.expiry_date || "",
+          // batch_no: alloc.batch_no || "",
+          // serial_no: alloc.bin_code || "",
+
+          // location_id: alloc.location_id || "",
+          // location_name: alloc.location_name || "",
+          // quantity: Number(alloc.quantity) || 0,
         }));
 
       return {
@@ -405,29 +435,29 @@ export class SalesOrderService {
     // const client = await pool.connect();
 
     // try {
-      // await client.query("BEGIN");
-      const order = payload.order;
+    // await client.query("BEGIN");
+    const order = payload.order;
 
-      const seqResult = await client.query(
-        `SELECT get_next_sequence($1, $2) AS code`,
-        [companyId, "sales_order"],
-      );
-      const orderNo = seqResult.rows[0].code;
+    const seqResult = await client.query(
+      `SELECT get_next_sequence($1, $2) AS code`,
+      [companyId, "sales_order"],
+    );
+    const orderNo = seqResult.rows[0].code;
 
-      const customerResult = await client.query(
-        `SELECT id FROM parties WHERE id = $1 AND company_id = $2`,
-        [order.customer_id, companyId],
-      );
-      if (!customerResult.rows.length) throw new Error("Customer not found");
+    const customerResult = await client.query(
+      `SELECT id FROM parties WHERE id = $1 AND company_id = $2`,
+      [order.customer_id, companyId],
+    );
+    if (!customerResult.rows.length) throw new Error("Customer not found");
 
-      const customerPostingGroupId =
-        order.customer_posting_group_id || order.sales_posting_group_id || null;
+    const customerPostingGroupId =
+      order.customer_posting_group_id || order.sales_posting_group_id || null;
 
-      const vatBusinessPostingGroupId =
-        order.vat_business_posting_group_id || null;
+    const vatBusinessPostingGroupId =
+      order.vat_business_posting_group_id || null;
 
-      const orderResult = await client.query(
-        `
+    const orderResult = await client.query(
+      `
           INSERT INTO sales_orders (
             company_id,
             order_no,
@@ -494,116 +524,117 @@ export class SalesOrderService {
           )
           RETURNING *;
         `,
-        [
-          companyId,
-          orderNo,
+      [
+        companyId,
+        orderNo,
 
-          order.customer_id,
-          order.customer_no,
-          order.customer_name,
+        order.customer_id,
+        order.customer_no,
+        order.customer_name,
 
-          order.bill_to_customer_id,
-          order.bill_to_customer_no,
-          order.bill_to_customer_name,
+        order.bill_to_customer_id,
+        order.bill_to_customer_no,
+        order.bill_to_customer_name,
 
-          order.salesperson,
-          order.cust_order_no,
-          order.consignment_no,
-          order.link_to_po,
+        order.salesperson,
+        order.cust_order_no,
+        order.consignment_no,
+        order.link_to_po,
 
-          order.currency_id,
-          order.exchange_rate,
+        order.currency_id,
+        order.exchange_rate,
 
-          order.order_date || null,
-          order.requested_delivery_date || null,
-          order.shipment_date || null,
-          order.posting_date?.trim() ? order.posting_date : null,
-          order.due_date || null,
+        order.order_date || null,
+        order.requested_delivery_date || null,
+        order.shipment_date || null,
+        order.posting_date?.trim() ? order.posting_date : null,
+        order.due_date || null,
 
-          order.reference,
+        order.reference,
 
-          order.payable_bank,
-          order.payable_bank_id,
+        order.payable_bank,
+        order.payable_bank_id,
 
-          order.payment_terms_id,
-          order.payment_method_id,
+        order.payment_terms_id,
+        order.payment_method_id,
 
-          order.contact,
-          order.book_in_phone,
-          order.book_in_contact,
-          order.book_in_email,
+        order.contact,
+        order.book_in_phone,
+        order.book_in_contact,
+        order.book_in_email,
 
-          order.shipment_method_id,
-          order.shipping_agent,
-          order.shipment_ref_no,
-          order.warehouse_ref_no,
+        order.shipment_method_id,
+        order.shipping_agent,
+        order.shipment_ref_no,
+        order.warehouse_ref_no,
 
-          order.reason,
+        order.reason,
 
-          order.notes,
-          order.internal_notes,
+        order.notes,
+        order.internal_notes,
 
-          order.subtotal,
-          order.vat_amount,
-          order.total_amount,
+        order.subtotal,
+        order.vat_amount,
+        order.total_amount,
 
-          order.status,
-          order.anonymous_customer,
+        order.status,
+        order.anonymous_customer,
 
-          customerPostingGroupId,
-          vatBusinessPostingGroupId,
-        ],
+        customerPostingGroupId,
+        vatBusinessPostingGroupId,
+      ],
+    );
+
+    const createdOrder = orderResult.rows[0];
+    let lineNo = 10000;
+
+    for (const line of payload.lines) {
+      const entriesWithUndefined = Object.entries(line).map(([key, value]) => [
+        key,
+        value === null ? undefined : value,
+      ]);
+
+      const sanitizedLine = Object.fromEntries(
+        entriesWithUndefined,
+      ) as SalesOrderLine;
+
+      await this.insertLine(
+        client,
+        companyId,
+        createdOrder.id,
+        sanitizedLine,
+        lineNo,
       );
+      lineNo += 10000;
+    }
 
-      const createdOrder = orderResult.rows[0];
-      let lineNo = 10000;
+    if (payload.primary_address) {
+      await this.insertAddress(
+        client,
+        createdOrder.id,
+        payload.primary_address,
+        companyId,
+      );
+    }
+    if (payload.billing_address) {
+      await this.insertAddress(
+        client,
+        createdOrder.id,
+        payload.billing_address,
+        companyId,
+      );
+    }
+    if (payload.shipping_address) {
+      await this.insertAddress(
+        client,
+        createdOrder.id,
+        payload.shipping_address,
+        companyId,
+      );
+    }
 
-      for (const line of payload.lines) {
-        const entriesWithUndefined = Object.entries(line).map(
-          ([key, value]) => [key, value === null ? undefined : value],
-        );
-
-        const sanitizedLine = Object.fromEntries(
-          entriesWithUndefined,
-        ) as SalesOrderLine;
-
-        await this.insertLine(
-          client,
-          companyId,
-          createdOrder.id,
-          sanitizedLine,
-          lineNo,
-        );
-        lineNo += 10000;
-      }
-
-      if (payload.primary_address) {
-        await this.insertAddress(
-          client,
-          createdOrder.id,
-          payload.primary_address,
-          companyId,
-        );
-      }
-      if (payload.billing_address) {
-        await this.insertAddress(
-          client,
-          createdOrder.id,
-          payload.billing_address,
-          companyId,
-        );
-      }
-      if (payload.shipping_address) {
-        await this.insertAddress(
-          client,
-          createdOrder.id,
-          payload.shipping_address,
-          companyId,
-        );
-      }
-
-      // await client.query("COMMIT");
-      return createdOrder;
+    // await client.query("COMMIT");
+    return createdOrder;
     // } catch (err) {
     //   await client.query("ROLLBACK");
     //   throw err;
@@ -635,7 +666,6 @@ export class SalesOrderService {
     if (existingResult.rows[0].status === "posted") {
       throw new Error("Posted sales order cannot be modified");
     }
-
 
     const customerPostingGroupId =
       order.customer_posting_group_id || order.sales_posting_group_id || null;
@@ -1210,7 +1240,7 @@ export class SalesOrderService {
     await client.query(
       `
       DELETE FROM inventory_allocations
-      WHERE sales_order_line_id = $1 AND company_id = $2
+      WHERE sales_order_line_id = $1 AND company_id = $2 AND status = 'ACTIVE'
       `,
       [salesOrderLineId, companyId],
     );
@@ -1223,37 +1253,51 @@ export class SalesOrderService {
         `
         INSERT INTO inventory_allocations (
           company_id,
+          source_allocation_id,
+
           outbound_entry_id,
           inbound_entry_id,
+
           sales_order_line_id,
+
           item_id,
           warehouse_id,
           warehouse_location_id,
+
           batch_no,
           bin_code,
           expiry_date,
+
           allocated_quantity,
           unit_cost,
           total_cost,
+
           allocation_method,
           status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'FIFO', 'ACTIVE')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'FIFO', 'ACTIVE')
         `,
         [
           companyId,
+          alloc.source_allocation_id,
+
           null,
-          null,
+          alloc.inbound_entry_id || null,
+
           salesOrderLineId,
+
           itemId,
           warehouseId,
           alloc.location_id || null,
+
           alloc.batch_no || null,
-          alloc.serial_no || null,
-          alloc.expiry_date === "" ? null : alloc.expiry_date || null,
+          alloc.bin_code || null,
+          alloc.expiry_date || null,
+
           Number(alloc.quantity) || 0,
-          0,
-          0,
+          Number(alloc.unit_cost) || 0,
+
+          (Number(alloc.quantity) || 0) * (Number(alloc.unit_cost) || 0),
         ],
       );
     }

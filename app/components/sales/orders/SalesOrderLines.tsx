@@ -850,6 +850,7 @@ export default function SalesOrderLines({
             activeAllocationLine.initialAllocations ||
             []
           }
+          salesOrderId={salesOrder.id}
         />
       )}
     </div>

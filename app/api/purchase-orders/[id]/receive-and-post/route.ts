@@ -93,8 +93,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       return qty - rec > 0;
     });
 
-    console.log('unfulfilledLines ==== ',unfulfilledLines);
-    console.log('dbLines ==== ',dbLines);
+    // console.log('unfulfilledLines ==== ',unfulfilledLines);
+    // console.log('dbLines ==== ',dbLines);
 
     if (unfulfilledLines.length > 0) {
       const receiptPayload: PurchaseReceiptPayload = {

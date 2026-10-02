@@ -182,8 +182,8 @@ export async function GET(req: NextRequest) {
             'county', pa.county,
             'postcode', pa.postcode,
             'country', pa.country,
-            'contact_person', COALESCE(fs.finance_contact_person, fc.contact_person),
-            'phone',  COALESCE(pa.phone, fc.contact_person_phone),
+            'contact_person', COALESCE(fs.finance_contact_person, fs.contact_person),
+            'phone',  COALESCE(pa.phone, fs.contact_person_phone),
             'email', COALESCE(pa.email, fs.email)
           )
           ELSE NULL 
