@@ -6,10 +6,41 @@ import { FetchParams, FetchResponse } from "@/types/table";
 import {
   SalesReturn,
   SalesReturnAddress,
+  SalesReturnAllocation,
   SalesReturnDeAllocationRecord,
   SalesReturnLine,
   SalesReturnPayload,
 } from "@/types/sales-return";
+
+type ListSalesInvoicesForReturnParams = {
+  companyId: string;
+  customerId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+};
+
+type SalesInvoiceAllocationRow = {
+  id: string;
+  source_allocation_id: string | null;
+  inbound_entry_id: string | null;
+  sales_order_line_id: string;
+  item_id: string | null;
+  warehouse_id: string | null;
+  location_id: string | null;
+  location_name: string | null;
+  quantity: number | string | null;
+  batch_no: string | null;
+  bin_code: string | null;
+  expiry_date: string | null;
+  date_received: string | null;
+  unit_cost: number | string | null;
+};
+
+type ReturnedAllocationRow = {
+  source_allocation_id: string;
+  returned_quantity: number | string | null;
+};
 
 export class SalesReturnService {
   /**
@@ -1149,7 +1180,6 @@ export class SalesReturnService {
     );
   }
 
-
   static async saveLineAllocations(
     client: PoolClient,
     companyId: string,
@@ -1314,7 +1344,8 @@ export class SalesReturnService {
       const availableQty = originalQty - alreadyReturned;
 
       if (returnQty > availableQty + 0.000001) {
-        const identifier = source.bin_code || source.batch_no || "selected line";
+        const identifier =
+          source.bin_code || source.batch_no || "selected line";
         throw new Error(
           `Cannot return ${returnQty} units for ${identifier}. Only ${Math.max(0, availableQty)} units remain eligible for return.`,
         );
@@ -1366,7 +1397,6 @@ export class SalesReturnService {
     }
   }
 
-
   /**
    * List paginated Posted Sales Returns (Credit Notes)
    */
@@ -1412,14 +1442,13 @@ export class SalesReturnService {
     };
 
     const orderByColumn =
-      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "cn.posted_credit_note_no";
+      sortBy && SORT_FIELDS[sortBy]
+        ? SORT_FIELDS[sortBy]
+        : "cn.posted_credit_note_no";
     const orderDirection = sortOrder === "ASC" ? "ASC" : "DESC";
 
     const queryValues: (string | number)[] = [companyId];
-    const whereClauses = [
-      "cn.company_id = $1",
-      "cn.is_posted = true",
-    ];
+    const whereClauses = ["cn.company_id = $1", "cn.is_posted = true"];
 
     if (search) {
       queryValues.push(`%${search}%`);
@@ -1456,7 +1485,9 @@ export class SalesReturnService {
           whereClauses.push(`cn.credit_note_no ILIKE $${queryValues.length}`);
         } else if (colKey === "posted_credit_note_no") {
           queryValues.push(`%${filter.value}%`);
-          whereClauses.push(`cn.posted_credit_note_no ILIKE $${queryValues.length}`);
+          whereClauses.push(
+            `cn.posted_credit_note_no ILIKE $${queryValues.length}`,
+          );
         } else if (colKey === "sales_invoice") {
           queryValues.push(`%${filter.value}%`);
           whereClauses.push(`cn.sales_invoice ILIKE $${queryValues.length}`);
@@ -1594,6 +1625,596 @@ export class SalesReturnService {
     return {
       data: dataResult.rows,
       totalRecords,
+    };
+  }
+
+  /**
+   * List posted Sales Invoices that can be selected
+   * when creating a Credit Note.
+   *
+   * This is intentionally separate from SalesOrderService.get()
+   * so Credit Note-specific return logic does not affect
+   * the Sales Order module.
+   */
+  static async listSalesInvoicesForReturn({
+    companyId,
+    customerId,
+    search,
+    page = 1,
+    limit = 10,
+  }: ListSalesInvoicesForReturnParams) {
+    const offset = (page - 1) * limit;
+
+    const whereConditions: string[] = [
+      "so.company_id = $1",
+      "so.is_posted = true",
+    ];
+
+    const queryParams: unknown[] = [companyId];
+
+    let paramCounter = 2;
+
+    /**
+     * Customer filter
+     */
+    if (customerId) {
+      whereConditions.push(`so.customer_id = $${paramCounter}`);
+
+      queryParams.push(customerId);
+      paramCounter++;
+    }
+
+    /**
+     * Search:
+     * - Invoice number
+     * - Order number
+     * - Customer name
+     * - Customer number
+     */
+    if (search) {
+      whereConditions.push(`
+        (
+          so.sales_invoice_no ILIKE $${paramCounter}
+          OR so.order_no ILIKE $${paramCounter}
+          OR so.customer_name ILIKE $${paramCounter}
+          OR so.customer_no ILIKE $${paramCounter}
+        )
+      `);
+
+      queryParams.push(`%${search}%`);
+      paramCounter++;
+    }
+
+    const whereClause = whereConditions.join(" AND ");
+
+    /**
+     * Count
+     */
+    const countResult = await pool.query(
+      `
+        SELECT COUNT(*)::int AS count
+        FROM sales_orders so
+        WHERE ${whereClause}
+      `,
+      queryParams,
+    );
+
+    const totalRecords = Number(countResult.rows[0]?.count || 0);
+
+    /**
+     * Invoice list
+     */
+    const listResult = await pool.query(
+      `
+        SELECT
+          so.id,
+
+          COALESCE(
+            so.posting_date,
+            so.order_date
+          ) AS posting_date,
+
+          COALESCE(
+            so.sales_invoice_no,
+            so.order_no
+          ) AS sales_invoice_no,
+
+          so.order_no,
+
+          COALESCE(c.code, 'GBP') AS currency_code,
+
+          so.subtotal AS amount,
+          so.vat_amount,
+          so.total_amount,
+
+          so.customer_id,
+          so.customer_no,
+          so.customer_name
+
+        FROM sales_orders so
+
+        LEFT JOIN currencies c
+          ON c.id = so.currency_id
+
+        WHERE ${whereClause}
+
+        ORDER BY
+          so.posting_date DESC NULLS LAST,
+          so.created_at DESC
+
+        LIMIT $${paramCounter}
+        OFFSET $${paramCounter + 1}
+      `,
+      [...queryParams, limit, offset],
+    );
+
+    return {
+      data: listResult.rows,
+      pagination: {
+        page,
+        limit,
+        totalRecords,
+        totalPages: totalRecords > 0 ? Math.ceil(totalRecords / limit) : 0,
+      },
+    };
+  }
+
+  /**
+   * Load a Sales Invoice specifically for Credit Note processing.
+   *
+   * IMPORTANT:
+   * This does NOT modify SalesOrderService.get().
+   *
+   * It returns:
+   *
+   * Original Invoice Allocation
+   *        ↓
+   * Already Returned Quantity
+   *        ↓
+   * Remaining Returnable Quantity
+   */
+  static async getSalesInvoiceForReturn(
+    companyId: string,
+    salesInvoiceId: string,
+  ) {
+    /**
+     * ---------------------------------------------------------
+     * 1. Load Sales Invoice
+     * ---------------------------------------------------------
+     */
+    const invoiceResult = await pool.query(
+      `
+        SELECT
+          so.*,
+
+          so.sales_invoice_no AS invoice_no,
+
+          pt.name AS payment_terms,
+          pm.name AS payment_method,
+          sm.name AS shipment_method
+
+        FROM sales_orders so
+
+        LEFT JOIN payment_terms pt
+          ON pt.id = so.payment_terms_id
+
+        LEFT JOIN payment_method pm
+          ON pm.id = so.payment_method_id
+
+        LEFT JOIN shipment_method sm
+          ON sm.id = so.shipment_method_id
+
+        WHERE
+          so.id = $1
+          AND so.company_id = $2
+          AND so.is_posted = true
+      `,
+      [salesInvoiceId, companyId],
+    );
+
+    if (!invoiceResult.rows.length) {
+      return null;
+    }
+
+    const invoice = invoiceResult.rows[0];
+
+    /**
+     * ---------------------------------------------------------
+     * 2. Load invoice lines
+     * ---------------------------------------------------------
+     */
+    const linesResult = await pool.query(
+      `
+        SELECT
+          sol.*,
+
+          i.item_code,
+          i.name AS item_name,
+
+          gl.code AS account_code,
+          gl.name AS account_name,
+
+          w.code AS warehouse_code,
+          w.name AS warehouse_name,
+
+          sol.warehouse_location_id AS location_id,
+
+          wl.code AS location_code,
+          wl.title AS location_name,
+
+          u.name AS uom_name
+
+        FROM sales_order_lines sol
+
+        LEFT JOIN items i
+          ON sol.item_id = i.id
+          AND i.company_id = $2
+
+        LEFT JOIN chart_of_accounts gl
+          ON sol.gl_account_id = gl.id
+          AND gl.company_id = $2
+
+        LEFT JOIN warehouses w
+          ON sol.warehouse_id = w.id
+          AND w.company_id = $2
+
+        LEFT JOIN warehouse_locations wl
+          ON sol.warehouse_id = wl.warehouse_id
+          AND sol.warehouse_location_id = wl.id
+          AND w.company_id = $2
+
+        LEFT JOIN uoms u
+          ON sol.uom_id = u.id
+          AND u.company_id = $2
+
+        WHERE
+          sol.sales_order_id = $1
+          AND sol.is_deleted = false
+
+        ORDER BY sol.line_no
+      `,
+      [salesInvoiceId, companyId],
+    );
+
+    /**
+     * ---------------------------------------------------------
+     * 3. Load ORIGINAL invoice allocations
+     * ---------------------------------------------------------
+     */
+    const allocationsResult = await pool.query<SalesInvoiceAllocationRow>(
+      `
+        SELECT
+          ia.id,
+
+          ia.source_allocation_id,
+          ia.inbound_entry_id,
+
+          ia.sales_order_line_id,
+          ia.item_id,
+
+          ia.warehouse_id,
+
+          ia.warehouse_location_id AS location_id,
+
+          wl.title AS location_name,
+
+          ia.allocated_quantity AS quantity,
+
+          ia.batch_no,
+          ia.bin_code,
+
+          TO_CHAR(
+            ia.expiry_date,
+            'YYYY-MM-DD'
+          ) AS expiry_date,
+
+          TO_CHAR(
+            ia.created_at,
+            'YYYY-MM-DD'
+          ) AS date_received,
+
+          ia.unit_cost
+
+        FROM inventory_allocations ia
+
+        LEFT JOIN warehouse_locations wl
+          ON wl.id = ia.warehouse_location_id
+
+        INNER JOIN sales_order_lines sol
+          ON ia.sales_order_line_id = sol.id
+
+        WHERE
+          sol.sales_order_id = $1
+          AND ia.company_id = $2
+
+          -- Only original outbound allocations
+          AND ia.credit_note_line_id IS NULL
+          AND ia.source_allocation_id IS NULL
+
+          -- Original sales allocation must be active
+          AND ia.status = 'ACTIVE'
+
+        ORDER BY ia.created_at, ia.id
+      `,
+      [salesInvoiceId, companyId],
+    );
+
+    /**
+     * ---------------------------------------------------------
+     * 4. Load quantities already returned through
+     *    POSTED Credit Notes
+     * ---------------------------------------------------------
+     *
+     * IMPORTANT:
+     *
+     * You must adjust the table/column names below to match
+     * your actual Credit Note allocation table.
+     *
+     * The concept is:
+     *
+     * original allocation
+     *        -
+     * posted credit note allocation
+     *        =
+     * remaining returnable quantity
+     *
+     */
+    const returnedAllocationsResult = await pool.query<ReturnedAllocationRow>(
+      `
+        SELECT
+          cra.source_allocation_id,
+
+          COALESCE(
+            SUM(cra.allocated_quantity),
+            0
+          ) AS returned_quantity
+
+        FROM inventory_allocations cra
+
+        INNER JOIN credit_note_lines cnl
+          ON cnl.id = cra.credit_note_line_id
+
+        INNER JOIN credit_notes cn
+          ON cn.id = cnl.credit_note_id
+
+        WHERE
+          cra.company_id = $1
+
+          AND cra.credit_note_line_id IS NOT NULL
+
+          AND cra.source_allocation_id IS NOT NULL
+
+          AND cn.company_id = $1
+
+          AND (
+            cn.status = 'posted'
+            OR cn.is_posted = true
+          )
+
+          AND cra.status = 'ACTIVE'
+
+        GROUP BY
+          cra.source_allocation_id
+      `,
+      [companyId],
+    );
+
+    /**
+     * Create quick lookup:
+     *
+     * source_allocation_id
+     *        =>
+     * returned quantity
+     */
+    const returnedByAllocationId = new Map<string, number>();
+
+    for (const row of returnedAllocationsResult.rows) {
+      returnedByAllocationId.set(
+        String(row.source_allocation_id),
+        Number(row.returned_quantity || 0),
+      );
+    }
+
+    /**
+     * ---------------------------------------------------------
+     * 5. Map allocations
+     * ---------------------------------------------------------
+     */
+    // const allocationsByLine = new Map<string, any[]>();
+    const allocationsByLine = new Map<string, SalesReturnAllocation[]>();
+
+    for (const allocation of allocationsResult.rows) {
+      const originalQuantity = Number(allocation.quantity || 0);
+
+      const alreadyReturned = Number(
+        returnedByAllocationId.get(String(allocation.id)) || 0,
+      );
+
+      const remainingQuantity = Math.max(originalQuantity - alreadyReturned, 0);
+
+      const mappedAllocation = {
+        id: allocation.id,
+
+        source_allocation_id: allocation.source_allocation_id || undefined,
+
+        inbound_entry_id: allocation.inbound_entry_id || undefined,
+
+        sales_order_line_id: allocation.sales_order_line_id,
+
+        item_id: allocation.item_id || undefined,
+
+        date_received: allocation.date_received || "",
+
+        prod_date: "",
+
+        expiry_date: allocation.expiry_date || "",
+
+        batch_no: allocation.batch_no || "",
+
+        serial_no: allocation.bin_code || "",
+
+        bin_code: allocation.bin_code || "",
+
+        warehouse_id: allocation.warehouse_id || "",
+
+        location_id: allocation.location_id || "",
+
+        location_name: allocation.location_name || "",
+
+        /**
+         * Original invoice allocation
+         */
+        quantity: originalQuantity,
+
+        /**
+         * Already consumed by posted Credit Notes
+         */
+        returned_quantity: alreadyReturned,
+
+        /**
+         * Actual quantity available for this
+         * Credit Note
+         */
+        remaining_quantity: remainingQuantity,
+
+        unit_cost: Number(allocation.unit_cost || 0),
+      };
+
+      const lineId = String(allocation.sales_order_line_id);
+
+      const existing = allocationsByLine.get(lineId) || [];
+
+      existing.push(mappedAllocation);
+
+      allocationsByLine.set(lineId, existing);
+    }
+
+    /**
+     * ---------------------------------------------------------
+     * 6. Map lines
+     * ---------------------------------------------------------
+     */
+    const lines = linesResult.rows.map((line) => {
+      const lineId = String(line.id);
+
+      const originalAllocations = allocationsByLine.get(lineId) || [];
+
+      const originalQuantity = Number(line.quantity || 0);
+
+      /**
+       * Total already returned for this
+       * invoice line.
+       */
+      const returnedQuantity = originalAllocations.reduce(
+        (sum, allocation) => sum + Number(allocation.returned_quantity || 0),
+        0,
+      );
+
+      /**
+       * Remaining quantity on the line.
+       */
+      const remainingQuantity = Math.max(
+        originalQuantity - returnedQuantity,
+        0,
+      );
+
+      /**
+       * Only allocations with quantity remaining
+       * should normally be selectable.
+       */
+      const availableAllocations = originalAllocations.filter(
+        (allocation) => Number(allocation.remaining_quantity || 0) > 0,
+      );
+
+      return {
+        ...line,
+
+        /**
+         * Original invoice quantity
+         */
+        quantity: originalQuantity,
+
+        max_invoice_qty: originalQuantity,
+
+        /**
+         * Already returned through posted
+         * Credit Notes.
+         */
+        returned_quantity: returnedQuantity,
+
+        /**
+         * Remaining quantity that can be
+         * returned.
+         */
+        remaining_quantity: remainingQuantity,
+
+        /**
+         * Original allocations are retained
+         * for reference.
+         */
+        original_invoice_allocations: originalAllocations,
+
+        /**
+         * Only currently available allocation
+         * quantities.
+         */
+        allocations: availableAllocations,
+
+        initialAllocations: availableAllocations,
+
+        is_allocated: remainingQuantity > 0 && availableAllocations.length > 0,
+      };
+    });
+
+    /**
+     * ---------------------------------------------------------
+     * 7. Load addresses
+     * ---------------------------------------------------------
+     */
+    const addressResult = await pool.query(
+      `
+        SELECT
+          id,
+          address_type,
+          name,
+          attention,
+          contact_name,
+          contact_person,
+          phone,
+          email,
+          address_1,
+          address_2,
+          city,
+          state,
+          county,
+          postcode,
+          country
+
+        FROM sales_order_addresses
+
+        WHERE sales_order_id = $1
+      `,
+      [salesInvoiceId],
+    );
+
+    /**
+     * ---------------------------------------------------------
+     * 8. Return Credit Note-specific structure
+     * ---------------------------------------------------------
+     */
+    return {
+      order: invoice,
+
+      lines,
+
+      primary_address:
+        addressResult.rows.find((x) => x.address_type === "primary") || null,
+
+      billing_address:
+        addressResult.rows.find((x) => x.address_type === "billing") || null,
+
+      shipping_address:
+        addressResult.rows.find((x) => x.address_type === "shipping") || null,
     };
   }
 }

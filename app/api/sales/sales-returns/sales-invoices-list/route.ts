@@ -1,6 +1,73 @@
 // /app/api/sales/sales-returns/sales-invoices-list/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
+import { SalesReturnService } from "@/lib/services/sales/sales-return.service";
+
+export async function GET(req: NextRequest) {
+  try {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+
+    const customerId = searchParams.get("customer_id") || undefined;
+    const search = searchParams.get("search") || undefined;
+
+    const pageParam = Number(searchParams.get("page") || "1");
+    const limitParam = Number(searchParams.get("limit") || "10");
+
+    const page =
+      Number.isFinite(pageParam) && pageParam > 0
+        ? Math.floor(pageParam)
+        : 1;
+
+    const limit =
+      Number.isFinite(limitParam) && limitParam > 0
+        ? Math.min(Math.floor(limitParam), 100)
+        : 10;
+
+    const result = await SalesReturnService.listSalesInvoicesForReturn({
+      companyId,
+      customerId,
+      search,
+      page,
+      limit,
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: result.data,
+      pagination: result.pagination,
+    });
+  } catch (err) {
+    console.error("[LIST_SALES_INVOICES_ERROR]:", err);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to load sales invoices.",
+      },
+      {
+        status: 500,
+      },
+    );
+  }
+}
+
+
+/* import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 
@@ -101,4 +168,4 @@ export async function GET(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+} */

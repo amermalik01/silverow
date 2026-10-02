@@ -1,8 +1,5 @@
 // types/sales-return.ts
 
-import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
-import { ReturnAllocationRecord } from "@/app/components/shared/modals/SalesReturn_StockAllocationModal";
-
 export type SalesReturnStatus = string;
 
 export type SalesReturn = {
@@ -145,6 +142,42 @@ export type SalesReturnPayload = {
   allow_empty_lines: boolean;
 };
 
+export interface SalesReturnAllocation {
+  id?: string;
+
+  source_allocation_id?: string;
+  inbound_entry_id?: string;
+
+  sales_order_line_id?: string;
+  item_id?: string;
+
+  batch_no?: string;
+  serial_no?: string;
+  bin_code?: string;
+
+  expiry_date?: string;
+  prod_date?: string;
+  date_received?: string;
+
+  warehouse_id?: string;
+  warehouse_code?: string;
+  warehouse_name?: string;
+
+  location_id?: string;
+  location_name?: string;
+
+  quantity: number;
+
+  returned_quantity?: number;
+  remaining_quantity?: number;
+
+  max_returnable_qty?: number;
+
+  unit_cost?: number;
+
+  max_invoice_qty?: number;
+}
+
 export type SalesReturnLineType = "ITEM" | "GL_ACCOUNT" | "COMMENT";
 
 export interface SalesReturnLine {
@@ -199,32 +232,36 @@ export interface SalesReturnLine {
   vat_business_posting_group_id?: string;
   vat_product_posting_group_id?: string;
 
-  allocations?: ReturnAllocationRecord[];
+  // allocations?: ReturnAllocationRecord[];
+  allocations?: SalesReturnAllocation[];
 }
 
 export interface SalesReturnLineUI extends SalesReturnLine {
   _stableKey?: string;
-  max_invoice_qty?: number;
   reserved_quantity?: string | number;
   available_stock?: string | number;
+
+  remaining_quantity?: number;
+  returned_quantity?: number;
+  max_invoice_qty?: number;
+
   is_allocated?: boolean;
 
-  initialAllocations?: ReturnAllocationRecord[];
-  original_invoice_allocations?: ReturnAllocationRecord[];
-}
-// export interface SalesReturnLineUI extends SalesReturnLine {
-//   _stableKey?: string;  
-//   max_invoice_qty?: number;
-//   reserved_quantity?: string | number;
-//   available_stock?: string | number;
-//   is_allocated?: boolean;
+  initialAllocations?: SalesReturnAllocation[];
+  original_invoice_allocations?: SalesReturnAllocation[];
 
-//   allocations?: ReturnAllocationRecord[];
-//   initialAllocations?: ReturnAllocationRecord[];
-//   stock_allocations?: PO_StockAllocationRecord[];
-//   po_line_allocations?: PO_StockAllocationRecord[];
-//   original_invoice_allocations?: ReturnAllocationRecord[];
-// }
+  // initialAllocations?: ReturnAllocationRecord[];
+  // original_invoice_allocations?: ReturnAllocationRecord[];
+}
+
+export interface SalesReturnDeAllocationRecord {
+  id?: string; // ID of the source allocation (or existing draft return allocation)
+  return_quantity: number; // Quantity being returned
+  location_id?: string | null;
+  batch_no?: string | null;
+  serial_no?: string | null;
+  expiry_date?: string | null;
+}
 
 export interface LookupItem {
   id: string;
@@ -383,13 +420,3 @@ export type SalesReturnListing = {
   linked_pos_1?: string;
   converted_to_so_by_name?: string;
 };
-
-
-export interface SalesReturnDeAllocationRecord {
-  id?: string;                   // ID of the source allocation (or existing draft return allocation)
-  return_quantity: number;        // Quantity being returned
-  location_id?: string | null;
-  batch_no?: string | null;
-  serial_no?: string | null;
-  expiry_date?: string | null;
-}

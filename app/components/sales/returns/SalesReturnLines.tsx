@@ -5,7 +5,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 
-import { SalesReturn, SalesReturnLineUI } from "@/types/sales-return";
+import {
+  SalesReturn,
+  SalesReturnAllocation,
+  SalesReturnLineUI,
+} from "@/types/sales-return";
 
 import ItemLookupModal, {
   ItemLookupRecord,
@@ -19,13 +23,9 @@ import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
 
-// import PO_StockAllocationModal, {
-//   PO_StockAllocationRecord,
-// } from "@/app/components/shared/modals/PO_StockAllocationModal";
+import SalesReturn_StockAllocationModal from "@/app/components/shared/modals/SalesReturn_StockAllocationModal";
 
-import SalesReturn_StockAllocationModal, {
-  ReturnAllocationRecord,
-} from "@/app/components/shared/modals/SalesReturn_StockAllocationModal";
+type ReturnAllocationRecord = SalesReturnAllocation;
 
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";

@@ -392,7 +392,11 @@ export const SalesReturnForm: React.FC<Props> = ({
     // Fetch Lines from selected Sales Invoice to allocate stock quantities
     try {
       show("Fetching invoice lines...");
-      const res = await fetch(`/api/sales/sales-orders/${invoice.id}`);
+      // const res = await fetch(`/api/sales/sales-orders/${invoice.id}`);
+      const res = await fetch(
+        `/api/sales/sales-returns/sales-invoices/${invoice.id}`,
+      );
+
       const payload = await res.json();
       hide();
 
@@ -412,7 +416,15 @@ export const SalesReturnForm: React.FC<Props> = ({
         if (Array.isArray(fetchedRawLines)) {
           const mappedLines: SalesReturnLineUI[] = fetchedRawLines.map(
             (l: SalesReturnLineUI, idx: number) => {
+              // const originalQty = Number(l.quantity || 0);
+              // const lineAllocations = Array.isArray(l.allocations)
+              //   ? l.allocations
+              //   : [];
+
               const originalQty = Number(l.quantity || 0);
+
+              const remainingQty = Number(l.remaining_quantity ?? originalQty);
+
               const lineAllocations = Array.isArray(l.allocations)
                 ? l.allocations
                 : [];
@@ -441,8 +453,17 @@ export const SalesReturnForm: React.FC<Props> = ({
                 account_code: l.account_code,
 
                 // Quantity Controls
-                quantity: originalQty,
-                max_invoice_qty: originalQty, // Store maximum allowed from Sales Invoice
+                // quantity: originalQty,
+                quantity: remainingQty,
+                /**
+                 * Original invoice quantity
+                 */
+                max_invoice_qty: originalQty,
+
+                returned_quantity: Number(l.returned_quantity || 0),
+
+                remaining_quantity: remainingQty,
+
                 unit_price: Number(l.unit_price || 0),
 
                 discount_type: l.discount_type || "PERCENT",
@@ -458,12 +479,19 @@ export const SalesReturnForm: React.FC<Props> = ({
                 net_amount: Number(l.net_amount || 0),
                 gross_amount: Number(l.gross_amount || 0),
 
+                /**
+                 * Keep the original invoice allocations
+                 * separately for reference.
+                 */
+                original_invoice_allocations:
+                  l.original_invoice_allocations || [],
+
                 // Tracking & Allocation hydration
-                original_invoice_allocations: lineAllocations,
+                // original_invoice_allocations: lineAllocations,
                 allocations: lineAllocations,
                 initialAllocations: lineAllocations,
-                is_allocated: lineAllocations.length > 0,
-                returned_quantity: 0,
+                is_allocated: remainingQty > 0 && lineAllocations.length > 0,
+                // returned_quantity: 0,
               };
             },
           );

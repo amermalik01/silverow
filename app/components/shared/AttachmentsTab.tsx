@@ -263,6 +263,7 @@ export default function AttachmentsTab({
                     ? "✓ Upload Complete"
                     : "Click or Drag Documents Here",
                 allowedContent: "PDF, Excel sheets, images up to 4MB",
+                button:"Add Attachments"
               }}
             />{" "}
           </div>
