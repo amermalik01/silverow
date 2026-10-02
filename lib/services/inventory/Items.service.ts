@@ -18,7 +18,7 @@ export class ItemsService {
       pageSize = 20,
       filters = {},
       sortBy,
-      sortOrder = "asc",
+      sortOrder = "desc",
     } = params;
     const offset = (page - 1) * pageSize;
 
@@ -34,7 +34,7 @@ export class ItemsService {
     };
 
     const orderByColumn =
-      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "i.name";
+      sortBy && SORT_FIELDS[sortBy] ? SORT_FIELDS[sortBy] : "i.item_code";
     const orderDirection = sortOrder?.toUpperCase() === "DESC" ? "DESC" : "ASC";
 
     const queryValues: (string | number)[] = [companyId];
@@ -140,7 +140,7 @@ export class ItemsService {
         END AS status_label
       ${joinSql}
       ${whereSql}
-      ORDER BY ${orderByColumn} ${orderDirection}, i.id ASC
+      ORDER BY ${orderByColumn} ${orderDirection}
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
 

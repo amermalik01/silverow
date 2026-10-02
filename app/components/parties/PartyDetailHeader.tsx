@@ -190,9 +190,9 @@ export default function PartyDetailHeader({
 
           {/* Right Column: Widgets & Conversion Actions */}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2">
             {/* Outstanding */}
-            <div className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30">
+            <div className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30">
               <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-amber-400/10 group-hover:bg-amber-400/20 transition-colors" />
 
               <div className="relative flex items-start justify-between gap-3">
@@ -203,7 +203,7 @@ export default function PartyDetailHeader({
                   </div>
 
                   <div className="mt-1.5 text-base font-bold tracking-tight text-amber-950 dark:text-amber-100">
-                    {formatFCY(outstandingBalance, currencyCode)} LCY {lcyFormatter.format(lcyBalance || 0)}
+                    {formatFCY(outstandingBalance, currencyCode)} / LCY {lcyFormatter.format(lcyBalance || 0)}
                   </div>
 
                   {/* <div className="mt-0.5 text-[10px] font-medium text-amber-700/70 dark:text-amber-300/70">
@@ -218,7 +218,7 @@ export default function PartyDetailHeader({
             </div>
 
             {/* Open Entries */}
-            <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-blue-900/50 dark:from-blue-950/40 dark:to-indigo-950/30">
+            {/* <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-blue-900/50 dark:from-blue-950/40 dark:to-indigo-950/30">
               <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-blue-400/10 group-hover:bg-blue-400/20 transition-colors" />
 
               <div className="relative flex items-start justify-between gap-3">
@@ -232,16 +232,16 @@ export default function PartyDetailHeader({
                     {openEntriesCount}
                   </div>
 
-                  {/* <div className="mt-0.5 text-[10px] font-medium text-blue-700/70 dark:text-blue-300/70">
+                  <div className="mt-0.5 text-[10px] font-medium text-blue-700/70 dark:text-blue-300/70">
                     Outstanding entries
-                  </div> */}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-blue-600 shadow-sm dark:bg-blue-900/40 dark:text-blue-400">
                   <Icon icon="lucide:layers-3" className="w-4 h-4" />
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Credit Limit */}
             <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-fuchsia-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-violet-900/50 dark:from-violet-950/40 dark:to-fuchsia-950/30">

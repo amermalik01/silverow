@@ -37,6 +37,9 @@ export async function GET(req: NextRequest) {
 
           p.assign_person_id,
           p.assign_person AS salesperson_code,
+
+          pc.name as contact_person,
+          pc.phone as contact_person_phone,
           
           -- Finance & Ledger Columns
           p.finance_contact_person,
@@ -82,6 +85,8 @@ export async function GET(req: NextRequest) {
         FROM parties p
         LEFT JOIN party_addresses pa 
           ON pa.party_id = p.id AND pa.is_primary = true
+        LEFT JOIN party_contacts pc 
+          ON pc.party_id = p.id AND pc.is_primary = true
         LEFT JOIN country c 
           ON pa.country = c.id::text OR pa.country = c.iso
         LEFT JOIN payment_terms pt ON p.payment_terms = pt.id::text AND pt.module_type='sales'
@@ -173,7 +178,8 @@ export async function GET(req: NextRequest) {
             'county', pa.county,
             'postcode', pa.postcode,
             'country', pa.country,
-            'phone', pa.phone,
+            'contact_person', fc.contact_person,
+            'phone',  COALESCE(pa.phone, fc.contact_person_phone),
             'email', COALESCE(pa.email, fc.email)
           )
           ELSE NULL 
@@ -214,6 +220,9 @@ export async function GET(req: NextRequest) {
       LEFT JOIN ranked_shipping_addresses sa ON sa.party_id = fc.id AND sa.rn = 1
       ORDER BY fc.customer_code DESC;
     `;
+
+    // console.log('queryText ==== ',queryText);
+    // console.log('companyId ==== ',companyId);
 
     const result = await pool.query(queryText, [
       companyId,

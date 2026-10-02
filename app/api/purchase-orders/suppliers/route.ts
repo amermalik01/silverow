@@ -37,6 +37,9 @@ export async function GET(req: NextRequest) {
 
           p.assign_person_id,
           p.assign_person AS purchaser_code,
+
+          pc.name as contact_person,
+          pc.phone as contact_person_phone,
           
           -- Finance & Ledger Columns
           p.finance_contact_person,
@@ -86,6 +89,8 @@ export async function GET(req: NextRequest) {
         FROM parties p
         LEFT JOIN party_addresses pa 
           ON pa.party_id = p.id AND pa.is_primary = true
+        LEFT JOIN party_contacts pc 
+          ON pc.party_id = p.id AND pc.is_primary = true
         LEFT JOIN country c 
           ON pa.country = c.id::text OR pa.country = c.iso
         LEFT JOIN payment_terms pt ON p.payment_terms = pt.id::text AND pt.module_type='purchases'
@@ -177,8 +182,8 @@ export async function GET(req: NextRequest) {
             'county', pa.county,
             'postcode', pa.postcode,
             'country', pa.country,
-            'contact_person', fs.finance_contact_person,
-            'phone', pa.phone,
+            'contact_person', COALESCE(fs.finance_contact_person, fc.contact_person),
+            'phone',  COALESCE(pa.phone, fc.contact_person_phone),
             'email', COALESCE(pa.email, fs.email)
           )
           ELSE NULL 

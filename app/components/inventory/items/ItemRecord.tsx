@@ -261,8 +261,8 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
     { key: "margin", label: "Item Margin Analysis" },
     { key: "warehouse", label: "Warehouse Location & Cost" },
     { key: "activities", label: "Activities" },
-    { key: "accounting", label: "Accounting GL" },
-    { key: "attributes", label: "Attributes" },
+    // { key: "accounting", label: "Accounting GL" },
+    // { key: "attributes", label: "Attributes" },
   ];
 
   return (
@@ -362,16 +362,16 @@ export default function ItemRecord({ id, slug, isReadonly = false }: Props) {
 
         {activeTab === "activities" && <ItemActivityTab itemId={id} />}
 
-        {activeTab === "accounting" && (
+        {/* {activeTab === "accounting" && (
           <AccountingTab
             item={item}
             setItem={setItem}
             isReadonly={isReadonly}
           />
-        )}
-        {activeTab === "attributes" && (
+        )} */}
+        {/* {activeTab === "attributes" && (
           <AttributesTab itemId={id} isReadonly={isReadonly} />
-        )}
+        )} */}
       </div>
 
       {/* 4. Action Footer */}
