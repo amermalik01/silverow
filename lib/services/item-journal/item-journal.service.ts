@@ -15,17 +15,42 @@ export type { ItemJournalLineInput, ItemJournalPayload };
 interface ItemJournalAllocationRow {
   id: string;
   journal_line_id: string;
+
+  source_allocation_id: string | null;
+  inbound_entry_id: string | null;
+
   item_id: string;
   warehouse_id: string;
+
   location_id: string | null;
+
   batch_no: string | null;
+  bin_code: string | null;
   serial_no: string | null;
+
   expiry_date: string | null;
+
   quantity: number;
   unit_cost: number;
   total_cost: number;
+
   status: string;
 }
+
+// interface ItemJournalAllocationRow {
+//   id: string;
+//   journal_line_id: string;
+//   item_id: string;
+//   warehouse_id: string;
+//   location_id: string | null;
+//   batch_no: string | null;
+//   serial_no: string | null;
+//   expiry_date: string | null;
+//   quantity: number;
+//   unit_cost: number;
+//   total_cost: number;
+//   status: string;
+// }
 
 export interface ColumnFilter {
   value?: string | number | boolean | null;
@@ -415,19 +440,45 @@ export class ItemJournalService {
       SELECT
         ia.id,
         ia.journal_line_id,
+
+        ia.source_allocation_id,
+        ia.inbound_entry_id,
+
         ia.item_id,
         ia.warehouse_id,
+
         ia.warehouse_location_id AS location_id,
+
         wl.title AS location_name,
+
         ia.batch_no,
+        ia.bin_code,
         ia.bin_code AS serial_no,
+
         -- ia.expiry_date,
+
         ia.allocated_quantity AS quantity,
+
         ia.unit_cost,
         ia.total_cost,
+
         ia.status,
-        TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
-        TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_shipped
+
+        TO_CHAR(
+          ia.date_received,
+          'YYYY-MM-DD'
+        ) AS date_received,
+
+        TO_CHAR(
+          ia.prod_date,
+          'YYYY-MM-DD'
+        ) AS prod_date,
+
+        TO_CHAR(
+          ia.expiry_date,
+          'YYYY-MM-DD'
+        ) AS expiry_date
+
       FROM inventory_allocations ia
       LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
       INNER JOIN journal_entry_lines jel ON ia.journal_line_id = jel.id
@@ -441,20 +492,41 @@ export class ItemJournalService {
     const allocations: ItemJournalAllocationRow[] = allocationsResult.rows.map(
       (row) => ({
         id: String(row.id),
+
         journal_line_id: String(row.journal_line_id),
+
+        source_allocation_id: row.source_allocation_id
+          ? String(row.source_allocation_id)
+          : null,
+
+        inbound_entry_id: row.inbound_entry_id
+          ? String(row.inbound_entry_id)
+          : null,
+
         item_id: String(row.item_id),
+
         warehouse_id: String(row.warehouse_id),
+
         location_id: row.location_id ? String(row.location_id) : null,
+
         batch_no: row.batch_no ? String(row.batch_no) : null,
+
+        bin_code: row.bin_code ? String(row.bin_code) : null,
+
         serial_no: row.serial_no ? String(row.serial_no) : null,
-        // expiry_date: row.expiry_date ? String(row.expiry_date) : null,
-        date_shipped: row.date_shipped || "",
-        prod_date: "",
+
+        date_received: row.date_received || "",
+
+        prod_date: row.prod_date || "",
+
         expiry_date: row.expiry_date || "",
 
         quantity: Number(row.quantity || 0),
+
         unit_cost: Number(row.unit_cost || 0),
+
         total_cost: Number(row.total_cost || 0),
+
         status: String(row.status),
       }),
     );
@@ -631,13 +703,14 @@ export class ItemJournalService {
    * This only creates allocation records.
    * It does NOT change inventory balances.
    */
+
   private static async saveItemJournalAllocations(
     client: PoolClient,
     companyId: string,
     journalId: string,
     journalLineId: string,
     line: ItemJournalLineInput,
-  ) {
+  ): Promise<void> {
     const allocations = line.allocations || [];
 
     for (const allocation of allocations) {
@@ -647,76 +720,93 @@ export class ItemJournalService {
         continue;
       }
 
-      const unitCost = Number(line.cost_per_unit || 0);
+      const unitCost = Number(allocation.unit_cost ?? line.cost_per_unit ?? 0);
 
-      const totalCost = quantity * unitCost;
+      const totalCost = Number((quantity * unitCost).toFixed(2));
+
+      const isNegative = line.transaction_type === "Negative Entry";
+
+      /* 
+
+        // 'ALLOCATED', */
 
       await client.query(
         `
-        INSERT INTO inventory_allocations (
-          company_id,
-          outbound_entry_id,
-          inbound_entry_id,
-          journal_line_id,
+      INSERT INTO inventory_allocations (
+        company_id,
 
-          item_id,
-          warehouse_id,
-          warehouse_location_id,
+        outbound_entry_id,
+        inbound_entry_id,
+        source_allocation_id,
 
-          batch_no,
-          bin_code,
-          expiry_date,
-          date_received,
-          prod_date,
+        journal_line_id,
 
-          allocated_quantity,
-          unit_cost,
-          total_cost,
+        item_id,
+        warehouse_id,
+        warehouse_location_id,
 
-          status,
-          created_at
-        )
-        VALUES (
-          $1,
-          $2,
-          $3,
-          $4,
+        batch_no,
+        bin_code,
+        expiry_date,
+        date_received,
+        prod_date,
 
-          $5,
-          $6,
-          $7,
+        allocated_quantity,
+        unit_cost,
+        total_cost,
 
-          $8,
-          $9,
-          $10,
+        status,
+        created_at
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
 
-          $11,
-          $12,
-          $13,
+        $6,
+        $7,
+        $8,
 
-          $14,
-          $15,
+        $9,
+        $10,
+        $11,
+        $12,
+        $13,
 
-          'ALLOCATED',
-          NOW()
-        )
-        `,
+        $14,
+        $15,
+        $16,
+
+        'ACTIVE'
+        NOW()
+      )
+      `,
         [
           companyId,
+
           null,
-          null, // journalId,
+
+          isNegative ? allocation.inbound_entry_id || null : null,
+
+          isNegative ? allocation.source_allocation_id || null : null,
+
           journalLineId,
 
           line.item_id,
           line.warehouse_id,
+
           allocation.location_id || line.location_id || null,
 
           allocation.batch_no || null,
 
-          allocation.serial_no || null,
+          allocation.bin_code || allocation.serial_no || null,
 
           allocation.expiry_date || null,
+
           allocation.date_received || null,
+
           allocation.prod_date || null,
 
           quantity,
@@ -727,3 +817,99 @@ export class ItemJournalService {
     }
   }
 }
+
+// private static async saveItemJournalAllocations(
+//   client: PoolClient,
+//   companyId: string,
+//   journalId: string,
+//   journalLineId: string,
+//   line: ItemJournalLineInput,
+// ) {
+//   const allocations = line.allocations || [];
+
+//   for (const allocation of allocations) {
+//     const quantity = Number(allocation.quantity || 0);
+
+//     if (quantity <= 0) {
+//       continue;
+//     }
+
+//     const unitCost = Number(line.cost_per_unit || 0);
+
+//     const totalCost = quantity * unitCost;
+
+//     await client.query(
+//       `
+//       INSERT INTO inventory_allocations (
+//         company_id,
+//         outbound_entry_id,
+//         inbound_entry_id,
+//         journal_line_id,
+
+//         item_id,
+//         warehouse_id,
+//         warehouse_location_id,
+
+//         batch_no,
+//         bin_code,
+//         expiry_date,
+//         date_received,
+//         prod_date,
+
+//         allocated_quantity,
+//         unit_cost,
+//         total_cost,
+
+//         status,
+//         created_at
+//       )
+//       VALUES (
+//         $1,
+//         $2,
+//         $3,
+//         $4,
+
+//         $5,
+//         $6,
+//         $7,
+
+//         $8,
+//         $9,
+//         $10,
+
+//         $11,
+//         $12,
+//         $13,
+
+//         $14,
+//         $15,
+
+//         'ALLOCATED',
+//         NOW()
+//       )
+//       `,
+//       [
+//         companyId,
+//         null,
+//         null, // journalId,
+//         journalLineId,
+
+//         line.item_id,
+//         line.warehouse_id,
+//         allocation.location_id || line.location_id || null,
+
+//         allocation.batch_no || null,
+
+//         allocation.serial_no || null,
+
+//         allocation.expiry_date || null,
+//         allocation.date_received || null,
+//         allocation.prod_date || null,
+
+//         quantity,
+//         unitCost,
+//         totalCost,
+//       ],
+//     );
+//   }
+// }

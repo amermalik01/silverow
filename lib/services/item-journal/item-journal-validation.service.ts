@@ -1,6 +1,12 @@
 // lib/services/item-journal/item-journal-validation.service.ts
 
 export interface StockAllocationRecord {
+  id?: string | null;
+
+  source_allocation_id?: string | null;
+
+  inbound_entry_id?: string | null;
+
   location_id?: string;
   location_name?: string;
 
@@ -9,9 +15,16 @@ export interface StockAllocationRecord {
   expiry_date?: string;
 
   batch_no?: string;
+  bin_code?: string;
+
+  sequence_no?: string;
   serial_no?: string;
 
   quantity: number;
+
+  available_quantity?: number;
+
+  unit_cost?: number;
 }
 
 export interface ItemJournalLineInput {
@@ -301,15 +314,37 @@ export class ItemJournalValidationService {
       if (line.transaction_type === "Negative Entry") {
         for (const allocation of allocations) {
           if (!allocation.batch_no && !allocation.serial_no) {
-            /**
-             * This is intentionally not mandatory for every inventory
-             * configuration. Location-only negative adjustments are valid
-             * when the underlying item is not batch/serial controlled.
-             */
             continue;
           }
         }
       }
+
+      // if (
+      //   line.transaction_type === "Negative Entry" &&
+      //   !allocation.source_allocation_id
+      // ) {
+      //   throw new Error(
+      //     `Line ${lineNo}, allocation ${allocationNo}: Source stock allocation is required for a negative entry.`,
+      //   );
+      // }
+
+      // if (
+      //   line.transaction_type === "Negative Entry" &&
+      //   !allocation.inbound_entry_id
+      // ) {
+      //   throw new Error(
+      //     `Line ${lineNo}, allocation ${allocationNo}: Inbound stock ledger entry is required for a negative entry.`,
+      //   );
+      // }
+
+      // if (
+      //   line.transaction_type === "Positive Entry" &&
+      //   allocation.source_allocation_id
+      // ) {
+      //   throw new Error(
+      //     `Line ${lineNo}, allocation ${allocationNo}: Positive entries cannot reference an existing source allocation.`,
+      //   );
+      // }
     }
   }
 
@@ -398,3 +433,17 @@ export class ItemJournalValidationService {
     };
   }
 }
+
+// export interface StockAllocationRecord {
+//   location_id?: string;
+//   location_name?: string;
+
+//   date_received?: string;
+//   prod_date?: string;
+//   expiry_date?: string;
+
+//   batch_no?: string;
+//   serial_no?: string;
+
+//   quantity: number;
+// }

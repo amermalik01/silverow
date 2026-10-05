@@ -18,7 +18,9 @@ import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
 
+
 import StockAllocationModal, {
+  AvailableStockRecord,
   StockAllocationRecord,
   StockSequenceRecord,
 } from "@/app/components/shared/modals/StockAllocationModal";
@@ -36,6 +38,7 @@ type Props = {
   // existingSequences: string[];
 
   existingSequences?: StockSequenceRecord[];
+  availableStock?: AvailableStockRecord[];
 
   onCloseItem: () => void;
   onItemSelect: (item: ItemLookupRecord) => void;
@@ -58,6 +61,7 @@ export default function ItemJournalModals({
   activeAllocationLine,
   formDisabled,
   existingSequences = [],
+  availableStock = [],
   onCloseItem,
   onItemSelect,
   onCloseGL,
@@ -91,43 +95,56 @@ export default function ItemJournalModals({
           onClose={onCloseAllocation}
           onSave={onSaveAllocation}
           targetQuantity={Number(activeAllocationLine.quantity || 0)}
+
           itemId={activeAllocationLine.item_id || ""}
           itemCode={activeAllocationLine.item_no || ""}
           itemName={activeAllocationLine.item_description || ""}
+
           warehouseId={activeAllocationLine.warehouse_id || ""}
           warehouseName={activeAllocationLine.warehouse_name || ""}
           locationId={activeAllocationLine.location_id || ""}
           locationName={activeAllocationLine.location_name || ""}
+
           uomName={activeAllocationLine.uom || ""}
           transactionType={activeAllocationLine.transaction_type}
+          mode={
+            activeAllocationLine.transaction_type === "Negative Entry"
+              ? "outbound"
+              : "inbound"
+          }
           existingSequences={existingSequences}
-          initialAllocations={(
-            activeAllocationLine.allocations ||
-            activeAllocationLine.initialAllocations ||
-            []
-          ).map((allocation) => ({
-            location_id: allocation.location_id || "",
+          availableStock={availableStock}
+          initialAllocations={activeAllocationLine.allocations ?? []}
+          // initialAllocations={activeAllocationLine.initialAllocations ?? []}
+          // onSave={handleSaveAllocations}
+          
+          // initialAllocations={(
+          //   activeAllocationLine.allocations ||
+          //   activeAllocationLine.initialAllocations ||
+          //   []
+          // ).map((allocation) => ({
+          //   location_id: allocation.location_id || "",
 
-            location_name: allocation.location_name || "",
+          //   location_name: allocation.location_name || "",
 
-            date_received: String(allocation.date_received || ""),
+          //   date_received: String(allocation.date_received || ""),
 
-            prod_date: String(allocation.prod_date || ""),
+          //   prod_date: String(allocation.prod_date || ""),
 
-            expiry_date: String(allocation.expiry_date || ""),
+          //   expiry_date: String(allocation.expiry_date || ""),
 
-            batch_no: String(allocation.batch_no || ""),
-            sequence_no: String(allocation.sequence_no || ""),
+          //   batch_no: String(allocation.batch_no || ""),
+          //   sequence_no: String(allocation.sequence_no || ""),
 
-            serial_no: String(allocation.serial_no || ""),
+          //   serial_no: String(allocation.serial_no || ""),
 
-            quantity: Number(allocation.quantity || 0),
+          //   quantity: Number(allocation.quantity || 0),
 
-            available_quantity:
-              allocation.available_quantity === undefined
-                ? undefined
-                : Number(allocation.available_quantity || 0),
-          }))}
+          //   available_quantity:
+          //     allocation.available_quantity === undefined
+          //       ? undefined
+          //       : Number(allocation.available_quantity || 0),
+          // }))}
         />
       )}
     </>

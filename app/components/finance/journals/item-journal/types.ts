@@ -2,11 +2,11 @@
 
 import type { ItemLookupRecord } from "../../../shared/modals/ItemLookupModal";
 
-import type { StockAllocationRecord } from "../../../shared/modals/StockAllocationModal";
+// import type { StockAllocationRecord } from "../../../shared/modals/StockAllocationModal";
 
 export type ItemJournalTransactionType = "Positive Entry" | "Negative Entry";
 
-export type StockStatus = "allocated" | "partial" | "unallocated";
+export type StockStatus = "allocated" | "partial" | "unallocated" | "overallocated";
 
 export type ApiResponse = {
   message?: string;
@@ -40,8 +40,11 @@ export type ItemJournalLineRow = {
   balancing_account_id: string;
   balancing_display_name: string;
 
-  allocations: StockAllocationRecord[];
-  initialAllocations?: StockAllocationRecord[];
+  // allocations: StockAllocationRecord[];
+  // initialAllocations?: StockAllocationRecord[];
+
+  allocations: ItemJournalAllocationRecord[];
+  initialAllocations?: ItemJournalAllocationRecord[];
 
   stock_status: StockStatus;
   is_allocated: boolean;
@@ -87,3 +90,28 @@ export type ItemJournalFormProps = {
 export type BuildItemLine = (
   item: ItemLookupRecord,
 ) => Promise<ItemJournalLineRow>;
+
+export type ItemJournalAllocationRecord = {
+  id?: string | null;
+
+  source_allocation_id?: string | null;
+  inbound_entry_id?: string | null;
+
+  location_id: string;
+  location_name: string;
+
+  date_received?: string;
+  prod_date?: string;
+  expiry_date?: string;
+
+  batch_no?: string;
+  bin_code?: string;
+  sequence_no?: string;
+  serial_no?: string;
+
+  quantity: number;
+
+  available_quantity?: number;
+
+  unit_cost?: number;
+};

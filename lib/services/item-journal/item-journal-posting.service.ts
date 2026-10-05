@@ -37,33 +37,68 @@ type ItemJournalDbLine = {
   created_at: Date | string;
 };
 
-type ItemJournalAllocationDbRow = {
+interface ItemJournalAllocationDbRow {
   id: string;
+
   journal_id: string;
   journal_line_id: string;
 
-  item_id: string;
+  source_allocation_id: string | null;
+  inbound_entry_id: string | null;
 
+  item_id: string;
   warehouse_id: string;
+
   warehouse_location_id: string | null;
+
   location_id: string | null;
 
-  allocated_quantity: number | string | null;
-
-  unit_cost: number | string | null;
-  total_cost: number | string | null;
-
-  date_received: Date | string | null;
-  prod_date: Date | string | null;
-  expiry_date: Date | string | null;
-
   batch_no: string | null;
+  bin_code: string | null;
   serial_no: string | null;
 
-  status: string | null;
+  expiry_date: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
 
-  created_at: Date | string;
-};
+  allocated_quantity: number;
+
+  unit_cost: number;
+  total_cost: number;
+
+  status: string;
+
+  created_at: string;
+}
+
+// type ItemJournalAllocationDbRow = {
+//   id: string;
+
+//   journal_id: string;
+//   journal_line_id: string;
+
+//   item_id: string;
+
+//   warehouse_id: string;
+//   warehouse_location_id: string | null;
+//   location_id: string | null;
+
+//   allocated_quantity: number | string | null;
+
+//   unit_cost: number | string | null;
+//   total_cost: number | string | null;
+
+//   date_received: Date | string | null;
+//   prod_date: Date | string | null;
+//   expiry_date: Date | string | null;
+
+//   batch_no: string | null;
+//   serial_no: string | null;
+
+//   status: string | null;
+
+//   created_at: Date | string;
+// };
 
 type ItemJournalAllocationInput = NonNullable<
   ItemJournalLineInput["allocations"]
@@ -267,12 +302,17 @@ export class ItemJournalPostingService {
               location_id: locationId,
 
               batch_no: allocation.batch_no || null,
+              bin_code: allocation.bin_code,
               serial_no: allocation.serial_no || null,
               expiry_date: allocation.expiry_date || null,
 
               quantity: allocationQty,
 
               unit_cost: Number(line.cost_per_unit || 0),
+
+              source_allocation_id: allocation.source_allocation_id,
+
+              inbound_entry_id: allocation.inbound_entry_id,
 
               reference_type: "ITEM_JOURNAL",
               reference_id: journalId,

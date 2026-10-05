@@ -7,19 +7,6 @@ import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { Icon } from "@iconify/react";
 
-// export type SO_StockAllocationRecord = {
-//   location_id: string;
-//   location_name: string;
-//   date_received?: string;
-//   prod_date?: string;
-//   expiry_date?: string;
-//   batch_no?: string;
-//   bin_code?: string;
-//   serial_no?: string;
-//   quantity: number;
-//   available_qty?: number;
-// };
-
 export type SO_StockAllocationRecord = {
   source_allocation_id: string;
 
@@ -63,20 +50,6 @@ type RawStockBatch = {
 
   unit_cost?: number | string | null;
 };
-
-// type AvailableStockBatch = {
-//   id: string;
-//   source_allocation_id?: string;
-//   location_id: string;
-//   location_name: string;
-//   date_received?: string;
-//   prod_date?: string;
-//   expiry_date?: string;
-//   batch_no?: string;
-//   bin_code?: string;
-//   serial_no?: string;
-//   available_qty: number;
-// };
 
 type AvailableStockBatch = {
   id: string;
@@ -165,27 +138,10 @@ export default function SO_StockAllocationModal({
           `/api/sales/sales-orders/available-batches?${params.toString()}`,
         );
 
-        // const res = await fetch(
-        //   `/api/sales/sales-orders/available-batches?item_id=${itemId}&warehouse_id=${warehouseId}&sales_order_id=${salesOrderId}`,
-        // );
         if (!res.ok) return;
 
         const payload = await res.json();
         const rawBatches: RawStockBatch[] = payload.data ?? [];
-
-        // Normalize available_quantity -> available_qty & guarantee unique ID
-        // const mappedBatches: AvailableStockBatch[] = rawBatches.map((b, idx) => ({
-        //   id: b.id || `batch_${b.location_id}_${b.batch_no || ""}_${b.bin_code || ""}_${idx}`,
-        //   location_id: b.location_id,
-        //   location_name: b.location_name,
-        //   date_received: b.date_received,
-        //   prod_date: b.prod_date,
-        //   expiry_date: b.expiry_date,
-        //   batch_no: b.batch_no,
-        //   bin_code: b.bin_code,
-        //   serial_no: b.serial_no,
-        //   available_qty: Number(b.available_qty ?? b.available_quantity ?? 0),
-        // }));
 
         const mappedBatches: AvailableStockBatch[] = rawBatches.map(
           (b, idx) => ({
@@ -231,13 +187,6 @@ export default function SO_StockAllocationModal({
       const initialMap: Record<string, number> = {};
 
       initialAllocations.forEach((alloc) => {
-        // const matchingBatch = availableBatches.find(
-        //   (b) =>
-        //     b.location_id === alloc.location_id &&
-        //     (b.batch_no || "") === (alloc.batch_no || "") &&
-        //     (b.bin_code || "") === (alloc.bin_code || ""),
-        // );
-
         const matchingBatch = availableBatches.find(
           (b) => b.source_allocation_id === alloc.source_allocation_id,
         );

@@ -9,19 +9,28 @@ import NumericTextInput from "@/components/ui/NumericTextInput";
 import { Icon } from "@iconify/react";
 
 export type StockAllocationRecord = {
+  id?: string | null;
+
+  source_allocation_id?: string | null;
+  inbound_entry_id?: string | null;
+
   location_id: string;
   location_name: string;
 
-  date_received: string;
-  prod_date: string;
-  expiry_date: string;
+  date_received?: string;
+  prod_date?: string;
+  expiry_date?: string;
 
-  batch_no: string;
+  batch_no?: string;
+  bin_code?: string;
+
   sequence_no?: string;
-  serial_no: string;
+  serial_no?: string;
 
   quantity: number;
   available_quantity?: number;
+
+  unit_cost?: number;
 };
 
 export type StockSequenceRecord = {
@@ -37,7 +46,85 @@ export type StockSequenceRecord = {
   expiry_date: string;
 
   available_quantity: number;
+
+  unit_cost?: number;
 };
+
+export type StockAllocationMode = "inbound" | "outbound";
+
+export type RawAvailableStockRecord = {
+  id?: string;
+  source_allocation_id?: string | null;
+  inbound_entry_id?: string | null;
+
+  location_id?: string | null;
+  location_name?: string | null;
+
+  date_received?: string | null;
+  prod_date?: string | null;
+  expiry_date?: string | null;
+
+  batch_no?: string | null;
+  bin_code?: string | null;
+  serial_no?: string | null;
+
+  available_quantity?: number | string | null;
+  available_qty?: number | string | null;
+
+  unit_cost?: number | string | null;
+};
+
+export type AvailableStockRecord = {
+  id: string;
+
+  source_allocation_id: string;
+  inbound_entry_id: string | null;
+
+  location_id: string;
+  location_name: string;
+
+  date_received: string;
+  prod_date: string;
+  expiry_date: string;
+
+  batch_no: string;
+  bin_code: string;
+  serial_no: string;
+
+  available_quantity: number;
+  unit_cost: number;
+};
+
+// export type StockAllocationRecord = {
+//   location_id: string;
+//   location_name: string;
+
+//   date_received: string;
+//   prod_date: string;
+//   expiry_date: string;
+
+//   batch_no: string;
+//   sequence_no?: string;
+//   serial_no: string;
+
+//   quantity: number;
+//   available_quantity?: number;
+// };
+
+// export type StockSequenceRecord = {
+//   location_id: string;
+//   location_name: string;
+
+//   batch_no: string;
+//   sequence_no: string;
+//   serial_no: string;
+
+//   date_received: string;
+//   prod_date: string;
+//   expiry_date: string;
+
+//   available_quantity: number;
+// };
 
 type Props = {
   open: boolean;
@@ -66,6 +153,8 @@ type Props = {
   transactionType?: "Positive Entry" | "Negative Entry";
 
   existingSequences?: StockSequenceRecord[];
+  mode?: StockAllocationMode;
+  availableStock?: AvailableStockRecord[];
 };
 
 const normalizeNumber = (value: unknown): number => {
@@ -77,15 +166,28 @@ const normalizeNumber = (value: unknown): number => {
 const normalizeAllocation = (
   allocation: Partial<StockAllocationRecord>,
 ): StockAllocationRecord => ({
+  id: allocation.id ?? null,
+
+  source_allocation_id: allocation.source_allocation_id ?? null,
+
+  inbound_entry_id: allocation.inbound_entry_id ?? null,
+
   location_id: String(allocation.location_id ?? ""),
+
   location_name: String(allocation.location_name ?? ""),
 
   date_received: String(allocation.date_received ?? ""),
+
   prod_date: String(allocation.prod_date ?? ""),
+
   expiry_date: String(allocation.expiry_date ?? ""),
 
   batch_no: String(allocation.batch_no ?? ""),
+
+  bin_code: String(allocation.bin_code ?? ""),
+
   sequence_no: String(allocation.sequence_no ?? ""),
+
   serial_no: String(allocation.serial_no ?? ""),
 
   quantity: normalizeNumber(allocation.quantity),
@@ -94,7 +196,26 @@ const normalizeAllocation = (
     allocation.available_quantity === undefined
       ? undefined
       : normalizeNumber(allocation.available_quantity),
+
+  unit_cost:
+    allocation.unit_cost === undefined
+      ? undefined
+      : normalizeNumber(allocation.unit_cost),
 });
+
+const getOutboundRemaining = (
+  stock: AvailableStockRecord,
+  allocations: StockAllocationRecord[],
+): number => {
+  const alreadySelected = allocations
+    .filter(
+      (allocation) =>
+        allocation.source_allocation_id === stock.source_allocation_id,
+    )
+    .reduce((sum, allocation) => sum + Number(allocation.quantity || 0), 0);
+
+  return Math.max(0, Number(stock.available_quantity || 0) - alreadySelected);
+};
 
 const getTotalAllocated = (allocations: StockAllocationRecord[]): number => {
   return allocations.reduce(
@@ -160,6 +281,9 @@ export default function StockAllocationModal({
   isReadonly = false,
 
   existingSequences = [],
+
+  mode,
+  availableStock,
 }: Props) {
   const [allocations, setAllocations] = useState<StockAllocationRecord[]>(() =>
     initialAllocations.map(normalizeAllocation),
@@ -176,15 +300,15 @@ export default function StockAllocationModal({
    * This is particularly important because the modal is sometimes kept
    * mounted while the active journal line changes.
    */
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (!open) {
+  //     return;
+  //   }
 
-    setAllocations(initialAllocations.map(normalizeAllocation));
-    setSelectedSequence(null);
-    setInputQuantity("");
-  }, [open, initialAllocations]);
+  //   setAllocations(initialAllocations.map(normalizeAllocation));
+  //   setSelectedSequence(null);
+  //   setInputQuantity("");
+  // }, [open, initialAllocations]);
 
   const safeTargetQuantity = useMemo(
     () => Math.max(0, normalizeNumber(targetQuantity)),
@@ -368,6 +492,110 @@ export default function StockAllocationModal({
     onSave(normalized);
   };
 
+  const handleOutboundCommitSave = () => {
+    if (isReadonly) {
+      return;
+    }
+
+    const normalized = allocations
+      .map(normalizeAllocation)
+      .filter(
+        (allocation) =>
+          normalizeNumber(allocation.quantity) > 0 &&
+          Boolean(allocation.source_allocation_id),
+      );
+
+    const total = getTotalAllocated(normalized);
+
+    if (!quantitiesEqual(total, safeTargetQuantity)) {
+      return;
+    }
+
+    onSave(normalized);
+    onClose();
+  };
+
+  const getSelectedOutboundQuantity = (sourceAllocationId: string): number => {
+    return allocations
+      .filter(
+        (allocation) => allocation.source_allocation_id === sourceAllocationId,
+      )
+      .reduce(
+        (sum, allocation) => sum + normalizeNumber(allocation.quantity),
+        0,
+      );
+  };
+
+  const handleOutboundQuantityChange = (
+    stock: AvailableStockRecord,
+    value: string | number,
+  ) => {
+    if (isReadonly) {
+      return;
+    }
+
+    const requested = normalizeNumber(value);
+
+    const otherAllocated = allocations
+      .filter(
+        (allocation) =>
+          allocation.source_allocation_id !== stock.source_allocation_id,
+      )
+      .reduce(
+        (sum, allocation) => sum + normalizeNumber(allocation.quantity),
+        0,
+      );
+
+    const remainingTarget = Math.max(0, safeTargetQuantity - otherAllocated);
+
+    const safeQuantity = Math.min(
+      Math.max(0, requested),
+      Number(stock.available_quantity || 0),
+      remainingTarget,
+    );
+
+    setAllocations((previous) => {
+      const withoutSource = previous.filter(
+        (allocation) =>
+          allocation.source_allocation_id !== stock.source_allocation_id,
+      );
+
+      if (safeQuantity <= 0) {
+        return withoutSource;
+      }
+
+      const allocation: StockAllocationRecord = {
+        source_allocation_id: stock.source_allocation_id,
+
+        inbound_entry_id: stock.inbound_entry_id,
+
+        location_id: stock.location_id,
+
+        location_name: stock.location_name,
+
+        date_received: stock.date_received,
+
+        prod_date: stock.prod_date,
+
+        expiry_date: stock.expiry_date,
+
+        batch_no: stock.batch_no,
+
+        bin_code: stock.bin_code,
+
+        serial_no: stock.serial_no,
+
+        quantity: safeQuantity,
+
+        available_quantity: stock.available_quantity,
+
+        unit_cost: stock.unit_cost,
+      };
+
+      return [...withoutSource, allocation];
+    });
+  };
+
   if (!open) {
     return null;
   }
@@ -491,161 +719,292 @@ export default function StockAllocationModal({
           </div>
         </div>
 
-        {/* Stock Sequence Selector */}
-        <div className="px-5 pt-5">
-          <div className="border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/40 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                  Stock Sequence
-                </label>
+        {mode === "inbound" && (
+          <div className="px-5 pt-5">
+            {/* Stock Sequence Selector */}
+            <div className="border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/40 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                    Stock Sequence
+                  </label>
 
-                <select
-                  value={selectedSequence?.sequence_no || ""}
-                  disabled={
-                    isReadonly || qtyToAllocate <= 0 || noSequencesAvailable
-                  }
-                  onChange={(event) => handleSelectSequence(event.target.value)}
-                  className="w-full border border-slate-300 dark:border-slate-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 disabled:opacity-60"
-                >
-                  <option value="">
-                    {noSequencesAvailable
-                      ? "No stock sequences available"
-                      : qtyToAllocate <= 0
-                        ? "Allocation complete"
-                        : "Select stock sequence..."}
-                  </option>
+                  <select
+                    value={selectedSequence?.sequence_no || ""}
+                    disabled={
+                      isReadonly || qtyToAllocate <= 0 || noSequencesAvailable
+                    }
+                    onChange={(event) =>
+                      handleSelectSequence(event.target.value)
+                    }
+                    className="w-full border border-slate-300 dark:border-slate-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 disabled:opacity-60"
+                  >
+                    <option value="">
+                      {noSequencesAvailable
+                        ? "No stock sequences available"
+                        : qtyToAllocate <= 0
+                          ? "Allocation complete"
+                          : "Select stock sequence..."}
+                    </option>
 
-                  {existingSequences.map((sequence, index) => {
-                    const remaining = getRemainingSequenceQuantity(
-                      sequence,
-                      allocations,
-                    );
+                    {existingSequences.map((sequence, index) => {
+                      const remaining = getRemainingSequenceQuantity(
+                        sequence,
+                        allocations,
+                      );
 
-                    return (
-                      <option
-                        key={`${sequence.sequence_no}-${sequence.serial_no}-${sequence.batch_no}-${index}`}
-                        value={sequence.sequence_no}
-                        disabled={remaining <= 0}
-                      >
-                        {sequence.sequence_no}
-                        {" | Batch: "}
-                        {sequence.batch_no || "-"}
-                        {" | Serial: "}
-                        {sequence.serial_no || "-"}
-                        {" | Available: "}
-                        {remaining}
-                      </option>
-                    );
-                  })}
-                </select>
+                      return (
+                        <option
+                          key={`${sequence.sequence_no}-${sequence.serial_no}-${sequence.batch_no}-${index}`}
+                          value={sequence.sequence_no}
+                          disabled={remaining <= 0}
+                        >
+                          {sequence.sequence_no}
+                          {" | Batch: "}
+                          {sequence.batch_no || "-"}
+                          {" | Serial: "}
+                          {sequence.serial_no || "-"}
+                          {" | Available: "}
+                          {remaining}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Selected Sequence
+                  </div>
+
+                  <div className="font-semibold text-sm mt-1">
+                    {selectedSequence?.sequence_no || "-"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Sequence Remaining
+                  </div>
+
+                  <div className="font-semibold text-sm mt-1">
+                    {selectedSequence ? selectedSequenceRemaining : "-"}
+                    {uomName ? ` ${uomName}` : ""}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  Selected Sequence
+              {selectedSequence && (
+                <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <div>
+                    <div className="text-[10px] text-slate-500">Location</div>
+
+                    <div className="text-xs font-semibold">
+                      {selectedSequence.location_name || locationName || "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] text-slate-500">Batch</div>
+
+                    <div className="font-mono text-xs font-semibold">
+                      {selectedSequence.batch_no || "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] text-slate-500">Serial</div>
+
+                    <div className="font-mono text-xs font-semibold">
+                      {selectedSequence.serial_no || "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] text-slate-500">
+                      Date Received
+                    </div>
+
+                    <div className="text-xs font-semibold">
+                      {selectedSequence.date_received || "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] text-slate-500">Prod. Date</div>
+
+                    <div className="text-xs font-semibold">
+                      {selectedSequence.prod_date || "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] text-slate-500">Expiry</div>
+
+                    <div className="text-xs font-semibold">
+                      {selectedSequence.expiry_date || "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] text-slate-500">Available</div>
+
+                    <div className="text-xs font-semibold text-green-600">
+                      {selectedSequenceRemaining}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {noSequencesAvailable && !isReadonly && (
+                <div className="mt-3 rounded border border-amber-200 bg-amber-50 text-amber-800 px-3 py-2 text-xs">
+                  No stock sequences are available for this item and warehouse.
+                </div>
+              )}
+
+              {transactionType === "Negative Entry" &&
+                !noSequencesAvailable && (
+                  <div className="mt-3 rounded border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2 text-xs">
+                    Negative Entry: allocation is limited to the available stock
+                    quantity of each sequence.
+                  </div>
+                )}
+
+              {transactionType === "Positive Entry" && (
+                <div className="mt-3 rounded border border-green-200 bg-green-50 text-green-800 px-3 py-2 text-xs">
+                  Positive Entry: stock sequence information is used for the
+                  allocation.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {mode === "outbound" && (
+          <div className="px-5 pt-5">
+            <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                <div className="text-sm font-semibold">
+                  Available Source Stock
                 </div>
 
-                <div className="font-semibold text-sm mt-1">
-                  {selectedSequence?.sequence_no || "-"}
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Select the existing inbound stock layer to consume.
                 </div>
               </div>
 
-              <div>
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  Sequence Remaining
-                </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1100px] text-xs">
+                  <thead>
+                    <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold">
+                      <th className="p-3 text-left">Date Received</th>
 
-                <div className="font-semibold text-sm mt-1">
-                  {selectedSequence ? selectedSequenceRemaining : "-"}
-                  {uomName ? ` ${uomName}` : ""}
-                </div>
+                      <th className="p-3 text-left">Batch</th>
+
+                      <th className="p-3 text-left">Bin</th>
+
+                      <th className="p-3 text-left">Serial</th>
+
+                      <th className="p-3 text-left">Location</th>
+
+                      <th className="p-3 text-right">Available</th>
+
+                      <th className="p-3 text-right">Unit Cost</th>
+
+                      <th className="p-3 text-right">Allocate</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {availableStock?.length ? (
+                      availableStock.map((stock) => {
+                        const selected = getSelectedOutboundQuantity(
+                          stock.source_allocation_id,
+                        );
+
+                        const remainingForSource = Math.max(
+                          0,
+                          Number(stock.available_quantity || 0) - selected,
+                        );
+
+                        return (
+                          <tr
+                            key={stock.id}
+                            className="hover:bg-slate-50 dark:hover:bg-slate-800/30"
+                          >
+                            <td className="p-3">
+                              {stock.date_received || "-"}
+                            </td>
+
+                            <td className="p-3 font-mono">
+                              {stock.batch_no || "-"}
+                            </td>
+
+                            <td className="p-3 font-mono">
+                              {stock.bin_code || "-"}
+                            </td>
+
+                            <td className="p-3 font-mono">
+                              {stock.serial_no || "-"}
+                            </td>
+
+                            <td className="p-3">
+                              {stock.location_name || "-"}
+                            </td>
+
+                            <td className="p-3 text-right font-semibold">
+                              {stock.available_quantity}
+                            </td>
+
+                            <td className="p-3 text-right">
+                              {stock.unit_cost}
+                            </td>
+
+                            <td className="p-3">
+                              <NumericTextInput
+                                value={selected ?? 0}
+                                min={0}
+                                max={Math.min(
+                                  stock.available_quantity,
+                                  safeTargetQuantity -
+                                    totalAllocated +
+                                    selected,
+                                )}
+                                disabled={
+                                  isReadonly ||
+                                  safeTargetQuantity -
+                                    totalAllocated +
+                                    selected <=
+                                    0
+                                }
+                                onChange={(value) =>
+                                  handleOutboundQuantityChange(stock, value)
+                                }
+                              />
+
+                              <div className="text-[10px] text-slate-500 mt-1 text-right">
+                                Remaining: {remainingForSource}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={8}
+                          className="p-6 text-center text-slate-500"
+                        >
+                          No available source stock found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-
-            {selectedSequence && (
-              <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                <div>
-                  <div className="text-[10px] text-slate-500">Location</div>
-
-                  <div className="text-xs font-semibold">
-                    {selectedSequence.location_name || locationName || "-"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] text-slate-500">Batch</div>
-
-                  <div className="font-mono text-xs font-semibold">
-                    {selectedSequence.batch_no || "-"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] text-slate-500">Serial</div>
-
-                  <div className="font-mono text-xs font-semibold">
-                    {selectedSequence.serial_no || "-"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] text-slate-500">
-                    Date Received
-                  </div>
-
-                  <div className="text-xs font-semibold">
-                    {selectedSequence.date_received || "-"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] text-slate-500">Prod. Date</div>
-
-                  <div className="text-xs font-semibold">
-                    {selectedSequence.prod_date || "-"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] text-slate-500">Expiry</div>
-
-                  <div className="text-xs font-semibold">
-                    {selectedSequence.expiry_date || "-"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] text-slate-500">Available</div>
-
-                  <div className="text-xs font-semibold text-green-600">
-                    {selectedSequenceRemaining}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {noSequencesAvailable && !isReadonly && (
-              <div className="mt-3 rounded border border-amber-200 bg-amber-50 text-amber-800 px-3 py-2 text-xs">
-                No stock sequences are available for this item and warehouse.
-              </div>
-            )}
-
-            {transactionType === "Negative Entry" && !noSequencesAvailable && (
-              <div className="mt-3 rounded border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2 text-xs">
-                Negative Entry: allocation is limited to the available stock
-                quantity of each sequence.
-              </div>
-            )}
-
-            {transactionType === "Positive Entry" && (
-              <div className="mt-3 rounded border border-green-200 bg-green-50 text-green-800 px-3 py-2 text-xs">
-                Positive Entry: stock sequence information is used for the
-                allocation.
-              </div>
-            )}
           </div>
-        </div>
+        )}
 
         {/* Allocation Table */}
         <div className="p-5 overflow-x-auto">
@@ -813,7 +1172,12 @@ export default function StockAllocationModal({
           {!isReadonly && (
             <Button
               type="button"
-              onClick={handleCommitSave}
+              // onClick={handleCommitSave}
+              onClick={
+                mode === "outbound"
+                  ? handleOutboundCommitSave
+                  : handleCommitSave
+              }
               disabled={!canSave}
               variant="save"
             >

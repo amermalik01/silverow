@@ -28,6 +28,9 @@ export interface StockLineInput {
   reference_type: string; // e.g. 'PURCHASE_ORDER', 'SALES_ORDER', 'STOCK_TRANSFER', 'ITEM_JOURNAL'
   reference_id: string;
   reference_line_id?: string | null;
+
+  source_allocation_id?: string | null;
+  inbound_entry_id?: string | null;
 }
 
 /* 
@@ -179,7 +182,455 @@ export class UnifiedInventoryEngineService {
    * 2. OUTBOUND STOCK ENGINE WITH DYNAMIC COSTING SCHEMES
    * =========================================================================
    */
+
   static async processOutboundStock(
+    client: PoolClient,
+    companyId: string,
+    postingDate: string,
+    transactionType: InventoryTransactionType,
+    line: StockLineInput,
+  ) {
+    const qtyNeeded = Number(line.quantity);
+
+    if (qtyNeeded <= 0) {
+      throw new Error("Outbound quantity must be greater than zero.");
+    }
+
+    const { costing_method, standard_cost } = await this.getItemCostingProfile(
+      client,
+      line.item_id,
+      companyId,
+    );
+
+    type AllocatedLayer = {
+      inbound_entry_id: string;
+      qtyToTake: number;
+      unitCost: number;
+      totalCost: number;
+    };
+
+    const allocatedLayers: AllocatedLayer[] = [];
+
+    let accumulatedCost = 0;
+    let remainingToDeduct = qtyNeeded;
+
+    /*
+     * =========================================================
+     * EXPLICIT SOURCE ALLOCATION
+     *
+     * Used by:
+     *   - Item Journal Negative Entry
+     *   - any future document that explicitly selects stock
+     *
+     * When inbound_entry_id is supplied, DO NOT run FIFO/LIFO.
+     * =========================================================
+     */
+    if (line.inbound_entry_id) {
+      const inboundResult = await client.query(
+        `
+      SELECT
+        id,
+        company_id,
+        item_id,
+        warehouse_id,
+        location_id,
+        bin_code,
+        batch_no,
+        serial_no,
+        expiry_date,
+        quantity,
+        remaining_quantity,
+        unit_cost,
+        status
+      FROM inventory_ledger_entries
+      WHERE id = $1
+        AND company_id = $2
+        AND item_id = $3
+        AND warehouse_id = $4
+        AND direction = 'IN'
+      FOR UPDATE
+      `,
+        [line.inbound_entry_id, companyId, line.item_id, line.warehouse_id],
+      );
+
+      if (!inboundResult.rows.length) {
+        throw new Error(
+          `Selected inbound stock layer ${line.inbound_entry_id} was not found.`,
+        );
+      }
+
+      const inboundLayer = inboundResult.rows[0];
+
+      const remainingQuantity = Number(inboundLayer.remaining_quantity || 0);
+
+      if (remainingQuantity <= 0) {
+        throw new Error(
+          `Selected inbound stock layer ${line.inbound_entry_id} has no remaining quantity.`,
+        );
+      }
+
+      if (line.source_allocation_id) {
+        const sourceAllocationResult = await client.query(
+          `
+          SELECT
+            id,
+            inbound_entry_id,
+            item_id,
+            warehouse_id,
+            allocated_quantity,
+            status
+          FROM inventory_allocations
+          WHERE id = $1
+            AND company_id = $2
+          FOR UPDATE
+          `,
+          [line.source_allocation_id, companyId],
+        );
+
+        if (!sourceAllocationResult.rows.length) {
+          throw new Error(
+            `Selected source allocation ${line.source_allocation_id} was not found.`,
+          );
+        }
+
+        const sourceAllocation = sourceAllocationResult.rows[0];
+
+        if (
+          String(sourceAllocation.inbound_entry_id) !==
+          String(line.inbound_entry_id)
+        ) {
+          throw new Error(
+            "Selected source allocation does not belong to the selected inbound stock layer.",
+          );
+        }
+
+        if (String(sourceAllocation.item_id) !== String(line.item_id)) {
+          throw new Error(
+            "Selected source allocation belongs to a different item.",
+          );
+        }
+
+        if (
+          String(sourceAllocation.warehouse_id) !== String(line.warehouse_id)
+        ) {
+          throw new Error(
+            "Selected source allocation belongs to a different warehouse.",
+          );
+        }
+
+        if (String(sourceAllocation.status) === "CLOSED") {
+          throw new Error(
+            `Selected source allocation ${line.source_allocation_id} is closed.`,
+          );
+        }
+      }
+
+      if (qtyNeeded > remainingQuantity) {
+        throw new Error(
+          `Selected source stock has only ${remainingQuantity} units available; ${qtyNeeded} requested.`,
+        );
+      }
+
+      const layerUnitCost =
+        costing_method === 4
+          ? standard_cost
+          : Number(inboundLayer.unit_cost || 0);
+
+      const layerTotalCost = Number((qtyNeeded * layerUnitCost).toFixed(2));
+
+      accumulatedCost = layerTotalCost;
+
+      remainingToDeduct = 0;
+
+      allocatedLayers.push({
+        inbound_entry_id: String(inboundLayer.id),
+
+        qtyToTake: qtyNeeded,
+
+        unitCost: layerUnitCost,
+
+        totalCost: layerTotalCost,
+      });
+    } else {
+      /*
+       * =========================================================
+       * EXISTING FIFO / LIFO BEHAVIOR
+       *
+       * Existing SO and other callers continue using this path.
+       * =========================================================
+       */
+
+      let orderByClause = "posting_date ASC, created_at ASC";
+
+      if (costing_method === 2) {
+        orderByClause = "posting_date DESC, created_at DESC";
+      }
+
+      const inboundLayersRes = await client.query(
+        `
+        SELECT *
+        FROM inventory_ledger_entries
+        WHERE company_id = $1
+          AND item_id = $2
+          AND warehouse_id = $3
+          AND direction = 'IN'
+          AND status = 'OPEN'
+          AND remaining_quantity > 0
+        ORDER BY ${orderByClause}
+        FOR UPDATE
+        `,
+        [companyId, line.item_id, line.warehouse_id],
+      );
+
+      if (costing_method === 4) {
+        accumulatedCost = Number((qtyNeeded * standard_cost).toFixed(2));
+      }
+
+      for (const layer of inboundLayersRes.rows) {
+        if (remainingToDeduct <= 0) {
+          break;
+        }
+
+        const layerRemaining = Number(layer.remaining_quantity);
+
+        const qtyToTake = Math.min(layerRemaining, remainingToDeduct);
+
+        const layerUnitCost =
+          costing_method === 4 ? standard_cost : Number(layer.unit_cost || 0);
+
+        const layerTotalCost = Number((qtyToTake * layerUnitCost).toFixed(2));
+
+        if (costing_method !== 4) {
+          accumulatedCost += layerTotalCost;
+        }
+
+        remainingToDeduct -= qtyToTake;
+
+        allocatedLayers.push({
+          inbound_entry_id: String(layer.id),
+
+          qtyToTake,
+
+          unitCost: layerUnitCost,
+
+          totalCost: layerTotalCost,
+        });
+      }
+    }
+
+    if (remainingToDeduct > 0) {
+      throw new Error(
+        `Insufficient stock for Item ID ${line.item_id} in Warehouse ${line.warehouse_id}. Shortage of ${remainingToDeduct} units.`,
+      );
+    }
+
+    const blendedUnitCost = Number((accumulatedCost / qtyNeeded).toFixed(6));
+
+    /*
+     * =========================================================
+     * CREATE OUTBOUND LEDGER ENTRY
+     * =========================================================
+     */
+
+    const outboundLedgerRes = await client.query(
+      `
+      INSERT INTO inventory_ledger_entries (
+        company_id,
+        posting_date,
+        transaction_type,
+
+        reference_type,
+        reference_id,
+        reference_line_id,
+
+        item_id,
+        warehouse_id,
+        location_id,
+        bin_code,
+
+        batch_no,
+        serial_no,
+        expiry_date,
+
+        quantity,
+        remaining_quantity,
+        unit_cost,
+        total_cost,
+
+        direction,
+        status
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+
+        $4,
+        $5,
+        $6,
+
+        $7,
+        $8,
+        $9,
+        $10,
+
+        $11,
+        $12,
+        $13,
+
+        $14,
+        0,
+        $15,
+        $16,
+
+        'OUT',
+        'CLOSED'
+      )
+      RETURNING *;
+      `,
+      [
+        companyId,
+        postingDate,
+        transactionType,
+
+        line.reference_type,
+        line.reference_id,
+        line.reference_line_id || null,
+
+        line.item_id,
+        line.warehouse_id,
+        line.location_id || null,
+        line.bin_code || null,
+
+        line.batch_no || null,
+        line.serial_no || null,
+        line.expiry_date || null,
+
+        qtyNeeded,
+        blendedUnitCost,
+        accumulatedCost,
+      ],
+    );
+
+    const outboundEntry = outboundLedgerRes.rows[0];
+
+    /*
+     * =========================================================
+     * WRITE ALLOCATIONS + DECREASE INBOUND LAYERS
+     * =========================================================
+     */
+
+    for (const allocation of allocatedLayers) {
+      await client.query(
+        `
+      INSERT INTO inventory_allocations (
+        company_id,
+
+        outbound_entry_id,
+        outbound_line_id,
+
+        inbound_entry_id,
+        source_allocation_id,
+
+        item_id,
+        warehouse_id,
+
+        warehouse_location_id,
+
+        batch_no,
+        bin_code,
+        expiry_date,
+
+        allocated_quantity,
+        unit_cost,
+        total_cost,
+
+        status
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+
+        $4,
+        $5,
+
+        $6,
+        $7,
+
+        $8,
+
+        $9,
+        $10,
+        $11,
+
+        $12,
+        $13,
+        $14,
+
+        'ACTIVE'
+      )
+      `,
+        [
+          companyId,
+
+          outboundEntry.id,
+
+          line.reference_line_id || null,
+
+          allocation.inbound_entry_id,
+
+          line.source_allocation_id || null,
+
+          line.item_id,
+          line.warehouse_id,
+
+          line.location_id || null,
+
+          line.batch_no || null,
+
+          line.bin_code || null,
+
+          line.expiry_date || null,
+
+          allocation.qtyToTake,
+
+          allocation.unitCost,
+
+          allocation.totalCost,
+        ],
+      );
+
+      await client.query(
+        `
+      UPDATE inventory_ledger_entries
+      SET
+        remaining_quantity =
+          remaining_quantity - $1,
+
+        status =
+          CASE
+            WHEN remaining_quantity - $1 <= 0
+              THEN 'CLOSED'
+            ELSE 'OPEN'
+          END
+
+      WHERE id = $2
+        AND company_id = $3
+      `,
+        [allocation.qtyToTake, allocation.inbound_entry_id, companyId],
+      );
+    }
+
+    return {
+      outboundEntry,
+
+      totalCost: accumulatedCost,
+
+      unitCost: blendedUnitCost,
+    };
+  }
+  /* static async processOutboundStock(
     client: PoolClient,
     companyId: string,
     postingDate: string,
@@ -341,7 +792,7 @@ export class UnifiedInventoryEngineService {
       totalCost: accumulatedCost,
       unitCost: blendedUnitCost,
     };
-  }
+  } */
 }
 
 /* export class UnifiedInventoryEngineService {

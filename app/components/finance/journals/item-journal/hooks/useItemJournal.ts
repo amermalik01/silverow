@@ -11,6 +11,7 @@ import { useLoader } from "@/app/context/LoaderContext";
 
 import type {
   ItemJournalFormProps,
+  ItemJournalAllocationRecord,
   ItemJournalLineRow,
   JournalMetadata,
   LocationOption,
@@ -34,9 +35,15 @@ import type { GLAccountLookupRecord } from "@/app/components/shared/modals/GLAcc
 import type { WarehouseLookupRecord } from "@/app/components/shared/modals/WarehouseLookupModal";
 import type { ItemLookupRecord } from "@/app/components/shared/modals/ItemLookupModal";
 
+// import type {
+//   StockAllocationRecord,
+//   StockSequenceRecord,
+// } from "@/app/components/shared/modals/StockAllocationModal";
+
 import type {
-  StockAllocationRecord,
   StockSequenceRecord,
+  AvailableStockRecord,
+  StockAllocationRecord,
 } from "@/app/components/shared/modals/StockAllocationModal";
 
 export function useItemJournal({
@@ -92,6 +99,10 @@ export function useItemJournal({
   const [existingSequences, setExistingSequences] = useState<
     StockSequenceRecord[]
   >([]);
+
+  const [availableStock, setAvailableStock] = useState<AvailableStockRecord[]>(
+    [],
+  );
 
   const formDisabled = readOnly || isPosted || !isEditing || loading;
 
@@ -308,6 +319,102 @@ export function useItemJournal({
     [getApiMessage],
   );
 
+  const fetchAvailableStock = useCallback(
+    async (
+      itemId: string,
+      warehouseId: string,
+    ): Promise<AvailableStockRecord[]> => {
+      if (!itemId || !warehouseId) {
+        return [];
+      }
+
+      const params = new URLSearchParams({
+        item_id: itemId,
+        warehouse_id: warehouseId,
+      });
+
+      const response = await fetch(
+        `/api/sales/sales-orders/available-batches?${params.toString()}`,
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await getApiMessage(
+            response,
+            "Failed to load available source stock.",
+          ),
+        );
+      }
+
+      const payload = await response.json();
+
+      const rawData: unknown[] = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
+
+      // const rawData: unknown[] = Array.isArray(payload?.data)
+      //   ? payload.data
+      //   : [];
+
+      return rawData
+        .map((raw): AvailableStockRecord | null => {
+          if (!raw || typeof raw !== "object") {
+            return null;
+          }
+
+          const row = raw as Record<string, unknown>;
+
+          const sourceAllocationId = String(row.source_allocation_id ?? "");
+
+          if (!sourceAllocationId) {
+            return null;
+          }
+
+          return {
+            id: String(row.id ?? sourceAllocationId),
+
+            source_allocation_id: sourceAllocationId,
+
+            inbound_entry_id:
+            row.inbound_entry_id === null ||
+            row.inbound_entry_id === undefined
+              ? null
+              : String(row.inbound_entry_id),
+
+            // inbound_entry_id:
+            //   row.inbound_entry_id !== null &&
+            //   row.inbound_entry_id !== undefined
+            //     ? String(row.inbound_entry_id)
+            //     : null,
+
+            location_id: String(row.location_id ?? ""),
+            location_name: String(row.location_name ?? ""),
+
+            date_received: String(row.date_received ?? ""),
+            prod_date: String(row.prod_date ?? ""),
+            expiry_date: String(row.expiry_date ?? ""),
+
+            batch_no: String(row.batch_no ?? ""),
+            bin_code: String(row.bin_code ?? ""),
+            serial_no: String(row.serial_no ?? ""),
+
+            available_quantity: Number(
+              row.available_quantity ?? row.available_qty ?? 0,
+            ),
+
+            unit_cost: Number(row.unit_cost ?? 0),
+          };
+        })
+        .filter(
+          (row): row is AvailableStockRecord =>
+            row !== null && row.available_quantity > 0,
+        );
+    },
+    [getApiMessage],
+  );
+
   /**
    * ---------------------------------------------------------
    * Normalize stock allocation
@@ -315,37 +422,48 @@ export function useItemJournal({
    */
   const normalizeAllocation = useCallback(
     (
-      allocation: Partial<StockAllocationRecord>,
+      allocation: Partial<ItemJournalAllocationRecord>,
       fallbackLocationId = "",
       fallbackLocationName = "",
-    ): StockAllocationRecord => {
-      return {
-        location_id: allocation.location_id
-          ? String(allocation.location_id)
-          : fallbackLocationId,
+    ): ItemJournalAllocationRecord => ({
+      id: allocation.id ?? null,
 
-        location_name: allocation.location_name || fallbackLocationName || "",
+      source_allocation_id: allocation.source_allocation_id ?? null,
 
-        date_received: String(allocation.date_received ?? ""),
+      inbound_entry_id: allocation.inbound_entry_id ?? null,
 
-        prod_date: String(allocation.prod_date ?? ""),
+      location_id: allocation.location_id
+        ? String(allocation.location_id)
+        : fallbackLocationId,
 
-        expiry_date: String(allocation.expiry_date ?? ""),
+      location_name: allocation.location_name || fallbackLocationName || "",
 
-        batch_no: String(allocation.batch_no ?? ""),
+      date_received: String(allocation.date_received ?? ""),
 
-        sequence_no: String(allocation.sequence_no ?? ""),
+      prod_date: String(allocation.prod_date ?? ""),
 
-        serial_no: String(allocation.serial_no ?? ""),
+      expiry_date: String(allocation.expiry_date ?? ""),
 
-        quantity: Number(allocation.quantity ?? 0),
+      batch_no: String(allocation.batch_no ?? ""),
 
-        available_quantity:
-          allocation.available_quantity === undefined
-            ? undefined
-            : Number(allocation.available_quantity ?? 0),
-      };
-    },
+      bin_code: String(allocation.bin_code ?? ""),
+
+      sequence_no: String(allocation.sequence_no ?? ""),
+
+      serial_no: String(allocation.serial_no ?? ""),
+
+      quantity: Number(allocation.quantity ?? 0),
+
+      available_quantity:
+        allocation.available_quantity === undefined
+          ? undefined
+          : Number(allocation.available_quantity ?? 0),
+
+      unit_cost:
+        allocation.unit_cost === undefined
+          ? undefined
+          : Number(allocation.unit_cost ?? 0),
+    }),
     [],
   );
 
@@ -527,16 +645,14 @@ export function useItemJournal({
                 ? rawInitialAllocations
                 : [];
 
-            const allocations: StockAllocationRecord[] = allocationSource.map(
-              (allocation: StockAllocationRecord) =>
-                normalizeAllocation(
-                  allocation,
-                  getString("location_id"),
-                  getString("location_name"),
-                ),
-            );
-
-            const status = getStockStatus(quantity, allocations);
+            // const allocations: StockAllocationRecord[] = allocationSource.map(
+            //   (allocation: StockAllocationRecord) =>
+            //     normalizeAllocation(
+            //       allocation,
+            //       getString("location_id"),
+            //       getString("location_name"),
+            //     ),
+            // );
 
             const accountId =
               getString("balancing_account_id") || getString("account_id");
@@ -550,6 +666,23 @@ export function useItemJournal({
               (accountCode && accountName
                 ? `${accountCode} - ${accountName}`
                 : accountName || accountCode || "");
+
+            const serverAllocations = allocationSource.map((allocation) =>
+              normalizeAllocation(
+                allocation,
+                getString("location_id"),
+                getString("location_name"),
+              ),
+            );
+
+            const allocations = serverAllocations.map((allocation) => ({
+              ...allocation,
+            }));
+
+            const initialAllocations = serverAllocations.map((allocation) => ({
+              ...allocation,
+            }));
+            // const status = getStockStatus(quantity, allocations);
 
             return {
               _stableKey: createStableKey(),
@@ -592,14 +725,21 @@ export function useItemJournal({
 
               allocations,
 
-              initialAllocations: allocations.map((allocation) => ({
-                ...allocation,
-              })),
+              initialAllocations,
 
-              stock_status: status,
+              stock_status: getStockStatus(quantity, allocations),
 
               is_allocated:
-                status === "allocated" || Boolean(rawLine.is_allocated),
+                getStockStatus(quantity, allocations) === "allocated",
+
+              // initialAllocations: allocations.map((allocation) => ({
+              //   ...allocation,
+              // })),
+
+              // stock_status: status,
+
+              // is_allocated:
+              //   status === "allocated" || Boolean(rawLine.is_allocated),
             };
           },
         );
@@ -747,7 +887,7 @@ export function useItemJournal({
             if (allocationTotal > updatedLine.quantity) {
               updatedLine.allocations = [];
 
-              updatedLine.initialAllocations = [];
+              // updatedLine.initialAllocations = [];
 
               updatedLine.stock_status = "unallocated";
 
@@ -766,7 +906,7 @@ export function useItemJournal({
           if (field === "item_id" && !String(value || "")) {
             updatedLine.allocations = [];
 
-            updatedLine.initialAllocations = [];
+            // updatedLine.initialAllocations = [];
 
             updatedLine.stock_status = "unallocated";
 
@@ -1264,64 +1404,71 @@ export function useItemJournal({
 
       if (!line.item_id) {
         toast.error("Please select an item first.");
-
         return;
       }
 
       if (!line.warehouse_id) {
         toast.error("Please select a warehouse first.");
-
         return;
       }
 
       if (!line.location_id) {
         toast.error("Please select a location first.");
-
         return;
       }
 
       if (Number(line.quantity || 0) <= 0) {
         toast.error("Please enter a quantity first.");
-
         return;
       }
 
-      const lineId = line._stableKey;
-
-      setActiveAllocationLineId(lineId);
-
+      setActiveAllocationLineId(line._stableKey);
       setExistingSequences([]);
+      setAvailableStock([]);
 
       try {
-        show("Loading stock sequences...");
-
-        const sequences = await fetchStockSequences(
-          String(line.item_id),
-          String(line.warehouse_id),
-          String(line.location_id),
+        show(
+          line.transaction_type === "Negative Entry"
+            ? "Loading available stock..."
+            : "Loading stock sequences...",
         );
 
-        setExistingSequences(sequences);
+        if (line.transaction_type === "Positive Entry") {
+          const sequences = await fetchStockSequences(
+            line.item_id,
+            line.warehouse_id,
+            line.location_id,
+          );
+
+          setExistingSequences(sequences);
+          setAvailableStock([]);
+        } else {
+          const stock = await fetchAvailableStock(
+            line.item_id,
+            line.warehouse_id,
+          );
+
+          setAvailableStock(stock);
+          setExistingSequences([]);
+        }
 
         setIsAllocationModalOpen(true);
-      } catch (error) {
-        console.error("Failed to load stock sequences:", error);
+      } catch (error: unknown) {
+        console.error("Failed to load stock allocation data:", error);
 
-        const message =
+        toast.error(
           error instanceof Error
             ? error.message
-            : "Failed to load stock sequences.";
-
-        toast.error(message);
+            : "Failed to load stock allocation data.",
+        );
 
         setActiveAllocationLineId(null);
-
         setIsAllocationModalOpen(false);
       } finally {
         hide();
       }
     },
-    [formDisabled, show, hide, fetchStockSequences],
+    [formDisabled, show, hide, fetchStockSequences, fetchAvailableStock],
   );
 
   /**
@@ -1410,9 +1557,14 @@ export function useItemJournal({
 
             allocations: sanitizedAllocations,
 
-            initialAllocations: sanitizedAllocations.map((allocation) => ({
-              ...allocation,
-            })),
+            // initialAllocations: sanitizedAllocations.map((allocation) => ({
+            //   ...allocation,
+            // })),
+
+            initialAllocations:
+              line.initialAllocations?.map((allocation) => ({
+                ...allocation,
+              })) ?? [],
 
             stock_status: status,
 
@@ -1510,8 +1662,17 @@ export function useItemJournal({
               return `Line ${lineNumber}: Allocation ${allocationNumber} quantity must be greater than zero.`;
             }
 
-            if (!allocation.sequence_no) {
-              return `Line ${lineNumber}: Allocation ${allocationNumber} is missing a stock sequence.`;
+            // if (!allocation.sequence_no) {
+            //   return `Line ${lineNumber}: Allocation ${allocationNumber} is missing a stock sequence.`;
+            // }
+
+            if (
+              line.transaction_type === "Positive Entry" &&
+              !allocation.sequence_no
+            ) {
+              throw new Error(
+                `Line ${lineNumber}, allocation ${allocationNumber}: Stock sequence is required for a positive entry.`,
+              );
             }
 
             if (
@@ -1910,16 +2071,16 @@ export function useItemJournal({
             ? rawAllocations
             : [];
 
-          const allocations = allocationSource.map(
-            (allocation: StockAllocationRecord) =>
-              normalizeAllocation(
-                allocation,
-                getString("location_id"),
-                getString("location_name"),
-              ),
-          );
+          // const allocations = allocationSource.map(
+          //   (allocation: StockAllocationRecord) =>
+          //     normalizeAllocation(
+          //       allocation,
+          //       getString("location_id"),
+          //       getString("location_name"),
+          //     ),
+          // );
 
-          const status = getStockStatus(quantity, allocations);
+          // const status = getStockStatus(quantity, allocations);
 
           const accountId =
             getString("balancing_account_id") || getString("account_id");
@@ -1927,6 +2088,22 @@ export function useItemJournal({
           const accountCode = getString("account_code");
 
           const accountName = getString("account_name");
+
+          const serverAllocations = allocationSource.map((allocation) =>
+            normalizeAllocation(
+              allocation,
+              getString("location_id"),
+              getString("location_name"),
+            ),
+          );
+
+          const allocations = serverAllocations.map((allocation) => ({
+            ...allocation,
+          }));
+
+          const initialAllocations = serverAllocations.map((allocation) => ({
+            ...allocation,
+          }));
 
           return {
             _stableKey: createStableKey(),
@@ -1973,13 +2150,19 @@ export function useItemJournal({
 
             allocations,
 
-            initialAllocations: allocations.map((allocation) => ({
-              ...allocation,
-            })),
+            initialAllocations,
 
-            stock_status: status,
+            stock_status: getStockStatus(quantity, allocations),
 
-            is_allocated: status === "allocated",
+            is_allocated: getStockStatus(quantity, allocations) === "allocated",
+
+            // initialAllocations: allocations.map((allocation) => ({
+            //   ...allocation,
+            // })),
+
+            // stock_status: status,
+
+            // is_allocated: status === "allocated",
           } satisfies ItemJournalLineRow;
         });
 
@@ -2184,7 +2367,6 @@ export function useItemJournal({
 
       const payload = buildApiPayload();
 
-
       const saveResponse = await fetch(
         journalId ? `${apiBase}/${journalId}` : apiBase,
         {
@@ -2214,7 +2396,6 @@ export function useItemJournal({
         );
       }
 
-
       const savedJournal =
         (savePayload as Record<string, unknown> | null)?.journal ??
         (savePayload as Record<string, unknown> | null)?.data ??
@@ -2235,7 +2416,6 @@ export function useItemJournal({
       }
 
       setCurrentJournalId(id);
-
 
       show("Posting Journal...");
 
@@ -2334,6 +2514,7 @@ export function useItemJournal({
     warehouses,
 
     existingSequences,
+    availableStock,
     currentJournalId,
     formDisabled,
 

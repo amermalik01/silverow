@@ -52,6 +52,7 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
     warehouseIndex,
 
     existingSequences,
+    availableStock,
 
     setItemActiveModal,
     setActiveModal,
@@ -190,6 +191,7 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
         activeAllocationLine={activeAllocationLine}
         formDisabled={formDisabled}
         existingSequences={existingSequences}
+        availableStock={availableStock}
         onCloseItem={() => setItemActiveModal(null)}
         onItemSelect={(item) => void handleMultipleItemSelect([item])}
         onCloseGL={() => setActiveModal(null)}

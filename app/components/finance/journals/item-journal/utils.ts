@@ -1,7 +1,11 @@
 // app/components/finance/journals/item-journal/utils.ts
 
-import type { ItemJournalLineRow, StockStatus } from "./types";
-import type { StockAllocationRecord } from "../../../shared/modals/StockAllocationModal";
+
+import type {
+  ItemJournalAllocationRecord,
+  ItemJournalLineRow,
+  StockStatus,
+} from "./types";
 
 export const today = (): string => {
   return new Date().toISOString().split("T")[0];
@@ -34,7 +38,7 @@ export const calculateAmount = (quantity: number, cost: number): number => {
 };
 
 export const getAllocationTotal = (
-  allocations: StockAllocationRecord[] = [],
+  allocations: ItemJournalAllocationRecord[] = [],
 ): number => {
   return allocations.reduce(
     (sum, allocation) => sum + Number(allocation.quantity || 0),
@@ -44,21 +48,29 @@ export const getAllocationTotal = (
 
 export const getStockStatus = (
   quantity: number,
-  allocations: StockAllocationRecord[] = [],
+  allocations: ItemJournalAllocationRecord[],
 ): StockStatus => {
-  const lineQuantity = Number(quantity || 0);
+  const target = Number(quantity || 0);
 
-  const allocatedQuantity = getAllocationTotal(allocations);
-
-  if (lineQuantity <= 0 || allocatedQuantity <= 0) {
+  if (target <= 0) {
     return "unallocated";
   }
 
-  if (allocatedQuantity >= lineQuantity) {
+  const allocated = getAllocationTotal(allocations);
+
+  if (allocated <= 0) {
+    return "unallocated";
+  }
+
+  if (Math.abs(allocated - target) < 0.000001) {
     return "allocated";
   }
 
-  return "partial";
+  if (allocated < target) {
+    return "partial";
+  }
+
+  return "overallocated";
 };
 
 export const createInitialRow = (
