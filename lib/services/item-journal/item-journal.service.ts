@@ -37,21 +37,6 @@ interface ItemJournalAllocationRow {
   status: string;
 }
 
-// interface ItemJournalAllocationRow {
-//   id: string;
-//   journal_line_id: string;
-//   item_id: string;
-//   warehouse_id: string;
-//   location_id: string | null;
-//   batch_no: string | null;
-//   serial_no: string | null;
-//   expiry_date: string | null;
-//   quantity: number;
-//   unit_cost: number;
-//   total_cost: number;
-//   status: string;
-// }
-
 export interface ColumnFilter {
   value?: string | number | boolean | null;
   matchMode?: string;

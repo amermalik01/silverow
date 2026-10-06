@@ -40,10 +40,60 @@ export interface CreateTransferDTO {
   }>;
 }
 
-export interface TransferListFilterOptions {
+export interface TransferColumnFilter {
+  value?: string | number | boolean | null;
+  matchMode?: string;
+}
+
+export type TransferTableColumnFilters = Record<
+  string,
+  TransferColumnFilter | string | number | boolean | undefined
+>;
+
+export interface TransferListFilters {
   status: "all" | "posted" | "unposted";
-  page: number;
-  limit: number;
+  page?: number;
+  limit?: number;
+  filters?: TransferTableColumnFilters;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+export interface TransferHeaderRow {
+  id: string;
+  transfer_no: string;
+  transfer_date: string | Date;
+
+  warehouse_from_id: string;
+  warehouse_to_id: string;
+
+  warehouse_from_name?: string | null;
+  warehouse_to_name?: string | null;
+
+  in_transit_code: string | null;
+
+  shipping_charge: number | string;
+
+  is_posted: boolean;
+
+  created_at?: string | Date;
+  updated_at?: string | Date;
+
+  posted_at?: string | Date | null;
+  posted_by?: string | null;
+
+  description?: string | null;
+}
+
+export interface PaginatedTransfersResult {
+  rows: TransferHeaderRow[];
+
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface TransferHeaderRow {
@@ -63,18 +113,294 @@ export interface TransferHeaderRow {
 export interface PaginatedTransfersResult {
   rows: TransferHeaderRow[];
   pagination: {
-    totalRows: number;
     page: number;
     limit: number;
+    total: number;
     totalPages: number;
   };
 }
 
 export class TransferStockService {
   /**
+   * DataTable-compatible Stock Transfer listing.
+   *
+   * Supports:
+   * - company isolation
+   * - posted/unposted/all status
+   * - column filtering
+   * - server-side sorting
+   * - server-side pagination
+   * - warehouse names
+   */
+  static async list(
+    companyId: string,
+    filters: TransferListFilters,
+  ): Promise<PaginatedTransfersResult> {
+    const page = Math.max(1, Math.floor(filters.page ?? 1));
+
+    const limit = Math.min(100, Math.max(1, Math.floor(filters.limit ?? 50)));
+
+    const offset = (page - 1) * limit;
+
+    /*
+     * ------------------------------------------------------------
+     * Base query
+     * ------------------------------------------------------------
+     */
+
+    const values: Array<string | number | boolean> = [companyId];
+
+    let whereConditions = `
+    WHERE h.company_id = $1
+  `;
+
+    /*
+     * ------------------------------------------------------------
+     * Lifecycle status
+     * ------------------------------------------------------------
+     */
+
+    if (filters.status === "posted") {
+      whereConditions += `
+      AND h.is_posted = true
+    `;
+    } else if (filters.status === "unposted") {
+      whereConditions += `
+      AND h.is_posted = false
+    `;
+    }
+
+    /*
+     * ------------------------------------------------------------
+     * Column filtering
+     * ------------------------------------------------------------
+     *
+     * IMPORTANT:
+     * Never directly interpolate DataTable column names.
+     *
+     * Only columns explicitly allowed here can participate
+     * in filtering.
+     */
+    const allowedFilterColumns: Record<string, string> = {
+      transfer_no: "h.transfer_no",
+      transfer_date: "h.transfer_date",
+
+      warehouse_from_name: "wf.name",
+      warehouse_to_name: "wt.name",
+
+      warehouse_from_id: "h.warehouse_from_id",
+      warehouse_to_id: "h.warehouse_to_id",
+
+      in_transit_code: "h.in_transit_code",
+      shipping_charge: "h.shipping_charge",
+
+      posted_at: "h.posted_at",
+      posted_by: "h.posted_by",
+    };
+
+    if (filters.filters) {
+      for (const [columnKey, filterValue] of Object.entries(filters.filters)) {
+        const column = allowedFilterColumns[columnKey];
+
+        if (!column) {
+          continue;
+        }
+
+        if (filterValue === undefined || filterValue === null) {
+          continue;
+        }
+
+        let extractedValue: string | number | boolean | null | undefined;
+
+        if (
+          typeof filterValue === "object" &&
+          filterValue !== null &&
+          "value" in filterValue
+        ) {
+          const value = filterValue.value;
+
+          if (
+            typeof value === "string" ||
+            typeof value === "number" ||
+            typeof value === "boolean" ||
+            value === null ||
+            value === undefined
+          ) {
+            extractedValue = value;
+          } else {
+            continue;
+          }
+        } else if (
+          typeof filterValue === "string" ||
+          typeof filterValue === "number" ||
+          typeof filterValue === "boolean"
+        ) {
+          extractedValue = filterValue;
+        } else {
+          continue;
+        }
+
+        // if (
+        //   typeof filterValue === "object" &&
+        //   filterValue !== null &&
+        //   "value" in filterValue
+        // ) {
+        //   extractedValue = filterValue.value;
+        // } else {
+        //   extractedValue = filterValue;
+        // }
+
+        if (
+          extractedValue === undefined ||
+          extractedValue === null ||
+          extractedValue === ""
+        ) {
+          continue;
+        }
+
+        /*
+         * Text-style filtering.
+         *
+         * Casting to text allows the same DataTable filter
+         * behavior for transfer numbers, warehouse names,
+         * transit code, etc.
+         */
+        values.push(`%${String(extractedValue)}%`);
+
+        whereConditions += `
+        AND ${column}::text ILIKE $${values.length}
+      `;
+      }
+    }
+
+    /*
+     * ------------------------------------------------------------
+     * Sorting
+     * ------------------------------------------------------------
+     *
+     * Whitelist prevents SQL injection through sortBy.
+     */
+    const allowedSortColumns: Record<string, string> = {
+      transfer_no: "h.transfer_no",
+      transfer_date: "h.transfer_date",
+
+      warehouse_from_name: "wf.name",
+      warehouse_to_name: "wt.name",
+
+      in_transit_code: "h.in_transit_code",
+      shipping_charge: "h.shipping_charge",
+
+      posted_at: "h.posted_at",
+      posted_by: "h.posted_by",
+
+      is_posted: "h.is_posted",
+    };
+
+    const sortColumn =
+      allowedSortColumns[filters.sortBy ?? ""] ?? "h.transfer_date";
+
+    const orderDirection =
+      filters.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    /*
+     * ------------------------------------------------------------
+     * Count
+     * ------------------------------------------------------------
+     */
+
+    const countQuery = `
+    SELECT COUNT(*)::int AS total
+    FROM public.transfer_headers h
+
+    LEFT JOIN public.warehouses wf
+      ON wf.id = h.warehouse_from_id
+      AND wf.company_id = h.company_id
+
+    LEFT JOIN public.warehouses wt
+      ON wt.id = h.warehouse_to_id
+      AND wt.company_id = h.company_id
+
+    ${whereConditions}
+  `;
+
+    const countResult = await pool.query<{ total: number }>(countQuery, values);
+
+    const total = countResult.rows[0]?.total ?? 0;
+
+    /*
+     * ------------------------------------------------------------
+     * Paginated data
+     * ------------------------------------------------------------
+     */
+
+    const dataValues = [...values, limit, offset];
+
+    const limitParameter = dataValues.length - 1;
+
+    const offsetParameter = dataValues.length;
+
+    const dataQuery = `
+    SELECT
+      h.id,
+      h.transfer_no,
+      h.transfer_date,
+
+      h.warehouse_from_id,
+      h.warehouse_to_id,
+
+      wf.name AS warehouse_from_name,
+      wt.name AS warehouse_to_name,
+
+      h.in_transit_code,
+      h.shipping_charge,
+
+      h.is_posted,
+
+      h.created_at,
+      h.updated_at,
+
+      h.posted_at,
+
+      h.posted_by
+
+    FROM public.transfer_headers h
+
+    LEFT JOIN public.warehouses wf
+      ON wf.id = h.warehouse_from_id
+      AND wf.company_id = h.company_id
+
+    LEFT JOIN public.warehouses wt
+      ON wt.id = h.warehouse_to_id
+      AND wt.company_id = h.company_id
+
+    ${whereConditions}
+
+    ORDER BY
+      ${sortColumn} ${orderDirection},
+      h.created_at DESC
+
+    LIMIT $${limitParameter}
+    OFFSET $${offsetParameter}
+  `;
+
+    const result = await pool.query<TransferHeaderRow>(dataQuery, dataValues);
+
+    return {
+      rows: result.rows,
+
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: total > 0 ? Math.ceil(total / limit) : 1,
+      },
+    };
+  }
+
+  /**
    * Fetch paginated list records with conditional criteria filters
    */
-  static async getPaginatedTransfers(
+  /* static async getPaginatedTransfers(
     companyId: string,
     options: TransferListFilterOptions,
   ): Promise<PaginatedTransfersResult> {
@@ -130,7 +456,7 @@ export class TransferStockService {
         totalPages,
       },
     };
-  }
+  } */
 
   static async getTransferById(companyId: string, id: string) {
     const headerResult = await pool.query(

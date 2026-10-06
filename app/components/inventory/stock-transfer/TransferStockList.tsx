@@ -2,6 +2,289 @@
 
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/app/components/DataTable/DataTable";
+import { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
+
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+
+import {
+  getStockTransferCellRenderers,
+  StockTransferRecord,
+} from "./transferStockCellRenderers";
+
+type StatusFilter = "unposted" | "posted" | "all";
+
+type Props = {
+  slug?: string;
+  title: string;
+  moduleKey: string;
+  sourceType: "STOCK_TRANSFER";
+  // sourceType: "stock_transfer";
+  createPath: string;
+};
+
+export default function StockTransferList({
+  slug = "",
+  title,
+  moduleKey,
+  sourceType,
+  createPath,
+}: Props) {
+  const [status, setStatus] = useState<StatusFilter>("unposted");
+
+  /*
+   * ------------------------------------------------------------
+   * Cell renderers
+   * ------------------------------------------------------------
+   *
+   * These handle:
+   * - Transfer No. links
+   * - Date formatting
+   * - Warehouse display
+   * - Freight formatting
+   * - Status badges
+   */
+  const cellRenderers = useMemo(() => {
+    return getStockTransferCellRenderers(slug, createPath);
+  }, [slug, createPath]);
+
+  const renderRowCell = useCallback(
+    (row: StockTransferRecord, columnKey: string) => {
+      const renderer = cellRenderers[columnKey as keyof typeof cellRenderers];
+
+      return renderer ? renderer(row) : undefined;
+    },
+    [cellRenderers],
+  );
+
+  /*
+   * ------------------------------------------------------------
+   * Listing API
+   * ------------------------------------------------------------
+   *
+   * DataTable supplies:
+   * - page
+   * - pageSize
+   * - search
+   * - sorting
+   * - filters
+   *
+   * We add the Stock Transfer-specific lifecycle status.
+   */
+  const fetchTransfers = useCallback(
+    async (
+      params: FetchParams,
+    ): Promise<FetchResponse<StockTransferRecord>> => {
+      try {
+        const res = await fetch("/api/inventory/transfer-stock/listing", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...params,
+            source: sourceType,
+            status: status === "all" ? undefined : status,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error(
+            `Stock transfer listing request failed with status ${res.status}`,
+          );
+        }
+
+        return (await res.json()) as FetchResponse<StockTransferRecord>;
+      } catch (error) {
+        console.error("[STOCK_TRANSFER_LIST_ERROR]", error);
+
+        /*
+         * Keep DataTable contract intact even when
+         * the API fails.
+         */
+        return {} as FetchResponse<StockTransferRecord>;
+        // return {
+        //   rows: [],
+        //   pagination: {
+        //     page: 1,
+        //     pageSize: 20,
+        //     total: 0,
+        //     totalPages: 1,
+        //   },
+        // };
+      }
+    },
+    [sourceType, status],
+  );
+
+  /*
+   * ------------------------------------------------------------
+   * Table configuration API
+   * ------------------------------------------------------------
+   */
+  const columnsConfigApi = useMemo(
+    () => ({
+      get: async (key: string): Promise<ColumnConfig[]> => {
+        const res = await fetch(
+          `/api/table-config?moduleKey=${encodeURIComponent(key)}`,
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to load stock transfer table configuration.");
+        }
+
+        return (await res.json()) as ColumnConfig[];
+      },
+
+      save: async (key: string, configs: ColumnConfig[]): Promise<void> => {
+        const res = await fetch("/api/table-config", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            moduleKey: key,
+            configs,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to save stock transfer table configuration.");
+        }
+      },
+
+      reset: async (key: string): Promise<ColumnConfig[]> => {
+        const resetRes = await fetch(
+          `/api/table-config/reset?moduleKey=${encodeURIComponent(key)}`,
+          {
+            method: "POST",
+          },
+        );
+
+        if (!resetRes.ok) {
+          throw new Error(
+            "Failed to reset stock transfer table configuration.",
+          );
+        }
+
+        const res = await fetch(
+          `/api/table-config?moduleKey=${encodeURIComponent(key)}`,
+        );
+
+        if (!res.ok) {
+          throw new Error(
+            "Failed to reload stock transfer table configuration.",
+          );
+        }
+
+        return (await res.json()) as ColumnConfig[];
+      },
+    }),
+    [],
+  );
+
+  /*
+   * ------------------------------------------------------------
+   * Post transfer
+   * ------------------------------------------------------------
+   *
+   * The actual posting action is deliberately kept out of the
+   * DataTable cell renderer. The renderer only represents data.
+   *
+   * If posting is required directly from the listing, it is
+   * better to add a dedicated action column later so that the
+   * DataTable architecture remains reusable.
+   */
+  const handleStatusChange = (newStatus: StatusFilter) => {
+    setStatus(newStatus);
+  };
+
+  const basePath = createPath.replace("/create", "");
+
+  return (
+    <div className="space-y-6">
+      {/* -------------------------------------------------------
+          Breadcrumbs
+          ------------------------------------------------------- */}
+      <Breadcrumbs
+        items={[
+          {
+            label: title,
+            href: basePath,
+          },
+        ]}
+      />
+
+      {/* -------------------------------------------------------
+          Header
+          ------------------------------------------------------- */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold">{title}</h2>
+        </div>
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={createPath}>+ Create</Link>
+        </Button>
+      </div>
+
+      {/* -------------------------------------------------------
+          Lifecycle / Status section
+          ------------------------------------------------------- */}
+      <div className="space-y-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm pt-2">
+        {/* Status Tabs */}
+        <div className="flex border-b border-slate-200 dark:border-slate-800 text-xs gap-1 mx-4">
+          {(["unposted", "posted", "all"] as StatusFilter[]).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => handleStatusChange(tab)}
+              className={`px-4 py-2 font-medium border-b-2 -mb-[2px] transition capitalize ${
+                status === tab
+                  ? "border-emerald-600 text-emerald-600 font-bold"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
+              }`}
+            >
+              {tab === "unposted"
+                ? "Open"
+                : tab === "posted"
+                  ? "Posted Transfers"
+                  : "All Transfers"}
+            </button>
+          ))}
+        </div>
+
+        {/* -----------------------------------------------------
+            Data Table
+            ----------------------------------------------------- */}
+        <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+          <DataTable<StockTransferRecord>
+            /*
+             * Reset DataTable's internal pagination/filter state
+             * whenever lifecycle status changes.
+             */
+            key={status}
+            moduleKey={moduleKey}
+            fetchApi={fetchTransfers}
+            columnsConfigApi={columnsConfigApi}
+            renderRowCell={renderRowCell}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
+
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
@@ -90,7 +373,7 @@ export default function StockTransferList({
 
   return (
     <div className="p-6 rounded border bg-white dark:bg-zinc-900 shadow-sm space-y-6">
-      {/* HEADER SECTION */}
+   
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -101,12 +384,7 @@ export default function StockTransferList({
             movements and drafts.
           </p>
         </div>
-        {/* <Link
-          href={createPath}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-medium rounded transition"
-        >
-          + New Transfer
-        </Link> */}
+
 
         <Button
           asChild
@@ -114,13 +392,13 @@ export default function StockTransferList({
           className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
         >
           <Link href={createPath}>
-            {/* <Icon icon="solar:add-circle-linear" width={16} height={16} /> */}
+
             + Create
           </Link>
         </Button>
       </div>
 
-      {/* FILTER TABS */}
+
       <div className="flex border-b border-zinc-200 dark:border-zinc-700 text-xs">
         {(["unposted", "posted", "all"] as StatusFilter[]).map((tab) => (
           <button
@@ -141,7 +419,7 @@ export default function StockTransferList({
         ))}
       </div>
 
-      {/* DATA VIEW GRID */}
+
       {loading ? (
         <div className="py-12 text-center text-xs text-zinc-500 font-medium">
           Loading general inventory distribution records...
@@ -233,7 +511,7 @@ export default function StockTransferList({
             </tbody>
           </table>
 
-          {/* PAGINATION PANEL CONTROLS */}
+
           <div className="flex justify-between items-center p-4 border-t border-zinc-200 dark:border-zinc-800 text-xs">
             <Button
               disabled={page <= 1 || loading}
@@ -257,4 +535,4 @@ export default function StockTransferList({
       )}
     </div>
   );
-}
+} */

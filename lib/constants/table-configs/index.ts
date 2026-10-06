@@ -30,6 +30,7 @@ import { postedLedgerEntriesConfig } from "./posted-ledger-entries";
 import { journalsColumnsConfig } from "./journals";
 
 import { partyLedgerActivityColumnsConfig } from "./party-ledger-activity";
+import { stockTransferColumnsConfig } from "./stock-transfer";
 
 export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   purchase_orders: purchaseOrdersConfig,
@@ -49,6 +50,7 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   customer_journals: journalsColumnsConfig,
   general_journals: journalsColumnsConfig,
   item_journals: journalsColumnsConfig,
+  stock_transfer_orders: stockTransferColumnsConfig,
 
   parties: partyColumnsConfig,
 

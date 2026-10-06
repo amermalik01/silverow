@@ -9,7 +9,7 @@ export function getItemCellRenderers(slug: string) {
   return {
     item_code: (row: ItemListRow) => (
       <Link
-        href={`/${slug}/inventory/items/${row.id}`}
+        href={`/${slug}/inventory/items/${row.id}/edit`}
         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
       >
         {row.item_code || "-"}

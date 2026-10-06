@@ -52,6 +52,22 @@ export function getJournalCellRenderers(slug: string, createPath: string) {
       </span>
     ),
 
+    is_posted: (row: JournalRecord) => (
+      <span
+        className={`inline-flex items-center px-2 py-0.5 rounded text-xs  ${
+          row.is_posted
+            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-800/20"
+            : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-800/20"
+        }`}
+      >
+        {row.is_posted ? "Posted" : "Draft"}
+      </span>
+    ),
+  };
+}
+
+
+
     // total_debit: (row: JournalRecord) => (
     //   <span className="font-mono text-right block font-semibold text-slate-700 dark:text-slate-200">
     //     {Number(row.total_debit).toLocaleString(undefined, {
@@ -71,17 +87,3 @@ export function getJournalCellRenderers(slug: string, createPath: string) {
     //     <span className="text-[10px] text-slate-400">{row.currency_code}</span>
     //   </span>
     // ),
-
-    is_posted: (row: JournalRecord) => (
-      <span
-        className={`inline-flex items-center px-2 py-0.5 rounded text-xs  ${
-          row.is_posted
-            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-800/20"
-            : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-800/20"
-        }`}
-      >
-        {row.is_posted ? "Posted" : "Draft"}
-      </span>
-    ),
-  };
-}

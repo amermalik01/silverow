@@ -5,19 +5,21 @@ import TransferStockForm from "@/app/components/inventory/stock-transfer/Transfe
 export default async function TransferStockEditPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string; id: string }>;
 }) {
-  const resolvedParams = await params;
+  const { slug, id } = await params;
 
   return (
     <div className="space-y-6 ">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Edit Transfer Stock
-        </h1>
-      </div>
 
-      <TransferStockForm transferStockId={resolvedParams.id} mode="edit" />
+      <TransferStockForm transferStockId={id} mode="edit" />
+
+      {/* <TransferStockForm
+        slug={slug}
+        journalId={id}
+        apiBase="/api/finance/item-journal"
+        redirectPath={`/${slug}/finance/item-journal`}
+      /> */}
     </div>
   );
 }

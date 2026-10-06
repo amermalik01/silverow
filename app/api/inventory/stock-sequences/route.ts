@@ -230,6 +230,9 @@ export async function GET(req: NextRequest) {
         ia.id ASC
     `;
 
+    console.log('query === ',query);
+    console.log('values === ',values);
+
     const result = await pool.query(query, values);
 
     /**

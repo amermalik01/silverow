@@ -2,6 +2,228 @@
 
 "use client";
 
+import React, { useState } from "react";
+
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+
+import { GeneralConfirmModal } from "@/app/components/shared/modals/GeneralConfirmModal";
+
+import type { TransferStockFormProps } from "./transfer-stock/types";
+
+import { useTransferStock } from "./transfer-stock/hooks/useTransferStock";
+
+import TransferStockHeader from "./transfer-stock/components/TransferStockHeader";
+
+import TransferStockToolbar from "./transfer-stock/components/TransferStockToolbar";
+
+import TransferStockTable from "./transfer-stock/components/TransferStockTable";
+
+import TransferStockFooter from "./transfer-stock/components/TransferStockFooter";
+
+import TransferStockModals from "./transfer-stock/components/TransferStockModals";
+
+export default function TransferStockForm(props: TransferStockFormProps) {
+  const {
+    transferStockId,
+    mode = "create",
+    redirectPath = "/inventory/transfer-stock",
+  } = props;
+
+  const [showPostConfirmModal, setShowPostConfirmModal] = useState(false);
+
+  const [isPosting, setIsPosting] = useState(false);
+
+  const transfer = useTransferStock(props);
+
+  const {
+    loading,
+    isPosted,
+    errorMsg,
+
+    isEditing,
+    setIsEditing,
+
+    currentTransferId,
+
+    metadata,
+    lines,
+
+    warehouses,
+    fromLocations,
+    toLocations,
+
+    formDisabled,
+
+    activeAllocationLine,
+
+    itemActiveModal,
+    setItemActiveModal,
+
+    isAllocationModalOpen,
+    setIsAllocationModalOpen,
+
+    setActiveAllocationLineId,
+
+    existingSequences,
+    availableStock,
+
+    handleHeaderChange,
+
+    handleFromWarehouseChange,
+    handleToWarehouseChange,
+
+    handleLineChange,
+
+    handleFromLocationChange,
+    handleToLocationChange,
+
+    handleItemSelect,
+
+    addLine,
+    removeLine,
+
+    handleOpenAllocation,
+    handleSaveAllocations,
+
+    saveDraft,
+    postTransfer,
+  } = transfer;
+
+  const sourceWarehouseName =
+    warehouses.find((warehouse) => warehouse.id === metadata.warehouse_from_id)
+      ?.name || "";
+
+  const handlePostClick = () => {
+    if (formDisabled || isPosting || loading) {
+      return;
+    }
+
+    setShowPostConfirmModal(true);
+  };
+
+  const handlePostTransfer = async () => {
+    if (isPosting || loading || formDisabled) {
+      return;
+    }
+
+    setIsPosting(true);
+
+    try {
+      const success = await postTransfer();
+
+      if (success) {
+        setShowPostConfirmModal(false);
+      }
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          {
+            label: "Stock Transfer Orders",
+            href: redirectPath,
+          },
+          {
+            label: metadata.transfer_no || "New Transfer",
+          },
+        ]}
+      />
+
+      <TransferStockHeader
+        isPosted={isPosted}
+        transferId={currentTransferId || transferStockId}
+        readOnly={mode === "view"}
+        isEditing={isEditing}
+        onEdit={() => setIsEditing(true)}
+      />
+
+      <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm px-4 py-6">
+        {errorMsg && (
+          <div className="p-3 bg-red-100 text-red-800 rounded font-medium text-sm border border-red-200">
+            {errorMsg}
+          </div>
+        )}
+
+        <TransferStockToolbar
+          metadata={metadata}
+          warehouses={warehouses}
+          formDisabled={formDisabled}
+          onHeaderChange={handleHeaderChange}
+          onFromWarehouseChange={handleFromWarehouseChange}
+          onToWarehouseChange={handleToWarehouseChange}
+          onAddLine={addLine}
+        />
+
+        <TransferStockTable
+          lines={lines}
+          fromLocations={fromLocations}
+          toLocations={toLocations}
+          formDisabled={formDisabled}
+          onLineChange={handleLineChange}
+          onOpenItem={(index) =>
+            setItemActiveModal({
+              index,
+              type: "item",
+              target: "item",
+            })
+          }
+          onFromLocationChange={handleFromLocationChange}
+          onToLocationChange={handleToLocationChange}
+          onOpenAllocation={handleOpenAllocation}
+          onRemove={removeLine}
+        />
+
+        <TransferStockFooter
+          formDisabled={formDisabled}
+          loading={loading}
+          isPosted={isPosted}
+          onPost={handlePostClick}
+          onSave={() => void saveDraft()}
+          onCancel={() => window.location.assign(redirectPath)}
+        />
+      </div>
+
+      <TransferStockModals
+        itemModalOpen={itemActiveModal !== null}
+        itemModalState={itemActiveModal}
+        allocationModalOpen={isAllocationModalOpen}
+        activeAllocationLine={activeAllocationLine}
+        formDisabled={formDisabled}
+        existingSequences={existingSequences}
+        availableStock={availableStock}
+        warehouseFromId={metadata.warehouse_from_id}
+        warehouseFromName={sourceWarehouseName}
+        onCloseItem={() => setItemActiveModal(null)}
+        onItemSelect={handleItemSelect}
+        onCloseAllocation={() => {
+          setIsAllocationModalOpen(false);
+          setActiveAllocationLineId(null);
+        }}
+        onSaveAllocation={handleSaveAllocations}
+      />
+
+      <GeneralConfirmModal
+        isOpen={showPostConfirmModal}
+        title="Confirmation"
+        message="Are you sure you want to post this Stock Transfer?"
+        onConfirm={handlePostTransfer}
+        onCancel={() => {
+          if (!isPosting) {
+            setShowPostConfirmModal(false);
+          }
+        }}
+        loading={isPosting || loading}
+      />
+    </div>
+  );
+}
+
+/* "use client";
+
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 
@@ -337,17 +559,7 @@ export default function TransferStockForm({
     setLines([...lines, newLine]);
   };
 
-  /* const updateLineField = (
-    localKey: string,
-    field: keyof TransferLine,
-    value: any,
-  ) => {
-    setLines((prev) =>
-      prev.map((l) =>
-        l.local_key === localKey ? { ...l, [field]: value } : l,
-      ),
-    );
-  }; */
+
 
   const removeLineItemRow = (localKey: string) => {
     setLines((prev) => prev.filter((l) => l.local_key !== localKey));
@@ -473,7 +685,7 @@ export default function TransferStockForm({
         </div>
       )}
 
-      {/* Header Cards Panel */}
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -588,13 +800,7 @@ export default function TransferStockForm({
           <label className="block text-xs font-medium text-zinc-500 mb-1">
             Freight / Shipping Cost
           </label>
-          {/* <input
-            type="number"
-            value={shippingCharge}
-            onChange={(e) => setShippingCharge(Number(e.target.value))}
-            disabled={isPosted || isFormDisabled || isLoading}
-            className="w-full text-xs border p-2 rounded-lg bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 font-mono"
-          /> */}
+
 
           <NumericTextInput
             min="0"
@@ -610,7 +816,7 @@ export default function TransferStockForm({
 
       <hr className="border-zinc-200 dark:border-zinc-800 my-4" />
 
-      {/* Grid Lines Table */}
+
 
       <div className="space-y-2">
         <div className="flex justify-between items-center">
@@ -736,20 +942,7 @@ export default function TransferStockForm({
                     </td>
 
                     <td className="p-2">
-                      {/* <input
-                        type="number"
-                        min={1}
-                        value={line.qty}
-                        disabled={isPosted}
-                        onChange={(e) =>
-                          updateLineField(
-                            line.local_key,
-                            "qty",
-                            Number(e.target.value),
-                          )
-                        }
-                        className="w-full border p-2 rounded-lg font-mono bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-                      /> */}
+
 
                       <NumericTextInput
                         min="1"
@@ -804,7 +997,7 @@ export default function TransferStockForm({
         </div>
       </div>
 
-      {/* Bottom Actions Form */}
+
       <div className="flex justify-end space-x-3 mt-6">
         {mode !== "create" && (
           <Button
@@ -835,7 +1028,7 @@ export default function TransferStockForm({
         )}
       </div>
 
-      {/* ITEM POPUP SEARCH MODAL */}
+
       {isItemModalOpen && (
         <ItemLookupModal
           open={isItemModalOpen}
@@ -847,7 +1040,7 @@ export default function TransferStockForm({
         />
       )}
 
-      {/* Row Controlled Allocation Modal Instance */}
+
       {isAllocationModalOpen &&
         activeAllocationRowKey &&
         activeAllocationLine && (
@@ -869,3 +1062,4 @@ export default function TransferStockForm({
     </div>
   );
 }
+ */

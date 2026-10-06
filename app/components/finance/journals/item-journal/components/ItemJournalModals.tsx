@@ -115,6 +115,12 @@ export default function ItemJournalModals({
           existingSequences={existingSequences}
           availableStock={availableStock}
           initialAllocations={activeAllocationLine.allocations ?? []}
+        />
+      )}
+    </>
+  );
+}
+
           // initialAllocations={activeAllocationLine.initialAllocations ?? []}
           // onSave={handleSaveAllocations}
           
@@ -145,8 +151,3 @@ export default function ItemJournalModals({
           //       ? undefined
           //       : Number(allocation.available_quantity || 0),
           // }))}
-        />
-      )}
-    </>
-  );
-}
