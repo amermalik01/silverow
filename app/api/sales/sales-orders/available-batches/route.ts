@@ -126,8 +126,8 @@ export async function GET(req: NextRequest) {
         ia.id ASC;
     `;
 
-    // console.log("sales-orders/available-batches query ==== ", query);
-    // console.log("queryParamsList ==== ", queryParamsList);
+    console.log("sales-orders/available-batches query ==== ", query);
+    console.log("queryParamsList ==== ", queryParamsList);
 
     const result = await client.query(query, queryParamsList);
 
