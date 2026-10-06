@@ -1,6 +1,6 @@
 // app/components/inventory/stock-transfer/TransferStockReport.tsx
 
-import React from "react";
+/* import React from "react";
 import { AllocationPayload } from './TransferStockForm';
 import { Button } from "@/components/ui/button";
 
@@ -37,7 +37,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
 }) => {
   return (
     <div className="bg-white p-8 max-w-4xl mx-auto my-6 border shadow-sm rounded font-sans text-xs text-gray-800">
-      {/* Printable Sheet Window Controller Actions */}
+
       <div className="no-print flex justify-end space-x-2 mb-6 border-b pb-3">
         <Button
           onClick={() => window.print()}
@@ -53,7 +53,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
         </Button>
       </div>
 
-      {/* Header Corporate Identity Block */}
+
       <div className="flex justify-between items-start mb-8">
         <div>
           <h2 className="text-xl font-bold tracking-widest text-gray-900 capitalize">
@@ -83,7 +83,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
         </div>
       </div>
 
-      {/* Routing Locations Manifest Box */}
+
       <div className="grid grid-cols-2 gap-8 border-t border-b py-4 bg-gray-50/50 px-2 mb-6">
         <div>
           <h4 className="text-blue-600 font-bold capitalize mb-1.5 text-[11px]">
@@ -116,7 +116,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
         </div>
       </div>
 
-      {/* Structured Serial Ledger Details Grid */}
+  
       <table className="w-full text-left table-fixed border-collapse">
         <thead>
           <tr className="bg-emerald-900 text-white font-semibold capitalize tracking-wider text-[10px]">
@@ -131,7 +131,7 @@ const TransferStockReport: React.FC<ReportProps> = ({
           </tr>
         </thead>
         <tbody>
-          {/* Explicitly mapping allocations sequentially to replicate legacy design structure */}
+
           {lines?.flatMap((line) =>
             line.allocations?.map((alloc: AllocationPayload, allocIdx: number) => (
               <tr
@@ -171,4 +171,4 @@ const TransferStockReport: React.FC<ReportProps> = ({
   );
 };
 
-export default TransferStockReport;
+export default TransferStockReport; */

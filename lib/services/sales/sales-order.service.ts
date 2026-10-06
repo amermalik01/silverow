@@ -347,7 +347,6 @@ export class SalesOrderService {
       const lineAllocations = allocationsResult.rows
         .filter((alloc) => alloc.sales_order_line_id === line.id)
         .map((alloc) => ({
-
           source_allocation_id: alloc.source_allocation_id,
 
           inbound_entry_id: alloc.inbound_entry_id,
@@ -1219,6 +1218,487 @@ export class SalesOrderService {
     warehouseId: string,
     initialAllocations: SO_StockAllocationRecord[],
   ): Promise<void> {
+    /**
+     * ---------------------------------------------------------
+     * 1. Validate Sales Order line
+     * ---------------------------------------------------------
+     */
+
+    const lineResult = await client.query(
+      `
+    SELECT
+      id,
+      sales_order_id,
+      item_id,
+      warehouse_id,
+      quantity,
+      COALESCE(quantity_shipped, 0) AS quantity_shipped
+    FROM sales_order_lines
+    WHERE id = $1
+      AND sales_order_id = $2
+      AND company_id = $3
+      AND is_deleted = false
+    FOR UPDATE
+    `,
+      [salesOrderLineId, salesOrderId, companyId],
+    );
+
+    if (!lineResult.rows.length) {
+      throw new Error(`Sales order line ${salesOrderLineId} not found.`);
+    }
+
+    const line = lineResult.rows[0];
+
+    /**
+     * Make sure the service receives the same item/warehouse
+     * that belongs to the database line.
+     */
+
+    if (line.item_id && String(line.item_id) !== String(itemId)) {
+      throw new Error(
+        "Sales order allocation item does not match the sales order line.",
+      );
+    }
+
+    if (
+      line.warehouse_id &&
+      String(line.warehouse_id) !== String(warehouseId)
+    ) {
+      throw new Error(
+        "Sales order allocation warehouse does not match the sales order line.",
+      );
+    }
+
+    /**
+     * ---------------------------------------------------------
+     * 2. Do not modify allocations after shipment
+     * ---------------------------------------------------------
+     */
+
+    const shippedQty = Number(line.quantity_shipped || 0);
+
+    if (shippedQty > 0) {
+      return;
+    }
+
+    /**
+     * ---------------------------------------------------------
+     * 3. Remove existing draft/pre-shipment allocations
+     *
+     * IMPORTANT:
+     *
+     * We only remove Sales Order allocation rows.
+     *
+     * We do NOT delete the original inbound inventory row.
+     * ---------------------------------------------------------
+     */
+
+    await client.query(
+      `
+    DELETE FROM inventory_allocations
+    WHERE company_id = $1
+      AND sales_order_line_id = $2
+      AND status = 'ACTIVE'
+    `,
+      [companyId, salesOrderLineId],
+    );
+
+    /**
+     * No allocations supplied.
+     *
+     * This is valid because the Sales Order can remain
+     * unallocated.
+     */
+
+    if (!initialAllocations || initialAllocations.length === 0) {
+      return;
+    }
+
+    /**
+     * ---------------------------------------------------------
+     * 4. Validate total Sales Order allocation quantity
+     * ---------------------------------------------------------
+     */
+
+    const orderLineQuantity = Number(line.quantity || 0);
+
+    let totalRequestedQuantity = 0;
+
+    for (const allocation of initialAllocations) {
+      const quantity = Number(allocation.quantity || 0);
+
+      if (!Number.isFinite(quantity)) {
+        throw new Error("Invalid Sales Order allocation quantity.");
+      }
+
+      if (quantity < 0) {
+        throw new Error("Sales Order allocation quantity cannot be negative.");
+      }
+
+      totalRequestedQuantity += quantity;
+    }
+
+    if (totalRequestedQuantity > orderLineQuantity + 0.000001) {
+      throw new Error(
+        `Sales Order allocation quantity (${totalRequestedQuantity}) exceeds line quantity (${orderLineQuantity}).`,
+      );
+    }
+
+    /**
+     * ---------------------------------------------------------
+     * 5. Process every allocation
+     * ---------------------------------------------------------
+     */
+
+    for (const allocation of initialAllocations) {
+      const requestedQuantity = Number(allocation.quantity || 0);
+
+      if (requestedQuantity <= 0) {
+        continue;
+      }
+
+      /**
+       * -------------------------------------------------------
+       * 5A. Resolve ORIGINAL source allocation
+       *
+       * Preferred:
+       *
+       * allocation.source_allocation_id
+       *
+       * Fallback:
+       *
+       * allocation.id
+       *
+       * This makes the backend resilient to frontend records
+       * where id represents the original source allocation.
+       * -------------------------------------------------------
+       */
+
+      const requestedSourceAllocationId =
+        allocation.source_allocation_id || allocation.id;
+
+      if (!requestedSourceAllocationId) {
+        throw new Error(
+          "Each Sales Order stock allocation must reference an original inventory allocation.",
+        );
+      }
+
+      /**
+       * -------------------------------------------------------
+       * 5B. Lock ORIGINAL inventory allocation
+       * -------------------------------------------------------
+       */
+
+      const sourceResult = await client.query(
+        `
+      SELECT
+        ia.id,
+
+        ia.company_id,
+
+        ia.inbound_entry_id,
+
+        ia.item_id,
+
+        ia.warehouse_id,
+
+        ia.warehouse_location_id,
+
+        ia.batch_no,
+
+        ia.bin_code,
+
+        ia.expiry_date,
+
+        ia.allocated_quantity,
+
+        ia.unit_cost,
+
+        ia.purchase_order_line_id,
+
+        ia.purchase_invoice_line_id,
+
+        ia.status
+
+      FROM inventory_allocations ia
+
+      WHERE ia.id = $1
+
+        AND ia.company_id = $2
+
+        AND ia.item_id = $3
+
+        AND ia.warehouse_id = $4
+
+        /**
+         * This must be the ORIGINAL/root allocation.
+         */
+        AND ia.source_allocation_id IS NULL
+
+        AND ia.sales_order_line_id IS NULL
+
+        AND ia.inbound_entry_id IS NOT NULL
+
+        AND ia.debit_note_line_id IS NULL
+
+        AND ia.credit_note_line_id IS NULL
+
+        AND ia.status = 'ACTIVE'
+
+      FOR UPDATE
+      `,
+        [requestedSourceAllocationId, companyId, itemId, warehouseId],
+      );
+
+      if (!sourceResult.rows.length) {
+        throw new Error(
+          `Source inventory allocation ${requestedSourceAllocationId} was not found or is not a valid original inventory allocation.`,
+        );
+      }
+
+      const source = sourceResult.rows[0];
+
+      /**
+       * -------------------------------------------------------
+       * 5C. Calculate quantities already reserved
+       *
+       * Existing Sales Orders are child allocations:
+       *
+       * source_allocation_id = source.id
+       *
+       * We exclude the current Sales Order because this method
+       * is called after deleting this line's old allocations,
+       * but keeping the condition makes the logic safe.
+       * -------------------------------------------------------
+       */
+
+      const reservedResult = await client.query(
+        `
+      SELECT
+        COALESCE(
+          SUM(ia.allocated_quantity),
+          0
+        ) AS reserved_quantity
+
+      FROM inventory_allocations ia
+
+      INNER JOIN sales_order_lines sol
+        ON sol.id = ia.sales_order_line_id
+
+      WHERE ia.company_id = $1
+
+        AND ia.source_allocation_id = $2
+
+        AND ia.status = 'ACTIVE'
+
+        AND ia.sales_order_line_id IS NOT NULL
+
+        AND sol.sales_order_id <> $3
+      `,
+        [companyId, source.id, salesOrderId],
+      );
+
+      const reservedQuantity = Number(
+        reservedResult.rows[0]?.reserved_quantity || 0,
+      );
+
+      /**
+       * -------------------------------------------------------
+       * 5D. Calculate returned quantity
+       *
+       * Keep Debit Note handling consistent with your existing
+       * inventory model.
+       * -------------------------------------------------------
+       */
+
+      const returnedResult = await client.query(
+        `
+      SELECT
+        COALESCE(
+          SUM(ia.allocated_quantity),
+          0
+        ) AS returned_quantity
+
+      FROM inventory_allocations ia
+
+      WHERE ia.company_id = $1
+
+        AND ia.source_allocation_id = $2
+
+        AND ia.status = 'ACTIVE'
+
+        AND ia.debit_note_line_id IS NOT NULL
+      `,
+        [companyId, source.id],
+      );
+
+      const returnedQuantity = Number(
+        returnedResult.rows[0]?.returned_quantity || 0,
+      );
+
+      /**
+       * -------------------------------------------------------
+       * 5E. Calculate true available quantity
+       *
+       * Original stock
+       *     -
+       * Returned quantity
+       *     -
+       * Other Sales Order reservations
+       *     =
+       * Available
+       * -------------------------------------------------------
+       */
+
+      const originalQuantity = Number(source.allocated_quantity || 0);
+
+      const availableQuantity =
+        originalQuantity - returnedQuantity - reservedQuantity;
+
+      /**
+       * -------------------------------------------------------
+       * 5F. Validate requested quantity
+       * -------------------------------------------------------
+       */
+
+      if (requestedQuantity > availableQuantity + 0.000001) {
+        const identifier = source.batch_no || source.bin_code || source.id;
+
+        throw new Error(
+          `Cannot allocate ${requestedQuantity} units from ${identifier}. Only ${Math.max(
+            0,
+            availableQuantity,
+          )} units are available.`,
+        );
+      }
+
+      /**
+       * -------------------------------------------------------
+       * 5G. Insert Sales Order CHILD allocation
+       *
+       * THIS IS THE CRITICAL FIX.
+       *
+       * source_allocation_id = source.id
+       *
+       * This creates:
+       *
+       * ORIGINAL INVENTORY
+       *        A
+       *        │
+       *        └── Sales Order allocation
+       *                B
+       *                source_allocation_id = A
+       * -------------------------------------------------------
+       */
+
+      await client.query(
+        `
+      INSERT INTO inventory_allocations (
+        company_id,
+
+        source_allocation_id,
+
+        outbound_entry_id,
+        outbound_line_id,
+
+        inbound_entry_id,
+
+        sales_order_line_id,
+
+        item_id,
+        warehouse_id,
+        warehouse_location_id,
+
+        batch_no,
+        bin_code,
+        expiry_date,
+
+        allocated_quantity,
+
+        unit_cost,
+        total_cost,
+
+        allocation_method,
+        status,
+
+        purchase_order_line_id,
+        purchase_invoice_line_id
+      )
+      VALUES (
+        $1,
+
+        $2,
+
+        NULL,
+        NULL,
+
+        $3,
+
+        $4,
+
+        $5,
+        $6,
+        $7,
+
+        $8,
+        $9,
+        $10,
+
+        $11,
+
+        $12,
+        $13,
+
+        'FIFO',
+        'ACTIVE',
+
+        $14,
+        $15
+      )
+      `,
+        [
+          companyId,
+
+          /**
+           * CRITICAL:
+           * Always use the actual database source id.
+           */
+          source.id,
+
+          source.inbound_entry_id,
+
+          salesOrderLineId,
+
+          source.item_id,
+          source.warehouse_id,
+          source.warehouse_location_id,
+
+          source.batch_no,
+          source.bin_code,
+          source.expiry_date,
+
+          requestedQuantity,
+
+          Number(source.unit_cost || 0),
+
+          requestedQuantity * Number(source.unit_cost || 0),
+
+          source.purchase_order_line_id,
+          source.purchase_invoice_line_id,
+        ],
+      );
+    }
+  }
+
+  /* static async saveLineAllocations(
+    client: PoolClient,
+    companyId: string,
+    salesOrderId: string,
+    salesOrderLineId: string,
+    itemId: string,
+    warehouseId: string,
+    initialAllocations: SO_StockAllocationRecord[],
+  ): Promise<void> {
     // 1. Lock check: If stock has already been shipped on this line, protect allocations from deletion/modification
     const lineCheck = await client.query(
       `
@@ -1301,7 +1781,7 @@ export class SalesOrderService {
         ],
       );
     }
-  }
+  } */
 
   private static validatePayload(payload: SalesOrderPayload): void {
     const order = payload.order;

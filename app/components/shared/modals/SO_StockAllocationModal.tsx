@@ -8,6 +8,7 @@ import NumericTextInput from "@/components/ui/NumericTextInput";
 import { Icon } from "@iconify/react";
 
 export type SO_StockAllocationRecord = {
+  id?: string;
   source_allocation_id: string;
 
   inbound_entry_id?: string | null;

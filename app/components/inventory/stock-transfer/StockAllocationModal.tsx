@@ -1,6 +1,6 @@
 // app/components/inventory/stock-transfer/StockAllocationModal.tsx
 
-import React, { useState, useEffect } from "react";
+/* import React, { useState, useEffect } from "react";
 import { AllocationPayload } from "./TransferStockForm";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
@@ -91,7 +91,7 @@ const StockAllocationModal: React.FC<ModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-7xl rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Modal Header banner context */}
+
         <div className="bg-gray-100 p-4 border-b flex justify-between items-center">
           <h3 className="font-semibold text-gray-700 text-base">
             Stock Allocation - {itemCode} ({itemName})
@@ -104,7 +104,7 @@ const StockAllocationModal: React.FC<ModalProps> = ({
           </button>
         </div>
 
-        {/* Info Metric Badges Panel */}
+
         <div className="p-4 grid grid-cols-5 gap-4 border-b bg-gray-50 text-xs">
           <div>
             <p className="text-xs text-gray-500">Item</p>
@@ -140,7 +140,7 @@ const StockAllocationModal: React.FC<ModalProps> = ({
           </div>
         </div>
 
-        {/* Filter Utilities Bar */}
+ 
         <div className="p-3 border-b flex items-center space-x-2">
           <input
             type="text"
@@ -154,7 +154,7 @@ const StockAllocationModal: React.FC<ModalProps> = ({
           </Button>
         </div>
 
-        {/* Batches Sub-ledger Listing */}
+
         <div className="overflow-y-auto flex-1 p-4">
           <table className="w-full text-left border-collapse table-fixed text-xs whitespace-nowrap">
             <thead>
@@ -195,14 +195,7 @@ const StockAllocationModal: React.FC<ModalProps> = ({
                   <td className="p-2">{batch.allocated_qty}</td>
                   <td className="p-2 font-bold">{batch.available_qty}</td>
                   <td className="p-2 text-center">
-                    {/* <input
-                      type="number"
-                      value={batch.current_allocation || ""}
-                      onChange={(e) =>
-                        handleAllocationInputChange(idx, Number(e.target.value))
-                      }
-                      className="w-16 text-center border border-emerald-400 rounded p-0.5 text-xs font-semibold text-emerald-700 bg-emerald-50/50"
-                    /> */}
+                    
 
                     <NumericTextInput
                       allowDecimals={false}
@@ -219,7 +212,7 @@ const StockAllocationModal: React.FC<ModalProps> = ({
           </table>
         </div>
 
-        {/* Confirmation Footer */}
+
         <div className="bg-gray-50 p-3 border-t flex justify-end space-x-2">
           <Button onClick={handleConfirmSave} variant="save">
             Save Allocations
@@ -237,33 +230,5 @@ const StockAllocationModal: React.FC<ModalProps> = ({
   );
 };
 
-export default StockAllocationModal;
+export default StockAllocationModal; */
 
-
-
-
-  // Simulation tracking lookups
-  /* useEffect(() => {
-    // This data would be fetched from database where item_id = current row and warehouse_id = warehouseFrom
-    const mockFetchedBatches: StockBatchRow[] = [
-      {
-        production_date: "13/10/2022",
-        use_by_date: "13/10/2023",
-        date_received: "09/06/2022",
-        storage_location: "Bikes",
-        cons_no: "",
-        ref_no: "CAAU6592879",
-        serial_no: "RD801010",
-        total_qty: 1,
-        sold_qty: 1,
-        returned_qty: 0,
-        allocated_qty: 0,
-        available_qty: 0,
-        current_allocation: 0,
-      },
-    ];
-    
-    setTimeout(() => {
-        setBatches(mockFetchedBatches);
-    }, 0);
-  }, [itemCode]); */
