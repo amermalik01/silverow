@@ -50,7 +50,7 @@ export type TransferStockLine = {
 
 export type TransferMetadata = {
   transfer_no: string;
-  transfer_date: string;
+  transfer_date?: string;
 
   warehouse_from_id: string;
   warehouse_to_id: string;
