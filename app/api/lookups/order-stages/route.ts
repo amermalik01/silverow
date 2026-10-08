@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   // Search parameters
   const search = searchParams.get("search") || "";
   const name = searchParams.get("name") || "";
-  const stageType = searchParams.get("stage_type") || ""; // 'sales_order', 'credit_note', etc.
+  const stageType = searchParams.get("stage_type") || "";
 
   // Type-safe array instantiation avoiding eslint 'prefer-const' & 'any' issues
   const queryParams: unknown[] = [companyId];

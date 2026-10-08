@@ -32,6 +32,7 @@ export async function GET(
             COALESCE(SUM(
                 CASE
                 WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
                     OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%REFUND%'
@@ -43,6 +44,7 @@ export async function GET(
             COALESCE(SUM(
                 CASE
                 WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
                     OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%REFUND%'
@@ -54,6 +56,7 @@ export async function GET(
             COALESCE(SUM(
                 CASE
                 WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
                     OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%REFUND%'
@@ -65,6 +68,7 @@ export async function GET(
             COALESCE(SUM(
                 CASE
                 WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
                     OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%REFUND%'
@@ -144,50 +148,3 @@ export async function GET(
     );
   }
 }
-
-    /* const query = `
-      SELECT 
-        SUM(
-          CASE 
-            WHEN UPPER(e.document_type) LIKE '%PAYMENT%' 
-              OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%' 
-              OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%' 
-              OR UPPER(e.document_type) LIKE '%REFUND%' 
-            THEN -ABS(e.original_amount_fcy)
-            ELSE ABS(e.original_amount_fcy)
-          END
-        ) AS total_original_fcy,
-        SUM(
-          CASE 
-            WHEN UPPER(e.document_type) LIKE '%PAYMENT%' 
-              OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%' 
-              OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%' 
-              OR UPPER(e.document_type) LIKE '%REFUND%' 
-            THEN -ABS(e.remaining_amount_fcy)
-            ELSE ABS(e.remaining_amount_fcy)
-          END
-        ) AS total_remaining_fcy,
-        SUM(
-          CASE 
-            WHEN UPPER(e.document_type) LIKE '%PAYMENT%' 
-              OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%' 
-              OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%' 
-              OR UPPER(e.document_type) LIKE '%REFUND%' 
-            THEN -ABS(e.original_amount_lcy)
-            ELSE ABS(e.original_amount_lcy)
-          END
-        ) AS total_original_lcy,
-        SUM(
-          CASE 
-            WHEN UPPER(e.document_type) LIKE '%PAYMENT%' 
-              OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%' 
-              OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%' 
-              OR UPPER(e.document_type) LIKE '%REFUND%' 
-            THEN -ABS(e.remaining_amount_lcy)
-            ELSE ABS(e.remaining_amount_lcy)
-          END
-        ) AS total_remaining_lcy,
-        COUNT(CASE WHEN e.is_open = true AND ABS(e.remaining_amount_fcy) > 0 THEN 1 END) AS open_count
-      FROM ${tableName} e
-      WHERE e.company_id = $1 AND e.${partyColumn} = $2
-    `; */

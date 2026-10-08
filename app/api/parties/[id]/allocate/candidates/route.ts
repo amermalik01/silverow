@@ -47,14 +47,14 @@ export async function GET(
       if (sourceDocType.includes("PAYMENT")) {
         allowedTypes = ["SALES_INVOICE", "INVOICE"];
       } else if (sourceDocType.includes("REFUND")) {
-        allowedTypes = ["CREDIT_NOTE"];
-      } else if (sourceDocType.includes("CREDIT_NOTE")) {
+        allowedTypes = ["CREDIT_MEMO","CREDIT_NOTE"];
+      } else if (sourceDocType.includes("CREDIT_MEMO") || sourceDocType.includes("CREDIT_NOTE")) {
         allowedTypes = ["SALES_INVOICE", "INVOICE"];
       } else if (
         sourceDocType.includes("INVOICE") ||
         sourceDocType.includes("SALES_INVOICE")
       ) {
-        allowedTypes = ["CREDIT_NOTE", "PAYMENT"];
+        allowedTypes = ["CREDIT_MEMO", "CREDIT_NOTE", "PAYMENT"];
       }
     }
 

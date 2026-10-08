@@ -29,6 +29,7 @@ function getSignedAmount(
       type.includes("PAYMENT") ||
       type.includes("CUSTOMER_PAYMENT") ||
       type.includes("CREDIT_NOTE") ||
+      type.includes("CREDIT_MEMO") ||
       type.includes("REFUND")
     ) {
       return -absAmount;
@@ -90,8 +91,9 @@ export async function POST(
           ELSE ABS(e.original_amount_fcy)
         END`
       : `CASE 
-          WHEN UPPER(e.document_type) LIKE '%PAYMENT%' 
-            OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%' 
+          WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
+            OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+            OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
             OR UPPER(e.document_type) LIKE '%REFUND%' 
           THEN -ABS(e.original_amount_fcy)
           ELSE ABS(e.original_amount_fcy)
@@ -108,6 +110,7 @@ export async function POST(
       : `CASE 
           WHEN UPPER(e.document_type) LIKE '%PAYMENT%' 
             OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%' 
+            OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%' 
             OR UPPER(e.document_type) LIKE '%REFUND%' 
           THEN -ABS(e.remaining_amount_fcy)
           ELSE ABS(e.remaining_amount_fcy)
@@ -123,7 +126,8 @@ export async function POST(
         END`
       : `CASE 
           WHEN UPPER(e.document_type) LIKE '%PAYMENT%' 
-            OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%' 
+            OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+            OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
             OR UPPER(e.document_type) LIKE '%REFUND%' 
           THEN -ABS(e.original_amount_lcy)
           ELSE ABS(e.original_amount_lcy)
@@ -139,7 +143,8 @@ export async function POST(
         END`
       : `CASE 
           WHEN UPPER(e.document_type) LIKE '%PAYMENT%' 
-            OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%' 
+            OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+            OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
             OR UPPER(e.document_type) LIKE '%REFUND%' 
           THEN -ABS(e.remaining_amount_lcy)
           ELSE ABS(e.remaining_amount_lcy)
@@ -153,6 +158,7 @@ export async function POST(
                 CASE
                 WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
                     OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
                     OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%REFUND%'
                 THEN -ABS(e.original_amount_fcy)
@@ -164,6 +170,7 @@ export async function POST(
                 CASE
                 WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
                     OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
                     OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%REFUND%'
                 THEN -ABS(e.remaining_amount_fcy)
@@ -175,6 +182,7 @@ export async function POST(
                 CASE
                 WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
                     OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
                     OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%REFUND%'
                 THEN -ABS(e.original_amount_lcy)
@@ -186,6 +194,7 @@ export async function POST(
                 CASE
                 WHEN UPPER(e.document_type) LIKE '%PAYMENT%'
                     OR UPPER(e.document_type) LIKE '%CREDIT_NOTE%'
+                    OR UPPER(e.document_type) LIKE '%CREDIT_MEMO%'
                     OR UPPER(e.document_type) LIKE '%DEBIT_NOTE%'
                     OR UPPER(e.document_type) LIKE '%REFUND%'
                 THEN -ABS(e.remaining_amount_lcy)
@@ -355,6 +364,7 @@ export async function POST(
       FROM combined_activity combined
       ${whereClause}
     `;
+
     const countResult = await pool.query(countQuery, queryParams);
     const totalRecords = parseInt(countResult.rows[0]?.total || "0", 10);
 
@@ -388,6 +398,9 @@ export async function POST(
       ORDER BY ${dbSortColumn} ${orderDirection}, combined.created_at DESC
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
+
+    // console.log('dataQuery ==== ',dataQuery);
+    // console.log('queryParams ==== ',queryParams);
 
     const dataResult = await pool.query(dataQuery, queryParams);
 
