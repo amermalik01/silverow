@@ -11,7 +11,10 @@ export interface InventoryAllocationResult {
   total_cost: number;
   batch_no?: string | null;
   bin_code?: string | null;
+
   expiry_date?: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
 }
 
 export interface InventoryLedgerEntry {
@@ -22,6 +25,10 @@ export interface InventoryLedgerEntry {
   unit_cost: number;
   batch_no?: string | null;
   bin_code?: string | null;
+
   expiry_date?: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
+  
   created_at: string;
 }

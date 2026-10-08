@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { Icon } from "@iconify/react";
+import { format } from "date-fns";
 
 export type SO_StockAllocationRecord = {
   id?: string;
@@ -16,9 +17,9 @@ export type SO_StockAllocationRecord = {
   location_id: string;
   location_name: string;
 
+  expiry_date?: string;
   date_received?: string;
   prod_date?: string;
-  expiry_date?: string;
 
   batch_no?: string;
   bin_code?: string;
@@ -38,9 +39,9 @@ type RawStockBatch = {
   location_id: string;
   location_name: string;
 
+  expiry_date?: string;
   date_received?: string;
   prod_date?: string;
-  expiry_date?: string;
 
   batch_no?: string;
   bin_code?: string;
@@ -61,9 +62,9 @@ type AvailableStockBatch = {
   location_id: string;
   location_name: string;
 
+  expiry_date?: string;
   date_received?: string;
   prod_date?: string;
-  expiry_date?: string;
 
   batch_no?: string;
   bin_code?: string;
@@ -560,11 +561,11 @@ export default function SO_StockAllocationModal({
                         <td className="p-2.5 font-mono text-slate-700 dark:text-slate-300">
                           {batch.bin_code || batch.serial_no || "-"}
                         </td>
-                        <td className="p-2.5 text-slate-500">
-                          {batch.date_received || "-"}
+                        <td className="p-2.5 text-slate-500">                        
+                          {batch.date_received ? format(batch.date_received, "dd/MM/yyyy") : "-"}
                         </td>
                         <td className="p-2.5 text-slate-500">
-                          {batch.expiry_date || "-"}
+                          {batch.expiry_date ? format(batch.expiry_date, "dd/MM/yyyy") : "-"}
                         </td>
                         <td className="p-2.5 text-right font-semibold text-slate-800 dark:text-slate-200">
                           {batch.available_qty}

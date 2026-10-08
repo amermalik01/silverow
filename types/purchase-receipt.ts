@@ -33,7 +33,11 @@ export interface PurchaseReceiptLine {
   serial_no?: string;
   consignment_no?: string;
   manufacture_date?: string;
-  expiry_date?: string;
+
+  expiry_date?: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
+
   quantity: number;
   reserved_quantity?: number;
   consumed_reservation_qty?: number;

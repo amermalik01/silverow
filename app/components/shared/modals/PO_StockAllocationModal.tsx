@@ -260,12 +260,16 @@ export default function PO_StockAllocationModal({
                   key={index}
                   className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
                 >
-                  <td className="p-3">{item.date_received}</td>
-                  <td className="p-3">{item.prod_date || "-"}</td>
-                  <td className="p-3">{item.expiry_date || "-"}</td>
+                  <td className="p-3">{item.date_received ? format(item.date_received, "dd/MM/yyyy") : "-"}</td>
+                  <td className="p-3">{item.prod_date ? format(item.prod_date, "dd/MM/yyyy") : "-"}</td>
+                  <td className="p-3">{item.expiry_date ? format(item.expiry_date, "dd/MM/yyyy") : "-"}</td>
+                  {/* <td className="p-3">{item.prod_date || "-"}</td>
+                  <td className="p-3">{item.expiry_date || "-"}</td> */}
                   <td className="p-3">{item.location_name}</td>
                   <td className="p-3 font-mono">{item.batch_no || "-"}</td>
+
                   <td className="p-3 font-mono">{item.serial_no || "-"}</td>
+
                   <td className="p-3 text-right font-semibold text-slate-900 dark:text-slate-100">
                     {item.quantity}
                   </td>

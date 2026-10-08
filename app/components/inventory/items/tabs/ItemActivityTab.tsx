@@ -21,7 +21,10 @@ interface WarehouseStock {
   available_quantity: number;
   average_cost?: number;
   last_movement_at?: string;
+  
   expiry_date?: string;
+  date_received?: string;
+  prod_date?: string;
 }
 
 interface TransactionMovement {

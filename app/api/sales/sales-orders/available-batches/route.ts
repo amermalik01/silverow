@@ -1,4 +1,5 @@
 // app/api/sales/sales-orders/available-batches/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { PoolClient } from "pg";
 
@@ -23,6 +24,8 @@ type AvailableBatchRow = {
   serial_no: string | null;
 
   expiry_date: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
 
   allocated_quantity: number | string | null;
   reserved_quantity: number | string | null;
@@ -59,8 +62,7 @@ export async function GET(req: NextRequest) {
 
     const itemId = searchParams.get("item_id");
     const warehouseId = searchParams.get("warehouse_id");
-    const currentSalesOrderId =
-      searchParams.get("sales_order_id");
+    const currentSalesOrderId = searchParams.get("sales_order_id");
 
     if (!itemId) {
       return NextResponse.json(
@@ -76,16 +78,7 @@ export async function GET(req: NextRequest) {
 
     client = await pool.connect();
 
-    /**
-     * =========================================================
-     * QUERY PARAMETERS
-     * =========================================================
-     */
-
-    const queryParams: string[] = [
-      companyId,
-      itemId,
-    ];
+    const queryParams: string[] = [companyId, itemId];
 
     let warehouseCondition = "";
 
@@ -130,27 +123,6 @@ export async function GET(req: NextRequest) {
       `;
     }
 
-    /**
-     * =========================================================
-     * AVAILABLE INVENTORY QUERY
-     * =========================================================
-     *
-     * inventory_allocations is being used as an allocation
-     * lineage tree.
-     *
-     * ROOT STOCK:
-     *
-     * source_allocation_id IS NULL
-     *
-     * SALES ORDER RESERVATION:
-     *
-     * source_allocation_id = ROOT.id
-     *
-     * sales_order_line_id = SO line
-     *
-     * Therefore this query only returns ROOT inventory rows.
-     */
-
     const query = `
       SELECT
         ia.id AS id,
@@ -162,25 +134,16 @@ export async function GET(req: NextRequest) {
 
         ia.item_id,
         ia.warehouse_id,
-
         ia.warehouse_location_id AS location_id,
-
         wl.title AS location_name,
 
         ia.batch_no,
         ia.bin_code,
-
-        /*
-         * Existing UI expects serial_no.
-         * Current inventory allocation model uses bin_code
-         * for this value.
-         */
         ia.bin_code AS serial_no,
 
-        TO_CHAR(
-          ia.expiry_date,
-          'YYYY-MM-DD'
-        ) AS expiry_date,
+        TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
+        TO_CHAR(ia.date_received,'YYYY-MM-DD') AS date_received,
+        TO_CHAR(ia.prod_date,'YYYY-MM-DD') AS prod_date,
 
         ia.allocated_quantity,
 
@@ -191,26 +154,16 @@ export async function GET(req: NextRequest) {
 
         ia.created_at AS received_at,
 
-        /*
-         * Quantity already returned to supplier through
-         * Debit Note.
-         */
         COALESCE(
           returned.returned_quantity,
           0
         ) AS returned_quantity,
-
-        /*
-         * Quantity currently reserved by OTHER Sales Orders.
-         */
+         
         COALESCE(
           reserved.reserved_quantity,
           0
         ) AS reserved_quantity,
-
-        /*
-         * Actual quantity available for allocation.
-         */
+         
         GREATEST(
           ia.allocated_quantity
 
@@ -228,32 +181,7 @@ export async function GET(req: NextRequest) {
         ) AS available_quantity
 
       FROM inventory_allocations ia
-
-      /*
-       * =======================================================
-       * WAREHOUSE LOCATION
-       * =======================================================
-       */
-
-      LEFT JOIN warehouse_locations wl
-        ON wl.id = ia.warehouse_location_id
-       AND wl.company_id = ia.company_id
-
-      /*
-       * =======================================================
-       * DEBIT NOTE / PURCHASE RETURN
-       * =======================================================
-       *
-       * These child allocations reduce the quantity available
-       * from the original purchase/inbound allocation.
-       *
-       * Example:
-       *
-       * ROOT allocation = 10
-       * Debit Note       = 2
-       *
-       * Remaining        = 8
-       */
+      LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id AND wl.company_id = ia.company_id
 
       LEFT JOIN LATERAL (
         SELECT
@@ -265,37 +193,11 @@ export async function GET(req: NextRequest) {
         FROM inventory_allocations r
 
         WHERE r.company_id = ia.company_id
-
           AND r.source_allocation_id = ia.id
-
           AND r.status = 'ACTIVE'
-
           AND r.debit_note_line_id IS NOT NULL
 
       ) returned ON true
-
-      /*
-       * =======================================================
-       * SALES ORDER RESERVATION
-       * =======================================================
-       *
-       * Every Sales Order reservation MUST contain:
-       *
-       * source_allocation_id = original inventory allocation id
-       *
-       * sales_order_line_id = current SO line id
-       *
-       * Example:
-       *
-       * ROOT:
-       *     id = A
-       *
-       * SALES ORDER:
-       *     id = B
-       *     source_allocation_id = A
-       *
-       * Then B consumes reservation quantity from A.
-       */
 
       LEFT JOIN LATERAL (
         SELECT
@@ -305,77 +207,30 @@ export async function GET(req: NextRequest) {
           ) AS reserved_quantity
 
         FROM inventory_allocations r
-
-        INNER JOIN sales_order_lines sol
-          ON sol.id = r.sales_order_line_id
+        INNER JOIN sales_order_lines sol ON sol.id = r.sales_order_line_id
 
         WHERE r.company_id = ia.company_id
-
           AND r.source_allocation_id = ia.id
-
           AND r.status = 'ACTIVE'
-
           AND r.sales_order_line_id IS NOT NULL
-
           AND sol.is_deleted = false
-
-          /*
-           * Do not count the current Sales Order's own
-           * allocations while editing it.
-           */
           ${currentSalesOrderCondition}
 
       ) reserved ON true
 
-      /*
-       * =======================================================
-       * ROOT INVENTORY ONLY
-       * =======================================================
-       *
-       * Sales Order child rows cannot appear here because:
-       *
-       * child.source_allocation_id IS NOT NULL
-       */
-
       WHERE ia.company_id = $1
-
         AND ia.item_id = $2
-
         AND ia.status = 'ACTIVE'
 
         ${warehouseCondition}
 
-        /*
-         * Sales Order stock allocation is currently based on
-         * inbound inventory.
-         */
-        AND ia.inbound_entry_id IS NOT NULL
-
-        /*
-         * ROOT allocation only.
-         */
+        -- AND ia.inbound_entry_id IS NOT NULL
+        AND ia.inbound_entry_id IS NULL
         AND ia.source_allocation_id IS NULL
-
-        /*
-         * Must not already be a Sales Order allocation.
-         */
         AND ia.sales_order_line_id IS NULL
-
-        /*
-         * Root stock that has itself been consumed by a
-         * Debit Note is excluded.
-         */
         AND ia.debit_note_line_id IS NULL
-
-        /*
-         * Credit Note allocations are not treated as source
-         * inventory rows here.
-         */
         AND ia.credit_note_line_id IS NULL
 
-        /*
-         * Only show stock that actually remains available.
-         */
         AND GREATEST(
           ia.allocated_quantity
 
@@ -406,90 +261,45 @@ export async function GET(req: NextRequest) {
         END ASC,
 
         ia.expiry_date ASC,
-
         ia.created_at ASC,
-
         ia.id ASC
     `;
 
-    const result =
-      await client.query<AvailableBatchRow>(
-        query,
-        queryParams,
-      );
+    // console.log('query ==== ',query);
+    // console.log('queryParams ==== ',queryParams);
 
-    /**
-     * =========================================================
-     * MAP DATABASE RESULT
-     * =========================================================
-     */
+    const result = await client.query<AvailableBatchRow>(query, queryParams);
 
     const data = result.rows.map((row) => ({
       id: row.id,
 
-      /*
-       * IMPORTANT:
-       *
-       * For a ROOT allocation:
-       *
-       * source_allocation_id = id
-       *
-       * This is the value that MUST be sent back to
-       * SalesOrderService.saveLineAllocations().
-       */
-      source_allocation_id:
-        row.source_allocation_id || row.id,
+      source_allocation_id: row.source_allocation_id || row.id,
+      inbound_entry_id: row.inbound_entry_id || "",
 
-      inbound_entry_id:
-        row.inbound_entry_id || "",
+      item_id: row.item_id,
+      warehouse_id: row.warehouse_id,
+      location_id: row.location_id || "",
+      location_name: row.location_name || "",
 
-      item_id:
-        row.item_id,
+      batch_no: row.batch_no || "",
+      bin_code: row.bin_code || "",
+      serial_no: row.serial_no || "",
 
-      warehouse_id:
-        row.warehouse_id,
+      expiry_date: row.expiry_date || "",
+      date_received: row.date_received || "",
+      prod_date: row.prod_date || "",
 
-      location_id:
-        row.location_id || "",
+      allocated_quantity: Number(row.allocated_quantity) || 0,
+      reserved_quantity: Number(row.reserved_quantity) || 0,
+      returned_quantity: Number(row.returned_quantity) || 0,
+      available_quantity: Number(row.available_quantity) || 0,
 
-      location_name:
-        row.location_name || "",
+      unit_cost: Number(row.unit_cost) || 0,
 
-      batch_no:
-        row.batch_no || "",
+      purchase_order_line_id: row.purchase_order_line_id || "",
+      purchase_invoice_line_id: row.purchase_invoice_line_id || "",
 
-      bin_code:
-        row.bin_code || "",
-
-      serial_no:
-        row.serial_no || "",
-
-      expiry_date:
-        row.expiry_date || "",
-
-      allocated_quantity:
-        Number(row.allocated_quantity) || 0,
-
-      reserved_quantity:
-        Number(row.reserved_quantity) || 0,
-
-      returned_quantity:
-        Number(row.returned_quantity) || 0,
-
-      available_quantity:
-        Number(row.available_quantity) || 0,
-
-      unit_cost:
-        Number(row.unit_cost) || 0,
-
-      purchase_order_line_id:
-        row.purchase_order_line_id || "",
-
-      purchase_invoice_line_id:
-        row.purchase_invoice_line_id || "",
-
-      received_at:
-        row.received_at,
+      received_at: row.received_at,
     }));
 
     return NextResponse.json({
@@ -498,10 +308,7 @@ export async function GET(req: NextRequest) {
       data,
     });
   } catch (err) {
-    console.error(
-      "[GET_AVAILABLE_BATCHES_ERROR]:",
-      err,
-    );
+    console.error("[GET_AVAILABLE_BATCHES_ERROR]:", err);
 
     return NextResponse.json(
       {

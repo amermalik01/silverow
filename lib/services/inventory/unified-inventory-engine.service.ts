@@ -22,7 +22,11 @@ export interface StockLineInput {
   bin_code?: string | null;
   batch_no?: string | null;
   serial_no?: string | null;
+
   expiry_date?: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
+
   quantity: number;
   unit_cost?: number; // Calculated or overridden
   reference_type: string; // e.g. 'PURCHASE_ORDER', 'SALES_ORDER', 'STOCK_TRANSFER', 'ITEM_JOURNAL'
@@ -539,7 +543,10 @@ export class UnifiedInventoryEngineService {
 
         batch_no,
         bin_code,
+
         expiry_date,
+        date_received,
+        prod_date,
 
         allocated_quantity,
         unit_cost,
@@ -568,6 +575,9 @@ export class UnifiedInventoryEngineService {
         $13,
         $14,
 
+        $15,
+        $16,
+
         'ACTIVE'
       )
       `,
@@ -591,7 +601,9 @@ export class UnifiedInventoryEngineService {
 
           line.bin_code || null,
 
-          line.expiry_date || null,
+          line.expiry_date === "" ? null : line.expiry_date || null,
+          line.date_received === "" ? null : line.date_received || null,
+          line.prod_date === "" ? null : line.prod_date || null,
 
           allocation.qtyToTake,
 

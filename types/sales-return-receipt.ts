@@ -21,7 +21,11 @@ export interface SalesReturnReceiptLineInput {
   bin_code?: string | null;
   batch_no?: string | null;
   serial_no?: string | null;
+  
   expiry_date?: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
+  
   quantity: number;
   unit_cost: number;
   source_allocation_id?: string | null;

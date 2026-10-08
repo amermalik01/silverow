@@ -23,7 +23,11 @@ interface IncomingLine {
   bin_code?: string;
   batch_no?: string;
   serial_no?: string;
+  
   expiry_date?: string;
+  date_received?: string;
+  prod_date?: string;
+
   quantity: number | string;
   unit_price?: number | string;
   unit_cost?: number | string;

@@ -17,9 +17,9 @@ export type StockAllocationRecord = {
   location_id: string;
   location_name: string;
 
+  expiry_date?: string;
   date_received?: string;
   prod_date?: string;
-  expiry_date?: string;
 
   batch_no?: string;
   bin_code?: string;

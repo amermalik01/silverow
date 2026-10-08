@@ -403,7 +403,11 @@ export interface SalesDispatchLine {
   bin_code?: string;
   batch_no?: string;
   serial_no?: string;
-  expiry_date?: string;
+
+  expiry_date?: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
+
   quantity: number;
   unit_price: number;
   unit_cost?: number;

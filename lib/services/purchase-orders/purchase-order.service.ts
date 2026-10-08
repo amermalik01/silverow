@@ -296,7 +296,8 @@ export class PurchaseOrderService {
           ia.batch_no,
           ia.bin_code,
           TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
-          TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_received
+          TO_CHAR(ia.date_received,'YYYY-MM-DD') AS date_received,
+          TO_CHAR(ia.prod_date,'YYYY-MM-DD') AS prod_date
       FROM inventory_allocations ia
       LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
       INNER JOIN purchase_order_lines pol ON ia.purchase_order_line_id = pol.id
@@ -311,7 +312,7 @@ export class PurchaseOrderService {
         .filter((alloc) => alloc.purchase_order_line_id === line.id)
         .map((alloc) => ({
           date_received: alloc.date_received || "",
-          prod_date: "", // Set to blank string since it is not saved on this table
+          prod_date: alloc.prod_date || "", // Set to blank string since it is not saved on this table
           expiry_date: alloc.expiry_date || "",
           batch_no: alloc.batch_no || "",
           serial_no: alloc.bin_code || "",
@@ -1196,13 +1197,15 @@ export class PurchaseOrderService {
           batch_no,
           bin_code,
           expiry_date,
+          date_received,
+          prod_date,
           allocated_quantity,
           unit_cost,
           total_cost,
           allocation_method,
           status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'FIFO', 'ACTIVE')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'FIFO', 'ACTIVE')
         `,
         [
           companyId,
@@ -1215,6 +1218,8 @@ export class PurchaseOrderService {
           alloc.batch_no || null,
           alloc.serial_no || null,
           alloc.expiry_date === "" ? null : alloc.expiry_date || null,
+          alloc.date_received === "" ? null : alloc.date_received || null,
+          alloc.prod_date === "" ? null : alloc.prod_date || null,
           Number(alloc.quantity) || 0,
           0,
           0,

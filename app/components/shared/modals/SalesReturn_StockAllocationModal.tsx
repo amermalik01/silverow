@@ -15,21 +15,6 @@ import {
 
 type ReturnAllocationRecord = SalesReturnAllocation;
 
-// export type ReturnAllocationRecord = {
-//   id?: string;
-//   batch_no?: string;
-//   serial_no?: string;
-//   expiry_date?: string;
-//   prod_date?: string;
-//   warehouse_id?: string;
-//   warehouse_code?: string;
-//   warehouse_name?: string;
-//   location_id?: string;
-//   location_name?: string;
-//   quantity: number;
-//   max_invoice_qty?: number;
-// };
-
 type Warehouse = {
   id: string;
   code: string;

@@ -1367,14 +1367,18 @@ export class SalesReturnService {
           warehouse_location_id,
           batch_no,
           bin_code,
+
           expiry_date,
+          date_received,
+          prod_date,
+
           allocated_quantity,
           unit_cost,
           total_cost,
           allocation_method,
           status
         )
-        VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'FIFO', 'ACTIVE')
+        VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'FIFO', 'ACTIVE')
         `,
         [
           companyId,
@@ -1388,7 +1392,11 @@ export class SalesReturnService {
           source.warehouse_location_id,
           source.batch_no,
           source.bin_code,
-          source.expiry_date,
+
+          source.expiry_date === "" ? null : source.expiry_date || null,
+          source.date_received === "" ? null : source.date_received || null,
+          source.prod_date === "" ? null : source.prod_date || null,
+          
           returnQty,
           source.unit_cost,
           returnQty * Number(source.unit_cost || 0),

@@ -1443,7 +1443,10 @@ export class DebitNoteService {
 
           batch_no,
           bin_code,
+
           expiry_date,
+          date_received,
+          prod_date,
 
           allocated_quantity,
           unit_cost,
@@ -1452,7 +1455,7 @@ export class DebitNoteService {
           allocation_method,
           status
         )
-        VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'FIFO', 'ACTIVE')
+        VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'FIFO', 'ACTIVE')
         `,
         [
           companyId,
@@ -1470,7 +1473,10 @@ export class DebitNoteService {
 
           source.batch_no,
           source.bin_code,
-          source.expiry_date,
+
+          source.expiry_date === "" ? null : source.expiry_date || null,
+          source.date_received === "" ? null : source.date_received || null,
+          source.prod_date === "" ? null : source.prod_date || null,
 
           returnQty,
           source.unit_cost,

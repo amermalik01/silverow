@@ -434,16 +434,3 @@ export class ItemJournalValidationService {
   }
 }
 
-// export interface StockAllocationRecord {
-//   location_id?: string;
-//   location_name?: string;
-
-//   date_received?: string;
-//   prod_date?: string;
-//   expiry_date?: string;
-
-//   batch_no?: string;
-//   serial_no?: string;
-
-//   quantity: number;
-// }

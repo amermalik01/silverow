@@ -1437,7 +1437,8 @@ export class SalesOrderService {
 
         AND ia.sales_order_line_id IS NULL
 
-        AND ia.inbound_entry_id IS NOT NULL
+       -- AND ia.inbound_entry_id IS NOT NULL
+       AND ia.inbound_entry_id IS NULL
 
         AND ia.debit_note_line_id IS NULL
 
@@ -1611,7 +1612,10 @@ export class SalesOrderService {
 
         batch_no,
         bin_code,
+        
         expiry_date,
+        date_received,
+        prod_date,
 
         allocated_quantity,
 
@@ -1648,12 +1652,14 @@ export class SalesOrderService {
 
         $12,
         $13,
+        $14,
+        $15,
 
         'FIFO',
         'ACTIVE',
 
-        $14,
-        $15
+        $16,
+        $17
       )
       `,
         [
@@ -1675,7 +1681,10 @@ export class SalesOrderService {
 
           source.batch_no,
           source.bin_code,
-          source.expiry_date,
+
+          source.expiry_date === "" ? null : source.expiry_date || null,
+          source.date_received === "" ? null : source.date_received || null,
+          source.prod_date === "" ? null : source.prod_date || null,
 
           requestedQuantity,
 
@@ -1689,99 +1698,6 @@ export class SalesOrderService {
       );
     }
   }
-
-  /* static async saveLineAllocations(
-    client: PoolClient,
-    companyId: string,
-    salesOrderId: string,
-    salesOrderLineId: string,
-    itemId: string,
-    warehouseId: string,
-    initialAllocations: SO_StockAllocationRecord[],
-  ): Promise<void> {
-    // 1. Lock check: If stock has already been shipped on this line, protect allocations from deletion/modification
-    const lineCheck = await client.query(
-      `
-      SELECT COALESCE(quantity_shipped, 0) AS quantity_shipped
-      FROM sales_order_lines
-      WHERE id = $1 AND company_id = $2
-      `,
-      [salesOrderLineId, companyId],
-    );
-
-    const shippedQty = Number(lineCheck.rows[0]?.quantity_shipped || 0);
-
-    if (shippedQty > 0) {
-      // Stock is already shipped against this line; skip allocation modifications to keep existing records intact
-      return;
-    }
-
-    // 2. Clear existing pre-shipment allocations for unshipped lines
-    await client.query(
-      `
-      DELETE FROM inventory_allocations
-      WHERE sales_order_line_id = $1 AND company_id = $2 AND status = 'ACTIVE'
-      `,
-      [salesOrderLineId, companyId],
-    );
-
-    if (!initialAllocations || !initialAllocations.length) return;
-
-    // 3. Insert fresh allocation records
-    for (const alloc of initialAllocations) {
-      await client.query(
-        `
-        INSERT INTO inventory_allocations (
-          company_id,
-          source_allocation_id,
-
-          outbound_entry_id,
-          inbound_entry_id,
-
-          sales_order_line_id,
-
-          item_id,
-          warehouse_id,
-          warehouse_location_id,
-
-          batch_no,
-          bin_code,
-          expiry_date,
-
-          allocated_quantity,
-          unit_cost,
-          total_cost,
-
-          allocation_method,
-          status
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'FIFO', 'ACTIVE')
-        `,
-        [
-          companyId,
-          alloc.source_allocation_id,
-
-          null,
-          alloc.inbound_entry_id || null,
-
-          salesOrderLineId,
-
-          itemId,
-          warehouseId,
-          alloc.location_id || null,
-
-          alloc.batch_no || null,
-          alloc.bin_code || null,
-          alloc.expiry_date || null,
-
-          Number(alloc.quantity) || 0,
-          Number(alloc.unit_cost) || 0,
-
-          (Number(alloc.quantity) || 0) * (Number(alloc.unit_cost) || 0),
-        ],
-      );
-    }
-  } */
 
   private static validatePayload(payload: SalesOrderPayload): void {
     const order = payload.order;

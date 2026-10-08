@@ -24,7 +24,10 @@ export type InventoryMovementLineInput = {
   movement_direction: "IN" | "OUT";
   batch_no?: string | null;
   serial_no?: string | null;
+
   expiry_date?: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
 };
 
 export type PostInventoryTransactionInput = {

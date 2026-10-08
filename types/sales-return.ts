@@ -260,7 +260,10 @@ export interface SalesReturnDeAllocationRecord {
   location_id?: string | null;
   batch_no?: string | null;
   serial_no?: string | null;
+
   expiry_date?: string | null;
+  date_received?: string | null;
+  prod_date?: string | null;
 }
 
 export interface LookupItem {
