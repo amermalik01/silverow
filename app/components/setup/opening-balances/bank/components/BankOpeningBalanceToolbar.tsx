@@ -14,11 +14,10 @@ export default function BankOpeningBalanceToolbar({
   onSelectCustomer,
 }: Props) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 justify-end">
       <Button
         type="button"
-        variant="outline"
-        className="border-emerald-700 text-emerald-800 hover:bg-emerald-50 font-semibold text-xs"
+        variant="add_line"
         onClick={onSelectSupplier}
       >
         Select Suppliers
@@ -26,8 +25,7 @@ export default function BankOpeningBalanceToolbar({
 
       <Button
         type="button"
-        variant="outline"
-        className="border-emerald-700 text-emerald-800 hover:bg-emerald-50 font-semibold text-xs"
+        variant="add_line"
         onClick={onSelectCustomer}
       >
         Select Customers

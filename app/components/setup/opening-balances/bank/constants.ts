@@ -1,4 +1,4 @@
-// constants.ts
+// app/components/setup/bank/constants.ts
 
 import type { BankOpeningBalanceRow, Currency } from "./types";
 

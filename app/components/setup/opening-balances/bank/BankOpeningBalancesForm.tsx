@@ -1,4 +1,4 @@
-// app/components/finance/opening-balances/BankOpeningBalancesForm.tsx
+// app/components/setup/opening-balances/BankOpeningBalancesForm.tsx
 
 "use client";
 
@@ -21,11 +21,11 @@ import SupplierLookupModal, {
   SupplierLookupItem,
 } from "@/app/components/shared/modals/SupplierLookupModal";
 
-import type { BankOpeningBalanceRow, Currency } from "./bank/types";
+import type { BankOpeningBalanceRow, Currency } from "./types";
 
-import BankOpeningBalanceToolbar from "./bank/components/BankOpeningBalanceToolbar";
-import BankOpeningBalanceTable from "./bank/components/BankOpeningBalanceTable";
-import { createBankOpeningBalanceRow } from "./bank/constants";
+import BankOpeningBalanceToolbar from "./components/BankOpeningBalanceToolbar";
+import BankOpeningBalanceTable from "./components/BankOpeningBalanceTable";
+import { createBankOpeningBalanceRow } from "./constants";
 
 type Props = {
   apiBase?: string;

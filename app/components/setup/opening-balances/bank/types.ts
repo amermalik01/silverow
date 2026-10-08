@@ -1,4 +1,4 @@
-// app/components/finance/opening-balances/bank/types.ts
+// app/components/setup/opening-balances/bank/types.ts
 
 export type Currency = {
   id: string;

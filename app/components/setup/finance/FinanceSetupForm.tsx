@@ -5,17 +5,21 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react";
 
+import VatRatesList from "@/app/components/setup/VatRatesList";
 import VatPostingSetupList from "@/app/components/setup/VatPostingSetupList";
+import PostingDateRangeSetup from "@/app/components/setup/posting/PostingDateRangeSetup";
 import VatBusinessPostingGroupsList from "@/app/components/setup/VatBusinessPostingGroupsList";
 // import VatProductPostingGroupsList from "@/app/components/setup/VatProductPostingGroupsList";
-import VatRatesList from "@/app/components/setup/VatRatesList";
-import PostingDateRangeSetup from "@/app/components/setup/posting/PostingDateRangeSetup";
-import InventorySystemSetup from "../posting/InventorySystemSetup";
+
 import SalesPostingGroups from "../posting/SalesPostingGroups";
+import InventorySystemSetup from "../posting/InventorySystemSetup";
 import PurchasePostingGroups from "../posting/PurchasePostingGroups";
 import InventoryPostingGroups from "../posting/InventoryPostingGroups";
+
+import BankOpeningBalancesForm from "../opening-balances/bank/BankOpeningBalancesForm";
 import StockOpeningBalanceForm from "../opening-balances/stock/StockOpeningBalanceForm";
-import BankOpeningBalancesForm from "../opening-balances/BankOpeningBalancesForm";
+import CustomerOpeningBalancesForm from "../opening-balances/customer/CustomerOpeningBalancesForm";
+import SupplierOpeningBalancesForm from "../opening-balances/supplier/SupplierOpeningBalancesForm";
 
 type TabType =
   | "posting_setup"
@@ -25,7 +29,11 @@ type TabType =
   | "rates"
   | "posting_date_range"
   | "bank_opening_balance"
+  | "supplier_opening_balance"
+  | "customer_opening_balance"
   | "stock_opening_balance";
+
+  
 
 const tabs: {
   id: TabType;
@@ -65,6 +73,16 @@ const tabs: {
   {
     id: "bank_opening_balance",
     label: "Bank Opening Balance",
+    icon: "solar:calendar-date-linear",
+  },
+  {
+    id: "customer_opening_balance",
+    label: "Customer Opening Balance",
+    icon: "solar:calendar-date-linear",
+  },
+  {
+    id: "supplier_opening_balance",
+    label: "Supplier Opening Balance",
     icon: "solar:calendar-date-linear",
   },
   {
@@ -240,6 +258,10 @@ export default function FinanceSetupForm() {
         {activeTab === "posting_date_range" && <PostingDateRangeSetup />}
 
         {activeTab === "bank_opening_balance" && <BankOpeningBalancesForm />}
+
+        {activeTab === "customer_opening_balance" && <CustomerOpeningBalancesForm />}
+
+        {activeTab === "supplier_opening_balance" && <SupplierOpeningBalancesForm />}
         
         {activeTab === "stock_opening_balance" && <StockOpeningBalanceForm />}
       </div>
