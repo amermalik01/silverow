@@ -14,6 +14,8 @@ import InventorySystemSetup from "../posting/InventorySystemSetup";
 import SalesPostingGroups from "../posting/SalesPostingGroups";
 import PurchasePostingGroups from "../posting/PurchasePostingGroups";
 import InventoryPostingGroups from "../posting/InventoryPostingGroups";
+import StockOpeningBalanceForm from "../opening-balances/stock/StockOpeningBalanceForm";
+import BankOpeningBalancesForm from "../opening-balances/BankOpeningBalancesForm";
 
 type TabType =
   | "posting_setup"
@@ -21,7 +23,9 @@ type TabType =
   | "business"
   // | "product"
   | "rates"
-  | "posting_date_range";
+  | "posting_date_range"
+  | "bank_opening_balance"
+  | "stock_opening_balance";
 
 const tabs: {
   id: TabType;
@@ -56,6 +60,16 @@ const tabs: {
   {
     id: "posting_date_range",
     label: "Posting Date Range",
+    icon: "solar:calendar-date-linear",
+  },
+  {
+    id: "bank_opening_balance",
+    label: "Bank Opening Balance",
+    icon: "solar:calendar-date-linear",
+  },
+  {
+    id: "stock_opening_balance",
+    label: "Stock Opening Balance",
     icon: "solar:calendar-date-linear",
   },
 ];
@@ -224,6 +238,10 @@ export default function FinanceSetupForm() {
         {activeTab === "rates" && <VatRatesList />}
 
         {activeTab === "posting_date_range" && <PostingDateRangeSetup />}
+
+        {activeTab === "bank_opening_balance" && <BankOpeningBalancesForm />}
+        
+        {activeTab === "stock_opening_balance" && <StockOpeningBalanceForm />}
       </div>
     </div>
   );
