@@ -52,14 +52,14 @@ interface CustomerStatementGroup {
 function getSignedAmount(docType: string, amount: number): number {
   const normalizedType = (docType || "").toUpperCase();
   switch (normalizedType) {
-    case "PURCHASE_INVOICE":
+    case "SALES_INVOICE":
     case "INVOICE":
-      return -Math.abs(amount); // Increases AP liability (credit balance)
+      return Math.abs(amount); // Increases AP liability (credit balance)
     case "PAYMENT":
     case "PURCHASE_DEBIT_NOTE":
-    case "DEBIT_NOTE":
+    case "CREDIT_MEMO":
     case "REFUND":
-      return Math.abs(amount); // Decreases AP liability
+      return -Math.abs(amount); // Decreases AP liability
     default:
       return amount;
   }

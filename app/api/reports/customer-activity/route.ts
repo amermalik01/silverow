@@ -11,6 +11,7 @@ function getSignedAmount(docType: string, amount: number): number {
   if (
     normalizedType.includes("PAYMENT") ||
     normalizedType.includes("VENDOR_PAYMENT") ||
+    normalizedType.includes("CREDIT_MEMO") ||
     normalizedType.includes("DEBIT_NOTE") ||
     normalizedType.includes("REFUND")||
     normalizedType.includes("FX_VARIANCE")
@@ -184,8 +185,8 @@ export async function GET(req: NextRequest) {
       ORDER BY combined.posting_date DESC, combined.created_at DESC
     `;
 
-    // console.log("query ===", query);
-    // console.log("queryParams ===", queryParams);
+    console.log("query ===", query);
+    console.log("queryParams ===", queryParams);
 
     const result = await pool.query(query, queryParams);
 

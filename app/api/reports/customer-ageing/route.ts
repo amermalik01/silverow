@@ -30,12 +30,12 @@ interface VendorGroup {
 function getSignedAmount(docType: string, amount: number): number {
   const normalizedType = (docType || "").toUpperCase();
   switch (normalizedType) {
-    case "PURCHASE_INVOICE":
+    case "SALES_INVOICE":
     case "INVOICE":
       return -Math.abs(amount); // Increases AP liability (credit balance)
     case "PAYMENT":
     case "PURCHASE_DEBIT_NOTE":
-    case "DEBIT_NOTE":
+    case "CREDIT_MEMO":
     case "REFUND":
       return Math.abs(amount); // Decreases AP liability
     default:
@@ -186,33 +186,19 @@ export async function GET(req: NextRequest) {
     // SQL Expression to handle document type signage in Summary aggregations
     const signedLcyExpr = `
       CASE 
-        WHEN UPPER(e.document_type) IN ('PURCHASE_INVOICE', 'INVOICE') THEN -ABS(e.remaining_amount_lcy)
-        WHEN UPPER(e.document_type) IN ('PAYMENT', 'PURCHASE_DEBIT_NOTE', 'DEBIT_NOTE', 'REFUND') THEN ABS(e.remaining_amount_lcy)
+        WHEN UPPER(e.document_type) IN ('SALES_INVOICE', 'INVOICE') THEN -ABS(e.remaining_amount_lcy)
+        WHEN UPPER(e.document_type) IN ('PAYMENT', 'PURCHASE_DEBIT_NOTE', 'CREDIT_MEMO', 'REFUND') THEN ABS(e.remaining_amount_lcy)
         ELSE e.remaining_amount_lcy 
       END
     `;
 
     const signedFcyExpr = `
       CASE 
-        WHEN UPPER(e.document_type) IN ('PURCHASE_INVOICE', 'INVOICE') THEN -ABS(e.remaining_amount_fcy)
-        WHEN UPPER(e.document_type) IN ('PAYMENT', 'PURCHASE_DEBIT_NOTE', 'DEBIT_NOTE', 'REFUND') THEN ABS(e.remaining_amount_fcy)
+        WHEN UPPER(e.document_type) IN ('SALES_INVOICE', 'INVOICE') THEN -ABS(e.remaining_amount_fcy)
+        WHEN UPPER(e.document_type) IN ('PAYMENT', 'PURCHASE_DEBIT_NOTE', 'CREDIT_MEMO', 'REFUND') THEN ABS(e.remaining_amount_fcy)
         ELSE e.remaining_amount_fcy 
       END
     `;
-    // SUM(e.remaining_amount_lcy) AS total_lcy,
-    // SUM(e.remaining_amount_fcy) AS total_fcy,
-
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 0 AND 30 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_0_30,
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 31 AND 60 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_31_60,
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 61 AND 90 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_61_90,
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 91 AND 120 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_91_120,
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) > 120 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_over_120,
-    // -- FCY Buckets
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 0 AND 30 THEN e.remaining_amount_fcy ELSE 0 END) AS fcy_bucket_0_30,
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 31 AND 60 THEN e.remaining_amount_fcy ELSE 0 END) AS fcy_bucket_31_60,
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 61 AND 90 THEN e.remaining_amount_fcy ELSE 0 END) AS fcy_bucket_61_90,
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 91 AND 120 THEN e.remaining_amount_fcy ELSE 0 END) AS fcy_bucket_91_120,
-    // SUM(CASE WHEN ($2::date - e.posting_date::date) > 120 THEN e.remaining_amount_fcy ELSE 0 END) AS fcy_bucket_over_120
 
     // Summary Aging Bucket Query
     const summaryQuery = `
@@ -343,24 +329,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-
-// Summary Aging Bucket Query
-// const summaryQuery = `
-//   SELECT
-//     p.id AS customer_id,
-//     p.customer_code AS vendor_no,
-//     p.name AS vendor_name,
-//     COALESCE(c.code, 'GBP') AS currency_code,
-//     SUM(e.remaining_amount_lcy) AS total_lcy,
-//     SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 0 AND 30 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_0_30,
-//     SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 31 AND 60 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_31_60,
-//     SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 61 AND 90 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_61_90,
-//     SUM(CASE WHEN ($2::date - e.posting_date::date) BETWEEN 91 AND 120 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_91_120,
-//     SUM(CASE WHEN ($2::date - e.posting_date::date) > 120 THEN e.remaining_amount_lcy ELSE 0 END) AS bucket_over_120
-//   FROM customer_ledger_entries e
-//   LEFT JOIN parties p ON p.id = e.customer_id
-//   LEFT JOIN currencies c ON c.id = e.currency_id
-//   WHERE ${whereConditions.join(" AND ")}
-//   GROUP BY p.id, p.customer_code, p.name, c.code
-//   ORDER BY p.name ASC
-// `;
