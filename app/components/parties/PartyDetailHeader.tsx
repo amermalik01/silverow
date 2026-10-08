@@ -113,7 +113,6 @@ export default function PartyDetailHeader({
 
   const isCustomerTarget = confirmModal.targetType === "to_customer";
 
-  // Currency formatters
   const formatFCY = (val: number, code: string) => {
     const validCode =
       code?.trim().length === 3 ? code.trim().toUpperCase() : "GBP";
@@ -141,15 +140,6 @@ export default function PartyDetailHeader({
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 {party.name || ""}
               </h2>
-              {/* <span
-                className={`px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize ${
-                  party.status === "active"
-                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
-                    : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                }`}
-              >
-                {party.status || "active"}
-              </span> */}
 
               <button
                 type="button"
@@ -188,10 +178,7 @@ export default function PartyDetailHeader({
             </div>
           </div>
 
-          {/* Right Column: Widgets & Conversion Actions */}
-
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            {/* Outstanding */}
             <div className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30">
               <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-amber-400/10 group-hover:bg-amber-400/20 transition-colors" />
 
@@ -203,7 +190,8 @@ export default function PartyDetailHeader({
                   </div>
 
                   <div className="mt-1.5 text-base font-bold tracking-tight text-amber-950 dark:text-amber-100">
-                    {formatFCY(outstandingBalance, currencyCode)} / LCY {lcyFormatter.format(lcyBalance || 0)}
+                    {formatFCY(outstandingBalance, currencyCode)} / LCY{" "}
+                    {lcyFormatter.format(lcyBalance || 0)}
                   </div>
 
                   {/* <div className="mt-0.5 text-[10px] font-medium text-amber-700/70 dark:text-amber-300/70">
@@ -217,33 +205,6 @@ export default function PartyDetailHeader({
               </div>
             </div>
 
-            {/* Open Entries */}
-            {/* <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-blue-900/50 dark:from-blue-950/40 dark:to-indigo-950/30">
-              <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-blue-400/10 group-hover:bg-blue-400/20 transition-colors" />
-
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                    <Icon icon="lucide:files" className="w-3.5 h-3.5" />
-                    Open Entries
-                  </div>
-
-                  <div className="mt-1.5 text-xl font-bold tracking-tight text-blue-950 dark:text-blue-100">
-                    {openEntriesCount}
-                  </div>
-
-                  <div className="mt-0.5 text-[10px] font-medium text-blue-700/70 dark:text-blue-300/70">
-                    Outstanding entries
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-blue-600 shadow-sm dark:bg-blue-900/40 dark:text-blue-400">
-                  <Icon icon="lucide:layers-3" className="w-4 h-4" />
-                </div>
-              </div>
-            </div> */}
-
-            {/* Credit Limit */}
             <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-fuchsia-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-violet-900/50 dark:from-violet-950/40 dark:to-fuchsia-950/30">
               <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-violet-400/10 group-hover:bg-violet-400/20 transition-colors" />
 
@@ -257,10 +218,6 @@ export default function PartyDetailHeader({
                   <div className="mt-1.5 text-base font-bold tracking-tight text-violet-950 dark:text-violet-100">
                     {formatFCY(Number(party.credit_limit) || 0, currencyCode)}
                   </div>
-
-                  {/* <div className="mt-0.5 text-[10px] font-medium text-violet-700/70 dark:text-violet-300/70">
-                    Available credit ceiling
-                  </div> */}
                 </div>
 
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-violet-600 shadow-sm dark:bg-violet-900/40 dark:text-violet-400">
@@ -269,7 +226,6 @@ export default function PartyDetailHeader({
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex items-center gap-2">
               {party.is_crm_lead && !party.is_customer && (
                 <Button
@@ -320,86 +276,6 @@ export default function PartyDetailHeader({
               )}
             </div>
           </div>
-
-          {/* <div className="flex items-center gap-3 flex-wrap">
-            <div className="px-3.5 py-2 bg-amber-50/80 dark:bg-amber-950/30 rounded-xl border border-amber-200/60 dark:border-amber-900/40 shadow-sm">
-              <span className="text-[12px] text-amber-700 dark:text-amber-400 block tracking-wider capitalize">
-                Open Outstanding
-              </span>
-              <div className="text-[10px] text-amber-900 dark:text-amber-300">
-                FCY: {formatFCY(outstandingBalance, currencyCode)} / LCY:{" "}
-                {lcyFormatter.format(lcyBalance || 0)}
-              </div>
-            </div>
-
-            <div className="px-3.5 py-2 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-900/40 shadow-sm">
-              <span className="text-[12px] text-blue-700 dark:text-blue-400 block tracking-wider capitalize">
-                Open Entries
-              </span>
-              <div className="text-[10px] font-mono text-blue-900 dark:text-blue-300">
-                {openEntriesCount} Entries
-              </div>
-            </div>
-
-            <div className="px-3.5 py-2 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-900/40 shadow-sm">
-              <span className="text-[12px] text-blue-700 dark:text-blue-400 block tracking-wider capitalize">
-                Credit Limits
-              </span>
-              <div className="text-[10px] font-mono text-blue-900 dark:text-blue-300">
-                {party.credit_limit}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {party.is_crm_lead && !party.is_customer && (
-                <Button
-                  type="button"
-                  onClick={() => openConfirmModal("to_customer")}
-                  disabled={loading !== null}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
-                >
-                  {loading === "to_customer" ? (
-                    <>
-                      <Icon
-                        icon="svg-spinners:180-ring-with-bg"
-                        className="w-3.5 h-3.5"
-                      />
-                      <span>Converting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon="lucide:user-check" className="w-3.5 h-3.5" />
-                      <span>Convert to Customer</span>
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {party.is_srm_vendor && !party.is_supplier && (
-                <Button
-                  type="button"
-                  onClick={() => openConfirmModal("to_supplier")}
-                  disabled={loading !== null}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
-                >
-                  {loading === "to_supplier" ? (
-                    <>
-                      <Icon
-                        icon="svg-spinners:180-ring-with-bg"
-                        className="w-3.5 h-3.5"
-                      />
-                      <span>Converting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon="lucide:truck" className="w-3.5 h-3.5" />
-                      <span>Convert to Supplier</span>
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div> */}
         </div>
 
         {errorMessage && (
@@ -409,7 +285,6 @@ export default function PartyDetailHeader({
         )}
       </div>
 
-      {/* Confirmation Modal */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 transition-all scale-100">
@@ -652,4 +527,131 @@ export default function PartyDetailHeader({
                 </span>
               )}
             </div> */
+}
+
+{
+  /* <div className="flex items-center gap-3 flex-wrap">
+            <div className="px-3.5 py-2 bg-amber-50/80 dark:bg-amber-950/30 rounded-xl border border-amber-200/60 dark:border-amber-900/40 shadow-sm">
+              <span className="text-[12px] text-amber-700 dark:text-amber-400 block tracking-wider capitalize">
+                Open Outstanding
+              </span>
+              <div className="text-[10px] text-amber-900 dark:text-amber-300">
+                FCY: {formatFCY(outstandingBalance, currencyCode)} / LCY:{" "}
+                {lcyFormatter.format(lcyBalance || 0)}
+              </div>
+            </div>
+
+            <div className="px-3.5 py-2 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-900/40 shadow-sm">
+              <span className="text-[12px] text-blue-700 dark:text-blue-400 block tracking-wider capitalize">
+                Open Entries
+              </span>
+              <div className="text-[10px] font-mono text-blue-900 dark:text-blue-300">
+                {openEntriesCount} Entries
+              </div>
+            </div>
+
+            <div className="px-3.5 py-2 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-900/40 shadow-sm">
+              <span className="text-[12px] text-blue-700 dark:text-blue-400 block tracking-wider capitalize">
+                Credit Limits
+              </span>
+              <div className="text-[10px] font-mono text-blue-900 dark:text-blue-300">
+                {party.credit_limit}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {party.is_crm_lead && !party.is_customer && (
+                <Button
+                  type="button"
+                  onClick={() => openConfirmModal("to_customer")}
+                  disabled={loading !== null}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
+                >
+                  {loading === "to_customer" ? (
+                    <>
+                      <Icon
+                        icon="svg-spinners:180-ring-with-bg"
+                        className="w-3.5 h-3.5"
+                      />
+                      <span>Converting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Icon icon="lucide:user-check" className="w-3.5 h-3.5" />
+                      <span>Convert to Customer</span>
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {party.is_srm_vendor && !party.is_supplier && (
+                <Button
+                  type="button"
+                  onClick={() => openConfirmModal("to_supplier")}
+                  disabled={loading !== null}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
+                >
+                  {loading === "to_supplier" ? (
+                    <>
+                      <Icon
+                        icon="svg-spinners:180-ring-with-bg"
+                        className="w-3.5 h-3.5"
+                      />
+                      <span>Converting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Icon icon="lucide:truck" className="w-3.5 h-3.5" />
+                      <span>Convert to Supplier</span>
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div> */
+}
+{
+  /* Open Entries */
+}
+
+{
+  /* <span
+                className={`px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize ${
+                  party.status === "active"
+                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
+                    : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                }`}
+              >
+                {party.status || "active"}
+              </span> */
+}
+{
+  /* <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-blue-900/50 dark:from-blue-950/40 dark:to-indigo-950/30">
+              <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-blue-400/10 group-hover:bg-blue-400/20 transition-colors" />
+
+              <div className="relative flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">
+                    <Icon icon="lucide:files" className="w-3.5 h-3.5" />
+                    Open Entries
+                  </div>
+
+                  <div className="mt-1.5 text-xl font-bold tracking-tight text-blue-950 dark:text-blue-100">
+                    {openEntriesCount}
+                  </div>
+
+                  <div className="mt-0.5 text-[10px] font-medium text-blue-700/70 dark:text-blue-300/70">
+                    Outstanding entries
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-blue-600 shadow-sm dark:bg-blue-900/40 dark:text-blue-400">
+                  <Icon icon="lucide:layers-3" className="w-4 h-4" />
+                </div>
+              </div>
+            </div> */
+}
+
+{
+  /* Credit Limit */
 }

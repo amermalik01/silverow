@@ -114,9 +114,6 @@ export default function ReportsPage() {
       { id: "FIN_PL_STMT", name: "Profit and Loss Statement" },
       { id: "FIN_BAL_SHEET", name: "Balance Sheet" },
       { id: "FIN_SRCH_ENTRY", name: "Search Record by Entry No." },
-      { id: "FIN_CUST_LIST", name: "Customer Listing" },
-      { id: "FIN_CRM_LIST", name: "CRM Listing" },
-      { id: "FIN_CUST_ACT", name: "Customer Activity Report" },
       { id: "FIN_MARGIN_ANLYS", name: "Item(s) Sales Margin Analysis" },
       { id: "FIN_FIG_GL", name: "Figure By G.L" },
       { id: "FIN_HAULIER_ACCR", name: "Haulier Accruals Report" },
@@ -168,6 +165,10 @@ export default function ReportsPage() {
       { id: "SALES_DIST_ANLYS", name: "Inland Distribution Analysis Report" },
       { id: "SALES_SRC_ORDER", name: "Source Of Sale Order(s)" },
       { id: "SALES_TICKETS", name: "Support Tickets" },
+      
+      { id: "FIN_CUST_LIST", name: "Customer Listing" },
+      { id: "FIN_CRM_LIST", name: "CRM Listing" },
+      { id: "FIN_CUST_ACT", name: "Customer Activity Report" },
     ],
     Inventory: [
       { id: "INV_AVAIL", name: "Stock Availability Report" },
