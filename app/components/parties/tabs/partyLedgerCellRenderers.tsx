@@ -139,13 +139,25 @@ export function getPartyLedgerCellRenderers({
 
     allocations: (row: LedgerEntry) => (
       <div className="text-center">
-        <button
+        {row.original_amount_fcy === row.remaining_amount_fcy ? (
+          <span></span>
+        ) : (
+          <button
+            onClick={() => onViewAllocations(row)}
+            title="View Allocations"
+            className="p-1 text-slate-500 hover:text-blue-600 transition-colors rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <Icon icon="tabler:eye" className="w-4 h-4 inline" />
+          </button>
+        )}
+
+        {/* <button
           onClick={() => onViewAllocations(row)}
           title="View Allocations"
           className="p-1 text-slate-500 hover:text-blue-600 transition-colors rounded hover:bg-slate-100 dark:hover:bg-slate-800"
         >
           <Icon icon="tabler:eye" className="w-4 h-4 inline" />
-        </button>
+        </button> */}
       </div>
     ),
 

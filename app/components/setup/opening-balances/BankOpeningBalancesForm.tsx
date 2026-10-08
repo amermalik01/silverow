@@ -173,6 +173,34 @@ export default function BankOpeningBalancesForm({
     setLines(updated);
   };
 
+  /* const handleLineChange = <K extends keyof BankOpeningBalanceRow>(
+    index: number,
+    field: K,
+    value: BankOpeningBalanceRow[K]
+  ) => {
+    const updated = [...lines];
+
+    if (field === "debit" && Number(value) > 0) {
+      updated[index].credit = 0;
+    } else if (field === "credit" && Number(value) > 0) {
+      updated[index].debit = 0;
+    }
+
+    if (field === "currency_id") {
+      const selectedCurrency = currencies.find((c) => c.id === value);
+      if (selectedCurrency) {
+        updated[index].currency_code = selectedCurrency.code;
+        updated[index].exchange_rate = Number(selectedCurrency.exchange_rate);
+      } else {
+        updated[index].currency_code = baseCurrencyObj.code;
+        updated[index].exchange_rate = 1.0;
+      }
+    }
+
+    updated[index] = { ...updated[index], [field]: value };
+    setLines(updated);
+  }; */
+
   const removeRow = (index: number) => {
     setLines(lines.filter((_, i) => i !== index));
   };
@@ -243,14 +271,6 @@ export default function BankOpeningBalancesForm({
 
   return (
     <div className="space-y-6">
-      {/* <Breadcrumbs
-        items={[
-          { label: "Setup", href: "/setup" },
-          { label: "Finance", href: "/finance" },
-          { label: "Opening Balances (Bank)" },
-        ]}
-      /> */}
-
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-4 shadow-sm">
         {errorMsg && (
           <div className="p-3 bg-red-100 text-red-700 rounded-md font-medium text-sm">

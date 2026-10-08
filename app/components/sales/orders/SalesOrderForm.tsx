@@ -347,15 +347,15 @@ export const SalesOrderForm: React.FC<Props> = ({
     }
 
     const customerPostingGroup = customer.posting_group?.trim();
-    
-        if (!customerPostingGroup) {
-          const errorMessage = `Posting group does not exist for customer "${customer.name}". Please assign a posting group to the customer.`;
-    
-          setValidationErrors([errorMessage]);
-          toast.error(errorMessage);
-    
-          return;
-        }
+
+    if (!customerPostingGroup) {
+      const errorMessage = `Posting group does not exist for customer "${customer.name}". Please assign a posting group to the customer.`;
+
+      setValidationErrors([errorMessage]);
+      toast.error(errorMessage);
+
+      return;
+    }
 
     // Find customer's payment terms in master data
     const selectedPaymentTerm = masterData?.paymentTerms.find(
@@ -614,7 +614,6 @@ export const SalesOrderForm: React.FC<Props> = ({
       router.replace(`/${slug}/sales/orders/${targetId}/edit`);
     }
   };
-
 
   const handleStageClick = async (targetStage: {
     id: string;
@@ -1205,7 +1204,6 @@ export const SalesOrderForm: React.FC<Props> = ({
           <div className="flex items-center gap-2">
             {isUpdateMode && (
               <>
-
                 <Button
                   type="button"
                   variant="post"

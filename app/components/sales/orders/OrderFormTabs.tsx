@@ -589,7 +589,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                     readOnly
                     disabled
                     className={`${inputStyle} font-mono`}
-                    value={order.customer_no || "Click Select..."}
+                    value={order.bill_to_customer_no || "Click Select..."}
                   />
                   <button
                     type="button"
@@ -609,7 +609,7 @@ export const OrderFormTabs: React.FC<OrderFormTabsProps> = ({
                   type="text"
                   disabled={isSettingsDisabled}
                   className={inputStyle}
-                  value={order.customer_name || ""}
+                  value={order.bill_to_customer_name || ""}
                 />
               </div>
               <div className="grid grid-cols-12 items-center gap-2">

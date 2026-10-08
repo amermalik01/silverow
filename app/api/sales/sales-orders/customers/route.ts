@@ -92,6 +92,7 @@ export async function GET(req: NextRequest) {
         LEFT JOIN payment_terms pt ON p.payment_terms = pt.id::text AND pt.module_type='sales'
         WHERE p.company_id = $1
           AND (p.is_customer = true)
+          AND (p.status = 'active')
           AND (
             $2 = '' OR 
             p.customer_code ILIKE '%' || $2 || '%' OR

@@ -451,6 +451,8 @@ export default function PartyRecord({
               setContacts={setContacts}
               isReadonly={effectiveReadonly}
               errors={formErrors}
+              onRequestEdit={isReadonlyProp ? undefined : () => setIsEditing(true)}
+              // onRequestEdit={() => setIsEditing(true)}
             />
           )}
           {activeTab === "locations" && (
@@ -459,6 +461,8 @@ export default function PartyRecord({
               setAddresses={setAddresses}
               isReadonly={effectiveReadonly}
               errors={formErrors}
+              onRequestEdit={isReadonlyProp ? undefined : () => setIsEditing(true)}
+              // onRequestEdit={() => setIsEditing(true)}
             />
           )}
 

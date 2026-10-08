@@ -11,6 +11,7 @@ type Props = {
   setAddresses: React.Dispatch<React.SetStateAction<PartyAddressDraft[]>>;
   isReadonly?: boolean;
   errors: Record<string, string>;
+  onRequestEdit?: () => void;
 };
 
 export default function AddressesTab({
@@ -18,8 +19,11 @@ export default function AddressesTab({
   setAddresses,
   isReadonly = false,
   errors,
+  onRequestEdit,
 }: Props) {
   const addAddressRow = () => {
+
+    onRequestEdit?.();
     setAddresses([
       ...addresses,
       {
@@ -76,8 +80,8 @@ export default function AddressesTab({
           Locations
         </h3>
 
-        {/* {!isReadonly && ( */}
-          <Button type="button" onClick={addAddressRow} variant="add_line" disabled={isReadonly}>
+        {/* {!isReadonly && (  disabled={isReadonly}*/}
+          <Button type="button" onClick={addAddressRow} variant="add_line" >
             Add Location
           </Button>
         {/* )} */}
