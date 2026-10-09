@@ -28,6 +28,7 @@ export const createSupplierOpeningBalanceRow = (
     doc_type: "Invoice",
     doc_no: "",
     external_ref_no: "",
+    description: "",
 
     currency_id: supplier.currency_id || "",
 

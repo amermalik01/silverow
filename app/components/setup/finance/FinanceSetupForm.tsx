@@ -18,7 +18,10 @@ import InventoryPostingGroups from "../posting/InventoryPostingGroups";
 
 import BankOpeningBalancesForm from "../opening-balances/bank/BankOpeningBalancesForm";
 import StockOpeningBalanceForm from "../opening-balances/stock/StockOpeningBalanceForm";
+
+import CustomerOpeningBalancesList from "../opening-balances/customer/CustomerOpeningBalancesList";
 import CustomerOpeningBalancesForm from "../opening-balances/customer/CustomerOpeningBalancesForm";
+import SupplierOpeningBalancesList from "../opening-balances/supplier/SupplierOpeningBalancesList";
 import SupplierOpeningBalancesForm from "../opening-balances/supplier/SupplierOpeningBalancesForm";
 
 type TabType =
@@ -32,8 +35,6 @@ type TabType =
   | "supplier_opening_balance"
   | "customer_opening_balance"
   | "stock_opening_balance";
-
-  
 
 const tabs: {
   id: TabType;
@@ -93,42 +94,23 @@ const tabs: {
 ];
 
 export default function FinanceSetupForm() {
+  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(
+    null,
+  );
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+
+  const [editingSupplierId, setEditingSupplierId] = useState<string | null>(
+    null,
+  );
+
+  const [showSupplierForm, setshowSupplierForm] = useState(false);
+
   const [activeTab, setActiveTab] = useState<TabType>("matrix");
 
   const activeTabInfo = tabs.find((tab) => tab.id === activeTab);
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      {/* =====================================================
-          Header
-          ===================================================== */}
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
-        {/* Optional header content can be enabled later */}
-
-        {/* <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
-            <Icon
-              icon="solar:wallet-money-linear"
-              width={20}
-              height={20}
-            />
-          </div>
-
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Finance Configuration
-            </h2>
-
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Manage your finance master data and posting configuration.
-            </p>
-          </div>
-        </div> */}
-      </div>
-
-      {/* =====================================================
-          Tabs
-          ===================================================== */}
       <div className="border-b border-slate-200 bg-slate-50/70 px-3 py-3 dark:border-slate-800 dark:bg-slate-950/40">
         <div className="flex flex-wrap items-center gap-1.5">
           {tabs.map((tab) => {
@@ -192,9 +174,6 @@ export default function FinanceSetupForm() {
         </div>
       </div>
 
-      {/* =====================================================
-          Active Section Header
-          ===================================================== */}
       <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800/80">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
           <Icon
@@ -215,9 +194,6 @@ export default function FinanceSetupForm() {
         </div>
       </div>
 
-      {/* =====================================================
-          Content
-          ===================================================== */}
       <div className="p-3 sm:p-4">
         {activeTab === "posting_setup" && (
           <>
@@ -259,78 +235,88 @@ export default function FinanceSetupForm() {
 
         {activeTab === "bank_opening_balance" && <BankOpeningBalancesForm />}
 
-        {activeTab === "customer_opening_balance" && <CustomerOpeningBalancesForm />}
+        {activeTab === "customer_opening_balance" && (
+          <>
+            {showCustomerForm ? (
+              <CustomerOpeningBalancesForm
+                recordId={editingCustomerId ?? undefined}
+                onEditComplete={() => {
+                  setShowCustomerForm(false);
+                  setEditingCustomerId(null);
+                }}
+              />
+            ) : (
+              <CustomerOpeningBalancesList
+                onAdd={() => {
+                  setEditingCustomerId(null);
+                  setShowCustomerForm(true);
+                }}
+                onEdit={(id) => {
+                  setEditingCustomerId(id);
+                  setShowCustomerForm(true);
+                }}
+              />
+            )}
+          </>
+        )}
 
-        {activeTab === "supplier_opening_balance" && <SupplierOpeningBalancesForm />}
-        
+        {activeTab === "supplier_opening_balance" && (
+          <>
+            {showSupplierForm ? (
+              <SupplierOpeningBalancesForm
+                recordId={editingSupplierId ?? undefined}
+                onEditComplete={() => {
+                  setshowSupplierForm(false);
+                  setEditingSupplierId(null);
+                }}
+              />
+            ) : (
+              <SupplierOpeningBalancesList
+                onAdd={() => {
+                  setEditingSupplierId(null);
+                  setshowSupplierForm(true);
+                }}
+                onEdit={(id) => {
+                  setEditingSupplierId(id);
+                  setshowSupplierForm(true);
+                }}
+              />
+            )}
+          </>
+        )}
+
         {activeTab === "stock_opening_balance" && <StockOpeningBalanceForm />}
       </div>
     </div>
   );
 }
 
-/* "use client";
+/* 
 
-import { useState } from "react";
-import VatPostingSetupList from "@/app/components/setup/VatPostingSetupList";
-import VatBusinessPostingGroupsList from "@/app/components/setup/VatBusinessPostingGroupsList";
-// import VatProductPostingGroupsList from "@/app/components/setup/VatProductPostingGroupsList";
-import VatRatesList from "@/app/components/setup/VatRatesList";
-import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
-import PostingDateRangeSetup from "@/app/components/setup/posting/PostingDateRangeSetup";
+=====================================================
+          Header
+          =====================================================
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+        Optional header content can be enabled later
 
-type TabType = "matrix" | "business" | "rates" | "posting_date_range"; // "product" |
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+            <Icon
+              icon="solar:wallet-money-linear"
+              width={20}
+              height={20}
+            />
+          </div>
 
-export default function FinanceSetupForm() {
-  const [activeTab, setActiveTab] = useState<TabType>("matrix");
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+              Finance Configuration
+            </h2>
 
-  const tabs: { id: TabType; label: string }[] = [
-    { id: "matrix", label: "Posting Setup Matrix" },
-    { id: "business", label: "Business Groups" },
-    // { id: "product", label: "Product Groups" },
-    { id: "rates", label: "VAT Rates" },
-    { id: "posting_date_range", label: "Posting Date Range" },
-    // { id: "posting_date_range", label: "Posting Date Range" },
-  ];
-
-  return (
-    <div className="space-y-4 ">
-      <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-
-        <div className="border-b border-slate-200 dark:border-slate-800">
-          <nav
-            className="-mb-px flex space-x-6 overflow-x-auto"
-            aria-label="Tabs"
-          >
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`py-3 px-1 border-b-2 text-sm font-medium whitespace-nowrap transition-colors ${
-                    isActive
-                      ? "border-slate-400 dark:border-slate-200 text-slate-900 dark:text-slate-100 font-semibold"
-                      : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-
-        <div className="mt-4">
-          {activeTab === "matrix" && <VatPostingSetupList />}
-          {activeTab === "business" && <VatBusinessPostingGroupsList />}
-          {activeTab === "posting_date_range" && <PostingDateRangeSetup />}
-          {activeTab === "product" && <VatProductPostingGroupsList />}
-          {activeTab === "rates" && <VatRatesList />}
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Manage your finance master data and posting configuration.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
  */

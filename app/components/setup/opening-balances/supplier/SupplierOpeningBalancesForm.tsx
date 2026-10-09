@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/app/context/LoaderContext";
@@ -20,19 +20,29 @@ import SupplierOpeningBalanceTable from "./components/SupplierOpeningBalanceTabl
 
 import { useSupplierOpeningBalances } from "./hooks/useSupplierOpeningBalances";
 
+// type Props = {
+//   apiBase?: string;
+//   redirectPath?: string;
+//   recordId?: string;
+// };
 type Props = {
   apiBase?: string;
-  redirectPath?: string;
   recordId?: string;
+  onEditComplete: () => void;
 };
+
+// export default function SupplierOpeningBalancesForm({
+//   apiBase = "/api/finance/opening-balances/supplier",
+//   redirectPath = "/finance/opening-balances",
+//   recordId,
+// }: Props) {
+//   const router = useRouter();
 
 export default function SupplierOpeningBalancesForm({
   apiBase = "/api/finance/opening-balances/supplier",
-  redirectPath = "/finance/opening-balances",
   recordId,
+  onEditComplete,
 }: Props) {
-  const router = useRouter();
-
   const { show, hide } = useLoader();
 
   const [currencies, setCurrencies] = useState<Currency[]>([]);
@@ -270,8 +280,10 @@ export default function SupplierOpeningBalancesForm({
         throw new Error(message);
       }
 
-      router.push(redirectPath);
-      router.refresh();
+      onEditComplete();
+
+      //   router.push(redirectPath);
+      //   router.refresh();
     } catch (error) {
       console.error("Failed to save supplier opening balance:", error);
 
@@ -349,8 +361,10 @@ export default function SupplierOpeningBalancesForm({
                     throw new Error(message);
                   }
 
-                  router.push(redirectPath);
-                  router.refresh();
+                  onEditComplete();
+
+                  //   router.push(redirectPath);
+                  //   router.refresh();
                 } catch (error) {
                   setErrorMsg(
                     error instanceof Error
@@ -369,7 +383,8 @@ export default function SupplierOpeningBalancesForm({
           <Button
             type="button"
             variant="ghost"
-            onClick={() => router.push(redirectPath)}
+            onClick={onEditComplete}
+            // onClick={() => router.push(redirectPath)}
           >
             Cancel
           </Button>

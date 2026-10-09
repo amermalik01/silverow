@@ -28,6 +28,7 @@ export const createCustomerOpeningBalanceRow = (
     doc_type: "Invoice",
     doc_no: "",
     external_ref_no: "",
+    description: "",
 
     currency_id: customer.currency_id || "",
     currency_code: defaultCurrency?.code || baseCurrencyCode,
