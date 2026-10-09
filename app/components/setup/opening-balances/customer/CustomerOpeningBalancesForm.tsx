@@ -23,11 +23,13 @@ import { useCustomerOpeningBalances } from "./hooks/useCustomerOpeningBalances";
 type Props = {
   apiBase?: string;
   redirectPath?: string;
+  recordId?: string;
 };
 
 export default function CustomerOpeningBalancesForm({
   apiBase = "/api/finance/opening-balances/customer",
   redirectPath = "/finance/opening-balances",
+  recordId,
 }: Props) {
   const router = useRouter();
 
@@ -39,7 +41,7 @@ export default function CustomerOpeningBalancesForm({
 
   const [showCustomerModal, setShowCustomerModal] = useState(false);
 
-  const { lines, appendCustomers, updateLine, removeLine } =
+  const { lines, appendCustomers, updateLine, removeLine, loadLines } =
     useCustomerOpeningBalances(currencies, "GBP");
 
   const baseCurrencyObj = useMemo(
@@ -80,6 +82,83 @@ export default function CustomerOpeningBalancesForm({
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!recordId) return;
+
+    let cancelled = false;
+
+    const loadRecord = async () => {
+      try {
+        show();
+        setErrorMsg(null);
+
+        const response = await fetch(`${apiBase}/${recordId}`);
+        const result: unknown = await response.json();
+
+        if (!response.ok) {
+          const message =
+            typeof result === "object" &&
+            result !== null &&
+            "error" in result &&
+            typeof result.error === "string"
+              ? result.error
+              : "Failed to load customer opening balance.";
+
+          throw new Error(message);
+        }
+
+        if (
+          typeof result !== "object" ||
+          result === null ||
+          !("data" in result) ||
+          typeof result.data !== "object" ||
+          result.data === null
+        ) {
+          throw new Error("Invalid customer opening balance response.");
+        }
+
+        const row = result.data as Record<string, unknown>;
+
+        if (!cancelled) {
+          loadLines([
+            {
+              id: String(row.id ?? recordId),
+              posting_date: String(row.posting_date ?? ""),
+              customer_id: String(row.party_id ?? ""),
+              customer_code: String(row.party_code ?? ""),
+              customer_name: String(row.party_name ?? ""),
+              doc_type: row.doc_type as CustomerOpeningBalanceRow["doc_type"],
+              doc_no: String(row.doc_no ?? ""),
+              external_ref_no: String(row.external_ref_no ?? ""),
+              description: String(row.description ?? ""),
+              currency_id: String(row.currency_id ?? ""),
+              currency_code: String(row.currency_code ?? "GBP"),
+              debit: Number(row.debit ?? 0),
+              credit: Number(row.credit ?? 0),
+              exchange_rate: Number(row.exchange_rate ?? 1),
+            },
+          ]);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setErrorMsg(
+            error instanceof Error
+              ? error.message
+              : "Failed to load customer opening balance.",
+          );
+        }
+      } finally {
+        if (!cancelled) hide();
+      }
+    };
+
+    void loadRecord();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [recordId, apiBase, loadLines, show, hide]);
 
   const handleSelectCustomers = (customers: CustomerLookupItem[]) => {
     appendCustomers(
@@ -139,6 +218,185 @@ export default function CustomerOpeningBalancesForm({
       setErrorMsg(validationError);
       return;
     }
+
+    if (recordId && lines.length !== 1) {
+      setErrorMsg("Edit mode requires exactly one opening balance row.");
+      return;
+    }
+
+    try {
+      show();
+
+      const payload = {
+        lines: lines.map((line) => ({
+          party_id: line.customer_id,
+          party_code: line.customer_code || null,
+          party_name: line.customer_name,
+          posting_date: line.posting_date,
+          doc_type: line.doc_type,
+          doc_no: line.doc_no.trim(),
+          external_ref_no: line.external_ref_no.trim(),
+          description: line.description || "",
+          currency_id: line.currency_id || null,
+          currency_code: line.currency_code,
+          debit: Number(line.debit) || 0,
+          credit: Number(line.credit) || 0,
+          exchange_rate: Number(line.exchange_rate) || 1,
+        })),
+      };
+
+      const response = await fetch(
+        recordId ? `${apiBase}/${recordId}` : apiBase,
+        {
+          method: recordId ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const result: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const message =
+          typeof result === "object" &&
+          result !== null &&
+          "error" in result &&
+          typeof result.error === "string"
+            ? result.error
+            : "Failed to save customer opening balance.";
+
+        throw new Error(message);
+      }
+
+      router.push(redirectPath);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to save customer opening balance:", error);
+
+      setErrorMsg(
+        error instanceof Error
+          ? error.message
+          : "Failed to save customer opening balance.",
+      );
+    } finally {
+      hide();
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white dark:bg-slate-900 border rounded-xl p-6 space-y-4">
+        {errorMsg && (
+          <div className="p-3 bg-red-100 text-red-700 rounded-md font-medium text-sm">
+            {errorMsg}
+          </div>
+        )}
+        {!recordId && (
+          <CustomerOpeningBalanceToolbar
+            onSelectCustomer={() => setShowCustomerModal(true)}
+          />
+        )}
+
+        <CustomerOpeningBalanceTable
+          lines={lines}
+          currencies={currencies}
+          baseCurrencyCode={baseCurrencyCode}
+          onChange={updateLine}
+          onRemove={removeLine}
+        />
+
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={handleSave}>
+            {recordId ? "Update" : "Save"}
+          </Button>
+
+          {recordId && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={async () => {
+                if (
+                  !window.confirm(
+                    "Are you sure you want to delete this customer opening balance?",
+                  )
+                ) {
+                  return;
+                }
+
+                try {
+                  show();
+
+                  const response = await fetch(`${apiBase}/${recordId}`, {
+                    method: "DELETE",
+                  });
+
+                  const result: unknown = await response
+                    .json()
+                    .catch(() => null);
+
+                  if (!response.ok) {
+                    const message =
+                      typeof result === "object" &&
+                      result !== null &&
+                      "error" in result &&
+                      typeof result.error === "string"
+                        ? result.error
+                        : "Failed to delete customer opening balance.";
+
+                    throw new Error(message);
+                  }
+
+                  router.push(redirectPath);
+                  router.refresh();
+                } catch (error) {
+                  setErrorMsg(
+                    error instanceof Error
+                      ? error.message
+                      : "Failed to delete customer opening balance.",
+                  );
+                } finally {
+                  hide();
+                }
+              }}
+            >
+              Delete
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => router.push(redirectPath)}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+
+      {showCustomerModal && (
+        <CustomerLookupModal
+          open={showCustomerModal}
+          multiple
+          onClose={() => setShowCustomerModal(false)}
+          onSelectMultiple={handleSelectCustomers}
+        />
+      )}
+    </div>
+  );
+}
+
+/* const handleSave = async () => {
+    setErrorMsg(null);
+
+    const validationError = validateLines();
+
+    if (validationError) {
+      setErrorMsg(validationError);
+      return;
+    }
+    
 
     try {
       show();
@@ -208,52 +466,4 @@ export default function CustomerOpeningBalancesForm({
     } finally {
       hide();
     }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 border rounded-xl p-6 space-y-4">
-        {errorMsg && (
-          <div className="p-3 bg-red-100 text-red-700 rounded-md font-medium text-sm">
-            {errorMsg}
-          </div>
-        )}
-
-        <CustomerOpeningBalanceToolbar
-          onSelectCustomer={() => setShowCustomerModal(true)}
-        />
-
-        <CustomerOpeningBalanceTable
-          lines={lines}
-          currencies={currencies}
-          baseCurrencyCode={baseCurrencyCode}
-          onChange={updateLine}
-          onRemove={removeLine}
-        />
-
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleSave}>
-            Save
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.push(redirectPath)}
-          >
-            Cancel
-          </Button>
-        </div>
-      </div>
-
-      {showCustomerModal && (
-        <CustomerLookupModal
-          open={showCustomerModal}
-          multiple
-          onClose={() => setShowCustomerModal(false)}
-          onSelectMultiple={handleSelectCustomers}
-        />
-      )}
-    </div>
-  );
-}
+  }; */

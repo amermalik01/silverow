@@ -46,6 +46,7 @@ export function useCustomerOpeningBalances(
               doc_type: "Invoice",
               doc_no: "",
               external_ref_no: "",
+              description: "",
 
               currency_id: customer.currency_id || "",
 
@@ -243,9 +244,14 @@ export function useCustomerOpeningBalances(
     setLines([]);
   }, []);
 
+  const loadLines = useCallback((rows: CustomerOpeningBalanceRow[]) => {
+    setLines(rows);
+  }, []);
+
   return {
     lines,
     setLines,
+    loadLines,
     appendCustomers,
     updateLine,
     removeLine,

@@ -11,6 +11,8 @@ export type Currency = {
 };
 
 export type CustomerOpeningBalanceRow = {
+  id?: string;
+
   posting_date: string;
 
   customer_id: string;
@@ -20,6 +22,7 @@ export type CustomerOpeningBalanceRow = {
   doc_type: CustomerOpeningBalanceDocType;
   doc_no: string;
   external_ref_no: string;
+  description: string;
 
   currency_id: string;
   currency_code: string;

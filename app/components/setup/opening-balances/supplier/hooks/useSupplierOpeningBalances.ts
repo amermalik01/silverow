@@ -40,23 +40,18 @@ export function useSupplierOpeningBalances(
               posting_date: new Date().toISOString().split("T")[0],
 
               supplier_id: supplier.id,
-
               supplier_code: supplier.code,
-
               supplier_name: supplier.name,
 
               doc_type: "Invoice",
-
               doc_no: "",
-
               external_ref_no: "",
+              description: "",
 
               currency_id: supplier.currency_id || "",
-
               currency_code: currency?.code || baseCurrencyCode,
 
               debit: 0,
-
               credit: 0,
 
               exchange_rate: currency ? Number(currency.exchange_rate) : 1,
@@ -201,9 +196,14 @@ export function useSupplierOpeningBalances(
     setLines([]);
   }, []);
 
+  const loadLines = useCallback((rows: SupplierOpeningBalanceRow[]) => {
+    setLines(rows);
+  }, []);
+
   return {
     lines,
     setLines,
+    loadLines,
     appendSuppliers,
     updateLine,
     removeLine,

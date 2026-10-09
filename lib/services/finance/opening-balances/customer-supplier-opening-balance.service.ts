@@ -42,7 +42,8 @@ type OpeningBalanceDbRow = {
 
 type PartyDbRow = {
   id: string;
-  code: string | null;
+  customer_code: string | null;
+  supplier_code: string | null;
   name: string;
   currency_id: string | null;
 };
@@ -286,16 +287,17 @@ export class CustomerSupplierOpeningBalanceService {
       `
         SELECT
           id,
-          code,
+          customer_code,
+          supplier_code,
           name,
           currency_id
         FROM parties
         WHERE id = $1
           AND company_id = $2
-          AND party_type = $3
+         -- AND party_type = $3
         LIMIT 1
       `,
-      [partyId, companyId, partyType],
+      [partyId, companyId],
     );
 
     if (!result.rows.length) {
@@ -334,7 +336,10 @@ export class CustomerSupplierOpeningBalanceService {
         line.party_id,
       );
 
-      const partyCode = line.party_code || party.code || null;
+      const partyCode =
+        line.party_code ||
+        (partyType == "customer" ? party.customer_code : party.supplier_code) ||
+        null;
 
       const partyName = line.party_name || party.name;
 
@@ -349,8 +354,7 @@ export class CustomerSupplierOpeningBalanceService {
         (Number(line.debit || 0) - Number(line.credit || 0)) *
         Number(line.exchange_rate || 1);
 
-      const result = await client.query<OpeningBalanceDbRow>(
-        `
+      const InertQry = `
           INSERT INTO ${tableName} (
             company_id,
 
@@ -373,7 +377,7 @@ export class CustomerSupplierOpeningBalanceService {
             credit,
 
             exchange_rate,
-            amount_lcy,
+           -- amount_lcy,
 
             created_at,
             updated_at
@@ -393,36 +397,44 @@ export class CustomerSupplierOpeningBalanceService {
             $12,
             $13,
             $14,
-            $15,
+           -- $15,
             NOW(),
             NOW()
           )
           RETURNING *
-        `,
-        [
-          companyId,
+        `;
 
-          line.party_id,
-          partyCode,
-          partyName,
+      const qryParam = [
+        companyId,
 
-          line.posting_date,
+        line.party_id,
+        partyCode,
+        partyName,
 
-          line.doc_type,
-          line.doc_no || "",
-          line.external_ref_no || "",
+        line.posting_date,
 
-          line.description || "",
+        line.doc_type,
+        line.doc_no || "",
+        line.external_ref_no || "",
 
-          currencyId,
-          line.currency_code,
+        line.description || "",
 
-          line.debit || 0,
-          line.credit || 0,
+        currencyId,
+        line.currency_code,
 
-          line.exchange_rate || 1,
-          amountLcy,
-        ],
+        line.debit || 0,
+        line.credit || 0,
+
+        line.exchange_rate || 1,
+        // amountLcy,
+      ];
+
+      // console.log("InertQry === ", InertQry);
+      // console.log("qryParam === ", qryParam);
+
+      const result = await client.query<OpeningBalanceDbRow>(
+        InertQry,
+        qryParam,
       );
 
       createdRows.push(this.mapRow(result.rows[0]));
@@ -556,5 +568,156 @@ export class CustomerSupplierOpeningBalanceService {
     }
 
     return this.mapRow(result.rows[0]);
+  }
+
+  static async update(
+    client: PoolClient,
+    companyId: string,
+    id: string,
+    partyType: OpeningBalancePartyType,
+    rawPayload: unknown,
+  ): Promise<OpeningBalanceRow> {
+    if (
+      typeof rawPayload !== "object" ||
+      rawPayload === null ||
+      Array.isArray(rawPayload)
+    ) {
+      throw new Error("Invalid request body");
+    }
+
+    const body = rawPayload as Record<string, unknown>;
+
+    let payloadToValidate: unknown;
+
+    if (Array.isArray(body.lines)) {
+      if (body.lines.length !== 1) {
+        throw new Error(
+          "Update requires exactly one line. Use POST to create multiple lines.",
+        );
+      }
+
+      payloadToValidate = { lines: body.lines };
+    } else {
+      // Allow a single line object directly in the request body.
+      payloadToValidate = { lines: [body] };
+    }
+
+    const payload = this.validatePayload(payloadToValidate);
+    const line = payload.lines[0];
+
+    const tableName = this.getTableName(partyType);
+
+    // Verify the target row belongs to this company and table.
+    const existingResult = await client.query(
+      `
+        SELECT id
+        FROM ${tableName}
+        WHERE id = $1
+          AND company_id = $2
+        FOR UPDATE
+      `,
+      [id, companyId],
+    );
+
+    if (!existingResult.rows.length) {
+      throw new Error("Opening balance record not found");
+    }
+
+    // Verify the selected customer/supplier belongs to this company.
+    const party = await this.validateParty(
+      client,
+      companyId,
+      partyType,
+      line.party_id,
+    );
+
+    const partyCode =
+      line.party_code ||
+      (partyType == "customer" ? party.customer_code : party.supplier_code) ||
+      null;
+    const partyName = line.party_name || party.name;
+    const currencyId = line.currency_id || party.currency_id || null;
+
+    const debit = Number(line.debit || 0);
+    const credit = Number(line.credit || 0);
+    const exchangeRate = Number(line.exchange_rate || 1);
+
+    // Debit/credit are stored in document currency.
+    // LCY = (Debit - Credit) * Exchange Rate.
+    const amountLcy = (debit - credit) * exchangeRate;
+
+    const result = await client.query<OpeningBalanceDbRow>(
+      `
+        UPDATE ${tableName}
+        SET
+          party_id = $1,
+          party_code = $2,
+          party_name = $3,
+          posting_date = $4,
+          doc_type = $5,
+          doc_no = $6,
+          external_ref_no = $7,
+          description = $8,
+          currency_id = $9,
+          currency_code = $10,
+          debit = $11,
+          credit = $12,
+          exchange_rate = $13,
+         -- amount_lcy = $14,
+          updated_at = NOW()
+        WHERE id = $14
+          AND company_id = $15
+        RETURNING *
+      `,
+      [
+        line.party_id,
+        partyCode,
+        partyName,
+        line.posting_date,
+        line.doc_type,
+        line.doc_no || "",
+        line.external_ref_no || "",
+        line.description || "",
+        currencyId,
+        line.currency_code,
+        debit,
+        credit,
+        exchangeRate,
+        // amountLcy,
+        id,
+        companyId,
+      ],
+    );
+
+    if (!result.rows.length) {
+      throw new Error("Opening balance record not found");
+    }
+
+    return this.mapRow(result.rows[0]);
+  }
+
+  /**
+   * Delete one opening balance line.
+   */
+  static async delete(
+    companyId: string,
+    id: string,
+    partyType: OpeningBalancePartyType,
+  ): Promise<void> {
+    const tableName = this.getTableName(partyType);
+
+    const result = await pool.query(
+      `
+        DELETE FROM ${tableName}
+        WHERE id = $1
+          AND company_id = $2
+        RETURNING id
+      `,
+      [id, companyId],
+    );
+
+    if (!result.rowCount) {
+      throw new Error("Opening balance record not found");
+    }
   }
 }
