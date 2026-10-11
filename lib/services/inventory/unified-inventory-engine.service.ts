@@ -642,169 +642,7 @@ export class UnifiedInventoryEngineService {
       unitCost: blendedUnitCost,
     };
   }
-  /* static async processOutboundStock(
-    client: PoolClient,
-    companyId: string,
-    postingDate: string,
-    transactionType: InventoryTransactionType,
-    line: StockLineInput,
-  ) {
-    const qtyNeeded = Number(line.quantity);
-    if (qtyNeeded <= 0)
-      throw new Error("Outbound quantity must be greater than zero.");
-
-    const { costing_method, standard_cost } = await this.getItemCostingProfile(
-      client,
-      line.item_id,
-      companyId,
-    );
-
-    // Determine Queue Order based on selected Method
-    let orderByClause = "posting_date ASC, created_at ASC"; // Default FIFO (1)
-
-    if (costing_method === 2) {
-      orderByClause = "posting_date DESC, created_at DESC"; // LIFO (2)
-    }
-
-    // Fetch open inbound layers
-    const inboundLayersRes = await client.query(
-      `
-      SELECT * FROM inventory_ledger_entries
-      WHERE company_id = $1
-        AND item_id = $2
-        AND warehouse_id = $3
-        AND direction = 'IN'
-        AND status = 'OPEN'
-        AND remaining_quantity > 0
-      ORDER BY ${orderByClause}
-      FOR UPDATE;
-      `,
-      [companyId, line.item_id, line.warehouse_id],
-    );
-
-    let remainingToDeduct = qtyNeeded;
-    let accumulatedCost = 0;
-
-    const allocatedLayers: {
-      inbound_entry_id: string;
-      qtyToTake: number;
-      unitCost: number;
-      totalCost: number;
-    }[] = [];
-
-    // For Standard Costing (4), override unit cost directly
-    if (costing_method === 4) {
-      accumulatedCost = Number((qtyNeeded * standard_cost).toFixed(2));
-    }
-
-    for (const layer of inboundLayersRes.rows) {
-      if (remainingToDeduct <= 0) break;
-
-      const layerRemaining = Number(layer.remaining_quantity);
-      const qtyToTake = Math.min(layerRemaining, remainingToDeduct);
-
-      // Calculate cost per layer based on method
-      const layerUnitCost =
-        costing_method === 4 ? standard_cost : Number(layer.unit_cost);
-      const layerTotalCost = Number((qtyToTake * layerUnitCost).toFixed(2));
-
-      if (costing_method !== 4) {
-        accumulatedCost += layerTotalCost;
-      }
-      remainingToDeduct -= qtyToTake;
-
-      allocatedLayers.push({
-        inbound_entry_id: layer.id,
-        qtyToTake,
-        unitCost: layerUnitCost,
-        totalCost: layerTotalCost,
-      });
-    }
-
-    if (remainingToDeduct > 0) {
-      throw new Error(
-        `Insufficient stock for Item ID ${line.item_id} in Warehouse ${line.warehouse_id}. Shortage of ${remainingToDeduct} units.`,
-      );
-    }
-
-    const blendedUnitCost = Number((accumulatedCost / qtyNeeded).toFixed(6));
-
-    // Record Outbound Transaction Entry
-    const outboundLedgerRes = await client.query(
-      `
-      INSERT INTO inventory_ledger_entries (
-        company_id, posting_date, transaction_type,
-        reference_type, reference_id, reference_line_id,
-        item_id, warehouse_id, location_id, bin_code,
-        batch_no, serial_no, expiry_date,
-        quantity, remaining_quantity, unit_cost, total_cost,
-        direction, status
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 0, $15, $16, 'OUT', 'CLOSED')
-      RETURNING *;
-      `,
-      [
-        companyId,
-        postingDate,
-        transactionType,
-        line.reference_type,
-        line.reference_id,
-        line.reference_line_id || null,
-        line.item_id,
-        line.warehouse_id,
-        line.location_id || null,
-        line.bin_code || null,
-        line.batch_no || null,
-        line.serial_no || null,
-        line.expiry_date || null,
-        qtyNeeded,
-        blendedUnitCost,
-        accumulatedCost,
-      ],
-    );
-
-    const outboundEntry = outboundLedgerRes.rows[0];
-
-    // Write Allocations and update inbound layers
-    for (const alloc of allocatedLayers) {
-      await client.query(
-        `
-        INSERT INTO inventory_allocations (
-          company_id, outbound_entry_id, outbound_line_id, inbound_entry_id,
-          item_id, warehouse_id, allocated_quantity, unit_cost, total_cost, status
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE');
-        `,
-        [
-          companyId,
-          outboundEntry.id,
-          line.reference_line_id || null,
-          alloc.inbound_entry_id,
-          line.item_id,
-          line.warehouse_id,
-          alloc.qtyToTake,
-          alloc.unitCost,
-          alloc.totalCost,
-        ],
-      );
-
-      await client.query(
-        `
-        UPDATE inventory_ledger_entries
-        SET remaining_quantity = remaining_quantity - $1,
-            status = CASE WHEN remaining_quantity - $1 <= 0 THEN 'CLOSED' ELSE 'OPEN' END
-        WHERE id = $2;
-        `,
-        [alloc.qtyToTake, alloc.inbound_entry_id],
-      );
-    }
-
-    return {
-      outboundEntry,
-      totalCost: accumulatedCost,
-      unitCost: blendedUnitCost,
-    };
-  } */
+  
 }
 
 /* export class UnifiedInventoryEngineService {
@@ -1155,3 +993,166 @@ export class UnifiedInventoryEngineService {
     }
   }
 } */
+/* static async processOutboundStock(
+    client: PoolClient,
+    companyId: string,
+    postingDate: string,
+    transactionType: InventoryTransactionType,
+    line: StockLineInput,
+  ) {
+    const qtyNeeded = Number(line.quantity);
+    if (qtyNeeded <= 0)
+      throw new Error("Outbound quantity must be greater than zero.");
+
+    const { costing_method, standard_cost } = await this.getItemCostingProfile(
+      client,
+      line.item_id,
+      companyId,
+    );
+
+    // Determine Queue Order based on selected Method
+    let orderByClause = "posting_date ASC, created_at ASC"; // Default FIFO (1)
+
+    if (costing_method === 2) {
+      orderByClause = "posting_date DESC, created_at DESC"; // LIFO (2)
+    }
+
+    // Fetch open inbound layers
+    const inboundLayersRes = await client.query(
+      `
+      SELECT * FROM inventory_ledger_entries
+      WHERE company_id = $1
+        AND item_id = $2
+        AND warehouse_id = $3
+        AND direction = 'IN'
+        AND status = 'OPEN'
+        AND remaining_quantity > 0
+      ORDER BY ${orderByClause}
+      FOR UPDATE;
+      `,
+      [companyId, line.item_id, line.warehouse_id],
+    );
+
+    let remainingToDeduct = qtyNeeded;
+    let accumulatedCost = 0;
+
+    const allocatedLayers: {
+      inbound_entry_id: string;
+      qtyToTake: number;
+      unitCost: number;
+      totalCost: number;
+    }[] = [];
+
+    // For Standard Costing (4), override unit cost directly
+    if (costing_method === 4) {
+      accumulatedCost = Number((qtyNeeded * standard_cost).toFixed(2));
+    }
+
+    for (const layer of inboundLayersRes.rows) {
+      if (remainingToDeduct <= 0) break;
+
+      const layerRemaining = Number(layer.remaining_quantity);
+      const qtyToTake = Math.min(layerRemaining, remainingToDeduct);
+
+      // Calculate cost per layer based on method
+      const layerUnitCost =
+        costing_method === 4 ? standard_cost : Number(layer.unit_cost);
+      const layerTotalCost = Number((qtyToTake * layerUnitCost).toFixed(2));
+
+      if (costing_method !== 4) {
+        accumulatedCost += layerTotalCost;
+      }
+      remainingToDeduct -= qtyToTake;
+
+      allocatedLayers.push({
+        inbound_entry_id: layer.id,
+        qtyToTake,
+        unitCost: layerUnitCost,
+        totalCost: layerTotalCost,
+      });
+    }
+
+    if (remainingToDeduct > 0) {
+      throw new Error(
+        `Insufficient stock for Item ID ${line.item_id} in Warehouse ${line.warehouse_id}. Shortage of ${remainingToDeduct} units.`,
+      );
+    }
+
+    const blendedUnitCost = Number((accumulatedCost / qtyNeeded).toFixed(6));
+
+    // Record Outbound Transaction Entry
+    const outboundLedgerRes = await client.query(
+      `
+      INSERT INTO inventory_ledger_entries (
+        company_id, posting_date, transaction_type,
+        reference_type, reference_id, reference_line_id,
+        item_id, warehouse_id, location_id, bin_code,
+        batch_no, serial_no, expiry_date,
+        quantity, remaining_quantity, unit_cost, total_cost,
+        direction, status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 0, $15, $16, 'OUT', 'CLOSED')
+      RETURNING *;
+      `,
+      [
+        companyId,
+        postingDate,
+        transactionType,
+        line.reference_type,
+        line.reference_id,
+        line.reference_line_id || null,
+        line.item_id,
+        line.warehouse_id,
+        line.location_id || null,
+        line.bin_code || null,
+        line.batch_no || null,
+        line.serial_no || null,
+        line.expiry_date || null,
+        qtyNeeded,
+        blendedUnitCost,
+        accumulatedCost,
+      ],
+    );
+
+    const outboundEntry = outboundLedgerRes.rows[0];
+
+    // Write Allocations and update inbound layers
+    for (const alloc of allocatedLayers) {
+      await client.query(
+        `
+        INSERT INTO inventory_allocations (
+          company_id, outbound_entry_id, outbound_line_id, inbound_entry_id,
+          item_id, warehouse_id, allocated_quantity, unit_cost, total_cost, status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE');
+        `,
+        [
+          companyId,
+          outboundEntry.id,
+          line.reference_line_id || null,
+          alloc.inbound_entry_id,
+          line.item_id,
+          line.warehouse_id,
+          alloc.qtyToTake,
+          alloc.unitCost,
+          alloc.totalCost,
+        ],
+      );
+
+      await client.query(
+        `
+        UPDATE inventory_ledger_entries
+        SET remaining_quantity = remaining_quantity - $1,
+            status = CASE WHEN remaining_quantity - $1 <= 0 THEN 'CLOSED' ELSE 'OPEN' END
+        WHERE id = $2;
+        `,
+        [alloc.qtyToTake, alloc.inbound_entry_id],
+      );
+    }
+
+    return {
+      outboundEntry,
+      totalCost: accumulatedCost,
+      unitCost: blendedUnitCost,
+    };
+  } */

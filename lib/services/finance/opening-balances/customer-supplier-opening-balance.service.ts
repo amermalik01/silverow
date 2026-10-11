@@ -10,6 +10,9 @@ import type {
   OpeningBalanceRow,
 } from "./customer-supplier-opening-balance.types";
 
+import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
+import { validateLedgerPostingDate } from "@/lib/validations/postingGate";
+
 type OpeningBalanceDbRow = {
   id: string;
   company_id: string;
@@ -718,6 +721,498 @@ export class CustomerSupplierOpeningBalanceService {
 
     if (!result.rowCount) {
       throw new Error("Opening balance record not found");
+    }
+  }
+
+  static async post(
+    companyId: string,
+    id: string,
+    partyType: OpeningBalancePartyType,
+    postedBy?: string,
+  ): Promise<void> {
+    const client = await pool.connect();
+
+    const tableName = this.getTableName(partyType);
+    const isSupplier = partyType === "supplier";
+
+    const subLedgerTable = isSupplier
+      ? "vendor_ledger_entries"
+      : "customer_ledger_entries";
+
+    const partyColumn = isSupplier ? "vendor_id" : "customer_id";
+
+    try {
+      await client.query("BEGIN");
+
+      // 1. Lock the source record to prevent duplicate posting.
+      const openingResult = await client.query(
+        `
+        SELECT
+          id,
+          company_id,
+          party_id,
+          party_code,
+          party_name,
+          posting_date,
+          doc_type,
+          doc_no,
+          external_ref_no,
+          description,
+          currency_id,
+          currency_code,
+          debit,
+          credit,
+          exchange_rate,
+          status
+        FROM ${tableName}
+        WHERE id = $1
+          AND company_id = $2
+        FOR UPDATE
+      `,
+        [id, companyId],
+      );
+
+      if (!openingResult.rows.length) {
+        throw new Error("Opening balance record not found.");
+      }
+
+      const opening = openingResult.rows[0];
+
+      if (opening.status === "Posted") {
+        throw new Error("This opening balance has already been posted.");
+      }
+
+      if (opening.status !== "Open") {
+        throw new Error("Only open opening balances can be posted.");
+      }
+
+      // 2. Validate posting date.
+      const postingDate =
+        opening.posting_date instanceof Date
+          ? opening.posting_date.toISOString().split("T")[0]
+          : String(opening.posting_date).split("T")[0];
+
+      const gateCheck = await validateLedgerPostingDate(companyId, postingDate);
+
+      if (!gateCheck.allowed) {
+        throw new Error(gateCheck.reason);
+      }
+
+      // 3. Validate amounts and calculate base-currency amounts.
+      const debitFCY = Number(opening.debit ?? 0);
+      const creditFCY = Number(opening.credit ?? 0);
+      const exchangeRate = Number(opening.exchange_rate ?? 1);
+
+      if (
+        !Number.isFinite(debitFCY) ||
+        !Number.isFinite(creditFCY) ||
+        debitFCY < 0 ||
+        creditFCY < 0
+      ) {
+        throw new Error("Invalid opening balance debit or credit.");
+      }
+
+      if (debitFCY > 0 && creditFCY > 0) {
+        throw new Error("A line cannot have both debit and credit.");
+      }
+
+      if (debitFCY === 0 && creditFCY === 0) {
+        throw new Error("Opening balance amount must be greater than zero.");
+      }
+
+      if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+        throw new Error("Exchange rate must be greater than zero.");
+      }
+
+      const debitLCY = Number((debitFCY * exchangeRate).toFixed(2));
+      const creditLCY = Number((creditFCY * exchangeRate).toFixed(2));
+
+      if (debitLCY === 0 && creditLCY === 0) {
+        throw new Error("Opening balance is zero in local currency.");
+      }
+
+      // 4. Verify party belongs to this company.
+      const party = await this.validateParty(
+        client,
+        companyId,
+        partyType,
+        opening.party_id,
+      );
+
+      // 5. Resolve the party's configured control account.
+      //
+      // Keep the resolution consistent with JournalService:
+      // posting group -> direct party account -> company fallback.
+      let controlAccountId: string | null = null;
+
+      if (isSupplier) {
+        const groupResult = await client.query(
+          `
+          SELECT ppg.payable_account_id AS account_id
+          FROM parties p
+          LEFT JOIN purchase_posting_groups ppg
+            ON p.posting_group::uuid = ppg.posting_group_id
+          WHERE p.id = $1
+            AND p.company_id = $2
+          LIMIT 1
+        `,
+          [opening.party_id, companyId],
+        );
+
+        controlAccountId = groupResult.rows[0]?.account_id || null;
+
+        if (!controlAccountId) {
+          const directResult = await client.query(
+            `
+            SELECT gl_account_payable AS account_id
+            FROM parties
+            WHERE id = $1
+              AND company_id = $2
+            LIMIT 1
+          `,
+            [opening.party_id, companyId],
+          );
+
+          controlAccountId = directResult.rows[0]?.account_id || null;
+        }
+
+        if (!controlAccountId) {
+          const fallbackResult = await client.query(
+            `
+            SELECT payable_account_id AS account_id
+            FROM purchase_posting_groups
+            WHERE company_id = $1
+            ORDER BY created_at ASC
+            LIMIT 1
+          `,
+            [companyId],
+          );
+
+          controlAccountId = fallbackResult.rows[0]?.account_id || null;
+        }
+      } else {
+        const groupResult = await client.query(
+          `
+          SELECT spg.receivable_account_id AS account_id
+          FROM parties p
+          LEFT JOIN sales_posting_groups spg
+            ON p.posting_group::uuid = spg.posting_group_id
+          WHERE p.id = $1
+            AND p.company_id = $2
+          LIMIT 1
+        `,
+          [opening.party_id, companyId],
+        );
+
+        controlAccountId = groupResult.rows[0]?.account_id || null;
+
+        if (!controlAccountId) {
+          const directResult = await client.query(
+            `
+            SELECT gl_account_receivable AS account_id
+            FROM parties
+            WHERE id = $1
+              AND company_id = $2
+            LIMIT 1
+          `,
+            [opening.party_id, companyId],
+          );
+
+          controlAccountId = directResult.rows[0]?.account_id || null;
+        }
+
+        if (!controlAccountId) {
+          const fallbackResult = await client.query(
+            `
+            SELECT receivable_account_id AS account_id
+            FROM sales_posting_groups
+            WHERE company_id = $1
+            ORDER BY created_at ASC
+            LIMIT 1
+          `,
+            [companyId],
+          );
+
+          controlAccountId = fallbackResult.rows[0]?.account_id || null;
+        }
+      }
+
+      if (!controlAccountId) {
+        throw new Error(
+          `No G/L control account configured for ${partyType} ${opening.party_id}.`,
+        );
+      }
+
+      // 6. Resolve the company's opening balance equity account.
+      // This is configured once per company in company_finance_setup.
+      const setupResult = await client.query(
+        `
+        SELECT opening_balance_equity_account_id
+        FROM company_finance_setup
+        WHERE company_id = $1
+        LIMIT 1
+      `,
+        [companyId],
+      );
+
+      const equityAccountId =
+        setupResult.rows[0]?.opening_balance_equity_account_id || null;
+
+      if (!equityAccountId) {
+        throw new Error(
+          "Opening balance equity G/L account is not configured for this company.",
+        );
+      }
+
+      // 7. Validate both G/L accounts.
+      await GLValidationService.validateAccount(client, controlAccountId);
+      await GLValidationService.validateAccount(client, equityAccountId);
+
+      if (controlAccountId === equityAccountId) {
+        throw new Error(
+          "The party control account and opening balance equity account must be different.",
+        );
+      }
+
+      // 8. Get a document reference.
+      // Use the document number when provided; otherwise generate a stable
+      // reference from the opening balance record ID.
+      const documentNo =
+        String(opening.doc_no || "").trim() ||
+        `OB-${isSupplier ? "SUP" : "CUS"}-${id}`;
+
+      const reference = String(opening.external_ref_no || "").trim() || null;
+
+      const description =
+        String(opening.description || "").trim() ||
+        `${isSupplier ? "Supplier" : "Customer"} opening balance`;
+
+      const currencyId = opening.currency_id || null;
+
+      // 9. Build the balanced posting legs.
+      //
+      // The equity entry is the exact opposite of the party entry in LCY.
+      const legs = [
+        {
+          accountId: controlAccountId,
+          debit: debitLCY,
+          credit: creditLCY,
+          debitFcy: debitFCY,
+          creditFcy: creditFCY,
+          partyType,
+          partyId: opening.party_id as string | null,
+          description,
+        },
+        {
+          accountId: equityAccountId,
+          debit: creditLCY,
+          credit: debitLCY,
+          debitFcy: creditFCY,
+          creditFcy: debitFCY,
+          partyType: null,
+          partyId: null,
+          description: `Opening balance offset - ${documentNo}`,
+        },
+      ];
+
+      GLValidationService.validateBalanced(
+        legs.map((leg) => ({
+          debit: leg.debit,
+          credit: leg.credit,
+        })),
+      );
+
+      // 10. Insert both G/L entries.
+      let partyGlEntryId: string | null = null;
+
+      for (const leg of legs) {
+        const txResult = await client.query(
+          `SELECT nextval('gl_transaction_id_seq') AS tx_id`,
+        );
+
+        const transactionId = Number(txResult.rows[0].tx_id);
+
+        const glResult = await client.query(
+          `
+          INSERT INTO gl_ledger_entries (
+            company_id,
+            account_id,
+            transaction_id,
+            vat_transaction_id,
+            vat_settlement_transaction_id,
+            source_journal_id,
+            entry_no,
+            posting_date,
+            source_type,
+            reference,
+            description,
+            debit,
+            credit,
+            currency_id,
+            exchange_rate,
+            debit_fcy,
+            credit_fcy,
+            source_document_id,
+            source_document_no,
+            party_type,
+            party_id,
+            document_no,
+            posted_at
+          )
+          VALUES (
+            $1, $2, $3, NULL, NULL, NULL,
+            $4, $5, $6, $7, $8, $9, $10,
+            $11, $12, $13, $14, $15, $16,
+            $17::sub_ledger_type, $18, $19, NOW()
+          )
+          RETURNING id
+        `,
+          [
+            companyId,
+            leg.accountId,
+            transactionId,
+            documentNo,
+            postingDate,
+            isSupplier
+              ? "SUPPLIER_OPENING_BALANCE"
+              : "CUSTOMER_OPENING_BALANCE",
+            reference,
+            leg.description,
+            leg.debit,
+            leg.credit,
+            currencyId,
+            exchangeRate,
+            leg.debitFcy,
+            leg.creditFcy,
+            id,
+            documentNo,
+            leg.partyType,
+            leg.partyId,
+            documentNo,
+          ],
+        );
+
+        if (leg.partyId) {
+          partyGlEntryId = glResult.rows[0].id;
+        }
+      }
+
+      if (!partyGlEntryId) {
+        throw new Error("Failed to create the party G/L ledger entry.");
+      }
+
+      // 11. Determine sub-ledger document type.
+      //
+      // Opening balances are represented as open customer/vendor documents.
+      // Payment and refund types are mapped explicitly for compatibility.
+      const rawDocType = String(opening.doc_type || "Invoice")
+        .trim()
+        .toUpperCase()
+        .replace(/[\s-]+/g, "_");
+
+      let subLedgerDocType: string;
+
+      if (rawDocType === "REFUND") {
+        subLedgerDocType = "REFUND";
+      } else if (rawDocType === "DEBIT_NOTE") {
+        subLedgerDocType = "DEBIT_NOTE";
+      } else if (rawDocType === "CREDIT_NOTE" || rawDocType === "CREDIT_MEMO") {
+        subLedgerDocType = isSupplier ? "CREDIT_MEMO" : "CREDIT_NOTE";
+      } else if (rawDocType === "PAYMENT" || rawDocType === "VENDOR_PAYMENT") {
+        subLedgerDocType = isSupplier ? "VENDOR_PAYMENT" : "PAYMENT";
+      } else {
+        subLedgerDocType = isSupplier ? "PURCHASE_INVOICE" : "SALES_INVOICE";
+      }
+
+      // 12. Calculate signed sub-ledger balances.
+      //
+      // Customer: debit increases the receivable.
+      // Supplier: credit increases the payable.
+      const originalAmountFCY = isSupplier
+        ? creditFCY - debitFCY
+        : debitFCY - creditFCY;
+
+      const originalAmountLCY = isSupplier
+        ? creditLCY - debitLCY
+        : debitLCY - creditLCY;
+
+      // 13. Create the open customer/vendor ledger document.
+      const subLedgerResult = await client.query(
+        `
+        INSERT INTO ${subLedgerTable} (
+          company_id,
+          ${partyColumn},
+          document_type,
+          document_id,
+          document_no,
+          posting_date,
+          description,
+          currency_id,
+          exchange_rate,
+          original_amount_fcy,
+          remaining_amount_fcy,
+          original_amount_lcy,
+          remaining_amount_lcy,
+          is_open,
+          journal_entry_id,
+          journal_line_id,
+          created_at,
+          updated_at
+        )
+        VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9,
+          $10, $10, $11, $11, true, NULL, NULL,
+          NOW(), NOW()
+        )
+        RETURNING id
+      `,
+        [
+          companyId,
+          opening.party_id,
+          subLedgerDocType,
+          id,
+          documentNo,
+          postingDate,
+          description,
+          currencyId,
+          exchangeRate,
+          originalAmountFCY,
+          originalAmountLCY,
+        ],
+      );
+
+      const subLedgerEntryId = subLedgerResult.rows[0]?.id;
+
+      if (!subLedgerEntryId) {
+        throw new Error("Failed to create the party sub-ledger entry.");
+      }
+
+      // 14. Mark the opening balance as posted.
+      //
+      // Adjust these tracking columns to match your actual table schema.
+      await client.query(
+        `
+        UPDATE ${tableName}
+        SET
+          status = 'Posted',
+          posted_at = NOW(),
+          posted_by = $1,
+          gl_ledger_entry_id = $2,
+          general_ledger_document_no = $3,
+          updated_at = NOW()
+        WHERE id = $4
+          AND company_id = $5
+          AND status = 'Open'
+      `,
+        [postedBy || null, partyGlEntryId, documentNo, id, companyId],
+      );
+
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
     }
   }
 }

@@ -3,7 +3,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
-// import { CustomerOpeningBalanceService } from "@/lib/services/finance/customer-opening-balance.service";
 
 import { CustomerSupplierOpeningBalanceService } from "@/lib/services/finance/opening-balances/customer-supplier-opening-balance.service";
 
@@ -121,6 +120,9 @@ export async function POST(req: NextRequest) {
   }
 }
 
+
+
+// import { CustomerOpeningBalanceService } from "@/lib/services/finance/customer-opening-balance.service";
 /* export async function POST(req: NextRequest) {
   const client = await pool.connect();
 

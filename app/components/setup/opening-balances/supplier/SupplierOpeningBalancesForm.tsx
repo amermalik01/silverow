@@ -45,6 +45,8 @@ export default function SupplierOpeningBalancesForm({
 }: Props) {
   const { show, hide } = useLoader();
 
+  const [isPosting, setIsPosting] = useState(false);
+
   const [currencies, setCurrencies] = useState<Currency[]>([]);
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -60,6 +62,73 @@ export default function SupplierOpeningBalancesForm({
   );
 
   const baseCurrencyCode = baseCurrencyObj?.code || "GBP";
+
+  const handlePost = async () => {
+    if (!recordId) {
+      setErrorMsg("Save the opening balance before posting.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Post this supplier opening balance to the general ledger?",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsPosting(true);
+      setErrorMsg(null);
+      show();
+
+      const response = await fetch(`${apiBase}/post`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids: [recordId] }),
+      });
+
+      const result: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const message =
+          typeof result === "object" &&
+          result !== null &&
+          "error" in result &&
+          typeof result.error === "string"
+            ? result.error
+            : "Failed to post supplier opening balance.";
+
+        throw new Error(message);
+      }
+
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "success" in result &&
+        result.success === false
+      ) {
+        throw new Error(
+          "error" in result && typeof result.error === "string"
+            ? result.error
+            : "Failed to post supplier opening balance.",
+        );
+      }
+
+      onEditComplete();
+    } catch (error) {
+      setErrorMsg(
+        error instanceof Error
+          ? error.message
+          : "Failed to post supplier opening balance.",
+      );
+    } finally {
+      setIsPosting(false);
+      hide();
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -377,6 +446,16 @@ export default function SupplierOpeningBalancesForm({
               }}
             >
               Delete
+            </Button>
+          )}
+
+          {recordId && (
+            <Button
+              type="button"
+              onClick={() => void handlePost()}
+              disabled={isPosting}
+            >
+              {isPosting ? "Posting..." : "Post to General Ledger"}
             </Button>
           )}
 

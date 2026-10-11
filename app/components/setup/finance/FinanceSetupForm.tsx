@@ -23,6 +23,7 @@ import CustomerOpeningBalancesList from "../opening-balances/customer/CustomerOp
 import CustomerOpeningBalancesForm from "../opening-balances/customer/CustomerOpeningBalancesForm";
 import SupplierOpeningBalancesList from "../opening-balances/supplier/SupplierOpeningBalancesList";
 import SupplierOpeningBalancesForm from "../opening-balances/supplier/SupplierOpeningBalancesForm";
+import GlobalFinanceSetupForm from "./GlobalFinanceSetupForm";
 
 type TabType =
   | "posting_setup"
@@ -31,6 +32,7 @@ type TabType =
   // | "product"
   | "rates"
   | "posting_date_range"
+  | "global_finance_setup"
   | "bank_opening_balance"
   | "supplier_opening_balance"
   | "customer_opening_balance"
@@ -41,6 +43,11 @@ const tabs: {
   label: string;
   icon: string;
 }[] = [
+  {
+    id: "global_finance_setup",
+    label: "Global Finance Setup",
+    icon: "solar:table-linear",
+  },
   {
     id: "posting_setup",
     label: "Finance Posting Setup",
@@ -232,6 +239,9 @@ export default function FinanceSetupForm() {
         {activeTab === "rates" && <VatRatesList />}
 
         {activeTab === "posting_date_range" && <PostingDateRangeSetup />}
+
+        {activeTab === "global_finance_setup" && <GlobalFinanceSetupForm />}
+
 
         {activeTab === "bank_opening_balance" && <BankOpeningBalancesForm />}
 

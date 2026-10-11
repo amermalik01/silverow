@@ -1,6 +1,5 @@
 // app/components/setup/opening-balances/stock/types.ts
 
-import type { ItemLookupRecord } from "@/app/components/shared/modals/ItemLookupModal";
 
 export type StockOpeningBalanceLineRow = {
   _stableKey: string;
@@ -31,6 +30,10 @@ export type StockOpeningBalanceLineRow = {
   quantity: number;
   unit_price: number;
   amount: number;
+
+  // Set by the server after posting.
+  posted?: boolean;
+  posted_at?: string | null;
 };
 
 export type WarehouseOption = {
@@ -43,4 +46,16 @@ export type LocationOption = {
   id: string;
   title: string;
   warehouse_id: string;
+};
+
+export type StockOpeningBalanceField =
+  keyof StockOpeningBalanceLineRow;
+
+export type StockOpeningBalanceFieldValue =
+  StockOpeningBalanceLineRow[StockOpeningBalanceField];
+
+export type StockOpeningBalanceApiResponse = {
+  data?: unknown;
+  error?: string;
+  message?: string;
 };

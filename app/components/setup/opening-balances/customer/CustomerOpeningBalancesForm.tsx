@@ -20,23 +20,11 @@ import CustomerOpeningBalanceTable from "./components/CustomerOpeningBalanceTabl
 
 import { useCustomerOpeningBalances } from "./hooks/useCustomerOpeningBalances";
 
-// type Props = {
-//   apiBase?: string;
-//   redirectPath?: string;
-//   recordId?: string;
-// };
 type Props = {
   apiBase?: string;
   recordId?: string;
   onEditComplete: () => void;
 };
-
-// export default function CustomerOpeningBalancesForm({
-//   apiBase = "/api/finance/opening-balances/customer",
-//   redirectPath = "/finance/opening-balances",
-//   recordId,
-// }: Props) {
-//   const router = useRouter();
 
 export default function CustomerOpeningBalancesForm({
   apiBase = "/api/finance/opening-balances/customer",
@@ -44,6 +32,8 @@ export default function CustomerOpeningBalancesForm({
   onEditComplete,
 }: Props) {
   const { show, hide } = useLoader();
+
+  const [isPosting, setIsPosting] = useState(false);
 
   const [currencies, setCurrencies] = useState<Currency[]>([]);
 
@@ -60,6 +50,73 @@ export default function CustomerOpeningBalancesForm({
   );
 
   const baseCurrencyCode = baseCurrencyObj?.code || "GBP";
+
+  const handlePost = async () => {
+    if (!recordId) {
+      setErrorMsg("Save the opening balance before posting.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Post this customer opening balance to the general ledger?",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsPosting(true);
+      setErrorMsg(null);
+      show();
+
+      const response = await fetch(`${apiBase}/post`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids: [recordId] }),
+      });
+
+      const result: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const message =
+          typeof result === "object" &&
+          result !== null &&
+          "error" in result &&
+          typeof result.error === "string"
+            ? result.error
+            : "Failed to post customer opening balance.";
+
+        throw new Error(message);
+      }
+
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "success" in result &&
+        result.success === false
+      ) {
+        throw new Error(
+          "error" in result && typeof result.error === "string"
+            ? result.error
+            : "Failed to post customer opening balance.",
+        );
+      }
+
+      onEditComplete();
+    } catch (error) {
+      setErrorMsg(
+        error instanceof Error
+          ? error.message
+          : "Failed to post customer opening balance.",
+      );
+    } finally {
+      setIsPosting(false);
+      hide();
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -379,6 +436,16 @@ export default function CustomerOpeningBalancesForm({
             </Button>
           )}
 
+          {recordId && (
+            <Button
+              type="button"
+              onClick={() => void handlePost()}
+              disabled={isPosting}
+            >
+              {isPosting ? "Posting..." : "Post to General Ledger"}
+            </Button>
+          )}
+
           <Button
             type="button"
             variant="ghost"
@@ -401,7 +468,18 @@ export default function CustomerOpeningBalancesForm({
     </div>
   );
 }
+// type Props = {
+//   apiBase?: string;
+//   redirectPath?: string;
+//   recordId?: string;
+// };
 
+// export default function CustomerOpeningBalancesForm({
+//   apiBase = "/api/finance/opening-balances/customer",
+//   redirectPath = "/finance/opening-balances",
+//   recordId,
+// }: Props) {
+//   const router = useRouter();
 /* const handleSave = async () => {
     setErrorMsg(null);
 

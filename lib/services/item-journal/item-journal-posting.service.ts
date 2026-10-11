@@ -71,34 +71,6 @@ interface ItemJournalAllocationDbRow {
   created_at: string;
 }
 
-// type ItemJournalAllocationDbRow = {
-//   id: string;
-
-//   journal_id: string;
-//   journal_line_id: string;
-
-//   item_id: string;
-
-//   warehouse_id: string;
-//   warehouse_location_id: string | null;
-//   location_id: string | null;
-
-//   allocated_quantity: number | string | null;
-
-//   unit_cost: number | string | null;
-//   total_cost: number | string | null;
-
-//   date_received: Date | string | null;
-//   prod_date: Date | string | null;
-//   expiry_date: Date | string | null;
-
-//   batch_no: string | null;
-//   serial_no: string | null;
-
-//   status: string | null;
-
-//   created_at: Date | string;
-// };
 
 type ItemJournalAllocationInput = NonNullable<
   ItemJournalLineInput["allocations"]
