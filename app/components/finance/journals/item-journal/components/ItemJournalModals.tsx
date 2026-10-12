@@ -117,6 +117,10 @@ export default function ItemJournalModals({
           initialAllocations={activeAllocationLine.allocations ?? []}
         />
       )}
+    </>
+  );
+}
+
 
       {/* {allocationModalOpen &&
         activeAllocationLine &&
@@ -180,6 +184,3 @@ export default function ItemJournalModals({
             initialAllocations={activeAllocationLine.allocations ?? []}
           />
         ))} */}
-    </>
-  );
-}

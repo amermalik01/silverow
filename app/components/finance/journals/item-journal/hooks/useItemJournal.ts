@@ -9,6 +9,8 @@ import { toast } from "sonner";
 
 import { useLoader } from "@/app/context/LoaderContext";
 
+import { useStockAllocation } from "./useStockAllocation";
+
 import type {
   ItemJournalFormProps,
   ItemJournalAllocationRecord,
@@ -66,12 +68,6 @@ export function useItemJournal({
     Record<string, LocationOption[]>
   >({});
 
-  const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
-
-  const [activeAllocationLineId, setActiveAllocationLineId] = useState<
-    string | null
-  >(null);
-
   const [activeModal, setActiveModal] = useState<GLModalState | null>(null);
 
   const [itemActiveModal, setItemActiveModal] = useState<ItemModalState | null>(
@@ -91,25 +87,8 @@ export function useItemJournal({
     createInitialRow(today()),
   ]);
 
-  const [existingSequences, setExistingSequences] = useState<
-    StockSequenceRecord[]
-  >([]);
-
-  const [availableStock, setAvailableStock] = useState<AvailableStockRecord[]>(
-    [],
-  );
-
   const formDisabled = readOnly || isPosted || !isEditing || loading;
 
-  const activeAllocationLine = useMemo(() => {
-    if (!activeAllocationLineId) {
-      return null;
-    }
-
-    return (
-      lines.find((line) => line._stableKey === activeAllocationLineId) || null
-    );
-  }, [activeAllocationLineId, lines]);
 
   const getApiMessage = useCallback(
     async (response: Response, fallback: string): Promise<string> => {
@@ -413,6 +392,31 @@ export function useItemJournal({
     }),
     [],
   );
+
+  const {
+    activeAllocationLine,
+    activeAllocationLineId,
+    isAllocationModalOpen,
+    existingSequences,
+    availableStock,
+    setIsAllocationModalOpen,
+    setActiveAllocationLineId,
+    setExistingSequences,
+    setAvailableStock,
+    handleOpenAllocation,
+    handleCloseAllocation,
+    handleSaveAllocations,
+    resetAllocation,
+  } = useStockAllocation({
+    lines,
+    setLines,
+    formDisabled,
+    fetchStockSequences,
+    fetchAvailableStock,
+    normalizeAllocation,
+    show,
+    hide,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -808,9 +812,12 @@ export function useItemJournal({
         activeAllocationLineId &&
         lines[index]?._stableKey === activeAllocationLineId
       ) {
-        setIsAllocationModalOpen(false);
-        setActiveAllocationLineId(null);
-        setExistingSequences([]);
+        // setIsAllocationModalOpen(false);
+        // setActiveAllocationLineId(null);
+        // setExistingSequences([]);
+
+        // stockAllocation.resetAllocation();
+        resetAllocation();
       }
     },
     [formDisabled, metadata.entry_date, activeAllocationLineId, lines],
@@ -862,441 +869,8 @@ export function useItemJournal({
     [metadata.entry_date],
   );
 
-  const openItemModal = useCallback(
-    (index: number) => {
-      if (formDisabled) {
-        return;
-      }
+  
 
-      setItemActiveModal({
-        index,
-        type: "item",
-        target: "item",
-      });
-    },
-    [formDisabled],
-  );
-
-  const closeItemModal = useCallback(() => {
-    setItemActiveModal(null);
-  }, []);
-
-  const handleMultipleItemSelect = useCallback(
-    async (items: ItemLookupRecord[]): Promise<void> => {
-      if (!items.length) {
-        setItemActiveModal(null);
-        return;
-      }
-
-      if (formDisabled) {
-        return;
-      }
-
-      try {
-        show("Loading item information...");
-
-        const newLines = await Promise.all(items.map(buildItemLine));
-
-        if (itemActiveModal !== null) {
-          const targetIndex = itemActiveModal.index;
-
-          setLines((previous) =>
-            previous.map((line, index) =>
-              index === targetIndex ? newLines[0] : line,
-            ),
-          );
-        } else {
-          setLines((previous) => [...previous, ...newLines]);
-        }
-
-        const warehouseIds = Array.from(
-          new Set(newLines.map((line) => line.warehouse_id).filter(Boolean)),
-        );
-
-        const locationResults = await Promise.all(
-          warehouseIds.map(async (warehouseId) => ({
-            warehouseId,
-            locations: await fetchLocationsForWarehouse(warehouseId),
-          })),
-        );
-
-        setLocationsByWarehouse((previous) => {
-          const updated = {
-            ...previous,
-          };
-
-          for (const result of locationResults) {
-            updated[result.warehouseId] = result.locations;
-          }
-
-          return updated;
-        });
-
-        toast.success(
-          items.length === 1
-            ? "Item selected."
-            : `${items.length} items selected.`,
-        );
-      } catch (error: unknown) {
-        console.error("Failed to add selected items:", error);
-
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to load selected item.",
-        );
-      } finally {
-        hide();
-        setItemActiveModal(null);
-      }
-    },
-    [
-      formDisabled,
-      itemActiveModal,
-      buildItemLine,
-      fetchLocationsForWarehouse,
-      show,
-      hide,
-    ],
-  );
-
-  const openWarehouseModal = useCallback(
-    (index: number) => {
-      if (formDisabled) {
-        return;
-      }
-
-      setWarehouseIndex(index);
-    },
-    [formDisabled],
-  );
-
-  const closeWarehouseModal = useCallback(() => {
-    setWarehouseIndex(null);
-  }, []);
-
-  const handleWarehouseSelect = useCallback(
-    async (warehouse: WarehouseLookupRecord): Promise<void> => {
-      if (warehouseIndex === null || formDisabled) {
-        return;
-      }
-
-      const targetIndex = warehouseIndex;
-
-      const warehouseId = String(warehouse.id || "");
-
-      setLines((previous) =>
-        previous.map((line, index) => {
-          if (index !== targetIndex) {
-            return line;
-          }
-          return {
-            ...line,
-            warehouse_id: warehouseId,
-            warehouse_code: warehouse.code || "",
-            warehouse_name: warehouse.name || "",
-            location_id: "",
-            location_name: "",
-            allocations: [],
-            initialAllocations: [],
-            stock_status: "unallocated",
-            is_allocated: false,
-          };
-        }),
-      );
-
-      if (warehouseId) {
-        const warehouseLocations =
-          await fetchLocationsForWarehouse(warehouseId);
-
-        setLocationsByWarehouse((previous) => ({
-          ...previous,
-          [warehouseId]: warehouseLocations,
-        }));
-      }
-
-      setExistingSequences([]);
-      setWarehouseIndex(null);
-    },
-    [warehouseIndex, formDisabled, fetchLocationsForWarehouse],
-  );
-
-  const openLocationModal = useCallback(
-    async (index: number) => {
-      if (formDisabled) {
-        return;
-      }
-
-      const line = lines[index];
-
-      if (!line) {
-        return;
-      }
-
-      if (!line.warehouse_id) {
-        toast.error("Please select a warehouse first.");
-        return;
-      }
-
-      if (!locationsByWarehouse[line.warehouse_id]) {
-        const locations = await fetchLocationsForWarehouse(line.warehouse_id);
-
-        setLocationsByWarehouse((previous) => ({
-          ...previous,
-          [line.warehouse_id]: locations,
-        }));
-      }
-
-      setLocationIndex(index);
-    },
-    [formDisabled, lines, locationsByWarehouse, fetchLocationsForWarehouse],
-  );
-
-  const closeLocationModal = useCallback(() => {
-    setLocationIndex(null);
-  }, []);
-
-  const handleLocationSelect = useCallback(
-    (targetIndex: number, location: LocationOption) => {
-      if (formDisabled) {
-        return;
-      }
-
-      setLines((previous) =>
-        previous.map((line, index) => {
-          if (index !== targetIndex) {
-            return line;
-          }
-
-          const locationId = String(location.id || "");
-          const locationName = location.title || "";
-
-          return {
-            ...line,
-            location_id: locationId,
-            location_name: locationName,
-            allocations: [],
-            initialAllocations: [],
-            stock_status: "unallocated",
-            is_allocated: false,
-          };
-        }),
-      );
-
-      setExistingSequences([]);
-      setLocationIndex(null);
-    },
-    [formDisabled],
-  );
-
-  const openGLModal = useCallback(
-    (index: number) => {
-      if (formDisabled) {
-        return;
-      }
-
-      setActiveModal({
-        index,
-        type: "balancing_account",
-        target: "gl",
-      });
-    },
-    [formDisabled],
-  );
-
-  const closeGLModal = useCallback(() => {
-    setActiveModal(null);
-  }, []);
-
-  const handleModalSelection = useCallback(
-    (selectedRecord: GLAccountLookupRecord) => {
-      if (!activeModal || formDisabled) {
-        return;
-      }
-
-      const targetIndex = activeModal.index;
-
-      setLines((previous) =>
-        previous.map((line, index) => {
-          if (index !== targetIndex) {
-            return line;
-          }
-          const code = selectedRecord.code || "";
-          const name = selectedRecord.name || "";
-          return {
-            ...line,
-            balancing_account_id: String(selectedRecord.id || ""),
-            balancing_display_name:
-              code && name ? `${code} - ${name}` : name || code,
-          };
-        }),
-      );
-      setActiveModal(null);
-    },
-    [activeModal, formDisabled],
-  );
-
-  const handleOpenAllocation = useCallback(
-    async (line: ItemJournalLineRow) => {
-      if (formDisabled) {
-        return;
-      }
-
-      if (!line.item_id) {
-        toast.error("Please select an item first.");
-        return;
-      }
-
-      if (!line.warehouse_id) {
-        toast.error("Please select a warehouse first.");
-        return;
-      }
-
-      if (!line.location_id) {
-        toast.error("Please select a location first.");
-        return;
-      }
-
-      if (Number(line.quantity || 0) <= 0) {
-        toast.error("Please enter a quantity first.");
-        return;
-      }
-
-      setActiveAllocationLineId(line._stableKey);
-      setExistingSequences([]);
-      setAvailableStock([]);
-
-      try {
-        show(
-          line.transaction_type === "Negative Entry"
-            ? "Loading available stock..."
-            : "Loading stock sequences...",
-        );
-
-        if (line.transaction_type === "Positive Entry") {
-          const sequences = await fetchStockSequences(
-            line.item_id,
-            line.warehouse_id,
-            line.location_id,
-          );
-
-          setExistingSequences(sequences);
-          setAvailableStock([]);
-        } else {
-          const stock = await fetchAvailableStock(
-            line.item_id,
-            line.warehouse_id,
-          );
-
-          setAvailableStock(stock);
-          setExistingSequences([]);
-        }
-
-        setIsAllocationModalOpen(true);
-      } catch (error: unknown) {
-        console.error("Failed to load stock allocation data:", error);
-
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to load stock allocation data.",
-        );
-
-        setActiveAllocationLineId(null);
-        setIsAllocationModalOpen(false);
-      } finally {
-        hide();
-      }
-    },
-    [formDisabled, show, hide, fetchStockSequences, fetchAvailableStock],
-  );
-
-  const handleCloseAllocation = useCallback(() => {
-    setIsAllocationModalOpen(false);
-    setActiveAllocationLineId(null);
-    setExistingSequences([]);
-  }, []);
-
-  const handleSaveAllocations = useCallback(
-    (allocationsData: StockAllocationRecord[]) => {
-      if (!activeAllocationLineId || formDisabled) {
-        return;
-      }
-
-      setLines((previous) =>
-        previous.map((line) => {
-          if (line._stableKey !== activeAllocationLineId) {
-            return line;
-          }
-
-          const quantity = Number(line.quantity || 0);
-
-          const sanitizedAllocations = allocationsData
-            .map((allocation) =>
-              normalizeAllocation(
-                allocation,
-                line.location_id,
-                line.location_name,
-              ),
-            )
-            .filter((allocation) => allocation.quantity > 0);
-
-          const allocatedQuantity = getAllocationTotal(sanitizedAllocations);
-
-          if (allocatedQuantity > quantity + 0.000001) {
-            toast.error(
-              "Allocated quantity cannot exceed the journal quantity.",
-            );
-
-            return line;
-          }
-
-          const sequenceKeys = new Set<string>();
-
-          for (const allocation of sanitizedAllocations) {
-            if (!allocation.sequence_no) {
-              continue;
-            }
-
-            const key = [
-              allocation.location_id,
-              allocation.sequence_no,
-              allocation.batch_no,
-              allocation.serial_no,
-            ].join("|");
-
-            if (sequenceKeys.has(key)) {
-              toast.error(
-                "The same stock sequence cannot be allocated more than once.",
-              );
-
-              return line;
-            }
-
-            sequenceKeys.add(key);
-          }
-
-          const status = getStockStatus(quantity, sanitizedAllocations);
-
-          return {
-            ...line,
-            allocations: sanitizedAllocations,
-            initialAllocations:
-              line.initialAllocations?.map((allocation) => ({
-                ...allocation,
-              })) ?? [],
-            stock_status: status,
-            is_allocated: status === "allocated",
-          };
-        }),
-      );
-
-      setIsAllocationModalOpen(false);
-      setActiveAllocationLineId(null);
-      setExistingSequences([]);
-    },
-    [activeAllocationLineId, formDisabled, normalizeAllocation],
-  );
 
   const validateBeforeSave = useCallback(
     (postToLedger: boolean): string | null => {
@@ -1369,14 +943,14 @@ export function useItemJournal({
               return `Line ${lineNumber}: Allocation ${allocationNumber} quantity must be greater than zero.`;
             }
 
-            if (
-              line.transaction_type === "Positive Entry" &&
-              !allocation.sequence_no
-            ) {
-              throw new Error(
-                `Line ${lineNumber}, allocation ${allocationNumber}: Stock sequence is required for a positive entry.`,
-              );
-            }
+            // if (
+            //   line.transaction_type === "Positive Entry" &&
+            //   !allocation.sequence_no
+            // ) {
+            //   throw new Error(
+            //     `Line ${lineNumber}, allocation ${allocationNumber}: Stock sequence is required for a positive entry.`,
+            //   );
+            // }
 
             if (
               allocation.available_quantity !== undefined &&
@@ -1784,15 +1358,39 @@ export function useItemJournal({
         amount: Number(line.amount || 0),
         balancing_account_id: line.balancing_account_id,
         balancing_display_name: line.balancing_display_name,
+
         allocations: line.allocations.map((allocation) => ({
+          id: allocation.id ?? null,
+
+          source_allocation_id: allocation.source_allocation_id ?? null,
+
+          inbound_entry_id: allocation.inbound_entry_id ?? null,
+
           location_id: allocation.location_id || line.location_id,
-          date_received: allocation.date_received,
-          prod_date: allocation.prod_date,
-          expiry_date: allocation.expiry_date,
-          batch_no: allocation.batch_no,
-          serial_no: allocation.serial_no,
+          location_name: allocation.location_name || line.location_name,
+
+          date_received: allocation.date_received ?? "",
+          prod_date: allocation.prod_date ?? "",
+          expiry_date: allocation.expiry_date ?? "",
+
+          batch_no: allocation.batch_no ?? "",
+          bin_code: allocation.bin_code ?? "",
+          sequence_no: allocation.sequence_no ?? "",
+          serial_no: allocation.serial_no ?? "",
+
           quantity: Number(allocation.quantity || 0),
+          available_quantity: allocation.available_quantity,
+          unit_cost: allocation.unit_cost,
         })),
+        // allocations: line.allocations.map((allocation) => ({
+        //   location_id: allocation.location_id || line.location_id,
+        //   date_received: allocation.date_received,
+        //   prod_date: allocation.prod_date,
+        //   expiry_date: allocation.expiry_date,
+        //   batch_no: allocation.batch_no,
+        //   serial_no: allocation.serial_no,
+        //   quantity: Number(allocation.quantity || 0),
+        // })),
       })),
     }),
     [metadata.entry_date, lines],
@@ -2004,6 +1602,280 @@ export function useItemJournal({
     [postJournal, saveDraft],
   );
 
+  const openItemModal = useCallback(
+    (index: number) => {
+      if (formDisabled) {
+        return;
+      }
+
+      setItemActiveModal({
+        index,
+        type: "item",
+        target: "item",
+      });
+    },
+    [formDisabled],
+  );
+
+  const closeItemModal = useCallback(() => {
+    setItemActiveModal(null);
+  }, []);
+
+  const handleMultipleItemSelect = useCallback(
+    async (items: ItemLookupRecord[]): Promise<void> => {
+      if (!items.length) {
+        setItemActiveModal(null);
+        return;
+      }
+
+      if (formDisabled) {
+        return;
+      }
+
+      try {
+        show("Loading item information...");
+
+        const newLines = await Promise.all(items.map(buildItemLine));
+
+        if (itemActiveModal !== null) {
+          const targetIndex = itemActiveModal.index;
+
+          setLines((previous) =>
+            previous.map((line, index) =>
+              index === targetIndex ? newLines[0] : line,
+            ),
+          );
+        } else {
+          setLines((previous) => [...previous, ...newLines]);
+        }
+
+        const warehouseIds = Array.from(
+          new Set(newLines.map((line) => line.warehouse_id).filter(Boolean)),
+        );
+
+        const locationResults = await Promise.all(
+          warehouseIds.map(async (warehouseId) => ({
+            warehouseId,
+            locations: await fetchLocationsForWarehouse(warehouseId),
+          })),
+        );
+
+        setLocationsByWarehouse((previous) => {
+          const updated = {
+            ...previous,
+          };
+
+          for (const result of locationResults) {
+            updated[result.warehouseId] = result.locations;
+          }
+
+          return updated;
+        });
+
+        toast.success(
+          items.length === 1
+            ? "Item selected."
+            : `${items.length} items selected.`,
+        );
+      } catch (error: unknown) {
+        console.error("Failed to add selected items:", error);
+
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to load selected item.",
+        );
+      } finally {
+        hide();
+        setItemActiveModal(null);
+      }
+    },
+    [
+      formDisabled,
+      itemActiveModal,
+      buildItemLine,
+      fetchLocationsForWarehouse,
+      show,
+      hide,
+    ],
+  );
+
+  const openWarehouseModal = useCallback(
+    (index: number) => {
+      if (formDisabled) {
+        return;
+      }
+
+      setWarehouseIndex(index);
+    },
+    [formDisabled],
+  );
+
+  const closeWarehouseModal = useCallback(() => {
+    setWarehouseIndex(null);
+  }, []);
+
+  const handleWarehouseSelect = useCallback(
+    async (warehouse: WarehouseLookupRecord): Promise<void> => {
+      if (warehouseIndex === null || formDisabled) {
+        return;
+      }
+
+      const targetIndex = warehouseIndex;
+
+      const warehouseId = String(warehouse.id || "");
+
+      setLines((previous) =>
+        previous.map((line, index) => {
+          if (index !== targetIndex) {
+            return line;
+          }
+          return {
+            ...line,
+            warehouse_id: warehouseId,
+            warehouse_code: warehouse.code || "",
+            warehouse_name: warehouse.name || "",
+            location_id: "",
+            location_name: "",
+            allocations: [],
+            initialAllocations: [],
+            stock_status: "unallocated",
+            is_allocated: false,
+          };
+        }),
+      );
+
+      if (warehouseId) {
+        const warehouseLocations =
+          await fetchLocationsForWarehouse(warehouseId);
+
+        setLocationsByWarehouse((previous) => ({
+          ...previous,
+          [warehouseId]: warehouseLocations,
+        }));
+      }
+
+      setExistingSequences([]);
+      setWarehouseIndex(null);
+    },
+    [warehouseIndex, formDisabled, fetchLocationsForWarehouse],
+  );
+
+  const openLocationModal = useCallback(
+    async (index: number) => {
+      if (formDisabled) {
+        return;
+      }
+
+      const line = lines[index];
+
+      if (!line) {
+        return;
+      }
+
+      if (!line.warehouse_id) {
+        toast.error("Please select a warehouse first.");
+        return;
+      }
+
+      if (!locationsByWarehouse[line.warehouse_id]) {
+        const locations = await fetchLocationsForWarehouse(line.warehouse_id);
+
+        setLocationsByWarehouse((previous) => ({
+          ...previous,
+          [line.warehouse_id]: locations,
+        }));
+      }
+
+      setLocationIndex(index);
+    },
+    [formDisabled, lines, locationsByWarehouse, fetchLocationsForWarehouse],
+  );
+
+  const closeLocationModal = useCallback(() => {
+    setLocationIndex(null);
+  }, []);
+
+  const handleLocationSelect = useCallback(
+    (targetIndex: number, location: LocationOption) => {
+      if (formDisabled) {
+        return;
+      }
+
+      setLines((previous) =>
+        previous.map((line, index) => {
+          if (index !== targetIndex) {
+            return line;
+          }
+
+          const locationId = String(location.id || "");
+          const locationName = location.title || "";
+
+          return {
+            ...line,
+            location_id: locationId,
+            location_name: locationName,
+            allocations: [],
+            initialAllocations: [],
+            stock_status: "unallocated",
+            is_allocated: false,
+          };
+        }),
+      );
+
+      setExistingSequences([]);
+      setLocationIndex(null);
+    },
+    [formDisabled],
+  );
+
+  const openGLModal = useCallback(
+    (index: number) => {
+      if (formDisabled) {
+        return;
+      }
+
+      setActiveModal({
+        index,
+        type: "balancing_account",
+        target: "gl",
+      });
+    },
+    [formDisabled],
+  );
+
+  const closeGLModal = useCallback(() => {
+    setActiveModal(null);
+  }, []);
+
+  const handleModalSelection = useCallback(
+    (selectedRecord: GLAccountLookupRecord) => {
+      if (!activeModal || formDisabled) {
+        return;
+      }
+
+      const targetIndex = activeModal.index;
+
+      setLines((previous) =>
+        previous.map((line, index) => {
+          if (index !== targetIndex) {
+            return line;
+          }
+          const code = selectedRecord.code || "";
+          const name = selectedRecord.name || "";
+          return {
+            ...line,
+            balancing_account_id: String(selectedRecord.id || ""),
+            balancing_display_name:
+              code && name ? `${code} - ${name}` : name || code,
+          };
+        }),
+      );
+      setActiveModal(null);
+    },
+    [activeModal, formDisabled],
+  );
+
   return {
     loading,
     isPosted,
@@ -2080,5 +1952,654 @@ export function useItemJournal({
 
     fetchLocationsForWarehouse,
     fetchStockSequences,
+
+    // activeAllocationLine: stockAllocation.activeAllocationLine,
+    // activeAllocationLineId: stockAllocation.activeAllocationLineId,
+
+    // isAllocationModalOpen: stockAllocation.isAllocationModalOpen,
+
+    // existingSequences: stockAllocation.existingSequences,
+    // availableStock: stockAllocation.availableStock,
+
+    // handleOpenAllocation: stockAllocation.handleOpenAllocation,
+
+    // handleCloseAllocation: stockAllocation.handleCloseAllocation,
+
+    // handleSaveAllocations: stockAllocation.handleSaveAllocations,
+
+    // setIsAllocationModalOpen: stockAllocation.setIsAllocationModalOpen,
+
+    // setActiveAllocationLineId: stockAllocation.setActiveAllocationLineId,
+
+    // setExistingSequences: stockAllocation.setExistingSequences,
+
+    // setAvailableStock: stockAllocation.setAvailableStock,
   };
 }
+
+
+
+  // const handleOpenAllocation = useCallback(
+  //   async (line: ItemJournalLineRow) => {
+  //     if (formDisabled) {
+  //       return;
+  //     }
+
+  //     if (!line.item_id) {
+  //       toast.error("Please select an item first.");
+  //       return;
+  //     }
+
+  //     if (!line.warehouse_id) {
+  //       toast.error("Please select a warehouse first.");
+  //       return;
+  //     }
+
+  //     if (!line.location_id) {
+  //       toast.error("Please select a location first.");
+  //       return;
+  //     }
+
+  //     if (Number(line.quantity || 0) <= 0) {
+  //       toast.error("Please enter a quantity first.");
+  //       return;
+  //     }
+
+  //     setActiveAllocationLineId(line._stableKey);
+  //     setExistingSequences([]);
+  //     setAvailableStock([]);
+
+  //     try {
+  //       show(
+  //         line.transaction_type === "Negative Entry"
+  //           ? "Loading available stock..."
+  //           : "Loading stock sequences...",
+  //       );
+
+  //       if (line.transaction_type === "Positive Entry") {
+  //         const sequences = await fetchStockSequences(
+  //           line.item_id,
+  //           line.warehouse_id,
+  //           line.location_id,
+  //         );
+
+  //         setExistingSequences(sequences);
+  //         setAvailableStock([]);
+  //       } else {
+  //         const stock = await fetchAvailableStock(
+  //           line.item_id,
+  //           line.warehouse_id,
+  //         );
+
+  //         setAvailableStock(stock);
+  //         setExistingSequences([]);
+  //       }
+
+  //       setIsAllocationModalOpen(true);
+  //     } catch (error: unknown) {
+  //       console.error("Failed to load stock allocation data:", error);
+
+  //       toast.error(
+  //         error instanceof Error
+  //           ? error.message
+  //           : "Failed to load stock allocation data.",
+  //       );
+
+  //       setActiveAllocationLineId(null);
+  //       setIsAllocationModalOpen(false);
+  //     } finally {
+  //       hide();
+  //     }
+  //   },
+  //   [formDisabled, show, hide, fetchStockSequences, fetchAvailableStock],
+  // );
+
+  // const handleCloseAllocation = useCallback(() => {
+  //   setIsAllocationModalOpen(false);
+  //   setActiveAllocationLineId(null);
+  //   setExistingSequences([]);
+  // }, []);
+
+  // const handleSaveAllocations = useCallback(
+  //   (allocationsData: StockAllocationRecord[]) => {
+  //     if (!activeAllocationLineId || formDisabled) {
+  //       return;
+  //     }
+
+  //     setLines((previous) =>
+  //       previous.map((line) => {
+  //         if (line._stableKey !== activeAllocationLineId) {
+  //           return line;
+  //         }
+
+  //         const quantity = Number(line.quantity || 0);
+
+  //         const sanitizedAllocations = allocationsData
+  //           .map((allocation) =>
+  //             normalizeAllocation(
+  //               allocation,
+  //               line.location_id,
+  //               line.location_name,
+  //             ),
+  //           )
+  //           .filter((allocation) => allocation.quantity > 0);
+
+  //         const allocatedQuantity = getAllocationTotal(sanitizedAllocations);
+
+  //         if (allocatedQuantity > quantity + 0.000001) {
+  //           toast.error(
+  //             "Allocated quantity cannot exceed the journal quantity.",
+  //           );
+
+  //           return line;
+  //         }
+
+  //         const sequenceKeys = new Set<string>();
+
+  //         for (const allocation of sanitizedAllocations) {
+  //           if (!allocation.sequence_no) {
+  //             continue;
+  //           }
+
+  //           const key = [
+  //             allocation.location_id,
+  //             allocation.sequence_no,
+  //             allocation.batch_no,
+  //             allocation.serial_no,
+  //           ].join("|");
+
+  //           if (sequenceKeys.has(key)) {
+  //             toast.error(
+  //               "The same stock sequence cannot be allocated more than once.",
+  //             );
+
+  //             return line;
+  //           }
+
+  //           sequenceKeys.add(key);
+  //         }
+
+  //         const status = getStockStatus(quantity, sanitizedAllocations);
+
+  //         return {
+  //           ...line,
+  //           allocations: sanitizedAllocations,
+  //           initialAllocations:
+  //             line.initialAllocations?.map((allocation) => ({
+  //               ...allocation,
+  //             })) ?? [],
+  //           stock_status: status,
+  //           is_allocated: status === "allocated",
+  //         };
+  //       }),
+  //     );
+
+  //     setIsAllocationModalOpen(false);
+  //     setActiveAllocationLineId(null);
+  //     setExistingSequences([]);
+  //   },
+  //   [activeAllocationLineId, formDisabled, normalizeAllocation],
+  // );
+
+  // const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
+
+  // const [activeAllocationLineId, setActiveAllocationLineId] = useState<
+  //   string | null
+  // >(null);
+
+  // const [existingSequences, setExistingSequences] = useState<
+  //   StockSequenceRecord[]
+  // >([]);
+
+  // const [availableStock, setAvailableStock] = useState<AvailableStockRecord[]>(
+  //   [],
+  // );
+
+  // const activeAllocationLine = useMemo(() => {
+  //   if (!activeAllocationLineId) {
+  //     return null;
+  //   }
+
+  //   return (
+  //     lines.find((line) => line._stableKey === activeAllocationLineId) || null
+  //   );
+  // }, [activeAllocationLineId, lines]);
+    // const stockAllocation = useStockAllocation({
+  //   lines,
+  //   setLines,
+  //   formDisabled,
+  //   fetchStockSequences,
+  //   fetchAvailableStock,
+  //   normalizeAllocation,
+  //   show,
+  //   hide,
+  // });
+
+/*
+"use client";
+
+import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+import { useLoader } from "@/app/context/LoaderContext";
+
+import type {
+  ItemJournalFormProps,
+  ItemJournalLineRow,
+  JournalMetadata,
+  ApiResponse,
+} from "../types";
+
+import { createInitialRow, today } from "../utils";
+
+import { useJournalMasterData } from "./useJournalMasterData";
+import { useJournalModals } from "./useJournalModals";
+import { useJournalLines } from "./useJournalLines";
+import { useStockAllocation } from "./useStockAllocation";
+import { useJournalPersistence } from "./useJournalPersistence";
+
+import type { ItemLookupRecord } from "@/app/components/shared/modals/ItemLookupModal";
+import type { GLAccountLookupRecord } from "@/app/components/shared/modals/GLAccountLookupModal";
+import type { WarehouseLookupRecord } from "@/app/components/shared/modals/WarehouseLookupModal";
+import type { LocationOption } from "../types";
+
+export function useItemJournal({
+  journalId,
+  apiBase,
+  redirectPath,
+  readOnly = false,
+}: ItemJournalFormProps) {
+  const router = useRouter();
+  const { show, hide } = useLoader();
+
+  const [loading, setLoading] = useState(false);
+  const [isPosted, setIsPosted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(!journalId);
+  const [currentJournalId, setCurrentJournalId] = useState<string | null>(
+    journalId || null,
+  );
+
+  const [metadata, setMetadata] = useState<JournalMetadata>({
+    entry_no: "",
+    entry_date: today(),
+  });
+
+  const [lines, setLines] = useState<ItemJournalLineRow[]>(() => [
+    createInitialRow(today()),
+  ]);
+
+  const formDisabled = readOnly || isPosted || !isEditing || loading;
+
+  const getApiMessage = useCallback(
+    async (response: Response, fallback: string): Promise<string> => {
+      try {
+        const payload: ApiResponse = await response.json();
+        return payload.message || payload.error || fallback;
+      } catch {
+        return fallback;
+      }
+    },
+    [],
+  );
+
+  const masterData = useJournalMasterData({ getApiMessage });
+  const modals = useJournalModals();
+
+  const buildItemLine = useCallback(
+    async (item: ItemLookupRecord): Promise<ItemJournalLineRow> => {
+      let warehouse: {
+        id?: string;
+        code?: string;
+        name?: string;
+      } | null = null;
+
+      try {
+        const response = await fetch(
+          `/api/lookups/default-warehouse?item_id=${encodeURIComponent(String(item.id))}`,
+        );
+
+        if (response.ok) {
+          const payload = await response.json();
+          warehouse = payload?.data ?? payload;
+        }
+      } catch (error) {
+        console.error("Failed to fetch default warehouse:", error);
+      }
+
+      return createInitialRow(metadata.entry_date, {
+        item_id: String(item.id || ""),
+        item_no: item.item_code || "",
+        item_description: item.description || item.name || "",
+        cost_per_unit: Number(item.standard_cost || 0),
+        uom: item.base_uom_name || "Pcs",
+        warehouse_id: warehouse?.id || "",
+        warehouse_code: warehouse?.code || "",
+        warehouse_name: warehouse?.name || "",
+        allocations: [],
+        initialAllocations: [],
+      });
+    },
+    [metadata.entry_date],
+  );
+
+  const journalLines = useJournalLines({
+    lines,
+    setLines,
+    metadata,
+    setMetadata,
+    formDisabled,
+    buildItemLine,
+  });
+
+  const stockAllocation = useStockAllocation({
+    lines,
+    setLines,
+    formDisabled,
+    fetchStockSequences: masterData.fetchStockSequences,
+    fetchAvailableStock: masterData.fetchAvailableStock,
+    normalizeAllocation: masterData.normalizeAllocation,
+    show,
+    hide,
+  });
+
+  const persistence = useJournalPersistence({
+    journalId,
+    apiBase,
+    redirectPath,
+    readOnly,
+    loading,
+    setLoading,
+    setErrorMsg,
+    setIsPosted,
+    setIsEditing,
+    setCurrentJournalId,
+    metadata,
+    setMetadata,
+    lines,
+    setLines,
+    getApiMessage,
+    normalizeAllocation: masterData.normalizeAllocation,
+    show,
+    hide,
+  });
+
+  const handleMultipleItemSelect = useCallback(
+    async (items: ItemLookupRecord[]) => {
+      if (!items.length) {
+        modals.setItemActiveModal(null);
+        return;
+      }
+
+      if (formDisabled) return;
+
+      try {
+        show("Loading item information...");
+
+        const newLines = await Promise.all(items.map(buildItemLine));
+        const targetIndex = modals.itemActiveModal?.index;
+
+        if (targetIndex !== undefined) {
+          setLines((previous) =>
+            previous.map((line, index) =>
+              index === targetIndex ? newLines[0] : line,
+            ),
+          );
+        } else {
+          setLines((previous) => [...previous, ...newLines]);
+        }
+
+        const ids = Array.from(
+          new Set(newLines.map((line) => line.warehouse_id).filter(Boolean)),
+        );
+
+        await Promise.all(
+          ids.map((id) => masterData.fetchLocationsForWarehouse(id)),
+        );
+
+        toast.success(
+          items.length === 1
+            ? "Item selected."
+            : `${items.length} items selected.`,
+        );
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to load selected item.",
+        );
+      } finally {
+        hide();
+        modals.setItemActiveModal(null);
+      }
+    },
+    [
+      formDisabled,
+      show,
+      hide,
+      buildItemLine,
+      modals,
+      masterData.fetchLocationsForWarehouse,
+    ],
+  );
+
+  const handleWarehouseSelect = useCallback(
+    async (warehouse: WarehouseLookupRecord) => {
+      const index = modals.warehouseIndex;
+      if (index === null || formDisabled) return;
+
+      const warehouseId = String(warehouse.id || "");
+
+      setLines((previous) =>
+        previous.map((line, i) =>
+          i !== index
+            ? line
+            : {
+                ...line,
+                warehouse_id: warehouseId,
+                warehouse_code: warehouse.code || "",
+                warehouse_name: warehouse.name || "",
+                location_id: "",
+                location_name: "",
+                allocations: [],
+                initialAllocations: [],
+                stock_status: "unallocated",
+                is_allocated: false,
+              },
+        ),
+      );
+
+      if (warehouseId) {
+        await masterData.fetchLocationsForWarehouse(warehouseId);
+      }
+
+      modals.closeWarehouseModal();
+    },
+    [modals, formDisabled, masterData.fetchLocationsForWarehouse],
+  );
+
+  const handleLocationSelect = useCallback(
+    (index: number, location: LocationOption) => {
+      if (formDisabled) return;
+
+      setLines((previous) =>
+        previous.map((line, i) =>
+          i !== index
+            ? line
+            : {
+                ...line,
+                location_id: String(location.id || ""),
+                location_name: location.title || "",
+                allocations: [],
+                initialAllocations: [],
+                stock_status: "unallocated",
+                is_allocated: false,
+              },
+        ),
+      );
+
+      modals.closeLocationModal();
+    },
+    [formDisabled, modals],
+  );
+
+  const handleModalSelection = useCallback(
+    (record: GLAccountLookupRecord) => {
+      const index = modals.activeModal?.index;
+      if (index === undefined || index === null || formDisabled) return;
+
+      const code = record.code || "";
+      const name = record.name || "";
+
+      setLines((previous) =>
+        previous.map((line, i) =>
+          i !== index
+            ? line
+            : {
+                ...line,
+                balancing_account_id: String(record.id || ""),
+                balancing_display_name:
+                  code && name ? `${code} - ${name}` : name || code,
+              },
+        ),
+      );
+
+      modals.closeGLModal();
+    },
+    [modals, formDisabled],
+  );
+
+  const openLocationModal = useCallback(
+    async (index: number) => {
+      if (formDisabled) return;
+
+      const line = lines[index];
+      if (!line) return;
+
+      if (!line.warehouse_id) {
+        toast.error("Please select a warehouse first.");
+        return;
+      }
+
+      if (!masterData.locationsByWarehouse[line.warehouse_id]) {
+        await masterData.fetchLocationsForWarehouse(line.warehouse_id);
+      }
+
+      modals.openLocationModal(index);
+    },
+    [formDisabled, lines, masterData, modals],
+  );
+
+  const handleCancel = useCallback(() => {
+    stockAllocation.resetAllocation();
+    modals.closeAllModals();
+    router.push(redirectPath);
+  }, [stockAllocation, modals, router, redirectPath]);
+
+  const handleEdit = useCallback(() => {
+    if (readOnly || isPosted) return;
+    setIsEditing(true);
+  }, [readOnly, isPosted]);
+
+  const handleSave = useCallback(() => persistence.saveDraft(), [persistence]);
+
+  const handlePost = useCallback(
+    () => persistence.postJournal(),
+    [persistence],
+  );
+
+  const handleSaveOrPost = persistence.handleSaveOrPost;
+
+  return {
+    loading,
+    isPosted,
+    errorMsg,
+    isEditing,
+    setIsEditing,
+    setErrorMsg,
+    metadata,
+    lines,
+    locationsByWarehouse: masterData.locationsByWarehouse,
+    warehouses: masterData.warehouses,
+    existingSequences: stockAllocation.existingSequences,
+    availableStock: stockAllocation.availableStock,
+    currentJournalId,
+    formDisabled,
+
+    activeAllocationLine: stockAllocation.activeAllocationLine,
+    isAllocationModalOpen: stockAllocation.isAllocationModalOpen,
+    itemActiveModal: modals.itemActiveModal,
+    activeModal: modals.activeModal,
+    warehouseIndex: modals.warehouseIndex,
+    locationIndex: modals.locationIndex,
+    activeAllocationLineId: stockAllocation.activeAllocationLineId,
+
+    setItemActiveModal: modals.setItemActiveModal,
+    setActiveModal: modals.setActiveModal,
+    setWarehouseIndex: modals.setWarehouseIndex,
+    setLocationIndex: modals.setLocationIndex,
+    setIsAllocationModalOpen: stockAllocation.setIsAllocationModalOpen,
+    setActiveAllocationLineId: stockAllocation.setActiveAllocationLineId,
+
+    handleLineChange: journalLines.handleLineChange,
+    addLineRow: journalLines.addLineRow,
+    removeLineRow: journalLines.removeLineRow,
+    handleMetadataChange: journalLines.handleMetadataChange,
+    setMetadata,
+
+    handleMultipleItemSelect,
+    handleWarehouseSelect,
+    handleLocationSelect,
+    handleModalSelection,
+
+    handleOpenAllocation: stockAllocation.handleOpenAllocation,
+    handleSaveAllocations: stockAllocation.handleSaveAllocations,
+    handleCloseAllocation: stockAllocation.handleCloseAllocation,
+
+    openItemModal: (index: number) => {
+      if (!formDisabled) modals.openItemModal(index);
+    },
+    closeItemModal: modals.closeItemModal,
+
+    openWarehouseModal: (index: number) => {
+      if (!formDisabled) modals.openWarehouseModal(index);
+    },
+    closeWarehouseModal: modals.closeWarehouseModal,
+
+    openLocationModal,
+    closeLocationModal: modals.closeLocationModal,
+
+    openGLModal: (index: number) => {
+      if (!formDisabled) modals.openGLModal(index);
+    },
+    closeGLModal: modals.closeGLModal,
+
+    validateBeforeSave: persistence.validateBeforeSave,
+    saveDraft: persistence.saveDraft,
+    postJournal: persistence.postJournal,
+    handleSaveOrPost,
+    handleSave,
+    handlePost,
+    handlePostJournal: handlePost,
+
+    saveJournal: persistence.saveDraft,
+    refreshJournal: async () => {
+      toast.error(
+        "Connect your existing refresh implementation to useJournalPersistence before calling refreshJournal.",
+      );
+    },
+
+    handleEdit,
+    handleCancel,
+    closeAllModals: () => {
+      stockAllocation.resetAllocation();
+      modals.closeAllModals();
+    },
+
+    fetchLocationsForWarehouse: masterData.fetchLocationsForWarehouse,
+    fetchStockSequences: masterData.fetchStockSequences,
+  };
+}
+
+*/
