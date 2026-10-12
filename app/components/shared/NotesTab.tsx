@@ -4,6 +4,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 
 export type Note = {
   id?: string;
@@ -18,6 +19,7 @@ type Props = {
   recordId: string;
   readonly?: boolean;
   errors: Record<string, string>;
+  onRequestEdit?: () => void;
 };
 
 export default function NotesTab({
@@ -25,6 +27,7 @@ export default function NotesTab({
   recordId,
   readonly = false,
   errors,
+  onRequestEdit,
 }: Props) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,8 +54,10 @@ export default function NotesTab({
   }, [loadNotes]);
 
   const handleSave = async () => {
+    onRequestEdit?.();
+
     if (!(note.length > 0)) {
-      alert("Add notes");
+      toast.error("Notes are empty");
       return false;
     }
     try {
@@ -76,26 +81,26 @@ export default function NotesTab({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {/* {!readonly && ( */}
-        <div className="lg:col-span-1 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-3 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="font-semibold text-xs text-slate-400 capitalize tracking-wider">
-            Notes
-          </h3>
-          <textarea
-            value={note}
-            disabled={readonly} 
-            onChange={(e) => setNote(e.target.value)}
-            className="border border-slate-200 dark:border-slate-800 p-3 rounded-lg w-full text-xs bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-slate-100"
-            rows={4}
-            placeholder="Add Notes..."
-          />
-          <Button
-            onClick={handleSave}
-            disabled={saving || readonly} //  || !note.trim()
-            variant="add_line"
-          >
-            {saving ? "Posting..." : "Add Notes"}
-          </Button>
-        </div>
+      <div className="lg:col-span-1 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-3 bg-slate-50/50 dark:bg-slate-900/50">
+        <h3 className="font-semibold text-xs text-slate-400 capitalize tracking-wider">
+          Notes
+        </h3>
+        <textarea
+          value={note}
+          disabled={readonly}
+          onChange={(e) => setNote(e.target.value)}
+          className="border border-slate-200 dark:border-slate-800 p-3 rounded-lg w-full text-xs bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-slate-100"
+          rows={4}
+          placeholder="Add Notes..."
+        />
+        <Button
+          onClick={handleSave}
+          disabled={saving} //  || !note.trim() || readonly
+          variant="add_line"
+        >
+          {saving ? "Posting..." : "Add Notes"}
+        </Button>
+      </div>
       {/* )} */}
 
       <div className="lg:col-span-2 space-y-3 max-h-[500px] overflow-y-auto pr-2">

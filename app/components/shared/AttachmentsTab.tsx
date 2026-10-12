@@ -25,12 +25,14 @@ type Props = {
   module: string;
   recordId: string;
   readonly?: boolean;
+  onRequestEdit?: () => void;
 };
 
 export default function AttachmentsTab({
   module,
   recordId,
   readonly = false,
+  onRequestEdit,
 }: Props) {
   const [files, setFiles] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,34 +118,6 @@ export default function AttachmentsTab({
     setDeleteTarget(null);
   };
 
-  /* const handleDelete = async (id: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this attachment?",
-    );
-    if (!confirmed) {
-      return;
-    }
-    try {
-      setDeletingId(id);
-
-      const res = await fetch(`/api/attachments/${id}`, {
-        method: "DELETE",
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to delete attachment");
-      }
-
-      setFiles((prev) => prev.filter((item) => item.id !== id));
-    } catch (err) {
-      console.error("Delete operation failed:", err);
-    } finally {
-      setDeletingId(null);
-    }
-  }; */
-
   const isPreviewable = (mimeType?: string) => {
     if (!mimeType) return false;
 
@@ -206,13 +180,14 @@ export default function AttachmentsTab({
             {" "}
             <UploadDropzone
               className="custom-attachment"
-              disabled = {readonly}
+              // disabled = {readonly}
               endpoint="attachmentUploader"
               input={{ module, recordId }}
               config={{ mode: "auto" }}
               onUploadBegin={() => {
                 setUploading(true);
                 setUploadComplete(false);
+                onRequestEdit?.();
               }}
               onClientUploadComplete={() => {
                 setUploading(false);
@@ -245,8 +220,8 @@ export default function AttachmentsTab({
                   "shadow-sm",
                   "transition-all",
                   "duration-200",
-                  // Normal state
-                  !uploading && !uploadComplete && !readonly
+                  // Normal state && !readonly
+                  !uploading && !uploadComplete 
                     ? "bg-blue-600 hover:bg-blue-700"
                     : "",
                   // Uploading state

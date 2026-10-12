@@ -491,6 +491,7 @@ export default function PartyRecord({
               recordId={id}
               readonly={effectiveReadonly}
               errors={formErrors}
+              onRequestEdit={isReadonlyProp ? undefined : () => setIsEditing(true)}
             />
           )}
           {activeTab === "attachments" && (
@@ -498,6 +499,7 @@ export default function PartyRecord({
               module={module}
               recordId={id}
               readonly={effectiveReadonly}
+              onRequestEdit={isReadonlyProp ? undefined : () => setIsEditing(true)}
             />
           )}
         </div>
