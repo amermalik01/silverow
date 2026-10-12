@@ -10,21 +10,25 @@ type Props = {
   formDisabled: boolean;
   loading: boolean;
   isPosted: boolean;
+  isEditing: boolean;
 
   onPost: () => void;
   onSave: () => void;
   onCancel: () => void;
   onNavigate: () => void;
+  onEdit: () => void;
 };
 
 export default function ItemJournalFooter({
   formDisabled,
   loading,
   isPosted,
+  isEditing,
   onPost,
   onSave,
   onCancel,
   onNavigate,
+  onEdit,
 }: Props) {
   return (
     <div className="flex flex-col lg:flex-row justify-between gap-4 pt-2">
@@ -56,19 +60,34 @@ export default function ItemJournalFooter({
             <Button
               type="button"
               onClick={onPost}
-              className="bg-emerald-700 hover:bg-emerald-800 text-white"
+              variant="post"
               disabled={loading}
             >
               {loading ? "Processing..." : "Post Journal"}
             </Button>
+          </>
+        )}
 
+        {!isEditing ? (
+          <>
             <Button
               type="button"
-              variant="outline"
+              onClick={onEdit}
+              disabled={isPosted}
+              variant="edit"
+            >
+              Edit
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              type="button"
               onClick={onSave}
               disabled={loading}
+              variant="save"
             >
-              Save
+              {loading ? "Saving..." : "Save"}
             </Button>
           </>
         )}

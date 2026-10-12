@@ -71,6 +71,8 @@ export default function TransferStockForm(props: TransferStockFormProps) {
 
     handleFromWarehouseChange,
     handleToWarehouseChange,
+    
+    handleTransitMethodChange,
 
     handleLineChange,
 
@@ -155,6 +157,7 @@ export default function TransferStockForm(props: TransferStockFormProps) {
           onHeaderChange={handleHeaderChange}
           onFromWarehouseChange={handleFromWarehouseChange}
           onToWarehouseChange={handleToWarehouseChange}
+          onTransitMethodChange={handleTransitMethodChange}
           onAddLine={addLine}
         />
 

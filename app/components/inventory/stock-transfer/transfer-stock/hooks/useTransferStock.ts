@@ -419,6 +419,54 @@ export function useTransferStock({
 
   /*
    * ---------------------------------------------------------
+   * Transit Method
+   * ---------------------------------------------------------
+   */
+
+  const handleTransitMethodChange = useCallback(
+    async (warehouseId: string) => {
+      if (formDisabled) {
+        return;
+      }
+
+      setMetadata((previous) => ({
+        ...previous,
+        warehouse_to_id: warehouseId,
+      }));
+
+      setToLocations([]);
+
+      setLines((previous) =>
+        previous.map((line) => ({
+          ...line,
+          to_location_id: "",
+          to_location_name: "",
+        })),
+      );
+
+      if (!warehouseId) {
+        return;
+      }
+
+      try {
+        const locations = await loadLocations(warehouseId);
+
+        setToLocations(locations);
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to load destination locations.";
+
+        setErrorMsg(message);
+        toast.error(message);
+      }
+    },
+    [formDisabled, loadLocations],
+  );
+
+  /*
+   * ---------------------------------------------------------
    * Item selection
    * ---------------------------------------------------------
    */
@@ -966,6 +1014,8 @@ export function useTransferStock({
 
     handleFromWarehouseChange,
     handleToWarehouseChange,
+
+    handleTransitMethodChange,
 
     handleLineChange,
 

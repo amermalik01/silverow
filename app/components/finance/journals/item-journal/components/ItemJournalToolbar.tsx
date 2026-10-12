@@ -36,9 +36,10 @@ export default function ItemJournalToolbar({
         <Button
           type="button"
           onClick={onAddLine}
-          className="bg-emerald-700 hover:bg-emerald-800 text-white"
+          variant="add_line"
+          // className="bg-emerald-700 hover:bg-emerald-800 text-white"
         >
-          + Add Line
+          Add Line
         </Button>
       )}
     </div>

@@ -32,6 +32,7 @@ type Props = {
   onFromWarehouseChange: (warehouseId: string) => void | Promise<void>;
 
   onToWarehouseChange: (warehouseId: string) => void | Promise<void>;
+  onTransitMethodChange: (transitCodeId: string) => void | Promise<void>;
 
   onAddLine: () => void;
 };
@@ -43,6 +44,7 @@ export default function TransferStockToolbar({
   onHeaderChange,
   onFromWarehouseChange,
   onToWarehouseChange,
+  onTransitMethodChange,
   onAddLine,
 }: Props) {
   const getInputClass = (
@@ -69,6 +71,13 @@ export default function TransferStockToolbar({
 
   const labelStyle =
     "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
+
+  const transit_codes = [
+    { id: "1", value: "Road" },
+    { id: "2", value: "Air" },
+    { id: "3", value: "Sea" },
+    { id: "4", value: "Rail" },
+  ];
 
   const [POModalOpen, setPOModalOpen] = useState(false);
 
@@ -204,8 +213,9 @@ export default function TransferStockToolbar({
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Transit Method Code
             </label>
+
             <div className="col-span-2">
-              <input
+              {/* <input
                 type="text"
                 value={metadata.in_transit_code}
                 disabled={formDisabled}
@@ -213,7 +223,24 @@ export default function TransferStockToolbar({
                   onHeaderChange("in_transit_code", event.target.value)
                 }
                 className={getInputClass("metadata.in_transit_code")}
-              />
+              /> */}
+
+              <select
+                value={metadata.in_transit_code}
+                disabled={formDisabled}
+                onChange={(event) =>
+                  void onTransitMethodChange(event.target.value)
+                }
+                className={getInputClass("metadata.in_transit_code")}
+              >
+                <option value="">Select In-transit Code</option>
+
+                {transit_codes.map((transit_code) => (
+                  <option key={transit_code.id} value={transit_code.id}>
+                    {transit_code.value}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

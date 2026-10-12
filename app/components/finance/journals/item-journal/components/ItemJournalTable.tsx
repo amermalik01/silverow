@@ -50,9 +50,9 @@ export default function ItemJournalTable({
       <table className="w-full table-fixed text-left text-xs border-collapse min-w-[1550px]">
         <colgroup>
           <col className="w-[105px]" />
-          <col className="w-[125px]" />
-          <col className="w-[110px]" />
-          <col className="w-[170px]" />
+          <col className="w-[105px]" />
+          <col className="w-[105px]" />
+          <col className="w-[165px]" />
           <col className="w-[160px]" />
           <col className="w-[160px]" />
           <col className="w-[60px]" />

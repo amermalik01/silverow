@@ -176,10 +176,13 @@ export default function ItemJournalForm(props: ItemJournalFormProps) {
           loading={loading}
           isPosted={isPosted}
           onPost={handlePostClick}
+          isEditing={isEditing}
           // onPost={() => void handleSaveOrPost(true)}
           onSave={() => void handleSaveOrPost(false)}
           onCancel={() => window.location.assign(redirectPath)}
           onNavigate={() => setShowNavigateModal(true)}
+          onEdit={() => setIsEditing(true)}
+          
         />
       </div>
 
