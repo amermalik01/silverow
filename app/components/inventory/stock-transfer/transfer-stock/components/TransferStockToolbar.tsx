@@ -16,10 +16,14 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Icon } from "@iconify/react";
 
+// import {
+//   PurchaseOrderLookupItem,
+//   PurchaseOrderMultiLookupModal,
+// } from "@/app/components/shared/modals/PurchaseOrderMultiLookupModal";
 import {
   PurchaseOrderLookupItem,
-  PurchaseOrderMultiLookupModal,
-} from "@/app/components/shared/modals/PurchaseOrderMultiLookupModal";
+  PurchaseOrderLookupModal,
+} from "@/app/components/shared/modals/PurchaseOrderLookupModal";
 
 type Props = {
   metadata: TransferMetadata;
@@ -93,11 +97,20 @@ export default function TransferStockToolbar({
   };
 
   const handleSelectPurchaseOrders = (
-    selectedOrders: PurchaseOrderLookupItem[],
+    selectedOrder: PurchaseOrderLookupItem[],
   ) => {
-    const codes = selectedOrders.map((order) => order.order_no).filter(Boolean);
+    onHeaderChange("po_no", selectedOrder.order_no);
 
-    onHeaderChange("po_no", [...new Set(codes)].join(", "));
+    const shippingAgent = [
+      selectedOrder.supplier_no,
+      selectedOrder.supplier_name,
+    ]
+      .filter(Boolean)
+      .join(" - ");
+
+    onHeaderChange("shipping_agent", shippingAgent);
+
+    onHeaderChange("shipping_charge", Number(selectedOrder.total_amount ?? 0));
     setPOModalOpen(false);
   };
 
@@ -130,7 +143,6 @@ export default function TransferStockToolbar({
           <Button
             type="button"
             onClick={onAddLine}
-            // className="bg-emerald-700 hover:bg-emerald-800 text-white"
             variant="add_line"
           >
             Add Line
@@ -280,20 +292,13 @@ export default function TransferStockToolbar({
                 className={`flex-1 flex flex-wrap items-center gap-1 min-h-[30px] p-1 border rounded dark:bg-slate-800 dark:border-slate-700 ${inputStyle}`}
               >
                 {metadata.po_no ? (
-                  metadata.po_no.split(",").map((poCode) => {
-                    const trimmedCode = poCode.trim();
-                    if (!trimmedCode) return null;
-                    return (
-                      <span
-                        key={trimmedCode}
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-emerald-700 dark:text-emerald-400 border dark:border-slate-600 font-medium"
-                      >
-                        <span>{trimmedCode}</span>
-                      </span>
-                    );
-                  })
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 border dark:border-slate-600 font-medium">
+                    {metadata.po_no}
+                  </span>
                 ) : (
-                  <span className="text-slate-400 text-xs px-1"></span>
+                  <span className="text-slate-400 text-xs px-1">
+                    Select purchase order
+                  </span>
                 )}
               </div>
               <button
@@ -358,13 +363,10 @@ export default function TransferStockToolbar({
       </div>
 
       {POModalOpen && (
-        <PurchaseOrderMultiLookupModal
+        <PurchaseOrderLookupModal
           isOpen={POModalOpen}
           onClose={() => setPOModalOpen(false)}
-          onSelectOrders={handleSelectPurchaseOrders}
-          selectedOrderNos={
-            metadata.po_no ? metadata.po_no.split(",").map((s) => s.trim()) : []
-          }
+          onSelectOrder={handleSelectPurchaseOrders}
         />
       )}
     </div>
