@@ -53,6 +53,7 @@ export default function TransferStockForm(props: TransferStockFormProps) {
     toLocations,
 
     formDisabled,
+    validationErrors,
 
     activeAllocationLine,
 
@@ -71,7 +72,7 @@ export default function TransferStockForm(props: TransferStockFormProps) {
 
     handleFromWarehouseChange,
     handleToWarehouseChange,
-    
+
     handleTransitMethodChange,
 
     handleLineChange,
@@ -154,6 +155,7 @@ export default function TransferStockForm(props: TransferStockFormProps) {
           metadata={metadata}
           warehouses={warehouses}
           formDisabled={formDisabled}
+          validationErrors={validationErrors}
           onHeaderChange={handleHeaderChange}
           onFromWarehouseChange={handleFromWarehouseChange}
           onToWarehouseChange={handleToWarehouseChange}
@@ -166,6 +168,7 @@ export default function TransferStockForm(props: TransferStockFormProps) {
           fromLocations={fromLocations}
           toLocations={toLocations}
           formDisabled={formDisabled}
+          validationErrors={validationErrors}
           onLineChange={handleLineChange}
           onOpenItem={(index) =>
             setItemActiveModal({

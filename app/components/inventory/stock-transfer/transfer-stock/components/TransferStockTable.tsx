@@ -4,7 +4,11 @@
 
 import React from "react";
 
-import type { LocationOption, TransferStockLine } from "../types";
+import type {
+  LocationOption,
+  TransferStockLine,
+  TransferValidationErrors,
+} from "../types";
 
 import TransferStockRow from "./TransferStockRow";
 
@@ -15,6 +19,7 @@ type Props = {
   toLocations: LocationOption[];
 
   formDisabled: boolean;
+  validationErrors: TransferValidationErrors;
 
   onLineChange: (
     index: number,
@@ -38,6 +43,8 @@ export default function TransferStockTable({
   fromLocations,
   toLocations,
   formDisabled,
+  validationErrors,
+
   onLineChange,
   onOpenItem,
   onFromLocationChange,
@@ -87,6 +94,8 @@ export default function TransferStockTable({
               fromLocations={fromLocations}
               toLocations={toLocations}
               formDisabled={formDisabled}
+              validationErrors={validationErrors}
+              
               totalLines={lines.length}
               onLineChange={onLineChange}
               onOpenItem={onOpenItem}

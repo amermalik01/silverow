@@ -9,9 +9,13 @@ import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 
-import type { LocationOption, TransferStockLine } from "../types";
-
 import { getAllocationTotal, getStockStatus } from "../utils";
+
+import type {
+  LocationOption,
+  TransferStockLine,
+  TransferValidationErrors,
+} from "../types";
 
 type Props = {
   line: TransferStockLine;
@@ -21,6 +25,7 @@ type Props = {
   toLocations: LocationOption[];
 
   formDisabled: boolean;
+  validationErrors: TransferValidationErrors;
   totalLines: number;
 
   onLineChange: (
@@ -46,6 +51,7 @@ export default function TransferStockRow({
   fromLocations,
   toLocations,
   formDisabled,
+  validationErrors,
   totalLines,
   onLineChange,
   onOpenItem,
@@ -60,15 +66,41 @@ export default function TransferStockRow({
 
   const allocationStatus = getStockStatus(qty, line.allocations);
 
-  const statusClass =
-    allocationStatus === "allocated"
-      ? "text-emerald-600 hover:bg-emerald-50"
-      : allocationStatus === "partial"
-        ? "text-amber-500 hover:bg-amber-50"
-        : "text-red-500 hover:bg-red-50";
+  const statusClass = {
+    allocated: "text-emerald-600",
+    partial: "text-amber-600",
+    unallocated: "text-red-500",
+    overallocated: "text-red-700 font-semibold",
+  }[allocationStatus];
+
+  // const statusClass =
+  //   allocationStatus === "allocated"
+  //     ? "text-emerald-600 hover:bg-emerald-50"
+  //     : allocationStatus === "partial"
+  //       ? "text-amber-500 hover:bg-amber-50"
+  //       : "text-red-500 hover:bg-red-50";
+
+  const errorKey = (field: string) => `line:${line._stableKey}:${field}`;
+
+  const fieldError = (field: string) => validationErrors[errorKey(field)];
+
+  const validatedClass = (field: string, baseClass: string) =>
+    `${baseClass} ${
+      fieldError(field) ? "border-red-500 ring-1 ring-red-200" : ""
+    }`;
+
+  const rowHasError = Object.keys(validationErrors).some((key) =>
+    key.startsWith(`line:${line._stableKey}:`),
+  );
 
   return (
-    <tr className="hover:bg-zinc-50 dark:hover:bg-slate-800/50 transition-colors">
+    <tr
+      className={`transition-colors ${
+        rowHasError
+          ? "bg-red-50/70 dark:bg-red-950/20"
+          : "hover:bg-zinc-50 dark:hover:bg-slate-800/50"
+      }`}
+    >
       {/* Item */}
       <td className="p-2 align-top">
         <div className="flex gap-1">
@@ -77,7 +109,11 @@ export default function TransferStockRow({
             readOnly
             value={line.item_code}
             placeholder="Select Item..."
-            className="w-full border p-1 rounded bg-zinc-50 dark:bg-slate-800 text-zinc-700 dark:text-zinc-200 font-mono text-xs outline-none truncate"
+            className={validatedClass(
+              "item_code",
+              "w-full border border-zinc-300 dark:border-slate-700 rounded p-1.5 text-xs bg-white dark:bg-slate-800 disabled:opacity-60",
+            )}
+            // className="w-full border p-1 rounded bg-zinc-50 dark:bg-slate-800 text-zinc-700 dark:text-zinc-200 font-mono text-xs outline-none truncate"
           />
 
           <Button
@@ -89,6 +125,16 @@ export default function TransferStockRow({
             <Icon icon="tabler:external-link" className="w-4 h-4" />
           </Button>
         </div>
+
+        {fieldError("item_code") && (
+          <p
+            id={`${line._stableKey}-from-error`}
+            className="mt-1 text-[10px] text-red-600"
+            role="alert"
+          >
+            {fieldError("item_code")}
+          </p>
+        )}
       </td>
 
       {/* Description */}
@@ -110,7 +156,17 @@ export default function TransferStockRow({
           disabled={formDisabled || !fromLocations.length}
           value={line.from_location_id}
           onChange={(event) => onFromLocationChange(index, event.target.value)}
-          className="w-full border border-zinc-300 dark:border-slate-700 rounded p-1.5 text-xs bg-white dark:bg-slate-800 disabled:opacity-60"
+          aria-invalid={Boolean(fieldError("from_location_id"))}
+          aria-describedby={
+            fieldError("from_location_id")
+              ? `${line._stableKey}-from-error`
+              : undefined
+          }
+          className={validatedClass(
+            "from_location_id",
+            "w-full border border-zinc-300 dark:border-slate-700 rounded p-1.5 text-xs bg-white dark:bg-slate-800 disabled:opacity-60",
+          )}
+          // className="w-full border border-zinc-300 dark:border-slate-700 rounded p-1.5 text-xs bg-white dark:bg-slate-800 disabled:opacity-60"
         >
           <option value="">Select Source Location</option>
 
@@ -120,6 +176,16 @@ export default function TransferStockRow({
             </option>
           ))}
         </select>
+
+        {fieldError("from_location_id") && (
+          <p
+            id={`${line._stableKey}-from-error`}
+            className="mt-1 text-[10px] text-red-600"
+            role="alert"
+          >
+            {fieldError("from_location_id")}
+          </p>
+        )}
       </td>
 
       {/* To Location */}
@@ -157,7 +223,8 @@ export default function TransferStockRow({
         <input
           type="text"
           value={line.uom}
-          disabled={formDisabled}
+          disabled
+          readOnly
           onChange={(event) => onLineChange(index, "uom", event.target.value)}
           className="w-full border border-zinc-300 dark:border-slate-700 rounded p-1 text-xs text-center bg-white dark:bg-slate-800"
         />
@@ -181,6 +248,12 @@ export default function TransferStockRow({
           >
             <Icon icon="tabler:box-seam" className="w-4 h-4" />
           </button>
+
+          {fieldError("allocations") && (
+            <p className="mt-1 text-[10px] text-red-600" role="alert">
+              {fieldError("allocations")}
+            </p>
+          )}
 
           <button
             type="button"

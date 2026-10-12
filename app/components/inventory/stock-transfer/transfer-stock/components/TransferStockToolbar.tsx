@@ -7,7 +7,11 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 
-import type { TransferMetadata, WarehouseOption } from "../types";
+import type {
+  TransferMetadata,
+  WarehouseOption,
+  TransferValidationErrors,
+} from "../types";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Icon } from "@iconify/react";
@@ -23,6 +27,7 @@ type Props = {
   warehouses: WarehouseOption[];
 
   formDisabled: boolean;
+  validationErrors: TransferValidationErrors;
 
   onHeaderChange: <K extends keyof TransferMetadata>(
     field: K,
@@ -41,6 +46,8 @@ export default function TransferStockToolbar({
   metadata,
   warehouses,
   formDisabled,
+  validationErrors,
+
   onHeaderChange,
   onFromWarehouseChange,
   onToWarehouseChange,
@@ -85,26 +92,23 @@ export default function TransferStockToolbar({
     setPOModalOpen(true);
   };
 
-  /* <input
-                type="text"
-                value={metadata.po_no}
-                disabled={formDisabled}
-                onChange={(event) =>
-                  onHeaderChange("po_no", event.target.value)
-                }
-                className={getInputClass("metadata.po_no")}
-              /> */
-
   const handleSelectPurchaseOrders = (
     selectedOrders: PurchaseOrderLookupItem[],
   ) => {
-    const codes = selectedOrders.map((o) => o.order_no).join(", ");
-    // onHeaderChange((prev) => ({
-    //   ...prev,
-    //   po_no: codes,
-    // }));
+    const codes = selectedOrders.map((order) => order.order_no).filter(Boolean);
+
+    onHeaderChange("po_no", [...new Set(codes)].join(", "));
     setPOModalOpen(false);
   };
+
+  const fieldError = (key: string) => validationErrors[key];
+
+  const getValidatedClass = (key: string) =>
+    `${getInputClass(key)} ${
+      fieldError(key)
+        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+        : ""
+    }`;
 
   return (
     <div className="space-y-4">
@@ -126,9 +130,10 @@ export default function TransferStockToolbar({
           <Button
             type="button"
             onClick={onAddLine}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white"
+            // className="bg-emerald-700 hover:bg-emerald-800 text-white"
+            variant="add_line"
           >
-            + Add Line
+            Add Line
           </Button>
         )}
       </div>
@@ -154,8 +159,15 @@ export default function TransferStockToolbar({
                     date ? format(date, "yyyy-MM-dd") : "",
                   )
                 }
-                className={getInputClass("metadata.transfer_date")}
+                // className={getInputClass("metadata.transfer_date")}
+                className={getValidatedClass("metadata.transfer_date")}
               />
+
+              {fieldError("metadata.transfer_date") && (
+                <p className="mt-1 text-xs text-red-600" role="alert">
+                  {fieldError("metadata.transfer_date")}
+                </p>
+              )}
             </div>
           </div>
 
@@ -170,7 +182,8 @@ export default function TransferStockToolbar({
                 onChange={(event) =>
                   void onFromWarehouseChange(event.target.value)
                 }
-                className={getInputClass("metadata.warehouse_from_id")}
+                // className={getInputClass("metadata.warehouse_from_id")}
+                className={getValidatedClass("metadata.warehouse_from_id")}
               >
                 <option value="">Select Source Warehouse</option>
 
@@ -180,6 +193,12 @@ export default function TransferStockToolbar({
                   </option>
                 ))}
               </select>
+
+              {fieldError("metadata.warehouse_from_id") && (
+                <p className="mt-1 text-xs text-red-600" role="alert">
+                  {fieldError("metadata.warehouse_from_id")}
+                </p>
+              )}
             </div>
           </div>
 
@@ -194,7 +213,8 @@ export default function TransferStockToolbar({
                 onChange={(event) =>
                   void onToWarehouseChange(event.target.value)
                 }
-                className={getInputClass("metadata.warehouse_to_id")}
+                // className={getInputClass("metadata.warehouse_to_id")}
+                className={getValidatedClass("metadata.warehouse_to_id")}
               >
                 <option value="">Select Source Warehouse</option>
 
@@ -204,6 +224,12 @@ export default function TransferStockToolbar({
                   </option>
                 ))}
               </select>
+
+              {fieldError("metadata.warehouse_to_id") && (
+                <p className="mt-1 text-xs text-red-600" role="alert">
+                  {fieldError("metadata.warehouse_to_id")}
+                </p>
+              )}
             </div>
           </div>
         </div>

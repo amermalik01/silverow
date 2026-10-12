@@ -10,6 +10,8 @@ import type {
 
 export type TransferStockFormMode = "create" | "edit" | "view";
 
+export type TransferValidationErrors = Record<string, string>;
+
 export type TransferAllocationRecord = StockAllocationRecord;
 
 export type WarehouseOption = {
