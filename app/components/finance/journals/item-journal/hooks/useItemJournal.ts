@@ -35,11 +35,6 @@ import type { GLAccountLookupRecord } from "@/app/components/shared/modals/GLAcc
 import type { WarehouseLookupRecord } from "@/app/components/shared/modals/WarehouseLookupModal";
 import type { ItemLookupRecord } from "@/app/components/shared/modals/ItemLookupModal";
 
-// import type {
-//   StockAllocationRecord,
-//   StockSequenceRecord,
-// } from "@/app/components/shared/modals/StockAllocationModal";
-
 import type {
   StockSequenceRecord,
   AvailableStockRecord,
@@ -106,11 +101,6 @@ export function useItemJournal({
 
   const formDisabled = readOnly || isPosted || !isEditing || loading;
 
-  /**
-   * ---------------------------------------------------------
-   * Active allocation line
-   * ---------------------------------------------------------
-   */
   const activeAllocationLine = useMemo(() => {
     if (!activeAllocationLineId) {
       return null;
@@ -121,11 +111,6 @@ export function useItemJournal({
     );
   }, [activeAllocationLineId, lines]);
 
-  /**
-   * ---------------------------------------------------------
-   * Generic API response message
-   * ---------------------------------------------------------
-   */
   const getApiMessage = useCallback(
     async (response: Response, fallback: string): Promise<string> => {
       try {
@@ -139,11 +124,6 @@ export function useItemJournal({
     [],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Fetch locations
-   * ---------------------------------------------------------
-   */
   const fetchLocationsForWarehouse = useCallback(
     async (warehouseId: string): Promise<LocationOption[]> => {
       if (!warehouseId) {
@@ -196,11 +176,6 @@ export function useItemJournal({
     [getApiMessage],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Fetch stock sequences
-   * ---------------------------------------------------------
-   */
   const fetchStockSequences = useCallback(
     async (
       itemId: string,
@@ -349,14 +324,10 @@ export function useItemJournal({
       const payload = await response.json();
 
       const rawData: unknown[] = Array.isArray(payload)
-      ? payload
-      : Array.isArray(payload?.data)
-        ? payload.data
-        : [];
-
-      // const rawData: unknown[] = Array.isArray(payload?.data)
-      //   ? payload.data
-      //   : [];
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
 
       return rawData
         .map((raw): AvailableStockRecord | null => {
@@ -378,16 +349,10 @@ export function useItemJournal({
             source_allocation_id: sourceAllocationId,
 
             inbound_entry_id:
-            row.inbound_entry_id === null ||
-            row.inbound_entry_id === undefined
-              ? null
-              : String(row.inbound_entry_id),
-
-            // inbound_entry_id:
-            //   row.inbound_entry_id !== null &&
-            //   row.inbound_entry_id !== undefined
-            //     ? String(row.inbound_entry_id)
-            //     : null,
+              row.inbound_entry_id === null ||
+              row.inbound_entry_id === undefined
+                ? null
+                : String(row.inbound_entry_id),
 
             location_id: String(row.location_id ?? ""),
             location_name: String(row.location_name ?? ""),
@@ -415,11 +380,6 @@ export function useItemJournal({
     [getApiMessage],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Normalize stock allocation
-   * ---------------------------------------------------------
-   */
   const normalizeAllocation = useCallback(
     (
       allocation: Partial<ItemJournalAllocationRecord>,
@@ -427,38 +387,25 @@ export function useItemJournal({
       fallbackLocationName = "",
     ): ItemJournalAllocationRecord => ({
       id: allocation.id ?? null,
-
       source_allocation_id: allocation.source_allocation_id ?? null,
-
       inbound_entry_id: allocation.inbound_entry_id ?? null,
-
       location_id: allocation.location_id
         ? String(allocation.location_id)
         : fallbackLocationId,
 
       location_name: allocation.location_name || fallbackLocationName || "",
-
       date_received: String(allocation.date_received ?? ""),
-
       prod_date: String(allocation.prod_date ?? ""),
-
       expiry_date: String(allocation.expiry_date ?? ""),
-
       batch_no: String(allocation.batch_no ?? ""),
-
       bin_code: String(allocation.bin_code ?? ""),
-
       sequence_no: String(allocation.sequence_no ?? ""),
-
       serial_no: String(allocation.serial_no ?? ""),
-
       quantity: Number(allocation.quantity ?? 0),
-
       available_quantity:
         allocation.available_quantity === undefined
           ? undefined
           : Number(allocation.available_quantity ?? 0),
-
       unit_cost:
         allocation.unit_cost === undefined
           ? undefined
@@ -467,11 +414,6 @@ export function useItemJournal({
     [],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Load warehouses + journal
-   * ---------------------------------------------------------
-   */
   useEffect(() => {
     let cancelled = false;
 
@@ -481,10 +423,6 @@ export function useItemJournal({
 
       try {
         show("Loading data...");
-
-        /**
-         * Load warehouses.
-         */
         const warehouseResponse = await fetch("/api/inventory/warehouses");
 
         let warehouseOptions: WarehouseOption[] = [];
@@ -518,9 +456,6 @@ export function useItemJournal({
           }
         }
 
-        /**
-         * Create warehouse lookup.
-         */
         const warehouseMap = new Map<string, WarehouseOption>(
           warehouseOptions.map((warehouse) => [
             String(warehouse.id),
@@ -528,9 +463,6 @@ export function useItemJournal({
           ]),
         );
 
-        /**
-         * New journal.
-         */
         if (!journalId) {
           if (!cancelled) {
             const entryDate = today();
@@ -550,9 +482,6 @@ export function useItemJournal({
           return;
         }
 
-        /**
-         * Existing journal.
-         */
         const response = await fetch(`${apiBase}/${journalId}`);
 
         if (!response.ok) {
@@ -571,18 +500,13 @@ export function useItemJournal({
           data?.journal ?? data?.data?.journal ?? data?.data ?? data;
 
         const posted = Boolean(journal?.is_posted);
-
         setCurrentJournalId(String(journal?.id ?? journalId));
-
         setIsPosted(posted);
-
         setIsEditing(!posted && !readOnly);
-
         const entryDate = normalizeDate(journal?.entry_date) || today();
 
         setMetadata({
           entry_no: String(journal?.entry_no ?? ""),
-
           entry_date: entryDate,
         });
 
@@ -599,13 +523,11 @@ export function useItemJournal({
           (rawLine: Record<string, unknown>) => {
             const getString = (key: string): string => {
               const value = rawLine[key];
-
               return value === null || value === undefined ? "" : String(value);
             };
 
             const numberValue = (value: unknown): number => {
               const number = Number(value);
-
               return Number.isFinite(number) ? number : 0;
             };
 
@@ -616,13 +538,9 @@ export function useItemJournal({
             );
 
             const warehouseId = getString("warehouse_id");
-
             const warehouse = warehouseMap.get(warehouseId);
-
             const debit = numberValue(rawLine.debit);
-
             const credit = numberValue(rawLine.credit);
-
             const rawTransactionType = getString("transaction_type");
 
             const transactionType =
@@ -645,20 +563,10 @@ export function useItemJournal({
                 ? rawInitialAllocations
                 : [];
 
-            // const allocations: StockAllocationRecord[] = allocationSource.map(
-            //   (allocation: StockAllocationRecord) =>
-            //     normalizeAllocation(
-            //       allocation,
-            //       getString("location_id"),
-            //       getString("location_name"),
-            //     ),
-            // );
-
             const accountId =
               getString("balancing_account_id") || getString("account_id");
 
             const accountCode = getString("account_code");
-
             const accountName = getString("account_name");
 
             const balancingDisplayName =
@@ -682,72 +590,41 @@ export function useItemJournal({
             const initialAllocations = serverAllocations.map((allocation) => ({
               ...allocation,
             }));
-            // const status = getStockStatus(quantity, allocations);
 
             return {
               _stableKey: createStableKey(),
-
               posting_date:
                 normalizeDate(getString("posting_date")) || entryDate,
 
               transaction_type: transactionType,
-
               item_id: getString("item_id"),
-
               item_no: getString("item_no") || getString("item_code"),
-
               item_description:
                 getString("item_description") || getString("description"),
 
               warehouse_id: warehouseId,
-
               warehouse_code:
                 getString("warehouse_code") || warehouse?.code || "",
-
               warehouse_name:
                 getString("warehouse_name") || warehouse?.name || "",
 
               location_id: getString("location_id"),
-
               location_name: getString("location_name"),
-
               quantity,
-
               uom: getString("uom") || getString("uom_name") || "Pcs",
-
               cost_per_unit: cost,
-
               amount: calculateAmount(quantity, cost),
-
               balancing_account_id: accountId,
-
               balancing_display_name: balancingDisplayName,
-
               allocations,
-
               initialAllocations,
-
               stock_status: getStockStatus(quantity, allocations),
-
               is_allocated:
                 getStockStatus(quantity, allocations) === "allocated",
-
-              // initialAllocations: allocations.map((allocation) => ({
-              //   ...allocation,
-              // })),
-
-              // stock_status: status,
-
-              // is_allocated:
-              //   status === "allocated" || Boolean(rawLine.is_allocated),
             };
           },
         );
 
-        /**
-         * Load locations for warehouses
-         * used by the existing journal.
-         */
         const warehouseIds = Array.from(
           new Set(
             normalizedLines.map((line) => line.warehouse_id).filter(Boolean),
@@ -808,11 +685,6 @@ export function useItemJournal({
     getApiMessage,
   ]);
 
-  /**
-   * ---------------------------------------------------------
-   * Metadata change
-   * ---------------------------------------------------------
-   */
   const handleMetadataChange = useCallback(
     (field: keyof JournalMetadata, value: string) => {
       if (formDisabled) {
@@ -836,11 +708,6 @@ export function useItemJournal({
     [formDisabled],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Line change
-   * ---------------------------------------------------------
-   */
   const handleLineChange = useCallback(
     (
       index: number,
@@ -874,7 +741,6 @@ export function useItemJournal({
                 : Number(updatedLine.cost_per_unit || 0);
 
             updatedLine.quantity = Number.isFinite(quantity) ? quantity : 0;
-
             updatedLine.cost_per_unit = Number.isFinite(cost) ? cost : 0;
 
             updatedLine.amount = calculateAmount(
@@ -886,9 +752,6 @@ export function useItemJournal({
 
             if (allocationTotal > updatedLine.quantity) {
               updatedLine.allocations = [];
-
-              // updatedLine.initialAllocations = [];
-
               updatedLine.stock_status = "unallocated";
 
               updatedLine.is_allocated = false;
@@ -905,11 +768,7 @@ export function useItemJournal({
 
           if (field === "item_id" && !String(value || "")) {
             updatedLine.allocations = [];
-
-            // updatedLine.initialAllocations = [];
-
             updatedLine.stock_status = "unallocated";
-
             updatedLine.is_allocated = false;
           }
 
@@ -920,11 +779,6 @@ export function useItemJournal({
     [formDisabled],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Add line
-   * ---------------------------------------------------------
-   */
   const addLineRow = useCallback(() => {
     if (formDisabled) {
       return;
@@ -936,11 +790,6 @@ export function useItemJournal({
     ]);
   }, [formDisabled, metadata.entry_date]);
 
-  /**
-   * ---------------------------------------------------------
-   * Remove line
-   * ---------------------------------------------------------
-   */
   const removeLineRow = useCallback(
     (index: number) => {
       if (formDisabled) {
@@ -967,11 +816,6 @@ export function useItemJournal({
     [formDisabled, metadata.entry_date, activeAllocationLineId, lines],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Build item line
-   * ---------------------------------------------------------
-   */
   const buildItemLine = useCallback(
     async (item: ItemLookupRecord): Promise<ItemJournalLineRow> => {
       let defaultWarehouse: {
@@ -1000,38 +844,24 @@ export function useItemJournal({
 
       return createInitialRow(metadata.entry_date, {
         item_id: String(item.id || ""),
-
         item_no: item.item_code || "",
-
         item_description: item.description || item.name || "",
-
         cost_per_unit: Number.isFinite(unitCost) ? unitCost : 0,
-
         uom: item.base_uom_name || "Pcs",
 
         warehouse_id: defaultWarehouse?.id || "",
-
         warehouse_code: defaultWarehouse?.code || "",
-
         warehouse_name: defaultWarehouse?.name || "",
 
         allocations: [],
-
         initialAllocations: [],
-
         stock_status: "unallocated",
-
         is_allocated: false,
       });
     },
     [metadata.entry_date],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Open item modal
-   * ---------------------------------------------------------
-   */
   const openItemModal = useCallback(
     (index: number) => {
       if (formDisabled) {
@@ -1047,20 +877,10 @@ export function useItemJournal({
     [formDisabled],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Close item modal
-   * ---------------------------------------------------------
-   */
   const closeItemModal = useCallback(() => {
     setItemActiveModal(null);
   }, []);
 
-  /**
-   * ---------------------------------------------------------
-   * Select item(s)
-   * ---------------------------------------------------------
-   */
   const handleMultipleItemSelect = useCallback(
     async (items: ItemLookupRecord[]): Promise<void> => {
       if (!items.length) {
@@ -1140,11 +960,6 @@ export function useItemJournal({
     ],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Open warehouse modal
-   * ---------------------------------------------------------
-   */
   const openWarehouseModal = useCallback(
     (index: number) => {
       if (formDisabled) {
@@ -1156,20 +971,10 @@ export function useItemJournal({
     [formDisabled],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Close warehouse modal
-   * ---------------------------------------------------------
-   */
   const closeWarehouseModal = useCallback(() => {
     setWarehouseIndex(null);
   }, []);
 
-  /**
-   * ---------------------------------------------------------
-   * Select warehouse
-   * ---------------------------------------------------------
-   */
   const handleWarehouseSelect = useCallback(
     async (warehouse: WarehouseLookupRecord): Promise<void> => {
       if (warehouseIndex === null || formDisabled) {
@@ -1185,26 +990,16 @@ export function useItemJournal({
           if (index !== targetIndex) {
             return line;
           }
-
           return {
             ...line,
-
             warehouse_id: warehouseId,
-
             warehouse_code: warehouse.code || "",
-
             warehouse_name: warehouse.name || "",
-
             location_id: "",
-
             location_name: "",
-
             allocations: [],
-
             initialAllocations: [],
-
             stock_status: "unallocated",
-
             is_allocated: false,
           };
         }),
@@ -1216,7 +1011,6 @@ export function useItemJournal({
 
         setLocationsByWarehouse((previous) => ({
           ...previous,
-
           [warehouseId]: warehouseLocations,
         }));
       }
@@ -1227,11 +1021,6 @@ export function useItemJournal({
     [warehouseIndex, formDisabled, fetchLocationsForWarehouse],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Open location modal
-   * ---------------------------------------------------------
-   */
   const openLocationModal = useCallback(
     async (index: number) => {
       if (formDisabled) {
@@ -1246,7 +1035,6 @@ export function useItemJournal({
 
       if (!line.warehouse_id) {
         toast.error("Please select a warehouse first.");
-
         return;
       }
 
@@ -1264,20 +1052,10 @@ export function useItemJournal({
     [formDisabled, lines, locationsByWarehouse, fetchLocationsForWarehouse],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Close location modal
-   * ---------------------------------------------------------
-   */
   const closeLocationModal = useCallback(() => {
     setLocationIndex(null);
   }, []);
 
-  /**
-   * ---------------------------------------------------------
-   * Select location
-   * ---------------------------------------------------------
-   */
   const handleLocationSelect = useCallback(
     (targetIndex: number, location: LocationOption) => {
       if (formDisabled) {
@@ -1291,27 +1069,15 @@ export function useItemJournal({
           }
 
           const locationId = String(location.id || "");
-
           const locationName = location.title || "";
 
-          /**
-           * A location change invalidates
-           * allocations created against
-           * the previous location.
-           */
           return {
             ...line,
-
             location_id: locationId,
-
             location_name: locationName,
-
             allocations: [],
-
             initialAllocations: [],
-
             stock_status: "unallocated",
-
             is_allocated: false,
           };
         }),
@@ -1323,11 +1089,6 @@ export function useItemJournal({
     [formDisabled],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Open G/L modal
-   * ---------------------------------------------------------
-   */
   const openGLModal = useCallback(
     (index: number) => {
       if (formDisabled) {
@@ -1343,20 +1104,10 @@ export function useItemJournal({
     [formDisabled],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Close G/L modal
-   * ---------------------------------------------------------
-   */
   const closeGLModal = useCallback(() => {
     setActiveModal(null);
   }, []);
 
-  /**
-   * ---------------------------------------------------------
-   * G/L selection
-   * ---------------------------------------------------------
-   */
   const handleModalSelection = useCallback(
     (selectedRecord: GLAccountLookupRecord) => {
       if (!activeModal || formDisabled) {
@@ -1370,32 +1121,21 @@ export function useItemJournal({
           if (index !== targetIndex) {
             return line;
           }
-
           const code = selectedRecord.code || "";
-
           const name = selectedRecord.name || "";
-
           return {
             ...line,
-
             balancing_account_id: String(selectedRecord.id || ""),
-
             balancing_display_name:
               code && name ? `${code} - ${name}` : name || code,
           };
         }),
       );
-
       setActiveModal(null);
     },
     [activeModal, formDisabled],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Open stock allocation
-   * ---------------------------------------------------------
-   */
   const handleOpenAllocation = useCallback(
     async (line: ItemJournalLineRow) => {
       if (formDisabled) {
@@ -1471,22 +1211,12 @@ export function useItemJournal({
     [formDisabled, show, hide, fetchStockSequences, fetchAvailableStock],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Close allocation modal
-   * ---------------------------------------------------------
-   */
   const handleCloseAllocation = useCallback(() => {
     setIsAllocationModalOpen(false);
     setActiveAllocationLineId(null);
     setExistingSequences([]);
   }, []);
 
-  /**
-   * ---------------------------------------------------------
-   * Save allocation
-   * ---------------------------------------------------------
-   */
   const handleSaveAllocations = useCallback(
     (allocationsData: StockAllocationRecord[]) => {
       if (!activeAllocationLineId || formDisabled) {
@@ -1521,10 +1251,6 @@ export function useItemJournal({
             return line;
           }
 
-          /**
-           * Prevent the same stock sequence
-           * from being allocated more than once.
-           */
           const sequenceKeys = new Set<string>();
 
           for (const allocation of sanitizedAllocations) {
@@ -1554,39 +1280,24 @@ export function useItemJournal({
 
           return {
             ...line,
-
             allocations: sanitizedAllocations,
-
-            // initialAllocations: sanitizedAllocations.map((allocation) => ({
-            //   ...allocation,
-            // })),
-
             initialAllocations:
               line.initialAllocations?.map((allocation) => ({
                 ...allocation,
               })) ?? [],
-
             stock_status: status,
-
             is_allocated: status === "allocated",
           };
         }),
       );
 
       setIsAllocationModalOpen(false);
-
       setActiveAllocationLineId(null);
-
       setExistingSequences([]);
     },
     [activeAllocationLineId, formDisabled, normalizeAllocation],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Validation
-   * ---------------------------------------------------------
-   */
   const validateBeforeSave = useCallback(
     (postToLedger: boolean): string | null => {
       if (!metadata.entry_date) {
@@ -1630,10 +1341,6 @@ export function useItemJournal({
           return `Line ${lineNumber}: Balancing G/L account is required.`;
         }
 
-        /**
-         * Stock allocation is mandatory
-         * when posting.
-         */
         if (postToLedger) {
           const allocatedQuantity = getAllocationTotal(line.allocations);
 
@@ -1662,10 +1369,6 @@ export function useItemJournal({
               return `Line ${lineNumber}: Allocation ${allocationNumber} quantity must be greater than zero.`;
             }
 
-            // if (!allocation.sequence_no) {
-            //   return `Line ${lineNumber}: Allocation ${allocationNumber} is missing a stock sequence.`;
-            // }
-
             if (
               line.transaction_type === "Positive Entry" &&
               !allocation.sequence_no
@@ -1691,58 +1394,34 @@ export function useItemJournal({
     [metadata.entry_date, lines],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Build API payload
-   * ---------------------------------------------------------
-   */
   const buildPayload = useCallback(
     (postToLedger: boolean) => {
       return {
         entry_no: metadata.entry_no || undefined,
-
         entry_date: metadata.entry_date,
-
         is_posted: postToLedger,
-
         post_to_ledger: postToLedger,
 
         lines: lines.map((line) => ({
           posting_date: line.posting_date || metadata.entry_date,
-
           transaction_type: line.transaction_type,
-
           item_id: line.item_id,
-
           item_no: line.item_no,
-
           item_description: line.item_description,
-
           warehouse_id: line.warehouse_id,
-
           warehouse_code: line.warehouse_code,
-
           warehouse_name: line.warehouse_name,
-
           location_id: line.location_id,
-
           location_name: line.location_name,
-
           quantity: Number(line.quantity || 0),
-
           uom: line.uom,
-
           cost_per_unit: Number(line.cost_per_unit || 0),
-
           amount: calculateAmount(
             Number(line.quantity || 0),
             Number(line.cost_per_unit || 0),
           ),
-
           balancing_account_id: line.balancing_account_id,
-
           balancing_display_name: line.balancing_display_name,
-
           allocations: line.allocations.map((allocation) =>
             normalizeAllocation(
               allocation,
@@ -1750,12 +1429,6 @@ export function useItemJournal({
               line.location_name,
             ),
           ),
-
-          /**
-           * Keep this field for APIs that
-           * distinguish the original allocation
-           * state from the current state.
-           */
           initialAllocations:
             line.initialAllocations?.map((allocation) =>
               normalizeAllocation(
@@ -1770,11 +1443,6 @@ export function useItemJournal({
     [metadata, lines, normalizeAllocation],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Save journal
-   * ---------------------------------------------------------
-   */
   const saveJournal = useCallback(
     async (postToLedger = false): Promise<boolean> => {
       if (readOnly) {
@@ -1783,7 +1451,6 @@ export function useItemJournal({
 
       if (isPosted) {
         toast.error("This journal has already been posted.");
-
         return false;
       }
 
@@ -1792,7 +1459,6 @@ export function useItemJournal({
       if (validationError) {
         setErrorMsg(validationError);
         toast.error(validationError);
-
         return false;
       }
 
@@ -1805,7 +1471,6 @@ export function useItemJournal({
         );
 
         const payload = buildPayload(postToLedger);
-
         const hasExistingJournal = Boolean(currentJournalId);
 
         const url = hasExistingJournal
@@ -1816,11 +1481,9 @@ export function useItemJournal({
 
         const response = await fetch(url, {
           method,
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify(payload),
         });
 
@@ -1857,16 +1520,13 @@ export function useItemJournal({
           setLines((previous) =>
             previous.map((line) => ({
               ...line,
-
               initialAllocations: line.allocations.map((allocation) => ({
                 ...allocation,
               })),
-
               stock_status: getStockStatus(
                 Number(line.quantity || 0),
                 line.allocations,
               ),
-
               is_allocated:
                 getStockStatus(Number(line.quantity || 0), line.allocations) ===
                 "allocated",
@@ -1876,14 +1536,9 @@ export function useItemJournal({
           toast.success("Item journal posted successfully.");
         } else {
           setIsEditing(true);
-
           toast.success("Item journal saved successfully.");
         }
 
-        /**
-         * If the backend generated an entry number,
-         * use it.
-         */
         const returnedEntryNo =
           returnedJournal?.entry_no ?? responseData?.entry_no;
 
@@ -1894,21 +1549,8 @@ export function useItemJournal({
           }));
         }
 
-        /**
-         * If this was a newly-created journal,
-         * update the browser URL without forcing
-         * a full page reload.
-         */
         if (!hasExistingJournal && returnedId) {
           const nextPath = redirectPath.replace(/\/$/, "");
-
-          /**
-           * Prefer the normal journal detail
-           * URL when redirectPath already contains
-           * the expected route.
-           *
-           * Otherwise navigate to redirectPath.
-           */
           if (nextPath.includes(String(returnedId))) {
             router.replace(nextPath);
           }
@@ -1949,41 +1591,18 @@ export function useItemJournal({
     ],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Save draft
-   * ---------------------------------------------------------
-   */
   const handleSave = useCallback(async (): Promise<boolean> => {
     return saveJournal(false);
   }, [saveJournal]);
 
-  /**
-   * ---------------------------------------------------------
-   * Save + post
-   * ---------------------------------------------------------
-   */
   const handlePost = useCallback(async (): Promise<boolean> => {
     return saveJournal(true);
   }, [saveJournal]);
 
-  /**
-   * ---------------------------------------------------------
-   * Explicit post handler
-   *
-   * Kept separately because some screens use
-   * handlePostJournal naming.
-   * ---------------------------------------------------------
-   */
   const handlePostJournal = useCallback(async (): Promise<boolean> => {
     return saveJournal(true);
   }, [saveJournal]);
 
-  /**
-   * ---------------------------------------------------------
-   * Cancel / go back
-   * ---------------------------------------------------------
-   */
   const handleCancel = useCallback(() => {
     setIsAllocationModalOpen(false);
     setActiveAllocationLineId(null);
@@ -1996,11 +1615,6 @@ export function useItemJournal({
     router.push(redirectPath);
   }, [router, redirectPath]);
 
-  /**
-   * ---------------------------------------------------------
-   * Edit posted/draft journal
-   * ---------------------------------------------------------
-   */
   const handleEdit = useCallback(() => {
     if (readOnly || isPosted) {
       return;
@@ -2009,11 +1623,6 @@ export function useItemJournal({
     setIsEditing(true);
   }, [readOnly, isPosted]);
 
-  /**
-   * ---------------------------------------------------------
-   * Refresh current journal
-   * ---------------------------------------------------------
-   */
   const refreshJournal = useCallback(async (): Promise<void> => {
     if (!currentJournalId) {
       return;
@@ -2034,16 +1643,12 @@ export function useItemJournal({
       }
 
       const data = await response.json();
-
       const journal =
         data?.journal ?? data?.data?.journal ?? data?.data ?? data;
 
       const posted = Boolean(journal?.is_posted);
-
       setIsPosted(posted);
-
       setIsEditing(!posted && !readOnly);
-
       const entryDate = normalizeDate(journal?.entry_date) || today();
 
       setMetadata({
@@ -2057,36 +1662,19 @@ export function useItemJournal({
         const normalized = apiLines.map((rawLine: Record<string, unknown>) => {
           const getString = (key: string): string => {
             const value = rawLine[key];
-
             return value === null || value === undefined ? "" : String(value);
           };
 
           const quantity = Number(rawLine.quantity || 0);
-
           const cost = Number(rawLine.cost_per_unit ?? rawLine.unit_cost ?? 0);
-
           const rawAllocations = rawLine.allocations;
-
           const allocationSource = Array.isArray(rawAllocations)
             ? rawAllocations
             : [];
 
-          // const allocations = allocationSource.map(
-          //   (allocation: StockAllocationRecord) =>
-          //     normalizeAllocation(
-          //       allocation,
-          //       getString("location_id"),
-          //       getString("location_name"),
-          //     ),
-          // );
-
-          // const status = getStockStatus(quantity, allocations);
-
           const accountId =
             getString("balancing_account_id") || getString("account_id");
-
           const accountCode = getString("account_code");
-
           const accountName = getString("account_name");
 
           const serverAllocations = allocationSource.map((allocation) =>
@@ -2107,62 +1695,34 @@ export function useItemJournal({
 
           return {
             _stableKey: createStableKey(),
-
             posting_date: normalizeDate(getString("posting_date")) || entryDate,
-
             transaction_type:
               getString("transaction_type") === "Negative Entry"
                 ? "Negative Entry"
                 : "Positive Entry",
-
             item_id: getString("item_id"),
-
             item_no: getString("item_no") || getString("item_code"),
-
             item_description:
               getString("item_description") || getString("description"),
-
             warehouse_id: getString("warehouse_id"),
-
             warehouse_code: getString("warehouse_code"),
-
             warehouse_name: getString("warehouse_name"),
-
             location_id: getString("location_id"),
-
             location_name: getString("location_name"),
-
             quantity,
-
             uom: getString("uom") || getString("uom_name") || "Pcs",
-
             cost_per_unit: cost,
-
             amount: calculateAmount(quantity, cost),
-
             balancing_account_id: accountId,
-
             balancing_display_name:
               getString("balancing_display_name") ||
               (accountCode && accountName
                 ? `${accountCode} - ${accountName}`
                 : accountName || accountCode || ""),
-
             allocations,
-
             initialAllocations,
-
             stock_status: getStockStatus(quantity, allocations),
-
             is_allocated: getStockStatus(quantity, allocations) === "allocated",
-
-            // initialAllocations: allocations.map((allocation) => ({
-            //   ...allocation,
-            // })),
-
-            // stock_status: status,
-
-            // is_allocated: status === "allocated",
           } satisfies ItemJournalLineRow;
         });
 
@@ -2192,11 +1752,6 @@ export function useItemJournal({
     normalizeAllocation,
   ]);
 
-  /**
-   * ---------------------------------------------------------
-   * Close all modals
-   * ---------------------------------------------------------
-   */
   const closeAllModals = useCallback(() => {
     setIsAllocationModalOpen(false);
     setActiveAllocationLineId(null);
@@ -2207,43 +1762,28 @@ export function useItemJournal({
     setLocationIndex(null);
   }, []);
 
-  // postToLedger: boolean
   const buildApiPayload = useCallback(
     () => ({
       entry_date: metadata.entry_date,
-
-      // is_posted: postToLedger,
       is_posted: false,
-
       source: "ITEM",
-
       lines: lines.map((line) => ({
         posting_date: line.posting_date,
-
         transaction_type: line.transaction_type,
-
         item_id: line.item_id,
         item_no: line.item_no,
         item_description: line.item_description,
-
         warehouse_id: line.warehouse_id,
         warehouse_code: line.warehouse_code,
         warehouse_name: line.warehouse_name,
-
         location_id: line.location_id,
         location_name: line.location_name,
-
         quantity: Number(line.quantity || 0),
-
         uom: line.uom,
-
         cost_per_unit: Number(line.cost_per_unit || 0),
-
         amount: Number(line.amount || 0),
-
         balancing_account_id: line.balancing_account_id,
         balancing_display_name: line.balancing_display_name,
-
         allocations: line.allocations.map((allocation) => ({
           location_id: allocation.location_id || line.location_id,
           date_received: allocation.date_received,
@@ -2264,14 +1804,11 @@ export function useItemJournal({
     }
 
     setErrorMsg(null);
-
     const validationError = validateBeforeSave(false);
 
     if (validationError) {
       setErrorMsg(validationError);
-
       toast.error(validationError);
-
       return false;
     }
 
@@ -2286,11 +1823,9 @@ export function useItemJournal({
         journalId ? `${apiBase}/${journalId}` : apiBase,
         {
           method: journalId ? "PUT" : "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify(payload),
         },
       );
@@ -2312,7 +1847,6 @@ export function useItemJournal({
       }
 
       toast.success("Item journal saved successfully.");
-
       router.push(redirectPath);
 
       return true;
@@ -2323,9 +1857,7 @@ export function useItemJournal({
         error instanceof Error ? error.message : "Failed to save item journal.";
 
       setErrorMsg(message);
-
       toast.error(message);
-
       return false;
     } finally {
       setLoading(false);
@@ -2349,33 +1881,26 @@ export function useItemJournal({
     }
 
     setErrorMsg(null);
-
     const validationError = validateBeforeSave(true);
 
     if (validationError) {
       setErrorMsg(validationError);
-
       toast.error(validationError);
-
       return false;
     }
-
     setLoading(true);
 
     try {
       show("Saving Journal...");
-
       const payload = buildApiPayload();
 
       const saveResponse = await fetch(
         journalId ? `${apiBase}/${journalId}` : apiBase,
         {
           method: journalId ? "PUT" : "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify(payload),
         },
       );
@@ -2416,12 +1941,10 @@ export function useItemJournal({
       }
 
       setCurrentJournalId(id);
-
       show("Posting Journal...");
 
       const postResponse = await fetch(`${apiBase}/${id}/post`, {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
@@ -2445,22 +1968,15 @@ export function useItemJournal({
 
       setIsPosted(true);
       setIsEditing(false);
-
       toast.success("Item journal posted successfully.");
-
       router.push(redirectPath);
-
       return true;
     } catch (error: unknown) {
       console.error("Failed to post item journal:", error);
-
       const message =
         error instanceof Error ? error.message : "Failed to post item journal.";
-
       setErrorMsg(message);
-
       toast.error(message);
-
       return false;
     } finally {
       setLoading(false);
@@ -2483,36 +1999,22 @@ export function useItemJournal({
       if (postToLedger) {
         return postJournal();
       }
-
       return saveDraft();
     },
     [postJournal, saveDraft],
   );
 
-  /**
-   * ---------------------------------------------------------
-   * Return hook API
-   * ---------------------------------------------------------
-   */
   return {
-    /**
-     * State
-     */
-
     loading,
     isPosted,
     errorMsg,
     isEditing,
-
     setIsEditing,
     setErrorMsg,
-
     metadata,
     lines,
-
     locationsByWarehouse,
     warehouses,
-
     existingSequences,
     availableStock,
     currentJournalId,
@@ -2547,44 +2049,23 @@ export function useItemJournal({
     saveDraft,
     postJournal,
 
-    /**
-     * Metadata handlers
-     */
     setMetadata,
     handleMetadataChange,
 
-    /**
-     * Item lookup
-     */
     openItemModal,
     closeItemModal,
 
-    /**
-     * Warehouse lookup
-     */
     openWarehouseModal,
     closeWarehouseModal,
 
-    /**
-     * Location lookup
-     */
     openLocationModal,
     closeLocationModal,
 
-    /**
-     * G/L lookup
-     */
     openGLModal,
     closeGLModal,
 
-    /**
-     * Stock allocation
-     */
     handleCloseAllocation,
 
-    /**
-     * Persistence
-     */
     validateBeforeSave,
     saveJournal,
     handleSave,
@@ -2592,20 +2073,11 @@ export function useItemJournal({
     handlePostJournal,
     refreshJournal,
 
-    /**
-     * Navigation/editing
-     */
     handleEdit,
     handleCancel,
 
-    /**
-     * Utility
-     */
     closeAllModals,
 
-    /**
-     * Data loaders
-     */
     fetchLocationsForWarehouse,
     fetchStockSequences,
   };

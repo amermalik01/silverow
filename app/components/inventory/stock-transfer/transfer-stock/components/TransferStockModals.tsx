@@ -64,7 +64,7 @@ export default function TransferStockModals({
         <ItemLookupModal open onClose={onCloseItem} onSelect={onItemSelect} />
       )}
 
-      {allocationModalOpen && activeAllocationLine && (
+      {/* {allocationModalOpen && activeAllocationLine && (
         <StockAllocationModal
           key={activeAllocationLine._stableKey}
           open={allocationModalOpen}
@@ -85,7 +85,7 @@ export default function TransferStockModals({
           availableStock={availableStock}
           initialAllocations={activeAllocationLine.allocations ?? []}
         />
-      )}
+      )} */}
     </>
   );
 }

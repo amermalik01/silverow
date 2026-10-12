@@ -18,12 +18,15 @@ import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
 
-
 import StockAllocationModal, {
   AvailableStockRecord,
   StockAllocationRecord,
   StockSequenceRecord,
 } from "@/app/components/shared/modals/StockAllocationModal";
+
+import PO_StockAllocationModal, {
+  type PO_StockAllocationRecord,
+} from "@/app/components/shared/modals/PO_StockAllocationModal";
 
 type Props = {
   itemModalOpen: boolean;
@@ -95,16 +98,13 @@ export default function ItemJournalModals({
           onClose={onCloseAllocation}
           onSave={onSaveAllocation}
           targetQuantity={Number(activeAllocationLine.quantity || 0)}
-
           itemId={activeAllocationLine.item_id || ""}
           itemCode={activeAllocationLine.item_no || ""}
           itemName={activeAllocationLine.item_description || ""}
-
           warehouseId={activeAllocationLine.warehouse_id || ""}
           warehouseName={activeAllocationLine.warehouse_name || ""}
           locationId={activeAllocationLine.location_id || ""}
           locationName={activeAllocationLine.location_name || ""}
-
           uomName={activeAllocationLine.uom || ""}
           transactionType={activeAllocationLine.transaction_type}
           mode={
@@ -117,37 +117,69 @@ export default function ItemJournalModals({
           initialAllocations={activeAllocationLine.allocations ?? []}
         />
       )}
+
+      {/* {allocationModalOpen &&
+        activeAllocationLine &&
+        (activeAllocationLine.transaction_type === "Positive Entry" ? (
+          <PO_StockAllocationModal
+            key={activeAllocationLine._stableKey}
+            open={allocationModalOpen}
+            isReadonly={formDisabled}
+            onClose={onCloseAllocation}
+            targetQuantity={Math.abs(
+              Number(activeAllocationLine.quantity || 0),
+            )}
+            itemId={activeAllocationLine.item_id || ""}
+            itemCode={activeAllocationLine.item_no || ""}
+            itemName={activeAllocationLine.item_description || ""}
+            warehouseId={activeAllocationLine.warehouse_id || ""}
+            warehouseName={activeAllocationLine.warehouse_name || ""}
+            uomName={activeAllocationLine.uom || ""}
+            initialAllocations={activeAllocationLine.allocations.map(
+              (allocation) => ({
+                location_id: allocation.location_id,
+                location_name: allocation.location_name,
+                date_received: allocation.date_received || "",
+                prod_date: allocation.prod_date || "",
+                expiry_date: allocation.expiry_date || "",
+                batch_no: allocation.batch_no || "",
+                serial_no: allocation.serial_no || "",
+                quantity: Number(allocation.quantity || 0),
+              }),
+            )}
+            onSave={(allocations) => {
+              onSaveAllocation(
+                allocations.map((allocation) => ({
+                  ...allocation,
+                })) as StockAllocationRecord[],
+              );
+            }}
+          />
+        ) : (
+          <StockAllocationModal
+            key={activeAllocationLine._stableKey}
+            open={allocationModalOpen}
+            isReadonly={formDisabled}
+            onClose={onCloseAllocation}
+            onSave={onSaveAllocation}
+            targetQuantity={Math.abs(
+              Number(activeAllocationLine.quantity || 0),
+            )}
+            itemId={activeAllocationLine.item_id || ""}
+            itemCode={activeAllocationLine.item_no || ""}
+            itemName={activeAllocationLine.item_description || ""}
+            warehouseId={activeAllocationLine.warehouse_id || ""}
+            warehouseName={activeAllocationLine.warehouse_name || ""}
+            locationId={activeAllocationLine.location_id || ""}
+            locationName={activeAllocationLine.location_name || ""}
+            uomName={activeAllocationLine.uom || ""}
+            transactionType={activeAllocationLine.transaction_type}
+            mode="outbound"
+            existingSequences={existingSequences}
+            availableStock={availableStock}
+            initialAllocations={activeAllocationLine.allocations ?? []}
+          />
+        ))} */}
     </>
   );
 }
-
-          // initialAllocations={activeAllocationLine.initialAllocations ?? []}
-          // onSave={handleSaveAllocations}
-          
-          // initialAllocations={(
-          //   activeAllocationLine.allocations ||
-          //   activeAllocationLine.initialAllocations ||
-          //   []
-          // ).map((allocation) => ({
-          //   location_id: allocation.location_id || "",
-
-          //   location_name: allocation.location_name || "",
-
-          //   date_received: String(allocation.date_received || ""),
-
-          //   prod_date: String(allocation.prod_date || ""),
-
-          //   expiry_date: String(allocation.expiry_date || ""),
-
-          //   batch_no: String(allocation.batch_no || ""),
-          //   sequence_no: String(allocation.sequence_no || ""),
-
-          //   serial_no: String(allocation.serial_no || ""),
-
-          //   quantity: Number(allocation.quantity || 0),
-
-          //   available_quantity:
-          //     allocation.available_quantity === undefined
-          //       ? undefined
-          //       : Number(allocation.available_quantity || 0),
-          // }))}

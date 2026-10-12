@@ -764,7 +764,7 @@ export class ItemJournalService {
         $15,
         $16,
 
-        'ACTIVE'
+        'ACTIVE',
         NOW()
       )
       `,
