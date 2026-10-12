@@ -16,10 +16,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Icon } from "@iconify/react";
 
-// import {
-//   PurchaseOrderLookupItem,
-//   PurchaseOrderMultiLookupModal,
-// } from "@/app/components/shared/modals/PurchaseOrderMultiLookupModal";
+
 import {
   PurchaseOrderLookupItem,
   PurchaseOrderLookupModal,
@@ -97,7 +94,7 @@ export default function TransferStockToolbar({
   };
 
   const handleSelectPurchaseOrders = (
-    selectedOrder: PurchaseOrderLookupItem[],
+    selectedOrder: PurchaseOrderLookupItem,
   ) => {
     onHeaderChange("po_no", selectedOrder.order_no);
 
