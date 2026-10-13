@@ -347,7 +347,7 @@ export default function ItemActivityTab({ itemId }: Props) {
                 <th className="p-2.5">Bin Code</th>
                 <th className="p-2.5 text-right">Allocated Qty</th>
                 <th className="p-2.5 text-right">Unit Cost</th>
-                <th className="p-2.5 text-center">Status</th>
+                {/* <th className="p-2.5 text-center">Status</th> */}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
@@ -369,11 +369,11 @@ export default function ItemActivityTab({ itemId }: Props) {
                     {/* <td className="p-2.5 text-slate-500 font-sans uppercase text-[10px]">{alloc.allocation_method || "FIFO"}</td> */}
                     <td className="p-2.5 text-right font-bold text-amber-600">{Number(alloc.allocated_quantity).toFixed(2)}</td>
                     <td className="p-2.5 text-right text-slate-500">{Number(alloc.unit_cost || 0).toFixed(2)}</td>
-                    <td className="p-2.5 text-center">
+                    {/* <td className="p-2.5 text-center">
                       <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                         {alloc.status || "ACTIVE"}
                       </span>
-                    </td>
+                    </td> */}
                   </tr>
                 ))
               )}
