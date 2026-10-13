@@ -165,13 +165,19 @@ export async function POST(req: Request) {
 
         // Auto-generate code if not supplied in single-item creation or migration
         if (!item_code) {
+          // const codeResult = await client.query(
+          //   `SELECT generate_item_code($1, $2, $3) AS code`,
+          //   [
+          //     companyId,
+          //     validatedItem.category_id || null,
+          //     validatedItem.brand_id || null,
+          //   ],
+          // );
+          // item_code = codeResult.rows[0]?.code || null;
+
           const codeResult = await client.query(
-            `SELECT generate_item_code($1, $2, $3) AS code`,
-            [
-              companyId,
-              validatedItem.category_id || null,
-              validatedItem.brand_id || null,
-            ],
+            "SELECT get_next_sequence($1, 'product') AS code",
+            [companyId],
           );
           item_code = codeResult.rows[0]?.code || null;
         }

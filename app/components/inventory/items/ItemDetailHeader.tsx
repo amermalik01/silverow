@@ -26,9 +26,9 @@ export default function ItemDetailHeader({ item, metrics }: MetricProps) {
             </span>
           )}
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
+        {/* <p className="text-xs text-slate-500 mt-1">
           {item.description || "No description provided."}
-        </p>
+        </p> */}
       </div>
 
       {/* Live Stock Indicators (Matching Legacy UI Top-Right) */}

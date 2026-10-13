@@ -33,11 +33,8 @@ const defaultForm: ItemFormData = {
   stock_tracking: true,
 
   reorder_qty: "",
-
   standard_sales_price: "",
-
   standard_cost: "",
-
   costing_method: 1,
 };
 
@@ -45,15 +42,10 @@ export default function ItemForm({ id }: Props) {
   const router = useRouter();
 
   const [form, setForm] = useState<ItemFormData>(defaultForm);
-
   const [loading, setLoading] = useState<boolean>(false);
-
   const [categories, setCategories] = useState<ItemLookupOption[]>([]);
-
   const [brands, setBrands] = useState<ItemLookupOption[]>([]);
-
   const [uoms, setUoms] = useState<ItemLookupOption[]>([]);
-
   const [autoCode, setAutoCode] = useState<boolean>(true);
 
   useEffect(() => {
@@ -71,35 +63,24 @@ export default function ItemForm({ id }: Props) {
 
         setForm({
           item_code: result.item_code || "",
-
           barcode: result.barcode || "",
-
           name: result.name || "",
-
           description: result.description || "",
 
           item_type: result.item_type || 1,
-
           status: result.status || 1,
 
           category_id: result.category_id || "",
-
           brand_id: result.brand_id || "",
 
           base_uom_id: result.base_uom_id || "",
-
           purchase_uom_id: result.purchase_uom_id || "",
-
           sales_uom_id: result.sales_uom_id || "",
 
           stock_tracking: result.stock_tracking ?? true,
-
           reorder_qty: result.reorder_qty?.toString() || "",
-
           standard_sales_price: result.standard_sales_price?.toString() || "",
-
           standard_cost: result.standard_cost?.toString() || "",
-
           costing_method: result.costing_method || 1,
         });
       } catch (err) {
@@ -116,22 +97,16 @@ export default function ItemForm({ id }: Props) {
     try {
       const [categoryRes, brandRes, uomRes] = await Promise.all([
         fetch("/api/setup/inventory/categories"),
-
         fetch("/api/setup/inventory/brands"),
-
         fetch("/api/setup/inventory/uoms"),
       ]);
 
       const categoryData = await categoryRes.json();
-
       const brandData = await brandRes.json();
-
       const uomData = await uomRes.json();
 
       setCategories(categoryData);
-
       setBrands(brandData);
-
       setUoms(uomData);
     } catch (err) {
       console.error(err);
@@ -147,19 +122,12 @@ export default function ItemForm({ id }: Props) {
       const payload = {
         ...form,
         item_code: autoCode ? "" : form.item_code,
-
         category_id: form.category_id || null,
-
         brand_id: form.brand_id || null,
-
         purchase_uom_id: form.purchase_uom_id || null,
-
         sales_uom_id: form.sales_uom_id || null,
-
         reorder_qty: form.reorder_qty || null,
-
         standard_sales_price: form.standard_sales_price || null,
-
         standard_cost: form.standard_cost || null,
       };
 
@@ -201,22 +169,6 @@ export default function ItemForm({ id }: Props) {
         <h2 className="font-semibold text-lg">General</h2>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* <div>
-            <label className="block mb-1">Item Code</label>
-
-            <input
-              value={form.item_code}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  item_code: e.target.value,
-                })
-              }
-              className="border p-2 w-full"
-              required
-            />
-          </div> */}
-
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="block">Item Code</label>
@@ -386,16 +338,8 @@ export default function ItemForm({ id }: Props) {
               className="border p-2 w-full"
             >
               <option value={1}>Inventory</option>
-
               <option value={2}>Service</option>
-
-              <option value={3}>Non Inventory</option>
-
-              <option value={4}>Raw Material</option>
-
-              <option value={5}>Finished Goods</option>
-
-              <option value={6}>Asset</option>
+              <option value={3}>Finished Goods</option>
             </select>
           </div>
         </div>
@@ -422,34 +366,10 @@ export default function ItemForm({ id }: Props) {
               }
               className="border p-2 w-full"
             />
-
-            {/* <input
-              type="number"
-              value={form.reorder_qty}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  reorder_qty: e.target.value,
-                })
-              }
-              className="border p-2 w-full"
-            /> */}
           </div>
 
           <div>
             <label className="block mb-1">Standard Cost</label>
-
-            {/* <input
-              type="number"
-              value={form.standard_cost}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  standard_cost: e.target.value,
-                })
-              }
-              className="border p-2 w-full"
-            /> */}
 
             <NumericTextInput
               allowDecimals
@@ -479,9 +399,7 @@ export default function ItemForm({ id }: Props) {
               className="border p-2 w-full"
             >
               <option value={1}>FIFO</option>
-
               <option value={2}>Average</option>
-
               <option value={3}>Standard</option>
             </select>
           </div>
@@ -496,17 +414,6 @@ export default function ItemForm({ id }: Props) {
           <div>
             <label className="block mb-1">Sales Price</label>
 
-            {/* <input
-              type="number"
-              value={form.standard_sales_price}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  standard_sales_price: e.target.value,
-                })
-              }
-              className="border p-2 w-full"
-            /> */}
             <NumericTextInput
               allowDecimals
               decimalScale={2}
@@ -546,7 +453,6 @@ export default function ItemForm({ id }: Props) {
         </div>
       </div>
 
-      {/* PURCHASE */}
       <div className="border rounded p-4 space-y-4">
         <h2 className="font-semibold text-lg">Purchase</h2>
 
