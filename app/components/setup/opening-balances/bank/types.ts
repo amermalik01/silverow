@@ -9,6 +9,7 @@ export type Currency = {
 };
 
 export type BankOpeningBalanceRow = {
+  id?: string;
   posting_date: string;
 
   party_type: "supplier" | "customer";
@@ -16,7 +17,7 @@ export type BankOpeningBalanceRow = {
   party_code?: string;
   party_name: string;
 
-  doc_type: "Payment" | "Refund";
+  doc_type: "Payment" | "Refund" | "Invoice" | "Credit Note" | "Debit Note";
   doc_no: string;
   external_ref_no: string;
 
@@ -30,6 +31,7 @@ export type BankOpeningBalanceRow = {
   debit: number;
   credit: number;
   exchange_rate: number;
+  status?: "Open" | "Posted";
 };
 
 /**

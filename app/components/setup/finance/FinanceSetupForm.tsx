@@ -26,13 +26,12 @@ import SupplierOpeningBalancesForm from "../opening-balances/supplier/SupplierOp
 import GlobalFinanceSetupForm from "./GlobalFinanceSetupForm";
 
 type TabType =
+  | "global_finance_setup"
   | "posting_setup"
   | "matrix"
   | "business"
-  // | "product"
   | "rates"
   | "posting_date_range"
-  | "global_finance_setup"
   | "bank_opening_balance"
   | "supplier_opening_balance"
   | "customer_opening_balance"
@@ -55,7 +54,7 @@ const tabs: {
   },
   {
     id: "matrix",
-    label: "Posting Setup Matrix",
+    label: "Posting Setup",
     icon: "solar:table-linear",
   },
   {
@@ -63,15 +62,10 @@ const tabs: {
     label: "Business Groups",
     icon: "solar:buildings-2-linear",
   },
-  // {
-  //   id: "product",
-  //   label: "Product Groups",
-  //   icon: "solar:box-linear",
-  // },
   {
     id: "rates",
     label: "VAT Rates",
-    icon: "solar:percent-circle-linear",
+    icon: "solar:record-circle-linear",
   },
   {
     id: "posting_date_range",
@@ -112,7 +106,7 @@ export default function FinanceSetupForm() {
 
   const [showSupplierForm, setshowSupplierForm] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<TabType>("matrix");
+  const [activeTab, setActiveTab] = useState<TabType>("global_finance_setup");
 
   const activeTabInfo = tabs.find((tab) => tab.id === activeTab);
 
@@ -202,6 +196,8 @@ export default function FinanceSetupForm() {
       </div>
 
       <div className="p-3 sm:p-4">
+        {activeTab === "global_finance_setup" && <GlobalFinanceSetupForm />}
+
         {activeTab === "posting_setup" && (
           <>
             <div className="space-y-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-4">
@@ -232,16 +228,9 @@ export default function FinanceSetupForm() {
 
         {activeTab === "business" && <VatBusinessPostingGroupsList />}
 
-        {/* {activeTab === "product" && (
-          <VatProductPostingGroupsList />
-        )} */}
-
         {activeTab === "rates" && <VatRatesList />}
 
         {activeTab === "posting_date_range" && <PostingDateRangeSetup />}
-
-        {activeTab === "global_finance_setup" && <GlobalFinanceSetupForm />}
-
 
         {activeTab === "bank_opening_balance" && <BankOpeningBalancesForm />}
 
@@ -300,33 +289,3 @@ export default function FinanceSetupForm() {
     </div>
   );
 }
-
-/* 
-
-=====================================================
-          Header
-          =====================================================
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
-        Optional header content can be enabled later
-
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
-            <Icon
-              icon="solar:wallet-money-linear"
-              width={20}
-              height={20}
-            />
-          </div>
-
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Finance Configuration
-            </h2>
-
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Manage your finance master data and posting configuration.
-            </p>
-          </div>
-        </div>
-      </div>
- */

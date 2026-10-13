@@ -172,6 +172,40 @@ export function useCustomerOpeningBalances(
             break;
         }
 
+        updated[index] = line;
+
+        return updated;
+      });
+    },
+    [currencies, baseCurrencyCode],
+  );
+
+  const removeLine = useCallback((index: number) => {
+    setLines((previous) =>
+      previous.filter((_, lineIndex) => lineIndex !== index),
+    );
+  }, []);
+
+  const clearLines = useCallback(() => {
+    setLines([]);
+  }, []);
+
+  const loadLines = useCallback((rows: CustomerOpeningBalanceRow[]) => {
+    setLines(rows);
+  }, []);
+
+  return {
+    lines,
+    setLines,
+    loadLines,
+    appendCustomers,
+    updateLine,
+    removeLine,
+    clearLines,
+  };
+}
+
+
         // if (field === "doc_type") {
         //   const documentType = value as CustomerOpeningBalanceRow["doc_type"];
 
@@ -225,36 +259,3 @@ export function useCustomerOpeningBalances(
         // ) {
         //   (line as CustomerOpeningBalanceRow)[field] = value as never;
         // }
-
-        updated[index] = line;
-
-        return updated;
-      });
-    },
-    [currencies, baseCurrencyCode],
-  );
-
-  const removeLine = useCallback((index: number) => {
-    setLines((previous) =>
-      previous.filter((_, lineIndex) => lineIndex !== index),
-    );
-  }, []);
-
-  const clearLines = useCallback(() => {
-    setLines([]);
-  }, []);
-
-  const loadLines = useCallback((rows: CustomerOpeningBalanceRow[]) => {
-    setLines(rows);
-  }, []);
-
-  return {
-    lines,
-    setLines,
-    loadLines,
-    appendCustomers,
-    updateLine,
-    removeLine,
-    clearLines,
-  };
-}

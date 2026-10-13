@@ -1,1 +1,0 @@
-// app/components/setup/opening-balances/bank/components/BankOpeningBalanceFooter.tsx

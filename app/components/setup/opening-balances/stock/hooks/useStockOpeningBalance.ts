@@ -26,7 +26,7 @@ import type {
   WarehouseOption,
 } from "../types";
 
-const API_BASE = "/api/setup/opening-balances/stock";
+const API_BASE = "/api/finance/opening-balances/stock";
 const POST_API = `${API_BASE}/post`;
 
 function getErrorMessage(

@@ -450,7 +450,6 @@ export default function CustomerOpeningBalancesForm({
             type="button"
             variant="ghost"
             onClick={onEditComplete}
-            // onClick={() => router.push(redirectPath)}
           >
             Cancel
           </Button>
@@ -468,95 +467,3 @@ export default function CustomerOpeningBalancesForm({
     </div>
   );
 }
-// type Props = {
-//   apiBase?: string;
-//   redirectPath?: string;
-//   recordId?: string;
-// };
-
-// export default function CustomerOpeningBalancesForm({
-//   apiBase = "/api/finance/opening-balances/customer",
-//   redirectPath = "/finance/opening-balances",
-//   recordId,
-// }: Props) {
-//   const router = useRouter();
-/* const handleSave = async () => {
-    setErrorMsg(null);
-
-    const validationError = validateLines();
-
-    if (validationError) {
-      setErrorMsg(validationError);
-      return;
-    }
-    
-
-    try {
-      show();
-
-      const payload = {
-        lines: lines.map((line: CustomerOpeningBalanceRow) => ({
-          posting_date: line.posting_date,
-
-          customer_id: line.customer_id,
-
-          customer_code: line.customer_code,
-
-          customer_name: line.customer_name,
-
-          doc_type: line.doc_type,
-
-          doc_no: line.doc_no.trim(),
-
-          external_ref_no: line.external_ref_no.trim(),
-
-          currency_id: line.currency_id,
-
-          currency_code: line.currency_code,
-
-          debit: Number(line.debit) || 0,
-
-          credit: Number(line.credit) || 0,
-
-          exchange_rate: Number(line.exchange_rate) || 1,
-        })),
-      };
-
-      const response = await fetch(apiBase, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result: unknown = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        let message = "Failed to save customer opening balances.";
-
-        if (
-          typeof result === "object" &&
-          result !== null &&
-          "message" in result &&
-          typeof result.message === "string"
-        ) {
-          message = result.message;
-        }
-
-        throw new Error(message);
-      }
-
-      router.push(redirectPath);
-    } catch (error) {
-      console.error("Failed to save customer opening balances:", error);
-
-      setErrorMsg(
-        error instanceof Error
-          ? error.message
-          : "Failed to save customer opening balances.",
-      );
-    } finally {
-      hide();
-    }
-  }; */
