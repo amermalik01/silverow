@@ -65,8 +65,8 @@ export default function TransferStockForm(props: TransferStockFormProps) {
 
     setActiveAllocationLineId,
 
-    existingSequences,
-    availableStock,
+    // existingSequences,
+    // availableStock,
 
     handleHeaderChange,
 
@@ -199,8 +199,8 @@ export default function TransferStockForm(props: TransferStockFormProps) {
         allocationModalOpen={isAllocationModalOpen}
         activeAllocationLine={activeAllocationLine}
         formDisabled={formDisabled}
-        existingSequences={existingSequences}
-        availableStock={availableStock}
+        // existingSequences={existingSequences}
+        // availableStock={availableStock}
         warehouseFromId={metadata.warehouse_from_id}
         warehouseFromName={sourceWarehouseName}
         onCloseItem={() => setItemActiveModal(null)}

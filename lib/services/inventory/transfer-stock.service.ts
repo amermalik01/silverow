@@ -400,67 +400,6 @@ export class TransferStockService {
     };
   }
 
-  /**
-   * Fetch paginated list records with conditional criteria filters
-   */
-  /* static async getPaginatedTransfers(
-    companyId: string,
-    options: TransferListFilterOptions,
-  ): Promise<PaginatedTransfersResult> {
-    const { status, page, limit } = options;
-    const offset = (page - 1) * limit;
-
-    const queryParams: (string | number | boolean)[] = [companyId];
-    let whereClause = `WHERE h.company_id = $1`;
-
-    // Append relational filter state flags dynamically
-    if (status === "posted") {
-      whereClause += ` AND h.is_posted = true`;
-    } else if (status === "unposted") {
-      whereClause += ` AND h.is_posted = false`;
-    }
-
-    // Calculate baseline total row limits matching criteria parameters
-    const countQuery = `
-      SELECT COUNT(*) as total 
-      FROM public.transfer_headers h
-      ${whereClause}
-    `;
-    const countResult = await pool.query(countQuery, queryParams);
-    const totalRows = parseInt(countResult.rows[0]?.total || "0", 10);
-
-    // Fetch primary line values utilizing sorting structures
-    const dataArgs = [...queryParams, limit, offset];
-    const dataQuery = `
-      SELECT 
-        h.id,
-        h.transfer_no,
-        h.transfer_date,
-        h.warehouse_from_id,
-        h.warehouse_to_id,
-        h.in_transit_code,
-        h.shipping_charge,
-        h.is_posted
-      FROM public.transfer_headers h
-      ${whereClause}
-      ORDER BY h.transfer_date DESC, h.created_at DESC
-      LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
-    `;
-
-    const dataResult = await pool.query(dataQuery, dataArgs);
-    const totalPages = Math.ceil(totalRows / limit) || 1;
-
-    return {
-      rows: dataResult.rows,
-      pagination: {
-        totalRows,
-        page,
-        limit,
-        totalPages,
-      },
-    };
-  } */
-
   static async getTransferById(companyId: string, id: string) {
     const headerResult = await pool.query(
       `SELECT * FROM public.transfer_headers WHERE id = $1 AND company_id = $2`,
@@ -469,8 +408,14 @@ export class TransferStockService {
     if (!headerResult.rows.length) return null;
 
     const linesResult = await pool.query(
-      `SELECT * FROM public.transfer_lines WHERE transfer_id = $1 ORDER BY id ASC`,
-      [id],
+      `
+      SELECT *
+      FROM public.transfer_lines
+      WHERE transfer_id = $1
+        AND company_id = $2
+      ORDER BY id ASC
+      `,
+      [id, companyId],
     );
 
     return {
@@ -486,6 +431,8 @@ export class TransferStockService {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+
+      await this.validateTransfer(data);
 
       const seqResult = await client.query(
         `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
@@ -561,20 +508,50 @@ export class TransferStockService {
         `SELECT * FROM public.transfer_headers WHERE id = $1 AND company_id = $2 FOR UPDATE`,
         [id, companyId],
       );
+
+      if (!transferCheck.rows.length) {
+        throw new Error("Transfer document record not found.");
+      }
       const transfer = transferCheck.rows[0];
 
-      if (!transfer) throw new Error("Transfer document record not found.");
       if (transfer.is_posted)
         throw new Error("This stock transfer order has already been posted.");
 
+      if (transfer.warehouse_from_id === transfer.warehouse_to_id) {
+        throw new Error("Source and destination warehouses must be different.");
+      }
+
+      // const linesResult = await client.query(
+      //   `SELECT * FROM public.transfer_lines WHERE transfer_id = $1`,
+      //   [id],
+      // );
+
       const linesResult = await client.query(
-        `SELECT * FROM public.transfer_lines WHERE transfer_id = $1`,
-        [id],
+        `
+        SELECT *
+        FROM public.transfer_lines
+        WHERE transfer_id = $1
+          AND company_id = $2
+        ORDER BY id
+        FOR UPDATE
+        `,
+        [id, companyId],
       );
+
+      if (linesResult.rows.length === 0) {
+        throw new Error("Transfer has no lines to post.");
+      }
 
       const movementLines: InventoryMovementLineInput[] = [];
 
       for (const line of linesResult.rows) {
+        const quantity = Number(line.qty);
+
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+          throw new Error(
+            `Transfer line ${line.id} must have a positive quantity.`,
+          );
+        }
         // Reserve inventory temporarily
         await InventoryAllocationService.createReservation(client, {
           companyId,
@@ -651,10 +628,25 @@ export class TransferStockService {
         transfer.id,
       );
 
-      await client.query(
-        `UPDATE public.transfer_headers SET is_posted = true, posted_at = now(), updated_at = now() WHERE id = $1`,
-        [id],
+      const postedResult = await client.query(
+        `
+        UPDATE public.transfer_headers
+        SET
+          is_posted = true,
+          posted_at = NOW(),
+          posted_by = $1,
+          updated_at = NOW()
+        WHERE id = $2
+          AND company_id = $3
+          AND is_posted = false
+        RETURNING id
+        `,
+        [userId ?? null, id, companyId],
       );
+
+      if (!postedResult.rows.length) {
+        throw new Error("Transfer could not be marked as posted.");
+      }
 
       await client.query("COMMIT");
       return { id, transfer_no: transfer.transfer_no, status: "POSTED" };
@@ -679,6 +671,8 @@ export class TransferStockService {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+
+      await this.validateTransfer(data);
 
       // 1. Pessimistically check validation permissions on target header draft row
       const checkResult = await client.query(
@@ -759,4 +753,94 @@ export class TransferStockService {
       client.release();
     }
   }
+
+  static async validateTransfer(data: CreateTransferDTO) {
+    if (!data.warehouseFromId || !data.warehouseToId) {
+      throw new Error("Source and destination warehouses are required.");
+    }
+
+    if (data.warehouseFromId === data.warehouseToId) {
+      throw new Error("Source and destination warehouses must be different.");
+    }
+
+    if (!Array.isArray(data.lines) || data.lines.length === 0) {
+      throw new Error("At least one transfer line is required.");
+    }
+
+    for (const line of data.lines) {
+      if (!line.itemId) {
+        throw new Error("Every transfer line must have an item.");
+      }
+
+      if (!Number.isFinite(line.qty) || line.qty <= 0) {
+        throw new Error("Transfer quantity must be greater than zero.");
+      }
+
+      if (!line.fromLocationId || !line.toLocationId) {
+        throw new Error(
+          "Source and destination locations are required for every line.",
+        );
+      }
+    }
+  }
 }
+/**
+ * Fetch paginated list records with conditional criteria filters
+ */
+/* static async getPaginatedTransfers(
+    companyId: string,
+    options: TransferListFilterOptions,
+  ): Promise<PaginatedTransfersResult> {
+    const { status, page, limit } = options;
+    const offset = (page - 1) * limit;
+
+    const queryParams: (string | number | boolean)[] = [companyId];
+    let whereClause = `WHERE h.company_id = $1`;
+
+    // Append relational filter state flags dynamically
+    if (status === "posted") {
+      whereClause += ` AND h.is_posted = true`;
+    } else if (status === "unposted") {
+      whereClause += ` AND h.is_posted = false`;
+    }
+
+    // Calculate baseline total row limits matching criteria parameters
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM public.transfer_headers h
+      ${whereClause}
+    `;
+    const countResult = await pool.query(countQuery, queryParams);
+    const totalRows = parseInt(countResult.rows[0]?.total || "0", 10);
+
+    // Fetch primary line values utilizing sorting structures
+    const dataArgs = [...queryParams, limit, offset];
+    const dataQuery = `
+      SELECT 
+        h.id,
+        h.transfer_no,
+        h.transfer_date,
+        h.warehouse_from_id,
+        h.warehouse_to_id,
+        h.in_transit_code,
+        h.shipping_charge,
+        h.is_posted
+      FROM public.transfer_headers h
+      ${whereClause}
+      ORDER BY h.transfer_date DESC, h.created_at DESC
+      LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
+    `;
+
+    const dataResult = await pool.query(dataQuery, dataArgs);
+    const totalPages = Math.ceil(totalRows / limit) || 1;
+
+    return {
+      rows: dataResult.rows,
+      pagination: {
+        totalRows,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  } */

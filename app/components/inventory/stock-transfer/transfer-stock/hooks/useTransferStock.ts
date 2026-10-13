@@ -7,11 +7,13 @@ import { toast } from "sonner";
 
 import type { ItemLookupRecord } from "@/app/components/shared/modals/ItemLookupModal";
 
-import type {
-  StockAllocationRecord,
-  StockSequenceRecord,
-  AvailableStockRecord,
-} from "@/app/components/shared/modals/StockAllocationModal";
+// import type {
+//   StockAllocationRecord,
+//   StockSequenceRecord,
+//   AvailableStockRecord,
+// } from "@/app/components/shared/modals/StockAllocationModal";
+
+import type { ST_StockAllocationRecord } from "@/app/components/shared/modals/ST_StockAllocationModal";
 
 import type {
   TransferApiResponse,
@@ -108,13 +110,13 @@ export function useTransferStock({
     string | null
   >(null);
 
-  const [existingSequences, setExistingSequences] = useState<
-    StockSequenceRecord[]
-  >([]);
+  // const [existingSequences, setExistingSequences] = useState<
+  //   StockSequenceRecord[]
+  // >([]);
 
-  const [availableStock, setAvailableStock] = useState<AvailableStockRecord[]>(
-    [],
-  );
+  // const [availableStock, setAvailableStock] = useState<AvailableStockRecord[]>(
+  //   [],
+  // );
 
   const formDisabled = mode === "view" || isPosted || !isEditing || loading;
 
@@ -519,8 +521,8 @@ export function useTransferStock({
         ),
       );
 
-      setExistingSequences([]);
-      setAvailableStock([]);
+      // setExistingSequences([]);
+      // setAvailableStock([]);
     },
     [formDisabled, fromLocations],
   );
@@ -614,14 +616,14 @@ export function useTransferStock({
        * sequences/available stock.
        */
 
-      setExistingSequences([]);
-      setAvailableStock([]);
+      // setExistingSequences([]);
+      // setAvailableStock([]);
     },
     [metadata.warehouse_from_id],
   );
 
   const handleSaveAllocations = useCallback(
-    (allocations: StockAllocationRecord[]) => {
+    (allocations: ST_StockAllocationRecord[]) => {
       if (!activeAllocationLineId) {
         return;
       }
@@ -1029,8 +1031,8 @@ export function useTransferStock({
 
     setActiveAllocationLineId,
 
-    existingSequences,
-    availableStock,
+    // existingSequences,
+    // availableStock,
 
     handleHeaderChange,
 
@@ -1196,3 +1198,29 @@ export function useTransferStock({
 //     setLoading(false);
 //   }
 // }, [currentTransferId, onSuccess, saveDraft, validateForm]);
+
+// const handleSaveAllocations = useCallback(
+//     (allocations: StockAllocationRecord[]) => {
+//       if (!activeAllocationLineId) {
+//         return;
+//       }
+
+//       setLines((previous) =>
+//         previous.map((line) =>
+//           line._stableKey === activeAllocationLineId
+//             ? {
+//                 ...line,
+//                 allocations,
+//                 initialAllocations: allocations.map((allocation) => ({
+//                   ...allocation,
+//                 })),
+//               }
+//             : line,
+//         ),
+//       );
+
+//       setIsAllocationModalOpen(false);
+//       setActiveAllocationLineId(null);
+//     },
+//     [activeAllocationLineId],
+//   );

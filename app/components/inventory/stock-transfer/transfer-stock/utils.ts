@@ -114,7 +114,7 @@ export const normalizeAllocation = (
   batch_no: String(allocation.batch_no ?? ""),
   bin_code: String(allocation.bin_code ?? ""),
 
-  sequence_no: String(allocation.sequence_no ?? ""),
+  // sequence_no: String(allocation.sequence_no ?? ""),
   serial_no: String(allocation.serial_no ?? ""),
 
   quantity: normalizeNumber(allocation.quantity),

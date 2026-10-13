@@ -3,16 +3,14 @@
 import type { ItemLookupRecord } from "@/app/components/shared/modals/ItemLookupModal";
 
 import type {
-  StockAllocationRecord,
-  StockSequenceRecord,
-  AvailableStockRecord,
-} from "@/app/components/shared/modals/StockAllocationModal";
+  ST_StockAllocationRecord,
+} from "@/app/components/shared/modals/ST_StockAllocationModal";
 
 export type TransferStockFormMode = "create" | "edit" | "view";
 
 export type TransferValidationErrors = Record<string, string>;
 
-export type TransferAllocationRecord = StockAllocationRecord;
+export type TransferAllocationRecord = ST_StockAllocationRecord;
 
 export type WarehouseOption = {
   id: string;
@@ -46,8 +44,11 @@ export type TransferStockLine = {
   to_location_id: string;
   to_location_name: string;
 
-  allocations: TransferAllocationRecord[];
-  initialAllocations?: TransferAllocationRecord[];
+  // allocations: TransferAllocationRecord[];
+  // initialAllocations?: TransferAllocationRecord[];
+
+  allocations: ST_StockAllocationRecord[];
+  initialAllocations: ST_StockAllocationRecord[];
 };
 
 export type TransferMetadata = {
@@ -127,9 +128,29 @@ export type TransferItemModalState = {
   target: "item";
 };
 
-export type TransferStockAllocationProps = {
-  existingSequences?: StockSequenceRecord[];
-  availableStock?: AvailableStockRecord[];
-};
+// export type TransferStockAllocationProps = {
+//   existingSequences?: StockSequenceRecord[];
+//   availableStock?: AvailableStockRecord[];
+// };
+
+export interface TransferStockAllocation {
+  source_allocation_id: string;
+  inbound_entry_id: string | null;
+
+  location_id: string;
+  location_name: string;
+
+  batch_no: string;
+  bin_code: string;
+  serial_no: string;
+
+  expiry_date: string;
+  date_received: string;
+  prod_date: string;
+
+  quantity: number;
+  available_qty: number;
+  unit_cost: number;
+}
 
 export type BuildTransferLine = (item: ItemLookupRecord) => TransferStockLine;
