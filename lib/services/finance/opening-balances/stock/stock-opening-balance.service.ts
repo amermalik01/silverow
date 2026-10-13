@@ -553,28 +553,39 @@ export class StockOpeningBalanceService {
       // The header and its ledger entries are finalized before
       // the transaction commits.
       // ---------------------------------------------------------
+      
+
+      const seqResult = await client.query(
+        `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
+        [companyId, "opening_balance"],
+      );
+      const entryNo = seqResult.rows[0].sequence_code;
 
       const journalResult = await client.query(
         `
         INSERT INTO journal_entries (
           company_id,
+          entry_no,
           entry_date,
           source,
           reference,
+          journal_type,
           is_posted,
           created_at
         )
         VALUES (
           $1,
           $2,
+          $3,
           'STOCK_OPENING_BALANCE',
+          'Stock Opening Balance',
           'Stock Opening Balance',
           FALSE,
           NOW()
         )
         RETURNING *
         `,
-        [companyId, postingDate],
+        [companyId, entryNo, postingDate],
       );
 
       const journal = journalResult.rows[0];
@@ -584,12 +595,6 @@ export class StockOpeningBalanceService {
       // Use the application's generated journal number when present.
       // Fall back to the journal UUID if entry_no is not generated.
       // const entryNo = String(journal.entry_no || journal.id);
-
-      const seqResult = await client.query(
-        `SELECT public.get_next_sequence($1, $2) AS sequence_code`,
-        [companyId, "opening_balance"],
-      );
-      const entryNo = seqResult.rows[0].sequence_code;
 
       const currencyId: string | null = journal.currency_id ?? null;
 
@@ -923,137 +928,3 @@ export class StockOpeningBalanceService {
     return date.toISOString().slice(0, 10);
   }
 }
-/* static async post(companyId: string, ids: string[]) {
-    if (!ids || ids.length === 0) {
-      throw new Error("No opening balance lines specified for posting.");
-    }
-
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      // 1. Fetch company finance setup for Stock and Opening Balance Equity accounts
-      const setupResult = await client.query(
-        `SELECT opening_balance_stock_account_id, opening_balance_equity_account_id 
-         FROM company_finance_setup 
-         WHERE company_id = $1`,
-        [companyId],
-      );
-
-      const setup = setupResult.rows[0];
-      if (
-        !setup ||
-        !setup.opening_balance_stock_account_id ||
-        !setup.opening_balance_equity_account_id
-      ) {
-        throw new Error(
-          "Stock Account and Opening Balance Equity Account must be configured in Finance Setup before posting.",
-        );
-      }
-
-      const stockAccountId = setup.opening_balance_stock_account_id;
-      const equityAccountId = setup.opening_balance_equity_account_id;
-
-      // 2. Fetch and lock the unposted opening balance rows
-      const rowsResult = await client.query(
-        `SELECT * FROM stock_opening_balances 
-         WHERE company_id = $1 AND id = ANY($2::uuid[]) AND posted = FALSE 
-         FOR UPDATE`,
-        [companyId, ids],
-      );
-
-      if (rowsResult.rows.length === 0) {
-        throw new Error(
-          "No valid unposted opening balance records found for the given IDs.",
-        );
-      }
-
-      const rows = rowsResult.rows;
-      let totalAmount = 0;
-      const postingDate =
-        rows[0].posting_date || new Date().toISOString().slice(0, 10);
-
-      // 3. Process Inbound Stock via Unified Inventory Engine
-      for (const row of rows) {
-        const qty = Number(row.quantity || 0);
-        const unitPrice = Number(row.unit_price || 0);
-        const amount = qty * unitPrice;
-        totalAmount += amount;
-
-        if (qty <= 0) {
-          throw new Error(
-            `Quantity must be greater than zero for item ${row.item_no || row.item_id}.`,
-          );
-        }
-
-        const stockLine = {
-          item_id: row.item_id,
-          warehouse_id: row.warehouse_id,
-          location_id: row.location_id || null,
-          batch_no: row.batch_no || null,
-          serial_no: row.ref_no || null,
-          expiry_date: row.use_by_date || null,
-          quantity: qty,
-          unit_cost: unitPrice,
-          reference_type: "STOCK_OPENING_BALANCE",
-          reference_id: row.id,
-        };
-
-        // Call the unified inventory engine with OPENING_balance transaction type
-        await UnifiedInventoryEngineService.processInboundStock(
-          client,
-          companyId,
-          postingDate,
-          "OPENING_BALANCE",
-          stockLine,
-        );
-
-        // Mark row as posted in stock_opening_balances table
-        await client.query(
-          `UPDATE stock_opening_balances 
-           SET posted = TRUE, posted_at = NOW() 
-           WHERE id = $1 AND company_id = $2`,
-          [row.id, companyId],
-        );
-      }
-
-      // 4. Create General Ledger Header & Double-Entry Lines
-      const journalEntryRes = await client.query(
-        `INSERT INTO journal_entries 
-         (company_id, entry_date, source, reference, is_posted, created_at)
-         VALUES ($1, $2, 'STOCK_OPENING_BALANCE', 'Opening Stock Balance Posting', TRUE, NOW())
-         RETURNING id`,
-        [companyId, postingDate],
-      );
-      const journalId = journalEntryRes.rows[0].id;
-
-      // Debit Stock Account
-      await client.query(
-        `INSERT INTO journal_entry_lines 
-         (journal_id, company_id, account_id, debit, credit, description, line_no)
-         VALUES ($1, $2, $3, $4, 0, 'Stock Opening Balance - Inventory Asset', 1)`,
-        [journalId, companyId, stockAccountId, totalAmount],
-      );
-
-      // Credit Opening Balance Equity Account
-      await client.query(
-        `INSERT INTO journal_entry_lines 
-         (journal_id, company_id, account_id, debit, credit, description, line_no)
-         VALUES ($1, $2, $3, 0, $4, 'Stock Opening Balance - Equity Offset', 2)`,
-        [journalId, companyId, equityAccountId, totalAmount],
-      );
-
-      await client.query("COMMIT");
-
-      return {
-        success: true,
-        message: `Successfully posted ${rows.length} stock opening balance line(s) to inventory and general ledger.`,
-      };
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-  } */

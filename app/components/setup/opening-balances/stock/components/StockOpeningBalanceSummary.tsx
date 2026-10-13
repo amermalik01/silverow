@@ -63,32 +63,30 @@ export default function StockOpeningBalanceSummary({
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Button
           type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={busy}
-          className="text-xs"
+          onClick={onPost}
+          disabled={busy || totalLines === 0 || unpostedCount === 0}
+          variant="save"
         >
-          Cancel
+          {posting ? "Posting..." : "Post"}
         </Button>
 
         <Button
           type="button"
           onClick={onSave}
           disabled={busy || totalLines === 0 || unpostedCount === 0}
-          className="bg-slate-700 text-xs text-white hover:bg-slate-800"
+          // className="bg-slate-700 text-xs text-white hover:bg-slate-800"
+          variant="save"
         >
-          <Icon icon="solar:diskette-linear" width={15} className="mr-1" />
-          {submitting ? "Saving..." : "Save Opening Balances"}
+          {submitting ? "Saving..." : "Save"}
         </Button>
 
         <Button
           type="button"
-          onClick={onPost}
-          disabled={busy || totalLines === 0 || unpostedCount === 0}
-          className="bg-emerald-600 text-xs text-white hover:bg-emerald-700"
+          variant="cancel"
+          onClick={onCancel}
+          disabled={busy}
         >
-          <Icon icon="solar:check-circle-linear" width={15} className="mr-1" />
-          {posting ? "Posting..." : "Post to Ledger"}
+          Cancel
         </Button>
       </div>
 
