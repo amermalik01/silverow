@@ -14,6 +14,7 @@ type Props = {
   outstandingBalance?: number;
   openEntriesCount?: number;
   lcyBalance?: number;
+  onOpenActivities?: () => void;
   onPartyUpdated?: (updatedAccount: Partial<Party>) => void;
 };
 
@@ -23,6 +24,7 @@ export default function PartyDetailHeader({
   outstandingBalance = 0,
   openEntriesCount = 0,
   lcyBalance = 0,
+  onOpenActivities,
   onPartyUpdated,
 }: Props) {
   const router = useRouter();
@@ -207,7 +209,13 @@ export default function PartyDetailHeader({
               </button>
             </div>
 
-            <div className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30">
+            {/* <div className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30"> */}
+            <button
+              type="button"
+              onClick={onOpenActivities}
+              title="View party activities"
+              className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            >
               <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-amber-400/10 group-hover:bg-amber-400/20 transition-colors" />
 
               <div className="relative flex items-start justify-between gap-3">
@@ -231,9 +239,15 @@ export default function PartyDetailHeader({
                   <Icon icon="lucide:coins" className="w-4 h-4" />
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-fuchsia-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-violet-900/50 dark:from-violet-950/40 dark:to-fuchsia-950/30">
+            {/* <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-fuchsia-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-violet-900/50 dark:from-violet-950/40 dark:to-fuchsia-950/30"> */}
+            <button
+              type="button"
+              onClick={onOpenActivities}
+              title="View party activities"
+              className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            >
               <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-violet-400/10 group-hover:bg-violet-400/20 transition-colors" />
 
               <div className="relative flex items-start justify-between gap-3">
@@ -252,7 +266,8 @@ export default function PartyDetailHeader({
                   <Icon icon="lucide:credit-card" className="w-4 h-4" />
                 </div>
               </div>
-            </div>
+            </button>
+              {/* </div> */}
 
             <div className="flex items-center gap-2">
               {party.is_crm_lead && !party.is_customer && (
