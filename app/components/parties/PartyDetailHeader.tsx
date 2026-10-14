@@ -133,7 +133,7 @@ export default function PartyDetailHeader({
 
   return (
     <>
-      <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl p-4 mb-6">
+      <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl p-2 mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
@@ -189,7 +189,7 @@ export default function PartyDetailHeader({
                     Open Outstanding
                   </div>
 
-                  <div className="mt-1.5 text-base font-bold tracking-tight text-amber-950 dark:text-amber-100">
+                  <div className="mt-1.5 text-sm font-semibold tracking-tight text-amber-950 dark:text-amber-100">
                     {formatFCY(outstandingBalance, currencyCode)} / LCY{" "}
                     {lcyFormatter.format(lcyBalance || 0)}
                   </div>
@@ -215,7 +215,7 @@ export default function PartyDetailHeader({
                     Credit Limit
                   </div>
 
-                  <div className="mt-1.5 text-base font-bold tracking-tight text-violet-950 dark:text-violet-100">
+                  <div className="mt-1.5 text-sm font-semibold tracking-tight text-violet-950 dark:text-violet-100">
                     {formatFCY(Number(party.credit_limit) || 0, currencyCode)}
                   </div>
                 </div>
