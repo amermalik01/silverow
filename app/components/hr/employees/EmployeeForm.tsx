@@ -15,7 +15,11 @@ import EmployeeContactsTab from "./tabs/EmployeeContactsTab";
 import EmployeeAddressesTab from "./tabs/EmployeeAddressesTab";
 import { Button } from "@/components/ui/button";
 
-export default function EmployeeForm() {
+type Props = {
+  slug: string;
+};
+
+export default function EmployeeForm({ slug }: Props) {
   const [activeTab, setActiveTab] = useState("general");
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
   const [addresses, setAddresses] = useState<EmployeeAddress[]>([]);

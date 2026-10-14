@@ -5,6 +5,25 @@ import EmployeeRecord from "@/app/components/hr/employees/EmployeeRecord";
 export default async function EditEmployeePage({
   params,
 }: {
+  params: Promise<{ slug: string; id: string }>;
+}) {
+  const { id,slug } = await params;
+
+  return (
+    <div className="space-y-6 ">
+
+      <EmployeeRecord id={id} slug={slug} />
+    </div>
+  );
+}
+
+
+
+/* import EmployeeRecord from "@/app/components/hr/employees/EmployeeRecord";
+
+export default async function EditEmployeePage({
+  params,
+}: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
@@ -18,4 +37,4 @@ export default async function EditEmployeePage({
       <EmployeeRecord id={id} />
     </div>
   );
-}
+} */

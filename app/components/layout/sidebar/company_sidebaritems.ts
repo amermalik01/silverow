@@ -244,18 +244,18 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             icon: "solar:user-id-linear",
             url: `/${slug}/hr/employees`,
           },
-          {
-            id: "Departments",
-            name: "Departments",
-            icon: "solar:buildings-linear",
-            url: `/${slug}/hr/departments`,
-          },
-          {
-            id: "Designations",
-            name: "Designations",
-             icon: "solar:medal-star-linear",
-            url: `/${slug}/hr/designations`,
-          },
+          // {
+          //   id: "Departments",
+          //   name: "Departments",
+          //   icon: "solar:buildings-linear",
+          //   url: `/${slug}/hr/departments`,
+          // },
+          // {
+          //   id: "Designations",
+          //   name: "Designations",
+          //    icon: "solar:medal-star-linear",
+          //   url: `/${slug}/hr/designations`,
+          // },
           {
             id: "Leaves",
             name: "Leaves",

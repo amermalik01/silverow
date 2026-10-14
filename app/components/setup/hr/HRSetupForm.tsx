@@ -7,8 +7,9 @@ import { Icon } from "@iconify/react";
 
 import RoleManagement from "../system/roles/RoleManagement";
 import DepartmentsTab from "./departments";
+import EmployeeTypeTab from "./employee_type";
 
-type TabType = "roles" | "departments" | "";
+type TabType = "roles" | "departments" | "employee_type" | "";
 
 const tabs: {
   id: TabType;
@@ -25,7 +26,14 @@ const tabs: {
     label: "Departments",
     icon: "solar:table-linear",
   },
+  {
+    id: "employee_type",
+    label: "Employment Type",
+    icon: "solar:table-linear",
+  },
 ];
+
+
 
 export default function HRSetupForm() {
   const [activeTab, setActiveTab] = useState<TabType>("roles");
@@ -103,6 +111,10 @@ export default function HRSetupForm() {
         {activeTab === "roles" && <RoleManagement />}
 
         {activeTab === "departments" && <DepartmentsTab />}
+
+        {activeTab === "employee_type" && <EmployeeTypeTab />}
+
+        
       </div>
     </div>
   );
