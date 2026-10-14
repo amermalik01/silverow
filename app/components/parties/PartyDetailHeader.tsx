@@ -137,10 +137,40 @@ export default function PartyDetailHeader({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                {party.name || ""}
-              </h2>
+              <div>
+                {/* <h1 className="text-2xl font-bold capitalize">Customer</h1> */}
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {party.name || ""}
+                </h2>
+              </div>
+              <div>
+                <div className="bg-emerald-50  dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
+                  {party.is_customer
+                    ? "Customer No."
+                    : party.is_supplier
+                      ? "Supplier No."
+                      : party.is_crm_lead
+                        ? "CRM Lead No."
+                        : party.is_srm_vendor
+                          ? "SRM No."
+                          : ""}
+                  &nbsp;
+                  {(party.is_customer
+                    ? party.customer_code
+                    : party.is_supplier
+                      ? party.supplier_code
+                      : party.is_crm_lead
+                        ? party.crm_code
+                        : party.is_srm_vendor
+                          ? party.srm_code
+                          : "") || ""}
+                </div>
+              </div>
+            </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-3">
+            <div className="flex items-center justify-end pr-8">
               <button
                 type="button"
                 onClick={() =>
@@ -176,9 +206,7 @@ export default function PartyDetailHeader({
                 />
               </button>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2">
             <div className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30">
               <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-amber-400/10 group-hover:bg-amber-400/20 transition-colors" />
 

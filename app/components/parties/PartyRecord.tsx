@@ -329,9 +329,8 @@ export default function PartyRecord({
           },
         ]}
       />
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+      {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <h1 className="text-2xl font-bold px-4 capitalize">{module}</h1>
-        {/* <div className="bg-[#0b3310] text-white shadow-sm gap-1.5 px-2 py-0.5 transition-colors rounded capitalize"> */}
         <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
           {account.is_customer
             ? "Customer No."
@@ -353,7 +352,7 @@ export default function PartyRecord({
                   ? account.srm_code
                   : "") || ""}
         </div>
-      </div>
+      </div> */}
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
         <PartyDetailHeader
           party={account}
@@ -366,14 +365,6 @@ export default function PartyRecord({
             setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
           }}
         />
-        {/* 
-        <PartyDetailHeader
-          party={account}
-          onPartyUpdated={(updatedAccount) => {
-            setAccount((prev) => ({ ...prev, ...updatedAccount }));
-            setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
-          }}
-        /> */}
         {Object.keys(formErrors).length > 0 && (
           <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
             <p className="font-semibold mb-1">
