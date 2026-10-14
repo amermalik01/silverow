@@ -13,8 +13,11 @@ export interface Employee {
   job_title?: string;
 
   department_id?: string;
+  department_name?: string;
   designation_id?: string;
+  designation_name?: string;
   manager_id?: string;
+  manager_name?: string;
   employment_type_id?: string;
   job_status?: string;
   start_date?: string;
