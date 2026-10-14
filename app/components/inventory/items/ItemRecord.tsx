@@ -188,6 +188,47 @@ export default function ItemRecord({
     loadInitialData();
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return;
+
+    let cancelled = false;
+
+    const loadStockMetrics = async () => {
+      try {
+        const res = await fetch(`/api/inventory/items/${id}/activity`, {
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to load stock summary");
+        }
+
+        const result = await res.json();
+
+        if (cancelled) return;
+
+        const summary = result.summary;
+
+        if (summary) {
+          setStockMetrics((prev) => ({
+            ...prev,
+            totalStock: Number(summary.totalPhysical ?? 0),
+            allocatedStock: Number(summary.totalReserved ?? 0),
+            availableStock: Number(summary.totalAvailable ?? 0),
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to load item stock metrics:", error);
+      }
+    };
+
+    loadStockMetrics();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -289,7 +330,7 @@ export default function ItemRecord({
         ]}
       />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+      {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <h1 className="text-2xl font-bold px-4 capitalize">Item</h1>
 
         {item.item_code && (
@@ -297,7 +338,7 @@ export default function ItemRecord({
             Item No. &nbsp;{item.item_code}
           </div>
         )}
-      </div>
+      </div> */}
 
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
         <ItemDetailHeader item={item} metrics={stockMetrics} />

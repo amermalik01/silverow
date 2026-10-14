@@ -730,7 +730,7 @@ export default function FinanceTab({
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Bank Address Line 1
+              Address Lines
             </label>
             <div className="col-span-2">
               <input
@@ -745,7 +745,7 @@ export default function FinanceTab({
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Bank Address Line 2
+              {/* Bank Address Line 2 */}
             </label>
             <div className="col-span-2">
               <input

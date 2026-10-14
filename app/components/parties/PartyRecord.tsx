@@ -361,6 +361,7 @@ export default function PartyRecord({
           openEntriesCount={ledgerSummary.openCount}
           lcyBalance={ledgerSummary.totalRemainingLCY}
           onOpenActivities={() => setActiveTab("activities")}
+          onOpenFinance={() => setActiveTab("finance")}
           onPartyUpdated={(updatedAccount) => {
             setAccount((prev) => ({ ...prev, ...updatedAccount }));
             setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
