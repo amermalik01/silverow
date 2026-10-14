@@ -52,19 +52,6 @@ export default function SalesTab({
                 </select>
               </td>
               <td className="p-3">
-                {/* <input
-                  type="number"
-                  disabled={isReadonly}
-                  value={item.standard_sales_price}
-                  onChange={(e) =>
-                    setItem((prev) => ({
-                      ...prev,
-                      standard_sales_price: e.target.value,
-                    }))
-                  }
-                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
-                /> */}
-
                 <NumericTextInput
                   allowDecimals
                   decimalScale={2}
@@ -76,17 +63,10 @@ export default function SalesTab({
                       standard_sales_price: String(val),
                     }))
                   }
-                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full disabled:bg-slate-50 disabled:cursor-not-allowed"
                 />
               </td>
               <td className="p-3">
-                {/* <input
-                  type="number"
-                  disabled={isReadonly}
-                  defaultValue={item.standard_sales_price}
-                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
-                /> */}
-
                 <NumericTextInput
                   allowDecimals
                   decimalScale={2}
@@ -98,7 +78,7 @@ export default function SalesTab({
                       standard_sales_price: String(val),
                     }))
                   }
-                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                  className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full disabled:bg-slate-50 disabled:cursor-not-allowed"
                 />
               </td>
             </tr>

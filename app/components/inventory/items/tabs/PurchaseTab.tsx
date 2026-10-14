@@ -19,53 +19,51 @@ export default function PurchaseTab({
   isReadonly = false,
 }: Props) {
   return (
-    <div className="space-y-6 text-xs">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
-        <div>
-          <label className="block mb-1 font-medium text-slate-700 dark:text-slate-300">
-            Costing Method
-          </label>
-          <select
-            disabled={isReadonly}
-            value={item.costing_method}
-            onChange={(e) =>
-              setItem((prev) => ({
-                ...prev,
-                costing_method: Number(e.target.value),
-              }))
-            }
-            className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
-          >
-            <option value={1}>First in First Out (FIFO)</option>
-            <option value={2}>Weighted Average</option>
-            <option value={3}>Standard Costing</option>
-          </select>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Costing Method
+            </label>
+            <div className="col-span-2">
+              <select
+                disabled={isReadonly}
+                value={item.costing_method}
+                onChange={(e) =>
+                  setItem((prev) => ({
+                    ...prev,
+                    costing_method: Number(e.target.value),
+                  }))
+                }
+                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
+              >
+                <option value={1}>First in First Out (FIFO)</option>
+                <option value={2}>Weighted Average</option>
+                <option value={3}>Standard Costing</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label className="block mb-1 font-medium text-slate-700 dark:text-slate-300">
-            Standard Cost
-          </label>
-
-          <NumericTextInput
-            allowDecimals
-            decimalScale={2}
-            disabled={isReadonly}
-            value={Number(item.standard_cost)}
-            onChange={(val) =>
-              setItem((prev) => ({ ...prev, standard_cost: String(val) }))
-            }
-            className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
-          />
-          {/* <input
-            type="number"
-            disabled={isReadonly}
-            value={item.standard_cost}
-            onChange={(e) =>
-              setItem((prev) => ({ ...prev, standard_cost: e.target.value }))
-            }
-            className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
-          /> */}
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Standard Cost
+            </label>
+            <div className="col-span-2">
+              <NumericTextInput
+                allowDecimals
+                decimalScale={2}
+                disabled={isReadonly}
+                value={Number(item.standard_cost)}
+                onChange={(val) =>
+                  setItem((prev) => ({ ...prev, standard_cost: String(val) }))
+                }
+                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -107,18 +105,6 @@ export default function PurchaseTab({
                   </select>
                 </td>
                 <td className="p-3 border-t border-slate-100 dark:border-slate-800/40">
-                  {/* <input
-                    type="number"
-                    disabled={isReadonly}
-                    value={item.standard_cost}
-                    onChange={(e) =>
-                      setItem((prev) => ({
-                        ...prev,
-                        standard_cost: e.target.value,
-                      }))
-                    }
-                    className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
-                  /> */}
 
                   <NumericTextInput
                     allowDecimals
@@ -131,7 +117,7 @@ export default function PurchaseTab({
                         standard_cost: String(val),
                       }))
                     }
-                    className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                    className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full disabled:bg-slate-50 disabled:cursor-not-allowed"
                   />
                 </td>
                 <td className="p-3 border-t border-slate-100 dark:border-slate-800/40">
@@ -139,7 +125,7 @@ export default function PurchaseTab({
                     type="number"
                     disabled={isReadonly}
                     defaultValue={1}
-                    className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                    className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full disabled:bg-slate-50 disabled:cursor-not-allowed"
                   />
                 </td>
                 <td className="p-3 border-t border-slate-100 dark:border-slate-800/40">
@@ -147,7 +133,7 @@ export default function PurchaseTab({
                     type="number"
                     disabled={isReadonly}
                     defaultValue={0}
-                    className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full"
+                    className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full disabled:bg-slate-50 disabled:cursor-not-allowed"
                   />
                 </td>
               </tr>
