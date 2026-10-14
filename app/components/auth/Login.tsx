@@ -81,7 +81,8 @@ export const Login = () => {
     },
     {
       // icon: "hugeicons:sale-tag-01",
-      icon: "solar:cart-large-2-linear",
+      icon: "solar:chart-square-2-linear",
+      // icon: "solar:cart-large-2-linear",
       title: "Sales",
     },
     {

@@ -1,6 +1,5 @@
 // app/components/setup/inventory/InventorySetupForm.tsx
 
-
 "use client";
 
 import React, { useState } from "react";
@@ -12,11 +11,7 @@ import UOMTab from "./tabs/UOM";
 // import StorageTypes from "./warehouses/storage-types/StorageTypes";
 import StorageTypesTab from "./tabs/storage_types";
 
-type TabType =
-  | "brands"
-  | "categories"
-  | "uom"
-  | "storage_types";
+type TabType = "brands" | "categories" | "uom" | "storage_types";
 
 const tabs: {
   id: TabType;
@@ -45,8 +40,6 @@ const tabs: {
   },
 ];
 
-
-
 export default function InventorySetupForm() {
   const [activeTab, setActiveTab] = useState<TabType>("brands");
 
@@ -54,36 +47,6 @@ export default function InventorySetupForm() {
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      {/* =====================================================
-          Header
-          ===================================================== */}
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
-        {/* Optional header content can be enabled later */}
-
-        {/* <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
-            <Icon
-              icon="solar:wallet-money-linear"
-              width={20}
-              height={20}
-            />
-          </div>
-
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Finance Configuration
-            </h2>
-
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Manage your finance master data and posting configuration.
-            </p>
-          </div>
-        </div> */}
-      </div>
-
-      {/* =====================================================
-          Tabs
-          ===================================================== */}
       <div className="border-b border-slate-200 bg-slate-50/70 px-3 py-3 dark:border-slate-800 dark:bg-slate-950/40">
         <div className="flex flex-wrap items-center gap-1.5">
           {tabs.map((tab) => {
@@ -147,9 +110,6 @@ export default function InventorySetupForm() {
         </div>
       </div>
 
-      {/* =====================================================
-          Active Section Header
-          ===================================================== */}
       <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800/80">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
           <Icon
@@ -170,9 +130,6 @@ export default function InventorySetupForm() {
         </div>
       </div>
 
-      {/* =====================================================
-          Content
-          ===================================================== */}
       <div className="p-3 sm:p-4">
         {activeTab === "brands" && <BrandsTab />}
         {activeTab === "categories" && <CategoriesTab />}
@@ -182,3 +139,30 @@ export default function InventorySetupForm() {
     </div>
   );
 }
+
+/* =====================================================
+          Header
+          ===================================================== */
+/* <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+      Optional header content can be enabled later
+
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+          <Icon
+            icon="solar:wallet-money-linear"
+            width={20}
+            height={20}
+          />
+        </div>
+
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+            Finance Configuration
+          </h2>
+
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Manage your finance master data and posting configuration.
+          </p>
+        </div>
+      </div>
+    </div> */

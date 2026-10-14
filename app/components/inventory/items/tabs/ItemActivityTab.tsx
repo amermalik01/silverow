@@ -1,6 +1,5 @@
 // app/components/inventory/items/tabs/ItemActivityTab.tsx
 
-
 // app/components/inventory/items/tabs/ItemActivityTab.tsx
 "use client";
 
@@ -55,7 +54,11 @@ interface InventoryAllocation {
 }
 
 interface ActivityData {
-  summary: { totalPhysical: number; totalReserved: number; totalAvailable: number };
+  summary: {
+    totalPhysical: number;
+    totalReserved: number;
+    totalAvailable: number;
+  };
   warehouseStock: WarehouseStock[];
   transactions: TransactionMovement[];
   allocations: InventoryAllocation[];
@@ -74,7 +77,9 @@ export default function ItemActivityTab({ itemId }: Props) {
     allocations: [],
   });
 
-  const [activeSubView, setActiveSubView] = useState<"stock" | "transactions" | "allocations">("stock");
+  const [activeSubView, setActiveSubView] = useState<
+    "stock" | "transactions" | "allocations"
+  >("stock");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
 
@@ -103,28 +108,41 @@ export default function ItemActivityTab({ itemId }: Props) {
       !searchQuery.trim() ||
       tx.transaction_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tx.warehouse_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (tx.batch_no && tx.batch_no.toLowerCase().includes(searchQuery.toLowerCase()));
+      (tx.batch_no &&
+        tx.batch_no.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesType = typeFilter === "ALL" || tx.transaction_type === typeFilter;
+    const matchesType =
+      typeFilter === "ALL" || tx.transaction_type === typeFilter;
 
     return matchesSearch && matchesType;
   });
 
   const getTransactionBadge = (type: string) => {
     const styles: Record<string, string> = {
-      PURCHASE_RECEIPT: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
-      SALES_SHIPMENT: "bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-400",
-      STOCK_TRANSFER_IN: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-400",
-      STOCK_TRANSFER_OUT: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-400",
-      OPENING_BALANCE: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-      ITEM_JOURNAL_IN: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
-      ITEM_JOURNAL_OUT: "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400",
-      DEBIT_NOTE_RETURN: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
-      CREDIT_NOTE_RETURN: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400",
+      PURCHASE_RECEIPT:
+        "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+      SALES_SHIPMENT:
+        "bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-400",
+      STOCK_TRANSFER_IN:
+        "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-400",
+      STOCK_TRANSFER_OUT:
+        "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-400",
+      OPENING_BALANCE:
+        "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+      ITEM_JOURNAL_IN:
+        "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
+      ITEM_JOURNAL_OUT:
+        "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400",
+      DEBIT_NOTE_RETURN:
+        "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+      CREDIT_NOTE_RETURN:
+        "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400",
     };
 
     return (
-      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${styles[type] || "bg-slate-100 text-slate-600"}`}>
+      <span
+        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${styles[type] || "bg-slate-100 text-slate-600"}`}
+      >
         {type.replace(/_/g, " ")}
       </span>
     );
@@ -136,31 +154,49 @@ export default function ItemActivityTab({ itemId }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Physical Stock</span>
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Total Stock
+            </span>
             <Icon icon="tabler:packages" className="w-5 h-5 text-slate-400" />
           </div>
           <div className="text-xl font-bold font-mono text-slate-800 dark:text-slate-100 mt-1">
-            {Number(data.summary.totalPhysical).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            {Number(data.summary.totalPhysical).toLocaleString(undefined, {
+              minimumFractionDigits: 0,
+            })}
           </div>
         </div>
 
         <div className="p-3.5 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Reserved Stock</span>
-            <Icon icon="tabler:lock-check" className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+              Allocated Stock
+            </span>
+            <Icon
+              icon="tabler:lock-check"
+              className="w-5 h-5 text-amber-500 dark:text-amber-400"
+            />
           </div>
           <div className="text-xl font-bold font-mono text-amber-800 dark:text-amber-300 mt-1">
-            {Number(data.summary.totalReserved).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            {Number(data.summary.totalReserved).toLocaleString(undefined, {
+              minimumFractionDigits: 0,
+            })}
           </div>
         </div>
 
         <div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/50 dark:border-emerald-900/30">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Available Stock</span>
-            <Icon icon="tabler:circle-check" className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+              Available Stock
+            </span>
+            <Icon
+              icon="tabler:circle-check"
+              className="w-5 h-5 text-emerald-500 dark:text-emerald-400"
+            />
           </div>
           <div className="text-xl font-bold font-mono text-emerald-800 dark:text-emerald-300 mt-1">
-            {Number(data.summary.totalAvailable).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            {Number(data.summary.totalAvailable).toLocaleString(undefined, {
+              minimumFractionDigits: 0,
+            })}
           </div>
         </div>
       </div>
@@ -172,7 +208,9 @@ export default function ItemActivityTab({ itemId }: Props) {
             type="button"
             onClick={() => setActiveSubView("stock")}
             className={`px-3 py-1.5 rounded-md transition-colors ${
-              activeSubView === "stock" ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100" : "text-slate-500"
+              activeSubView === "stock"
+                ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100"
+                : "text-slate-500"
             }`}
           >
             Warehouse Stock
@@ -181,7 +219,9 @@ export default function ItemActivityTab({ itemId }: Props) {
             type="button"
             onClick={() => setActiveSubView("transactions")}
             className={`px-3 py-1.5 rounded-md transition-colors ${
-              activeSubView === "transactions" ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100" : "text-slate-500"
+              activeSubView === "transactions"
+                ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100"
+                : "text-slate-500"
             }`}
           >
             Movement Transactions
@@ -190,7 +230,9 @@ export default function ItemActivityTab({ itemId }: Props) {
             type="button"
             onClick={() => setActiveSubView("allocations")}
             className={`px-3 py-1.5 rounded-md transition-colors ${
-              activeSubView === "allocations" ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100" : "text-slate-500"
+              activeSubView === "allocations"
+                ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100"
+                : "text-slate-500"
             }`}
           >
             Allocations
@@ -245,28 +287,49 @@ export default function ItemActivityTab({ itemId }: Props) {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
               {data.warehouseStock.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-4 text-center text-slate-400 font-sans">
+                  <td
+                    colSpan={8}
+                    className="p-4 text-center text-slate-400 font-sans"
+                  >
                     No active stock layers found in ledger.
                   </td>
                 </tr>
               ) : (
                 data.warehouseStock.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                  <tr
+                    key={idx}
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+                  >
                     <td className="p-2.5 font-sans font-medium text-slate-800 dark:text-slate-200">
-                      {row.warehouse_name} <span className="text-slate-400 text-[10px]">({row.warehouse_code})</span>
+                      {row.warehouse_name}{" "}
+                      <span className="text-slate-400 text-[10px]">
+                        ({row.warehouse_code})
+                      </span>
                     </td>
-                    <td className="p-2.5 font-sans text-slate-600 dark:text-slate-400">{row.location_title || "-"}</td>
-                    <td className="p-2.5 text-slate-600 dark:text-slate-400">{row.batch_no || row.serial_no || "-"}</td>
-                    <td className="p-2.5 text-right font-medium">{Number(row.quantity).toFixed(2)}</td>
-                    <td className="p-2.5 text-right text-amber-600 font-medium">{Number(row.reserved_quantity).toFixed(2)}</td>
+                    <td className="p-2.5 font-sans text-slate-600 dark:text-slate-400">
+                      {row.location_title || "-"}
+                    </td>
+                    <td className="p-2.5 text-slate-600 dark:text-slate-400">
+                      {row.batch_no || row.serial_no || "-"}
+                    </td>
+                    <td className="p-2.5 text-right font-medium">
+                      {Number(row.quantity)}
+                    </td>
+                    <td className="p-2.5 text-right text-amber-600 font-medium">
+                      {Number(row.reserved_quantity)}
+                    </td>
                     <td className="p-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                      {Number(row.available_quantity).toFixed(2)}
+                      {Number(row.available_quantity)}
                     </td>
                     <td className="p-2.5 text-right text-slate-500">
-                      {row.average_cost ? Number(row.average_cost).toFixed(2) : "-"}
+                      {row.average_cost
+                        ? Number(row.average_cost).toFixed(2)
+                        : "-"}
                     </td>
                     <td className="p-2.5 text-center font-sans text-slate-500">
-                      {row.expiry_date ? format(new Date(row.expiry_date), "dd/MM/yyyy") : "—"}
+                      {row.expiry_date
+                        ? format(new Date(row.expiry_date), "dd/MM/yyyy")
+                        : "—"}
                     </td>
                   </tr>
                 ))
@@ -295,7 +358,10 @@ export default function ItemActivityTab({ itemId }: Props) {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
               {filteredTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-4 text-center text-slate-400 font-sans">
+                  <td
+                    colSpan={8}
+                    className="p-4 text-center text-slate-400 font-sans"
+                  >
                     No ledger movement history recorded.
                   </td>
                 </tr>
@@ -303,15 +369,24 @@ export default function ItemActivityTab({ itemId }: Props) {
                 filteredTransactions.map((tx) => {
                   const isIn = tx.movement_direction?.toUpperCase() === "IN";
                   return (
-                    <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                    <tr
+                      key={tx.id}
+                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+                    >
                       <td className="p-2.5 font-sans text-slate-600">
-                        {tx.posting_date ? format(new Date(tx.posting_date), "dd/MM/yyyy") : "—"}
+                        {tx.posting_date
+                          ? format(new Date(tx.posting_date), "dd/MM/yyyy")
+                          : "—"}
                       </td>
                       {/* <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200 truncate" title={tx.reference_id}>
                         {tx.reference_id || tx.id.slice(0, 8)}
                       </td> */}
-                      <td className="p-2.5 font-sans">{getTransactionBadge(tx.transaction_type)}</td>
-                      <td className="p-2.5 font-sans text-slate-700 dark:text-slate-300">{tx.warehouse_name}</td>
+                      <td className="p-2.5 font-sans">
+                        {getTransactionBadge(tx.transaction_type)}
+                      </td>
+                      <td className="p-2.5 font-sans text-slate-700 dark:text-slate-300">
+                        {tx.warehouse_name}
+                      </td>
                       <td className="p-2.5 text-center">
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -323,9 +398,16 @@ export default function ItemActivityTab({ itemId }: Props) {
                           {isIn ? "IN" : "OUT"}
                         </span>
                       </td>
-                      <td className="p-2.5 text-right font-bold">{Number(tx.quantity).toFixed(2)}</td>
-                      <td className="p-2.5 text-right text-slate-500">{Number(tx.unit_cost || 0).toFixed(2)}</td>
-                      <td className="p-2.5 text-right text-slate-700 dark:text-slate-300">{Number(tx.total_cost || 0).toFixed(2)}</td>
+                      <td className="p-2.5 text-right font-bold">
+                        {isIn ? "" : "-"}
+                        {Number(tx.quantity)}
+                      </td>
+                      <td className="p-2.5 text-right text-slate-500">
+                        {Number(tx.unit_cost || 0).toFixed(2)}
+                      </td>
+                      <td className="p-2.5 text-right text-slate-700 dark:text-slate-300">
+                        {Number(tx.total_cost || 0).toFixed(2)}
+                      </td>
                     </tr>
                   );
                 })
@@ -353,22 +435,40 @@ export default function ItemActivityTab({ itemId }: Props) {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
               {data.allocations.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-4 text-center text-slate-400 font-sans">
+                  <td
+                    colSpan={7}
+                    className="p-4 text-center text-slate-400 font-sans"
+                  >
                     No active allocations found.
                   </td>
                 </tr>
               ) : (
                 data.allocations.map((alloc) => (
-                  <tr key={alloc.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                  <tr
+                    key={alloc.id}
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+                  >
                     <td className="p-2.5 font-sans text-slate-600">
-                      {alloc.created_at ? format(new Date(alloc.created_at), "dd/MM/yyyy") : "—"}
+                      {alloc.created_at
+                        ? format(new Date(alloc.created_at), "dd/MM/yyyy")
+                        : "—"}
                     </td>
-                    <td className="p-2.5 font-sans text-slate-800 dark:text-slate-200">{alloc.warehouse_name}</td>
-                    <td className="p-2.5 text-slate-600">{alloc.batch_no || "-"}</td>
-                    <td className="p-2.5 text-slate-600">{alloc.bin_code || "-"}</td>
+                    <td className="p-2.5 font-sans text-slate-800 dark:text-slate-200">
+                      {alloc.warehouse_name}
+                    </td>
+                    <td className="p-2.5 text-slate-600">
+                      {alloc.batch_no || "-"}
+                    </td>
+                    <td className="p-2.5 text-slate-600">
+                      {alloc.bin_code || "-"}
+                    </td>
                     {/* <td className="p-2.5 text-slate-500 font-sans uppercase text-[10px]">{alloc.allocation_method || "FIFO"}</td> */}
-                    <td className="p-2.5 text-right font-bold text-amber-600">{Number(alloc.allocated_quantity).toFixed(2)}</td>
-                    <td className="p-2.5 text-right text-slate-500">{Number(alloc.unit_cost || 0).toFixed(2)}</td>
+                    <td className="p-2.5 text-right font-bold text-amber-600">
+                      {Number(alloc.allocated_quantity)}
+                    </td>
+                    <td className="p-2.5 text-right text-slate-500">
+                      {Number(alloc.unit_cost || 0).toFixed(2)}
+                    </td>
                     {/* <td className="p-2.5 text-center">
                       <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                         {alloc.status || "ACTIVE"}

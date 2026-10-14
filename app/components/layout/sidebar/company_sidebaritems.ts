@@ -89,8 +89,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Sales",
         name: "Sales",
-        // icon: "solar:shield-keyhole-minimalistic-linear",
-        icon: "solar:cart-large-2-linear",
+        icon: "solar:chart-square-2-linear",
+        // icon: "solar:cart-large-2-linear",
         children: [
           {
             id: "CRM",
@@ -307,8 +307,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             url: `/${slug}/setup/purchases`,
           },
           {
-            id: "Warehouse Setup",
-            name: "Warehouse Setup",
+            id: "Warehouse",
+            name: "Warehouse",
             icon: "solar:warehouse-linear",
             url: `/${slug}/setup/inventory/warehouses`,
             // children: [
@@ -326,8 +326,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
           },
 
           {
-            id: "Inventory Setup",
-            name: "Inventory Setup",
+            id: "Inventory",
+            name: "Inventory",
             icon: "solar:box-minimalistic-linear",
             url: `/${slug}/setup/inventory`,
           },
