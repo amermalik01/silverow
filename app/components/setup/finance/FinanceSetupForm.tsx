@@ -24,6 +24,7 @@ import CustomerOpeningBalancesForm from "../opening-balances/customer/CustomerOp
 import SupplierOpeningBalancesList from "../opening-balances/supplier/SupplierOpeningBalancesList";
 import SupplierOpeningBalancesForm from "../opening-balances/supplier/SupplierOpeningBalancesForm";
 import GlobalFinanceSetupForm from "./GlobalFinanceSetupForm";
+import GLAccountOpeningBalanceForm from "../opening-balances/gl/GLAccountOpeningBalanceForm";
 
 type TabType =
   | "global_finance_setup"
@@ -35,7 +36,8 @@ type TabType =
   | "bank_opening_balance"
   | "supplier_opening_balance"
   | "customer_opening_balance"
-  | "stock_opening_balance";
+  | "stock_opening_balance"
+  | "gl_account_opening_balance";
 
 const tabs: {
   id: TabType;
@@ -91,6 +93,11 @@ const tabs: {
     id: "stock_opening_balance",
     label: "Stock Opening Balance",
     icon: "solar:calendar-date-linear",
+  },
+  {
+    id: "gl_account_opening_balance",
+    label: "G/L Account Opening Balance",
+    icon: "solar:bill-list-linear",
   },
 ];
 
@@ -285,6 +292,10 @@ export default function FinanceSetupForm() {
         )}
 
         {activeTab === "stock_opening_balance" && <StockOpeningBalanceForm />}
+
+        {activeTab === "gl_account_opening_balance" && (
+          <GLAccountOpeningBalanceForm />
+        )}
       </div>
     </div>
   );
