@@ -16,9 +16,6 @@ import { Icon } from "@iconify/react";
 import ItemLookupModal, {
   ItemLookupRecord,
 } from "@/app/components/shared/modals/ItemLookupModal";
-import CustomerLookupModal, {
-  CustomerLookupItem,
-} from "@/app/components/shared/modals/CustomerLookupModal";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfMonth, endOfMonth } from "date-fns";
@@ -26,6 +23,10 @@ import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
 import { useLoader } from "@/app/context/LoaderContext";
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
+
+import SupplierLookupModal, {
+  SupplierLookupItem,
+} from "@/app/components/shared/modals/SupplierLookupModal";
 
 type PurchaseEntry = {
   id: string;
@@ -522,11 +523,11 @@ export default function ItemPurchasesBySupplierReport() {
       )}
 
       {isSupplierModalOpen && (
-        <CustomerLookupModal
+        <SupplierLookupModal
           open={isSupplierModalOpen}
           multiple={true}
           onClose={() => setIsSupplierModalOpen(false)}
-          onSelectMultiple={(suppliers: CustomerLookupItem[]) => {
+          onSelectMultiple={(suppliers: SupplierLookupItem[]) => {
             setSelectedSupplierIds(suppliers.map((s) => s.id));
             setSelectedSuppliersText(
               suppliers.map((s) => s.name).join("; "),

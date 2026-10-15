@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       SELECT 
         prl.id,
         COALESCE(pr.receipt_no, '-') AS invoice_no,
-        COALESCE(v.customer_code, v.id::text) AS supplier_no,
+        COALESCE(v.supplier_code, v.id::text) AS supplier_no,
         COALESCE(v.name, 'Unknown Supplier') AS supplier_name,
         COALESCE(u.name, 'Pcs') AS uom,
         prl.quantity,
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
       FROM purchase_receipt_lines prl
       JOIN purchase_receipts pr ON pr.id = prl.purchase_receipt_id
       JOIN items i ON i.id = prl.item_id
-      LEFT JOIN units_of_measure u ON u.id = i.base_uom_id
+      LEFT JOIN uoms u ON u.id = i.base_uom_id
       LEFT JOIN parties v ON v.id = pr.vendor_id
       WHERE ${whereConditions.join(" AND ")}
       ORDER BY i.item_code ASC, pr.posting_date ASC
