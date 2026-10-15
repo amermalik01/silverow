@@ -171,7 +171,7 @@ export default function ReportsPage() {
       { id: "FIN_CUST_ACT", name: "Customer Activity Report" },
     ],
     Inventory: [
-      { id: "INV_AVAIL", name: "Stock Availability Report" },
+      { id: "STOCK_AVAILABILITY", name: "Stock Availability Report" },// INV_AVAIL
       { id: "INV_SUMMARY", name: "Stock Summary Report" },
       { id: "INV_FIG_ITEM", name: "Sales Figures By Item(s)" },
       { id: "INV_PUR_SUPP", name: "Item Purchases By Supplier(s)" },

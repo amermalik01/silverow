@@ -254,7 +254,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
     category: "Inventory",
     reports: [
       {
-        id: "INV_AVAIL",
+        id: "STOCK_AVAILABILITY", // INV_AVAIL
         name: "Stock Availability Report",
         path: "stock-availability",
       },

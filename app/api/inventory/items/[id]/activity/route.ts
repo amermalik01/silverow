@@ -1,7 +1,5 @@
 // app/api/inventory/items/[id]/activity/route.ts
 
-// app/api/inventory/items/[id]/activity/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { pool } from "@/lib/db";
