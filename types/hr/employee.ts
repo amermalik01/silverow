@@ -13,8 +13,10 @@ export interface Employee {
   job_title?: string;
 
   department_id?: string;
+  // department_ids?: string;
   department_name?: string;
   designation_id?: string;
+  // designation_ids?: string;
   designation_name?: string;
   manager_id?: string;
   manager_name?: string;
@@ -27,20 +29,25 @@ export interface Employee {
   // Login / access
   user_id?: string;
   login_email?: string;
+  email?: string;
   login_role?: string;
   allow_login?: boolean;
 
   // Contact
-  address_1?: string;
-  address_2?: string;
+  address_line_1?: string;
+  address_line_2?: string;
   city?: string;
   county?: string;
   postcode?: string;
-  country_id?: string;
+  country?: string;
+
+  work_telephone?: string;
+  home_telephone?: string;
   phone?: string;
+
   mobile?: string;
   personal_email?: string;
-  email?: string;
+  work_email?: string;
   skype?: string;
   linkedin?: string;
 
@@ -70,9 +77,69 @@ export interface Employee {
   emergency_contact_mobile?: string;
   emergency_contact_phone?: string;
   emergency_contact_email?: string;
+  emergency_contact_telephone?: string;
 
   // Payroll
   basic_salary?: number;
+  salary_currency?: string;
+  salary_frequency?: string;
+  commission_rate?: number;
+  commission_effective_date?: string;
+  overtime_rate?: number;
+  company_bonus?: number;
+  entitled_holidays?: number;
+
+  salary_effective_date?: string;
+  salary_review_date?: string;
+
+  employee_pension_percentage?: number;
+  employee_pension_start_date?: string;
+  employee_pension_change_date?: string;
+  employee_pension_end_date?: string;
+
+  employer_pension_percentage?: number;
+  employer_pension_start_date?: string;
+  employer_pension_change_date?: string;
+  employer_pension_end_date?: string;
+
+  has_company_car?: boolean;
+  car_make?: string;
+  car_model?: string;
+  car_vin_reg?: string;
+  car_co2?: string;
+
+  car_market_value?: string;
+  car_fuel_type?: string;
+  car_engine_size?: string;
+  car_date_from?: string;
+  car_date_to?: string;
+
+  has_fuel_card?: boolean;
+  fuel_card_number?: string;
+  fuel_cost_deductions?: boolean;
+
+  has_company_laptop?: boolean;
+  laptop_make?: string;
+  laptop_model?: string;
+  laptop_serial?: string;
+  laptop_date_from?: string;
+  laptop_date_to?: string;
+
+  has_company_tablet?: boolean;
+  tablet_make?: string;
+  tablet_model?: string;
+  tablet_serial?: string;
+  tablet_date_from?: string;
+  tablet_date_to?: string;
+  
+  has_company_mobile?: boolean;
+  mobile_make?: string;
+  mobile_model?: string;
+  mobile_imei?: string;
+  mobile_date_from?: string;
+  mobile_date_to?: string;
+
+  p11d_value?: string;
 
   created_at?: string;
   updated_at?: string;

@@ -205,7 +205,7 @@ export default function ItemPurchasesBySupplierReport() {
     <div className="w-full space-y-6">
       <Breadcrumbs
         items={[
-          { label: "Reports", href: `/${params.slug}/reports` },
+        //   { label: "Reports", href: `/${params.slug}/reports` },
           { label: "All Reports", href: `/${params.slug}/reports` },
           { label: "Item Purchases By Supplier(s)" },
         ]}

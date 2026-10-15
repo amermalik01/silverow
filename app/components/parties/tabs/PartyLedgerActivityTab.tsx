@@ -109,7 +109,7 @@ export default function PartyLedgerActivityTab({
         case "sales_invoice":
         case "invoice":
           return partyType === "customer"
-            ? `/${slug}/sales/sales-invoices/${targetId}`
+            ? `/${slug}/sales/invoices/${targetId}`
             : `/${slug}/purchases/purchase-invoices/${targetId}`;
 
         case "purchase_invoice":
@@ -291,15 +291,31 @@ export default function PartyLedgerActivityTab({
   return (
     <div className="space-y-4">
       {/* Tabs Filter Bar */}
-      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs w-fit">
+      {/* <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs w-fit bg-[#d5e2d2]">
         {(["OPEN", "CLOSED", "ALL"] as const).map((statusTab) => (
           <button
             key={statusTab}
             onClick={() => setFilter(statusTab)}
-            className={`px-3 py-1 rounded-md transition-colors capitalize ${
+            className={`px-3 py-1 rounded-md transition-colors  capitalize ${
               filter === statusTab
                 ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100"
                 : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            {statusTab.toLowerCase()}
+          </button>
+        ))}
+      </div> */}
+
+      <div className="flex items-center gap-1 bg-[#eef3ec] dark:bg-slate-800 p-1 rounded-xl text-xs w-fit border border-[#d5e2d2] dark:border-slate-700">
+        {(["OPEN", "CLOSED", "ALL"] as const).map((statusTab) => (
+          <button
+            key={statusTab}
+            onClick={() => setFilter(statusTab)}
+            className={`px-4 py-2 rounded-lg transition-all duration-200 capitalize ${
+              filter === statusTab
+                ? "bg-[#d5e2d2] text-[#36543b] dark:bg-[#45634a] dark:text-white font-semibold shadow-sm"
+                : "text-[#6b806c] hover:bg-[#e1eadf] hover:text-[#36543b] dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
             }`}
           >
             {statusTab.toLowerCase()}

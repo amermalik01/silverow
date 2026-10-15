@@ -12,7 +12,7 @@ import {
 import EmployeeGeneralTab from "./tabs/EmployeeGeneralTab";
 import EmployeeAccessTab from "./tabs/EmployeeAccessTab";
 import EmployeeContactsTab from "./tabs/EmployeeContactsTab";
-import EmployeeAddressesTab from "./tabs/EmployeeAddressesTab";
+// import EmployeeAddressesTab from "./tabs/EmployeeAddressesTab";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -110,16 +110,16 @@ export default function EmployeeForm({ slug }: Props) {
         <EmployeeAccessTab access={access} setAccess={setAccess} />
       )}
 
-      {activeTab === "contacts" && (
+      {/* {activeTab === "contacts" && (
         <EmployeeContactsTab contacts={contacts} setContacts={setContacts} />
-      )}
+      )} */}
 
-      {activeTab === "addresses" && (
+      {/* {activeTab === "addresses" && (
         <EmployeeAddressesTab
           addresses={addresses}
           setAddresses={setAddresses}
         />
-      )}
+      )} */}
 
       {/* SAVE */}
       <div className="flex justify-end border-t border-border pt-4">
@@ -132,15 +132,6 @@ export default function EmployeeForm({ slug }: Props) {
           {loading ? "Saving..." : "Save Employee"}
         </Button>
       </div>
-      {/* <div className="flex justify-end border-t pt-4">
-        <Button
-          onClick={save}
-          disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded"
-        >
-          {loading ? "Saving..." : "Save Employee"}
-        </Button>
-      </div> */}
     </div>
   );
 }

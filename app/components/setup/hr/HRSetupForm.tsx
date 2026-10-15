@@ -6,10 +6,12 @@ import React, { useState } from "react";
 import { Icon } from "@iconify/react";
 
 import RoleManagement from "../system/roles/RoleManagement";
+
 import DepartmentsTab from "./departments";
+import DesignationsTab from "./designations";
 import EmployeeTypeTab from "./employee_type";
 
-type TabType = "roles" | "departments" | "employee_type" | "";
+type TabType = "roles" | "departments" | "designations" | "employee_type" | "";
 
 const tabs: {
   id: TabType;
@@ -24,6 +26,11 @@ const tabs: {
   {
     id: "departments",
     label: "Departments",
+    icon: "solar:table-linear",
+  },
+  {
+    id: "designations",
+    label: "Designations",
     icon: "solar:table-linear",
   },
   {
@@ -111,6 +118,8 @@ export default function HRSetupForm() {
         {activeTab === "roles" && <RoleManagement />}
 
         {activeTab === "departments" && <DepartmentsTab />}
+
+        {activeTab === "designations" && <DesignationsTab />}
 
         {activeTab === "employee_type" && <EmployeeTypeTab />}
 

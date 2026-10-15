@@ -1,6 +1,6 @@
 // app/components/hr/employees/tabs/EmployeeAddressesTab.tsx
 
-"use client";
+/* "use client";
 
 import { Button } from "@/components/ui/button";
 import { EmployeeAddress } from "@/types/hr/employee";
@@ -135,4 +135,4 @@ export default function EmployeeAddressesTab({
       )}
     </div>
   );
-}
+} */

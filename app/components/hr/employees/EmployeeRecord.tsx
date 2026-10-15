@@ -13,16 +13,17 @@ import type {
   EmployeeContact,
 } from "@/types/hr/employee";
 
-import EmployeeGeneralTab from "./tabs/EmployeeGeneralTab";
-import EmployeeContactTab from "./tabs/EmployeeContactsTab";
-// import EmployeePersonalTab from "./tabs/EmployeePersonalTab";
-// import EmployeeSalaryTab from "./tabs/EmployeeSalaryTab";
-// import EmployeeBenefitsTab from "./tabs/EmployeeBenefitsTab";
 // import EmployeeExpensesTab from "./tabs/EmployeeExpensesTab";
 // import EmployeeHolidaysTab from "./tabs/EmployeeHolidaysTab";
 
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 import EmployeeDetailHeader from "./EmployeeDetailHeader";
+
+import EmployeeGeneralTab from "./tabs/EmployeeGeneralTab";
+import EmployeeContactTab from "./tabs/EmployeeContactsTab";
+import EmployeePersonalTab from "./tabs/EmployeePersonalTab";
+import EmployeeSalaryTab from "./tabs/EmployeeSalaryTab";
+import EmployeeBenefitsTab from "./tabs/EmployeeBenefitsTab";
 
 type Props = {
   id: string;
@@ -42,8 +43,8 @@ const tabs = [
   { id: "personal", label: "Personal" },
   { id: "salary", label: "Salary, Holidays & Pensions" },
   { id: "benefits", label: "Benefits" },
-  { id: "expenses", label: "Expenses" },
-  { id: "holidays", label: "Holidays" },
+  // { id: "expenses", label: "Expenses" },
+  // { id: "holidays", label: "Holidays" },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -274,7 +275,7 @@ export default function EmployeeRecord({
         )}
 
         {/* Legacy tabs */}
-        <div className="flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-800">
+        <div className="flex gap-1  border-b border-slate-200 dark:border-slate-800">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -301,15 +302,15 @@ export default function EmployeeRecord({
             />
           )}
 
-          {/* {activeTab === "contact" && (
+          {activeTab === "contact" && (
             <EmployeeContactTab
               employee={employee}
               setEmployee={setEmployee}
               isReadonly={effectiveReadonly}
             />
-          )} */}
+          )}
 
-          {/* {activeTab === "personal" && (
+          {activeTab === "personal" && (
             <EmployeePersonalTab
               employee={employee}
               setEmployee={setEmployee}
@@ -327,11 +328,14 @@ export default function EmployeeRecord({
 
           {activeTab === "benefits" && (
             <EmployeeBenefitsTab
-              employeeId={id}
+              employee={employee}
+              setEmployee={setEmployee}
               isReadonly={effectiveReadonly}
             />
           )}
 
+
+          {/* 
           {activeTab === "expenses" && (
             <EmployeeExpensesTab
               employeeId={id}
