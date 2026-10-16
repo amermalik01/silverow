@@ -22,6 +22,7 @@ import {
   ItemFormData,
   ItemLookupOption,
   ItemWarehouseDraft,
+  InventoryCostingMethod,
 } from "@/types/inventory";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 
@@ -47,7 +48,8 @@ const defaultItemForm: ItemFormData = {
   reorder_qty: "",
   standard_sales_price: "",
   standard_cost: "",
-  costing_method: 1,
+  // costing_method: 1,
+  costing_method: "FIFO",
 
   inventory_posting_group_id: "",
   inventory_gl_id: "",
@@ -66,6 +68,9 @@ export default function ItemRecord({
 
   const [activeTab, setActiveTab] = useState("general");
   const [isEditing, setIsEditing] = useState(false);
+
+  const [costingMethod, setCostingMethod] =
+    useState<InventoryCostingMethod>("FIFO");
 
   const [item, setItem] = useState<ItemFormData>(defaultItemForm);
   const [autoCode, setAutoCode] = useState<boolean>(true);
@@ -101,16 +106,31 @@ export default function ItemRecord({
 
       try {
         // Always fetch lookups
-        const [catRes, brandRes, uomRes, vatRes] = await Promise.all([
+        const [catRes, brandRes, uomRes, vatRes, setupRes] = await Promise.all([
           fetch("/api/setup/inventory/categories"),
           fetch("/api/setup/inventory/brands"),
           fetch("/api/setup/inventory/uoms"),
           fetch("/api/setup/vat-product-posting-groups"),
+          fetch("/api/setup/posting/inventory-system"),
         ]);
 
         if (catRes.ok) setCategories(await catRes.json());
         if (brandRes.ok) setBrands(await brandRes.json());
         if (uomRes.ok) setUoms(await uomRes.json());
+
+        if (setupRes.ok) {
+          const setupData = await setupRes.json();
+
+          const validMethods: InventoryCostingMethod[] = [
+            "FIFO",
+            "WEIGHTED_AVERAGE",
+            "STANDARD",
+          ];
+
+          if (validMethods.includes(setupData.costing_method)) {
+            setCostingMethod(setupData.costing_method);
+          }
+        }
 
         let fetchedVatGroups: ItemLookupOption[] = [];
 
@@ -160,7 +180,13 @@ export default function ItemRecord({
           reorder_qty: itemData.reorder_qty?.toString() || "",
           standard_sales_price: itemData.standard_sales_price?.toString() || "",
           standard_cost: itemData.standard_cost?.toString() || "",
-          costing_method: itemData.costing_method || 1,
+          // costing_method: itemData.costing_method || 1,
+
+          costing_method: (["FIFO", "WEIGHTED_AVERAGE", "STANDARD"].includes(
+            itemData.costing_method,
+          )
+            ? itemData.costing_method
+            : "FIFO") as InventoryCostingMethod,
 
           // If no VAT group exists on item, default to "Standard"
           vat_product_group_id:
@@ -401,6 +427,7 @@ export default function ItemRecord({
               item={item}
               setItem={setItem}
               uoms={uoms}
+              costingMethod={costingMethod}
               isReadonly={effectiveReadonly}
             />
           )}

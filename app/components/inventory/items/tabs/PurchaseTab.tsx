@@ -3,13 +3,17 @@
 "use client";
 
 import NumericTextInput from "@/components/ui/NumericTextInput";
-import { ItemFormData, ItemLookupOption } from "@/types/inventory";
+import {
+  ItemFormData,
+  ItemLookupOption,
+  InventoryCostingMethod,
+} from "@/types/inventory";
 
 type Props = {
   item: ItemFormData;
   setItem: React.Dispatch<React.SetStateAction<ItemFormData>>;
   uoms: ItemLookupOption[];
-  costingMethod: "FIFO" | "WEIGHTED_AVERAGE" | "STANDARD";
+  costingMethod: InventoryCostingMethod;
   isReadonly?: boolean;
 };
 
@@ -20,11 +24,11 @@ export default function PurchaseTab({
   costingMethod,
   isReadonly = false,
 }: Props) {
-  const COSTING_METHOD_LABELS = {
+  const COSTING_METHOD_LABELS: Record<InventoryCostingMethod, string> = {
     FIFO: "First In, First Out (FIFO)",
     WEIGHTED_AVERAGE: "Weighted Average",
     STANDARD: "Standard Costing",
-  } as const;
+  };
 
   return (
     <div className="space-y-6">

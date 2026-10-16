@@ -57,30 +57,50 @@ export class UnifiedInventoryEngineService {
    * 1 = FIFO, 2 = LIFO, 3 = Moving Average, 4 = Standard Cost
    */
 
+  /**
+   * Helper: Resolves global company costing method and item standard cost from DB
+   * Costing methods mapping:
+   * 'FIFO' (or 1) = FIFO
+   * 'LIFO' (or 2) = LIFO
+   * 'WEIGHTED_AVERAGE' (or 3) = Moving Average
+   * 'STANDARD' (or 4) = Standard Cost
+   */
+
   private static async getItemCostingProfile(
     client: PoolClient,
     itemId: string,
     companyId: string,
-    companyDefaultCostingMethod: number = 1,
-  ): Promise<{ costing_method: number; standard_cost: number }> {
+  ): Promise<{ costing_method: string | number; standard_cost: number }> {
     const res = await client.query(
       `
       SELECT 
-        COALESCE(i.costing_method, c.default_costing_method, $3) AS costing_method,
+        c.costing_method AS global_costing_method,
         COALESCE(i.standard_cost, 0) AS standard_cost
       FROM items i
-      LEFT JOIN companies c ON c.id = i.company_id
+      JOIN companies c ON c.id = i.company_id
       WHERE i.id = $1 AND i.company_id = $2
       `,
-      [itemId, companyId, companyDefaultCostingMethod],
+      [itemId, companyId],
     );
 
     if (!res.rows.length) {
-      throw new Error(`Item record ${itemId} not found.`);
+      throw new Error(`Item record ${itemId} or company setup not found.`);
     }
 
+    // You can normalize this string or numeric value depending on how your DB stores it
+    const costingMethodRaw = res.rows[0].global_costing_method;
+
+    // Map string values to numbers if your engine relies on numerical checks (1, 2, 3, 4)
+    let costingMethodNum = 1; // Default FIFO
+    if (costingMethodRaw === "LIFO" || costingMethodRaw === 2)
+      costingMethodNum = 2;
+    else if (costingMethodRaw === "WEIGHTED_AVERAGE" || costingMethodRaw === 3)
+      costingMethodNum = 3;
+    else if (costingMethodRaw === "STANDARD" || costingMethodRaw === 4)
+      costingMethodNum = 4;
+
     return {
-      costing_method: Number(res.rows[0].costing_method),
+      costing_method: costingMethodNum,
       standard_cost: Number(res.rows[0].standard_cost),
     };
   }
@@ -233,19 +253,9 @@ export class UnifiedInventoryEngineService {
       const inboundResult = await client.query(
         `
       SELECT
-        id,
-        company_id,
-        item_id,
-        warehouse_id,
-        location_id,
-        bin_code,
-        batch_no,
-        serial_no,
-        expiry_date,
-        quantity,
-        remaining_quantity,
-        unit_cost,
-        status
+          id, company_id, item_id, warehouse_id, location_id, bin_code,
+          batch_no, serial_no, expiry_date, quantity, remaining_quantity,
+          unit_cost, status
       FROM inventory_ledger_entries
       WHERE id = $1
         AND company_id = $2
@@ -264,7 +274,6 @@ export class UnifiedInventoryEngineService {
       }
 
       const inboundLayer = inboundResult.rows[0];
-
       const remainingQuantity = Number(inboundLayer.remaining_quantity || 0);
 
       if (remainingQuantity <= 0) {
@@ -273,61 +282,61 @@ export class UnifiedInventoryEngineService {
         );
       }
 
-      if (line.source_allocation_id) {
-        const sourceAllocationResult = await client.query(
-          `
-          SELECT
-            id,
-            inbound_entry_id,
-            item_id,
-            warehouse_id,
-            allocated_quantity,
-            status
-          FROM inventory_allocations
-          WHERE id = $1
-            AND company_id = $2
-          FOR UPDATE
-          `,
-          [line.source_allocation_id, companyId],
-        );
+      // if (line.source_allocation_id) {
+      //   const sourceAllocationResult = await client.query(
+      //     `
+      //     SELECT
+      //       id,
+      //       inbound_entry_id,
+      //       item_id,
+      //       warehouse_id,
+      //       allocated_quantity,
+      //       status
+      //     FROM inventory_allocations
+      //     WHERE id = $1
+      //       AND company_id = $2
+      //     FOR UPDATE
+      //     `,
+      //     [line.source_allocation_id, companyId],
+      //   );
 
-        if (!sourceAllocationResult.rows.length) {
-          throw new Error(
-            `Selected source allocation ${line.source_allocation_id} was not found.`,
-          );
-        }
+      //   if (!sourceAllocationResult.rows.length) {
+      //     throw new Error(
+      //       `Selected source allocation ${line.source_allocation_id} was not found.`,
+      //     );
+      //   }
 
-        const sourceAllocation = sourceAllocationResult.rows[0];
+      //   const sourceAllocation = sourceAllocationResult.rows[0];
 
-        if (
-          String(sourceAllocation.inbound_entry_id) !==
-          String(line.inbound_entry_id)
-        ) {
-          throw new Error(
-            "Selected source allocation does not belong to the selected inbound stock layer.",
-          );
-        }
+      //   if (
+      //     String(sourceAllocation.inbound_entry_id) !==
+      //     String(line.inbound_entry_id)
+      //   ) {
+      //     throw new Error(
+      //       "Selected source allocation does not belong to the selected inbound stock layer.",
+      //     );
+      //   }
 
-        if (String(sourceAllocation.item_id) !== String(line.item_id)) {
-          throw new Error(
-            "Selected source allocation belongs to a different item.",
-          );
-        }
+      //   if (String(sourceAllocation.item_id) !== String(line.item_id)) {
+      //     throw new Error(
+      //       "Selected source allocation belongs to a different item.",
+      //     );
+      //   }
 
-        if (
-          String(sourceAllocation.warehouse_id) !== String(line.warehouse_id)
-        ) {
-          throw new Error(
-            "Selected source allocation belongs to a different warehouse.",
-          );
-        }
+      //   if (
+      //     String(sourceAllocation.warehouse_id) !== String(line.warehouse_id)
+      //   ) {
+      //     throw new Error(
+      //       "Selected source allocation belongs to a different warehouse.",
+      //     );
+      //   }
 
-        if (String(sourceAllocation.status) === "CLOSED") {
-          throw new Error(
-            `Selected source allocation ${line.source_allocation_id} is closed.`,
-          );
-        }
-      }
+      //   if (String(sourceAllocation.status) === "CLOSED") {
+      //     throw new Error(
+      //       `Selected source allocation ${line.source_allocation_id} is closed.`,
+      //     );
+      //   }
+      // }
 
       if (qtyNeeded > remainingQuantity) {
         throw new Error(
@@ -343,16 +352,12 @@ export class UnifiedInventoryEngineService {
       const layerTotalCost = Number((qtyNeeded * layerUnitCost).toFixed(2));
 
       accumulatedCost = layerTotalCost;
-
       remainingToDeduct = 0;
 
       allocatedLayers.push({
         inbound_entry_id: String(inboundLayer.id),
-
         qtyToTake: qtyNeeded,
-
         unitCost: layerUnitCost,
-
         totalCost: layerTotalCost,
       });
     } else {
@@ -391,12 +396,9 @@ export class UnifiedInventoryEngineService {
       }
 
       for (const layer of inboundLayersRes.rows) {
-        if (remainingToDeduct <= 0) {
-          break;
-        }
+        if (remainingToDeduct <= 0) break;
 
         const layerRemaining = Number(layer.remaining_quantity);
-
         const qtyToTake = Math.min(layerRemaining, remainingToDeduct);
 
         const layerUnitCost =
@@ -412,11 +414,8 @@ export class UnifiedInventoryEngineService {
 
         allocatedLayers.push({
           inbound_entry_id: String(layer.id),
-
           qtyToTake,
-
           unitCost: layerUnitCost,
-
           totalCost: layerTotalCost,
         });
       }
@@ -439,56 +438,16 @@ export class UnifiedInventoryEngineService {
     const outboundLedgerRes = await client.query(
       `
       INSERT INTO inventory_ledger_entries (
-        company_id,
-        posting_date,
-        transaction_type,
-
-        reference_type,
-        reference_id,
-        reference_line_id,
-
-        item_id,
-        warehouse_id,
-        location_id,
-        bin_code,
-
-        batch_no,
-        serial_no,
-        expiry_date,
-
-        quantity,
-        remaining_quantity,
-        unit_cost,
-        total_cost,
-
-        direction,
-        status
+        company_id, posting_date, transaction_type,
+        reference_type, reference_id, reference_line_id,
+        item_id, warehouse_id, location_id, bin_code,
+        batch_no, serial_no, expiry_date,
+        quantity, remaining_quantity, unit_cost, total_cost,
+        direction, status
       )
       VALUES (
-        $1,
-        $2,
-        $3,
-
-        $4,
-        $5,
-        $6,
-
-        $7,
-        $8,
-        $9,
-        $10,
-
-        $11,
-        $12,
-        $13,
-
-        $14,
-        0,
-        $15,
-        $16,
-
-        'OUT',
-        'CLOSED'
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, 0, $15, $16, 'OUT', 'CLOSED'
       )
       RETURNING *;
       `,
@@ -504,8 +463,8 @@ export class UnifiedInventoryEngineService {
         line.item_id,
         line.warehouse_id,
         line.location_id || null,
-        line.bin_code || null,
 
+        line.bin_code || null,
         line.batch_no || null,
         line.serial_no || null,
         line.expiry_date || null,
@@ -528,77 +487,30 @@ export class UnifiedInventoryEngineService {
       await client.query(
         `
       INSERT INTO inventory_allocations (
-        company_id,
-
-        outbound_entry_id,
-        outbound_line_id,
-
-        inbound_entry_id,
-        source_allocation_id,
-
-        item_id,
-        warehouse_id,
-
-        warehouse_location_id,
-
-        batch_no,
-        bin_code,
-
-        expiry_date,
-        date_received,
-        prod_date,
-
-        allocated_quantity,
-        unit_cost,
-        total_cost,
-
-        status
+        company_id, outbound_entry_id, outbound_line_id,
+        inbound_entry_id, source_allocation_id, item_id,
+        warehouse_id, warehouse_location_id, batch_no, bin_code,
+        expiry_date, date_received, prod_date,
+        allocated_quantity, unit_cost, total_cost, status
       )
       VALUES (
-        $1,
-        $2,
-        $3,
-
-        $4,
-        $5,
-
-        $6,
-        $7,
-
-        $8,
-
-        $9,
-        $10,
-        $11,
-
-        $12,
-        $13,
-        $14,
-
-        $15,
-        $16,
-
-        'ACTIVE'
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+          $11, $12, $13, $14, $15, $16, 'ACTIVE'
       )
       `,
         [
           companyId,
 
           outboundEntry.id,
-
           line.reference_line_id || null,
-
           allocation.inbound_entry_id,
-
           line.source_allocation_id || null,
 
           line.item_id,
           line.warehouse_id,
-
           line.location_id || null,
 
           line.batch_no || null,
-
           line.bin_code || null,
 
           line.expiry_date === "" ? null : line.expiry_date || null,
@@ -606,9 +518,7 @@ export class UnifiedInventoryEngineService {
           line.prod_date === "" ? null : line.prod_date || null,
 
           allocation.qtyToTake,
-
           allocation.unitCost,
-
           allocation.totalCost,
         ],
       );
@@ -636,11 +546,38 @@ export class UnifiedInventoryEngineService {
 
     return {
       outboundEntry,
-
       totalCost: accumulatedCost,
-
       unitCost: blendedUnitCost,
     };
+    // return { outboundEntry, allocatedLayers };
   }
-  
 }
+/* 
+private static async getItemCostingProfile(
+    client: PoolClient,
+    itemId: string,
+    companyId: string,
+    companyDefaultCostingMethod: number = 1,
+  ): Promise<{ costing_method: number; standard_cost: number }> {
+    const res = await client.query(
+      `
+      SELECT 
+        COALESCE(i.costing_method, c.default_costing_method, $3) AS costing_method,
+        COALESCE(i.standard_cost, 0) AS standard_cost
+      FROM items i
+      LEFT JOIN companies c ON c.id = i.company_id
+      WHERE i.id = $1 AND i.company_id = $2
+      `,
+      [itemId, companyId, companyDefaultCostingMethod],
+    );
+
+    if (!res.rows.length) {
+      throw new Error(`Item record ${itemId} not found.`);
+    }
+
+    return {
+      costing_method: Number(res.rows[0].costing_method),
+      standard_cost: Number(res.rows[0].standard_cost),
+    };
+  }
+*/

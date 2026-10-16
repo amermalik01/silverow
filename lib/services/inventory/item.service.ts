@@ -2,7 +2,7 @@
 
 import { pool } from "@/lib/db";
 import { QueryResult, QueryResultRow } from "pg";
-import { ItemListRow, ItemWarehouseDraft } from "@/types/inventory";
+import { ItemListRow, ItemWarehouseDraft,InventoryCostingMethod } from "@/types/inventory";
 
 type GetItemListOptions = {
   companyId: string;
@@ -27,7 +27,8 @@ type CreateItemInput = {
   standard_sales_price?: string | number | null;
 
   standard_cost?: string | number | null;
-  costing_method?: number;
+  // costing_method?: number;
+  costing_method: InventoryCostingMethod;
   warehouses?: ItemWarehouseDraft[];
 };
 

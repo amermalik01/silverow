@@ -2,6 +2,12 @@
 
 import { z } from "zod";
 
+export const InventoryCostingMethodSchema = z.enum([
+  "FIFO",
+  "WEIGHTED_AVERAGE",
+  "STANDARD",
+]);
+
 export const ItemSchema = z.object({
   item_code: z.string().optional().nullable(),
   barcode: z.string().optional().nullable(),
@@ -12,13 +18,17 @@ export const ItemSchema = z.object({
   base_uom_id: z.string().min(1, "Base UOM is required"),
   purchase_uom_id: z.string().optional().nullable(),
   sales_uom_id: z.string().optional().nullable(),
+  
   item_type: z.number().default(1),
   status: z.number().default(1),
   stock_tracking: z.boolean().default(true),
+
   reorder_qty: z.union([z.string(), z.number()]).optional().nullable(),
   standard_sales_price: z.union([z.string(), z.number()]).optional().nullable(),
   standard_cost: z.union([z.string(), z.number()]).optional().nullable(),
-  costing_method: z.number().default(1),
+  // costing_method: z.number().default(1),
+
+  costing_method: InventoryCostingMethodSchema.default("FIFO"),
 
   // VAT Product Posting Group
   vat_product_group_id: z.string().optional().nullable(),

@@ -35,7 +35,7 @@ export type ItemFormData = {
   reorder_qty: string;
   standard_sales_price: string;
   standard_cost: string;
-  costing_method: number;
+  costing_method: InventoryCostingMethod;
 
   // VAT Product Posting Group
   vat_product_group_id?: string;
@@ -208,6 +208,11 @@ export type StockForm = {
   serial_no: string;
   expiry_date: string;
 };
+
+export type InventoryCostingMethod =
+  | "FIFO"
+  | "WEIGHTED_AVERAGE"
+  | "STANDARD";
 
 /* ---------------------------
    COMMON MASTER TYPES

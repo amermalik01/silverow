@@ -167,7 +167,9 @@ export async function PUT(req: Request, { params }: Props) {
         toNumberOrDefault(validatedItem.reorder_qty, 0),
         toNumberOrDefault(validatedItem.standard_sales_price, 0),
         toNumberOrDefault(validatedItem.standard_cost, 0),
-        toNumberOrDefault(validatedItem.costing_method, 1),
+        // toNumberOrDefault(validatedItem.costing_method, 1),
+        validatedItem.costing_method,
+        
         toCleanOrNull(validatedItem.inventory_posting_group_id),
         toCleanOrNull(validatedItem.inventory_gl_id),
         toCleanOrNull(validatedItem.cogs_gl_id),
