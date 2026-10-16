@@ -151,7 +151,7 @@ export default function SetupDataGridTable({
       {/* Table Container */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-          <thead className="bg-slate-50 text-[11px] font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-slate-800 dark:bg-slate-950/50">
+          <thead className="bg-slate-50 text-[11px] font-semibold capitalize tracking-wider text-slate-500 border-b border-slate-200 dark:border-slate-800 dark:bg-slate-950/50">
             <tr className="capitalize">
               {columns.map((column) => (
                 <th
@@ -890,7 +890,7 @@ export default function SetupDataGridTable({
                         text-left
                         text-[10px]
                         font-bold
-                        uppercase
+                        capitalize
                         tracking-wider
                         text-slate-500
                         dark:text-slate-400
@@ -941,7 +941,7 @@ export default function SetupDataGridTable({
                   text-right
                   text-[10px]
                   font-bold
-                  uppercase
+                  capitalize
                   tracking-wider
                   text-slate-500
                   dark:text-slate-400

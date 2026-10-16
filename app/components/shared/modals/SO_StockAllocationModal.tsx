@@ -360,7 +360,7 @@ export default function SO_StockAllocationModal({
               icon="tabler:boxes"
               className="text-xl text-emerald-400 dark:text-slate-300"
             />
-            <h2 className="text-sm font-semibold tracking-wide text-white uppercase">
+            <h2 className="text-sm font-semibold tracking-wide text-white capitalize">
               Stock Allocation &mdash; {itemCode}
             </h2>
           </div>
@@ -394,7 +394,7 @@ export default function SO_StockAllocationModal({
 
           <div className="grid grid-cols-3 col-span-3 gap-3 text-center">
             <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded p-2 shadow-xs">
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-medium">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 capitalize font-medium">
                 Target Qty
               </div>
               <div className="text-base font-bold text-slate-800 dark:text-slate-100">
@@ -413,7 +413,7 @@ export default function SO_StockAllocationModal({
               }`}
             >
               <div
-                className={`text-[11px] uppercase font-medium ${
+                className={`text-[11px] capitalize font-medium ${
                   qtyToAllocate > 0
                     ? "text-amber-600 dark:text-amber-400"
                     : "text-emerald-600 dark:text-emerald-400"
@@ -436,7 +436,7 @@ export default function SO_StockAllocationModal({
             </div>
 
             <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded p-2 shadow-xs">
-              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 uppercase font-medium">
+              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 capitalize font-medium">
                 Allocated Total
               </div>
               <div className="text-base font-bold text-emerald-600 dark:text-emerald-400">

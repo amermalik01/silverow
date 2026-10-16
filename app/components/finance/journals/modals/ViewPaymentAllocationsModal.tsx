@@ -118,7 +118,7 @@ export default function ViewPaymentAllocationsModal({
                     <td className="p-2 font-semibold text-slate-800 dark:text-slate-200">
                       {item.allocated_doc_no}
                     </td>
-                    <td className="p-2 uppercase text-[10px]">
+                    <td className="p-2 capitalize text-[10px]">
                       {item.allocated_doc_type.replace(/_/g, " ")}
                     </td>
                     <td className="p-2 text-right font-bold text-emerald-600 dark:text-emerald-400">

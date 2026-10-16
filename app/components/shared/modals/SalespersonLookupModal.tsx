@@ -293,7 +293,7 @@ export default function SalespersonLookupModal({
                     </td>
                     <td className="p-2.5 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold capitalize tracking-wider ${
                           person.status === "active"
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                             : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"

@@ -449,7 +449,7 @@ export default function ST_StockAllocationModal({
               icon="tabler:transfer"
               className="text-xl text-emerald-400"
             />{" "}
-            <h2 className="text-sm font-semibold uppercase tracking-wide">
+            <h2 className="text-sm font-semibold capitalize tracking-wide">
               {" "}
               Transfer Stock Allocation — {itemCode}{" "}
             </h2>{" "}
@@ -492,7 +492,7 @@ export default function ST_StockAllocationModal({
             {" "}
             <div className="rounded border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
               {" "}
-              <div className="text-[11px] font-medium uppercase text-slate-500">
+              <div className="text-[11px] font-medium capitalize text-slate-500">
                 {" "}
                 Target Qty{" "}
               </div>{" "}
@@ -508,7 +508,7 @@ export default function ST_StockAllocationModal({
             <div
               className={`rounded border p-2 ${qtyToAllocate > 0 ? "border-amber-300 bg-amber-50/30 dark:border-amber-900 dark:bg-amber-950/20" : "border-emerald-300 bg-emerald-50/30 dark:border-emerald-900 dark:bg-emerald-950/20"}`}
             >
-              <div className="text-[11px] font-medium uppercase">
+              <div className="text-[11px] font-medium capitalize">
                 {" "}
                 To Allocate{" "}
               </div>{" "}
@@ -520,7 +520,7 @@ export default function ST_StockAllocationModal({
             </div>
             <div className="rounded border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
               {" "}
-              <div className="text-[11px] font-medium uppercase text-emerald-600">
+              <div className="text-[11px] font-medium capitalize text-emerald-600">
                 {" "}
                 Allocated Total{" "}
               </div>{" "}

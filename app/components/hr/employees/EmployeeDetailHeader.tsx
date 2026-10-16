@@ -149,9 +149,6 @@ export default function EmployeeDetailHeader({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <div className="min-w-0">
-                {/* <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Human Resources / Employee
-                </p> */}
 
                 <h2 className="break-words text-lg font-bold text-slate-900 dark:text-white">
                   {employeeName || "Employee"}

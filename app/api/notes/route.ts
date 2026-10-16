@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 
 function validateNote(subject: unknown, description: unknown) {
   if (typeof subject !== "string" || !subject.trim()) {
@@ -19,8 +19,9 @@ function validateNote(subject: unknown, description: unknown) {
     return "Description is required.";
   }
 
-  const cleanHtml = DOMPurify.sanitize(description, {
-    ALLOWED_TAGS: [
+  // Sanitize HTML safely using sanitize-html (no jsdom required)
+  const cleanHtml = sanitizeHtml(description, {
+    allowedTags: [
       "p",
       "br",
       "strong",
@@ -33,20 +34,16 @@ function validateNote(subject: unknown, description: unknown) {
       "a",
       "blockquote",
     ],
-    ALLOWED_ATTR: ["href", "target", "rel"],
-    ALLOW_DATA_ATTR: false,
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+    },
   });
 
-  // Count readable text, not HTML tags or markup.
-  const plainText = cleanHtml
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .trim();
+  // Extract readable text to check length
+  const plainText = sanitizeHtml(cleanHtml, {
+    allowedTags: [],
+    allowedAttributes: {},
+  }).trim();
 
   if (!plainText) {
     return "Description is required.";

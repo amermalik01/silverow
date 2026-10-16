@@ -121,7 +121,7 @@ export default function GlobalFinanceSetupForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* VAT Settlement Section */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <h3 className="text-xs font-bold capitalize tracking-wider text-slate-400">
             VAT Settlement Accounts
           </h3>
 
@@ -161,7 +161,7 @@ export default function GlobalFinanceSetupForm() {
 
         {/* Opening Balances Section */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <h3 className="text-xs font-bold capitalize tracking-wider text-slate-400">
             Opening Balances G/L Setup
           </h3>
 

@@ -140,7 +140,7 @@ export default function ItemActivityTab({ itemId }: Props) {
 
     return (
       <span
-        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${styles[type] || "bg-slate-100 text-slate-600"}`}
+        className={`px-2 py-0.5 rounded text-[10px] font-bold capitalize ${styles[type] || "bg-slate-100 text-slate-600"}`}
       >
         {type.replace(/_/g, " ")}
       </span>

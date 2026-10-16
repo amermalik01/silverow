@@ -222,7 +222,7 @@ export default function PartyDetailHeader({
 
               <div className="relative flex items-start justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-amber-700 dark:text-amber-400">
                     <Icon icon="lucide:wallet" className="w-3.5 h-3.5" />
                     Open Outstanding
                   </div>
@@ -254,7 +254,7 @@ export default function PartyDetailHeader({
 
               <div className="relative flex items-start justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-400">
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-violet-700 dark:text-violet-400">
                     <Icon icon="lucide:gauge" className="w-3.5 h-3.5" />
                     Credit Limit
                   </div>
@@ -676,7 +676,7 @@ export default function PartyDetailHeader({
 
               <div className="relative flex items-start justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-blue-700 dark:text-blue-400">
                     <Icon icon="lucide:files" className="w-3.5 h-3.5" />
                     Open Entries
                   </div>
