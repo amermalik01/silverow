@@ -368,7 +368,8 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
                 placeholder="External Notes"
                 disabled
                 readOnly
-                className={`${inputNotesStyle} font-mono resize-none`}
+                className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-[11px] bg-blue-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
+                
                 value={invoice.notes || ""}
               />
             </div>

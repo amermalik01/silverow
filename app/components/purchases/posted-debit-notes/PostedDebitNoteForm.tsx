@@ -481,7 +481,8 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
               <textarea
                 placeholder="External Notes"
                 disabled={isFormDisabled}
-                className={`${inputNotesStyle} font-mono bg-blue-100`}
+                className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-[11px] bg-blue-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
+                
                 value={note.notes || ""}
                 onChange={(e) => updateField("notes", e.target.value)}
               />

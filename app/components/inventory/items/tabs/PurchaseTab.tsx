@@ -9,6 +9,7 @@ type Props = {
   item: ItemFormData;
   setItem: React.Dispatch<React.SetStateAction<ItemFormData>>;
   uoms: ItemLookupOption[];
+  costingMethod: "FIFO" | "WEIGHTED_AVERAGE" | "STANDARD";
   isReadonly?: boolean;
 };
 
@@ -16,8 +17,15 @@ export default function PurchaseTab({
   item,
   setItem,
   uoms,
+  costingMethod,
   isReadonly = false,
 }: Props) {
+  const COSTING_METHOD_LABELS = {
+    FIFO: "First In, First Out (FIFO)",
+    WEIGHTED_AVERAGE: "Weighted Average",
+    STANDARD: "Standard Costing",
+  } as const;
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
@@ -27,8 +35,15 @@ export default function PurchaseTab({
               Costing Method
             </label>
             <div className="col-span-2">
-              <select
-                disabled={isReadonly}
+              <input
+                type="text"
+                readOnly
+                value={COSTING_METHOD_LABELS[costingMethod]}
+                className="w-full rounded border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-800"
+              />
+              {/* <select
+                // disabled={isReadonly}
+                disabled={true}
                 value={item.costing_method}
                 onChange={(e) =>
                   setItem((prev) => ({
@@ -41,7 +56,7 @@ export default function PurchaseTab({
                 <option value={1}>First in First Out (FIFO)</option>
                 <option value={2}>Weighted Average</option>
                 <option value={3}>Standard Costing</option>
-              </select>
+              </select> */}
             </div>
           </div>
         </div>
@@ -105,7 +120,6 @@ export default function PurchaseTab({
                   </select>
                 </td>
                 <td className="p-3 border-t border-slate-100 dark:border-slate-800/40">
-
                   <NumericTextInput
                     allowDecimals
                     decimalScale={2}

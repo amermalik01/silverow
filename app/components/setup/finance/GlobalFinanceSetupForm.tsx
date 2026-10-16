@@ -65,6 +65,7 @@ export default function GlobalFinanceSetupForm() {
     vat_deferred_account_id: "",
     opening_balance_stock_account_id: "",
     opening_balance_equity_account_id: "",
+    inventory_adjustment_account_id:"",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -85,6 +86,8 @@ export default function GlobalFinanceSetupForm() {
               setupData.opening_balance_stock_account_id || "",
             opening_balance_equity_account_id:
               setupData.opening_balance_equity_account_id || "",
+            inventory_adjustment_account_id:
+              setupData.inventory_adjustment_account_id || "",
           });
         }
       })
@@ -197,6 +200,32 @@ export default function GlobalFinanceSetupForm() {
             />
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h3 className="text-xs font-bold capitalize tracking-wider text-slate-400">
+            Inventory Adjustment Global Accounts Setup
+          </h3>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Inventory Adjustment Account
+            </label>
+
+            <AccountSelectField
+              accounts={accounts}
+              value={formData.inventory_adjustment_account_id}
+              onChange={(val) =>
+                setFormData({
+                  ...formData,
+                  inventory_adjustment_account_id: val,
+                })
+              }
+            />
+          </div>
+        </div>
+        <div className="space-y-4"></div>
       </div>
 
       <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">

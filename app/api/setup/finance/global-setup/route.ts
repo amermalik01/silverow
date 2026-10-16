@@ -34,7 +34,15 @@ export async function PUT(req: Request) {
 
     const query = `
       INSERT INTO company_finance_setup 
-      (company_id, vat_payable_receivable_account_id, vat_deferred_account_id, opening_balance_stock_account_id, opening_balance_equity_account_id, updated_at)
+      (
+        company_id, 
+        vat_payable_receivable_account_id, 
+        vat_deferred_account_id, 
+        opening_balance_stock_account_id, 
+        opening_balance_equity_account_id, 
+        inventory_adjustment_account_id, 
+        updated_at
+      )
       VALUES ($1, $2, $3, $4, $5, NOW())
       ON CONFLICT (company_id) 
       DO UPDATE SET 
@@ -42,6 +50,7 @@ export async function PUT(req: Request) {
         vat_deferred_account_id = EXCLUDED.vat_deferred_account_id,
         opening_balance_stock_account_id = EXCLUDED.opening_balance_stock_account_id,
         opening_balance_equity_account_id = EXCLUDED.opening_balance_equity_account_id,
+        inventory_adjustment_account_id = EXCLUDED.inventory_adjustment_account_id,
         updated_at = NOW();
     `;
 
@@ -51,6 +60,7 @@ export async function PUT(req: Request) {
       b.vat_deferred_account_id || null,
       b.opening_balance_stock_account_id || null,
       b.opening_balance_equity_account_id || null,
+      b.inventory_adjustment_account_id || null,
     ]);
 
     return NextResponse.json({ success: true });
