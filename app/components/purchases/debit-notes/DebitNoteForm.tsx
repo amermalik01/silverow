@@ -1295,6 +1295,9 @@ export const DebitNoteForm: React.FC<Props> = ({
     }
   };
 
+  const inputNotesStyle =
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-[11px] bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const inputDateStyle =
@@ -1477,20 +1480,20 @@ export const DebitNoteForm: React.FC<Props> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 px-2">
           <div className="space-x-2 gap-y-2 col-span-2 grid grid-cols-3 items-start">
-            <div>
+            <div className="col-span-2">
               <textarea
                 placeholder="Add Internal Notes"
                 disabled={isFormDisabled}
-                className={`${inputStyle} font-mono`}
+                className={`${inputNotesStyle} font-mono`}
                 value={note.internal_notes || ""}
                 onChange={(e) => updateField("internal_notes", e.target.value)}
               />
             </div>
-            <div className="col-span-2">
+            <div>
               <textarea
                 placeholder="Add External Notes"
                 disabled={isFormDisabled}
-                className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-slate-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
+                className="w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-[11px] bg-blue-100 dark:bg-slate-800/80  outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200"
                 // className={`${inputStyle} font-mono`}
                 value={note.notes || ""}
                 onChange={(e) => updateField("notes", e.target.value)}

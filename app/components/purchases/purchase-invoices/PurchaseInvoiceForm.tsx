@@ -185,8 +185,12 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
   const noop = () => {};
   const asyncNoop = async () => {};
 
+  const inputNotesStyle =
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-[11px] bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+
   const labelStyle =
     "block text-xs text-slate-500 dark:text-slate-400 mb-0.5 col-span-4";
 
@@ -350,21 +354,21 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 px-2">
           <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
-            <div>
+            <div className="col-span-2">
               <textarea
                 placeholder="Internal Notes"
                 disabled
                 readOnly
-                className={`${inputStyle} font-mono resize-none`}
+                className={`${inputNotesStyle} font-mono resize-none bg-blue-100`}
                 value={invoice.internal_notes || ""}
               />
             </div>
-            <div className="col-span-2">
+            <div>
               <textarea
                 placeholder="External Notes"
                 disabled
                 readOnly
-                className={`${inputStyle} font-mono resize-none`}
+                className={`${inputNotesStyle} font-mono resize-none`}
                 value={invoice.notes || ""}
               />
             </div>
@@ -378,7 +382,6 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
                 </span>
               </div>
               <div>
-
                 <NumericTextInput
                   value={Number(currencyConfig.exchange_rate) ?? "1.00"}
                   allowDecimals={true}
@@ -549,4 +552,3 @@ export const PurchaseInvoiceForm: React.FC<Props> = ({
     </div>
   );
 };
-

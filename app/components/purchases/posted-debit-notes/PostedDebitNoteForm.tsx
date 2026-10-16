@@ -247,6 +247,9 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
     setNote((prev) => ({ ...prev, [field]: value }));
   };
 
+  const inputNotesStyle =
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-[11px] bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+
   const inputStyle =
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const inputDateStyle =
@@ -465,20 +468,20 @@ export const PostedDebitNoteForm: React.FC<Props> = ({
       <div className="  bg-white  border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 px-2">
           <div className="space-x-1 col-span-2 grid grid-cols-3 items-start">
-            <div>
+            <div className="col-span-2">
               <textarea
-                placeholder="Add Internal Notes"
+                placeholder="Internal Notes"
                 disabled={isFormDisabled}
-                className={`${inputStyle} font-mono`}
+                className={`${inputNotesStyle} font-mono`}
                 value={note.internal_notes || ""}
                 onChange={(e) => updateField("internal_notes", e.target.value)}
               />
             </div>
-            <div className="col-span-2">
+            <div>
               <textarea
-                placeholder="Add External Notes"
+                placeholder="External Notes"
                 disabled={isFormDisabled}
-                className={`${inputStyle} font-mono`}
+                className={`${inputNotesStyle} font-mono bg-blue-100`}
                 value={note.notes || ""}
                 onChange={(e) => updateField("notes", e.target.value)}
               />
