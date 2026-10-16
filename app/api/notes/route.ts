@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
          company_id, module, record_id, note,
          subject, description, created_by
        )
-       VALUES ($1, $2, $3, $4::text, $5::varchar,, $6, $7)
+       VALUES ($1, $2, $3, $4::text, $5::varchar, $6, $7)
        RETURNING
          id, module, record_id, subject, description,
          created_at, created_by`,

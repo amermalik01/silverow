@@ -123,7 +123,7 @@ export default function AccountingTab({
   return (
     <div className="space-y-6 text-xs max-w-4xl">
       {/* 1. Primary Assignment: Inventory Posting Group */}
-      <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
+      <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded p-4 space-y-3">
         <div>
           <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
             Inventory Posting Group (UK Default Rules)
@@ -147,7 +147,7 @@ export default function AccountingTab({
                 inventory_posting_group_id: e.target.value,
               }))
             }
-            className="w-full h-9 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
           >
             {postingGroups.length === 0 && (
               <option value="">-- Standard UK Inventory Default --</option>
@@ -167,7 +167,7 @@ export default function AccountingTab({
           Effective Resolved Accounts
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-white dark:bg-slate-900">
+          <div className="border border-slate-200 dark:border-slate-800 rounded p-3 bg-white dark:bg-slate-900">
             <label className="text-slate-500 font-medium block mb-1">
               Inventory Asset GL
             </label>
@@ -179,7 +179,7 @@ export default function AccountingTab({
             </p>
           </div>
 
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-white dark:bg-slate-900">
+          <div className="border border-slate-200 dark:border-slate-800 rounded p-3 bg-white dark:bg-slate-900">
             <label className="text-slate-500 font-medium block mb-1">
               Cost of Goods Sold (COGS) GL
             </label>
@@ -190,7 +190,7 @@ export default function AccountingTab({
             </p>
           </div>
 
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-white dark:bg-slate-900">
+          <div className="border border-slate-200 dark:border-slate-800 rounded p-3 bg-white dark:bg-slate-900">
             <label className="text-slate-500 font-medium block mb-1">
               Stock Adjustment GL
             </label>
@@ -217,7 +217,7 @@ export default function AccountingTab({
           </Button>
 
           {showOverrides && (
-            <div className="mt-3 p-4 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl space-y-4">
+            <div className="mt-3 p-4 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded space-y-4">
               <p className="text-slate-500">
                 Override individual GL accounts using the lookup modal. Leave
                 empty to maintain automatic posting group values.
@@ -237,7 +237,7 @@ export default function AccountingTab({
                       value={
                         overrideLabels.inventory || item?.inventory_gl_id || ""
                       }
-                      className="w-full h-9 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs"
+                      className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs"
                     />
                     <Button
                       type="button"
@@ -272,7 +272,7 @@ export default function AccountingTab({
                       readOnly
                       placeholder="Posting Group Default"
                       value={overrideLabels.cogs || item?.cogs_gl_id || ""}
-                      className="w-full h-9 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs"
+                      className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs"
                     />
                     <Button
                       type="button"

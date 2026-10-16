@@ -48,7 +48,7 @@ export default function GeneralTab({
                     setItem((prev) => ({ ...prev, item_code: e.target.value }))
                   }
                   placeholder={autoCode ? "Auto-generated" : "Enter item code"}
-                  className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 disabled:bg-slate-50 dark:disabled:bg-slate-800/50"
+                  className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 dark:disabled:bg-slate-800/50"
                 />
                 {!isReadonly && (
                   <label className="flex items-center gap-1.5 text-slate-500 cursor-pointer">
@@ -81,7 +81,7 @@ export default function GeneralTab({
                 onChange={(e) =>
                   setItem((prev) => ({ ...prev, name: e.target.value }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
               />
               {errors["general.name"] && (
                 <p className="text-red-500 text-[10px] mt-1">
@@ -102,7 +102,7 @@ export default function GeneralTab({
                 onChange={(e) =>
                   setItem((prev) => ({ ...prev, category_id: e.target.value }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
               >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
@@ -125,7 +125,7 @@ export default function GeneralTab({
                 onChange={(e) =>
                   setItem((prev) => ({ ...prev, brand_id: e.target.value }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
               >
                 <option value="">Select Brand</option>
                 {brands.map((brand) => (
@@ -151,7 +151,7 @@ export default function GeneralTab({
                     vat_product_group_id: e.target.value,
                   }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 bg-white dark:bg-slate-900"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900"
               >
                 <option value="">Select VAT Group</option>
                 {vatProductGroups.map((group) => (
@@ -176,7 +176,7 @@ export default function GeneralTab({
                 onChange={(e) =>
                   setItem((prev) => ({ ...prev, base_uom_id: e.target.value }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
               >
                 <option value="">Select UOM</option>
                 {uoms.map((uom) => (
@@ -205,7 +205,7 @@ export default function GeneralTab({
                 onChange={(e) =>
                   setItem((prev) => ({ ...prev, barcode: e.target.value }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -223,7 +223,7 @@ export default function GeneralTab({
                 onChange={(val) =>
                   setItem((prev) => ({ ...prev, reorder_qty: String(val) }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -242,7 +242,7 @@ export default function GeneralTab({
                     item_type: Number(e.target.value),
                   }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
               >
                 <option value={1}>Inventory</option>
                 <option value={2}>Service</option>

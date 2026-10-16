@@ -36,7 +36,7 @@ export default function PurchaseTab({
                     costing_method: Number(e.target.value),
                   }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
               >
                 <option value={1}>First in First Out (FIFO)</option>
                 <option value={2}>Weighted Average</option>
@@ -60,7 +60,7 @@ export default function PurchaseTab({
                 onChange={(val) =>
                   setItem((prev) => ({ ...prev, standard_cost: String(val) }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function PurchaseTab({
         <h3 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">
           Purchase Pricing Configuration
         </h3>
-        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+        <div className="border border-slate-200 dark:border-slate-800 rounded overflow-hidden">
           <table className="w-full table-fixed text-left">
             <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-b border-slate-200 dark:border-slate-800">
               <tr>

@@ -4,6 +4,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { UploadDropzone } from "@/lib/uploadthing";
+import { Icon } from "@iconify/react";
 
 export type Attachment = {
   id?: string;
@@ -19,6 +20,8 @@ export type Attachment = {
   file_size?: number;
 
   created_at?: string;
+  created_by?: string | null;
+  created_by_name?: string | null;
 };
 
 type Props = {
@@ -43,6 +46,16 @@ export default function AttachmentsTab({
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Attachment | null>(null);
+
+  const formatDate = (date?: string) => {
+    if (!date) return "Not available";
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return "Not available";
+    return parsed.toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
 
   const loadFiles = useCallback(async () => {
     try {
@@ -176,73 +189,71 @@ export default function AttachmentsTab({
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* {!readonly && ( */}
-          <div className=" lg:col-span-1 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-1 text-center transition-all hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 ">
-            {" "}
-            <UploadDropzone
-              className="custom-attachment"
-              // disabled = {readonly}
-              endpoint="attachmentUploader"
-              input={{ module, recordId }}
-              config={{ mode: "auto" }}
-              onUploadBegin={() => {
-                setUploading(true);
+        <div className=" lg:col-span-1 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-1 text-center transition-all hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 ">
+          {" "}
+          <UploadDropzone
+            className="custom-attachment"
+            // disabled = {readonly}
+            endpoint="attachmentUploader"
+            input={{ module, recordId }}
+            config={{ mode: "auto" }}
+            onUploadBegin={() => {
+              setUploading(true);
+              setUploadComplete(false);
+              onRequestEdit?.();
+            }}
+            onClientUploadComplete={() => {
+              setUploading(false);
+              setUploadComplete(true);
+              loadFiles();
+              window.setTimeout(() => {
                 setUploadComplete(false);
-                onRequestEdit?.();
-              }}
-              onClientUploadComplete={() => {
-                setUploading(false);
-                setUploadComplete(true);
-                loadFiles();
-                window.setTimeout(() => {
-                  setUploadComplete(false);
-                }, 2500);
-              }}
-              onUploadError={(error: Error) => {
-                setUploading(false);
-                setUploadComplete(false);
-                console.error(`Upload error: ${error.message}`);
-              }}
-              appearance={{
-                container: "w-full max-h-[150px] border-0 bg-transparent ",
-                label:
-                  "text-sm font-semibold text-slate-700 dark:text-slate-200",
-                uploadIcon: "h-8 w-8",
-                allowedContent:
-                  "text-[11px] text-slate-400 dark:text-slate-500",
-                button: [
-                  "w-full",
-                  "h-9",
-                  "w-24",
-                  "rounded-lg",
-                  "text-xs",
-                  "font-semibold",
-                  "text-white",
-                  "shadow-sm",
-                  "transition-all",
-                  "duration-200",
-                  // Normal state && !readonly
-                  !uploading && !uploadComplete 
-                    ? "bg-blue-600 hover:bg-blue-700"
-                    : "",
-                  // Uploading state
-                  uploading ? "bg-slate-400 cursor-not-allowed" : "",
-                  // Completed state
-                  uploadComplete ? "bg-emerald-500 hover:bg-emerald-600" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" "),
-              }}
-              content={{
-                label: uploading
-                  ? "Uploading..."
-                  : uploadComplete
-                    ? "✓ Upload Complete"
-                    : "Click or Drag Documents Here",
-                allowedContent: "PDF, Excel sheets, images up to 4MB",
-                button:"Add Attachments"
-              }}
-            />{" "}
-          </div>
+              }, 2500);
+            }}
+            onUploadError={(error: Error) => {
+              setUploading(false);
+              setUploadComplete(false);
+              console.error(`Upload error: ${error.message}`);
+            }}
+            appearance={{
+              container: "w-full max-h-[150px] border-0 bg-transparent ",
+              label: "text-sm font-semibold text-slate-700 dark:text-slate-200",
+              uploadIcon: "h-8 w-8",
+              allowedContent: "text-[11px] text-slate-400 dark:text-slate-500",
+              button: [
+                "w-full",
+                "h-9",
+                "w-24",
+                "rounded-lg",
+                "text-xs",
+                "font-semibold",
+                "text-white",
+                "shadow-sm",
+                "transition-all",
+                "duration-200",
+                // Normal state && !readonly
+                !uploading && !uploadComplete
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "",
+                // Uploading state
+                uploading ? "bg-slate-400 cursor-not-allowed" : "",
+                // Completed state
+                uploadComplete ? "bg-emerald-500 hover:bg-emerald-600" : "",
+              ]
+                .filter(Boolean)
+                .join(" "),
+            }}
+            content={{
+              label: uploading
+                ? "Uploading..."
+                : uploadComplete
+                  ? "✓ Upload Complete"
+                  : "Click or Drag Documents Here",
+              allowedContent: "PDF, Excel sheets, images up to 4MB",
+              button: "Add Attachments",
+            }}
+          />{" "}
+        </div>
         {/* )} */}
 
         <div className="lg:col-span-2 space-y-2">
@@ -258,60 +269,62 @@ export default function AttachmentsTab({
             files.map((item) => {
               const previewable = isPreviewable(item.mime_type);
               return (
-                <div
-                  key={item.id}
-                  className=" border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 rounded-xl flex justify-between items-center gap-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/50 "
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={` w-10 h-10 rounded-lg flex items-center justify-center text-[9px] font-bold tracking-tight shrink-0 ${getFileIconColor(item.mime_type)} `}
-                    >
-                      {" "}
-                      {getFileTypeLabel(item.file_name, item.mime_type)}
-                    </div>{" "}
-                    <div className="min-w-0">
-                      {" "}
-                      <p
-                        className=" text-xs font-medium text-slate-800 dark:text-slate-200 truncate "
-                        title={item.file_name}
-                      >
+                <>
+                  <div
+                    key={item.id}
+                    className=" border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 rounded-xl  gap-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/50 "
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={` w-10 h-10 rounded-lg flex items-center justify-center text-[9px] font-bold tracking-tight shrink-0 ${getFileIconColor(item.mime_type)} `}
+                        >
+                          {" "}
+                          {getFileTypeLabel(item.file_name, item.mime_type)}
+                        </div>{" "}
+                        <div className="min-w-0">
+                          {" "}
+                          <p
+                            className=" text-xs font-medium text-slate-800 dark:text-slate-200 truncate "
+                            title={item.file_name}
+                          >
+                            {" "}
+                            {item.file_name}{" "}
+                          </p>{" "}
+                          <p className=" text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5 ">
+                            {" "}
+                            {item.mime_type || "Document"}{" "}
+                            {item.file_size
+                              ? ` • ${formatFileSize(item.file_size)}`
+                              : ""}{" "}
+                          </p>{" "}
+                        </div>{" "}
+                      </div>{" "}
+                      {/* Actions */}{" "}
+                      <div className="flex items-center gap-2 shrink-0">
                         {" "}
-                        {item.file_name}{" "}
-                      </p>{" "}
-                      <p className=" text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5 ">
-                        {" "}
-                        {item.mime_type || "Document"}{" "}
-                        {item.file_size
-                          ? ` • ${formatFileSize(item.file_size)}`
-                          : ""}{" "}
-                      </p>{" "}
-                    </div>{" "}
-                  </div>{" "}
-                  {/* Actions */}{" "}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {" "}
-                    {item.file_path && (
-                      <a
-                        href={item.file_path}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className=" inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-950 px-3 py-1.5 rounded-lg transition-all "
-                      >
-                        {" "}
-                        {previewable ? "View" : "Open"}{" "}
-                      </a>
-                    )}{" "}
-                    {!readonly && item.id && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteClick(item)}
-                        disabled={deletingId === item.id}
-                        className="inline-flex items-center text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950 px-2 py-1 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {deletingId === item.id ? "Deleting..." : "Delete"}
-                      </button>
-                    )}
-                    {/* {!readonly && item.id && (
+                        {item.file_path && (
+                          <a
+                            href={item.file_path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className=" inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-950 px-3 py-1.5 rounded-lg transition-all "
+                          >
+                            {" "}
+                            {previewable ? "View" : "Open"}{" "}
+                          </a>
+                        )}{" "}
+                        {!readonly && item.id && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClick(item)}
+                            disabled={deletingId === item.id}
+                            className="inline-flex items-center text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950 px-2 py-1 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {deletingId === item.id ? "Deleting..." : "Delete"}
+                          </button>
+                        )}
+                        {/* {!readonly && item.id && (
                     <button
                       type="button"
                       onClick={() => handleDelete(item.id!)}
@@ -322,8 +335,41 @@ export default function AttachmentsTab({
                       {deletingId === item.id ? "Deleting..." : "Delete"}{" "}
                     </button>
                   )}{" "} */}
-                  </div>{" "}
-                </div>
+                      </div>{" "}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center gap-1.5">
+                        <Icon
+                          icon="lucide:user-round"
+                          className="w-3.5 h-3.5"
+                        />
+                        <span>
+                          Created by:{" "}
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                            {item.created_by_name ||
+                              (item.created_by
+                                ? `User ${item.created_by}`
+                                : "Unknown")}
+                          </span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <Icon
+                          icon="lucide:calendar-clock"
+                          className="w-3.5 h-3.5"
+                        />
+                        <span>
+                          Created on:{" "}
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                            {formatDate(item.created_at)}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </>
               );
             })
           )}

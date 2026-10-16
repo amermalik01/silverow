@@ -21,13 +21,13 @@ type Props = {
 
 export default function EmployeeAccessTab({ access, setAccess }: Props) {
   const inputClass =
-    "w-full border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all";
+    "w-full border border-slate-300 rounded px-3 py-2 text-xs text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all";
   const labelClass =
     "block text-xs font-semibold text-slate-600 capitalize tracking-wider mb-1.5";
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3">
+      <div className="p-4 bg-slate-50 border border-slate-200 rounded flex items-start gap-3">
         <div className="pt-0.5">
           <input
             id="enable-login-toggle"
@@ -54,7 +54,7 @@ export default function EmployeeAccessTab({ access, setAccess }: Props) {
       </div>
 
       {access.enable_login && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border border-slate-200 bg-white shadow-sm rounded-xl animate-fadeIn">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border border-slate-200 bg-white shadow-sm rounded animate-fadeIn">
           <div className="md:col-span-2">
             <label className={labelClass}>IAM Identity Email Address</label>
             <input

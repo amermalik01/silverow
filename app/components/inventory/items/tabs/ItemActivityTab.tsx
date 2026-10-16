@@ -151,7 +151,7 @@ export default function ItemActivityTab({ itemId }: Props) {
     <div className="space-y-5">
       {/* KPI Cards */}
       {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded border border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Total Stock
@@ -165,7 +165,7 @@ export default function ItemActivityTab({ itemId }: Props) {
           </div>
         </div>
 
-        <div className="p-3.5 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
+        <div className="p-3.5 bg-amber-50/50 dark:bg-amber-950/20 rounded border border-amber-200/50 dark:border-amber-900/30">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
               Allocated Stock
@@ -182,7 +182,7 @@ export default function ItemActivityTab({ itemId }: Props) {
           </div>
         </div>
 
-        <div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/50 dark:border-emerald-900/30">
+        <div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded border border-emerald-200/50 dark:border-emerald-900/30">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
               Available Stock
@@ -243,7 +243,7 @@ export default function ItemActivityTab({ itemId }: Props) {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg px-2.5 py-1.5 focus:outline-none"
+              className="text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded px-2.5 py-1.5 focus:outline-none"
             >
               <option value="ALL">All Modules</option>
               <option value="OPENING_BALANCE">Opening Balance</option>
@@ -261,7 +261,7 @@ export default function ItemActivityTab({ itemId }: Props) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search reference, batch..."
-              className="w-full sm:w-48 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg px-3 py-1.5 focus:outline-none"
+              className="w-full sm:w-48 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded px-3 py-1.5 focus:outline-none"
             />
           </div>
         )}
@@ -269,7 +269,7 @@ export default function ItemActivityTab({ itemId }: Props) {
 
       {/* 1. Warehouse Stock Distribution */}
       {activeSubView === "stock" && (
-        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded">
           <table className="w-full text-left text-xs table-fixed border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
@@ -340,7 +340,7 @@ export default function ItemActivityTab({ itemId }: Props) {
 
       {/* 2. Movement Transactions */}
       {activeSubView === "transactions" && (
-        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded">
           <table className="w-full text-left table-fixed text-xs border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
@@ -418,7 +418,7 @@ export default function ItemActivityTab({ itemId }: Props) {
 
       {/* 3. Allocations View */}
       {activeSubView === "allocations" && (
-        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded">
           <table className="w-full text-left table-fixed text-xs border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>

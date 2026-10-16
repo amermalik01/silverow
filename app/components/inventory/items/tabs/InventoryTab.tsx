@@ -17,7 +17,7 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
 
       {/* STOCK CONTROL */}
 
-      <div className="border rounded-lg p-4 space-y-4">
+      <div className="border rounded p-4 space-y-4">
         <h3 className="font-semibold">Stock Control</h3>
 
         <div className="grid grid-cols-2 gap-4">
@@ -50,7 +50,7 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
 
       {/* REORDER */}
 
-      <div className="border rounded-lg p-4 space-y-4">
+      <div className="border rounded p-4 space-y-4">
         <h3 className="font-semibold">Reorder Setup</h3>
 
         <div className="grid grid-cols-3 gap-4">
@@ -73,7 +73,7 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
 
       {/* COSTING */}
 
-      <div className="border rounded-lg p-4 space-y-4">
+      <div className="border rounded p-4 space-y-4">
         <h3 className="font-semibold">Costing & Valuation</h3>
 
         <div className="grid grid-cols-3 gap-4">
@@ -105,12 +105,12 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
 
       {/* WAREHOUSE RULES */}
 
-      <div className="border rounded-lg p-4 space-y-4">
+      <div className="border rounded p-4 space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold">Warehouse Rules</h3>
 
           <Button variant="add_line"
-            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
             // className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5 px-3 py-2 rounded"
           >
             Add Warehouse Rule
@@ -140,7 +140,7 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
 
       {/* ITEM SUMMARY */}
 
-      <div className="border rounded-lg p-4">
+      <div className="border rounded p-4">
         <h3 className="font-semibold mb-2">Inventory Summary</h3>
         <p className="text-xs text-gray-500">Item ID: {itemId}</p>
       </div>

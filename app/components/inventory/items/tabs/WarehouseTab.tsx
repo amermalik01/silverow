@@ -138,7 +138,7 @@ export default function WarehouseTab({
   return (
     <div className="space-y-6">
       {/* Top Header Summary Bar */}
-      <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between text-xs gap-4">
+      <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between text-xs gap-4">
         {/* <div className="flex items-center gap-6 text-slate-600 dark:text-slate-300 font-medium">
           <span>
             On Route Stock:{" "}
@@ -163,7 +163,6 @@ export default function WarehouseTab({
             type="button"
             onClick={addWarehouseRow}
             disabled={loadingLookups}
-            // className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
             variant="add_line"
             // className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm disabled:opacity-50"
           >
@@ -173,7 +172,7 @@ export default function WarehouseTab({
       </div>
 
       {activeWarehouses.length === 0 && (
-        <div className="p-8 text-center text-xs border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
+        <div className="p-8 text-center text-xs border border-dashed rounded border-slate-300 dark:border-slate-700 text-slate-400">
           No warehouse assignments established for this item.
         </div>
       )}
