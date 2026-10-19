@@ -133,8 +133,43 @@ export class SalesReturnReceiptService {
         }
       }
 
-      const unitCost = Number(line.unit_cost || 0);
-      const totalCost = Number((qtyReturned * unitCost).toFixed(2));
+      // 4. Resolve the historical Unit Cost from original sales dispatch allocations
+      // This looks up the exact FIFO cost at which the item was originally shipped out.
+      let resolvedUnitCost = 0;
+
+      if (line.credit_note_line_id) {
+        // Find the original shipment allocation cost using the credit note line / sales order connection
+        const originalAllocationRes = await client.query(
+          `
+          SELECT ia.unit_cost
+          FROM inventory_allocations ia
+          JOIN stock_dispatch_lines sdl ON sdl.id = ia.outbound_line_id
+          JOIN credit_note_lines cnl ON cnl.sales_invoice_line_id = sdl.sales_order_line_id
+          WHERE cnl.id = $1
+          ORDER BY ia.created_at DESC
+          LIMIT 1
+          `,
+          [line.credit_note_line_id]
+        );
+
+        if (originalAllocationRes.rows.length > 0) {
+          resolvedUnitCost = Number(originalAllocationRes.rows[0].unit_cost || 0);
+        }
+      }
+
+      // Fallback to item standard cost or request line cost if no prior shipment allocation is found
+      if (resolvedUnitCost <= 0) {
+        const itemRes = await client.query(
+          `SELECT COALESCE(standard_cost, 0) AS standard_cost FROM items WHERE id = $1`,
+          [line.item_id]
+        );
+        resolvedUnitCost = Number(itemRes.rows[0]?.standard_cost || line.unit_cost || 0);
+      }
+
+      const totalCost = Number((qtyReturned * resolvedUnitCost).toFixed(2));
+
+      // const unitCost = Number(line.unit_cost || 0);
+      // const totalCost = Number((qtyReturned * unitCost).toFixed(2));
 
       // 4. Save into unified stock_dispatch_lines table
       const lineResult = await client.query(
@@ -171,7 +206,7 @@ export class SalesReturnReceiptService {
           line.serial_no || null,
           line.expiry_date || null,
           qtyReturned,
-          unitCost,
+          resolvedUnitCost,//unitCost,
           totalCost,
         ]
       );
@@ -180,7 +215,7 @@ export class SalesReturnReceiptService {
 
       // 5. Post physical inbound stock receipt via Inventory Engine
       let inventoryValueToCapitalize = totalCost;
-      let ledgerEntryUnitCost = unitCost;
+      let ledgerEntryUnitCost = resolvedUnitCost;// unitCost;
 
       if (line.item_id && line.warehouse_id) {
         const inboundRes =
@@ -198,7 +233,7 @@ export class SalesReturnReceiptService {
               serial_no: line.serial_no,
               expiry_date: line.expiry_date,
               quantity: qtyReturned,
-              unit_cost: unitCost,
+              unit_cost: resolvedUnitCost,// unitCost,
               reference_type: "SALES_RETURN",
               reference_id: receipt.id,
               reference_line_id: receiptLine.id,

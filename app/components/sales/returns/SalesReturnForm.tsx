@@ -889,8 +889,8 @@ export const SalesReturnForm: React.FC<Props> = ({
       });
 
       setShowReceiveAndPostModal(false);
+      router.push(`/${slug}/sales/returns/new`);
 
-      router.push(`/${slug}/sales/orders/new`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Error processing operation.",
@@ -974,7 +974,8 @@ export const SalesReturnForm: React.FC<Props> = ({
 
       setShowCreditNoteModal(false);
 
-      router.push(`/${slug}/sales/orders/new`);
+      router.push(`/${slug}/sales/returns/new`);
+      
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Error posting invoice",
