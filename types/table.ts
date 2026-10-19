@@ -31,6 +31,8 @@ export interface FilterValue {
   [key: string]: FilterItem;
 }
 
+export type ListingStatus = "active" | "inactive";
+
 export interface FetchParams {
   page?: number;
   pageSize?: number;
@@ -39,6 +41,9 @@ export interface FetchParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc" | "ASC" | "DESC";
   filters?: FilterValue;
+
+  // New: server-side listing status
+  statusFilter?: ListingStatus;
 }
 
 export interface FetchResponse<T> {
@@ -66,12 +71,3 @@ export interface DataTableSelection<T> {
   enabled?: boolean;
   onSelectionChange?: (rows: T[]) => void;
 }
-
-// export interface FetchParams {
-//   page: number;
-//   pageSize: number;
-//   search?: string;
-//   sortBy?: string;
-//   sortOrder?: "asc" | "desc";
-//   filters?: FilterValue;
-// }

@@ -140,7 +140,8 @@ export class PartyService {
       const page = params.page ?? 1;
       const pageSize = params.pageSize ?? 10;
       const search = params.search ?? "";
-      const sortColumn = params.sortColumn;
+
+      const sortColumn = params.sortBy;
       const sortOrder = params.sortOrder;
 
       const offset = (page - 1) * pageSize;
@@ -160,7 +161,15 @@ export class PartyService {
         whereClauses.push(`p.${role} = true`);
       }
 
-      // Search Filter Across Code, Metadata, and Primary Contacts
+      // Active / inactive filter
+      const statusFilter =
+        params.statusFilter === "inactive" ? "inactive" : "active";
+
+      whereClauses.push(`p.status = $${paramIdx}`);
+      queryValues.push(statusFilter);
+      paramIdx++;
+
+      // Search filter
       if (search.trim()) {
         const searchPattern = `%${search.trim()}%`;
         whereClauses.push(`(
@@ -317,9 +326,29 @@ export class PartyService {
         LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
       `;
 
-     const totalQuery = `
-        SELECT COUNT(p.id)::int AS count 
+      // const totalQuery = `
+      //   SELECT COUNT(p.id)::int AS count
+      //   FROM parties p
+      //   ${whereSql}
+      // `;
+
+      const totalQuery = `
+        SELECT COUNT(p.id)::int AS count
         FROM parties p
+        LEFT JOIN LATERAL (
+          SELECT name
+          FROM party_contacts
+          WHERE party_id = p.id
+          ORDER BY is_primary DESC, id ASC
+          LIMIT 1
+        ) pc ON true
+        LEFT JOIN LATERAL (
+          SELECT city
+          FROM party_addresses
+          WHERE party_id = p.id
+          ORDER BY is_primary DESC, id ASC
+          LIMIT 1
+        ) pa ON true
         ${whereSql}
       `;
 

@@ -40,6 +40,20 @@ export class ItemsService {
     const queryValues: (string | number)[] = [companyId];
     const whereClauses = ["i.company_id = $1", "i.deleted_at IS NULL"];
 
+    /* Active / Inactive listing filter */
+    const statusFilter =
+      params.statusFilter === "inactive" ? "inactive" : "active";
+
+    if (statusFilter === "inactive") {
+      // Include inactive items only.
+      queryValues.push(2);
+      whereClauses.push(`i.status = $${queryValues.length}`);
+    } else {
+      // Include active items only.
+      queryValues.push(1);
+      whereClauses.push(`i.status = $${queryValues.length}`);
+    }
+
     // Dynamic Filters
     Object.entries(filters).forEach(([colKey, filter]) => {
       if (!filter) return;

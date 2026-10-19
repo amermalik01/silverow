@@ -16,6 +16,7 @@ import {
   DataTableProps,
   FetchParams,
   FilterValue,
+  ListingStatus,
 } from "@/types/table";
 
 import { ColumnHeaderFilter } from "./ColumnHeaderFilter";
@@ -197,6 +198,10 @@ export function DataTable<T extends object>({
     undefined,
   );
 
+  const [statusFilter, setStatusFilter] = useState<ListingStatus>("active");
+
+  const [loadedQueryKey, setLoadedQueryKey] = useState<string | null>(null);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [globalSearch, setGlobalSearch] = useState("");
@@ -219,6 +224,28 @@ export function DataTable<T extends object>({
    */
   const isInitialFilterRender = useRef(true);
 
+  const currentQueryKey = useMemo(
+    () =>
+      JSON.stringify({
+        page,
+        pageSize,
+        filters: debouncedFilters,
+        search: globalSearch.trim(),
+        sortBy,
+        sortOrder,
+        statusFilter,
+      }),
+    [
+      page,
+      pageSize,
+      debouncedFilters,
+      globalSearch,
+      sortBy,
+      sortOrder,
+      statusFilter,
+    ],
+  );
+
   /* ------------------------------------------------------------------------ */
   /* Derived state                                                            */
   /* ------------------------------------------------------------------------ */
@@ -240,7 +267,12 @@ export function DataTable<T extends object>({
    * This fixes the visual issue where checkboxes appear
    * before the listing data.
    */
-  const showSelectionColumn = enableRowSelection && !loading && data.length > 0;
+  // const showSelectionColumn = enableRowSelection && !loading && data.length > 0;
+  const showSelectionColumn =
+    enableRowSelection &&
+    !loading &&
+    loadedQueryKey === currentQueryKey &&
+    data.length > 0;
 
   /**
    * Search is deliberately kept client-side for the
@@ -249,27 +281,29 @@ export function DataTable<T extends object>({
    * If your API supports global search, we can move this
    * completely server-side later.
    */
-  const filteredData = useMemo(() => {
-    const term = globalSearch.trim().toLowerCase();
 
-    if (!term) {
-      return data;
-    }
+  const filteredData = data;
+  // const filteredData = useMemo(() => {
+  //   const term = globalSearch.trim().toLowerCase();
 
-    return data.filter((row) => {
-      const rowRecord = row as Record<string, unknown>;
+  //   if (!term) {
+  //     return data;
+  //   }
 
-      return visibleColumns.some((col) => {
-        const rawValue = rowRecord[col.columnKey];
+  //   return data.filter((row) => {
+  //     const rowRecord = row as Record<string, unknown>;
 
-        if (rawValue === null || rawValue === undefined) {
-          return false;
-        }
+  //     return visibleColumns.some((col) => {
+  //       const rawValue = rowRecord[col.columnKey];
 
-        return String(rawValue).toLowerCase().includes(term);
-      });
-    });
-  }, [data, globalSearch, visibleColumns]);
+  //       if (rawValue === null || rawValue === undefined) {
+  //         return false;
+  //       }
+
+  //       return String(rawValue).toLowerCase().includes(term);
+  //     });
+  //   });
+  // }, [data, globalSearch, visibleColumns]);
 
   const activeFilterCount = useMemo(() => {
     return Object.values(filters).filter(
@@ -343,8 +377,10 @@ export function DataTable<T extends object>({
 
   const loadData = useCallback(async () => {
     const currentRequestId = ++requestIdRef.current;
+    const requestQueryKey = currentQueryKey;
 
     setLoading(true);
+    setLoadedQueryKey(null);
 
     try {
       const params: FetchParams = {
@@ -354,26 +390,18 @@ export function DataTable<T extends object>({
         search: globalSearch.trim(),
         sortBy,
         sortOrder,
+        statusFilter,
       };
 
       const response = await fetchApi(params);
 
-      /**
-       * Ignore old request responses.
-       *
-       * Example:
-       *
-       * Request A = page 1
-       * Request B = page 2
-       *
-       * If B finishes first, A should not overwrite B.
-       */
       if (currentRequestId !== requestIdRef.current) {
         return;
       }
 
       setData(response.data || []);
       setTotalRecords(response.totalRecords || 0);
+      setLoadedQueryKey(requestQueryKey);
     } catch (err) {
       if (currentRequestId !== requestIdRef.current) {
         return;
@@ -383,6 +411,7 @@ export function DataTable<T extends object>({
 
       setData([]);
       setTotalRecords(0);
+      setLoadedQueryKey(null);
     } finally {
       if (currentRequestId === requestIdRef.current) {
         setLoading(false);
@@ -395,7 +424,9 @@ export function DataTable<T extends object>({
     globalSearch,
     sortBy,
     sortOrder,
+    statusFilter,
     fetchApi,
+    currentQueryKey,
   ]);
 
   /* ------------------------------------------------------------------------ */
@@ -410,16 +441,13 @@ export function DataTable<T extends object>({
     loadData();
   }, [loadData]);
 
-  /**
-   * Clear selected rows whenever the actual listing
-   * changes.
-   *
-   * This prevents selections from one page being
-   * accidentally applied to another page.
-   */
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [page, pageSize, debouncedFilters, sortBy, sortOrder, data]);
+  }, [currentQueryKey]);
+
+  // useEffect(() => {
+  //   setSelectedIds(new Set());
+  // }, [page, pageSize, debouncedFilters, sortBy, sortOrder, statusFilter, data]);
 
   /**
    * Inform parent component about selected IDs.
@@ -453,6 +481,18 @@ export function DataTable<T extends object>({
     setDebouncedFilters({});
     setPage(1);
   }, []);
+
+  const handleStatusChange = useCallback(
+    (nextStatus: ListingStatus) => {
+      if (nextStatus === statusFilter) return;
+
+      setLoading(true);
+      setStatusFilter(nextStatus);
+      setPage(1);
+      setSelectedIds(new Set());
+    },
+    [statusFilter],
+  );
 
   /* ------------------------------------------------------------------------ */
   /* Sorting                                                                  */
@@ -541,17 +581,181 @@ export function DataTable<T extends object>({
       {/* Toolbar                                                            */}
       {/* ------------------------------------------------------------------ */}
 
-      <div className="flex flex-col sm:flex-row items-center justify-between bg-emerald-950 px-3 py-2 text-emerald-100 border-b border-emerald-900 gap-2">
-        <div className="flex items-center gap-1.5 w-full">
+      <div className="flex flex-col sm:flex-row xl:items-center xl:justify-between  bg-emerald-950 px-3 py-2 text-emerald-100 border-b border-emerald-900 gap-3">
+        {/* gap-3 w-full */}
+        {/* Left: Status and Search */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0 flex-1">
           {/* Search */}
+          <div className="relative w-full sm:max-w-sm">
+            <input
+              type="text"
+              placeholder="Search records..."
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              className="w-full rounded-md border border-emerald-700/60
+                bg-emerald-900/50 py-2 pl-9 pr-9 text-xs text-white
+                placeholder:text-emerald-300/70 outline-none
+                transition-colors focus:border-emerald-400
+                focus:ring-2 focus:ring-emerald-500/20"
+            />
+
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300 pointer-events-none">
+              🔍
+            </span>
+
+            {globalSearch && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setGlobalSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-300 hover:text-white"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Table Actions */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Active / Inactive */}
+          <div
+            className="inline-flex w-fit shrink-0 items-center gap-1 rounded-md border border-emerald-800/70 bg-slate-900/60 p-1"
+            role="group"
+            aria-label="Filter records by status"
+          >
+            <button
+              type="button"
+              aria-pressed={statusFilter === "active"}
+              onClick={() => handleStatusChange("active")}
+              className={`inline-flex items-center justify-center gap-2
+                rounded-md px-3 py-1 text-xs font-semibold transition-all
+                focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-emerald-400 ${
+                  statusFilter === "active"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-emerald-200 hover:bg-emerald-800/70"
+                }`}
+            >
+              {/* <span
+                className={`h-2 w-2 rounded-full ${
+                  statusFilter === "active"
+                    ? "bg-emerald-200"
+                    : "bg-emerald-400"
+                }`}
+              /> */}
+              Active
+            </button>
+
+            <button
+              type="button"
+              aria-pressed={statusFilter === "inactive"}
+              onClick={() => handleStatusChange("inactive")}
+              className={`inline-flex items-center justify-center gap-2
+                rounded-md px-3 py-1 text-xs font-semibold transition-all
+                focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-amber-400 ${
+                  statusFilter === "inactive"
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "text-emerald-200 hover:bg-emerald-800/70"
+                }`}
+            >
+              {/* <span
+                className={`h-2 w-2 rounded-full ${
+                  statusFilter === "inactive" ? "bg-amber-100" : "bg-amber-400"
+                }`}
+              /> */}
+              Inactive
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md
+              border border-emerald-700/60 bg-emerald-900/50
+              px-3 py-2 text-xs font-medium text-emerald-100
+              transition-colors hover:bg-emerald-800"
+          >
+            <span>⚙️</span>
+            Customise
+          </button>
+
+          <button
+            type="button"
+            aria-pressed={showFilters}
+            onClick={() => setShowFilters((previous) => !previous)}
+            className={`inline-flex items-center gap-2 rounded-md
+              border px-3 py-2 text-xs font-medium transition-colors ${
+                showFilters
+                  ? "border-emerald-400 bg-emerald-700 text-white"
+                  : "border-emerald-700/60 bg-emerald-900/50 text-emerald-100 hover:bg-emerald-800"
+              }`}
+          >
+            <span>🔻</span>
+            Column Filters
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[10px]">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="rounded-md border border-rose-800/70
+                bg-rose-950/60 px-3 py-2 text-xs font-medium
+                text-rose-200 transition-colors hover:bg-rose-900"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* <div className="flex flex-col sm:flex-row items-center justify-between bg-emerald-950 px-3 py-2 text-emerald-100 border-b border-emerald-900 gap-2">
+        <div className="flex items-center gap-1.5 w-full">
+          // Search
           <div className="relative w-full max-w-md">
             <input
               type="text"
               placeholder="Search current page data..."
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
-              className="w-full rounded-lg bg-emerald-900/60 border border-emerald-700/50 px-3 py-1.5 pl-8 text-xs text-emerald-100 placeholder-emerald-400/70 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+              className="w-full rounded-md bg-emerald-900/60 border border-emerald-700/50 px-3 py-1.5 pl-8 text-xs text-emerald-100 placeholder-emerald-400/70 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
             />
+
+            // Active / Inactive Filter
+            <div className="flex items-center gap-1 shrink-0 rounded-md border border-emerald-700/50 bg-emerald-900/60 p-1">
+              <button
+                type="button"
+                aria-pressed={statusFilter === "active"}
+                disabled={loading && statusFilter === "active"}
+                onClick={() => handleStatusChange("active")}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  statusFilter === "active"
+                    ? "bg-emerald-500 text-white"
+                    : "text-emerald-200 hover:bg-emerald-800"
+                }`}
+              >
+                Active
+              </button>
+
+              <button
+                type="button"
+                aria-pressed={statusFilter === "inactive"}
+                disabled={loading && statusFilter === "inactive"}
+                onClick={() => handleStatusChange("inactive")}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  statusFilter === "inactive"
+                    ? "bg-amber-500 text-white"
+                    : "text-emerald-200 hover:bg-emerald-800"
+                }`}
+              >
+                Inactive
+              </button>
+            </div>
 
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-emerald-400">
               🔍
@@ -568,20 +772,20 @@ export function DataTable<T extends object>({
             )}
           </div>
 
-          {/* Customize */}
+          // Customize
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="p-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50 transition-colors shrink-0"
+            className="p-1.5 rounded-md bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50 transition-colors shrink-0"
           >
             ⚙️ Customise Table
           </button>
 
-          {/* Filters */}
+          //Filters
           <button
             type="button"
             onClick={() => setShowFilters((previous) => !previous)}
-            className={`relative p-1.5 rounded-lg transition-colors border shrink-0 ${
+            className={`relative p-1.5 rounded-md transition-colors border shrink-0 ${
               showFilters
                 ? "bg-emerald-700 text-white border-emerald-500"
                 : "bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50"
@@ -590,25 +794,25 @@ export function DataTable<T extends object>({
             🔻 Column Filters
           </button>
 
-          {/* Clear Filters */}
+          // Clear Filters
           {activeFilterCount > 0 && (
             <button
               type="button"
               onClick={handleClearFilters}
-              className="flex items-center gap-1 text-[11px] font-semibold bg-rose-950/80 hover:bg-rose-900 text-rose-200 px-2.5 py-1 rounded-lg border border-rose-800/80 transition-colors shrink-0"
+              className="flex items-center gap-1 text-[11px] font-semibold bg-rose-950/80 hover:bg-rose-900 text-rose-200 px-2.5 py-1 rounded-md border border-rose-800/80 transition-colors shrink-0"
             >
               ✕ Clear ({activeFilterCount})
             </button>
           )}
         </div>
 
-        {/* Selection count */}
+        // Selection count 
         <div className="text-xs text-emerald-300 font-medium self-end sm:self-auto whitespace-nowrap">
           {enableRowSelection && selectedIds.size > 0 && (
             <>{selectedIds.size} selected</>
           )}
         </div>
-      </div>
+      </div> */}
 
       {/* ------------------------------------------------------------------ */}
       {/* Table                                                              */}
@@ -775,7 +979,7 @@ export function DataTable<T extends object>({
               setPageSize(Number(e.target.value));
               setPage(1);
             }}
-            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 outline-none cursor-pointer"
+            className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 outline-none cursor-pointer"
           >
             <option value={20}>20</option>
 
@@ -791,7 +995,7 @@ export function DataTable<T extends object>({
               type="button"
               disabled={loading || page === 1}
               onClick={() => setPage((previous) => Math.max(1, previous - 1))}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 disabled:opacity-40 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 disabled:opacity-40 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
             >
               Previous
             </button>
@@ -802,7 +1006,7 @@ export function DataTable<T extends object>({
                 loading || endRecord >= totalRecords || totalRecords === 0
               }
               onClick={() => setPage((previous) => previous + 1)}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 disabled:opacity-40 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 disabled:opacity-40 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
             >
               Next
             </button>
@@ -841,473 +1045,3 @@ export function DataTable<T extends object>({
     </div>
   );
 }
-
-/* interface DataTableProps<T> {
-  moduleKey: string;
-  fetchApi: (params: FetchParams) => Promise<FetchResponse<T>>;
-  columnsConfigApi: {
-    get: (moduleKey: string) => Promise<ColumnConfig[]>;
-    save: (moduleKey: string, configs: ColumnConfig[]) => Promise<void>;
-    reset: (moduleKey: string) => Promise<ColumnConfig[]>;
-  };
-  renderRowCell?: (row: T, columnKey: string) => React.ReactNode;
-}
-
-const DataTableCell = memo(function DataTableCell<T extends object>({
-  row,
-  col,
-  renderRowCell,
-}: {
-  row: T;
-  col: ColumnConfig;
-  renderRowCell?: (row: T, columnKey: string) => React.ReactNode;
-}) {
-  const customRender = renderRowCell
-    ? renderRowCell(row, col.columnKey)
-    : undefined;
-
-  let cellValue: React.ReactNode = "-";
-  if (customRender !== undefined) {
-    cellValue = customRender;
-  } else {
-    const val = (row as Record<string, unknown>)[col.columnKey];
-    if (val !== null && val !== undefined) {
-      cellValue =
-        typeof val === "object" ? String(val) : (val as React.ReactNode);
-    }
-  }
-
-  return (
-    <td
-      style={{
-        backgroundColor: col.headerColor ? `${col.headerColor}15` : undefined,
-      }}
-      className={`border-r border-slate-200 dark:border-slate-800 p-2 ${
-        col.isPinned
-          ? "sticky left-0 z-10 bg-white dark:bg-slate-900 shadow-sm"
-          : ""
-      }`}
-    >
-      {cellValue}
-    </td>
-  );
-}) as <T extends object>(props: {
-  row: T;
-  col: ColumnConfig;
-  renderRowCell?: (row: T, columnKey: string) => React.ReactNode;
-}) => React.JSX.Element;
-
-const DataTableRow = memo(function DataTableRow<T extends object>({
-  row,
-  rowId,
-  visibleColumns,
-  renderRowCell,
-}: {
-  row: T;
-  rowId: string | number;
-  visibleColumns: ColumnConfig[];
-  renderRowCell?: (row: T, columnKey: string) => React.ReactNode;
-}) {
-  return (
-    <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
-      <td className="border-r border-slate-200 dark:border-slate-800 p-2 text-center">
-        <input
-          type="checkbox"
-          className="accent-emerald-600 cursor-pointer rounded"
-        />
-      </td>
-      {visibleColumns.map((col) => (
-        <DataTableCell
-          key={col.columnKey}
-          row={row}
-          col={col}
-          renderRowCell={
-            renderRowCell as (row: object, columnKey: string) => React.ReactNode
-          }
-        />
-      ))}
-    </tr>
-  );
-}) as <T extends object>(props: {
-  row: T;
-  rowId: string | number;
-  visibleColumns: ColumnConfig[];
-  renderRowCell?: (row: T, columnKey: string) => React.ReactNode;
-}) => React.JSX.Element;
-
-export function DataTable<T extends object>({
-  moduleKey,
-  fetchApi,
-  columnsConfigApi,
-  renderRowCell,
-}: DataTableProps<T>) {
-  const [data, setData] = useState<T[]>([]);
-  const [columns, setColumns] = useState<ColumnConfig[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [totalRecords, setTotalRecords] = useState<number>(0);
-
-  // Pagination, Filter & Sorting State
-  const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(20);
-  const [filters, setFilters] = useState<FilterValue>({});
-  const [debouncedFilters, setDebouncedFilters] = useState<FilterValue>({});
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(
-    undefined,
-  );
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [globalSearch, setGlobalSearch] = useState<string>("");
-
-  const isInitialFilterRender = useRef(true);
-
-  // Debounce filter changes without triggering initial mount duplicate state update
-  useEffect(() => {
-    if (isInitialFilterRender.current) {
-      isInitialFilterRender.current = false;
-      return;
-    }
-    const handler = setTimeout(() => {
-      setDebouncedFilters(filters);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [filters]);
-
-  const loadColumns = useCallback(async () => {
-    try {
-      const config = await columnsConfigApi.get(moduleKey);
-      setColumns(config.sort((a, b) => a.columnOrder - b.columnOrder));
-    } catch (err) {
-      console.error("Failed to load column configuration:", err);
-    }
-  }, [moduleKey, columnsConfigApi]);
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetchApi({
-        page,
-        pageSize,
-        filters: debouncedFilters,
-        sortBy,
-        sortOrder,
-      });
-      setData(res.data || []);
-      setTotalRecords(res.totalRecords || 0);
-    } catch (err) {
-      console.error("Failed to fetch data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, pageSize, debouncedFilters, sortBy, sortOrder, fetchApi]);
-
-  useEffect(() => {
-    loadColumns();
-  }, [loadColumns]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handleFilterChange = useCallback(
-    (columnKey: string, filterData: FilterValue[string]) => {
-      setFilters((prev) => ({
-        ...prev,
-        [columnKey]: filterData,
-      }));
-      setPage(1);
-    },
-    [],
-  );
-
-  const handleClearFilters = useCallback(() => {
-    setFilters({});
-    setDebouncedFilters({});
-    setPage(1);
-  }, []);
-
-  const handleSortChange = useCallback((columnKey: string) => {
-    if (columnKey === "actions") return;
-    setSortBy((prevSortBy) => {
-      if (prevSortBy !== columnKey) {
-        setSortOrder("asc");
-        return columnKey;
-      }
-      setSortOrder((prevOrder) => {
-        if (prevOrder === "asc") return "desc";
-        setSortBy(undefined);
-        return undefined;
-      });
-      return columnKey;
-    });
-    setPage(1);
-  }, []);
-
-  const visibleColumns = useMemo(
-    () => columns.filter((col) => col.isVisible),
-    [columns],
-  );
-
-  const filteredData = useMemo(() => {
-    if (!globalSearch.trim()) return data;
-    const term = globalSearch.toLowerCase().trim();
-    return data.filter((row) => {
-      return visibleColumns.some((col) => {
-        const rawVal = (row as Record<string, unknown>)[col.columnKey];
-        return (
-          rawVal !== null &&
-          rawVal !== undefined &&
-          String(rawVal).toLowerCase().includes(term)
-        );
-      });
-    });
-  }, [data, globalSearch, visibleColumns]);
-
-  const activeFilterCount = useMemo(() => {
-    return Object.values(filters).filter(
-      (f) => f && Boolean(f.value || f.from || f.to),
-    ).length;
-  }, [filters]);
-
-  const startRecord = (page - 1) * pageSize + 1;
-  const endRecord = Math.min(page * pageSize, totalRecords);
-
-  return (
-    <div className="w-full font-sans text-slate-800 dark:text-slate-100 rounded-xl overflow-hidden shadow-lg border border-emerald-900/30">
-      <div className="flex flex-col sm:flex-row items-center justify-between bg-emerald-950 px-3 py-2 text-emerald-100 border-b border-emerald-900 gap-2">
-        <div className="flex items-center gap-1.5 w-full">
-          <div className="relative w-full max-w-md">
-            <input
-              type="text"
-              placeholder="Search current page data..."
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
-              className="w-full rounded-lg bg-emerald-900/60 border border-emerald-700/50 px-3 py-1.5 pl-8 text-xs text-emerald-100 placeholder-emerald-400/70 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-            />
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-emerald-400">
-              🔍
-            </span>
-            {globalSearch && (
-              <button
-                onClick={() => setGlobalSearch("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-emerald-400 hover:text-white"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="p-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50 transition-colors shrink-0"
-          >
-            ⚙️ Customise Table
-          </button>
-
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`relative p-1.5 rounded-lg transition-colors border shrink-0 ${
-              showFilters
-                ? "bg-emerald-700 text-white border-emerald-500"
-                : "bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50"
-            }`}
-          >
-            🔻 Column Filters
-          </button>
-
-          {activeFilterCount > 0 && (
-            <button
-              onClick={handleClearFilters}
-              className="flex items-center gap-1 text-[11px] font-semibold bg-rose-950/80 hover:bg-rose-900 text-rose-200 px-2.5 py-1 rounded-lg border border-rose-800/80 transition-colors shrink-0"
-            >
-              ✕ Clear ({activeFilterCount})
-            </button>
-          )}
-        </div>
-
-        <div className="text-xs text-emerald-300 font-medium self-end sm:self-auto">
-        
-        </div>
-      </div>
-
-      <div className="relative overflow-x-auto bg-white dark:bg-slate-900">
-        <table className="w-full border-collapse table-fixed text-left text-xs">
-  
-          <thead>
-            <tr className="bg-emerald-900 font-semibold text-emerald-50">
-
-              {!loading && filteredData.length > 0 && (
-                <th className="w-10 border-r border-emerald-800 p-2 text-center">
-                  <input
-                    type="checkbox"
-                    // checked={isAllSelected}
-                    // onChange={handleSelectAll}
-                    className="rounded border-slate-300 dark:border-slate-700 text-slate-900 focus:ring-slate-500"
-                  />
-                </th>
-              )}
-              {visibleColumns.map((col) => (
-                <th
-                  key={col.columnKey}
-                  onClick={() => handleSortChange(col.columnKey)}
-                  style={{
-                    width: col.columnWidth ? `${col.columnWidth}px` : "auto",
-                    backgroundColor: col.headerColor || undefined,
-                  }}
-                  className={`border-r border-emerald-800/80 p-2 font-bold capitalize tracking-wider text-[11px] select-none ${
-                    col.columnKey !== "actions"
-                      ? "cursor-pointer hover:bg-emerald-800/60"
-                      : ""
-                  } ${col.isPinned ? "sticky left-0 z-20 shadow-md" : ""}`}
-                >
-                  <div className="flex items-center justify-between gap-1">
-                    <span>{col.label}</span>
-                    {col.columnKey !== "actions" && (
-                      <span className="text-[10px] text-emerald-300 opacity-80">
-                        {sortBy === col.columnKey
-                          ? sortOrder === "asc"
-                            ? "▲"
-                            : "▼"
-                          : "⇅"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-              ))}
-            </tr>
-
-            {showFilters && (
-              <tr className="bg-emerald-900/90 border-b border-emerald-800">
-                <td className="border-r border-emerald-800/80 p-2 text-center bg-emerald-900"></td>
-                {visibleColumns.map((col) => (
-                  <td
-                    key={`filter-${col.columnKey}`}
-                    style={{ backgroundColor: col.headerColor || undefined }}
-                    className="border-r border-emerald-800/80 p-2 items-start content-start"
-                  >
-                    <ColumnHeaderFilter
-                      column={col}
-                      filters={filters}
-                      onFilterChange={handleFilterChange}
-                    />
-                  </td>
-                ))}
-              </tr>
-            )}
-          </thead>
-
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-            {loading ? (
-              // Render skeleton rows equal to current pageSize to preserve table height and eliminate flickering
-              Array.from({ length: pageSize }).map((_, rowIndex) => (
-                <tr key={`skeleton-row-${rowIndex}`} className="animate-pulse">
-                  {filteredData.length > 0 && (
-                    <td className="border-r border-slate-200 dark:border-slate-800 p-2 text-center">
-                      <div className="h-4 w-4 bg-slate-200 dark:bg-slate-800 rounded mx-auto" />
-                    </td>
-                  )}
-                  {visibleColumns.map((col) => (
-                    <td
-                      key={`skeleton-cell-${col.columnKey}`}
-                      className="border-r border-slate-200 dark:border-slate-800 p-2"
-                    >
-                      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : filteredData.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={visibleColumns.length + 1}
-                  className="p-12 text-center text-slate-400 font-medium"
-                >
-                  No data matching criteria.
-                </td>
-              </tr>
-            ) : (
-              filteredData.map((row, idx) => {
-                const rowObj = row as Record<string, unknown>;
-                const rowId =
-                  "id" in rowObj &&
-                  (typeof rowObj.id === "string" ||
-                    typeof rowObj.id === "number")
-                    ? rowObj.id
-                    : idx;
-
-                return (
-                  <DataTableRow
-                    key={rowId}
-                    row={row}
-                    rowId={rowId}
-                    visibleColumns={visibleColumns}
-                    renderRowCell={renderRowCell}
-                  />
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-between border-t bg-slate-50 dark:bg-slate-800/60 p-2 text-xs text-slate-600 dark:text-slate-300 gap-3">
-        <div className="font-semibold">{totalRecords} Total Records</div>
-        <div className="flex items-center gap-4">
-          <div>
-            Showing{" "}
-            <span className="font-bold">
-              {totalRecords > 0 ? startRecord : 0}
-            </span>{" "}
-            to <span className="font-bold">{endRecord}</span>
-          </div>
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setPage(1);
-            }}
-            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 outline-none  cursor-pointer"
-          >
-            <option value={20}>20 &nbsp;&nbsp;</option>
-            <option value={50}>50 &nbsp;&nbsp;</option>
-            <option value={100}>100 &nbsp;&nbsp;</option>
-          </select>
-          per page
-          <div className="flex gap-1.5">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 disabled:opacity-40 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-            >
-              Previous
-            </button>
-            <button
-              disabled={endRecord >= totalRecords}
-              onClick={() => setPage((p) => p + 1)}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 disabled:opacity-40 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <CustomisationModal
-        key={`${isModalOpen}-${columns.length}`}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        columns={columns}
-        onSave={async (updatedCols) => {
-          await columnsConfigApi.save(moduleKey, updatedCols);
-          setColumns(updatedCols);
-          setIsModalOpen(false);
-        }}
-        onResetDefault={async () => {
-          const defaultConfig = await columnsConfigApi.reset(moduleKey);
-          setColumns(defaultConfig);
-          setIsModalOpen(false);
-        }}
-      />
-    </div>
-  );
-} */
