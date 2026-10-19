@@ -6,14 +6,32 @@ export class PermissionService {
   /**
    * LIST
    */
+  // static async list() {
+  //   const result = await pool.query(
+  //     `
+  //     SELECT *
+  //     FROM auth_permissions
+  //     ORDER BY module, action
+  //     `,
+  //   );
+
+  //   return result.rows;
+  // }
+
   static async list() {
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM auth_permissions
-      ORDER BY module, action
-      `,
-    );
+    const result = await pool.query(`
+      SELECT 
+        p.id, 
+        p.module, 
+        m.parent_module, 
+        m.display_name AS module_display_name,
+        p.action, 
+        p.code, 
+        p.display_name 
+      FROM auth_permissions p
+      LEFT JOIN ref_modules m ON p.module = m.name
+      ORDER BY m.parent_module NULLS FIRST, p.module, p.action
+    `);
 
     return result.rows;
   }
