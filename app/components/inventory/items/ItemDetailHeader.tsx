@@ -91,7 +91,7 @@ export default function ItemDetailHeader({ item, metrics }: MetricProps) {
               icon="tabler:barcode"
               className="h-4 w-4 text-slate-500"
             />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-semibold capitalize tracking-wider text-slate-500">
               Item No.
             </span>
             <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -115,7 +115,7 @@ export default function ItemDetailHeader({ item, metrics }: MetricProps) {
             <div className="relative flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div
-                  className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${card.titleColor}`}
+                  className={`flex items-center gap-2 text-[10px] font-bold capitalize tracking-wider ${card.titleColor}`}
                 >
                   <Icon icon={card.icon} className="h-4 w-4 shrink-0" />
                   {card.title}
@@ -245,7 +245,7 @@ export default function ItemDetailHeader({ item, metrics }: MetricProps) {
 
             <div className="relative flex items-start justify-between gap-3">
               <div>
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-amber-700 dark:text-amber-400">
                   <Icon
                     icon="tabler:packages"
                     className="w-5 h-5 text-slate-400"
@@ -265,7 +265,7 @@ export default function ItemDetailHeader({ item, metrics }: MetricProps) {
 
             <div className="relative flex items-start justify-between gap-3">
               <div>
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-400">
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-violet-700 dark:text-violet-400">
                   <Icon
                     icon="tabler:lock-check"
                     className="w-5 h-5 text-amber-500 dark:text-amber-400"
@@ -285,7 +285,7 @@ export default function ItemDetailHeader({ item, metrics }: MetricProps) {
 
             <div className="relative flex items-start justify-between gap-3">
               <div>
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-amber-700 dark:text-amber-400">
                   <Icon
                     icon="tabler:circle-check"
                     className="w-5 h-5 text-emerald-500 dark:text-emerald-400"
@@ -313,7 +313,7 @@ export default function ItemDetailHeader({ item, metrics }: MetricProps) {
               <div className="relative flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div
-                    className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${card.titleColor}`}
+                    className={`flex items-center gap-2 text-md capitalize tracking-wider ${card.titleColor}`}
                   >
                     <Icon icon={card.icon} className="h-4 w-4 shrink-0" />
                     {card.title}

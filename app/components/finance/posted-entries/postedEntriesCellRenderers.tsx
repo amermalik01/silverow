@@ -129,7 +129,7 @@ const formatAmount = (val?: number | string | null): React.ReactNode => {
     ),
     source_no: (row: PostedLedgerEntry) => row.source_no || "-",
     // currency_code: (row: PostedLedgerEntry) => (
-    //   <span className="uppercase text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+    //   <span className="capitalize text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
     //     {row.currency_code || "LCY"}
     //   </span>
     // ),

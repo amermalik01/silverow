@@ -1,7 +1,5 @@
 // lib/services/sales/sales-return-posting.service.ts
 
-// lib/services/sales/sales-return-posting.service.ts
-
 import { PoolClient } from "pg";
 import { pool } from "@/lib/db";
 import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";

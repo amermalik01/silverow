@@ -115,7 +115,7 @@ export default function PermissionMatrix({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b text-xs uppercase text-slate-500 bg-slate-50 dark:bg-slate-800">
+            <tr className="border-b text-xs capitalize text-slate-500 bg-slate-50 dark:bg-slate-800">
               <th className="p-3">Tab Name</th>
               <th className="p-3 text-center">Check All</th>
               {ACTIONS.map((action) => (

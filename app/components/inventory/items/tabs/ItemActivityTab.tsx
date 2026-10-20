@@ -153,7 +153,7 @@ export default function ItemActivityTab({ itemId }: Props) {
       {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded border border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-500 capitalize tracking-wider">
               Total Stock
             </span>
             <Icon icon="tabler:packages" className="w-5 h-5 text-slate-400" />
@@ -167,7 +167,7 @@ export default function ItemActivityTab({ itemId }: Props) {
 
         <div className="p-3.5 bg-amber-50/50 dark:bg-amber-950/20 rounded border border-amber-200/50 dark:border-amber-900/30">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 capitalize tracking-wider">
               Allocated Stock
             </span>
             <Icon
@@ -184,7 +184,7 @@ export default function ItemActivityTab({ itemId }: Props) {
 
         <div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded border border-emerald-200/50 dark:border-emerald-900/30">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 capitalize tracking-wider">
               Available Stock
             </span>
             <Icon
@@ -202,14 +202,14 @@ export default function ItemActivityTab({ itemId }: Props) {
 
       {/* Sub-navigation Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+        <div className="flex items-center gap-1 bg-[#eef3ec] dark:bg-slate-800 p-1 rounded-xl text-xs w-fit border border-[#d5e2d2] dark:border-slate-700">
           <button
             type="button"
             onClick={() => setActiveSubView("stock")}
-            className={`px-3 py-1.5 rounded-md transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-all duration-200 capitalize ${
               activeSubView === "stock"
-                ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100"
-                : "text-slate-500"
+                ? "bg-[#d5e2d2] text-[#36543b] dark:bg-[#45634a] dark:text-white font-semibold shadow-sm"
+                : "text-[#6b806c] hover:bg-[#e1eadf] hover:text-[#36543b] dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
             }`}
           >
             Warehouse Stock
@@ -217,10 +217,10 @@ export default function ItemActivityTab({ itemId }: Props) {
           <button
             type="button"
             onClick={() => setActiveSubView("transactions")}
-            className={`px-3 py-1.5 rounded-md transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-all duration-200 capitalize ${
               activeSubView === "transactions"
-                ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100"
-                : "text-slate-500"
+                ? "bg-[#d5e2d2] text-[#36543b] dark:bg-[#45634a] dark:text-white font-semibold shadow-sm"
+                : "text-[#6b806c] hover:bg-[#e1eadf] hover:text-[#36543b] dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
             }`}
           >
             Movement Transactions
@@ -228,10 +228,10 @@ export default function ItemActivityTab({ itemId }: Props) {
           <button
             type="button"
             onClick={() => setActiveSubView("allocations")}
-            className={`px-3 py-1.5 rounded-md transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-all duration-200 capitalize ${
               activeSubView === "allocations"
-                ? "bg-white dark:bg-slate-700 font-semibold shadow-sm text-slate-800 dark:text-slate-100"
-                : "text-slate-500"
+                ? "bg-[#d5e2d2] text-[#36543b] dark:bg-[#45634a] dark:text-white font-semibold shadow-sm"
+                : "text-[#6b806c] hover:bg-[#e1eadf] hover:text-[#36543b] dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
             }`}
           >
             Allocations
@@ -276,7 +276,7 @@ export default function ItemActivityTab({ itemId }: Props) {
                 <th className="p-2.5">Warehouse</th>
                 <th className="p-2.5">Location</th>
                 <th className="p-2.5">Batch / Serial</th>
-                <th className="p-2.5 text-right">Physical Qty</th>
+                <th className="p-2.5 text-right">Total Qty</th>
                 <th className="p-2.5 text-right">Reserved Qty</th>
                 <th className="p-2.5 text-right">Available Qty</th>
                 <th className="p-2.5 text-right">Avg Cost</th>
@@ -461,7 +461,7 @@ export default function ItemActivityTab({ itemId }: Props) {
                     <td className="p-2.5 text-slate-600">
                       {alloc.bin_code || "-"}
                     </td>
-                    {/* <td className="p-2.5 text-slate-500 font-sans uppercase text-[10px]">{alloc.allocation_method || "FIFO"}</td> */}
+                    {/* <td className="p-2.5 text-slate-500 font-sans capitalize text-[10px]">{alloc.allocation_method || "FIFO"}</td> */}
                     <td className="p-2.5 text-right font-bold text-amber-600">
                       {Number(alloc.allocated_quantity)}
                     </td>
