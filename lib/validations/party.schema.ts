@@ -2,12 +2,6 @@
 
 import { z } from "zod";
 
-// Preprocessor to safely convert empty strings or null values to undefined
-// const looseString = z.preprocess(
-//   (val) => (val === "" || val === null ? undefined : String(val)),
-//   z.string().optional(),
-// );
-
 // Preprocessor specifically tailored for email formatting rules
 const looseEmail = z.preprocess(
   (val) => (val === "" || val === null ? undefined : String(val)),
@@ -20,11 +14,6 @@ const looseNumber = z.preprocess((val) => {
   const parsed = Number(val);
   return isNaN(parsed) ? 0 : parsed;
 }, z.number().nonnegative("Credit ceiling bounds cannot be negative").default(0));
-
-// const looseDate = z.preprocess(
-//   (val) => (val === "" || val === null ? undefined : String(val)),
-//   z.string().optional()
-// );
 
 // Preprocessor to safely convert empty/null/undefined values to undefined
 const looseString = z.preprocess(
@@ -215,23 +204,3 @@ export const PartySchema = z.object({
   bank_address: looseString,
   bank_address_2: looseString,
 });
-
-/* .superRefine((data, ctx) => {
-  if (data.is_customer) {
-    if (!data.sales_posting_group_id || data.sales_posting_group_id.trim() === "") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Business Posting Group is required",
-        path: ["sales_posting_group_id"],
-      });
-    }
-  } else {
-    if (!data.purchase_posting_group_id || data.purchase_posting_group_id.trim() === "") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Business Posting Group is required",
-        path: ["purchase_posting_group_id"],
-      });
-    }
-  }
-}) */

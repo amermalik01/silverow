@@ -223,6 +223,13 @@ export default function ContactsTab({
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 
             {/* <div className="xl:col-span-2 grid grid-cols-6 gap-3 items-start">
               <label className="text-xs font-medium col-span-1 pt-2">
@@ -237,9 +244,3 @@ export default function ContactsTab({
                 className={getInputClass(`contacts.${idx}.notes`, "col-span-5")}
               />
             </div> */}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}

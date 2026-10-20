@@ -13,8 +13,7 @@ import FinanceTab from "./tabs/FinanceTab";
 
 import ContactsTab from "./tabs/ContactsTab";
 import AddressesTab from "./tabs/AddressesTab";
-// import OpportunityCycleTab from "./tabs/OpportunityCycleTab";
-// import ActivitiesTab from "../shared/ActivitiesTab";
+import PriceListTab, { PriceListDraft } from "./tabs/PriceListTab";
 import PartyLedgerActivityTab from "./tabs/PartyLedgerActivityTab";
 import NotesTab from "../shared/NotesTab";
 import AttachmentsTab from "../shared/AttachmentsTab";
@@ -64,12 +63,16 @@ export default function PartyRecord({
   const activeCurrencyCode =
     currencies.find((c) => c.id === account.currency_id)?.code || "GBP";
 
-  // Snapshot states for rolling back on Cancel
   const [initialAccount, setInitialAccount] = useState<Partial<Party>>({});
   const [initialContacts, setInitialContacts] = useState<PartyContactDraft[]>(
     [],
   );
   const [initialAddresses, setInitialAddresses] = useState<PartyAddressDraft[]>(
+    [],
+  );
+
+  const [priceLists, setPriceLists] = useState<PriceListDraft[]>([]);
+  const [initialPriceLists, setInitialPriceLists] = useState<PriceListDraft[]>(
     [],
   );
 
@@ -105,20 +108,19 @@ export default function PartyRecord({
         const loadedAccount = data.account ?? {};
         const loadedContacts = data.contacts || [];
         const loadedAddresses = data.addresses || [];
+        const loadedPriceLists = data.priceLists || [];
 
         // Set working state
         setAccount(loadedAccount);
         setContacts(loadedContacts);
         setAddresses(loadedAddresses);
+        setPriceLists(loadedPriceLists);
 
         // Save initial snapshot for rollback capability
         setInitialAccount(loadedAccount);
         setInitialContacts(loadedContacts);
         setInitialAddresses(loadedAddresses);
-
-        // setAccount(data.account ?? {});
-        // setContacts(data.contacts || []);
-        // setAddresses(data.addresses || []);
+        setInitialPriceLists(loadedPriceLists);
 
         if (currencyRes.ok) {
           const currencyData = await currencyRes.json();
@@ -217,7 +219,7 @@ export default function PartyRecord({
       const res = await fetch(`/api/parties/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ account, contacts, addresses }),
+        body: JSON.stringify({ account, contacts, addresses, priceLists }),
       });
 
       const result = await res.json();
@@ -232,6 +234,7 @@ export default function PartyRecord({
       setInitialAccount(updatedAccount);
       setInitialContacts(contacts);
       setInitialAddresses(addresses);
+      setInitialPriceLists(priceLists);
 
       // Clear errors, exit edit mode & notify user
       setFormErrors({});
@@ -254,6 +257,7 @@ export default function PartyRecord({
     setAccount(initialAccount);
     setContacts(initialContacts);
     setAddresses(initialAddresses);
+    setPriceLists(initialPriceLists);
     setFormErrors({});
     setIsEditing(false);
   };
@@ -284,11 +288,7 @@ export default function PartyRecord({
     account.is_crm_lead ||
     account.is_customer;
 
-  // if (isCrmOrCustomer) {
-  //   tabs.splice(3, 0, "opportunities");
-  // }
-
-  tabs.push("activities", "notes", "attachments");
+  tabs.push("price_list", "activities", "notes", "attachments");
 
   const redirectPath =
     module == "srm"
@@ -329,30 +329,6 @@ export default function PartyRecord({
           },
         ]}
       />
-      {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <h1 className="text-2xl font-bold px-4 capitalize">{module}</h1>
-        <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
-          {account.is_customer
-            ? "Customer No."
-            : account.is_supplier
-              ? "Supplier No."
-              : account.is_crm_lead
-                ? "CRM Lead No."
-                : account.is_srm_vendor
-                  ? "SRM No."
-                  : ""}
-          &nbsp;
-          {(account.is_customer
-            ? account.customer_code
-            : account.is_supplier
-              ? account.supplier_code
-              : account.is_crm_lead
-                ? account.crm_code
-                : account.is_srm_vendor
-                  ? account.srm_code
-                  : "") || ""}
-        </div>
-      </div> */}
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
         <PartyDetailHeader
           party={account}
@@ -377,13 +353,7 @@ export default function PartyRecord({
               {Object.entries(formErrors)
                 .filter(([key]) => key !== "global")
                 .map(([key, message]) => (
-                  <li key={key}>
-                    {/* <span className="capitalize font-medium">
-                    {key.replace(".", " ")}
-                  </span>
-                  : */}
-                    {message}
-                  </li>
+                  <li key={key}>{message}</li>
                 ))}
             </ul>
           </div>
@@ -404,7 +374,7 @@ export default function PartyRecord({
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
               >
-                {tab}
+                {tab.replace("_", " ")}
                 {hasErrorInTab && (
                   <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 )}
@@ -444,7 +414,9 @@ export default function PartyRecord({
               setContacts={setContacts}
               isReadonly={effectiveReadonly}
               errors={formErrors}
-              onRequestEdit={isReadonlyProp ? undefined : () => setIsEditing(true)}
+              onRequestEdit={
+                isReadonlyProp ? undefined : () => setIsEditing(true)
+              }
               // onRequestEdit={() => setIsEditing(true)}
             />
           )}
@@ -454,15 +426,44 @@ export default function PartyRecord({
               setAddresses={setAddresses}
               isReadonly={effectiveReadonly}
               errors={formErrors}
-              onRequestEdit={isReadonlyProp ? undefined : () => setIsEditing(true)}
+              onRequestEdit={
+                isReadonlyProp ? undefined : () => setIsEditing(true)
+              }
               // onRequestEdit={() => setIsEditing(true)}
             />
           )}
 
-          {/* {activeTab === "opportunities" && (
-            <OpportunityCycleTab partyId={id} readonly={effectiveReadonly} />
+          {/* {activeTab === "price_list" && (
+            <PriceListTab
+              partyId={id}
+              priceLists={priceLists}
+              setPriceLists={setPriceLists}
+              isReadonly={effectiveReadonly}
+              errors={formErrors}
+              onRequestEdit={
+                isReadonlyProp ? undefined : () => setIsEditing(true)
+              }
+            />
           )} */}
-          {/* <><ActivitiesTab module={module} recordId={id} /></> */}
+
+          {activeTab === "price_list" && (
+            <PriceListTab
+              partyId={id}
+              partyType={
+                module === "supplier" || account.is_supplier
+                  ? "supplier"
+                  : "customer"
+              }
+              baseCurrencyId={account.currency_id || ""}
+              priceLists={priceLists}
+              setPriceLists={setPriceLists}
+              isReadonly={effectiveReadonly}
+              errors={formErrors}
+              onRequestEdit={
+                isReadonlyProp ? undefined : () => setIsEditing(true)
+              }
+            />
+          )}
 
           {activeTab === "activities" && (
             <PartyLedgerActivityTab
@@ -484,7 +485,9 @@ export default function PartyRecord({
               recordId={id}
               readonly={effectiveReadonly}
               errors={formErrors}
-              onRequestEdit={isReadonlyProp ? undefined : () => setIsEditing(true)}
+              onRequestEdit={
+                isReadonlyProp ? undefined : () => setIsEditing(true)
+              }
             />
           )}
           {activeTab === "attachments" && (
@@ -492,7 +495,9 @@ export default function PartyRecord({
               module={module}
               recordId={id}
               readonly={effectiveReadonly}
-              onRequestEdit={isReadonlyProp ? undefined : () => setIsEditing(true)}
+              onRequestEdit={
+                isReadonlyProp ? undefined : () => setIsEditing(true)
+              }
             />
           )}
         </div>
