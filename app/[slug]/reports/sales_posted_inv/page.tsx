@@ -382,7 +382,10 @@ export default function PostedSalesInvoiceAndCreditNoteReport() {
                               : "bg-red-50 text-red-700 border border-red-200"
                           }`}
                         >
-                          {item.document_type}
+                          {item.document_type
+                            .replace(/_/g, " ")
+                            .toLowerCase()
+                            .replace(/\b\w/g, (s) => s.toUpperCase())}
                         </span>
                       </td>
                       <td className="p-3 text-slate-900 font-bold font-mono">

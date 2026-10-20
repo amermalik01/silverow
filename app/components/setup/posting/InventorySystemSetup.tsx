@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 
-type InventoryCostingMethod = "FIFO" | "WEIGHTED_AVERAGE" | "STANDARD";
+type InventoryCostingMethod = "FIFO" | "LIFO" | "WEIGHTED_AVERAGE" | "STANDARD";
 
 type InventorySystem = "PERPETUAL" | "PERIODIC";
 
@@ -31,6 +31,7 @@ const COSTING_OPTIONS: {
   label: string;
 }[] = [
   { value: "FIFO", label: "First In, First Out (FIFO)" },
+  { value: "LIFO", label: "last In, First Out (LIFO)" },
   { value: "WEIGHTED_AVERAGE", label: "Weighted Average" },
   { value: "STANDARD", label: "Standard Costing" },
 ];

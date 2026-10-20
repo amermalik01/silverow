@@ -82,8 +82,9 @@ export default function InventoryTab({ itemId }: { itemId: string }) {
 
             <select className="border p-2 w-full rounded">
               <option value="1">FIFO</option>
-              <option value="2">Average</option>
-              <option value="3">Standard</option>
+              <option value="2">LIFO</option>
+              <option value="3">Average</option>
+              <option value="4">Standard</option>
             </select>
           </div>
 

@@ -159,7 +159,11 @@ export const PostedTransactionsModal: React.FC<
                             : "—"}
                         </td>
                         <td className="p-2.5">
-                          {row.document_type || "Purchase Invoice"}
+                          {row.document_type
+                            .replace(/_/g, " ")
+                            .toLowerCase()
+                            .replace(/\b\w/g, (s) => s.toUpperCase()) ||
+                            "Purchase Invoice"}
                         </td>
                         <td className="p-2.5 font-semibold">
                           {row.document_number || invoiceNo}
@@ -207,11 +211,7 @@ export const PostedTransactionsModal: React.FC<
 
         {/* Modal Actions */}
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex justify-end bg-slate-50 dark:bg-slate-900">
-          <Button
-            type="button"
-            onClick={onClose}
-            variant="cancel"
-          >
+          <Button type="button" onClick={onClose} variant="cancel">
             Close
           </Button>
         </div>

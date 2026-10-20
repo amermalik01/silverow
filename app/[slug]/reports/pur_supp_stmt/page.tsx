@@ -413,7 +413,12 @@ export default function SupplierStatementReport() {
                           <td className="p-2.5">
                             {formatDate(e.posting_date)}
                           </td>
-                          <td className="p-2.5 font-sans">{e.document_type}</td>
+                          <td className="p-2.5 font-sans">
+                            {e.document_type
+                              .replace(/_/g, " ")
+                              .toLowerCase()
+                              .replace(/\b\w/g, (s) => s.toUpperCase())}
+                          </td>
                           <td className="p-2.5 font-semibold text-emerald-800">
                             {e.document_no || "—"}
                           </td>

@@ -6,12 +6,13 @@ import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 type InventorySystem = "PERPETUAL" | "PERIODIC";
 
-type InventoryCostingMethod = "FIFO" | "WEIGHTED_AVERAGE" | "STANDARD";
+type InventoryCostingMethod = "FIFO" | "LIFO" | "WEIGHTED_AVERAGE" | "STANDARD";
 
 const INVENTORY_SYSTEMS: InventorySystem[] = ["PERPETUAL", "PERIODIC"];
 
 const COSTING_METHODS: InventoryCostingMethod[] = [
   "FIFO",
+  "LIFO",
   "WEIGHTED_AVERAGE",
   "STANDARD",
 ];

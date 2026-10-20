@@ -26,6 +26,7 @@ export default function PurchaseTab({
 }: Props) {
   const COSTING_METHOD_LABELS: Record<InventoryCostingMethod, string> = {
     FIFO: "First In, First Out (FIFO)",
+    LIFO: "Last In, First Out (LIFO)",
     WEIGHTED_AVERAGE: "Weighted Average",
     STANDARD: "Standard Costing",
   };
@@ -58,8 +59,9 @@ export default function PurchaseTab({
                 className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
               >
                 <option value={1}>First in First Out (FIFO)</option>
-                <option value={2}>Weighted Average</option>
-                <option value={3}>Standard Costing</option>
+                <option value={2}>Last in First Out (LIFO)</option>
+                <option value={3}>Weighted Average</option>
+                <option value={4}>Standard Costing</option>
               </select> */}
             </div>
           </div>

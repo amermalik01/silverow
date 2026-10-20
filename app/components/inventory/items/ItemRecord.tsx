@@ -123,6 +123,7 @@ export default function ItemRecord({
 
           const validMethods: InventoryCostingMethod[] = [
             "FIFO",
+            "LIFO",
             "WEIGHTED_AVERAGE",
             "STANDARD",
           ];
@@ -182,7 +183,7 @@ export default function ItemRecord({
           standard_cost: itemData.standard_cost?.toString() || "",
           // costing_method: itemData.costing_method || 1,
 
-          costing_method: (["FIFO", "WEIGHTED_AVERAGE", "STANDARD"].includes(
+          costing_method: (["FIFO", "LIFO","WEIGHTED_AVERAGE", "STANDARD"].includes(
             itemData.costing_method,
           )
             ? itemData.costing_method

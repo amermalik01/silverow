@@ -153,7 +153,11 @@ export const PostedTransactionsModal: React.FC<
                             : "—"}
                         </td>
                         <td className="p-2.5">
-                          {row.document_type || "Purchase Invoice"}
+                          {row.document_type
+                            .replace(/_/g, " ")
+                            .toLowerCase()
+                            .replace(/\b\w/g, (s) => s.toUpperCase()) ||
+                            "Purchase Invoice"}
                         </td>
                         <td className="p-2.5 font-semibold">
                           {row.document_number || journalNo}
@@ -192,18 +196,14 @@ export const PostedTransactionsModal: React.FC<
 
           {postedInfo && (
             <div className="mt-3 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-              Posted By {postedInfo.user} On{" "} {postedInfo.date}
+              Posted By {postedInfo.user} On {postedInfo.date}
               {/* {postedInfo.date ? format(postedInfo.date, "dd/MM/yyyy") : ""} */}
             </div>
           )}
         </div>
 
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex justify-end bg-slate-50 dark:bg-slate-900">
-          <Button
-            type="button"
-            onClick={onClose}
-            variant="cancel"
-          >
+          <Button type="button" onClick={onClose} variant="cancel">
             Close
           </Button>
         </div>

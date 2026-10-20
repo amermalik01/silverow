@@ -211,6 +211,7 @@ export type StockForm = {
 
 export type InventoryCostingMethod =
   | "FIFO"
+  | "LIFO"
   | "WEIGHTED_AVERAGE"
   | "STANDARD";
 

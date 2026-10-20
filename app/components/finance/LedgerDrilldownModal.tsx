@@ -26,7 +26,7 @@ interface LedgerRow {
   amount_fcy: string | number;
   balancing_account_type: string;
   balancing_account_no: string;
-  balancing_account_name: string;  
+  balancing_account_name: string;
   entry_no: string;
   posted_by: string;
 }
@@ -85,7 +85,9 @@ export default function LedgerDrilldownModal({
         if (val) params.append(key, val);
       });
 
-      const res = await fetch(`/api/finance/accounts/${accountId}/ledger?${params.toString()}`);
+      const res = await fetch(
+        `/api/finance/accounts/${accountId}/ledger?${params.toString()}`,
+      );
       if (!res.ok) throw new Error("Failed to load ledger records");
 
       const json = await res.json();
@@ -126,7 +128,9 @@ export default function LedgerDrilldownModal({
         if (val) params.append(key, val);
       });
 
-      const res = await fetch(`/api/finance/accounts/${accountId}/ledger?${params.toString()}`);
+      const res = await fetch(
+        `/api/finance/accounts/${accountId}/ledger?${params.toString()}`,
+      );
       if (!res.ok) throw new Error("Export failed");
 
       const json = await res.json();
@@ -161,7 +165,12 @@ export default function LedgerDrilldownModal({
         ...exportRows.map((r) =>
           [
             `"${r.posting_date ? format(parseISO(r.posting_date), "yyyy-MM-dd") : ""}"`,
-            `"${r.document_type || ""}"`,
+            `"${
+              r.document_type
+                .replace(/_/g, " ")
+                .toLowerCase()
+                .replace(/\b\w/g, (s) => s.toUpperCase()) || ""
+            }"`,
             `"${r.document_no || ""}"`,
             `"${r.gl_no || ""}"`,
             `"${r.source_no || ""}"`,
@@ -179,7 +188,7 @@ export default function LedgerDrilldownModal({
             `"${(r.balancing_account_name || "").replace(/"/g, '""')}"`,
             `"${r.entry_no || ""}"`,
             `"${r.posted_by || ""}"`,
-          ].join(",")
+          ].join(","),
         ),
       ].join("\n");
 
@@ -187,7 +196,10 @@ export default function LedgerDrilldownModal({
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `Ledger_${accountCode}_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`);
+      link.setAttribute(
+        "download",
+        `Ledger_${accountCode}_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`,
+      );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -206,13 +218,14 @@ export default function LedgerDrilldownModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-lg shadow-2xl w-full max-w-[95vw] h-[90vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
-        
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 bg-[#103701] dark:bg-[#262F3C] text-white">
           <div className="flex items-center gap-2">
             <Icon icon="tabler:calculator" className="text-xl" />
             <h2 className="text-sm font-semibold tracking-wide text-white">
-              Ledger Drilldown: <span className="font-mono text-emerald-200">{accountCode}</span> - {accountName}
+              Ledger Drilldown:{" "}
+              <span className="font-mono text-emerald-200">{accountCode}</span>{" "}
+              - {accountName}
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -221,7 +234,10 @@ export default function LedgerDrilldownModal({
               disabled={exporting || pagination.total === 0}
               className="bg-emerald-700 hover:bg-emerald-600 text-white h-8 px-3 text-xs rounded transition flex items-center gap-1.5 disabled:opacity-40"
             >
-              <Icon icon={exporting ? "tabler:loader-2" : "tabler:download"} className={`text-base ${exporting ? "animate-spin" : ""}`} />
+              <Icon
+                icon={exporting ? "tabler:loader-2" : "tabler:download"}
+                className={`text-base ${exporting ? "animate-spin" : ""}`}
+              />
               Export Filtered CSV
             </Button>
             <button
@@ -236,7 +252,10 @@ export default function LedgerDrilldownModal({
         {/* Global Search Bar */}
         <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row gap-3 items-center justify-between">
           <div className="relative w-full sm:max-w-md">
-            <Icon icon="tabler:search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+            <Icon
+              icon="tabler:search"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+            />
             <input
               type="text"
               placeholder="Search document no, reference, description..."
@@ -255,7 +274,8 @@ export default function LedgerDrilldownModal({
           </div>
           {loading && (
             <span className="flex items-center gap-1 text-xs text-[#103701] dark:text-emerald-400">
-              <Icon icon="tabler:loader-2" className="animate-spin text-base" /> Fetching ledger...
+              <Icon icon="tabler:loader-2" className="animate-spin text-base" />{" "}
+              Fetching ledger...
             </span>
           )}
         </div>
@@ -280,24 +300,141 @@ export default function LedgerDrilldownModal({
                 <th className="p-2 text-left font-semibold">Bal. Type</th>
                 <th className="p-2 text-left font-semibold">Bal. No</th>
                 <th className="p-2 text-left font-semibold">Bal. Name</th>
-                <th className="p-2 text-left font-semibold">Entry No</th> 
+                <th className="p-2 text-left font-semibold">Entry No</th>
                 <th className="p-2 text-left font-semibold">Posted By</th>
               </tr>
 
               {/* Per-Column Input Filters */}
               <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.posting_date} onChange={(e) => handleFilterChange("posting_date", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.document_type} onChange={(e) => handleFilterChange("document_type", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.document_no} onChange={(e) => handleFilterChange("document_no", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.source_no} onChange={(e) => handleFilterChange("source_no", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.name} onChange={(e) => handleFilterChange("name", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.currency_code} onChange={(e) => handleFilterChange("currency_code", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td colSpan={6} className="bg-slate-100/50 dark:bg-slate-800/20"></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.balancing_account_type} onChange={(e) => handleFilterChange("balancing_account_type", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.balancing_account_no} onChange={(e) => handleFilterChange("balancing_account_no", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.balancing_account_name} onChange={(e) => handleFilterChange("balancing_account_name", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.entry_no} onChange={(e) => handleFilterChange("entry_no", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
-                <td className="p-1"><input type="text" placeholder="Filter..." value={filters.posted_by} onChange={(e) => handleFilterChange("posted_by", e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]" /></td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.posting_date}
+                    onChange={(e) =>
+                      handleFilterChange("posting_date", e.target.value)
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.document_type}
+                    onChange={(e) =>
+                      handleFilterChange("document_type", e.target.value)
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.document_no}
+                    onChange={(e) =>
+                      handleFilterChange("document_no", e.target.value)
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.source_no}
+                    onChange={(e) =>
+                      handleFilterChange("source_no", e.target.value)
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.name}
+                    onChange={(e) => handleFilterChange("name", e.target.value)}
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.currency_code}
+                    onChange={(e) =>
+                      handleFilterChange("currency_code", e.target.value)
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td
+                  colSpan={6}
+                  className="bg-slate-100/50 dark:bg-slate-800/20"
+                ></td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.balancing_account_type}
+                    onChange={(e) =>
+                      handleFilterChange(
+                        "balancing_account_type",
+                        e.target.value,
+                      )
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.balancing_account_no}
+                    onChange={(e) =>
+                      handleFilterChange("balancing_account_no", e.target.value)
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.balancing_account_name}
+                    onChange={(e) =>
+                      handleFilterChange(
+                        "balancing_account_name",
+                        e.target.value,
+                      )
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.entry_no}
+                    onChange={(e) =>
+                      handleFilterChange("entry_no", e.target.value)
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
+                <td className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    value={filters.posted_by}
+                    onChange={(e) =>
+                      handleFilterChange("posted_by", e.target.value)
+                    }
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px]"
+                  />
+                </td>
               </tr>
             </thead>
 
@@ -310,27 +447,86 @@ export default function LedgerDrilldownModal({
                 </tr>
               )}
               {data.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                  <td className="p-2 whitespace-nowrap">{row.posting_date ? format(parseISO(row.posting_date), "dd/MM/yyyy") : "-"}</td>
-                  <td className="p-2 capitalize">{row.document_type || "-"}</td>
-                  <td className="p-2 font-medium text-slate-900 dark:text-slate-100">{row.document_no || "-"}</td>
+                <tr
+                  key={row.id}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
+                >
+                  <td className="p-2 whitespace-nowrap">
+                    {row.posting_date
+                      ? format(parseISO(row.posting_date), "dd/MM/yyyy")
+                      : "-"}
+                  </td>
+                  <td className="p-2 capitalize">
+                    {row.document_type
+                      .replace(/_/g, " ")
+                      .toLowerCase()
+                      .replace(/\b\w/g, (s) => s.toUpperCase()) || "-"}
+                  </td>
+                  <td className="p-2 font-medium text-slate-900 dark:text-slate-100">
+                    {row.document_no || "-"}
+                  </td>
                   <td className="p-2">{row.source_no || "-"}</td>
-                  <td className="p-2 truncate max-w-[200px]" title={row.name}>{row.name || "-"}</td>
-                  <td className="p-2 text-center font-bold">{row.currency_code || "GBP"}</td>
-                  
+                  <td className="p-2 truncate max-w-[200px]" title={row.name}>
+                    {row.name || "-"}
+                  </td>
+                  <td className="p-2 text-center font-bold">
+                    {row.currency_code || "GBP"}
+                  </td>
+
                   {/* LCY Amounts */}
-                  <td className="p-2 text-right text-blue-600 dark:text-blue-400">{Number(row.debit_lcy) > 0 ? Number(row.debit_lcy).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "-"}</td>
-                  <td className="p-2 text-right text-red-600 dark:text-red-400">{Number(row.credit_lcy) > 0 ? Number(row.credit_lcy).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "-"}</td>
-                  <td className={`p-2 text-right font-semibold ${Number(row.amount_lcy) >= 0 ? "text-slate-900 dark:text-slate-100" : "text-red-500"}`}>{Number(row.amount_lcy).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                  <td className="p-2 text-right text-blue-600 dark:text-blue-400">
+                    {Number(row.debit_lcy) > 0
+                      ? Number(row.debit_lcy).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                        })
+                      : "-"}
+                  </td>
+                  <td className="p-2 text-right text-red-600 dark:text-red-400">
+                    {Number(row.credit_lcy) > 0
+                      ? Number(row.credit_lcy).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                        })
+                      : "-"}
+                  </td>
+                  <td
+                    className={`p-2 text-right font-semibold ${Number(row.amount_lcy) >= 0 ? "text-slate-900 dark:text-slate-100" : "text-red-500"}`}
+                  >
+                    {Number(row.amount_lcy).toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </td>
 
                   {/* FCY Amounts */}
-                  <td className="p-2 text-right text-blue-600/70">{Number(row.debit_fcy) > 0 ? Number(row.debit_fcy).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "-"}</td>
-                  <td className="p-2 text-right text-red-600/70">{Number(row.credit_fcy) > 0 ? Number(row.credit_fcy).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "-"}</td>
-                  <td className="p-2 text-right font-semibold">{Number(row.amount_fcy).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                  <td className="p-2 text-right text-blue-600/70">
+                    {Number(row.debit_fcy) > 0
+                      ? Number(row.debit_fcy).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                        })
+                      : "-"}
+                  </td>
+                  <td className="p-2 text-right text-red-600/70">
+                    {Number(row.credit_fcy) > 0
+                      ? Number(row.credit_fcy).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                        })
+                      : "-"}
+                  </td>
+                  <td className="p-2 text-right font-semibold">
+                    {Number(row.amount_fcy).toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </td>
 
-                  <td className="p-2 capitalize">{row.balancing_account_type || "-"}</td>
+                  <td className="p-2 capitalize">
+                    {row.balancing_account_type || "-"}
+                  </td>
                   <td className="p-2">{row.balancing_account_no || "-"}</td>
-                  <td className="p-2 truncate max-w-[180px]" title={row.balancing_account_name}>{row.balancing_account_name || "-"}</td>
+                  <td
+                    className="p-2 truncate max-w-[180px]"
+                    title={row.balancing_account_name}
+                  >
+                    {row.balancing_account_name || "-"}
+                  </td>
                   <td className="p-2">{row.entry_no || "-"}</td>
                   <td className="p-2 whitespace-nowrap">{row.posted_by}</td>
                 </tr>
@@ -343,12 +539,39 @@ export default function LedgerDrilldownModal({
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
           <div className="flex items-center gap-4 font-mono">
             <div>
-              Showing {data.length > 0 ? (page - 1) * limit + 1 : 0} to {Math.min(page * limit, pagination.total)} of {pagination.total} entries
+              Showing {data.length > 0 ? (page - 1) * limit + 1 : 0} to{" "}
+              {Math.min(page * limit, pagination.total)} of {pagination.total}{" "}
+              entries
             </div>
             <div className="hidden md:flex gap-3 border-l border-slate-300 dark:border-slate-700 pl-4 font-semibold">
-              <span>Debit Total(LCY): <span className="text-blue-600 gap-3 border-r border-slate-300 dark:border-slate-700 pr-4">{pageDebitLCY.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span></span>
-              <span>Credit Total(LCY): <span className="text-red-600 gap-3 border-r border-slate-300 dark:border-slate-700 pr-4">{pageCreditLCY.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span></span>
-              <span>Balance(LCY): <span className={pageBalanceLCY >= 0 ? "text-emerald-600" : "text-red-500"}>{pageBalanceLCY.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span></span>
+              <span>
+                Debit Total(LCY):{" "}
+                <span className="text-blue-600 gap-3 border-r border-slate-300 dark:border-slate-700 pr-4">
+                  {pageDebitLCY.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </span>
+              <span>
+                Credit Total(LCY):{" "}
+                <span className="text-red-600 gap-3 border-r border-slate-300 dark:border-slate-700 pr-4">
+                  {pageCreditLCY.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </span>
+              <span>
+                Balance(LCY):{" "}
+                <span
+                  className={
+                    pageBalanceLCY >= 0 ? "text-emerald-600" : "text-red-500"
+                  }
+                >
+                  {pageBalanceLCY.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </span>
             </div>
           </div>
 
@@ -386,7 +609,9 @@ export default function LedgerDrilldownModal({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                onClick={() =>
+                  setPage((prev) => Math.min(prev + 1, pagination.totalPages))
+                }
                 disabled={page >= pagination.totalPages || loading}
                 className="h-8 px-2"
               >
@@ -395,7 +620,6 @@ export default function LedgerDrilldownModal({
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
@@ -595,7 +819,9 @@ export default function LedgerDrilldownModal({
                           {format(row.posting_date, "dd/MM/yyyy")}
                         </td>
                         <td className="p-2 border-r dark:border-slate-800">
-                          {row.document_type}
+                          {row.document_type.replace(/_/g, " ")
+                                .toLowerCase()
+                                .replace(/\b\w/g, (s) => s.toUpperCase())}
                         </td>
                         <td className="p-2 border-r dark:border-slate-800 font-medium text-slate-900 dark:text-slate-100">
                           {row.document_no}

@@ -53,7 +53,7 @@ export default function AllocateJournalPaymentModal({
   const { show, hide } = useLoader();
   const [documents, setDocuments] = useState<OpenDocument[]>([]);
   const [allocations, setAllocations] = useState<Record<string, number>>({});
-  
+
   const totalAllocated = Object.values(allocations).reduce(
     (sum, v) => sum + (v || 0),
     0,
@@ -118,9 +118,13 @@ export default function AllocateJournalPaymentModal({
           ? data.map((d) => ({
               ...d,
               original_amount_fcy: Math.abs(Number(d.original_amount_fcy) || 0),
-              remaining_amount_fcy: Math.abs(Number(d.remaining_amount_fcy) || 0),
+              remaining_amount_fcy: Math.abs(
+                Number(d.remaining_amount_fcy) || 0,
+              ),
               original_amount_lcy: Math.abs(Number(d.original_amount_lcy) || 0),
-              remaining_amount_lcy: Math.abs(Number(d.remaining_amount_lcy) || 0),
+              remaining_amount_lcy: Math.abs(
+                Number(d.remaining_amount_lcy) || 0,
+              ),
             }))
           : [];
 
@@ -157,7 +161,6 @@ export default function AllocateJournalPaymentModal({
   ]);
 
   const handleAutoAllocateToggle = (shouldAllocateFull: boolean) => {
-
     if (!shouldAllocateFull) {
       setAllocations({});
       return;
@@ -285,7 +288,7 @@ export default function AllocateJournalPaymentModal({
               onClick={() => handleAutoAllocateToggle(true)}
               disabled={documents.length === 0}
             >
-              Auto Allocate FIFO
+              Auto Allocate
             </Button>
             <Button
               type="button"
@@ -358,12 +361,23 @@ export default function AllocateJournalPaymentModal({
                           : "—"}
                       </td>
                       <td className="p-2 font-bold">{doc.document_no}</td>
-                      <td className="p-2 text-zinc-500">{doc.document_type}</td>
+                      <td className="p-2 text-zinc-500">
+                        {doc.document_type
+                          .replace(/_/g, " ")
+                          .toLowerCase()
+                          .replace(/\b\w/g, (s) => s.toUpperCase())}
+                      </td>
                       <td className="p-2 text-right">
-                        {formatCurrency(doc.original_amount_fcy, doc.currency_code)}
+                        {formatCurrency(
+                          doc.original_amount_fcy,
+                          doc.currency_code,
+                        )}
                       </td>
                       <td className="p-2 text-right font-bold text-amber-600">
-                        {formatCurrency(doc.remaining_amount_fcy, doc.currency_code)}
+                        {formatCurrency(
+                          doc.remaining_amount_fcy,
+                          doc.currency_code,
+                        )}
                       </td>
                       <td className="p-2">
                         <NumericTextInput
@@ -442,4 +456,3 @@ export default function AllocateJournalPaymentModal({
     </div>
   );
 }
-

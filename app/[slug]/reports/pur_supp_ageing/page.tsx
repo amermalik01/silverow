@@ -587,7 +587,9 @@ export default function SupplierAgeingReport() {
                                 {formatDate(entry.posting_date)}
                               </td>
                               <td className="p-2.5 font-sans">
-                                {entry.document_type}
+                                {entry.document_type.replace(/_/g, " ")
+                                .toLowerCase()
+                                .replace(/\b\w/g, (s) => s.toUpperCase())}
                               </td>
                               <td className="p-2.5 font-semibold text-emerald-800">
                                 {entry.document_no || "—"}

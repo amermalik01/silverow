@@ -77,7 +77,9 @@ export default function SalesFiguresByItemReport() {
   const [selectedCustomersText, setSelectedCustomersText] =
     useState<string>("");
 
-  const [selectedSalespersonIds, setSelectedSalespersonIds] = useState<string[]>([]);
+  const [selectedSalespersonIds, setSelectedSalespersonIds] = useState<
+    string[]
+  >([]);
   const [selectedSalespersonsText, setSelectedSalespersonsText] =
     useState<string>("");
 
@@ -183,7 +185,7 @@ export default function SalesFiguresByItemReport() {
             "Item No": group.item_no,
             "Item Description": group.description,
             "Posting Date": formatDate(e.posting_date),
-            "Doc. Type": e.doc_type,
+            "Doc. Type": e.doc_type.replace(/_/g, " "),
             "Doc. No": e.doc_no,
             "Customer Name": e.customer_name,
             Salesperson: e.salesperson,
@@ -217,7 +219,7 @@ export default function SalesFiguresByItemReport() {
     <div className="w-full space-y-6">
       <Breadcrumbs
         items={[
-          { label: "Reports", href: `/${params.slug}/reports` },
+          // { label: "Reports", href: `/${params.slug}/reports` },
           { label: "All Reports", href: `/${params.slug}/reports` },
           { label: "Sales Figures By Item(s)" },
         ]}
@@ -474,14 +476,21 @@ export default function SalesFiguresByItemReport() {
                               <td className="p-2.5">
                                 {formatDate(e.posting_date)}
                               </td>
-                              <td className="p-2.5 font-sans">{e.doc_type}</td>
+                              <td className="p-2.5 font-sans capitalize">
+                                {e.doc_type
+                                  .replace(/_/g, " ")
+                                  .toLowerCase()
+                                  .replace(/\b\w/g, (s) => s.toUpperCase())}
+                              </td>
                               <td className="p-2.5 font-semibold text-emerald-800">
                                 {e.doc_no}
                               </td>
                               <td className="p-2.5 font-sans">
                                 {e.customer_name}
                               </td>
-                              <td className="p-2.5 font-sans">{e.salesperson}</td>
+                              <td className="p-2.5 font-sans">
+                                {e.salesperson}
+                              </td>
                               <td className="p-2.5 text-right tabular-nums">
                                 {formatNumber(e.quantity, 0)}
                               </td>
@@ -612,7 +621,13 @@ export default function SalesFiguresByItemReport() {
           onSelectMultiple={(salespersons: Employee[]) => {
             setSelectedSalespersonIds(salespersons.map((s) => s.id));
             setSelectedSalespersonsText(
-              salespersons.map((s) => `${s.employee_code || ""} - ${s.display_name || ""}` || s.display_name).join("; ") ,
+              salespersons
+                .map(
+                  (s) =>
+                    `${s.employee_code || ""} - ${s.display_name || ""}` ||
+                    s.display_name,
+                )
+                .join("; "),
             );
           }}
         />

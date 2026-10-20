@@ -4,6 +4,7 @@ import { z } from "zod";
 
 export const InventoryCostingMethodSchema = z.enum([
   "FIFO",
+  "LIFO",
   "WEIGHTED_AVERAGE",
   "STANDARD",
 ]);

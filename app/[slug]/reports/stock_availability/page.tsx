@@ -207,7 +207,7 @@ export default function StockAvailabilityReport() {
                 "Consignment No": detailEntry.consignment_no || "",
                 "Ref. No": detailEntry.ref_no || "",
                 "Frame No": detailEntry.frame_no || "",
-                "Doc. Type": detailEntry.doc_type || "",
+                "Doc. Type": detailEntry.doc_type.replace(/_/g, " ") || "",
                 "Received Qty": detailEntry.received_qty,
                 "Sold Qty": detailEntry.sold_qty,
                 "Date Received": formatDate(detailEntry.date_received),
@@ -554,8 +554,13 @@ export default function StockAvailabilityReport() {
                                   <td className="p-2.5 font-sans text-slate-500">
                                     {detail.frame_no || "—"}
                                   </td>
-                                  <td className="p-2.5 font-sans">
-                                    {detail.doc_type || "—"}
+                                  <td className="p-2.5 font-sans capitalize">
+                                    {detail.doc_type
+                                      .replace(/_/g, " ")
+                                      .toLowerCase()
+                                      .replace(/\b\w/g, (s) =>
+                                        s.toUpperCase(),
+                                      ) || "—"}
                                   </td>
                                   <td className="p-2.5 text-right tabular-nums">
                                     {formatNumber(detail.received_qty)}

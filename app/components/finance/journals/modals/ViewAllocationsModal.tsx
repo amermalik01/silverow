@@ -61,7 +61,12 @@ export default function ViewAllocationsModal({
             {details.map((row) => (
               <tr key={row.id}>
                 <td className="p-2">{row.allocation_date}</td>
-                <td className="p-2">{row.document_type}</td>
+                <td className="p-2">
+                  {row.document_type
+                    .replace(/_/g, " ")
+                    .toLowerCase()
+                    .replace(/\b\w/g, (s) => s.toUpperCase())}
+                </td>
                 <td className="p-2 font-bold">{row.document_no}</td>
                 <td className="p-2 text-right">
                   ${Number(row.allocated_amount).toFixed(2)}
