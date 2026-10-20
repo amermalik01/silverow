@@ -122,6 +122,7 @@ export default function PartyLedgerActivityTab({
           return `/${slug}/purchases/purchase-orders/${targetId}`;
 
         case "credit_memo":
+        case "credit_note":
         case "debit_note":
         case "posted_debit_note":
         case "posted_credit_note":

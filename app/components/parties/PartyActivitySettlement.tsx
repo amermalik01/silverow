@@ -40,7 +40,7 @@ export default function PartyActivitySettlement({
 
   // Separate open payments/credit memos from open debit invoices
   const payments = openEntries.filter(
-    (e) => e.document_type === "PAYMENT" || e.document_type === "CREDIT_MEMO",
+    (e) => e.document_type === "PAYMENT" || e.document_type === "CREDIT_MEMO" || e.document_type === "CREDIT_NOTE",
   );
   const invoices = openEntries.filter(
     (e) =>

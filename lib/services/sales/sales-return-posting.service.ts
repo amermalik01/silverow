@@ -277,7 +277,7 @@ export class SalesReturnPostingService {
       await CustomerLedgerService.createEntry(client, {
         companyId,
         customerId: salesReturn.customer_id,
-        documentType: "CREDIT_MEMO",
+        documentType: "CREDIT_NOTE",
         documentId: salesReturn.id,
         documentNo: postedCreditNoteNo,
         postingDate,
@@ -679,7 +679,7 @@ export class SalesReturnPostingService {
       await CustomerLedgerService.createEntry(client, {
         companyId,
         customerId: salesReturn.customer_id,
-        documentType: "CREDIT_MEMO",
+        documentType: "CREDIT_NOTE",
         documentId: createdCreditNote.id,
         documentNo: createdCreditNote.credit_note_no,
         postingDate: creditNoteDate,

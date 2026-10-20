@@ -11,6 +11,7 @@ function getSignedAmount(docType: string, amount: number): number {
   if (
     normalizedType.includes("PAYMENT") ||
     normalizedType.includes("VENDOR_PAYMENT") ||
+    normalizedType.includes("CREDIT_NOTE") ||
     normalizedType.includes("CREDIT_MEMO") ||
     normalizedType.includes("DEBIT_NOTE") ||
     normalizedType.includes("REFUND")||

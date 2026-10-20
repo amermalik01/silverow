@@ -58,6 +58,7 @@ function getSignedAmount(docType: string, amount: number): number {
     case "PAYMENT":
     case "PURCHASE_DEBIT_NOTE":
     case "CREDIT_MEMO":
+    case "CREDIT_NOTE":
     case "REFUND":
       return -Math.abs(amount); // Decreases AP liability
     default:

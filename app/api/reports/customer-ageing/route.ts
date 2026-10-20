@@ -36,6 +36,7 @@ function getSignedAmount(docType: string, amount: number): number {
     case "PAYMENT":
     case "PURCHASE_DEBIT_NOTE":
     case "CREDIT_MEMO":
+    case "CREDIT_NOTE":
     case "REFUND":
       return Math.abs(amount); // Decreases AP liability
     default:
@@ -183,11 +184,11 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // SQL Expression to handle document type signage in Summary aggregations
+    // SQL Expression to handle document type signage in Summary aggregations 
     const signedLcyExpr = `
       CASE 
         WHEN UPPER(e.document_type) IN ('SALES_INVOICE', 'INVOICE') THEN -ABS(e.remaining_amount_lcy)
-        WHEN UPPER(e.document_type) IN ('PAYMENT', 'PURCHASE_DEBIT_NOTE', 'CREDIT_MEMO', 'REFUND') THEN ABS(e.remaining_amount_lcy)
+        WHEN UPPER(e.document_type) IN ('PAYMENT', 'PURCHASE_DEBIT_NOTE', 'CREDIT_MEMO', 'CREDIT_NOTE', 'REFUND') THEN ABS(e.remaining_amount_lcy)
         ELSE e.remaining_amount_lcy 
       END
     `;
@@ -195,7 +196,7 @@ export async function GET(req: NextRequest) {
     const signedFcyExpr = `
       CASE 
         WHEN UPPER(e.document_type) IN ('SALES_INVOICE', 'INVOICE') THEN -ABS(e.remaining_amount_fcy)
-        WHEN UPPER(e.document_type) IN ('PAYMENT', 'PURCHASE_DEBIT_NOTE', 'CREDIT_MEMO', 'REFUND') THEN ABS(e.remaining_amount_fcy)
+        WHEN UPPER(e.document_type) IN ('PAYMENT', 'PURCHASE_DEBIT_NOTE', 'CREDIT_MEMO', 'CREDIT_NOTE', 'REFUND') THEN ABS(e.remaining_amount_fcy)
         ELSE e.remaining_amount_fcy 
       END
     `;

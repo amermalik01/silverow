@@ -8,6 +8,7 @@ export interface CreateCustomerLedgerEntryInput {
   documentType:
     | "SALES_INVOICE"
     | "CREDIT_MEMO"
+    | "CREDIT_NOTE"
     | "PAYMENT"
     | "CUSTOMER_PAYMENT"
     | "REFUND"

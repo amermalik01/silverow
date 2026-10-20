@@ -10,6 +10,7 @@ import {
 import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
 import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
 import { CustomerLedgerService } from "@/lib/services/ledger/customer-ledger.service";
+import { CreditLimitService } from "./credit-limit.service";
 
 export interface PostSalesOrderInput {
   companyId: string;
@@ -207,6 +208,16 @@ export class SalesOrderPostingService {
         0,
       );
       const grossTotal = Number(totalCreditSum.toFixed(2));
+
+      // ── NEW: Perform Credit Limit Validation Check ──────────────────────
+      await CreditLimitService.validateCreditLimit(
+        client,
+        companyId,
+        order.customer_id,
+        grossTotal,
+        order.id
+      );
+      // ────────────────────────────────────────────────────────────────────
 
       glLines.push({
         account_id: fallbackArAccountId,
