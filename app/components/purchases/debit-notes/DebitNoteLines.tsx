@@ -779,6 +779,7 @@ export default function DebitNoteLines({
 
       <WarehouseLookupModal
         open={warehouseIndex !== null}
+        itemId={warehouseIndex !== null ? lines[warehouseIndex]?.item_id : undefined}
         onClose={() => setWarehouseIndex(null)}
         onSelect={(warehouse: WarehouseLookupRecord) => {
           if (warehouseIndex === null) return;
