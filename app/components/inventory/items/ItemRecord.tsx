@@ -5,17 +5,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@iconify/react";
 import { useLoader } from "@/app/context/LoaderContext";
 
 import ItemDetailHeader from "./ItemDetailHeader";
 import GeneralTab from "./tabs/GeneralTab";
 import PurchaseTab from "./tabs/PurchaseTab";
 import SalesTab from "./tabs/SalesTab";
+import PriceOffersTab, {
+  ItemPriceOfferDraft,
+} from "../../parties/tabs/PriceOffersTab";
 import MarginAnalysisTab from "./tabs/MarginAnalysisTab";
 import WarehouseTab from "./tabs/WarehouseTab";
-import AccountingTab from "./tabs/AccountingTab";
-import AttributesTab from "./tabs/AttributesTab";
 import ItemActivityTab from "./tabs/ItemActivityTab";
 
 import {
@@ -79,6 +79,7 @@ export default function ItemRecord({
   const [categories, setCategories] = useState<ItemLookupOption[]>([]);
   const [brands, setBrands] = useState<ItemLookupOption[]>([]);
   const [uoms, setUoms] = useState<ItemLookupOption[]>([]);
+  const [baseCurrencyId, setBaseCurrencyId] = useState<string>("");
 
   const effectiveReadonly = isReadonlyProp || !isEditing;
 
@@ -97,6 +98,9 @@ export default function ItemRecord({
   // 1. Add state for warehouses
   const [warehouses, setWarehouses] = useState<ItemWarehouseDraft[]>([]);
 
+  // Price Offers state for this item
+  const [priceOffers, setPriceOffers] = useState<ItemPriceOfferDraft[]>([]);
+
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -106,21 +110,27 @@ export default function ItemRecord({
 
       try {
         // Always fetch lookups
-        const [catRes, brandRes, uomRes, vatRes, setupRes] = await Promise.all([
-          fetch("/api/setup/inventory/categories"),
-          fetch("/api/setup/inventory/brands"),
-          fetch("/api/setup/inventory/uoms"),
-          fetch("/api/setup/vat-product-posting-groups"),
-          fetch("/api/setup/posting/inventory-system"),
-        ]);
+        const [catRes, brandRes, uomRes, vatRes, setupRes, currencyRes] =
+          await Promise.all([
+            fetch("/api/setup/inventory/categories"),
+            fetch("/api/setup/inventory/brands"),
+            fetch("/api/setup/inventory/uoms"),
+            fetch("/api/setup/vat-product-posting-groups"),
+            fetch("/api/setup/posting/inventory-system"),
+            fetch("/api/setup/general/company/currencies/base"),
+          ]);
 
         if (catRes.ok) setCategories(await catRes.json());
         if (brandRes.ok) setBrands(await brandRes.json());
         if (uomRes.ok) setUoms(await uomRes.json());
 
+        if (currencyRes.ok) {
+          const curData = await currencyRes.json();
+          if (curData?.id) setBaseCurrencyId(curData.id);
+        }
+
         if (setupRes.ok) {
           const setupData = await setupRes.json();
-
           const validMethods: InventoryCostingMethod[] = [
             "FIFO",
             "LIFO",
@@ -134,7 +144,6 @@ export default function ItemRecord({
         }
 
         let fetchedVatGroups: ItemLookupOption[] = [];
-
         if (vatRes.ok) {
           fetchedVatGroups = await vatRes.json();
           setVatProductGroups(fetchedVatGroups);
@@ -156,55 +165,96 @@ export default function ItemRecord({
           return;
         }
 
-        const itemRes = await fetch(`/api/inventory/items/${id}`);
+        // Fetch Item Record & Price Offers in parallel if editing existing item
+        const [itemRes, offersRes] = await Promise.all([
+          fetch(`/api/inventory/items/${id}`),
+          fetch(`/api/inventory/items/${id}/price-offers`),
+        ]);
 
-        if (!itemRes.ok) return;
+        if (itemRes.ok) {
+          const result = await itemRes.json();
 
-        const result = await itemRes.json();
+          const itemData = result.item || result;
+          const warehouseData = result.warehouses || [];
 
-        const itemData = result.item || result;
-        const warehouseData = result.warehouses || [];
+          setItem({
+            item_code: itemData.item_code || "",
+            barcode: itemData.barcode || "",
+            name: itemData.name || "",
+            description: itemData.description || "",
+            item_type: itemData.item_type || 1,
+            status: itemData.status || 1,
+            category_id: itemData.category_id || "",
+            brand_id: itemData.brand_id || "",
+            base_uom_id: itemData.base_uom_id || "",
+            purchase_uom_id: itemData.purchase_uom_id || "",
+            sales_uom_id: itemData.sales_uom_id || "",
+            stock_tracking: itemData.stock_tracking ?? true,
+            reorder_qty: itemData.reorder_qty?.toString() || "",
 
-        setItem({
-          item_code: itemData.item_code || "",
-          barcode: itemData.barcode || "",
-          name: itemData.name || "",
-          description: itemData.description || "",
-          item_type: itemData.item_type || 1,
-          status: itemData.status || 1,
-          category_id: itemData.category_id || "",
-          brand_id: itemData.brand_id || "",
-          base_uom_id: itemData.base_uom_id || "",
-          purchase_uom_id: itemData.purchase_uom_id || "",
-          sales_uom_id: itemData.sales_uom_id || "",
-          stock_tracking: itemData.stock_tracking ?? true,
-          reorder_qty: itemData.reorder_qty?.toString() || "",
-          standard_sales_price: itemData.standard_sales_price?.toString() || "",
-          standard_cost: itemData.standard_cost?.toString() || "",
-          // costing_method: itemData.costing_method || 1,
+            standard_sales_price:
+              itemData.standard_sales_price?.toString() || "",
+            min_sales_price: itemData.min_sales_price?.toString() || "",
+            standard_cost: itemData.standard_cost?.toString() || "",
+            purchase_price: itemData.purchase_price?.toString() || "",
+            min_purchase_qty: itemData.min_purchase_qty?.toString() || "1",
+            max_purchase_qty: itemData.max_purchase_qty?.toString() || "100",
 
-          costing_method: (["FIFO", "LIFO","WEIGHTED_AVERAGE", "STANDARD"].includes(
-            itemData.costing_method,
-          )
-            ? itemData.costing_method
-            : "FIFO") as InventoryCostingMethod,
+            // costing_method: itemData.costing_method || 1,
 
-          // If no VAT group exists on item, default to "Standard"
-          vat_product_group_id:
-            itemData.vat_product_group_id || standardVatGroup?.id || "",
-          inventory_posting_group_id: itemData.inventory_posting_group_id || "",
-          inventory_gl_id: itemData.inventory_gl_id || "",
-          cogs_gl_id: itemData.cogs_gl_id || "",
-          sales_gl_id: itemData.sales_gl_id || "",
-          purchase_gl_id: itemData.purchase_gl_id || "",
-        });
+            costing_method: ([
+              "FIFO",
+              "LIFO",
+              "WEIGHTED_AVERAGE",
+              "STANDARD",
+            ].includes(itemData.costing_method)
+              ? itemData.costing_method
+              : "FIFO") as InventoryCostingMethod,
 
-        if (itemData.item_code) setAutoCode(false);
+            // If no VAT group exists on item, default to "Standard"
+            vat_product_group_id:
+              itemData.vat_product_group_id || standardVatGroup?.id || "",
+            inventory_posting_group_id:
+              itemData.inventory_posting_group_id || "",
+            inventory_gl_id: itemData.inventory_gl_id || "",
+            cogs_gl_id: itemData.cogs_gl_id || "",
+            sales_gl_id: itemData.sales_gl_id || "",
+            purchase_gl_id: itemData.purchase_gl_id || "",
+          });
 
-        if (itemData.stock_metrics) setStockMetrics(itemData.stock_metrics);
+          if (itemData.item_code) setAutoCode(false);
+          if (itemData.stock_metrics) setStockMetrics(itemData.stock_metrics);
+          if (Array.isArray(warehouseData)) setWarehouses(warehouseData);
+        }
 
-        // Populate warehouses state safely without re-reading stream
-        if (Array.isArray(warehouseData)) setWarehouses(warehouseData);
+
+        if (offersRes.ok) {
+          const offerData = await offersRes.json();
+          if (offerData && Array.isArray(offerData.priceOffers)) {
+            setPriceOffers(
+              offerData.priceOffers.map((o: ItemPriceOfferDraft) => ({
+                id: o.id ||o.price_list_id,
+                price_list_item_id: o.price_list_item_id,
+                name: o.name || o.price_list_name || "Custom Price List",
+                list_type: o.list_type || "SALES",
+                party_id: o.party_id || null,
+                party_name: o.party_name || "General / Global List",
+                party_type: o.party_type || "customer",
+                start_date: o.start_date || new Date().toISOString().split("T")[0],
+                end_date: o.end_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                currency_id: o.currency_id || baseCurrencyId,
+                offer_method: o.offer_method || "Fixed Price",
+                standard_price: o.standard_price || 0,
+                offered_price: o.offered_price || 0,
+                min_order_qty: o.min_order_qty || 1,
+                max_order_qty: o.max_order_qty || 100,
+                has_volume_discount: !!o.has_volume_discount,
+                volume_discounts: o.volume_discounts || [],
+              }))
+            );
+          }
+        }
+
       } catch (err) {
         console.error("Failed to load item record context", err);
       } finally {
@@ -301,8 +351,13 @@ export default function ItemRecord({
           purchase_uom_id: item.purchase_uom_id || null,
           sales_uom_id: item.sales_uom_id || null,
           reorder_qty: item.reorder_qty || null,
+
           standard_sales_price: item.standard_sales_price || null,
+          min_sales_price: item.min_sales_price || null,
           standard_cost: item.standard_cost || null,
+          purchase_price: item.purchase_price || null,
+          min_purchase_qty: item.min_purchase_qty || null,
+          max_purchase_qty: item.max_purchase_qty || null,
 
           // GL Accounting & Posting Group mappings
           vat_product_group_id: item.vat_product_group_id || null,
@@ -313,6 +368,7 @@ export default function ItemRecord({
           purchase_gl_id: item.purchase_gl_id || null,
         },
         warehouses,
+        priceOffers,
       };
 
       const res = await fetch(`/api/inventory/items${id ? `/${id}` : ""}`, {
@@ -340,6 +396,7 @@ export default function ItemRecord({
     { key: "general", label: "General" },
     { key: "purchase", label: "Purchase Information" },
     { key: "sales", label: "Sales Information" },
+    { key: "price_offers", label: "Price Offers" },
     { key: "margin", label: "Item Margin Analysis" },
     { key: "warehouse", label: "Warehouse Location & Cost" },
     { key: "activities", label: "Activities" },
@@ -356,16 +413,6 @@ export default function ItemRecord({
           { label: item.item_code || "" },
         ]}
       />
-
-      {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <h1 className="text-2xl font-bold px-4 capitalize">Item</h1>
-
-        {item.item_code && (
-          <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
-            Item No. &nbsp;{item.item_code}
-          </div>
-        )}
-      </div> */}
 
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
         <ItemDetailHeader item={item} metrics={stockMetrics} />
@@ -440,6 +487,18 @@ export default function ItemRecord({
               isReadonly={effectiveReadonly}
             />
           )}
+
+          {activeTab === "price_offers" && (
+            <PriceOffersTab
+              itemId={id}
+              baseCurrencyId={baseCurrencyId}
+              isReadonly={effectiveReadonly}
+              priceOffers={priceOffers}
+              setPriceOffers={setPriceOffers}
+              onRequestEdit={() => !isEditing && setIsEditing(true)}
+            />
+          )}
+
           {activeTab === "margin" && (
             <MarginAnalysisTab itemId={id} isReadonly={effectiveReadonly} />
           )}
@@ -512,18 +571,30 @@ export default function ItemRecord({
     </div>
   );
 }
+/*
+{ key: "accounting", label: "Accounting GL" },
+{ key: "attributes", label: "Attributes" },
+ 
+{activeTab === "accounting" && (
+  <AccountingTab
+    item={item}
+    setItem={setItem}
+    isReadonly={isReadonly}
+  />
+)} 
+{activeTab === "attributes" && (
+  <AttributesTab itemId={id} isReadonly={isReadonly} />
+)}
+import { Icon } from "@iconify/react";
+import AccountingTab from "./tabs/AccountingTab";
+import AttributesTab from "./tabs/AttributesTab";
 
-// { key: "accounting", label: "Accounting GL" },
-// { key: "attributes", label: "Attributes" },
-/* 
-    {activeTab === "accounting" && (
-      <AccountingTab
-        item={item}
-        setItem={setItem}
-        isReadonly={isReadonly}
-      />
-    )} 
-    {activeTab === "attributes" && (
-      <AttributesTab itemId={id} isReadonly={isReadonly} />
-    )} 
-*/
+<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+  <h1 className="text-2xl font-bold px-4 capitalize">Item</h1>
+
+  {item.item_code && (
+    <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
+      Item No. &nbsp;{item.item_code}
+    </div>
+  )}
+</div> */

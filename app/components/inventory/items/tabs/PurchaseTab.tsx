@@ -46,23 +46,6 @@ export default function PurchaseTab({
                 value={COSTING_METHOD_LABELS[costingMethod]}
                 className="w-full rounded border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-800"
               />
-              {/* <select
-                // disabled={isReadonly}
-                disabled={true}
-                value={item.costing_method}
-                onChange={(e) =>
-                  setItem((prev) => ({
-                    ...prev,
-                    costing_method: Number(e.target.value),
-                  }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
-              >
-                <option value={1}>First in First Out (FIFO)</option>
-                <option value={2}>Last in First Out (LIFO)</option>
-                <option value={3}>Weighted Average</option>
-                <option value={4}>Standard Costing</option>
-              </select> */}
             </div>
           </div>
         </div>
@@ -130,29 +113,42 @@ export default function PurchaseTab({
                     allowDecimals
                     decimalScale={2}
                     disabled={isReadonly}
-                    value={Number(item.standard_cost)}
+                    value={Number(
+                      item.purchase_price ?? item.standard_cost ?? 0,
+                    )}
                     onChange={(val) =>
                       setItem((prev) => ({
                         ...prev,
-                        standard_cost: String(val),
+                        purchase_price: String(val),
+                        // standard_cost: String(val),
                       }))
                     }
                     className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full disabled:bg-slate-50 disabled:cursor-not-allowed"
                   />
                 </td>
                 <td className="p-3 border-t border-slate-100 dark:border-slate-800/40">
-                  <input
-                    type="number"
+                  <NumericTextInput
                     disabled={isReadonly}
-                    defaultValue={1}
+                    value={Number(item.min_purchase_qty ?? 1)}
+                    onChange={(val) =>
+                      setItem((prev) => ({
+                        ...prev,
+                        min_purchase_qty: String(val),
+                      }))
+                    }
                     className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full disabled:bg-slate-50 disabled:cursor-not-allowed"
                   />
                 </td>
                 <td className="p-3 border-t border-slate-100 dark:border-slate-800/40">
-                  <input
-                    type="number"
+                  <NumericTextInput
                     disabled={isReadonly}
-                    defaultValue={0}
+                    value={Number(item.max_purchase_qty ?? 100)}
+                    onChange={(val) =>
+                      setItem((prev) => ({
+                        ...prev,
+                        max_purchase_qty: String(val),
+                      }))
+                    }
                     className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full disabled:bg-slate-50 disabled:cursor-not-allowed"
                   />
                 </td>
@@ -164,3 +160,23 @@ export default function PurchaseTab({
     </div>
   );
 }
+
+/* 
+<select
+  // disabled={isReadonly}
+  disabled={true}
+  value={item.costing_method}
+  onChange={(e) =>
+    setItem((prev) => ({
+      ...prev,
+      costing_method: Number(e.target.value),
+    }))
+  }
+  className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
+>
+  <option value={1}>First in First Out (FIFO)</option>
+  <option value={2}>Last in First Out (LIFO)</option>
+  <option value={3}>Weighted Average</option>
+  <option value={4}>Standard Costing</option>
+</select> 
+*/

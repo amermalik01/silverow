@@ -433,19 +433,6 @@ export default function PartyRecord({
             />
           )}
 
-          {/* {activeTab === "price_list" && (
-            <PriceListTab
-              partyId={id}
-              priceLists={priceLists}
-              setPriceLists={setPriceLists}
-              isReadonly={effectiveReadonly}
-              errors={formErrors}
-              onRequestEdit={
-                isReadonlyProp ? undefined : () => setIsEditing(true)
-              }
-            />
-          )} */}
-
           {activeTab === "price_list" && (
             <PriceListTab
               partyId={id}

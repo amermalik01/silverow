@@ -7,7 +7,8 @@ import { Icon } from "@iconify/react";
 import MasterDropdown from "@/app/components/common/MasterDropdown";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import { format, parseISO, startOfDay } from "date-fns";
+// import { format, parseISO, startOfDay } from "date-fns";
+import { format, parse, parseISO, isValid } from "date-fns";
 
 import ItemLookupModal, {
   ItemLookupRecord,
@@ -65,6 +66,22 @@ type Props = {
   onRequestEdit?: () => void;
 };
 
+function parseStoredDate(value?: string): Date | undefined {
+  if (!value) return undefined;
+
+  let date: Date;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    date = parseISO(value);
+  } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    date = parse(value, "dd/MM/yyyy", new Date());
+  } else {
+    date = parseISO(value);
+  }
+
+  return isValid(date) ? date : undefined;
+}
+
 export default function PriceListTab({
   partyId,
   partyType,
@@ -87,13 +104,19 @@ export default function PriceListTab({
   // Enforce fixed list type based on party type
   const enforcedListType = partyType === "supplier" ? "PURCHASE" : "SALES";
 
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>(
-    startOfDay(new Date()),
-  );
+  //   const [startDate, setStartDate] = useState<Date | undefined>();
+  //   const [endDate, setEndDate] = useState<Date | undefined>(
+  //     startOfDay(new Date()),
+  //   );
+
+  const startDate = parseStoredDate(activeList?.start_date);
+  const endDate = parseStoredDate(activeList?.end_date);
 
   const addPriceList = () => {
     onRequestEdit?.();
+
+    const today = new Date();
+
     const newList: PriceListDraft = {
       party_id: partyId,
       name:
@@ -101,10 +124,15 @@ export default function PriceListTab({
           ? "Supplier Purchase Price List"
           : "Customer Sales Price List",
       list_type: enforcedListType,
-      start_date: new Date().toISOString().split("T")[0],
-      end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
+      start_date: format(today, "yyyy-MM-dd"),
+      end_date: format(
+        new Date(today.getFullYear() + 1, today.getMonth(), today.getDate()),
+        "yyyy-MM-dd",
+      ),
+      //   start_date: new Date().toISOString().split("T")[0],
+      //   end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      //     .toISOString()
+      //     .split("T")[0],
       currency_id: baseCurrencyId || "",
       offer_method: "Fixed Price",
       items: [],
@@ -375,6 +403,24 @@ export default function PriceListTab({
                 </label>
                 <div className="col-span-2">
                   <DatePicker
+                    value={startDate}
+                    containerClassName="col-span-8"
+                    disabled={isReadonly}
+                    minDate={new Date()}
+                    maxDate={endDate}
+                    onChange={(date: Date | undefined) => {
+                      if (date && isValid(date)) {
+                        updateActiveListHeader(
+                          "start_date",
+                          format(date, "yyyy-MM-dd"),
+                        );
+                      }
+                    }}
+                    className={getInputClass(
+                      `priceLists.${selectedListIdx}.start_date`,
+                    )}
+                  />
+                  {/* <DatePicker
                     value={
                       activeList.start_date
                         ? parseISO(activeList.start_date)
@@ -395,7 +441,7 @@ export default function PriceListTab({
                     className={getInputClass(
                       `priceLists.${selectedListIdx}.start_date`,
                     )}
-                  />
+                  /> */}
                 </div>
               </div>
 
@@ -406,6 +452,23 @@ export default function PriceListTab({
                 </label>
                 <div className="col-span-2">
                   <DatePicker
+                    value={endDate}
+                    containerClassName="col-span-8"
+                    disabled={isReadonly}
+                    minDate={startDate}
+                    onChange={(date: Date | undefined) => {
+                      if (date && isValid(date)) {
+                        updateActiveListHeader(
+                          "end_date",
+                          format(date, "yyyy-MM-dd"),
+                        );
+                      }
+                    }}
+                    className={getInputClass(
+                      `priceLists.${selectedListIdx}.end_date`,
+                    )}
+                  />
+                  {/* <DatePicker
                     value={
                       activeList.end_date
                         ? parseISO(activeList.end_date)
@@ -422,19 +485,6 @@ export default function PriceListTab({
                         );
                       }
                     }}
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.end_date`,
-                    )}
-                  />
-                  {/* <DatePicker
-                    value={activeList.end_date}
-                    containerClassName="col-span-8"
-                    disabled={isReadonly}
-                    onChange={setEndDate}
-                    minDate={startDate}
-                    // onChange={(e) =>
-                    //   updateActiveListHeader("end_date", e.target.value)
-                    // }
                     className={getInputClass(
                       `priceLists.${selectedListIdx}.end_date`,
                     )}

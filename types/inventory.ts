@@ -34,7 +34,11 @@ export type ItemFormData = {
   stock_tracking: boolean;
   reorder_qty: string;
   standard_sales_price: string;
+  min_sales_price?: string;
   standard_cost: string;
+  purchase_price?: string;
+  min_purchase_qty?: string;
+  max_purchase_qty?: string;
   costing_method: InventoryCostingMethod;
 
   // VAT Product Posting Group

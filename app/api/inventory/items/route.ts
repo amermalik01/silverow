@@ -161,6 +161,13 @@ export async function POST(req: Request) {
           )
           .map((w: unknown) => ItemWarehouseSchema.parse(w));
 
+
+        const rawPriceOffers = Array.isArray(rawItemData.priceOffers)
+          ? rawItemData.priceOffers
+          : Array.isArray(rawBody.priceOffers)
+            ? rawBody.priceOffers
+            : [];
+
         let item_code = validatedItem.item_code || null;
 
         // Auto-generate code if not supplied in single-item creation or migration
@@ -262,6 +269,80 @@ export async function POST(req: Request) {
           }
         }
 
+        // Process Price Offers & Volume Discounts
+        for (const offer of rawPriceOffers) {
+          let priceListId = offer.id;
+
+          if (!priceListId) {
+            const plInsertRes = await client.query(
+              `
+              INSERT INTO price_lists (
+                company_id, name, list_type, party_id, offer_method, start_date, end_date, currency_id, status
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1)
+              RETURNING id
+              `,
+              [
+                companyId,
+                offer.name || "Item Price Offer",
+                offer.list_type || "SALES",
+                toCleanOrNull(offer.party_id),
+                offer.offer_method || "Fixed Price",
+                toDateOrNull(offer.start_date) || new Date(),
+                toDateOrNull(offer.end_date) ||
+                  new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+                toCleanOrNull(offer.currency_id) || null,
+              ],
+            );
+            priceListId = plInsertRes.rows[0].id;
+          }
+
+          const pliInsertRes = await client.query(
+            `
+            INSERT INTO price_list_items (
+              price_list_id, item_id, uom_id, standard_price, offered_price, min_order_qty, max_order_qty, has_volume_discount
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id
+            `,
+            [
+              priceListId,
+              newItem.id,
+              toCleanOrNull(validatedItem.base_uom_id),
+              toNumberOrDefault(
+                offer.standard_price,
+                toNumberOrDefault(validatedItem.standard_sales_price, 0),
+              ),
+              toNumberOrDefault(offer.offered_price, 0),
+              toNumberOrDefault(offer.min_order_qty, 1),
+              toNumberOrDefault(offer.max_order_qty, 100),
+              !!offer.has_volume_discount,
+            ],
+          );
+
+          const priceListItemId = pliInsertRes.rows[0].id;
+
+          if (
+            offer.has_volume_discount &&
+            Array.isArray(offer.volume_discounts)
+          ) {
+            for (const vd of offer.volume_discounts) {
+              await client.query(
+                `
+                INSERT INTO price_list_volume_discounts (
+                  price_list_item_id, min_order_qty, discount_type, discount_value, discounted_price
+                ) VALUES ($1, $2, $3, $4, $5)
+                `,
+                [
+                  priceListItemId,
+                  toNumberOrDefault(vd.min_order_qty, 1),
+                  vd.discount_type || "PERCENTAGE",
+                  toNumberOrDefault(vd.discount_value, 0),
+                  toNumberOrDefault(vd.discounted_price, 0),
+                ],
+              );
+            }
+          }
+        }
+
         insertedItems.push(newItem);
       }
 
@@ -309,66 +390,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
-/* import { NextRequest, NextResponse } from "next/server";
-
-import { getServerSession } from "next-auth";
-
-import { authOptions } from "@/lib/auth";
-import { createItem, getItemList } from "@/lib/services/inventory/item.service";
-
-export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const companyId = session.user.company_id;
-
-  if (!companyId) {
-    return NextResponse.json(
-      {
-        error: "Company context missing",
-      },
-      { status: 400 },
-    );
-  }
-
-  const search = req.nextUrl.searchParams.get("search") || "";
-
-  const data = await getItemList({
-    companyId,
-    search,
-  });
-
-  return NextResponse.json(data);
-}
-
-export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const companyId = session.user.company_id;
-
-  if (!companyId) {
-    return NextResponse.json(
-      {
-        error: "Company context missing",
-      },
-      { status: 400 },
-    );
-  }
-
-  const body = await req.json();
-
-  const data = await createItem({
-    ...body,
-    company_id: companyId,
-  });
-
-  return NextResponse.json(data);
-} */

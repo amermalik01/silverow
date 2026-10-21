@@ -117,6 +117,10 @@ export async function PUT(req: Request, { params }: Props) {
       )
       .map((w: unknown) => ItemWarehouseSchema.parse(w));
 
+    const rawPriceOffers = Array.isArray(rawBody.priceOffers)
+      ? rawBody.priceOffers
+      : [];
+
     const client = await pool.connect();
 
     try {
@@ -169,7 +173,7 @@ export async function PUT(req: Request, { params }: Props) {
         toNumberOrDefault(validatedItem.standard_cost, 0),
         // toNumberOrDefault(validatedItem.costing_method, 1),
         validatedItem.costing_method,
-        
+
         toCleanOrNull(validatedItem.inventory_posting_group_id),
         toCleanOrNull(validatedItem.inventory_gl_id),
         toCleanOrNull(validatedItem.cogs_gl_id),
@@ -225,6 +229,118 @@ export async function PUT(req: Request, { params }: Props) {
         }
       }
 
+      // Sync Price Offers & Volume Discounts for this item
+      // First, remove existing price list item links associated with this item
+      const existingPlItems = await client.query(
+        `SELECT id FROM price_list_items WHERE item_id = $1`,
+        [id],
+      );
+      if (existingPlItems.rowCount && existingPlItems.rowCount > 0) {
+        const pliIds = existingPlItems.rows.map((r) => r.id);
+        await client.query(
+          `DELETE FROM price_list_volume_discounts WHERE price_list_item_id = ANY($1)`,
+          [pliIds],
+        );
+        await client.query(`DELETE FROM price_list_items WHERE item_id = $1`, [
+          id,
+        ]);
+      }
+
+      // Re-insert submitted price offers
+      for (const offer of rawPriceOffers) {
+        let priceListId = offer.id;
+
+        if (!priceListId) {
+          const plInsertRes = await client.query(
+            `
+            INSERT INTO price_lists (
+              company_id, name, list_type, party_id, offer_method, start_date, end_date, currency_id, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1)
+            RETURNING id
+            `,
+            [
+              companyId,
+              offer.name || "Item Price Offer",
+              offer.list_type || "SALES",
+              toCleanOrNull(offer.party_id),
+              offer.offer_method || "Fixed Price",
+              toDateOrNull(offer.start_date) || new Date(),
+              toDateOrNull(offer.end_date) ||
+                new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+              toCleanOrNull(offer.currency_id) || null,
+            ],
+          );
+          priceListId = plInsertRes.rows[0].id;
+        } else {
+          // Update existing list name or metadata if changed
+          await client.query(
+            `
+            UPDATE price_lists SET
+              name = $1,
+              list_type = $2,
+              party_id = $3,
+              offer_method = $4,
+              updated_at = NOW()
+            WHERE id = $5 AND company_id = $6
+            `,
+            [
+              offer.name || "Item Price Offer",
+              offer.list_type || "SALES",
+              toCleanOrNull(offer.party_id),
+              offer.offer_method || "Fixed Price",
+              priceListId,
+              companyId,
+            ],
+          );
+        }
+
+        const pliInsertRes = await client.query(
+          `
+          INSERT INTO price_list_items (
+            price_list_id, item_id, uom_id, standard_price, offered_price, min_order_qty, max_order_qty, has_volume_discount
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING id
+          `,
+          [
+            priceListId,
+            id,
+            toCleanOrNull(validatedItem.base_uom_id),
+            toNumberOrDefault(
+              offer.standard_price,
+              toNumberOrDefault(validatedItem.standard_sales_price, 0),
+            ),
+            toNumberOrDefault(offer.offered_price, 0),
+            toNumberOrDefault(offer.min_order_qty, 1),
+            toNumberOrDefault(offer.max_order_qty, 100),
+            !!offer.has_volume_discount,
+          ],
+        );
+
+        const priceListItemId = pliInsertRes.rows[0].id;
+
+        if (
+          offer.has_volume_discount &&
+          Array.isArray(offer.volume_discounts)
+        ) {
+          for (const vd of offer.volume_discounts) {
+            await client.query(
+              `
+              INSERT INTO price_list_volume_discounts (
+                price_list_item_id, min_order_qty, discount_type, discount_value, discounted_price
+              ) VALUES ($1, $2, $3, $4, $5)
+              `,
+              [
+                priceListItemId,
+                toNumberOrDefault(vd.min_order_qty, 1),
+                vd.discount_type || "PERCENTAGE",
+                toNumberOrDefault(vd.discount_value, 0),
+                toNumberOrDefault(vd.discounted_price, 0),
+              ],
+            );
+          }
+        }
+      }
+
       await client.query("COMMIT");
       return NextResponse.json(
         { success: true, item: itemResult.rows[0] },
@@ -273,11 +389,35 @@ export async function DELETE(_: Request, { params }: Props) {
   try {
     await client.query("BEGIN");
 
+    // 1. Delete associated warehouse records
     await client.query(
       `DELETE FROM item_warehouses WHERE item_id = $1 AND company_id = $2`,
       [id, companyId],
     );
 
+    // 2. Clean up linked price list items and their volume discount tiers
+    const plItemsResult = await client.query(
+      `SELECT id FROM price_list_items WHERE item_id = $1`,
+      [id]
+    );
+
+    if (plItemsResult.rowCount && plItemsResult.rowCount > 0) {
+      const pliIds = plItemsResult.rows.map((r) => r.id);
+      
+      // Delete volume discounts for these price list items
+      await client.query(
+        `DELETE FROM price_list_volume_discounts WHERE price_list_item_id = ANY($1)`,
+        [pliIds]
+      );
+
+      // Delete the price list items themselves
+      await client.query(
+        `DELETE FROM price_list_items WHERE item_id = $1`,
+        [id]
+      );
+    }
+
+    // 3. Soft delete the main item record
     const deleteResult = await client.query(
       `UPDATE items SET deleted_at = NOW() WHERE id = $1 AND company_id = $2 RETURNING id`,
       [id, companyId],
@@ -294,7 +434,7 @@ export async function DELETE(_: Request, { params }: Props) {
     await client.query("COMMIT");
     return NextResponse.json({
       success: true,
-      message: "Item record soft deleted successfully.",
+      message: "Item record and its custom price offers deleted successfully.",
     });
   } catch (err: unknown) {
     await client.query("ROLLBACK");
@@ -310,73 +450,3 @@ export async function DELETE(_: Request, { params }: Props) {
     client.release();
   }
 }
-
-/* import { NextRequest, NextResponse } from "next/server";
-import { getCompanyId } from "@/lib/auth/getCompanyId";
-
-import {
-  getItemById,
-  updateItem,
-  deleteItem,
-} from "@/lib/services/inventory/item.service";
-
-type Props = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
-export async function GET(req: NextRequest, { params }: Props) {
-  const companyId = await getCompanyId();
-  if (!companyId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await params;
-
-  const data = await getItemById({
-    id,
-    companyId,
-  });
-
-  if (!data) {
-    return NextResponse.json({ error: "Item not found" }, { status: 404 });
-  }
-
-  return NextResponse.json(data);
-}
-
-export async function PUT(req: NextRequest, { params }: Props) {
-  const companyId = await getCompanyId();
-  if (!companyId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await params;
-  const body = await req.json();
-
-  const data = await updateItem({
-    id,
-    companyId,
-    data: body,
-  });
-
-  return NextResponse.json(data);
-}
-
-export async function DELETE(req: NextRequest, { params }: Props) {
-  const companyId = await getCompanyId();
-  if (!companyId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await params;
-
-  const data = await deleteItem({
-    id,
-    companyId,
-  });
-
-  return NextResponse.json(data);
-}
- */
