@@ -46,7 +46,7 @@ export class ItemsService {
 
     if (statusFilter === "inactive") {
       // Include inactive items only.
-      queryValues.push(2);
+      queryValues.push(0);
       whereClauses.push(`i.status = $${queryValues.length}`);
     } else {
       // Include active items only.
@@ -157,6 +157,9 @@ export class ItemsService {
       ORDER BY ${orderByColumn} ${orderDirection}
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
+
+    // console.log('dataQuery === ',dataQuery);
+    // console.log('dataQueryValues === ',dataQueryValues);
 
     const dataResult = await pool.query(dataQuery, dataQueryValues);
 

@@ -9,5 +9,5 @@ export default async function NewItemPage({
 }) {
   const { slug } = await params;
 
-  return <ItemRecord id="" slug={slug} />;
+  return <ItemRecord id="" slug={slug} isReadonly={false} />;
 }

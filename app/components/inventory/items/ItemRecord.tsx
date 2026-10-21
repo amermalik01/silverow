@@ -65,9 +65,11 @@ export default function ItemRecord({
 }: Props) {
   const router = useRouter();
   const { show, hide } = useLoader();
+  console.log("isReadonlyProp === ", isReadonlyProp);
 
   const [activeTab, setActiveTab] = useState("general");
-  const [isEditing, setIsEditing] = useState(false);
+  // const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!id);
 
   const [costingMethod, setCostingMethod] =
     useState<InventoryCostingMethod>("FIFO");
@@ -81,7 +83,8 @@ export default function ItemRecord({
   const [uoms, setUoms] = useState<ItemLookupOption[]>([]);
   const [baseCurrencyId, setBaseCurrencyId] = useState<string>("");
 
-  const effectiveReadonly = isReadonlyProp || !isEditing;
+  // const effectiveReadonly = isReadonlyProp || !isEditing;
+  const effectiveReadonly = isReadonlyProp || (!!id && !isEditing);
 
   const [vatProductGroups, setVatProductGroups] = useState<ItemLookupOption[]>(
     [],
@@ -178,6 +181,7 @@ export default function ItemRecord({
           const warehouseData = result.warehouses || [];
 
           setItem({
+            id: itemData.id,
             item_code: itemData.item_code || "",
             barcode: itemData.barcode || "",
             name: itemData.name || "",
@@ -227,21 +231,25 @@ export default function ItemRecord({
           if (Array.isArray(warehouseData)) setWarehouses(warehouseData);
         }
 
-
         if (offersRes.ok) {
           const offerData = await offersRes.json();
           if (offerData && Array.isArray(offerData.priceOffers)) {
             setPriceOffers(
               offerData.priceOffers.map((o: ItemPriceOfferDraft) => ({
-                id: o.id ||o.price_list_id,
+                id: o.id || o.price_list_id,
                 price_list_item_id: o.price_list_item_id,
                 name: o.name || o.price_list_name || "Custom Price List",
                 list_type: o.list_type || "SALES",
                 party_id: o.party_id || null,
                 party_name: o.party_name || "General / Global List",
                 party_type: o.party_type || "customer",
-                start_date: o.start_date || new Date().toISOString().split("T")[0],
-                end_date: o.end_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                start_date:
+                  o.start_date || new Date().toISOString().split("T")[0],
+                end_date:
+                  o.end_date ||
+                  new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                    .toISOString()
+                    .split("T")[0],
                 currency_id: o.currency_id || baseCurrencyId,
                 offer_method: o.offer_method || "Fixed Price",
                 standard_price: o.standard_price || 0,
@@ -250,11 +258,10 @@ export default function ItemRecord({
                 max_order_qty: o.max_order_qty || 100,
                 has_volume_discount: !!o.has_volume_discount,
                 volume_discounts: o.volume_discounts || [],
-              }))
+              })),
             );
           }
         }
-
       } catch (err) {
         console.error("Failed to load item record context", err);
       } finally {
@@ -333,6 +340,11 @@ export default function ItemRecord({
 
   const handleCancelEdit = () => {
     setFormErrors({});
+
+    if (!id) {
+      router.back();
+      return;
+    }
     setIsEditing(false);
   };
 
@@ -415,7 +427,17 @@ export default function ItemRecord({
       />
 
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
-        <ItemDetailHeader item={item} metrics={stockMetrics} />
+        <ItemDetailHeader
+          item={item}
+          metrics={stockMetrics}
+          onItemUpdated={(updatedAccount) => {
+            setItem((prev) => ({
+              ...prev,
+              ...updatedAccount,
+            }));
+            // setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
+          }}
+        />
 
         {Object.keys(formErrors).length > 0 && (
           <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">

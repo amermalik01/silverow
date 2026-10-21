@@ -20,6 +20,8 @@ export type ItemLookupOption = {
 };
 
 export type ItemFormData = {
+  id?: string;
+  company_id?: string;
   item_code: string;
   barcode: string;
   name: string;
