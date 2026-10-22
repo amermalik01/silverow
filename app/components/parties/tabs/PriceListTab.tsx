@@ -104,11 +104,6 @@ export default function PriceListTab({
   // Enforce fixed list type based on party type
   const enforcedListType = partyType === "supplier" ? "PURCHASE" : "SALES";
 
-  //   const [startDate, setStartDate] = useState<Date | undefined>();
-  //   const [endDate, setEndDate] = useState<Date | undefined>(
-  //     startOfDay(new Date()),
-  //   );
-
   const startDate = parseStoredDate(activeList?.start_date);
   const endDate = parseStoredDate(activeList?.end_date);
 
@@ -129,10 +124,6 @@ export default function PriceListTab({
         new Date(today.getFullYear() + 1, today.getMonth(), today.getDate()),
         "yyyy-MM-dd",
       ),
-      //   start_date: new Date().toISOString().split("T")[0],
-      //   end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-      //     .toISOString()
-      //     .split("T")[0],
       currency_id: baseCurrencyId || "",
       offer_method: "Fixed Price",
       items: [],
@@ -147,9 +138,26 @@ export default function PriceListTab({
     val: string | boolean,
   ) => {
     onRequestEdit?.();
-    setPriceLists(
-      priceLists.map((list, idx) =>
+
+    setPriceLists((current) =>
+      current.map((list, idx) =>
         idx === selectedListIdx ? { ...list, [key]: val } : list,
+      ),
+    );
+
+    // setPriceLists(
+    //   priceLists.map((list, idx) =>
+    //     idx === selectedListIdx ? { ...list, [key]: val } : list,
+    //   ),
+    // );
+  };
+
+  const updateSelectedList = (
+    updater: (list: PriceListDraft) => PriceListDraft,
+  ) => {
+    setPriceLists((current) =>
+      current.map((list, idx) =>
+        idx === selectedListIdx ? updater(list) : list,
       ),
     );
   };
@@ -191,20 +199,35 @@ export default function PriceListTab({
     val: unknown,
   ) => {
     onRequestEdit?.();
-    if (!activeList) return;
-    const updatedItems = activeList.items.map((item, idx) => {
-      if (idx === itemIdx) {
-        return { ...item, [key]: val };
-      }
-      return item;
-    });
 
-    setPriceLists(
-      priceLists.map((list, idx) =>
-        idx === selectedListIdx ? { ...list, items: updatedItems } : list,
+    updateSelectedList((list) => ({
+      ...list,
+      items: list.items.map((item, idx) =>
+        idx === itemIdx ? { ...item, [key]: val } : item,
       ),
-    );
+    }));
   };
+
+  // const updateItemRow = (
+  //   itemIdx: number,
+  //   key: keyof PriceListItemDraft,
+  //   val: unknown,
+  // ) => {
+  //   onRequestEdit?.();
+  //   if (!activeList) return;
+  //   const updatedItems = activeList.items.map((item, idx) => {
+  //     if (idx === itemIdx) {
+  //       return { ...item, [key]: val };
+  //     }
+  //     return item;
+  //   });
+
+  //   setPriceLists(
+  //     priceLists.map((list, idx) =>
+  //       idx === selectedListIdx ? { ...list, items: updatedItems } : list,
+  //     ),
+  //   );
+  // };
 
   const removeItemRow = (itemIdx: number) => {
     onRequestEdit?.();
@@ -406,7 +429,7 @@ export default function PriceListTab({
                     value={startDate}
                     containerClassName="col-span-8"
                     disabled={isReadonly}
-                    minDate={new Date()}
+                    // minDate={new Date()}
                     maxDate={endDate}
                     onChange={(date: Date | undefined) => {
                       if (date && isValid(date)) {
@@ -420,28 +443,6 @@ export default function PriceListTab({
                       `priceLists.${selectedListIdx}.start_date`,
                     )}
                   />
-                  {/* <DatePicker
-                    value={
-                      activeList.start_date
-                        ? parseISO(activeList.start_date)
-                        : undefined
-                    }
-                    containerClassName="col-span-8"
-                    disabled={isReadonly}
-                    minDate={new Date()}
-                    maxDate={endDate}
-                    onChange={(date: Date | undefined) => {
-                      if (date) {
-                        updateActiveListHeader(
-                          "start_date",
-                          format(date, "dd/MM/yyyy"),
-                        );
-                      }
-                    }}
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.start_date`,
-                    )}
-                  /> */}
                 </div>
               </div>
 
@@ -468,27 +469,6 @@ export default function PriceListTab({
                       `priceLists.${selectedListIdx}.end_date`,
                     )}
                   />
-                  {/* <DatePicker
-                    value={
-                      activeList.end_date
-                        ? parseISO(activeList.end_date)
-                        : undefined
-                    }
-                    containerClassName="col-span-8"
-                    disabled={isReadonly}
-                    minDate={startDate}
-                    onChange={(date: Date | undefined) => {
-                      if (date) {
-                        updateActiveListHeader(
-                          "end_date",
-                          format(date, "dd/MM/yyyy"),
-                        );
-                      }
-                    }}
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.end_date`,
-                    )}
-                  /> */}
                 </div>
               </div>
 

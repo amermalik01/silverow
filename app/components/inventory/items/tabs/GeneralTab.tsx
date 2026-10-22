@@ -193,7 +193,7 @@ export default function GeneralTab({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 items-center">
+          {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Barcode
             </label>
@@ -208,7 +208,7 @@ export default function GeneralTab({
                 className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
               />
             </div>
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">

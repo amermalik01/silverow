@@ -157,7 +157,7 @@ export const Login = () => {
                 <div
                   className="
                   bg-emerald-800
-                  rounded-2xl
+                  rounded-md
                   px-8
                   py-4
                   shadow-md
@@ -206,7 +206,7 @@ export const Login = () => {
               <div
                 className="
                   mt-4
-                  rounded-xl
+                  rounded-md
                   bg-red-50
                   border
                   border-red-200
@@ -242,7 +242,7 @@ export const Login = () => {
                     className="
                         h-12
                         pl-11
-                        rounded-xl
+                        rounded-md
                         border-slate-200
                         bg-slate-50/80
                         focus:bg-white
@@ -279,7 +279,7 @@ export const Login = () => {
                     className="
                       h-12
                       pl-11
-                      rounded-xl
+                      rounded-md
                       border-slate-200
                       bg-slate-50/80
                       focus:bg-white
@@ -303,7 +303,7 @@ export const Login = () => {
                     w-full
                     h-12
                     mt-2
-                    rounded-xl
+                    rounded-md
                     bg-emerald-700
                     hover:bg-emerald-800
                     text-white
@@ -338,7 +338,7 @@ export const Login = () => {
                   bg-slate-900/40
                   border
                   border-white/15
-                  rounded-xl
+                  rounded-md
                   py-3
                   px-1
                   flex

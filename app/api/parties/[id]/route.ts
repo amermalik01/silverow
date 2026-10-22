@@ -10,10 +10,13 @@ import {
   PartyAddressSchema,
 } from "@/lib/validations/party.schema";
 
+import { priceListsSchema } from "@/lib/validations/price-list.schema";
+
 import { z } from "zod";
 
 type PartyContactInput = z.infer<typeof PartyContactSchema>;
 type PartyAddressInput = z.infer<typeof PartyAddressSchema>;
+type PriceListsInput = z.infer<typeof priceListsSchema>;
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -161,9 +164,28 @@ export async function PUT(req: Request, { params }: Props) {
       (a: unknown) => PartyAddressSchema.parse(a),
     );
 
-    const rawPriceLists = Array.isArray(rawBody.priceLists)
-      ? rawBody.priceLists
-      : [];
+    const priceListsResult = priceListsSchema.safeParse(
+      rawBody.priceLists ?? [],
+    );
+
+    if (!priceListsResult.success) {
+      return NextResponse.json(
+        {
+          error: "Price list validation failed.",
+          issues: priceListsResult.error.issues.map((issue) => ({
+            path: issue.path.map(String).join("."),
+            message: issue.message,
+          })),
+        },
+        { status: 400 },
+      );
+    }
+
+    const rawPriceLists = priceListsResult.data;
+
+    // const rawPriceLists = Array.isArray(rawBody.priceLists)
+    //   ? rawBody.priceLists
+    //   : [];
 
     const client = await pool.connect();
 
@@ -443,22 +465,41 @@ export async function PUT(req: Request, { params }: Props) {
         for (const item of items) {
           const itemId = item.item_id as string;
           const itemCode = (item.item_code as string) || "SKU";
+          const UOM_ID = item.uom_id;
 
           if (!itemId) continue;
 
           // Check against other price lists for this party & list type with overlapping dates
-          const overlapCheck = await client.query(
-            `
-            SELECT pl.name 
+
+          const overlapCheckQry = `
+            SELECT pl.id, pl.name, pl.start_date, pl.end_date
             FROM price_lists pl
             JOIN price_list_items pli ON pli.price_list_id = pl.id
-            WHERE pl.party_id = $1 
-              AND pl.list_type = $2
+            WHERE pl.company_id = $1
+              AND pl.party_id = $2 
+              AND pl.list_type = $3
               AND pl.status = 1
-              AND pli.item_id = $3
-              AND ($4::date <= pl.end_date AND $5::date >= pl.start_date)
-            `,
-            [id, listType, itemId, startDate, endDate],
+              AND pli.item_id = $4
+              AND pli.uom_id = $5
+              AND pl.start_date <= $7::date
+              AND pl.end_date >= $6::date
+              AND ($8::uuid IS NULL OR pl.id <> $8::uuid)
+            LIMIT 1`;
+
+          const overlapCheckParam = [
+            companyId,
+            id,
+            listType,
+            itemId,
+            UOM_ID,
+            startDate,
+            endDate,
+            pl.id,
+          ];
+
+          const overlapCheck = await client.query(
+            overlapCheckQry,
+            overlapCheckParam,
           );
 
           if (overlapCheck.rows.length > 0) {
@@ -549,10 +590,11 @@ export async function PUT(req: Request, { params }: Props) {
       }
 
       await client.query("COMMIT");
-      return NextResponse.json(
-        { success: true, account: partyResult.rows[0] },
-        { status: 200 },
-      );
+      return NextResponse.json(partyResult.rows[0], { status: 200 });
+      // return NextResponse.json(
+      //   { success: true, account: partyResult.rows[0] },
+      //   { status: 200 },
+      // );
     } catch (err: unknown) {
       await client.query("ROLLBACK");
       console.error("PUT Mutation Fatal Exception Error:", err);

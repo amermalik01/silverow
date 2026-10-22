@@ -35,6 +35,7 @@ import type {
   PartyAddressDraft,
 } from "@/types/erp";
 import Breadcrumbs from "../layout/shared/breadcrumb/BreadcrumbComp";
+import { priceListsSchema } from "@/lib/validations/price-list.schema";
 
 type Props = {
   id: string;
@@ -194,6 +195,16 @@ export default function PartyRecord({
         });
       }
     });
+
+    // Add this inside validateForm(), before its final error check.
+    const priceListsCheck = priceListsSchema.safeParse(priceLists);
+
+    if (!priceListsCheck.success) {
+      priceListsCheck.error.issues.forEach((issue) => {
+        const path = issue.path.map(String).join(".");
+        structuredErrors[`priceLists.${path}`] = issue.message;
+      });
+    }
 
     if (Object.keys(structuredErrors).length > 0) {
       setFormErrors(structuredErrors);

@@ -21,7 +21,7 @@ export const LogoutButton = () => {
       className="
         w-full
         h-12
-        rounded-xl
+        rounded-md
         bg-emerald-700
         hover:bg-emerald-800
         text-white
