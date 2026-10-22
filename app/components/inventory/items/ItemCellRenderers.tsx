@@ -19,7 +19,7 @@ export function getItemCellRenderers(slug: string) {
     name: (row: ItemListRow) => row.name || "-",
     category_name: (row: ItemListRow) => row.category_name || "-",
     brand_name: (row: ItemListRow) => row.brand_name || "-",
-    posting_group_name: (row: ItemListRow) => row.posting_group_name || "-",
+    // posting_group_name: (row: ItemListRow) => row.posting_group_name || "-",
     item_type_label: (row: ItemListRow) => row.item_type_label || "-",
     status_label: (row: ItemListRow) => {
       const isStatusActive = row.status === 1 || row.status_label === "Active";

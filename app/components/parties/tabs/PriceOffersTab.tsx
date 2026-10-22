@@ -106,12 +106,67 @@ export default function PriceOffersTab({
     setActiveOfferIdx(validList.length);
   };
 
+  // const updateActiveOffer = (key: keyof ItemPriceOfferDraft, val: unknown) => {
+  //   onRequestEdit?.();
+  //   setPriceOffers((prev) =>
+  //     (prev || []).map((offer, idx) =>
+  //       idx === safeIdx ? { ...offer, [key]: val, is_dirty: true } : offer,
+  //     ),
+  //   );
+  // };
+
+  const calculateDiscountedPrice = (
+    basePrice: number | string,
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT",
+    discountValue: number | string,
+  ): number => {
+    const price = Number(basePrice);
+    const discount = Number(discountValue);
+
+    if (!Number.isFinite(price) || !Number.isFinite(discount)) {
+      return 0;
+    }
+
+    if (price < 0 || discount < 0) {
+      return 0;
+    }
+
+    const discountedPrice =
+      discountType === "PERCENTAGE"
+        ? price - (price * discount) / 100
+        : price - discount;
+
+    return Math.round(Math.max(0, discountedPrice) * 100) / 100;
+  };
+
   const updateActiveOffer = (key: keyof ItemPriceOfferDraft, val: unknown) => {
     onRequestEdit?.();
+
     setPriceOffers((prev) =>
-      (prev || []).map((offer, idx) =>
-        idx === safeIdx ? { ...offer, [key]: val, is_dirty: true } : offer,
-      ),
+      (prev || []).map((offer, idx) => {
+        if (idx !== safeIdx) return offer;
+
+        const updatedOffer = {
+          ...offer,
+          [key]: val,
+          is_dirty: true,
+        };
+
+        if (key === "offered_price") {
+          updatedOffer.volume_discounts = (offer.volume_discounts || []).map(
+            (tier) => ({
+              ...tier,
+              discounted_price: calculateDiscountedPrice(
+                val as number | string,
+                tier.discount_type,
+                tier.discount_value,
+              ),
+            }),
+          );
+        }
+
+        return updatedOffer;
+      }),
     );
   };
 
@@ -151,18 +206,57 @@ export default function PriceOffersTab({
     val: unknown,
   ) => {
     onRequestEdit?.();
+
     setPriceOffers((prev) =>
       (prev || []).map((offer, idx) => {
-        if (idx === offerIdx) {
-          const updatedTiers = (offer.volume_discounts || []).map(
-            (tier, tIdx) => (tIdx === tierIdx ? { ...tier, [key]: val } : tier),
-          );
-          return { ...offer, volume_discounts: updatedTiers, is_dirty: true };
-        }
-        return offer;
+        if (idx !== offerIdx) return offer;
+
+        const updatedTiers = (offer.volume_discounts || []).map(
+          (tier, tIdx) => {
+            if (tIdx !== tierIdx) return tier;
+
+            const updatedTier = { ...tier, [key]: val };
+
+            if (key === "discount_type" || key === "discount_value") {
+              updatedTier.discounted_price = calculateDiscountedPrice(
+                offer.offered_price,
+                updatedTier.discount_type,
+                updatedTier.discount_value,
+              );
+            }
+
+            return updatedTier;
+          },
+        );
+
+        return {
+          ...offer,
+          volume_discounts: updatedTiers,
+          is_dirty: true,
+        };
       }),
     );
   };
+
+  // const updateVolumeDiscountTier = (
+  //   offerIdx: number,
+  //   tierIdx: number,
+  //   key: keyof ItemVolumeDiscountDraft,
+  //   val: unknown,
+  // ) => {
+  //   onRequestEdit?.();
+  //   setPriceOffers((prev) =>
+  //     (prev || []).map((offer, idx) => {
+  //       if (idx === offerIdx) {
+  //         const updatedTiers = (offer.volume_discounts || []).map(
+  //           (tier, tIdx) => (tIdx === tierIdx ? { ...tier, [key]: val } : tier),
+  //         );
+  //         return { ...offer, volume_discounts: updatedTiers, is_dirty: true };
+  //       }
+  //       return offer;
+  //     }),
+  //   );
+  // };
 
   const removeVolumeDiscountTier = (offerIdx: number, tierIdx: number) => {
     onRequestEdit?.();
@@ -510,6 +604,12 @@ export default function PriceOffersTab({
                           <input
                             type="number"
                             value={tier.discounted_price}
+                            readOnly
+                            className="w-24 border border-slate-300 dark:border-slate-700 rounded p-1 text-xs bg-slate-50 text-slate-900 dark:text-white"
+                          />
+                          {/* <input
+                            type="number"
+                            value={tier.discounted_price}
                             disabled={isReadonly}
                             onChange={(e) =>
                               updateVolumeDiscountTier(
@@ -520,7 +620,7 @@ export default function PriceOffersTab({
                               )
                             }
                             className="w-24 border border-slate-300 dark:border-slate-700 rounded p-1 text-xs bg-slate-50 text-slate-900 dark:text-white"
-                          />
+                          /> */}
                         </td>
                         <td className="p-2.5 text-right">
                           {!isReadonly && (

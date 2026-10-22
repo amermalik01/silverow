@@ -32,20 +32,24 @@ export async function GET(_: Request, { params }: Props) {
           ELSE 'supplier'
         END AS party_type,
         pli.uom_id,
-        pli.standard_price,
-        pli.offered_price,
-        pli.min_order_qty,
-        pli.max_order_qty,
+
+        ROUND(pli.standard_price::numeric, 2) AS standard_price,
+        ROUND(pli.offered_price::numeric, 2) AS offered_price,
+        ROUND(pli.min_order_qty::numeric, 0) AS min_order_qty,
+        ROUND(pli.max_order_qty::numeric, 0) AS max_order_qty,
+
+
+
         pli.has_volume_discount,
         COALESCE(
           (
             SELECT json_agg(
               json_build_object(
                 'id', vd.id,
-                'min_order_qty', vd.min_order_qty,
+                'min_order_qty', ROUND(vd.min_order_qty::numeric, 2),
                 'discount_type', vd.discount_type,
-                'discount_value', vd.discount_value,
-                'discounted_price', vd.discounted_price
+                'discount_value', ROUND(vd.discount_value::numeric, 2),
+                'discounted_price', ROUND(vd.discounted_price::numeric, 2)
               )
             ) FROM price_list_volume_discounts vd WHERE vd.price_list_item_id = pli.id
           ), '[]'::json

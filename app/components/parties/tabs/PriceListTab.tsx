@@ -162,6 +162,30 @@ export default function PriceListTab({
     );
   };
 
+  const calculateDiscountedPrice = (
+    basePrice: number | string,
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT",
+    discountValue: number | string,
+  ): number => {
+    const price = Number(basePrice);
+    const discount = Number(discountValue);
+
+    if (!Number.isFinite(price) || !Number.isFinite(discount)) {
+      return 0;
+    }
+
+    if (price < 0 || discount < 0) {
+      return 0;
+    }
+
+    const discountedPrice =
+      discountType === "PERCENTAGE"
+        ? price - (price * discount) / 100
+        : price - discount;
+
+    return Math.round(Math.max(0, discountedPrice) * 100) / 100;
+  };
+
   const handleMultipleItemSelect = async (items: ItemLookupRecord[]) => {
     if (!items.length || !activeList) {
       setIsItemModalOpen(false);
@@ -193,6 +217,21 @@ export default function PriceListTab({
     setIsItemModalOpen(false);
   };
 
+  // const updateItemRow = (
+  //   itemIdx: number,
+  //   key: keyof PriceListItemDraft,
+  //   val: unknown,
+  // ) => {
+  //   onRequestEdit?.();
+
+  //   updateSelectedList((list) => ({
+  //     ...list,
+  //     items: list.items.map((item, idx) =>
+  //       idx === itemIdx ? { ...item, [key]: val } : item,
+  //     ),
+  //   }));
+  // };
+
   const updateItemRow = (
     itemIdx: number,
     key: keyof PriceListItemDraft,
@@ -202,9 +241,24 @@ export default function PriceListTab({
 
     updateSelectedList((list) => ({
       ...list,
-      items: list.items.map((item, idx) =>
-        idx === itemIdx ? { ...item, [key]: val } : item,
-      ),
+      items: list.items.map((item, idx) => {
+        if (idx !== itemIdx) return item;
+
+        const updatedItem = { ...item, [key]: val };
+
+        if (key === "offered_price") {
+          updatedItem.volume_discounts = item.volume_discounts.map((tier) => ({
+            ...tier,
+            discounted_price: calculateDiscountedPrice(
+              val as number | string,
+              tier.discount_type,
+              tier.discount_value,
+            ),
+          }));
+        }
+
+        return updatedItem;
+      }),
     }));
   };
 
@@ -275,26 +329,66 @@ export default function PriceListTab({
     val: unknown,
   ) => {
     onRequestEdit?.();
+
     if (!activeList) return;
+
     const updatedItems = activeList.items.map((item, idx) => {
-      if (idx === itemIdx) {
-        const updatedTiers = item.volume_discounts.map((tier, tIdx) => {
-          if (tIdx === tierIdx) {
-            return { ...tier, [key]: val };
-          }
-          return tier;
-        });
-        return { ...item, volume_discounts: updatedTiers };
-      }
-      return item;
+      if (idx !== itemIdx) return item;
+
+      const updatedTiers = item.volume_discounts.map((tier, tIdx) => {
+        if (tIdx !== tierIdx) return tier;
+
+        const updatedTier = { ...tier, [key]: val };
+
+        // Recalculate when discount type or discount value changes.
+        if (key === "discount_type" || key === "discount_value") {
+          updatedTier.discounted_price = calculateDiscountedPrice(
+            item.offered_price,
+            updatedTier.discount_type,
+            updatedTier.discount_value,
+          );
+        }
+
+        return updatedTier;
+      });
+
+      return { ...item, volume_discounts: updatedTiers };
     });
 
-    setPriceLists(
-      priceLists.map((list, idx) =>
+    setPriceLists((current) =>
+      current.map((list, idx) =>
         idx === selectedListIdx ? { ...list, items: updatedItems } : list,
       ),
     );
   };
+
+  // const updateVolumeDiscountRow = (
+  //   itemIdx: number,
+  //   tierIdx: number,
+  //   key: keyof VolumeDiscountDraft,
+  //   val: unknown,
+  // ) => {
+  //   onRequestEdit?.();
+  //   if (!activeList) return;
+  //   const updatedItems = activeList.items.map((item, idx) => {
+  //     if (idx === itemIdx) {
+  //       const updatedTiers = item.volume_discounts.map((tier, tIdx) => {
+  //         if (tIdx === tierIdx) {
+  //           return { ...tier, [key]: val };
+  //         }
+  //         return tier;
+  //       });
+  //       return { ...item, volume_discounts: updatedTiers };
+  //     }
+  //     return item;
+  //   });
+
+  //   setPriceLists(
+  //     priceLists.map((list, idx) =>
+  //       idx === selectedListIdx ? { ...list, items: updatedItems } : list,
+  //     ),
+  //   );
+  // };
 
   const removeVolumeDiscountRow = (itemIdx: number, tierIdx: number) => {
     onRequestEdit?.();
@@ -560,7 +654,7 @@ export default function PriceListTab({
                   onClick={() => setIsItemModalOpen(true)}
                   variant="add_line"
                 >
-                  + Add Item
+                  Add Item
                 </Button>
               )}
             </div>
@@ -711,7 +805,7 @@ export default function PriceListTab({
                     onClick={() => addVolumeDiscountRow(activeItemIdx)}
                     variant="add_line"
                   >
-                    + Add Tier
+                    Add Tier
                   </Button>
                 )}
               </div>
@@ -798,6 +892,12 @@ export default function PriceListTab({
                             <input
                               type="number"
                               value={tier.discounted_price}
+                              readOnly
+                              className="w-24 border rounded p-1 text-xs bg-slate-50"
+                            />
+                            {/* <input
+                              type="number"
+                              value={tier.discounted_price}
                               disabled={isReadonly}
                               onChange={(e) =>
                                 updateVolumeDiscountRow(
@@ -808,7 +908,7 @@ export default function PriceListTab({
                                 )
                               }
                               className="w-24 border rounded p-1 text-xs bg-slate-50"
-                            />
+                            /> */}
                           </td>
                           <td className="p-2.5 text-right">
                             {!isReadonly && (
