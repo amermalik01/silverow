@@ -205,6 +205,25 @@ export default function SalesOrderLines({
       console.error("Failed to fetch default warehouse:", error);
     }
 
+    // Fetch Dynamic Price Offer
+    let resolvedUnitPrice = Number(item.standard_sales_price || 0);
+    try {
+      const customerId = salesOrder.customer_id || "";
+      const postingDate =
+        salesOrder.posting_date || new Date().toISOString().split("T")[0];
+      const priceRes = await fetch(
+        `/api/sales/orders/resolve-price?customer_id=${customerId}&item_id=${item.id}&posting_date=${postingDate}&quantity=1`,
+      );
+      if (priceRes.ok) {
+        const priceData = await priceRes.json();
+        if (priceData.unit_price !== undefined) {
+          resolvedUnitPrice = Number(priceData.unit_price);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to resolve dynamic price offer:", err);
+    }
+
     const vatBusinessGroupId = salesOrder.vat_business_posting_group_id || "";
     const vatProductGroupId = item.vat_product_group_id || "";
     let calculatedVatPercent = 0;
@@ -241,7 +260,8 @@ export default function SalesOrderLines({
       item_name: item.name,
 
       description: item.description || item.name,
-      unit_price: Number(item.standard_sales_price || 0),
+      unit_price: resolvedUnitPrice,
+      // unit_price: Number(item.standard_sales_price || 0),
 
       uom_id: item.base_uom_id,
       uom_name: item.base_uom_name,
@@ -354,27 +374,115 @@ export default function SalesOrderLines({
     setLines(lines.filter((_, lineIndex) => lineIndex !== index));
   };
 
-  const updateLine = <K extends keyof SalesOrderLineUI>(
+  // 2. Add an effect to re-fetch/update prices when customer_id or posting_date changes
+  useEffect(() => {
+    async function updateLinesPricing() {
+      if (!salesOrder?.customer_id && !salesOrder?.posting_date) return;
+
+      const updatedLines = await Promise.all(
+        lines.map(async (line) => {
+          if (line.line_type !== "ITEM" || !line.item_id) return line;
+
+          try {
+            const customerId = salesOrder.customer_id || "";
+            const postingDate =
+              salesOrder.posting_date || new Date().toISOString().split("T")[0];
+            const qty = Number(line.quantity || 1);
+
+            const res = await fetch(
+              `/api/sales/orders/resolve-price?customer_id=${customerId}&item_id=${line.item_id}&posting_date=${postingDate}&quantity=${qty}`,
+            );
+
+            if (res.ok) {
+              const data = await res.json();
+              if (data.unit_price !== undefined) {
+                return {
+                  ...line,
+                  unit_price: Number(data.unit_price),
+                };
+              }
+            }
+          } catch (err) {
+            console.error(
+              "Failed to update line price on posting date/customer change:",
+              err,
+            );
+          }
+          return line;
+        }),
+      );
+
+      setLines(updatedLines.map((l) => calculateLine(l)));
+    }
+
+    updateLinesPricing();
+  }, [salesOrder?.customer_id, salesOrder?.posting_date]);
+
+  // 3. Also update unit price dynamically if line quantity changes (triggers volume discount checks)
+  const updateLine = async <K extends keyof SalesOrderLineUI>(
     index: number,
     field: K,
     value: SalesOrderLineUI[K],
   ) => {
     const updated = [...lines];
-
     const targetLine = {
       ...updated[index],
       [field]: value,
     };
 
-    if (field === "quantity") {
+    if (
+      field === "quantity" &&
+      targetLine.line_type === "ITEM" &&
+      targetLine.item_id
+    ) {
       targetLine.allocations = [];
       targetLine.initialAllocations = [];
       targetLine.is_allocated = false;
+
+      // Re-resolve price based on new quantity threshold (Volume Discounts)
+      try {
+        const customerId = salesOrder.customer_id || "";
+        const postingDate =
+          salesOrder.posting_date || new Date().toISOString().split("T")[0];
+        const res = await fetch(
+          `/api/sales/orders/resolve-price?customer_id=${customerId}&item_id=${targetLine.item_id}&posting_date=${postingDate}&quantity=${Number(value || 1)}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.unit_price !== undefined) {
+            targetLine.unit_price = Number(data.unit_price);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to re-resolve volume discount price:", err);
+      }
     }
 
     updated[index] = calculateLine(targetLine);
     setLines(updated);
   };
+
+  // const updateLine = <K extends keyof SalesOrderLineUI>(
+  //   index: number,
+  //   field: K,
+  //   value: SalesOrderLineUI[K],
+  // ) => {
+  //   const updated = [...lines];
+
+  //   const targetLine = {
+  //     ...updated[index],
+  //     [field]: value,
+  //   };
+
+  //   if (field === "quantity") {
+  //     targetLine.allocations = [];
+  //     targetLine.initialAllocations = [];
+  //     targetLine.is_allocated = false;
+  //   }
+
+  //   updated[index] = calculateLine(targetLine);
+  //   setLines(updated);
+  // };
 
   const handleOpenAllocationModal = (lineKey: string) => {
     setActiveAllocationLineId(lineKey);
@@ -795,7 +903,9 @@ export default function SalesOrderLines({
 
       <WarehouseLookupModal
         open={warehouseIndex !== null}
-        itemId={warehouseIndex !== null ? lines[warehouseIndex]?.item_id : undefined}
+        itemId={
+          warehouseIndex !== null ? lines[warehouseIndex]?.item_id : undefined
+        }
         onClose={() => setWarehouseIndex(null)}
         onSelect={(warehouse: WarehouseLookupRecord) => {
           if (warehouseIndex === null) {
