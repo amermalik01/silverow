@@ -158,6 +158,25 @@ export default function PurchaseOrderLines({
       console.error("Failed to fetch default warehouse:", err);
     }
 
+    // Fetch Dynamic Purchase Price Offer
+    let resolvedUnitCost = Number(item.standard_cost || 0);
+    try {
+      const supplierId = purchaseOrder.supplier_id || "";
+      const postingDate =
+        purchaseOrder.invoice_date || new Date().toISOString().split("T")[0];
+      const priceRes = await fetch(
+        `/api/purchase-orders/resolve-price?supplier_id=${supplierId}&item_id=${item.id}&posting_date=${postingDate}&quantity=1`,
+      );
+      if (priceRes.ok) {
+        const priceData = await priceRes.json();
+        if (priceData.unit_cost !== undefined) {
+          resolvedUnitCost = Number(priceData.unit_cost);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to resolve dynamic purchase price offer:", err);
+    }
+
     // 2. Resolve VAT Business Posting Group
     const vatBusinessGroupId = purchaseOrder.purchase_posting_group_id || "";
 
@@ -201,7 +220,8 @@ export default function PurchaseOrderLines({
 
       description: item.description || item.name,
 
-      unit_cost: Number(item.standard_cost || 0),
+      // unit_cost: Number(item.standard_cost || 0),
+      unit_cost: resolvedUnitCost,
 
       uom_id: item.base_uom_id,
       uom_name: item.base_uom_name,
@@ -348,7 +368,52 @@ export default function PurchaseOrderLines({
     setLines(lines.filter((_, i) => i !== index));
   };
 
-  const updateLine = <K extends keyof PurchaseOrderLineUI>(
+  useEffect(() => {
+    async function updateLinesPricing() {
+      if (!purchaseOrder?.supplier_id && !purchaseOrder?.invoice_date) return;
+
+      const updatedLines = await Promise.all(
+        lines.map(async (line) => {
+          if (line.line_type !== "ITEM" || !line.item_id) return line;
+
+          try {
+            const supplierId = purchaseOrder.supplier_id || "";
+            const postingDate =
+              purchaseOrder.invoice_date ||
+              new Date().toISOString().split("T")[0];
+            const qty = Number(line.quantity || 1);
+
+            const res = await fetch(
+              `/api/purchase-orders/resolve-price?supplier_id=${supplierId}&item_id=${line.item_id}&posting_date=${postingDate}&quantity=${qty}`,
+            );
+
+            if (res.ok) {
+              const data = await res.json();
+              if (data.unit_cost !== undefined) {
+                return {
+                  ...line,
+                  unit_cost: Number(data.unit_cost),
+                };
+              }
+            }
+          } catch (err) {
+            console.error(
+              "Failed to update line cost on supplier/posting date change:",
+              err,
+            );
+          }
+          return line;
+        }),
+      );
+
+      setLines(updatedLines.map((l) => calculateLine(l)));
+    }
+
+    updateLinesPricing();
+  }, [purchaseOrder?.supplier_id, purchaseOrder?.invoice_date]);
+
+  // 3. Update unit cost dynamically if line quantity changes (triggers volume discount checks)
+  const updateLine = async <K extends keyof PurchaseOrderLineUI>(
     index: number,
     field: K,
     value: PurchaseOrderLineUI[K],
@@ -356,16 +421,57 @@ export default function PurchaseOrderLines({
     const updated = [...lines];
     const targetLine = { ...updated[index], [field]: value };
 
-    // Reset allocations if quantity changes
     if (field === "quantity") {
       targetLine.allocations = [];
       targetLine.initialAllocations = [];
       targetLine.is_allocated = false;
+
+      if (targetLine.line_type === "ITEM" && targetLine.item_id) {
+        try {
+          const supplierId = purchaseOrder.supplier_id || "";
+          const postingDate =
+            purchaseOrder.invoice_date ||
+            new Date().toISOString().split("T")[0];
+          const res = await fetch(
+            `/api/purchase-orders/resolve-price?supplier_id=${supplierId}&item_id=${targetLine.item_id}&posting_date=${postingDate}&quantity=${Number(value || 1)}`,
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.unit_cost !== undefined) {
+              targetLine.unit_cost = Number(data.unit_cost);
+            }
+          }
+        } catch (err) {
+          console.error(
+            "Failed to re-resolve purchase volume discount price:",
+            err,
+          );
+        }
+      }
     }
 
     updated[index] = calculateLine(targetLine);
     setLines(updated);
   };
+
+  // const updateLine = <K extends keyof PurchaseOrderLineUI>(
+  //   index: number,
+  //   field: K,
+  //   value: PurchaseOrderLineUI[K],
+  // ) => {
+  //   const updated = [...lines];
+  //   const targetLine = { ...updated[index], [field]: value };
+
+  //   // Reset allocations if quantity changes
+  //   if (field === "quantity") {
+  //     targetLine.allocations = [];
+  //     targetLine.initialAllocations = [];
+  //     targetLine.is_allocated = false;
+  //   }
+
+  //   updated[index] = calculateLine(targetLine);
+  //   setLines(updated);
+  // };
 
   const changeLineType = (
     index: number,
@@ -635,7 +741,10 @@ export default function PurchaseOrderLines({
                         <button
                           type="button"
                           disabled={isLineDisabled}
-                          title={line.warehouse_name && `${line.warehouse_code || ""} - ${line.warehouse_name}  - (${Number(line.reserved_quantity)})`}
+                          title={
+                            line.warehouse_name &&
+                            `${line.warehouse_code || ""} - ${line.warehouse_name}  - (${Number(line.reserved_quantity)})`
+                          }
                           onClick={() => setWarehouseIndex(index)}
                           className="w-full border dark:border-slate-700 rounded px-2 py-1.5 text-[11px] bg-white dark:bg-slate-800 flex items-center justify-between gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
@@ -802,7 +911,7 @@ export default function PurchaseOrderLines({
         onClose={() => setItemModalOpen(false)}
         multiple={true}
         // onSelect={() => {}}
-        onSelect={(item) =>  handleMultipleItemSelect([item])}
+        onSelect={(item) => handleMultipleItemSelect([item])}
         onSelectMultiple={handleMultipleItemSelect}
       />
 
@@ -817,7 +926,9 @@ export default function PurchaseOrderLines({
 
       <WarehouseLookupModal
         open={warehouseIndex !== null}
-        itemId={warehouseIndex !== null ? lines[warehouseIndex]?.item_id : undefined}
+        itemId={
+          warehouseIndex !== null ? lines[warehouseIndex]?.item_id : undefined
+        }
         onClose={() => setWarehouseIndex(null)}
         onSelect={(warehouse: WarehouseLookupRecord) => {
           if (warehouseIndex === null) return;
@@ -881,8 +992,6 @@ export default function PurchaseOrderLines({
   );
 }
 
-
-
 // className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
 //   // 🟡 YELLOW / AMBER = Stock Received
 //   isStockReceived
@@ -900,5 +1009,3 @@ export default function PurchaseOrderLines({
 //       ? "Allocated Stock"
 //       : "Partially Allocated"
 // }
-
-
