@@ -27,6 +27,25 @@ type Props = {
   onRequestEdit?: () => void;
 };
 
+async function parseJsonResponse<T>(res: Response): Promise<T> {
+  const text = await res.text();
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    console.error("Invalid JSON response from API:", {
+      url: res.url,
+      status: res.status,
+      contentType: res.headers.get("content-type"),
+      responseBody: text.slice(0, 500),
+    });
+
+    throw new Error(
+      `The server returned an invalid JSON response (HTTP ${res.status}). Check the browser Network tab and server logs.`,
+    );
+  }
+}
+
 export default function NotesTab({
   module,
   recordId,
@@ -69,7 +88,11 @@ export default function NotesTab({
       });
 
       const res = await fetch(`/api/notes?${params.toString()}`);
-      const data = await res.json();
+      // const data = await res.json();
+      const data = await parseJsonResponse<{
+        data?: Note[];
+        error?: string;
+      }>(res);
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to load notes.");
@@ -110,7 +133,11 @@ export default function NotesTab({
         }),
       });
 
-      const data = await res.json();
+      // const data = await res.json();
+      const data = await parseJsonResponse<{
+        data?: Note;
+        error?: string;
+      }>(res);
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to add note.");
@@ -165,7 +192,11 @@ export default function NotesTab({
         }),
       });
 
-      const data = await res.json();
+      // const data = await res.json();
+      const data = await parseJsonResponse<{
+        data?: Note;
+        error?: string;
+      }>(res);
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to update note.");
@@ -206,7 +237,11 @@ export default function NotesTab({
         { method: "DELETE" },
       );
 
-      const data = await res.json();
+      // const data = await res.json();
+      const data = await parseJsonResponse<{
+        success?: boolean;
+        error?: string;
+      }>(res);
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to delete note.");
@@ -437,7 +472,10 @@ export default function NotesTab({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    <Icon icon="lucide:calendar-clock" className="w-3.5 h-3.5" />
+                    <Icon
+                      icon="lucide:calendar-clock"
+                      className="w-3.5 h-3.5"
+                    />
                     <span>
                       Created on:{" "}
                       <span className="font-medium text-slate-700 dark:text-slate-300">

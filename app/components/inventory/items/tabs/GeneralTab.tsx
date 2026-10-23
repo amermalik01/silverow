@@ -139,7 +139,7 @@ export default function GeneralTab({
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              VAT Product Posting Group
+              {/* VAT Product Posting Group */}VAT Rate
             </label>
             <div className="col-span-2">
               <select
@@ -246,10 +246,10 @@ export default function GeneralTab({
               >
                 <option value={1}>Inventory</option>
                 <option value={2}>Service</option>
-                <option value={3}>Non Inventory</option>
+                {/* <option value={3}>Non Inventory</option>
                 <option value={4}>Raw Material</option>
                 <option value={5}>Finished Goods</option>
-                <option value={6}>Asset</option>
+                <option value={6}>Asset</option> */}
               </select>
             </div>
           </div>
