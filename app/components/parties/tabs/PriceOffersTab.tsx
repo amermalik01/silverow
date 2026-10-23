@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+// import MasterDropdown from "@/app/components/shared/MasterDropdown";
 
 import CustomerLookupModal, {
   CustomerLookupItem,
@@ -12,6 +13,7 @@ import CustomerLookupModal, {
 import SupplierLookupModal, {
   SupplierLookupItem,
 } from "@/app/components/shared/modals/SupplierLookupModal";
+import MasterDropdown from "../../common/MasterDropdown";
 
 export type ItemVolumeDiscountDraft = {
   id?: string;
@@ -224,6 +226,7 @@ export default function PriceOffersTab({
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/40">
                 <th className="p-3">Customer</th>
+                <th className="p-3">Currency</th>
                 <th className="p-3">Offered Price</th>
                 <th className="p-3">Min Qty</th>
                 <th className="p-3">Max Qty</th>
@@ -236,7 +239,7 @@ export default function PriceOffersTab({
             <tbody>
               {customerOffers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                  <td colSpan={9} className="p-6 text-center text-slate-400 italic">
                     No customer price offers configured.
                   </td>
                 </tr>
@@ -245,6 +248,17 @@ export default function PriceOffersTab({
                   <tr key={originalIdx} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
                     <td className="p-3 font-medium text-slate-800 dark:text-slate-200">
                       {offer.party_name || "General / Global List"}
+                    </td>
+                    <td className="p-3 w-36">
+                      <MasterDropdown
+                        type="Currency"
+                        value={offer.currency_id || baseCurrencyId || ""}
+                        displayFormat="name"
+                        valueKey="id"
+                        onChange={(val) => updateOfferRow(originalIdx, "currency_id", val ?? "")}
+                        className="w-full border p-1 py-0.5 h-7 rounded text-xs outline-none bg-transparent"
+                        disabled={isReadonly}
+                      />
                     </td>
                     <td className="p-3">
                       <input
@@ -345,6 +359,7 @@ export default function PriceOffersTab({
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/40">
                 <th className="p-3">Supplier</th>
+                <th className="p-3">Currency</th>
                 <th className="p-3">Offered Cost</th>
                 <th className="p-3">Min Qty</th>
                 <th className="p-3">Max Qty</th>
@@ -357,7 +372,7 @@ export default function PriceOffersTab({
             <tbody>
               {supplierOffers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                  <td colSpan={9} className="p-6 text-center text-slate-400 italic">
                     No supplier price offers configured.
                   </td>
                 </tr>
@@ -366,6 +381,17 @@ export default function PriceOffersTab({
                   <tr key={originalIdx} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
                     <td className="p-3 font-medium text-slate-800 dark:text-slate-200">
                       {offer.party_name || "General / Global List"}
+                    </td>
+                    <td className="p-3 w-36">
+                      <MasterDropdown
+                        type="Currency"
+                        value={offer.currency_id || baseCurrencyId || ""}
+                        displayFormat="name"
+                        valueKey="id"
+                        onChange={(val) => updateOfferRow(originalIdx, "currency_id", val ?? "")}
+                        className="w-full border p-1 py-0.5 h-7 rounded text-xs outline-none bg-transparent"
+                        disabled={isReadonly}
+                      />
                     </td>
                     <td className="p-3">
                       <input
@@ -552,7 +578,7 @@ export default function PriceOffersTab({
                 party_type: "customer",
                 start_date: defaultStartDate,
                 end_date: defaultEndDate,
-                currency_id: baseCurrencyId || "",
+                currency_id: customer.currency_id || baseCurrencyId || "",
                 offer_method: "Phone",
                 standard_price: 0,
                 offered_price: 0,
@@ -588,7 +614,7 @@ export default function PriceOffersTab({
                 party_type: "supplier",
                 start_date: defaultStartDate,
                 end_date: defaultEndDate,
-                currency_id: baseCurrencyId || "",
+                currency_id: supplier.currency_id || baseCurrencyId || "",
                 offer_method: "Phone",
                 standard_price: 0,
                 offered_price: 0,

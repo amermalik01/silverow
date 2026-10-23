@@ -28,7 +28,8 @@ export async function GET(_: Request, { params }: Props) {
         pl.party_id,
         COALESCE(
           CASE 
-            WHEN p.code IS NOT NULL AND p.code <> '' THEN p.code || ' - ' || p.name
+            WHEN pl.list_type = 'SALES' AND p.customer_code IS NOT NULL AND p.customer_code <> '' THEN p.customer_code || ' - ' || p.name
+            WHEN pl.list_type = 'PURCHASE' AND p.supplier_code IS NOT NULL AND p.supplier_code <> '' THEN p.supplier_code || ' - ' || p.name
             ELSE p.name
           END, 
           'General / Global List'
@@ -39,6 +40,7 @@ export async function GET(_: Request, { params }: Props) {
         END AS party_type,
         to_char(pl.start_date, 'YYYY-MM-DD') AS start_date,
         to_char(pl.end_date, 'YYYY-MM-DD') AS end_date,
+        pl.currency_id,
         pli.uom_id,
 
         ROUND(pli.standard_price::numeric, 2) AS standard_price,

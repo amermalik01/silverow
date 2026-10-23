@@ -247,10 +247,40 @@ export async function PUT(req: Request, { params }: Props) {
       }
 
       // Re-insert/Sync submitted price offers
-      for (const offer of rawPriceOffers) {
-        let priceListId = offer.price_list_id;
 
-        const defaultOfferName = `${validatedItem.name} - ${offer.party_type === "customer" ? "Customer Offer" : "Supplier Offer"}`;
+      // Re-insert/Sync submitted price offers with Date Overlap Validation
+      for (const offer of rawPriceOffers) {
+        const offerStartDate = toDateOrNull(offer.start_date) || `${new Date().getFullYear()}-01-01`;
+        const offerEndDate = toDateOrNull(offer.end_date) || `${new Date().getFullYear()}-12-31`;
+
+        // Check for date overlaps on the same item and same party/list_type combination
+        const overlapCheckQuery = `
+          SELECT pl.id FROM price_lists pl
+          JOIN price_list_items pli ON pli.price_list_id = pl.id
+          WHERE pli.item_id = $1 
+            AND pl.company_id = $2 
+            AND pl.list_type = $3
+            AND (pl.party_id IS NOT DISTINCT FROM $4)
+            AND ($5::date <= pl.end_date AND $6::date >= pl.start_date)
+            ${offer.price_list_id ? "AND pl.id <> $7" : ""}
+        `;
+
+        const overlapParams = offer.price_list_id
+          ? [id, companyId, offer.list_type || "SALES", toCleanOrNull(offer.party_id), offerStartDate, offerEndDate, offer.price_list_id]
+          : [id, companyId, offer.list_type || "SALES", toCleanOrNull(offer.party_id), offerStartDate, offerEndDate];
+
+        const overlapResult = await client.query(overlapCheckQuery, overlapParams);
+
+        if (overlapResult.rowCount && overlapResult.rowCount > 0) {
+          await client.query("ROLLBACK");
+          return NextResponse.json(
+            { error: `Price offer date range (${offerStartDate} to ${offerEndDate}) overlaps with an existing price offer for this ${offer.party_type || 'party'}.` },
+            { status: 400 }
+          );
+        }
+
+        let priceListId = offer.price_list_id;
+        const defaultOfferName = `${validatedItem.name} - ${offer.list_type === "SALES" ? "Customer Offer" : "Supplier Offer"}`;
 
         if (!priceListId) {
           const plInsertRes = await client.query(
@@ -266,9 +296,9 @@ export async function PUT(req: Request, { params }: Props) {
               offer.list_type || "SALES",
               toCleanOrNull(offer.party_id),
               offer.offer_method || "Phone",
-              toDateOrNull(offer.start_date) || `${new Date().getFullYear()}-01-01`,
-              toDateOrNull(offer.end_date) || `${new Date().getFullYear()}-12-31`,
-              toCleanOrNull(offer.currency_id) || null,
+              offerStartDate,
+              offerEndDate,
+              toCleanOrNull(offer.currency_id) || toCleanOrNull(validatedItem.sales_uom_id) || companyId,
             ],
           );
           priceListId = plInsertRes.rows[0].id;
@@ -282,16 +312,18 @@ export async function PUT(req: Request, { params }: Props) {
               offer_method = $4,
               start_date = $5,
               end_date = $6,
+              currency_id = $7,
               updated_at = NOW()
-            WHERE id = $7 AND company_id = $8
+            WHERE id = $8 AND company_id = $9
             `,
             [
               offer.name || defaultOfferName,
               offer.list_type || "SALES",
               toCleanOrNull(offer.party_id),
               offer.offer_method || "Phone",
-              toDateOrNull(offer.start_date) || `${new Date().getFullYear()}-01-01`,
-              toDateOrNull(offer.end_date) || `${new Date().getFullYear()}-12-31`,
+              offerStartDate,
+              offerEndDate,
+              toCleanOrNull(offer.currency_id) || toCleanOrNull(validatedItem.sales_uom_id) || companyId,
               priceListId,
               companyId,
             ],
@@ -338,6 +370,111 @@ export async function PUT(req: Request, { params }: Props) {
           }
         }
       }
+      /* for (const offer of rawPriceOffers) {
+        let priceListId = offer.price_list_id;
+
+        // const defaultOfferName = `${validatedItem.name} - ${offer.party_type === "customer" ? "Customer Offer" : "Supplier Offer"}`;
+        const defaultOfferName = `${validatedItem.name} - ${offer.list_type === "SALES" ? "Customer Offer" : "Supplier Offer"}`;
+        const fallbackCurrencyId =
+          toCleanOrNull(offer.currency_id) ||
+          companyId; 
+
+        if (!priceListId) {
+          const plInsertRes = await client.query(
+            `
+            INSERT INTO price_lists (
+              company_id, name, list_type, party_id, offer_method, start_date, end_date, currency_id, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1)
+            RETURNING id
+            `,
+            [
+              companyId,
+              offer.name || defaultOfferName,
+              offer.list_type || "SALES",
+              toCleanOrNull(offer.party_id),
+              offer.offer_method || "Phone",
+              toDateOrNull(offer.start_date) ||
+                `${new Date().getFullYear()}-01-01`,
+              toDateOrNull(offer.end_date) ||
+                `${new Date().getFullYear()}-12-31`,
+              fallbackCurrencyId,
+            ],
+          );
+          priceListId = plInsertRes.rows[0].id;
+        } else {
+          await client.query(
+            `
+            UPDATE price_lists SET
+              name = $1,
+              list_type = $2,
+              party_id = $3,
+              offer_method = $4,
+              start_date = $5,
+              end_date = $6,
+              updated_at = NOW()
+            WHERE id = $7 AND company_id = $8
+            `,
+            [
+              offer.name || defaultOfferName,
+              offer.list_type || "SALES",
+              toCleanOrNull(offer.party_id),
+              offer.offer_method || "Phone",
+              toDateOrNull(offer.start_date) ||
+                `${new Date().getFullYear()}-01-01`,
+              toDateOrNull(offer.end_date) ||
+                `${new Date().getFullYear()}-12-31`,
+              priceListId,
+              companyId,
+            ],
+          );
+        }
+
+        const pliInsertRes = await client.query(
+          `
+          INSERT INTO price_list_items (
+            price_list_id, item_id, uom_id, standard_price, offered_price, min_order_qty, max_order_qty, has_volume_discount
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING id
+          `,
+          [
+            priceListId,
+            id,
+            toCleanOrNull(validatedItem.base_uom_id),
+            toNumberOrDefault(
+              offer.standard_price,
+              toNumberOrDefault(validatedItem.standard_sales_price, 0),
+            ),
+            toNumberOrDefault(offer.offered_price, 0),
+            toNumberOrDefault(offer.min_order_qty, 1),
+            toNumberOrDefault(offer.max_order_qty, 100),
+            Boolean(offer.has_volume_discount),
+          ],
+        );
+
+        const priceListItemId = pliInsertRes.rows[0].id;
+
+        if (
+          offer.has_volume_discount &&
+          Array.isArray(offer.volume_discounts)
+        ) {
+          for (const vd of offer.volume_discounts) {
+            await client.query(
+              `
+              INSERT INTO price_list_volume_discounts (
+                price_list_item_id, min_order_qty, discount_type, discount_value, discounted_price
+              ) VALUES ($1, $2, $3, $4, $5)
+              `,
+              [
+                priceListItemId,
+                toNumberOrDefault(vd.min_order_qty, 1),
+                vd.discount_type || "PERCENTAGE",
+                toNumberOrDefault(vd.discount_value, 0),
+                toNumberOrDefault(vd.discounted_price, 0),
+              ],
+            );
+          }
+        }
+      } */
 
       await client.query("COMMIT");
       return NextResponse.json(
