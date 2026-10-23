@@ -212,7 +212,7 @@ export default function SalesOrderLines({
       const postingDate =
         salesOrder.posting_date || new Date().toISOString().split("T")[0];
       const priceRes = await fetch(
-        `/api/sales/orders/resolve-price?customer_id=${customerId}&item_id=${item.id}&posting_date=${postingDate}&quantity=1`,
+        `/api/sales/sales-orders/resolve-price?customer_id=${customerId}&item_id=${item.id}&posting_date=${postingDate}&quantity=1`,
       );
       if (priceRes.ok) {
         const priceData = await priceRes.json();
@@ -390,7 +390,7 @@ export default function SalesOrderLines({
             const qty = Number(line.quantity || 1);
 
             const res = await fetch(
-              `/api/sales/orders/resolve-price?customer_id=${customerId}&item_id=${line.item_id}&posting_date=${postingDate}&quantity=${qty}`,
+              `/api/sales/sales-orders/resolve-price?customer_id=${customerId}&item_id=${line.item_id}&posting_date=${postingDate}&quantity=${qty}`,
             );
 
             if (res.ok) {
@@ -445,7 +445,7 @@ export default function SalesOrderLines({
         const postingDate =
           salesOrder.posting_date || new Date().toISOString().split("T")[0];
         const res = await fetch(
-          `/api/sales/orders/resolve-price?customer_id=${customerId}&item_id=${targetLine.item_id}&posting_date=${postingDate}&quantity=${Number(value || 1)}`,
+          `/api/sales/sales-orders/resolve-price?customer_id=${customerId}&item_id=${targetLine.item_id}&posting_date=${postingDate}&quantity=${Number(value || 1)}`,
         );
         if (res.ok) {
           const data = await res.json();

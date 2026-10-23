@@ -1,19 +1,24 @@
-// app/api/sales/orders/resolve-price/route.ts
+// app/api/sales/sales-orders/resolve-price/route.ts
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 
 export async function GET(req: Request) {
   const companyId = await getCompanyId();
+
   if (!companyId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 },
+    );
   }
 
   const { searchParams } = new URL(req.url);
   const customerId = searchParams.get("customer_id");
   const itemId = searchParams.get("item_id");
-  const postingDate = searchParams.get("posting_date") || new Date().toISOString().split("T")[0];
+  const postingDate =
+    searchParams.get("posting_date") || new Date().toISOString().split("T")[0];
   const quantity = Number(searchParams.get("quantity") || 1);
 
   if (!itemId) {
@@ -26,7 +31,7 @@ export async function GET(req: Request) {
     // 1. Fetch standard item price as fallback
     const itemRes = await client.query(
       `SELECT standard_sales_price FROM items WHERE id = $1 AND company_id = $2`,
-      [itemId, companyId]
+      [itemId, companyId],
     );
 
     if (itemRes.rowCount === 0) {
@@ -55,7 +60,12 @@ export async function GET(req: Request) {
       LIMIT 1
     `;
 
-    const priceRes = await client.query(priceQuery, [itemId, companyId, postingDate, customerId || null]);
+    const priceRes = await client.query(priceQuery, [
+      itemId,
+      companyId,
+      postingDate,
+      customerId || null,
+    ]);
 
     if (priceRes.rowCount && priceRes.rowCount > 0) {
       const rule = priceRes.rows[0];
@@ -71,7 +81,7 @@ export async function GET(req: Request) {
           ORDER BY min_order_qty DESC
           LIMIT 1
           `,
-          [rule.price_list_item_id, quantity]
+          [rule.price_list_item_id, quantity],
         );
 
         if (vdRes.rowCount && vdRes.rowCount > 0) {
@@ -90,7 +100,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ unit_price: unitPrice }, { status: 200 });
   } catch (err) {
     console.error("Resolve price error:", err);
-    return NextResponse.json({ error: "Failed to resolve price" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to resolve price" },
+      { status: 500 },
+    );
   } finally {
     client.release();
   }
