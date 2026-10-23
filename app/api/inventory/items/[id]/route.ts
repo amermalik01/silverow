@@ -230,8 +230,8 @@ export async function PUT(req: Request, { params }: Props) {
       }
 
       // Sync Price Offers & Volume Discounts for this item
-      // First, remove existing price list item links associated with this item
-      /* const existingPlItems = await client.query(
+      // First, get existing price list items to clean up removed tiers/items
+      const existingPlItems = await client.query(
         `SELECT id FROM price_list_items WHERE item_id = $1`,
         [id],
       );
@@ -246,9 +246,11 @@ export async function PUT(req: Request, { params }: Props) {
         ]);
       }
 
-      // Re-insert submitted price offers
+      // Re-insert/Sync submitted price offers
       for (const offer of rawPriceOffers) {
-        let priceListId = offer.id;
+        let priceListId = offer.price_list_id;
+
+        const defaultOfferName = `${validatedItem.name} - ${offer.party_type === "customer" ? "Customer Offer" : "Supplier Offer"}`;
 
         if (!priceListId) {
           const plInsertRes = await client.query(
@@ -260,19 +262,17 @@ export async function PUT(req: Request, { params }: Props) {
             `,
             [
               companyId,
-              offer.name || "Item Price Offer",
+              offer.name || defaultOfferName,
               offer.list_type || "SALES",
               toCleanOrNull(offer.party_id),
-              offer.offer_method || "Phone",//"Fixed Price",
-              toDateOrNull(offer.start_date) || new Date(),
-              toDateOrNull(offer.end_date) ||
-                new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+              offer.offer_method || "Phone",
+              toDateOrNull(offer.start_date) || `${new Date().getFullYear()}-01-01`,
+              toDateOrNull(offer.end_date) || `${new Date().getFullYear()}-12-31`,
               toCleanOrNull(offer.currency_id) || null,
             ],
           );
           priceListId = plInsertRes.rows[0].id;
         } else {
-          // Update existing list name or metadata if changed
           await client.query(
             `
             UPDATE price_lists SET
@@ -280,14 +280,18 @@ export async function PUT(req: Request, { params }: Props) {
               list_type = $2,
               party_id = $3,
               offer_method = $4,
+              start_date = $5,
+              end_date = $6,
               updated_at = NOW()
-            WHERE id = $5 AND company_id = $6
+            WHERE id = $7 AND company_id = $8
             `,
             [
-              offer.name || "Item Price Offer",
+              offer.name || defaultOfferName,
               offer.list_type || "SALES",
               toCleanOrNull(offer.party_id),
-              offer.offer_method || "Phone",//"Fixed Price",
+              offer.offer_method || "Phone",
+              toDateOrNull(offer.start_date) || `${new Date().getFullYear()}-01-01`,
+              toDateOrNull(offer.end_date) || `${new Date().getFullYear()}-12-31`,
               priceListId,
               companyId,
             ],
@@ -305,23 +309,17 @@ export async function PUT(req: Request, { params }: Props) {
             priceListId,
             id,
             toCleanOrNull(validatedItem.base_uom_id),
-            toNumberOrDefault(
-              offer.standard_price,
-              toNumberOrDefault(validatedItem.standard_sales_price, 0),
-            ),
+            toNumberOrDefault(offer.standard_price, toNumberOrDefault(validatedItem.standard_sales_price, 0)),
             toNumberOrDefault(offer.offered_price, 0),
             toNumberOrDefault(offer.min_order_qty, 1),
             toNumberOrDefault(offer.max_order_qty, 100),
-            !!offer.has_volume_discount,
+            Boolean(offer.has_volume_discount),
           ],
         );
 
         const priceListItemId = pliInsertRes.rows[0].id;
 
-        if (
-          offer.has_volume_discount &&
-          Array.isArray(offer.volume_discounts)
-        ) {
+        if (offer.has_volume_discount && Array.isArray(offer.volume_discounts)) {
           for (const vd of offer.volume_discounts) {
             await client.query(
               `
@@ -339,87 +337,7 @@ export async function PUT(req: Request, { params }: Props) {
             );
           }
         }
-      } */
-
-      // Inside your PUT route transaction execution block:
-      // if (Array.isArray(rawBody.priceOffers)) {
-        for (const offer of rawPriceOffers) {
-          // Find or create Price List header
-          let priceListId = offer.price_list_id;
-
-          if (!priceListId) {
-            const plRes = await client.query(
-              `INSERT INTO price_lists (company_id, name, list_type, party_id, start_date, end_date, currency_id, offer_method, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1) RETURNING id`,
-              [
-                companyId,
-                offer.name || "Custom Price List",
-                offer.list_type || "SALES",
-                offer.party_id || null,
-                offer.start_date || new Date(),
-                offer.end_date || new Date(Date.now() + 365 * 86400000),
-                offer.currency_id || null,
-                offer.offer_method || "Phone",
-              ],
-            );
-            priceListId = plRes.rows[0].id;
-          }
-
-          // Insert or update Price List Item
-          let priceListItemId = offer.price_list_item_id;
-          if (!priceListItemId) {
-            const pliRes = await client.query(
-              `INSERT INTO price_list_items (price_list_id, item_id, uom_id, standard_price, offered_price, min_order_qty, max_order_qty, has_volume_discount)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-              [
-                priceListId,
-                id,
-                offer.uom_id || null,
-                toNumberOrDefault(offer.standard_price, 0),
-                toNumberOrDefault(offer.offered_price, 0),
-                toNumberOrDefault(offer.min_order_qty, 1),
-                toNumberOrDefault(offer.max_order_qty, 100),
-                Boolean(offer.has_volume_discount),
-              ],
-            );
-            priceListItemId = pliRes.rows[0].id;
-          } else {
-            await client.query(
-              `UPDATE price_list_items 
-             SET offered_price = $1, min_order_qty = $2, max_order_qty = $3, has_volume_discount = $4
-             WHERE id = $5`,
-              [
-                toNumberOrDefault(offer.offered_price, 0),
-                toNumberOrDefault(offer.min_order_qty, 1),
-                toNumberOrDefault(offer.max_order_qty, 100),
-                Boolean(offer.has_volume_discount),
-                priceListItemId,
-              ],
-            );
-          }
-
-          // Sync Volume Discounts
-          if (Array.isArray(offer.volume_discounts)) {
-            await client.query(
-              `DELETE FROM price_list_volume_discounts WHERE price_list_item_id = $1`,
-              [priceListItemId],
-            );
-            for (const tier of offer.volume_discounts) {
-              await client.query(
-                `INSERT INTO price_list_volume_discounts (price_list_item_id, min_order_qty, discount_type, discount_value, discounted_price)
-               VALUES ($1, $2, $3, $4, $5)`,
-                [
-                  priceListItemId,
-                  toNumberOrDefault(tier.min_order_qty, 0),
-                  tier.discount_type || "PERCENTAGE",
-                  toNumberOrDefault(tier.discount_value, 0),
-                  toNumberOrDefault(tier.discounted_price, 0),
-                ],
-              );
-            }
-          }
-        }
-      // }
+      }
 
       await client.query("COMMIT");
       return NextResponse.json(
@@ -529,3 +447,113 @@ export async function DELETE(_: Request, { params }: Props) {
     client.release();
   }
 }
+
+/* const existingPlItems = await client.query(
+        `SELECT id FROM price_list_items WHERE item_id = $1`,
+        [id],
+      );
+      if (existingPlItems.rowCount && existingPlItems.rowCount > 0) {
+        const pliIds = existingPlItems.rows.map((r) => r.id);
+        await client.query(
+          `DELETE FROM price_list_volume_discounts WHERE price_list_item_id = ANY($1)`,
+          [pliIds],
+        );
+        await client.query(`DELETE FROM price_list_items WHERE item_id = $1`, [
+          id,
+        ]);
+      }
+
+      // Re-insert submitted price offers
+      for (const offer of rawPriceOffers) {
+        let priceListId = offer.id;
+
+        if (!priceListId) {
+          const plInsertRes = await client.query(
+            `
+            INSERT INTO price_lists (
+              company_id, name, list_type, party_id, offer_method, start_date, end_date, currency_id, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1)
+            RETURNING id
+            `,
+            [
+              companyId,
+              offer.name || "Item Price Offer",
+              offer.list_type || "SALES",
+              toCleanOrNull(offer.party_id),
+              offer.offer_method || "Phone",//"Fixed Price",
+              toDateOrNull(offer.start_date) || new Date(),
+              toDateOrNull(offer.end_date) ||
+                new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+              toCleanOrNull(offer.currency_id) || null,
+            ],
+          );
+          priceListId = plInsertRes.rows[0].id;
+        } else {
+          // Update existing list name or metadata if changed
+          await client.query(
+            `
+            UPDATE price_lists SET
+              name = $1,
+              list_type = $2,
+              party_id = $3,
+              offer_method = $4,
+              updated_at = NOW()
+            WHERE id = $5 AND company_id = $6
+            `,
+            [
+              offer.name || "Item Price Offer",
+              offer.list_type || "SALES",
+              toCleanOrNull(offer.party_id),
+              offer.offer_method || "Phone",//"Fixed Price",
+              priceListId,
+              companyId,
+            ],
+          );
+        }
+
+        const pliInsertRes = await client.query(
+          `
+          INSERT INTO price_list_items (
+            price_list_id, item_id, uom_id, standard_price, offered_price, min_order_qty, max_order_qty, has_volume_discount
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING id
+          `,
+          [
+            priceListId,
+            id,
+            toCleanOrNull(validatedItem.base_uom_id),
+            toNumberOrDefault(
+              offer.standard_price,
+              toNumberOrDefault(validatedItem.standard_sales_price, 0),
+            ),
+            toNumberOrDefault(offer.offered_price, 0),
+            toNumberOrDefault(offer.min_order_qty, 1),
+            toNumberOrDefault(offer.max_order_qty, 100),
+            !!offer.has_volume_discount,
+          ],
+        );
+
+        const priceListItemId = pliInsertRes.rows[0].id;
+
+        if (
+          offer.has_volume_discount &&
+          Array.isArray(offer.volume_discounts)
+        ) {
+          for (const vd of offer.volume_discounts) {
+            await client.query(
+              `
+              INSERT INTO price_list_volume_discounts (
+                price_list_item_id, min_order_qty, discount_type, discount_value, discounted_price
+              ) VALUES ($1, $2, $3, $4, $5)
+              `,
+              [
+                priceListItemId,
+                toNumberOrDefault(vd.min_order_qty, 1),
+                vd.discount_type || "PERCENTAGE",
+                toNumberOrDefault(vd.discount_value, 0),
+                toNumberOrDefault(vd.discounted_price, 0),
+              ],
+            );
+          }
+        }
+      } */
