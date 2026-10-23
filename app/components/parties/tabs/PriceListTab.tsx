@@ -125,7 +125,7 @@ export default function PriceListTab({
         "yyyy-MM-dd",
       ),
       currency_id: baseCurrencyId || "",
-      offer_method: "Fixed Price",
+      offer_method: "Phone", //"Fixed Price",
       items: [],
     };
     setPriceLists([...priceLists, newList]);
@@ -414,7 +414,7 @@ export default function PriceListTab({
     );
   };
 
-  const getInputClass = (
+  /* const getInputClass = (
     errorKey: string,
     extraClasses: string = "",
     disabled: boolean = isReadonly,
@@ -428,6 +428,21 @@ export default function PriceListTab({
       ? "border-red-500 bg-red-50/10 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
       : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
     return `${baseClasses} ${stateClasses} ${extraClasses}`;
+  }; */
+
+  const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
+    const baseClasses =
+      "w-full border p-2 py-1 h-7 rounded text-xs outline-none transition-colors duration-150";
+
+    if (disabled) {
+      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none`;
+    }
+
+    const stateClasses = errors[errorKey]
+      ? "border-red-500 bg-red-50/10 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+
+    return `${baseClasses} ${stateClasses}`;
   };
 
   return (
@@ -468,125 +483,166 @@ export default function PriceListTab({
         <div className="space-y-6">
           {/* Main Price List Meta Card with structured grid matching Contacts layout */}
           <div className="p-4 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-3">
-              {/* Name */}
-              <div className="grid grid-cols-3 gap-3 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Name <span className="text-red-500">*</span>
-                </label>
-                <div className="col-span-2">
-                  <input
-                    type="text"
-                    value={activeList.name}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      updateActiveListHeader("name", e.target.value)
-                    }
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.name`,
-                    )}
-                  />
+            {/* <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-3"> */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
+              <div className="space-y-2">
+                {/* Name */}
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className="col-span-2">
+                    <input
+                      type="text"
+                      value={activeList.name}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        updateActiveListHeader("name", e.target.value)
+                      }
+                      className={getInputClass(
+                        `priceLists.${selectedListIdx}.name`,
+                      )}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Offer Method */}
-              <div className="grid grid-cols-3 gap-3 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Offer Method
-                </label>
-                <div className="col-span-2">
-                  <select
-                    value={activeList.offer_method}
-                    disabled={isReadonly}
-                    onChange={(e) =>
-                      updateActiveListHeader("offer_method", e.target.value)
-                    }
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.offer_method`,
+                {/* Salesperson Selection via Modal */}
+
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    {partyType === "customer"
+                      ? "Salesperson"
+                      : partyType === "supplier"
+                        ? "Purchaser"
+                        : "Assign Person"}
+                  </label>
+                  <div className="col-span-2 flex gap-1">
+                    <input
+                      type="text"
+                      readOnly
+                      value={activeList.salesperson_name || "Select Person..."}
+                      placeholder="Select salesperson..."
+                      className={getInputClass(
+                        `priceLists.${selectedListIdx}.salesperson_id`,
+                      )}
+                    />
+
+                    {!isReadonly && (
+                      <button
+                        type="button"
+                        disabled={isReadonly}
+                        onClick={() => setIsSalespersonModalOpen(true)}
+                        className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                      >
+                        <Icon icon="tabler:external-link" className="w-4 h-4" />
+                      </button>
                     )}
-                  >
-                    <option value="Fixed Price">Fixed Price</option>
+                  </div>
+                </div>
+
+                {/* Offer Method */}
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Offer Method
+                  </label>
+                  <div className="col-span-2">
+                    <select
+                      value={activeList.offer_method}
+                      disabled={isReadonly}
+                      onChange={(e) =>
+                        updateActiveListHeader("offer_method", e.target.value)
+                      }
+                      className={getInputClass(
+                        `priceLists.${selectedListIdx}.offer_method`,
+                      )}
+                    >
+                      <option value="Phone">Phone</option>
+                      <option value="Email">Email</option>
+                      {/* <option value="Fixed Price">Fixed Price</option>
                     <option value="Percentage Discount">
                       Percentage Discount
-                    </option>
-                  </select>
+                    </option> */}
+                    </select>
+                  </div>
                 </div>
               </div>
+              <div className="space-y-2">
+                {/* Start Date */}
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <div className="col-span-2">
+                    <DatePicker
+                      value={startDate}
+                      containerClassName="col-span-8"
+                      disabled={isReadonly}
+                      // minDate={new Date()}
+                      maxDate={endDate}
+                      onChange={(date: Date | undefined) => {
+                        if (date && isValid(date)) {
+                          updateActiveListHeader(
+                            "start_date",
+                            format(date, "yyyy-MM-dd"),
+                          );
+                        }
+                      }}
+                      className={getInputClass(
+                        `priceLists.${selectedListIdx}.start_date`,
+                      )}
+                    />
+                  </div>
+                </div>
 
-              {/* Start Date */}
-              <div className="grid grid-cols-3 gap-3 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Start Date <span className="text-red-500">*</span>
-                </label>
-                <div className="col-span-2">
-                  <DatePicker
-                    value={startDate}
-                    containerClassName="col-span-8"
-                    disabled={isReadonly}
-                    // minDate={new Date()}
-                    maxDate={endDate}
-                    onChange={(date: Date | undefined) => {
-                      if (date && isValid(date)) {
-                        updateActiveListHeader(
-                          "start_date",
-                          format(date, "yyyy-MM-dd"),
-                        );
+                {/* End Date */}
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    End Date <span className="text-red-500">*</span>
+                  </label>
+                  <div className="col-span-2">
+                    <DatePicker
+                      value={endDate}
+                      containerClassName="col-span-8"
+                      disabled={isReadonly}
+                      minDate={startDate}
+                      onChange={(date: Date | undefined) => {
+                        if (date && isValid(date)) {
+                          updateActiveListHeader(
+                            "end_date",
+                            format(date, "yyyy-MM-dd"),
+                          );
+                        }
+                      }}
+                      className={getInputClass(
+                        `priceLists.${selectedListIdx}.end_date`,
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Currency (Locked & Disabled to Base Currency) */}
+                <div className="grid grid-cols-3 gap-3 items-center">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Currency <span className="text-red-500">*</span>
+                  </label>
+                  <div className="col-span-2">
+                    <MasterDropdown
+                      type="Currency"
+                      value={activeList.currency_id || baseCurrencyId}
+                      displayFormat="name"
+                      valueKey="id"
+                      onChange={(val) =>
+                        updateActiveListHeader("currency_id", val ?? "")
                       }
-                    }}
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.start_date`,
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* End Date */}
-              <div className="grid grid-cols-3 gap-3 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  End Date <span className="text-red-500">*</span>
-                </label>
-                <div className="col-span-2">
-                  <DatePicker
-                    value={endDate}
-                    containerClassName="col-span-8"
-                    disabled={isReadonly}
-                    minDate={startDate}
-                    onChange={(date: Date | undefined) => {
-                      if (date && isValid(date)) {
-                        updateActiveListHeader(
-                          "end_date",
-                          format(date, "yyyy-MM-dd"),
-                        );
-                      }
-                    }}
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.end_date`,
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* Currency (Locked & Disabled to Base Currency) */}
-              <div className="grid grid-cols-3 gap-3 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Currency <span className="text-red-500">*</span>
-                </label>
-                <div className="col-span-2">
-                  <MasterDropdown
-                    type="Currency"
-                    value={activeList.currency_id || baseCurrencyId}
-                    displayFormat="name"
-                    valueKey="id"
-                    onChange={(val) =>
-                      updateActiveListHeader("currency_id", val ?? "")
-                    }
-                    disabled={true} // Locked to party base currency
-                  />
+                      className="w-full border p-2 py-1 h-7 rounded text-xs outline-none transition-colors duration-150"
+                      disabled={true} // Locked to party base currency
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* List Type (Locked & Disabled based on partyType) */}
-              <div className="grid grid-cols-3 gap-3 items-center">
+              {/* <div className="grid grid-cols-3 gap-3 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   List Type
                 </label>
@@ -604,41 +660,7 @@ export default function PriceListTab({
                     <option value="PURCHASE">Purchase Price List</option>
                   </select>
                 </div>
-              </div>
-
-              {/* Salesperson Selection via Modal */}
-
-              <div className="grid grid-cols-3 gap-3 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  {partyType === "customer"
-                    ? "Salesperson"
-                    : partyType === "supplier"
-                      ? "Purchaser"
-                      : "Assign Person"}
-                </label>
-                <div className="col-span-2 flex gap-1">
-                  <input
-                    type="text"
-                    readOnly
-                    value={activeList.salesperson_name || "Select Person..."}
-                    placeholder="Select salesperson..."
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.salesperson_id`,
-                    )}
-                  />
-
-                  {!isReadonly && (
-                    <button
-                      type="button"
-                      disabled={isReadonly}
-                      onClick={() => setIsSalespersonModalOpen(true)}
-                      className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
-                    >
-                      <Icon icon="tabler:external-link" className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
+              </div> */}
             </div>
           </div>
 

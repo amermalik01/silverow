@@ -92,7 +92,7 @@ export default function PriceOffersTab({
         .toISOString()
         .split("T")[0],
       currency_id: baseCurrencyId || "",
-      offer_method: "Fixed Price",
+      offer_method: "Phone",//"Fixed Price",
       standard_price: 0,
       offered_price: 0,
       min_order_qty: 1,
@@ -397,17 +397,19 @@ export default function PriceOffersTab({
                 </label>
                 <div className="col-span-2">
                   <select
-                    value={activeOffer.offer_method || "Fixed Price"}
+                    value={activeOffer.offer_method || "Phone"}// "Fixed Price"
                     disabled={isReadonly}
                     onChange={(e) =>
                       updateActiveOffer("offer_method", e.target.value)
                     }
                     className="w-full border border-slate-300 dark:border-slate-700 rounded p-2 bg-white dark:bg-slate-900"
                   >
-                    <option value="Fixed Price">Fixed Price</option>
+                    <option value="Phone">Phone</option>
+                    <option value="Email">Email</option>
+                    {/* <option value="Fixed Price">Fixed Price</option>
                     <option value="Percentage Discount">
                       Percentage Discount
-                    </option>
+                    </option> */}
                   </select>
                 </div>
               </div>

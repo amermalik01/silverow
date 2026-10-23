@@ -263,7 +263,7 @@ export async function PUT(req: Request, { params }: Props) {
               offer.name || "Item Price Offer",
               offer.list_type || "SALES",
               toCleanOrNull(offer.party_id),
-              offer.offer_method || "Fixed Price",
+              offer.offer_method || "Phone",//"Fixed Price",
               toDateOrNull(offer.start_date) || new Date(),
               toDateOrNull(offer.end_date) ||
                 new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
@@ -287,7 +287,7 @@ export async function PUT(req: Request, { params }: Props) {
               offer.name || "Item Price Offer",
               offer.list_type || "SALES",
               toCleanOrNull(offer.party_id),
-              offer.offer_method || "Fixed Price",
+              offer.offer_method || "Phone",//"Fixed Price",
               priceListId,
               companyId,
             ],

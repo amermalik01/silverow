@@ -532,7 +532,7 @@ export async function PUT(req: Request, { params }: Props) {
             pl.list_type,
             id,
             toCleanOrNull(pl.salesperson_id),
-            pl.offer_method || "Fixed Price",
+            pl.offer_method || "Phone",// "Fixed Price",
             pl.start_date,
             pl.end_date,
             pl.currency_id,
