@@ -144,12 +144,6 @@ export default function PriceListTab({
         idx === selectedListIdx ? { ...list, [key]: val } : list,
       ),
     );
-
-    // setPriceLists(
-    //   priceLists.map((list, idx) =>
-    //     idx === selectedListIdx ? { ...list, [key]: val } : list,
-    //   ),
-    // );
   };
 
   const updateSelectedList = (
@@ -200,8 +194,8 @@ export default function PriceListTab({
       category_name: "",
       uom_id: item.base_uom_id || "",
       uom_name: item.base_uom_name || "",
-      standard_price: item.standard_sales_price || item.standard_cost || 0,
-      offered_price: item.standard_sales_price || item.standard_cost || 0,
+      standard_price: Number(item.standard_sales_price || item.standard_cost || 0).toFixed(2),
+      offered_price: Number(item.standard_sales_price || item.standard_cost || 0).toFixed(2),
       min_order_qty: 1,
       max_order_qty: 100,
       has_volume_discount: false,
@@ -216,21 +210,6 @@ export default function PriceListTab({
     );
     setIsItemModalOpen(false);
   };
-
-  // const updateItemRow = (
-  //   itemIdx: number,
-  //   key: keyof PriceListItemDraft,
-  //   val: unknown,
-  // ) => {
-  //   onRequestEdit?.();
-
-  //   updateSelectedList((list) => ({
-  //     ...list,
-  //     items: list.items.map((item, idx) =>
-  //       idx === itemIdx ? { ...item, [key]: val } : item,
-  //     ),
-  //   }));
-  // };
 
   const updateItemRow = (
     itemIdx: number,
@@ -261,27 +240,6 @@ export default function PriceListTab({
       }),
     }));
   };
-
-  // const updateItemRow = (
-  //   itemIdx: number,
-  //   key: keyof PriceListItemDraft,
-  //   val: unknown,
-  // ) => {
-  //   onRequestEdit?.();
-  //   if (!activeList) return;
-  //   const updatedItems = activeList.items.map((item, idx) => {
-  //     if (idx === itemIdx) {
-  //       return { ...item, [key]: val };
-  //     }
-  //     return item;
-  //   });
-
-  //   setPriceLists(
-  //     priceLists.map((list, idx) =>
-  //       idx === selectedListIdx ? { ...list, items: updatedItems } : list,
-  //     ),
-  //   );
-  // };
 
   const removeItemRow = (itemIdx: number) => {
     onRequestEdit?.();
@@ -413,22 +371,6 @@ export default function PriceListTab({
       ),
     );
   };
-
-  /* const getInputClass = (
-    errorKey: string,
-    extraClasses: string = "",
-    disabled: boolean = isReadonly,
-  ) => {
-    const baseClasses =
-      "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
-    if (disabled) {
-      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none ${extraClasses}`;
-    }
-    const stateClasses = errors[errorKey]
-      ? "border-red-500 bg-red-50/10 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
-      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
-    return `${baseClasses} ${stateClasses} ${extraClasses}`;
-  }; */
 
   const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
     const baseClasses =
@@ -640,27 +582,6 @@ export default function PriceListTab({
                   </div>
                 </div>
               </div>
-
-              {/* List Type (Locked & Disabled based on partyType) */}
-              {/* <div className="grid grid-cols-3 gap-3 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  List Type
-                </label>
-                <div className="col-span-2">
-                  <select
-                    value={enforcedListType}
-                    disabled={true} // Locked based on customer/supplier card type
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.list_type`,
-                      "",
-                      true,
-                    )}
-                  >
-                    <option value="SALES">Sales Price List</option>
-                    <option value="PURCHASE">Purchase Price List</option>
-                  </select>
-                </div>
-              </div> */}
             </div>
           </div>
 
@@ -965,6 +886,7 @@ export default function PriceListTab({
           open={isItemModalOpen}
           onClose={() => setIsItemModalOpen(false)}
           multiple={true}
+          onSelect={(item) => handleMultipleItemSelect([item])}
           onSelectMultiple={handleMultipleItemSelect}
         />
       )}
@@ -995,3 +917,85 @@ export default function PriceListTab({
     </div>
   );
 }
+
+{
+  /* List Type (Locked & Disabled based on partyType) */
+}
+{
+  /* <div className="grid grid-cols-3 gap-3 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  List Type
+                </label>
+                <div className="col-span-2">
+                  <select
+                    value={enforcedListType}
+                    disabled={true} // Locked based on customer/supplier card type
+                    className={getInputClass(
+                      `priceLists.${selectedListIdx}.list_type`,
+                      "",
+                      true,
+                    )}
+                  >
+                    <option value="SALES">Sales Price List</option>
+                    <option value="PURCHASE">Purchase Price List</option>
+                  </select>
+                </div>
+              </div> */
+}
+
+// const updateItemRow = (
+//   itemIdx: number,
+//   key: keyof PriceListItemDraft,
+//   val: unknown,
+// ) => {
+//   onRequestEdit?.();
+//   if (!activeList) return;
+//   const updatedItems = activeList.items.map((item, idx) => {
+//     if (idx === itemIdx) {
+//       return { ...item, [key]: val };
+//     }
+//     return item;
+//   });
+
+//   setPriceLists(
+//     priceLists.map((list, idx) =>
+//       idx === selectedListIdx ? { ...list, items: updatedItems } : list,
+//     ),
+//   );
+// };
+
+// setPriceLists(
+//   priceLists.map((list, idx) =>
+//     idx === selectedListIdx ? { ...list, [key]: val } : list,
+//   ),
+// );
+// const updateItemRow = (
+//   itemIdx: number,
+//   key: keyof PriceListItemDraft,
+//   val: unknown,
+// ) => {
+//   onRequestEdit?.();
+
+//   updateSelectedList((list) => ({
+//     ...list,
+//     items: list.items.map((item, idx) =>
+//       idx === itemIdx ? { ...item, [key]: val } : item,
+//     ),
+//   }));
+// };
+
+/* const getInputClass = (
+    errorKey: string,
+    extraClasses: string = "",
+    disabled: boolean = isReadonly,
+  ) => {
+    const baseClasses =
+      "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
+    if (disabled) {
+      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none ${extraClasses}`;
+    }
+    const stateClasses = errors[errorKey]
+      ? "border-red-500 bg-red-50/10 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+    return `${baseClasses} ${stateClasses} ${extraClasses}`;
+  }; */

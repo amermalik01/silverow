@@ -231,7 +231,7 @@ export async function PUT(req: Request, { params }: Props) {
 
       // Sync Price Offers & Volume Discounts for this item
       // First, remove existing price list item links associated with this item
-      const existingPlItems = await client.query(
+      /* const existingPlItems = await client.query(
         `SELECT id FROM price_list_items WHERE item_id = $1`,
         [id],
       );
@@ -339,7 +339,87 @@ export async function PUT(req: Request, { params }: Props) {
             );
           }
         }
-      }
+      } */
+
+      // Inside your PUT route transaction execution block:
+      // if (Array.isArray(rawBody.priceOffers)) {
+        for (const offer of rawPriceOffers) {
+          // Find or create Price List header
+          let priceListId = offer.price_list_id;
+
+          if (!priceListId) {
+            const plRes = await client.query(
+              `INSERT INTO price_lists (company_id, name, list_type, party_id, start_date, end_date, currency_id, offer_method, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1) RETURNING id`,
+              [
+                companyId,
+                offer.name || "Custom Price List",
+                offer.list_type || "SALES",
+                offer.party_id || null,
+                offer.start_date || new Date(),
+                offer.end_date || new Date(Date.now() + 365 * 86400000),
+                offer.currency_id || null,
+                offer.offer_method || "Phone",
+              ],
+            );
+            priceListId = plRes.rows[0].id;
+          }
+
+          // Insert or update Price List Item
+          let priceListItemId = offer.price_list_item_id;
+          if (!priceListItemId) {
+            const pliRes = await client.query(
+              `INSERT INTO price_list_items (price_list_id, item_id, uom_id, standard_price, offered_price, min_order_qty, max_order_qty, has_volume_discount)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+              [
+                priceListId,
+                id,
+                offer.uom_id || null,
+                toNumberOrDefault(offer.standard_price, 0),
+                toNumberOrDefault(offer.offered_price, 0),
+                toNumberOrDefault(offer.min_order_qty, 1),
+                toNumberOrDefault(offer.max_order_qty, 100),
+                Boolean(offer.has_volume_discount),
+              ],
+            );
+            priceListItemId = pliRes.rows[0].id;
+          } else {
+            await client.query(
+              `UPDATE price_list_items 
+             SET offered_price = $1, min_order_qty = $2, max_order_qty = $3, has_volume_discount = $4
+             WHERE id = $5`,
+              [
+                toNumberOrDefault(offer.offered_price, 0),
+                toNumberOrDefault(offer.min_order_qty, 1),
+                toNumberOrDefault(offer.max_order_qty, 100),
+                Boolean(offer.has_volume_discount),
+                priceListItemId,
+              ],
+            );
+          }
+
+          // Sync Volume Discounts
+          if (Array.isArray(offer.volume_discounts)) {
+            await client.query(
+              `DELETE FROM price_list_volume_discounts WHERE price_list_item_id = $1`,
+              [priceListItemId],
+            );
+            for (const tier of offer.volume_discounts) {
+              await client.query(
+                `INSERT INTO price_list_volume_discounts (price_list_item_id, min_order_qty, discount_type, discount_value, discounted_price)
+               VALUES ($1, $2, $3, $4, $5)`,
+                [
+                  priceListItemId,
+                  toNumberOrDefault(tier.min_order_qty, 0),
+                  tier.discount_type || "PERCENTAGE",
+                  toNumberOrDefault(tier.discount_value, 0),
+                  toNumberOrDefault(tier.discounted_price, 0),
+                ],
+              );
+            }
+          }
+        }
+      // }
 
       await client.query("COMMIT");
       return NextResponse.json(
@@ -398,23 +478,22 @@ export async function DELETE(_: Request, { params }: Props) {
     // 2. Clean up linked price list items and their volume discount tiers
     const plItemsResult = await client.query(
       `SELECT id FROM price_list_items WHERE item_id = $1`,
-      [id]
+      [id],
     );
 
     if (plItemsResult.rowCount && plItemsResult.rowCount > 0) {
       const pliIds = plItemsResult.rows.map((r) => r.id);
-      
+
       // Delete volume discounts for these price list items
       await client.query(
         `DELETE FROM price_list_volume_discounts WHERE price_list_item_id = ANY($1)`,
-        [pliIds]
+        [pliIds],
       );
 
       // Delete the price list items themselves
-      await client.query(
-        `DELETE FROM price_list_items WHERE item_id = $1`,
-        [id]
-      );
+      await client.query(`DELETE FROM price_list_items WHERE item_id = $1`, [
+        id,
+      ]);
     }
 
     // 3. Soft delete the main item record

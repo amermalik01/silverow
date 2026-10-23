@@ -238,7 +238,7 @@ export default function ItemRecord({
               offerData.priceOffers.map((o: ItemPriceOfferDraft) => ({
                 id: o.id || o.price_list_id,
                 price_list_item_id: o.price_list_item_id,
-                name: o.name || o.price_list_name || "Custom Price List",
+                name: o.name || "Custom Price List", // o.price_list_name || 
                 list_type: o.list_type || "SALES",
                 party_id: o.party_id || null,
                 party_name: o.party_name || "General / Global List",

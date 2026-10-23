@@ -4,6 +4,616 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+
+import CustomerLookupModal, {
+  CustomerLookupItem,
+} from "@/app/components/shared/modals/CustomerLookupModal";
+
+import SupplierLookupModal, {
+  SupplierLookupItem,
+} from "@/app/components/shared/modals/SupplierLookupModal";
+
+export type ItemVolumeDiscountDraft = {
+  id?: string;
+  min_order_qty: number | string;
+  discount_type: "PERCENTAGE" | "FIXED_AMOUNT";
+  discount_value: number | string;
+  discounted_price: number | string;
+};
+
+export type ItemPriceOfferDraft = {
+  id?: string;
+  price_list_id?: string;
+  price_list_item_id?: string;
+  name: string;
+  list_type: "SALES" | "PURCHASE";
+  party_id?: string | null;
+  party_name?: string;
+  party_type?: "customer" | "supplier" | "";
+  start_date: string;
+  end_date: string;
+  currency_id: string;
+  offer_method: string;
+  standard_price: number | string;
+  offered_price: number | string;
+  min_order_qty: number | string;
+  max_order_qty: number | string;
+  has_volume_discount: boolean;
+  volume_discounts: ItemVolumeDiscountDraft[];
+  is_new?: boolean;
+  is_dirty?: boolean;
+};
+
+type Props = {
+  itemId: string;
+  baseCurrencyId?: string;
+  isReadonly?: boolean;
+  priceOffers: ItemPriceOfferDraft[];
+  setPriceOffers: React.Dispatch<React.SetStateAction<ItemPriceOfferDraft[]>>;
+  onRequestEdit?: () => void;
+};
+
+export default function PriceOffersTab({
+  itemId,
+  baseCurrencyId,
+  isReadonly = false,
+  priceOffers = [],
+  setPriceOffers,
+  onRequestEdit,
+}: Props) {
+  const [activeTierOfferIdx, setActiveTierOfferIdx] = useState<number | null>(null);
+
+  // Modal State Flags
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+
+  const validList = Array.isArray(priceOffers) ? priceOffers : [];
+
+  const currentYear = new Date().getFullYear();
+  const defaultStartDate = `${currentYear}-01-01`;
+  const defaultEndDate = `${currentYear}-12-31`;
+
+  // Separate list into Customer (Sales) and Supplier (Purchase) tables
+  const customerOffers = validList
+    .map((offer, idx) => ({ offer, originalIdx: idx }))
+    .filter(({ offer }) => offer.list_type === "SALES");
+
+  const supplierOffers = validList
+    .map((offer, idx) => ({ offer, originalIdx: idx }))
+    .filter(({ offer }) => offer.list_type === "PURCHASE");
+
+  const updateOfferRow = (originalIdx: number, key: keyof ItemPriceOfferDraft, val: unknown) => {
+    onRequestEdit?.();
+    setPriceOffers((prev) =>
+      (prev || []).map((offer, idx) => {
+        if (idx !== originalIdx) return offer;
+
+        const updated = { ...offer, [key]: val, is_dirty: true };
+        if (key === "offered_price") {
+          updated.volume_discounts = (offer.volume_discounts || []).map((tier) => ({
+            ...tier,
+            discounted_price: calculateDiscountedPrice(
+              val as number | string,
+              tier.discount_type,
+              tier.discount_value
+            ),
+          }));
+        }
+        return updated;
+      })
+    );
+  };
+
+  const removeOfferRow = (originalIdx: number) => {
+    onRequestEdit?.();
+    setPriceOffers((prev) => (prev || []).filter((_, idx) => idx !== originalIdx));
+    if (activeTierOfferIdx === originalIdx) setActiveTierOfferIdx(null);
+  };
+
+  const calculateDiscountedPrice = (
+    basePrice: number | string,
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT",
+    discountValue: number | string,
+  ): number => {
+    const price = Number(basePrice);
+    const discount = Number(discountValue);
+
+    if (!Number.isFinite(price) || !Number.isFinite(discount) || price < 0 || discount < 0) {
+      return 0;
+    }
+
+    const discountedPrice =
+      discountType === "PERCENTAGE"
+        ? price - (price * discount) / 100
+        : price - discount;
+
+    return Math.round(Math.max(0, discountedPrice) * 100) / 100;
+  };
+
+  const addVolumeDiscountTier = (originalIdx: number) => {
+    onRequestEdit?.();
+    setPriceOffers((prev) =>
+      (prev || []).map((offer, idx) => {
+        if (idx === originalIdx) {
+          const newTier: ItemVolumeDiscountDraft = {
+            min_order_qty: 5,
+            discount_type: "PERCENTAGE",
+            discount_value: 5,
+            discounted_price: calculateDiscountedPrice(offer.offered_price, "PERCENTAGE", 5),
+          };
+          return {
+            ...offer,
+            has_volume_discount: true,
+            volume_discounts: [...(offer.volume_discounts || []), newTier],
+            is_dirty: true,
+          };
+        }
+        return offer;
+      })
+    );
+  };
+
+  const updateVolumeDiscountTier = (
+    originalIdx: number,
+    tierIdx: number,
+    key: keyof ItemVolumeDiscountDraft,
+    val: unknown,
+  ) => {
+    onRequestEdit?.();
+    setPriceOffers((prev) =>
+      (prev || []).map((offer, idx) => {
+        if (idx !== originalIdx) return offer;
+
+        const updatedTiers = (offer.volume_discounts || []).map((tier, tIdx) => {
+          if (tIdx !== tierIdx) return tier;
+          const updatedTier = { ...tier, [key]: val };
+          if (key === "discount_type" || key === "discount_value") {
+            updatedTier.discounted_price = calculateDiscountedPrice(
+              offer.offered_price,
+              updatedTier.discount_type,
+              updatedTier.discount_value
+            );
+          }
+          return updatedTier;
+        });
+
+        return { ...offer, volume_discounts: updatedTiers, is_dirty: true };
+      })
+    );
+  };
+
+  const removeVolumeDiscountTier = (originalIdx: number, tierIdx: number) => {
+    onRequestEdit?.();
+    setPriceOffers((prev) =>
+      (prev || []).map((offer, idx) => {
+        if (idx === originalIdx) {
+          const updatedTiers = (offer.volume_discounts || []).filter((_, tIdx) => tIdx !== tierIdx);
+          return {
+            ...offer,
+            volume_discounts: updatedTiers,
+            has_volume_discount: updatedTiers.length > 0,
+            is_dirty: true,
+          };
+        }
+        return offer;
+      })
+    );
+  };
+
+  return (
+    <div className="space-y-8 text-xs">
+      {/* ================= 1. CUSTOMER PRICE OFFERS (SALES) ================= */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+            Customer Price Offers (Sales)
+          </h3>
+          {!isReadonly && (
+            <Button
+              type="button"
+              onClick={() => setIsCustomerModalOpen(true)}
+              variant="add_line"
+            >
+              Add Customer Offer
+            </Button>
+          )}
+        </div>
+
+        <div className="rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/40">
+                <th className="p-3">Customer</th>
+                <th className="p-3">Offered Price</th>
+                <th className="p-3">Min Qty</th>
+                <th className="p-3">Max Qty</th>
+                <th className="p-3">Start Date</th>
+                <th className="p-3">End Date</th>
+                <th className="p-3 text-center">Volume Discounts</th>
+                <th className="p-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {customerOffers.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                    No customer price offers configured.
+                  </td>
+                </tr>
+              ) : (
+                customerOffers.map(({ offer, originalIdx }) => (
+                  <tr key={originalIdx} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
+                    <td className="p-3 font-medium text-slate-800 dark:text-slate-200">
+                      {offer.party_name || "General / Global List"}
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="number"
+                        value={offer.offered_price ?? 0}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "offered_price", e.target.value)}
+                        className="w-24 border rounded p-1.5 bg-blue-50 font-semibold text-right"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="number"
+                        value={offer.min_order_qty ?? 1}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "min_order_qty", e.target.value)}
+                        className="w-16 border rounded p-1.5 text-right"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="number"
+                        value={offer.max_order_qty ?? 100}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "max_order_qty", e.target.value)}
+                        className="w-16 border rounded p-1.5 text-right"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="date"
+                        value={offer.start_date || defaultStartDate}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "start_date", e.target.value)}
+                        className="border rounded p-1.5 bg-transparent"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="date"
+                        value={offer.end_date || defaultEndDate}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "end_date", e.target.value)}
+                        className="border rounded p-1.5 bg-transparent"
+                      />
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTierOfferIdx(originalIdx === activeTierOfferIdx ? null : originalIdx)}
+                        className={`px-2 py-1 rounded text-[11px] font-semibold border ${
+                          offer.has_volume_discount
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                            : "bg-slate-100 text-slate-600 border-slate-300"
+                        }`}
+                      >
+                        {offer.has_volume_discount ? `${offer.volume_discounts.length} Tiers` : "Configure Tiers"}
+                      </button>
+                    </td>
+                    <td className="p-3 text-right">
+                      {!isReadonly && (
+                        <button
+                          type="button"
+                          onClick={() => removeOfferRow(originalIdx)}
+                          className="text-red-500 hover:text-red-700 font-bold px-2"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ================= 2. SUPPLIER PRICE OFFERS (PURCHASE) ================= */}
+      <div className="space-y-3 pt-4">
+        <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+            Supplier Price Offers (Purchase)
+          </h3>
+          {!isReadonly && (
+            <Button
+              type="button"
+              onClick={() => setIsSupplierModalOpen(true)}
+              variant="add_line"
+            >
+              Add Supplier Offer
+            </Button>
+          )}
+        </div>
+
+        <div className="rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/40">
+                <th className="p-3">Supplier</th>
+                <th className="p-3">Offered Cost</th>
+                <th className="p-3">Min Qty</th>
+                <th className="p-3">Max Qty</th>
+                <th className="p-3">Start Date</th>
+                <th className="p-3">End Date</th>
+                <th className="p-3 text-center">Volume Discounts</th>
+                <th className="p-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {supplierOffers.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                    No supplier price offers configured.
+                  </td>
+                </tr>
+              ) : (
+                supplierOffers.map(({ offer, originalIdx }) => (
+                  <tr key={originalIdx} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
+                    <td className="p-3 font-medium text-slate-800 dark:text-slate-200">
+                      {offer.party_name || "General / Global List"}
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="number"
+                        value={offer.offered_price ?? 0}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "offered_price", e.target.value)}
+                        className="w-24 border rounded p-1.5 bg-blue-50 font-semibold text-right"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="number"
+                        value={offer.min_order_qty ?? 1}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "min_order_qty", e.target.value)}
+                        className="w-16 border rounded p-1.5 text-right"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="number"
+                        value={offer.max_order_qty ?? 100}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "max_order_qty", e.target.value)}
+                        className="w-16 border rounded p-1.5 text-right"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="date"
+                        value={offer.start_date || defaultStartDate}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "start_date", e.target.value)}
+                        className="border rounded p-1.5 bg-transparent"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="date"
+                        value={offer.end_date || defaultEndDate}
+                        disabled={isReadonly}
+                        onChange={(e) => updateOfferRow(originalIdx, "end_date", e.target.value)}
+                        className="border rounded p-1.5 bg-transparent"
+                      />
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTierOfferIdx(originalIdx === activeTierOfferIdx ? null : originalIdx)}
+                        className={`px-2 py-1 rounded text-[11px] font-semibold border ${
+                          offer.has_volume_discount
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                            : "bg-slate-100 text-slate-600 border-slate-300"
+                        }`}
+                      >
+                        {offer.has_volume_discount ? `${offer.volume_discounts.length} Tiers` : "Configure Tiers"}
+                      </button>
+                    </td>
+                    <td className="p-3 text-right">
+                      {!isReadonly && (
+                        <button
+                          type="button"
+                          onClick={() => removeOfferRow(originalIdx)}
+                          className="text-red-500 hover:text-red-700 font-bold px-2"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ================= 3. VOLUME DISCOUNT TIERS DRAWER/SECTION ================= */}
+      {activeTierOfferIdx !== null && validList[activeTierOfferIdx] && (
+        <div className="p-4 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/20 dark:bg-slate-900 space-y-3">
+          <div className="flex justify-between items-center">
+            <h5 className="font-bold text-blue-800 dark:text-blue-300">
+              Volume Discount Tiers for &quot;{validList[activeTierOfferIdx].party_name || "General List"}&quot;
+            </h5>
+            {!isReadonly && (
+              <Button type="button" onClick={() => addVolumeDiscountTier(activeTierOfferIdx)} variant="add_line">
+                Add Tier
+              </Button>
+            )}
+          </div>
+
+          <table className="w-full text-left border-collapse bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/40">
+                <th className="p-2.5">Min Order Qty</th>
+                <th className="p-2.5">Discount Type</th>
+                <th className="p-2.5">Discount Value</th>
+                <th className="p-2.5">Discounted Price</th>
+                <th className="p-2.5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!validList[activeTierOfferIdx].volume_discounts ||
+              validList[activeTierOfferIdx].volume_discounts.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-4 text-center text-slate-400 italic">
+                    No volume discount tiers specified.
+                  </td>
+                </tr>
+              ) : (
+                validList[activeTierOfferIdx].volume_discounts.map((tier, tierIdx) => (
+                  <tr key={tierIdx} className="border-b border-slate-100 dark:border-slate-800">
+                    <td className="p-2.5">
+                      <input
+                        type="number"
+                        value={tier.min_order_qty}
+                        disabled={isReadonly}
+                        onChange={(e) => updateVolumeDiscountTier(activeTierOfferIdx, tierIdx, "min_order_qty", e.target.value)}
+                        className="w-24 border rounded p-1 text-xs"
+                      />
+                    </td>
+                    <td className="p-2.5">
+                      <select
+                        value={tier.discount_type}
+                        disabled={isReadonly}
+                        onChange={(e) => updateVolumeDiscountTier(activeTierOfferIdx, tierIdx, "discount_type", e.target.value)}
+                        className="border rounded p-1 text-xs"
+                      >
+                        <option value="PERCENTAGE">Percentage (%)</option>
+                        <option value="FIXED_AMOUNT">Fixed Value</option>
+                      </select>
+                    </td>
+                    <td className="p-2.5">
+                      <input
+                        type="number"
+                        value={tier.discount_value}
+                        disabled={isReadonly}
+                        onChange={(e) => updateVolumeDiscountTier(activeTierOfferIdx, tierIdx, "discount_value", e.target.value)}
+                        className="w-24 border rounded p-1 text-xs"
+                      />
+                    </td>
+                    <td className="p-2.5 font-semibold text-emerald-600">
+                      <input
+                        type="number"
+                        value={tier.discounted_price}
+                        readOnly
+                        className="w-24 border rounded p-1 text-xs bg-slate-50"
+                      />
+                    </td>
+                    <td className="p-2.5 text-right">
+                      {!isReadonly && (
+                        <button
+                          type="button"
+                          onClick={() => removeVolumeDiscountTier(activeTierOfferIdx, tierIdx)}
+                          className="text-slate-400 hover:text-red-600 font-bold px-2"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Customer Lookup Modal with Multiple Select */}
+      {isCustomerModalOpen && (
+        <CustomerLookupModal
+          open={isCustomerModalOpen}
+          multiple={true}
+          onClose={() => setIsCustomerModalOpen(false)}
+          onSelectMultiple={(customers: CustomerLookupItem[]) => {
+            if (customers && customers.length > 0) {
+              onRequestEdit?.();
+              const newOffers: ItemPriceOfferDraft[] = customers.map((customer) => ({
+                name: `Customer Price Offer - ${customer.name}`,
+                list_type: "SALES",
+                party_id: customer.id,
+                party_name: `${customer.customer_code ? customer.customer_code + " - " : ""}${customer.name}`,
+                party_type: "customer",
+                start_date: defaultStartDate,
+                end_date: defaultEndDate,
+                currency_id: baseCurrencyId || "",
+                offer_method: "Phone",
+                standard_price: 0,
+                offered_price: 0,
+                min_order_qty: 1,
+                max_order_qty: 100,
+                has_volume_discount: false,
+                volume_discounts: [],
+                is_new: true,
+                is_dirty: true,
+              }));
+
+              setPriceOffers((prev) => [...(prev || []), ...newOffers]);
+            }
+            setIsCustomerModalOpen(false);
+          }}
+        />
+      )}
+
+      {/* Supplier Lookup Modal with Multiple Select */}
+      {isSupplierModalOpen && (
+        <SupplierLookupModal
+          open={isSupplierModalOpen}
+          multiple={true}
+          onClose={() => setIsSupplierModalOpen(false)}
+          onSelectMultiple={(suppliers: SupplierLookupItem[]) => {
+            if (suppliers && suppliers.length > 0) {
+              onRequestEdit?.();
+              const newOffers: ItemPriceOfferDraft[] = suppliers.map((supplier) => ({
+                name: `Supplier Price Offer - ${supplier.name}`,
+                list_type: "PURCHASE",
+                party_id: supplier.id,
+                party_name: `${supplier.supplier_code ? supplier.supplier_code + " - " : ""}${supplier.name}`,
+                party_type: "supplier",
+                start_date: defaultStartDate,
+                end_date: defaultEndDate,
+                currency_id: baseCurrencyId || "",
+                offer_method: "Phone",
+                standard_price: 0,
+                offered_price: 0,
+                min_order_qty: 1,
+                max_order_qty: 100,
+                has_volume_discount: false,
+                volume_discounts: [],
+                is_new: true,
+                is_dirty: true,
+              }));
+
+              setPriceOffers((prev) => [...(prev || []), ...newOffers]);
+            }
+            setIsSupplierModalOpen(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* "use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
 
 import CustomerLookupModal, {
@@ -92,7 +702,7 @@ export default function PriceOffersTab({
         .toISOString()
         .split("T")[0],
       currency_id: baseCurrencyId || "",
-      offer_method: "Phone",//"Fixed Price",
+      offer_method: "Phone", //"Fixed Price",
       standard_price: 0,
       offered_price: 0,
       min_order_qty: 1,
@@ -238,26 +848,6 @@ export default function PriceOffersTab({
     );
   };
 
-  // const updateVolumeDiscountTier = (
-  //   offerIdx: number,
-  //   tierIdx: number,
-  //   key: keyof ItemVolumeDiscountDraft,
-  //   val: unknown,
-  // ) => {
-  //   onRequestEdit?.();
-  //   setPriceOffers((prev) =>
-  //     (prev || []).map((offer, idx) => {
-  //       if (idx === offerIdx) {
-  //         const updatedTiers = (offer.volume_discounts || []).map(
-  //           (tier, tIdx) => (tIdx === tierIdx ? { ...tier, [key]: val } : tier),
-  //         );
-  //         return { ...offer, volume_discounts: updatedTiers, is_dirty: true };
-  //       }
-  //       return offer;
-  //     }),
-  //   );
-  // };
-
   const removeVolumeDiscountTier = (offerIdx: number, tierIdx: number) => {
     onRequestEdit?.();
     setPriceOffers((prev) =>
@@ -280,7 +870,7 @@ export default function PriceOffersTab({
 
   return (
     <div className="space-y-4 text-xs">
-      {/* Sub-Tabs Selector Header */}
+ 
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
         <div className="flex items-center gap-2 overflow-x-auto">
           {validList.map((offer, idx) => (
@@ -311,10 +901,10 @@ export default function PriceOffersTab({
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Main Configuration Meta Card */}
+
           <div className="p-4 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-3">
-              {/* List Name */}
+
               <div className="grid grid-cols-3 gap-3 items-center">
                 <label className="font-medium text-slate-700 dark:text-slate-300">
                   Offer List Name <span className="text-red-500">*</span>
@@ -330,7 +920,7 @@ export default function PriceOffersTab({
                 </div>
               </div>
 
-              {/* List Type (Sales / Purchase) */}
+
               <div className="grid grid-cols-3 gap-3 items-center">
                 <label className="font-medium text-slate-700 dark:text-slate-300">
                   List Type
@@ -359,7 +949,7 @@ export default function PriceOffersTab({
                 </div>
               </div>
 
-              {/* Target Party Assignment via Customer/Supplier Modal */}
+
               <div className="grid grid-cols-3 gap-3 items-center">
                 <label className="font-medium text-slate-700 dark:text-slate-300">
                   Target Party
@@ -390,14 +980,14 @@ export default function PriceOffersTab({
                 </div>
               </div>
 
-              {/* Offer Method */}
+ 
               <div className="grid grid-cols-3 gap-3 items-center">
                 <label className="font-medium text-slate-700 dark:text-slate-300">
                   Offer Method
                 </label>
                 <div className="col-span-2">
                   <select
-                    value={activeOffer.offer_method || "Phone"}// "Fixed Price"
+                    value={activeOffer.offer_method || "Phone"} // "Fixed Price"
                     disabled={isReadonly}
                     onChange={(e) =>
                       updateActiveOffer("offer_method", e.target.value)
@@ -406,17 +996,14 @@ export default function PriceOffersTab({
                   >
                     <option value="Phone">Phone</option>
                     <option value="Email">Email</option>
-                    {/* <option value="Fixed Price">Fixed Price</option>
-                    <option value="Percentage Discount">
-                      Percentage Discount
-                    </option> */}
+
                   </select>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Pricing Matrix for Active Offer */}
+ 
           <div className="rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
             <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">
               <h4 className="font-bold text-slate-800 dark:text-slate-200">
@@ -507,7 +1094,7 @@ export default function PriceOffersTab({
             </table>
           </div>
 
-          {/* Volume Discount Tiers Sub-Matrix */}
+
           {activeOffer.has_volume_discount && (
             <div className="p-4 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/20 dark:bg-slate-900 space-y-3">
               <div className="flex justify-between items-center">
@@ -609,20 +1196,6 @@ export default function PriceOffersTab({
                             readOnly
                             className="w-24 border border-slate-300 dark:border-slate-700 rounded p-1 text-xs bg-slate-50 text-slate-900 dark:text-white"
                           />
-                          {/* <input
-                            type="number"
-                            value={tier.discounted_price}
-                            disabled={isReadonly}
-                            onChange={(e) =>
-                              updateVolumeDiscountTier(
-                                safeIdx,
-                                tierIdx,
-                                "discounted_price",
-                                e.target.value,
-                              )
-                            }
-                            className="w-24 border border-slate-300 dark:border-slate-700 rounded p-1 text-xs bg-slate-50 text-slate-900 dark:text-white"
-                          /> */}
                         </td>
                         <td className="p-2.5 text-right">
                           {!isReadonly && (
@@ -647,11 +1220,11 @@ export default function PriceOffersTab({
         </div>
       )}
 
-      {/* Customer Lookup Modal */}
+
       {isCustomerModalOpen && (
         <CustomerLookupModal
           open={isCustomerModalOpen}
-          multiple={false}
+          multiple={true}
           onClose={() => {
             setIsCustomerModalOpen(false);
             setPartyModalTargetIdx(null);
@@ -685,11 +1258,11 @@ export default function PriceOffersTab({
         />
       )}
 
-      {/* Supplier Lookup Modal */}
+
       {isSupplierModalOpen && (
         <SupplierLookupModal
           open={isSupplierModalOpen}
-          multiple={false}
+          multiple={true}
           onClose={() => {
             setIsSupplierModalOpen(false);
             setPartyModalTargetIdx(null);
@@ -724,4 +1297,40 @@ export default function PriceOffersTab({
       )}
     </div>
   );
-}
+} */
+
+// const updateVolumeDiscountTier = (
+//   offerIdx: number,
+//   tierIdx: number,
+//   key: keyof ItemVolumeDiscountDraft,
+//   val: unknown,
+// ) => {
+//   onRequestEdit?.();
+//   setPriceOffers((prev) =>
+//     (prev || []).map((offer, idx) => {
+//       if (idx === offerIdx) {
+//         const updatedTiers = (offer.volume_discounts || []).map(
+//           (tier, tIdx) => (tIdx === tierIdx ? { ...tier, [key]: val } : tier),
+//         );
+//         return { ...offer, volume_discounts: updatedTiers, is_dirty: true };
+//       }
+//       return offer;
+//     }),
+//   );
+// };
+
+  /* <input
+        type="number"
+        value={tier.discounted_price}
+        disabled={isReadonly}
+        onChange={(e) =>
+          updateVolumeDiscountTier(
+            safeIdx,
+            tierIdx,
+            "discounted_price",
+            e.target.value,
+          )
+        }
+        className="w-24 border border-slate-300 dark:border-slate-700 rounded p-1 text-xs bg-slate-50 text-slate-900 dark:text-white"
+      /> */
+
