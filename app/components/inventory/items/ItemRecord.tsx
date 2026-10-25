@@ -25,6 +25,7 @@ import {
   InventoryCostingMethod,
 } from "@/types/inventory";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+import { toast } from "sonner";
 
 type Props = {
   id: string;
@@ -238,7 +239,7 @@ export default function ItemRecord({
               offerData.priceOffers.map((o: ItemPriceOfferDraft) => ({
                 id: o.id || o.price_list_id,
                 price_list_item_id: o.price_list_item_id,
-                name: o.name || "Custom Price List", // o.price_list_name || 
+                name: o.name || "Custom Price List", // o.price_list_name ||
                 list_type: o.list_type || "SALES",
                 party_id: o.party_id || null,
                 party_name: o.party_name || "General / Global List",
@@ -394,7 +395,11 @@ export default function ItemRecord({
         throw new Error(errorData.error || "Failed to save item details.");
       }
 
-      router.push(`/${slug}/inventory/items`);
+      // router.push(`/${slug}/inventory/items`);
+      // Clear errors, exit edit mode & notify user
+      setFormErrors({});
+      setIsEditing(false);
+      toast.success("Record saved successfully! ✅");
     } catch (err) {
       if (err instanceof Error) {
         setFormErrors({ global: err.message });

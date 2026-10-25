@@ -4,15 +4,17 @@
 
 import { useState } from "react";
 import { Icon } from "@iconify/react";
+
 import MasterDropdown from "@/app/components/common/MasterDropdown";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-// import { format, parseISO, startOfDay } from "date-fns";
 import { format, parse, parseISO, isValid } from "date-fns";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 import ItemLookupModal, {
   ItemLookupRecord,
 } from "@/app/components/shared/modals/ItemLookupModal";
+
 import SalespersonLookupModal, {
   Employee,
 } from "@/app/components/shared/modals/SalespersonLookupModal";
@@ -194,8 +196,12 @@ export default function PriceListTab({
       category_name: "",
       uom_id: item.base_uom_id || "",
       uom_name: item.base_uom_name || "",
-      standard_price: Number(item.standard_sales_price || item.standard_cost || 0).toFixed(2),
-      offered_price: Number(item.standard_sales_price || item.standard_cost || 0).toFixed(2),
+      standard_price: Number(
+        item.standard_sales_price || item.standard_cost || 0,
+      ).toFixed(2),
+      offered_price: Number(
+        item.standard_sales_price || item.standard_cost || 0,
+      ).toFixed(2),
       min_order_qty: 1,
       max_order_qty: 100,
       has_volume_discount: false,
@@ -319,34 +325,6 @@ export default function PriceListTab({
       ),
     );
   };
-
-  // const updateVolumeDiscountRow = (
-  //   itemIdx: number,
-  //   tierIdx: number,
-  //   key: keyof VolumeDiscountDraft,
-  //   val: unknown,
-  // ) => {
-  //   onRequestEdit?.();
-  //   if (!activeList) return;
-  //   const updatedItems = activeList.items.map((item, idx) => {
-  //     if (idx === itemIdx) {
-  //       const updatedTiers = item.volume_discounts.map((tier, tIdx) => {
-  //         if (tIdx === tierIdx) {
-  //           return { ...tier, [key]: val };
-  //         }
-  //         return tier;
-  //       });
-  //       return { ...item, volume_discounts: updatedTiers };
-  //     }
-  //     return item;
-  //   });
-
-  //   setPriceLists(
-  //     priceLists.map((list, idx) =>
-  //       idx === selectedListIdx ? { ...list, items: updatedItems } : list,
-  //     ),
-  //   );
-  // };
 
   const removeVolumeDiscountRow = (itemIdx: number, tierIdx: number) => {
     onRequestEdit?.();
@@ -647,48 +625,37 @@ export default function PriceListTab({
                       <td className="p-3">{item.uom_name || "Pcs"}</td>
                       <td className="p-3">{item.standard_price}</td>
                       <td className="p-3">
-                        <input
-                          type="number"
-                          value={item.offered_price}
-                          disabled={isReadonly}
-                          onChange={(e) =>
-                            updateItemRow(
-                              itemIdx,
-                              "offered_price",
-                              e.target.value,
-                            )
+                        <NumericTextInput
+                          allowDecimals
+                          decimalScale={2}
+                          value={Number(item.offered_price ?? 0)}
+                          onChange={(val) =>
+                            updateItemRow(itemIdx, "offered_price", val)
                           }
-                          className="w-24 border rounded p-1 text-xs bg-blue-50 font-semibold"
+                          disabled={isReadonly}
+                          className="w-24 border rounded p-1.5 font-semibold text-xs text-right"
                         />
                       </td>
                       <td className="p-3">
-                        <input
-                          type="number"
-                          value={item.min_order_qty}
-                          disabled={isReadonly}
-                          onChange={(e) =>
-                            updateItemRow(
-                              itemIdx,
-                              "min_order_qty",
-                              e.target.value,
-                            )
+                        <NumericTextInput
+                          allowDecimals={false}
+                          value={Number(item.min_order_qty ?? 0)}
+                          onChange={(val) =>
+                            updateItemRow(itemIdx, "min_order_qty", val)
                           }
-                          className="w-16 border rounded p-1 text-xs bg-transparent"
+                          disabled={isReadonly}
+                          className="w-16 border rounded p-1 text-xs bg-transparent text-right"
                         />
                       </td>
                       <td className="p-3">
-                        <input
-                          type="number"
-                          value={item.max_order_qty}
-                          disabled={isReadonly}
-                          onChange={(e) =>
-                            updateItemRow(
-                              itemIdx,
-                              "max_order_qty",
-                              e.target.value,
-                            )
+                        <NumericTextInput
+                          allowDecimals={false}
+                          value={Number(item.max_order_qty ?? 0)}
+                          onChange={(val) =>
+                            updateItemRow(itemIdx, "max_order_qty", val)
                           }
-                          className="w-16 border rounded p-1 text-xs bg-transparent"
+                          disabled={isReadonly}
+                          className="w-16 border rounded p-1 text-xs bg-transparent text-right"
                         />
                       </td>
                       <td className="p-3 text-center">
@@ -782,19 +749,19 @@ export default function PriceListTab({
                           className="border-b border-slate-100 dark:border-slate-800"
                         >
                           <td className="p-2.5">
-                            <input
-                              type="number"
-                              value={tier.min_order_qty}
-                              disabled={isReadonly}
-                              onChange={(e) =>
+                            <NumericTextInput
+                              allowDecimals={false}
+                              value={Number(tier.min_order_qty ?? 0)}
+                              onChange={(val) =>
                                 updateVolumeDiscountRow(
                                   activeItemIdx,
                                   tierIdx,
                                   "min_order_qty",
-                                  e.target.value,
+                                  val,
                                 )
                               }
-                              className="w-24 border rounded p-1 text-xs"
+                              disabled={isReadonly}
+                              className="w-24 border rounded p-1 text-xs bg-transparent text-right"
                             />
                           </td>
                           <td className="p-2.5">
@@ -816,19 +783,20 @@ export default function PriceListTab({
                             </select>
                           </td>
                           <td className="p-2.5">
-                            <input
-                              type="number"
-                              value={tier.discount_value}
-                              disabled={isReadonly}
-                              onChange={(e) =>
+                            <NumericTextInput
+                              allowDecimals
+                              decimalScale={2}
+                              value={Number(tier.discount_value ?? 0)}
+                              onChange={(val) =>
                                 updateVolumeDiscountRow(
                                   activeItemIdx,
                                   tierIdx,
                                   "discount_value",
-                                  e.target.value,
+                                  val,
                                 )
                               }
-                              className="w-24 border rounded p-1 text-xs"
+                              disabled={isReadonly}
+                              className="w-24 border rounded p-1 font-semibold text-xs text-right"
                             />
                           </td>
                           <td className="p-2.5 font-semibold text-emerald-600">
@@ -838,20 +806,6 @@ export default function PriceListTab({
                               readOnly
                               className="w-24 border rounded p-1 text-xs bg-slate-50"
                             />
-                            {/* <input
-                              type="number"
-                              value={tier.discounted_price}
-                              disabled={isReadonly}
-                              onChange={(e) =>
-                                updateVolumeDiscountRow(
-                                  activeItemIdx,
-                                  tierIdx,
-                                  "discounted_price",
-                                  e.target.value,
-                                )
-                              }
-                              className="w-24 border rounded p-1 text-xs bg-slate-50"
-                            /> */}
                           </td>
                           <td className="p-2.5 text-right">
                             {!isReadonly && (
@@ -917,85 +871,3 @@ export default function PriceListTab({
     </div>
   );
 }
-
-{
-  /* List Type (Locked & Disabled based on partyType) */
-}
-{
-  /* <div className="grid grid-cols-3 gap-3 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  List Type
-                </label>
-                <div className="col-span-2">
-                  <select
-                    value={enforcedListType}
-                    disabled={true} // Locked based on customer/supplier card type
-                    className={getInputClass(
-                      `priceLists.${selectedListIdx}.list_type`,
-                      "",
-                      true,
-                    )}
-                  >
-                    <option value="SALES">Sales Price List</option>
-                    <option value="PURCHASE">Purchase Price List</option>
-                  </select>
-                </div>
-              </div> */
-}
-
-// const updateItemRow = (
-//   itemIdx: number,
-//   key: keyof PriceListItemDraft,
-//   val: unknown,
-// ) => {
-//   onRequestEdit?.();
-//   if (!activeList) return;
-//   const updatedItems = activeList.items.map((item, idx) => {
-//     if (idx === itemIdx) {
-//       return { ...item, [key]: val };
-//     }
-//     return item;
-//   });
-
-//   setPriceLists(
-//     priceLists.map((list, idx) =>
-//       idx === selectedListIdx ? { ...list, items: updatedItems } : list,
-//     ),
-//   );
-// };
-
-// setPriceLists(
-//   priceLists.map((list, idx) =>
-//     idx === selectedListIdx ? { ...list, [key]: val } : list,
-//   ),
-// );
-// const updateItemRow = (
-//   itemIdx: number,
-//   key: keyof PriceListItemDraft,
-//   val: unknown,
-// ) => {
-//   onRequestEdit?.();
-
-//   updateSelectedList((list) => ({
-//     ...list,
-//     items: list.items.map((item, idx) =>
-//       idx === itemIdx ? { ...item, [key]: val } : item,
-//     ),
-//   }));
-// };
-
-/* const getInputClass = (
-    errorKey: string,
-    extraClasses: string = "",
-    disabled: boolean = isReadonly,
-  ) => {
-    const baseClasses =
-      "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
-    if (disabled) {
-      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none ${extraClasses}`;
-    }
-    const stateClasses = errors[errorKey]
-      ? "border-red-500 bg-red-50/10 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
-      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
-    return `${baseClasses} ${stateClasses} ${extraClasses}`;
-  }; */
