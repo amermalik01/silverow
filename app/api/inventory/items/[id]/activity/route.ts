@@ -2,6 +2,53 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
+import { ItemActivityService } from "@/lib/services/inventory/item-activity.service";
+
+interface RouteContext {
+  params: Promise<{ id: string }>;
+}
+
+export async function GET(_req: NextRequest, { params }: RouteContext) {
+  try {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id: itemId } = await params;
+
+    if (!itemId) {
+      return NextResponse.json(
+        { error: "Item ID is required" },
+        { status: 400 },
+      );
+    }
+
+    const activity = await ItemActivityService.getActivity(companyId, itemId);
+
+    return NextResponse.json(activity);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "ITEM_NOT_FOUND") {
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
+    }
+
+    console.error("Item Activity API Error:", error);
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to load item activity",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+/* import { NextRequest, NextResponse } from "next/server";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { pool } from "@/lib/db";
 
 export async function GET(
@@ -157,3 +204,4 @@ export async function GET(
     );
   }
 }
+ */

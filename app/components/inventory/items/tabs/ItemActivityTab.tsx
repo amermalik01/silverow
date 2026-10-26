@@ -225,7 +225,7 @@ export default function ItemActivityTab({ itemId }: Props) {
           >
             Movement Transactions
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={() => setActiveSubView("allocations")}
             className={`px-4 py-2 rounded-lg transition-all duration-200 capitalize ${
@@ -235,7 +235,7 @@ export default function ItemActivityTab({ itemId }: Props) {
             }`}
           >
             Allocations
-          </button>
+          </button> */}
         </div>
 
         {activeSubView === "transactions" && (
