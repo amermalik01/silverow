@@ -1,10 +1,26 @@
 // app/components/inventory/items/ItemDetailHeader.tsx
 
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ItemFormData } from "@/types/inventory";
 import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
+import ItemStockModal, { StockDetailRow } from "./ItemStockModal";
+
+type WarehouseStockItem = {
+  warehouse_id: string;
+  warehouse_name: string;
+  quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
+  [key: string]: unknown;
+};
+
+type ItemActivityState = {
+  warehouseStock: WarehouseStockItem[];
+  transactions: StockDetailRow[];
+  allocations: StockDetailRow[];
+};
 
 type MetricProps = {
   item: ItemFormData;
@@ -22,6 +38,35 @@ export default function ItemDetailHeader({
   metrics,
   onItemUpdated,
 }: MetricProps) {
+  const [activityData, setActivityData] = useState<ItemActivityState>({
+    warehouseStock: [],
+    transactions: [],
+    allocations: [],
+  });
+
+  const [activeModal, setActiveModal] = useState<
+    "total" | "allocated" | "available" | null
+  >(null);
+
+  // Fetch activity breakdown when item id is present
+  useEffect(() => {
+    if (!item.id) return;
+    fetch(`/api/inventory/items/${item.id}/cards-activity`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) {
+          setActivityData({
+            warehouseStock: data.warehouseStock || [],
+            transactions: data.transactions || [],
+            allocations: data.allocations || [],
+          });
+        }
+      })
+      .catch((err) =>
+        console.error("Failed to load item activity metrics", err),
+      );
+  }, [item.id]);
+
   const formatQuantity = (value: number) =>
     Number(value || 0).toLocaleString(undefined, {
       maximumFractionDigits: 3,
@@ -34,6 +79,7 @@ export default function ItemDetailHeader({
       subtitle: "Physical inventory",
       icon: "tabler:packages",
       color: "blue",
+      modalKey: "total" as const,
       container:
         "border-blue-200 bg-gradient-to-br from-blue-50 to-sky-50 dark:border-blue-900/50 dark:from-blue-950/40 dark:to-sky-950/20",
       titleColor: "text-blue-700 dark:text-blue-400",
@@ -48,6 +94,7 @@ export default function ItemDetailHeader({
       subtitle: "Reserved inventory",
       icon: "tabler:lock-check",
       color: "amber",
+      modalKey: "allocated" as const,
       container:
         "border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/20",
       titleColor: "text-amber-700 dark:text-amber-400",
@@ -62,6 +109,7 @@ export default function ItemDetailHeader({
       subtitle: "Ready to use",
       icon: "tabler:circle-check",
       color: "emerald",
+      modalKey: "available" as const,
       container:
         "border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 dark:border-emerald-900/50 dark:from-emerald-950/40 dark:to-teal-950/20",
       titleColor: "text-emerald-700 dark:text-emerald-400",
@@ -218,6 +266,7 @@ export default function ItemDetailHeader({
             {stockCards.map((card) => (
               <div
                 key={card.title}
+                onClick={() => setActiveModal(card.modalKey)}
                 className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${card.container}`}
               >
                 <div
@@ -381,6 +430,28 @@ export default function ItemDetailHeader({
           </div>
         </div>
       )}
+
+      {/* Dynamic Stock Modal */}
+      <ItemStockModal
+        isOpen={activeModal !== null}
+        title={`${item.item_code || ""} - (${item.name || "Item"}) ${
+          activeModal === "total"
+            ? "Stock Sheet"
+            : activeModal === "allocated"
+              ? "Allocated Stock"
+              : "Available Stock"
+        }`}
+        data={
+          activeModal === "total"
+            ? activityData.transactions
+            : activeModal === "allocated"
+              ? activityData.allocations
+              : activityData.transactions.filter(
+                  (t) => Number(t.available_qty || 0) > 0,
+                )
+        }
+        onClose={() => setActiveModal(null)}
+      />
     </>
   );
 }
