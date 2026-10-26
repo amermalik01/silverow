@@ -146,17 +146,19 @@ export async function PUT(req: Request, { params }: Props) {
           status = $11,
           stock_tracking = $12,
           reorder_qty = $13,
-          standard_sales_price = $14,
-          standard_cost = $15,
-          costing_method = $16,
-          inventory_posting_group_id = $17,
-          inventory_gl_id = $18,
-          cogs_gl_id = $19,
-          sales_gl_id = $20,
-          purchase_gl_id = $21,
-          vat_product_group_id = $22,
+          minimum_sales_price = $14,
+          standard_sales_price = $15,
+          standard_purchase_price = $16,
+          standard_cost = $17,
+          costing_method = $18,
+          inventory_posting_group_id = $19,
+          inventory_gl_id = $20,
+          cogs_gl_id = $21,
+          sales_gl_id = $22,
+          purchase_gl_id = $23,
+          vat_product_group_id = $24,
           updated_at = NOW()
-        WHERE id = $23 AND company_id = $24
+        WHERE id = $25 AND company_id = $26
         RETURNING *;
       `;
 
@@ -174,7 +176,10 @@ export async function PUT(req: Request, { params }: Props) {
         toNumberOrDefault(validatedItem.status, 1),
         !!validatedItem.stock_tracking,
         toNumberOrDefault(validatedItem.reorder_qty, 0),
+        toNumberOrDefault(validatedItem.minimum_sales_price, 0),
         toNumberOrDefault(validatedItem.standard_sales_price, 0),
+
+        toNumberOrDefault(validatedItem.standard_purchase_price, 0),
         toNumberOrDefault(validatedItem.standard_cost, 0),
         // toNumberOrDefault(validatedItem.costing_method, 1),
         validatedItem.costing_method,

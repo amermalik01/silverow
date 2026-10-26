@@ -59,7 +59,7 @@ export default function PurchaseTab({
               <NumericTextInput
                 allowDecimals
                 decimalScale={2}
-                disabled={isReadonly}
+                disabled                
                 value={Number(item.standard_cost)}
                 onChange={(val) =>
                   setItem((prev) => ({ ...prev, standard_cost: String(val) }))
@@ -114,12 +114,13 @@ export default function PurchaseTab({
                     decimalScale={2}
                     disabled={isReadonly}
                     value={Number(
-                      item.purchase_price ?? item.standard_cost ?? 0,
+                      item.standard_purchase_price ?? 0,
+                      // item.standard_purchase_price ?? item.standard_cost ?? 0,
                     )}
                     onChange={(val) =>
                       setItem((prev) => ({
                         ...prev,
-                        purchase_price: String(val),
+                        standard_purchase_price: String(val),
                         // standard_cost: String(val),
                       }))
                     }

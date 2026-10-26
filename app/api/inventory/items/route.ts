@@ -198,14 +198,14 @@ export async function POST(req: Request) {
           INSERT INTO items (
             company_id, item_code, barcode, name, description,
             category_id, brand_id, base_uom_id, purchase_uom_id, sales_uom_id,
-            item_type, status, stock_tracking, reorder_qty, standard_sales_price,
-            standard_cost, costing_method, inventory_posting_group_id,
+            item_type, status, stock_tracking, reorder_qty, minimum_sales_price, standard_sales_price,
+            standard_purchase_price, standard_cost, costing_method, inventory_posting_group_id,
             inventory_gl_id, cogs_gl_id, sales_gl_id, purchase_gl_id,vat_product_group_id,
             created_at, updated_at
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
             $11, $12, $13, $14, $15, $16, $17, $18,
-            $19, $20, $21, $22, $23, NOW(), NOW()
+            $19, $20, $21, $22, $23, $24, $25, NOW(), NOW()
           ) RETURNING *;
         `;
 
@@ -224,7 +224,10 @@ export async function POST(req: Request) {
           toNumberOrDefault(validatedItem.status, 1),
           !!validatedItem.stock_tracking,
           toNumberOrDefault(validatedItem.reorder_qty, 0),
+          toNumberOrDefault(validatedItem.minimum_sales_price, 0),
           toNumberOrDefault(validatedItem.standard_sales_price, 0),
+
+          toNumberOrDefault(validatedItem.standard_purchase_price, 0),
           toNumberOrDefault(validatedItem.standard_cost, 0),
           // toNumberOrDefault(validatedItem.costing_method, 1),
           validatedItem.costing_method,

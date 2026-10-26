@@ -199,9 +199,9 @@ export default function ItemRecord({
 
             standard_sales_price:
               itemData.standard_sales_price?.toString() || "",
-            min_sales_price: itemData.min_sales_price?.toString() || "",
+            minimum_sales_price: itemData.minimum_sales_price?.toString() || "",
             standard_cost: itemData.standard_cost?.toString() || "",
-            purchase_price: itemData.purchase_price?.toString() || "",
+            standard_purchase_price: itemData.standard_purchase_price?.toString() || "",
             min_purchase_qty: itemData.min_purchase_qty?.toString() || "1",
             max_purchase_qty: itemData.max_purchase_qty?.toString() || "100",
 
@@ -366,9 +366,9 @@ export default function ItemRecord({
           reorder_qty: item.reorder_qty || null,
 
           standard_sales_price: item.standard_sales_price || null,
-          min_sales_price: item.min_sales_price || null,
+          minimum_sales_price: item.minimum_sales_price || null,
           standard_cost: item.standard_cost || null,
-          purchase_price: item.purchase_price || null,
+          standard_purchase_price: item.standard_purchase_price || null,
           min_purchase_qty: item.min_purchase_qty || null,
           max_purchase_qty: item.max_purchase_qty || null,
 

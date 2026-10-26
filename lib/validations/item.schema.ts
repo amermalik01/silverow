@@ -25,7 +25,10 @@ export const ItemSchema = z.object({
   stock_tracking: z.boolean().default(true),
 
   reorder_qty: z.union([z.string(), z.number()]).optional().nullable(),
+  minimum_sales_price: z.union([z.string(), z.number()]).optional().nullable(),
   standard_sales_price: z.union([z.string(), z.number()]).optional().nullable(),
+
+  standard_purchase_price: z.union([z.string(), z.number()]).optional().nullable(),
   standard_cost: z.union([z.string(), z.number()]).optional().nullable(),
   // costing_method: z.number().default(1),
 

@@ -71,11 +71,11 @@ export default function SalesTab({
                   allowDecimals
                   decimalScale={2}
                   disabled={isReadonly}
-                  value={Number(item.min_sales_price ?? item.standard_sales_price ?? 0)}
+                  value={Number(item.minimum_sales_price ?? item.standard_sales_price ?? 0)}
                   onChange={(val) =>
                     setItem((prev) => ({
                       ...prev,
-                      min_sales_price: String(val),
+                      minimum_sales_price: String(val),
                     }))
                   }
                   className="border border-slate-200 dark:border-slate-800 rounded p-1.5 w-full disabled:bg-slate-50 disabled:cursor-not-allowed"
