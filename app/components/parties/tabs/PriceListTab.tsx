@@ -57,6 +57,18 @@ export type PriceListDraft = {
   items: PriceListItemDraft[];
 };
 
+type PriceHistoryRecord = {
+  id: string;
+  old_offered_price: number | null;
+  new_offered_price: number;
+  old_min_order_qty: number | null;
+  new_min_order_qty: number;
+  old_max_order_qty: number | null;
+  new_max_order_qty: number | null;
+  changed_at: string;
+  changed_by_name: string | null;
+};
+
 type Props = {
   partyId: string;
   partyType: "customer" | "supplier";
@@ -97,13 +109,19 @@ export default function PriceListTab({
   const [selectedListIdx, setSelectedListIdx] = useState<number>(0);
   const [activeItemIdx, setActiveItemIdx] = useState<number | null>(null);
 
+  // History Modal States
+  const [historyModalItem, setHistoryModalItem] = useState<{
+    priceListItemId: string;
+    itemName: string;
+  } | null>(null);
+  const [historyLogs, setHistoryLogs] = useState<PriceHistoryRecord[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
   // Modal States
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [isSalespersonModalOpen, setIsSalespersonModalOpen] = useState(false);
 
   const activeList = priceLists[selectedListIdx] || null;
-
-  // Enforce fixed list type based on party type
   const enforcedListType = partyType === "supplier" ? "PURCHASE" : "SALES";
 
   const startDate = parseStoredDate(activeList?.start_date);
@@ -166,11 +184,12 @@ export default function PriceListTab({
     const price = Number(basePrice);
     const discount = Number(discountValue);
 
-    if (!Number.isFinite(price) || !Number.isFinite(discount)) {
-      return 0;
-    }
-
-    if (price < 0 || discount < 0) {
+    if (
+      !Number.isFinite(price) ||
+      !Number.isFinite(discount) ||
+      price < 0 ||
+      discount < 0
+    ) {
       return 0;
     }
 
@@ -257,6 +276,24 @@ export default function PriceListTab({
       ),
     );
     if (activeItemIdx === itemIdx) setActiveItemIdx(null);
+  };
+
+  const fetchHistory = async (priceListItemId: string, itemName: string) => {
+    if (!priceListItemId) return;
+    setHistoryModalItem({ priceListItemId, itemName });
+    setIsLoadingHistory(true);
+    try {
+      const res = await fetch(
+        `/api/inventory/items/price-history/${priceListItemId}`,
+      );
+      const data = await res.json();
+      setHistoryLogs(data.history || []);
+    } catch (err) {
+      console.error("Failed to load price history", err);
+      setHistoryLogs([]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
 
   const addVolumeDiscountRow = (itemIdx: number) => {
@@ -659,7 +696,7 @@ export default function PriceListTab({
                         />
                       </td>
                       <td className="p-3 text-center">
-                        <input
+                        {/* <input
                           type="checkbox"
                           checked={item.has_volume_discount}
                           onChange={(e) => {
@@ -677,9 +714,43 @@ export default function PriceListTab({
                           }}
                           disabled={isReadonly}
                           className="w-4 h-4 rounded text-blue-600"
-                        />
+                        /> */}
+                      <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveItemIdx(
+                              itemIdx === activeItemIdx ? null : itemIdx,
+                            );
+                            if (!item.has_volume_discount && item.volume_discounts.length === 0) {
+                              addVolumeDiscountRow(itemIdx);
+                            }
+                          }}
+                          className={`px-2 py-1 rounded text-[11px] font-semibold border ${
+                            item.has_volume_discount && item.volume_discounts.length > 0
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                              : "bg-slate-100 text-slate-600 border-slate-300"
+                          }`}
+                        >
+                          {item.has_volume_discount && item.volume_discounts.length > 0
+                            ? `${item.volume_discounts.length} Tiers`
+                            : "Configure Tiers"}
+                        </button>
                       </td>
-                      <td className="p-3 text-right">
+
+                      <td className="p-3 text-right space-x-2">
+                        {item.id && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetchHistory(item.id!, item.name);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 underline font-medium"
+                          >
+                            History
+                          </button>
+                        )}
                         {!isReadonly && (
                           <button
                             type="button"
@@ -831,6 +902,81 @@ export default function PriceListTab({
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ================= HISTORY MODAL ================= */}
+      {historyModalItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                Price Update History — {historyModalItem.itemName}
+              </h4>
+              <button
+                onClick={() => setHistoryModalItem(null)}
+                className="text-slate-500 hover:text-red-500 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {isLoadingHistory ? (
+              <div className="p-8 text-center text-slate-400">
+                Loading history logs...
+              </div>
+            ) : historyLogs.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 italic">
+                No price update history found.
+              </div>
+            ) : (
+              <div className="max-h-80 overflow-y-auto border rounded">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 border-b">
+                      <th className="p-2.5">Date & Time</th>
+                      <th className="p-2.5">Updated By</th>
+                      <th className="p-2.5 text-right">Old Price</th>
+                      <th className="p-2.5 text-right">New Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyLogs.map((log) => (
+                      <tr
+                        key={log.id}
+                        className="border-b hover:bg-slate-50/50"
+                      >
+                        <td className="p-2.5 text-slate-600 dark:text-slate-300">
+                          {format(log.changed_at, "dd/MM/yyyy hh:mm:ss")}
+                        </td>
+                        <td className="p-2.5 font-medium">
+                          {log.changed_by_name || "System User"}
+                        </td>
+                        <td className="p-2.5 text-right text-slate-500">
+                          {log.old_offered_price
+                            ? Number(log.old_offered_price)?.toFixed(2)
+                            : "-"}
+                        </td>
+                        <td className="p-2.5 text-right font-semibold text-emerald-600">
+                          {Number(log.new_offered_price)?.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <Button
+                type="button"
+                onClick={() => setHistoryModalItem(null)}
+                variant="outline"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

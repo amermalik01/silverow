@@ -4,6 +4,9 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
 import {
   PartySchema,
   PartyContactSchema,
@@ -448,7 +451,359 @@ export async function PUT(req: Request, { params }: Props) {
         }
       }
 
-      // 4. Validate Overlapping Prices for Same Items in Same Dates for Same Party
+      // Retrieve current user ID for history audit logging
+      const session = await getServerSession(authOptions);
+      const currentUserId = session?.user?.id || null;
+
+      // Helper functions for parsing
+      const toNumberOrDefault = (val: unknown, fallback: number) => {
+        const num = Number(val);
+        return Number.isFinite(num) ? num : fallback;
+      };
+
+      // 4. Map existing price list items for this party to preserve IDs and track history properly
+      const existingPlItemsRes = await client.query(
+        `
+      SELECT pli.id AS price_list_item_id, pl.id AS price_list_id, pli.item_id 
+      FROM price_list_items pli
+      JOIN price_lists pl ON pli.price_list_id = pl.id
+      WHERE pl.party_id = $1 AND pl.company_id = $2
+      `,
+        [id, companyId],
+      );
+
+      const existingItemsMap = new Map<
+        string,
+        { priceListItemId: string; priceListId: string }
+      >();
+      for (const row of existingPlItemsRes.rows) {
+        // Key format: itemId_priceListId (or just itemId if unique per list)
+        const key = `${row.item_id}_${row.price_list_id}`;
+        existingItemsMap.set(key, {
+          priceListItemId: row.price_list_item_id,
+          priceListId: row.price_list_id,
+        });
+      }
+
+      // 5. Validate Overlapping Prices & Sync Price Lists, Items, History, and Volume Discounts
+      for (const pl of rawPriceLists) {
+        const listName = (pl.name as string) || "Price List";
+        const startDate = pl.start_date as string;
+        const endDate = pl.end_date as string;
+        const listType = pl.list_type as string;
+        const items = Array.isArray(pl.items) ? pl.items : [];
+
+        if (!startDate || !endDate) {
+          throw new Error(
+            `Price list "${listName}" must specify valid start and end dates.`,
+          );
+        }
+
+        for (const item of items) {
+          const itemId = item.item_id as string;
+          const itemCode = (item.item_code as string) || "SKU";
+          const UOM_ID = item.uom_id;
+
+          if (!itemId) continue;
+
+          // Check against other price lists for this party & list type with overlapping dates
+          const overlapCheckQry = `
+          SELECT pl.id, pl.name, pl.start_date, pl.end_date
+          FROM price_lists pl
+          JOIN price_list_items pli ON pli.price_list_id = pl.id
+          WHERE pl.company_id = $1
+            AND pl.party_id = $2 
+            AND pl.list_type = $3
+            AND pl.status = 1
+            AND pli.item_id = $4
+            AND pli.uom_id = $5
+            AND pl.start_date <= $7::date
+            AND pl.end_date >= $6::date
+            AND ($8::uuid IS NULL OR pl.id <> $8::uuid)
+          LIMIT 1`;
+
+          const overlapCheckParam = [
+            companyId,
+            id,
+            listType,
+            itemId,
+            UOM_ID,
+            startDate,
+            endDate,
+            pl.id || null,
+          ];
+
+          const overlapCheck = await client.query(
+            overlapCheckQry,
+            overlapCheckParam,
+          );
+
+          if (overlapCheck.rows.length > 0) {
+            const conflictListName = overlapCheck.rows[0].name;
+            await client.query("ROLLBACK");
+            return NextResponse.json(
+              {
+                error: `Date overlap validation error: Item [${itemCode}] already has an active price offer in another list ("${conflictListName}") during the selected date range (${startDate} to ${endDate}).`,
+              },
+              { status: 409 },
+            );
+          }
+        }
+      }
+
+      // Clear old price lists for this party before re-syncing
+      await client.query("DELETE FROM price_lists WHERE party_id = $1", [id]);
+
+      for (const pl of rawPriceLists) {
+        const plResult = await client.query(
+          `
+        INSERT INTO price_lists (
+          company_id, name, list_type, party_id, salesperson_id, offer_method, start_date, end_date, currency_id, status, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+        RETURNING id;
+        `,
+          [
+            companyId,
+            pl.name || "Price List",
+            pl.list_type,
+            id,
+            toCleanOrNull(pl.salesperson_id),
+            pl.offer_method || "Phone",
+            pl.start_date,
+            pl.end_date,
+            pl.currency_id,
+            1,
+          ],
+        );
+
+        const priceListId = plResult.rows[0].id;
+        const items = Array.isArray(pl.items) ? pl.items : [];
+
+        for (const item of items) {
+          const itemId = item.item_id;
+          const lookupKey = `${itemId}_${pl.id}`;
+          let priceListItemId =
+            item.id || existingItemsMap.get(lookupKey)?.priceListItemId;
+
+          const newOfferedPrice = toNumberOrDefault(item.offered_price, 0);
+          const newMinQty = toNumberOrDefault(item.min_order_qty, 1);
+          const newMaxQty = toNumberOrDefault(item.max_order_qty, 100);
+          const standardPriceVal = toNumberOrDefault(item.standard_price, 0);
+
+          if (!priceListItemId) {
+            // Insert new price list item
+            const itemResult = await client.query(
+              `
+            INSERT INTO price_list_items (
+              price_list_id, item_id, uom_id, standard_price, offered_price, min_order_qty, max_order_qty, has_volume_discount, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+            RETURNING id;
+            `,
+              [
+                priceListId,
+                itemId,
+                item.uom_id,
+                standardPriceVal,
+                newOfferedPrice,
+                newMinQty,
+                newMaxQty,
+                Boolean(item.has_volume_discount),
+              ],
+            );
+            priceListItemId = itemResult.rows[0].id;
+
+            // Initial creation history log
+            await client.query(
+              `
+            INSERT INTO price_list_item_history (
+              price_list_item_id, new_offered_price, new_min_order_qty, new_max_order_qty, changed_by
+            ) VALUES ($1, $2, $3, $4, $5)
+            `,
+              [
+                priceListItemId,
+                newOfferedPrice,
+                newMinQty,
+                newMaxQty,
+                currentUserId,
+              ],
+            );
+          } else {
+            // Check existing item for modifications to record audit history
+            const existingPliRes = await client.query(
+              `SELECT offered_price, min_order_qty, max_order_qty FROM price_list_items WHERE id = $1`,
+              [priceListItemId],
+            );
+
+            if (existingPliRes.rowCount && existingPliRes.rowCount > 0) {
+              const oldRow = existingPliRes.rows[0];
+              if (
+                Number(oldRow.offered_price) !== newOfferedPrice ||
+                Number(oldRow.min_order_qty) !== newMinQty ||
+                Number(oldRow.max_order_qty) !== newMaxQty
+              ) {
+                await client.query(
+                  `
+                INSERT INTO price_list_item_history (
+                  price_list_item_id, old_offered_price, new_offered_price, old_min_order_qty, new_min_order_qty, old_max_order_qty, new_max_order_qty, changed_by
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                `,
+                  [
+                    priceListItemId,
+                    oldRow.offered_price,
+                    newOfferedPrice,
+                    oldRow.min_order_qty,
+                    newMinQty,
+                    oldRow.max_order_qty,
+                    newMaxQty,
+                    currentUserId,
+                  ],
+                );
+              }
+            }
+
+            // Update existing item record
+            await client.query(
+              `
+            UPDATE price_list_items SET
+              price_list_id = $1,
+              standard_price = $2,
+              offered_price = $3,
+              min_order_qty = $4,
+              max_order_qty = $5,
+              has_volume_discount = $6,
+              updated_at = NOW()
+            WHERE id = $7
+            `,
+              [
+                priceListId,
+                standardPriceVal,
+                newOfferedPrice,
+                newMinQty,
+                newMaxQty,
+                Boolean(item.has_volume_discount),
+                priceListItemId,
+              ],
+            );
+          }
+
+          // Sync Volume Discount Tiers
+          await client.query(
+            `DELETE FROM price_list_volume_discounts WHERE price_list_item_id = $1`,
+            [priceListItemId],
+          );
+
+          const volumeDiscounts = Array.isArray(item.volume_discounts)
+            ? item.volume_discounts
+            : [];
+          if (item.has_volume_discount && volumeDiscounts.length > 0) {
+            for (const vd of volumeDiscounts) {
+              await client.query(
+                `
+              INSERT INTO price_list_volume_discounts (
+                price_list_item_id, min_order_qty, discount_type, discount_value, discounted_price, created_at
+              ) VALUES ($1, $2, $3, $4, $5, NOW())
+              `,
+                [
+                  priceListItemId,
+                  toNumberOrDefault(vd.min_order_qty, 1),
+                  vd.discount_type || "PERCENTAGE",
+                  toNumberOrDefault(vd.discount_value, 0),
+                  toNumberOrDefault(vd.discounted_price, 0),
+                ],
+              );
+            }
+          }
+        }
+      }
+
+      await client.query("COMMIT");
+      return NextResponse.json(partyResult.rows[0], { status: 200 });
+      // return NextResponse.json(
+      //   { success: true, account: partyResult.rows[0] },
+      //   { status: 200 },
+      // );
+    } catch (err: unknown) {
+      await client.query("ROLLBACK");
+      console.error("PUT Mutation Fatal Exception Error:", err);
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error
+              ? err.message
+              : "Execution Transaction Refused",
+        },
+        { status: 500 },
+      );
+    } finally {
+      client.release();
+    }
+  } catch (parseErr: unknown) {
+    return NextResponse.json(
+      {
+        error:
+          parseErr instanceof Error
+            ? parseErr.message
+            : "Payload validation failure.",
+      },
+      { status: 400 },
+    );
+  }
+}
+
+/* ==========================================================
+   3. DELETE PARTY (DELETE /api/parties/[id])
+============================================================ */
+export async function DELETE(_: Request, { params }: Props) {
+  const companyId = await getCompanyId();
+  if (!companyId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(`DELETE FROM party_contacts WHERE party_id = $1`, [id]);
+    await client.query(`DELETE FROM party_addresses WHERE party_id = $1`, [id]);
+    await client.query(`DELETE FROM price_lists WHERE party_id = $1`, [id]);
+
+    const deleteResult = await client.query(
+      `DELETE FROM parties WHERE id = $1 AND company_id = $2 RETURNING id`,
+      [id, companyId],
+    );
+
+    if (deleteResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return NextResponse.json(
+        { error: "Record not found or user lacks authorization." },
+        { status: 404 },
+      );
+    }
+
+    await client.query("COMMIT");
+    return NextResponse.json({
+      success: true,
+      message: "Party record deleted successfully.",
+    });
+  } catch (err: unknown) {
+    await client.query("ROLLBACK");
+    console.error("Delete operational failure:", err);
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error ? err.message : "Failed to delete party record.",
+      },
+      { status: 500 },
+    );
+  } finally {
+    client.release();
+  }
+}
+
+
+      /* // 4. Validate Overlapping Prices for Same Items in Same Dates for Same Party
       for (const pl of rawPriceLists) {
         const listName = (pl.name as string) || "Price List";
         const startDate = pl.start_date as string;
@@ -587,90 +942,4 @@ export async function PUT(req: Request, { params }: Props) {
             }
           }
         }
-      }
-
-      await client.query("COMMIT");
-      return NextResponse.json(partyResult.rows[0], { status: 200 });
-      // return NextResponse.json(
-      //   { success: true, account: partyResult.rows[0] },
-      //   { status: 200 },
-      // );
-    } catch (err: unknown) {
-      await client.query("ROLLBACK");
-      console.error("PUT Mutation Fatal Exception Error:", err);
-      return NextResponse.json(
-        {
-          error:
-            err instanceof Error
-              ? err.message
-              : "Execution Transaction Refused",
-        },
-        { status: 500 },
-      );
-    } finally {
-      client.release();
-    }
-  } catch (parseErr: unknown) {
-    return NextResponse.json(
-      {
-        error:
-          parseErr instanceof Error
-            ? parseErr.message
-            : "Payload validation failure.",
-      },
-      { status: 400 },
-    );
-  }
-}
-
-/* ==========================================================
-   3. DELETE PARTY (DELETE /api/parties/[id])
-============================================================ */
-export async function DELETE(_: Request, { params }: Props) {
-  const companyId = await getCompanyId();
-  if (!companyId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await params;
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    await client.query(`DELETE FROM party_contacts WHERE party_id = $1`, [id]);
-    await client.query(`DELETE FROM party_addresses WHERE party_id = $1`, [id]);
-    await client.query(`DELETE FROM price_lists WHERE party_id = $1`, [id]);
-
-    const deleteResult = await client.query(
-      `DELETE FROM parties WHERE id = $1 AND company_id = $2 RETURNING id`,
-      [id, companyId],
-    );
-
-    if (deleteResult.rowCount === 0) {
-      await client.query("ROLLBACK");
-      return NextResponse.json(
-        { error: "Record not found or user lacks authorization." },
-        { status: 404 },
-      );
-    }
-
-    await client.query("COMMIT");
-    return NextResponse.json({
-      success: true,
-      message: "Party record deleted successfully.",
-    });
-  } catch (err: unknown) {
-    await client.query("ROLLBACK");
-    console.error("Delete operational failure:", err);
-    return NextResponse.json(
-      {
-        error:
-          err instanceof Error ? err.message : "Failed to delete party record.",
-      },
-      { status: 500 },
-    );
-  } finally {
-    client.release();
-  }
-}
+      } */
