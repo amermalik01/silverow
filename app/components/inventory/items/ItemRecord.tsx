@@ -66,7 +66,6 @@ export default function ItemRecord({
 }: Props) {
   const router = useRouter();
   const { show, hide } = useLoader();
-  console.log("isReadonlyProp === ", isReadonlyProp);
 
   const [activeTab, setActiveTab] = useState("general");
   // const [isEditing, setIsEditing] = useState(false);

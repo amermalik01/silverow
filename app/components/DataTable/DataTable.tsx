@@ -361,6 +361,13 @@ export function DataTable<T extends object>({
     try {
       const config = await columnsConfigApi.get(moduleKey);
 
+      console.log("[DataTable] Columns:", {
+        moduleKey,
+        total: config.length,
+        visible: config.filter((col) => col.isVisible).length,
+        keys: config.map((col) => col.columnKey),
+      });
+
       const sortedConfig = [...config].sort(
         (a, b) => a.columnOrder - b.columnOrder,
       );

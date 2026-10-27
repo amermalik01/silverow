@@ -80,7 +80,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
           {
             id: "Item Journals",
             name: "Item Journals",
-             icon: "solar:box-linear",
+            icon: "solar:box-linear",
             url: `/${slug}/finance/item-journal`,
           },
         ],
@@ -109,7 +109,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Opportunity Cycle",
             icon: "solar:user-rounded-linear",
             url: `/${slug}/sales/customer`,
-          },      
+          },
 
           {
             id: "Sales Quotes",
@@ -267,6 +267,20 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Attendance",
             icon: "solar:clock-circle-linear",
             url: `/${slug}/hr/attendance`,
+          },
+        ],
+      },
+
+      {
+        id: "Energy",
+        name: "Energy",
+        icon: "griddy-icons:solar-energy-alt-filled",
+        children: [
+          {
+            id: "Sites",
+            name: "Sites",
+            icon: "griddy-icons:sustainable-energy",
+            url: `/${slug}/energy/sites`,
           },
         ],
       },

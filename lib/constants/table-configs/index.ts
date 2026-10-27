@@ -32,6 +32,8 @@ import { journalsColumnsConfig } from "./journals";
 import { partyLedgerActivityColumnsConfig } from "./party-ledger-activity";
 import { stockTransferColumnsConfig } from "./stock-transfer";
 
+import { sitesColumnsConfig } from "./sites";
+
 export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   purchase_orders: purchaseOrdersConfig,
   purchase_invoices: purchaseInvoicesConfig,
@@ -60,6 +62,7 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   customers: customersConfig,
 
   inventory_items: itemColumnsConfig,
+  energy_sites: sitesColumnsConfig,
 
   hr_employees: EmployeeConfig,
 
