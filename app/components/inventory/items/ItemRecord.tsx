@@ -482,7 +482,7 @@ export default function ItemRecord({
         </div>
 
         <div className="py-2">
-          {activeTab === "general" && (
+          {/* {activeTab === "general" && (
             <GeneralTab
               item={item}
               setItem={setItem}
@@ -494,6 +494,25 @@ export default function ItemRecord({
               setAutoCode={setAutoCode}
               errors={formErrors}
               isReadonly={effectiveReadonly}
+            />
+          )} */}
+
+          {activeTab === "general" && (
+            <GeneralTab
+              item={item}
+              setItem={setItem}
+              categories={categories}
+              setCategories={setCategories}
+              brands={brands}
+              setBrands={setBrands}
+              uoms={uoms}
+              setUoms={setUoms}
+              vatProductGroups={vatProductGroups}
+              autoCode={autoCode}
+              setAutoCode={setAutoCode}
+              errors={formErrors}
+              isReadonly={isReadonlyProp}
+              effectiveReadonly={effectiveReadonly}
             />
           )}
           {activeTab === "purchase" && (

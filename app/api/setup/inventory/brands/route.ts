@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     const result = await pool.query(
       `INSERT INTO item_brands 
        (company_id, code, code_prefix, name)
-       VALUES ($1, $2, $3, $4) RETURNING id`,
+       VALUES ($1, $2, $3, $4) RETURNING *`,
       [companyId, b.code, b.code_prefix, b.name],
     );
     return NextResponse.json(result.rows[0]);

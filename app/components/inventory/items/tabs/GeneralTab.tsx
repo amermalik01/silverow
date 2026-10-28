@@ -2,6 +2,7 @@
 
 "use client";
 
+import SelectWithAddModal from "@/app/components/common/SelectWithAddModal";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { ItemFormData, ItemLookupOption } from "@/types/inventory";
 
@@ -9,26 +10,34 @@ type Props = {
   item: ItemFormData;
   setItem: React.Dispatch<React.SetStateAction<ItemFormData>>;
   categories: ItemLookupOption[];
+  setCategories: React.Dispatch<React.SetStateAction<ItemLookupOption[]>>;
   brands: ItemLookupOption[];
+  setBrands: React.Dispatch<React.SetStateAction<ItemLookupOption[]>>;
   uoms: ItemLookupOption[];
+  setUoms: React.Dispatch<React.SetStateAction<ItemLookupOption[]>>;
   vatProductGroups?: ItemLookupOption[];
   autoCode: boolean;
   setAutoCode: (val: boolean) => void;
   errors: Record<string, string>;
   isReadonly?: boolean;
+  effectiveReadonly?: boolean;
 };
 
 export default function GeneralTab({
   item,
   setItem,
   categories,
+  setCategories,
   brands,
+  setBrands,
   uoms,
+  setUoms,
   vatProductGroups = [],
   autoCode,
   setAutoCode,
   errors,
   isReadonly = false,
+  effectiveReadonly = false,
 }: Props) {
   return (
     <div className="space-y-6">
@@ -96,7 +105,24 @@ export default function GeneralTab({
               Category
             </label>
             <div className="col-span-2">
-              <select
+              <SelectWithAddModal
+                disabled={effectiveReadonly}
+                value={item.category_id}
+                onChange={(val) =>
+                  setItem((prev) => ({ ...prev, category_id: val }))
+                }
+                items={categories}
+                placeholder="Select Category"
+                apiEndpoint="/api/setup/inventory/categories"
+                additionalFields={[
+                  { name: "code", label: "Category Code", type: "text" },
+                ]}
+                onItemAdded={(newCat) =>
+                  setCategories((prev) => [...prev, newCat])
+                }
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-sm"
+              />
+              {/* <select
                 disabled={isReadonly}
                 value={item.category_id}
                 onChange={(e) =>
@@ -110,7 +136,7 @@ export default function GeneralTab({
                     {cat.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
             </div>
           </div>
 
@@ -119,7 +145,7 @@ export default function GeneralTab({
               Brand
             </label>
             <div className="col-span-2">
-              <select
+              {/* <select
                 disabled={isReadonly}
                 value={item.brand_id}
                 onChange={(e) =>
@@ -133,7 +159,25 @@ export default function GeneralTab({
                     {brand.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
+
+              <SelectWithAddModal
+                disabled={effectiveReadonly}
+                value={item.brand_id}
+                onChange={(val) =>
+                  setItem((prev) => ({ ...prev, brand_id: val }))
+                }
+                items={brands}
+                placeholder="Select Brand"
+                apiEndpoint="/api/setup/inventory/brands"
+                additionalFields={[
+                  { name: "code", label: "Brand Code", type: "text" },
+                ]}
+                onItemAdded={(newBrand) =>
+                  setBrands((prev) => [...prev, newBrand])
+                }
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-sm"
+              />
             </div>
           </div>
 
@@ -170,7 +214,7 @@ export default function GeneralTab({
               Base Unit of Measure <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2">
-              <select
+              {/* <select
                 disabled={isReadonly}
                 value={item.base_uom_id}
                 onChange={(e) =>
@@ -184,7 +228,27 @@ export default function GeneralTab({
                     {uom.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
+
+              <SelectWithAddModal
+                disabled={effectiveReadonly}
+                value={item.base_uom_id}
+                onChange={(val) =>
+                  setItem((prev) => ({ ...prev, base_uom_id: val }))
+                }
+                items={uoms}
+                placeholder="Select UOM"
+                apiEndpoint="/api/setup/inventory/uoms"
+                additionalFields={[
+                  {
+                    name: "code",
+                    label: "UOM Code (e.g., PCS, KG)",
+                    type: "text",
+                  },
+                ]}
+                onItemAdded={(newUom) => setUoms((prev) => [...prev, newUom])}
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-sm"
+              />
               {errors["general.base_uom_id"] && (
                 <p className="text-red-500 text-[10px] mt-1">
                   {errors["general.base_uom_id"]}
@@ -192,23 +256,6 @@ export default function GeneralTab({
               )}
             </div>
           </div>
-
-          {/* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Barcode
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                disabled={isReadonly}
-                value={item.barcode}
-                onChange={(e) =>
-                  setItem((prev) => ({ ...prev, barcode: e.target.value }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
-              />
-            </div>
-          </div> */}
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -246,10 +293,6 @@ export default function GeneralTab({
               >
                 <option value={1}>Inventory</option>
                 <option value={2}>Service</option>
-                {/* <option value={3}>Non Inventory</option>
-                <option value={4}>Raw Material</option>
-                <option value={5}>Finished Goods</option>
-                <option value={6}>Asset</option> */}
               </select>
             </div>
           </div>
@@ -257,4 +300,29 @@ export default function GeneralTab({
       </div>
     </div>
   );
+}
+
+{
+  /* <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Barcode
+            </label>
+            <div className="col-span-2">
+              <input
+                type="text"
+                disabled={isReadonly}
+                value={item.barcode}
+                onChange={(e) =>
+                  setItem((prev) => ({ ...prev, barcode: e.target.value }))
+                }
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div> */
+}
+{
+  /* <option value={3}>Non Inventory</option>
+                <option value={4}>Raw Material</option>
+                <option value={5}>Finished Goods</option>
+                <option value={6}>Asset</option> */
 }
