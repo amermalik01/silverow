@@ -30,6 +30,7 @@ export interface ItemWarehouseStock {
 
 export interface ItemMovement {
   id: string;
+  doc_id: string;
   transaction_no: string;
   transaction_type: string;
   reference_type: string | null;
@@ -109,6 +110,7 @@ interface StockRow extends QueryResultRow {
 
 interface MovementRow extends QueryResultRow {
   id: string;
+  doc_id: string;
   transaction_no: string;
   transaction_type: string;
   reference_type: string | null;
@@ -360,6 +362,20 @@ const transactionsQuery = `
       st.transfer_no,
       '-'::text
     ) AS transaction_no,
+
+    COALESCE(
+      pi_from_po_pr.id::text,
+      po_from_pr.id::text,
+      jnl.id::text,
+      so_from_sd2.id::text,
+      so_from_sd2.id::text,
+      cn_from_sd1.id::text,
+      cn_from_sd1.id::text,
+      dn_from_sd.id::text,
+      dn_from_sd.id::text,
+      st.id::text,
+      '-'::text
+    ) AS doc_id,
 
     bl.transaction_type,
     bl.reference_type,
@@ -659,8 +675,8 @@ export class ItemActivityService {
         params,
       );
 
-      console.log("transactionsQuery === ", transactionsQuery);
-      console.log("params === ", params);
+      // console.log("transactionsQuery === ", transactionsQuery);
+      // console.log("params === ", params);
 
       const transactionResult = await client.query<MovementRow>(
         transactionsQuery,

@@ -10,6 +10,7 @@ import SalespersonLookupModal, {
   Employee,
 } from "@/app/components/shared/modals/SalespersonLookupModal";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+import SelectWithAddModal from "../../common/SelectWithAddModal";
 
 interface PostingGroupItem {
   id: string;
@@ -470,8 +471,6 @@ export default function GeneralTab({
         </div>
 
         <div className="space-y-2">
-          
-
           {/* {(account.is_customer || account.is_crm_lead) && (
             <div className="grid grid-cols-3 gap-2 items-center">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -534,8 +533,6 @@ export default function GeneralTab({
             </div>
           </div> */}
 
-          
-
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Location Type
@@ -586,7 +583,10 @@ export default function GeneralTab({
 
           {account.is_customer && (
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300" title="Used for editable settings in Orders">
+              <label
+                className="text-xs font-medium text-slate-700 dark:text-slate-300"
+                title="Used for editable settings in Orders"
+              >
                 Anonymous Customer
               </label>
 
@@ -633,7 +633,7 @@ export default function GeneralTab({
               Segment
             </label>
             <div className="col-span-2">
-              <select
+              {/* <select
                 disabled={isReadonly}
                 value={account.segment_id || ""}
                 onChange={(e) => updateField("segment_id", e.target.value)}
@@ -645,7 +645,21 @@ export default function GeneralTab({
                     {seg.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
+
+              <SelectWithAddModal
+                disabled={isReadonly}
+                value={account.segment_id || ""}
+                onChange={(val) => updateField("segment_id", val)}
+                items={segments}
+                placeholder="Select Segment..."
+                apiEndpoint={`/api/setup/sales/segments?module=${activeModule}`}
+                payloadExtra={{ module_type: activeModule }}
+                onItemAdded={(newItem) =>
+                  setSegments((prev) => [...prev, newItem])
+                }
+                className={getInputClass("general.segment_id")}
+              />
 
               {errors["general.segment_id"] && (
                 <p className="text-red-500 text-xs mt-0.5">
@@ -659,7 +673,20 @@ export default function GeneralTab({
               Territory
             </label>
             <div className="col-span-2">
-              <select
+              <SelectWithAddModal
+                disabled={isReadonly}
+                value={account.territory_id || ""}
+                onChange={(val) => updateField("territory_id", val)}
+                items={territories}
+                placeholder="Select Territory..."
+                apiEndpoint={`/api/setup/sales/territories?module=${activeModule}`}
+                payloadExtra={{ module_type: activeModule }}
+                onItemAdded={(newItem) =>
+                  setTerritories((prev) => [...prev, newItem])
+                }
+                className={getInputClass("general.territory_id")}
+              />
+              {/* <select
                 disabled={isReadonly}
                 value={account.territory_id || ""}
                 onChange={(e) => updateField("territory_id", e.target.value)}
@@ -671,7 +698,7 @@ export default function GeneralTab({
                     {t.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
             </div>
           </div>
 
@@ -682,7 +709,7 @@ export default function GeneralTab({
                   Ownership Type
                 </label>
                 <div className="col-span-2">
-                  <select
+                  {/* <select
                     disabled={isReadonly}
                     value={account.ownership_type_id || ""}
                     onChange={(e) =>
@@ -696,10 +723,22 @@ export default function GeneralTab({
                         {ot.name}
                       </option>
                     ))}
-                  </select>
+                  </select> */}
+
+                  <SelectWithAddModal
+                    disabled={isReadonly}
+                    value={account.ownership_type_id || ""}
+                    onChange={(val) => updateField("ownership_type_id", val)}
+                    items={ownershipType}
+                    placeholder="Select  Ownership Type..."
+                    apiEndpoint={`/api/setup/sales/ownership_type`}
+                    onItemAdded={(newItem) =>
+                      setOwnershipType((prev) => [...prev, newItem])
+                    }
+                    className={getInputClass("general.ownership_type_id")}
+                  />
                 </div>
               </div>
-
               {/* <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   No. Of Employee(s)
@@ -733,7 +772,6 @@ export default function GeneralTab({
                   </div>
                 </div>
               </div> */}
-
               {/* <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Company Reg. No.
@@ -765,7 +803,6 @@ export default function GeneralTab({
                   />
                 </div>
               </div> */}
-
               {/* <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Sales Status
@@ -859,8 +896,6 @@ export default function GeneralTab({
             </div>
           </div>
 
-          
-
           {/* <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               {account.is_crm_lead || account.is_customer
@@ -924,12 +959,6 @@ export default function GeneralTab({
               />
             </div>
           </div> */}
-
-          
-
-          
-
-          
         </div>
       </div>
 

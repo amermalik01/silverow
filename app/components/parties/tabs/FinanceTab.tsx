@@ -413,6 +413,21 @@ export default function FinanceTab({
                       </option>
                     ))}
                   </select>
+
+                  {/* 
+                  <SelectWithAddModal
+                    disabled={isReadonly}
+                    value={account.payment_term_id || ""}
+                    onChange={(val) => updateField("payment_term_id", val)}
+                    items={paymentTerms}
+                    placeholder="Select Payment Terms..."
+                    apiEndpoint={`/api/setup/sales/payment_terms?module=${activeModule}`}
+                    payloadExtra={{ module_type: activeModule }}
+                    additionalFields={[{ name: "days", label: "Days", type: "number" }]}
+                    onItemAdded={(newItem) => setPaymentTerms((prev) => [...prev, newItem])}
+                    className={getInputClass("general.payment_term_id")}
+                  />
+                  */}
                 </div>
               </div>
 

@@ -16,6 +16,9 @@ type ColumnDef = {
 };
 
 export type StockDetailRow = {
+  id: string;
+  doc_id?: string | null;
+  reference_id?: string | null;
   document_type?: string;
   date?: string;
   document_no?: string;
