@@ -103,12 +103,20 @@ export default function ItemActivityTab({ itemId }: Props) {
   }, [fetchActivity]);
 
   const filteredTransactions = data.transactions.filter((tx) => {
+
+    // console.log('searchQuery === ',searchQuery);
+    // console.log('tx === ',tx);
     const matchesSearch =
       !searchQuery.trim() ||
       tx.transaction_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tx.warehouse_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (tx.batch_no &&
-        tx.batch_no.toLowerCase().includes(searchQuery.toLowerCase()));
+        tx.batch_no.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (tx.serial_no &&
+        tx.serial_no.toLowerCase().includes(searchQuery.toLowerCase()));
+
+
+    // console.log('matchesSearch === ',matchesSearch);
 
     const matchesType =
       typeFilter === "ALL" || tx.transaction_type === typeFilter;
@@ -260,7 +268,7 @@ export default function ItemActivityTab({ itemId }: Props) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search reference, batch..."
+              placeholder="Search reference, batch,serial..."
               className="w-full sm:w-48 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded px-3 py-1.5 focus:outline-none"
             />
           </div>
@@ -277,7 +285,7 @@ export default function ItemActivityTab({ itemId }: Props) {
                 <th className="p-2.5">Location</th>
                 <th className="p-2.5">Batch / Serial</th>
                 <th className="p-2.5 text-right">Total Qty</th>
-                <th className="p-2.5 text-right">Reserved Qty</th>
+                <th className="p-2.5 text-right">Allocated Qty</th>
                 <th className="p-2.5 text-right">Available Qty</th>
                 <th className="p-2.5 text-right">Avg Cost</th>
                 <th className="p-2.5 text-center">Expiry Date</th>
@@ -348,6 +356,9 @@ export default function ItemActivityTab({ itemId }: Props) {
                 {/* <th className="p-2.5">Reference ID</th> */}
                 <th className="p-2.5">Transaction Type</th>
                 <th className="p-2.5">Warehouse</th>
+                {/* <th className="p-2.5">Location</th> */}
+                <th className="p-2.5">Batch</th>
+                <th className="p-2.5">Serial No.</th>
                 <th className="p-2.5 text-center">Direction</th>
                 <th className="p-2.5 text-right">Quantity</th>
                 <th className="p-2.5 text-right">Unit Cost</th>
@@ -386,6 +397,15 @@ export default function ItemActivityTab({ itemId }: Props) {
                       <td className="p-2.5 font-sans text-slate-700 dark:text-slate-300">
                         {tx.warehouse_name}
                       </td>
+                      {/* <td className="p-2.5 font-sans text-slate-700 dark:text-slate-300">
+                        {tx.location_title || "-"}
+                      </td> */}
+                      <td className="p-2.5 font-sans text-slate-700 dark:text-slate-300">
+                        {tx.batch_no || "-"}
+                      </td>
+                      <td className="p-2.5 font-sans text-slate-700 dark:text-slate-300">
+                        {tx.serial_no || "-"}
+                      </td>
                       <td className="p-2.5 text-center">
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -417,7 +437,7 @@ export default function ItemActivityTab({ itemId }: Props) {
       )}
 
       {/* 3. Allocations View */}
-      {activeSubView === "allocations" && (
+      {/* {activeSubView === "allocations" && (
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded">
           <table className="w-full text-left table-fixed text-xs border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
@@ -428,7 +448,7 @@ export default function ItemActivityTab({ itemId }: Props) {
                 <th className="p-2.5">Bin Code</th>
                 <th className="p-2.5 text-right">Allocated Qty</th>
                 <th className="p-2.5 text-right">Unit Cost</th>
-                {/* <th className="p-2.5 text-center">Status</th> */}
+    
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
@@ -461,25 +481,25 @@ export default function ItemActivityTab({ itemId }: Props) {
                     <td className="p-2.5 text-slate-600">
                       {alloc.bin_code || "-"}
                     </td>
-                    {/* <td className="p-2.5 text-slate-500 font-sans capitalize text-[10px]">{alloc.allocation_method || "FIFO"}</td> */}
+                    <td className="p-2.5 text-slate-500 font-sans capitalize text-[10px]">{alloc.allocation_method || "FIFO"}</td>
                     <td className="p-2.5 text-right font-bold text-amber-600">
                       {Number(alloc.allocated_quantity)}
                     </td>
                     <td className="p-2.5 text-right text-slate-500">
                       {Number(alloc.unit_cost || 0).toFixed(2)}
                     </td>
-                    {/* <td className="p-2.5 text-center">
+                    <td className="p-2.5 text-center">
                       <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                         {alloc.status || "ACTIVE"}
                       </span>
-                    </td> */}
+                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

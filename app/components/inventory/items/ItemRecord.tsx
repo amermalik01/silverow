@@ -187,7 +187,7 @@ export default function ItemRecord({
             name: itemData.name || "",
             description: itemData.description || "",
             item_type: itemData.item_type || 1,
-            status: itemData.status || 1,
+            status: itemData.status ?? 1,
             category_id: itemData.category_id || "",
             brand_id: itemData.brand_id || "",
             base_uom_id: itemData.base_uom_id || "",
@@ -413,7 +413,7 @@ export default function ItemRecord({
     { key: "purchase", label: "Purchase Information" },
     { key: "sales", label: "Sales Information" },
     { key: "price_offers", label: "Price Offers" },
-    { key: "margin", label: "Item Margin Analysis" },
+    // { key: "margin", label: "Item Margin Analysis" },
     { key: "warehouse", label: "Warehouse Location & Cost" },
     { key: "activities", label: "Activities" },
   ];
@@ -525,9 +525,9 @@ export default function ItemRecord({
             />
           )}
 
-          {activeTab === "margin" && (
+          {/* {activeTab === "margin" && (
             <MarginAnalysisTab itemId={id} isReadonly={effectiveReadonly} />
-          )}
+          )} */}
 
           {activeTab === "warehouse" && (
             <WarehouseTab
