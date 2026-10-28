@@ -27,23 +27,46 @@ type Props = {
   onRequestEdit?: () => void;
 };
 
+// async function parseJsonResponse<T>(res: Response): Promise<T> {
+//   const text = await res.text();
+
+//   try {
+//     return JSON.parse(text) as T;
+//   } catch {
+//     console.error("Invalid JSON response from API:", {
+//       url: res.url,
+//       status: res.status,
+//       contentType: res.headers.get("content-type"),
+//       responseBody: text.slice(0, 500),
+//     });
+
+//     throw new Error(
+//       `The server returned an invalid JSON response (HTTP ${res.status}). Check the browser Network tab and server logs.`,
+//     );
+//   }
+// }
+
 async function parseJsonResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
 
+  let data: T;
+
   try {
-    return JSON.parse(text) as T;
+    data = JSON.parse(text) as T;
   } catch {
-    console.error("Invalid JSON response from API:", {
+    console.error("Non-JSON API response:", {
       url: res.url,
       status: res.status,
       contentType: res.headers.get("content-type"),
-      responseBody: text.slice(0, 500),
+      responseBody: text.slice(0, 1000),
     });
 
     throw new Error(
-      `The server returned an invalid JSON response (HTTP ${res.status}). Check the browser Network tab and server logs.`,
+      `Notes API returned a non-JSON response (HTTP ${res.status}). Check Vercel logs.`,
     );
   }
+
+  return data;
 }
 
 export default function NotesTab({

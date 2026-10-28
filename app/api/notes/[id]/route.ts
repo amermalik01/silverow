@@ -4,11 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 
 type Context = {
   params: Promise<{ id: string }>;
 };
+
 
 function validateNote(subject: unknown, description: unknown) {
   if (typeof subject !== "string" || !subject.trim()) {
@@ -23,8 +24,8 @@ function validateNote(subject: unknown, description: unknown) {
     return "Description is required.";
   }
 
-  const cleanHtml = DOMPurify.sanitize(description, {
-    ALLOWED_TAGS: [
+  const cleanHtml = sanitizeHtml(description, {
+    allowedTags: [
       "p",
       "br",
       "strong",
@@ -37,18 +38,18 @@ function validateNote(subject: unknown, description: unknown) {
       "a",
       "blockquote",
     ],
-    ALLOWED_ATTR: ["href", "target", "rel"],
-    ALLOW_DATA_ATTR: false,
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
   });
 
-  const plainText = cleanHtml
-    .replace(/<[^>]*>/g, "")
+  // Convert sanitized HTML to plain text for validation.
+  const plainText = sanitizeHtml(cleanHtml, {
+    allowedTags: [],
+    allowedAttributes: {},
+  })
     .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
     .trim();
 
   if (!plainText) {
@@ -63,6 +64,35 @@ function validateNote(subject: unknown, description: unknown) {
     subject: subject.trim(),
     description: cleanHtml,
   };
+}
+
+
+function logNotesError(operation: string, err: unknown) {
+  if (err && typeof err === "object") {
+    const error = err as {
+      message?: string;
+      code?: string;
+      detail?: string;
+      constraint?: string;
+      table?: string;
+      column?: string;
+      stack?: string;
+    };
+
+    console.error(`[Notes API] ${operation} failed`, {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint,
+      table: error.table,
+      column: error.column,
+      stack: error.stack,
+    });
+
+    return;
+  }
+
+  console.error(`[Notes API] ${operation} failed`, err);
 }
 
 export async function PUT(req: NextRequest, { params }: Context) {
@@ -127,6 +157,8 @@ export async function PUT(req: NextRequest, { params }: Context) {
     return NextResponse.json({ data: result.rows[0] });
   } catch (err) {
     console.error("PUT Note Error:", err);
+
+    logNotesError("GET", err);
 
     return NextResponse.json(
       { error: "Failed to update note." },

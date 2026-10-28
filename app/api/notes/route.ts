@@ -6,6 +6,36 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import sanitizeHtml from "sanitize-html";
 
+
+function logNotesError(operation: string, err: unknown) {
+  if (err && typeof err === "object") {
+    const error = err as {
+      message?: string;
+      code?: string;
+      detail?: string;
+      constraint?: string;
+      table?: string;
+      column?: string;
+      stack?: string;
+    };
+
+    console.error(`[Notes API] ${operation} failed`, {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint,
+      table: error.table,
+      column: error.column,
+      stack: error.stack,
+    });
+
+    return;
+  }
+
+  console.error(`[Notes API] ${operation} failed`, err);
+}
+
+
 function validateNote(subject: unknown, description: unknown) {
   if (typeof subject !== "string" || !subject.trim()) {
     return "Subject is required.";
@@ -100,6 +130,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ data: result.rows });
   } catch (err) {
     console.error("GET Notes Error:", err);
+    logNotesError("GET", err);
 
     return NextResponse.json(
       { error: "Failed to fetch notes." },
@@ -160,6 +191,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ data: result.rows[0] }, { status: 201 });
   } catch (err) {
     console.error("POST Note Error:", err);
+
+    logNotesError("GET", err);
 
     return NextResponse.json(
       { error: "Failed to create note." },
