@@ -4,6 +4,8 @@
 
 import type { RebateDraft } from "@/types/rebate";
 import { inputClass, labelClass } from "./styles";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parse, parseISO, isValid } from "date-fns";
 
 interface Props {
   value: RebateDraft;
@@ -12,12 +14,32 @@ interface Props {
   errors?: Record<string, string>;
 }
 
+function parseStoredDate(value?: string): Date | undefined {
+  if (!value) return undefined;
+
+  let date: Date;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    date = parseISO(value);
+  } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    date = parse(value, "dd/MM/yyyy", new Date());
+  } else {
+    date = parseISO(value);
+  }
+
+  return isValid(date) ? date : undefined;
+}
+
 export default function RebateHeader({
   value,
   onChange,
   readonly = false,
   errors = {},
 }: Props) {
+  const currentYear = new Date().getFullYear();
+  const defaultStartDate = `${currentYear}-01-01`;
+  const defaultEndDate = `${currentYear}-12-31`;
+
   return (
     <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 pt-2">
       <div className="space-y-3">
@@ -125,26 +147,41 @@ export default function RebateHeader({
           <label className={labelClass}>
             Start Date <span className="text-red-500">*</span>
           </label>
-          <input
-            className={`${inputClass} col-span-2`}
-            type="date"
-            disabled={readonly}
-            value={value.start_date}
-            onChange={(e) => onChange({ start_date: e.target.value })}
-          />
+          <div className="col-span-2">
+            <DatePicker
+              value={parseStoredDate(value.start_date || defaultStartDate)}
+              containerClassName="col-span-8"
+              disabled={readonly}
+              maxDate={parseStoredDate(value.end_date)}
+              onChange={(date: Date | undefined) => {
+                if (date && isValid(date)) {
+                  onChange({
+                    start_date: date ? format(date, "yyyy-MM-dd") : "",
+                  });
+                }
+              }}
+              className={`${inputClass} `}
+            />
+          </div>
         </div>
         <div className="grid grid-cols-3 items-center gap-3">
           <label className={labelClass}>
             End Date <span className="text-red-500">*</span>
           </label>
           <div className="col-span-2">
-            <input
-              className={inputClass}
-              type="date"
+            <DatePicker
+              value={parseStoredDate(value.end_date || defaultStartDate)}
+              containerClassName="col-span-8"
               disabled={readonly}
-              min={value.start_date}
-              value={value.end_date}
-              onChange={(e) => onChange({ end_date: e.target.value })}
+              minDate={parseStoredDate(value.start_date)}
+              onChange={(date: Date | undefined) => {
+                if (date && isValid(date)) {
+                  onChange({
+                    end_date: date ? format(date, "yyyy-MM-dd") : "",
+                  });
+                }
+              }}
+              className={inputClass}
             />
             {errors.end_date && (
               <p className="text-xs text-red-500">{errors.end_date}</p>

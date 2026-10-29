@@ -14,7 +14,7 @@ export default function RebateCategorySelector({
   value,
   onChange,
   readonly = false,
-  lookupUrl = "/api/lookups/item-categories",
+  lookupUrl = "/api/setup/inventory/categories",
 }: Props) {
   const [options, setOptions] = useState<RebateLookupOption[]>([]);
   const [query, setQuery] = useState("");

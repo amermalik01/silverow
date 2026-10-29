@@ -2,6 +2,8 @@
 
 "use client";
 
+import { format } from "date-fns";
+
 import type { RebateDraft } from "@/types/rebate";
 
 interface Props {
@@ -64,11 +66,11 @@ export default function RebateList({
                 <td className="px-3 py-2 font-medium">{r.name}</td>
                 <td className="px-3 py-2">{r.scope}</td>
                 <td className="px-3 py-2">
-                  {r.rebate_value}
+                  {Number(r.rebate_value)?.toFixed(2)}
                   {r.price_type === "PERCENTAGE" ? "%" : ""}
                 </td>
                 <td className="px-3 py-2">
-                  {r.start_date} — {r.end_date}
+                  {format(r.start_date, "dd/MM/yyyy")} — {format(r.end_date, "dd/MM/yyyy")}
                 </td>
                 <td className="px-3 py-2">{r.status || "DRAFT"}</td>
               </tr>
