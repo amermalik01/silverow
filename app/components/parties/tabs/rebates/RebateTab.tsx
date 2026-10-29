@@ -152,7 +152,7 @@ export default function RebateTab({
   const current = editing ? draft : selected;
 
   return (
-    <div className="space-y-4 text-slate-800 dark:text-slate-100">
+    <div className="space-y-4">
       <RebateList
         rows={rows}
         selectedId={selected?.id}

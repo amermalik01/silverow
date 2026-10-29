@@ -19,7 +19,7 @@ export default function RebateHeader({
   errors = {},
 }: Props) {
   return (
-    <div className="grid grid-cols-1 gap-x-10 gap-y-3 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 pt-2">
       <div className="space-y-3">
         <div className="grid grid-cols-3 items-center gap-3">
           <label className={labelClass}>

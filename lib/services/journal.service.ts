@@ -1,4 +1,5 @@
 // lib/services/journal.service.ts
+
 import { PoolClient } from "pg";
 
 import { pool } from "@/lib/db";
