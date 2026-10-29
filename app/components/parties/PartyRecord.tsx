@@ -36,6 +36,7 @@ import type {
 } from "@/types/erp";
 import Breadcrumbs from "../layout/shared/breadcrumb/BreadcrumbComp";
 import { priceListsSchema } from "@/lib/validations/price-list.schema";
+import RebateTab from "./tabs/rebates/RebateTab";
 
 type Props = {
   id: string;
@@ -299,7 +300,11 @@ export default function PartyRecord({
     account.is_crm_lead ||
     account.is_customer;
 
-  tabs.push("price_list", "activities", "notes", "attachments");
+  tabs.push("price_list", "rebates", "activities", "notes", "attachments");
+
+  // if (isFinanceEligible) {
+  //   tabs.push("rebates");
+  // }
 
   const redirectPath =
     module == "srm"
@@ -460,6 +465,15 @@ export default function PartyRecord({
               onRequestEdit={
                 isReadonlyProp ? undefined : () => setIsEditing(true)
               }
+            />
+          )}
+
+          {activeTab === "rebates" && (
+            <RebateTab
+              partyId={id}
+              rebateType={module === "supplier" ? "PURCHASE" : "SALES"}
+              baseCurrencyId={account.currency_id || ""}
+              isReadonly={isReadonlyProp}
             />
           )}
 
