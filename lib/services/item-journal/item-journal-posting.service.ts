@@ -71,7 +71,6 @@ interface ItemJournalAllocationDbRow {
   created_at: string;
 }
 
-
 type ItemJournalAllocationInput = NonNullable<
   ItemJournalLineInput["allocations"]
 >[number];
@@ -200,7 +199,11 @@ export class ItemJournalPostingService {
             ia.prod_date,
             ia.expiry_date,
             ia.batch_no,
-            ia.bin_code AS serial_no,
+            -- ia.bin_code AS serial_no,
+            COALESCE(
+              NULLIF(BTRIM(ia.serial_no), ''),
+              NULLIF(BTRIM(ia.bin_code), '')
+            ) AS serial_no,
             ia.status,
             ia.created_at
           FROM inventory_allocations ia
@@ -267,6 +270,11 @@ export class ItemJournalPostingService {
             const locationId =
               allocation.location_id || line.location_id || null;
 
+            const trackingCode =
+              allocation.serial_no?.trim() ||
+              allocation.bin_code?.trim() ||
+              null;
+
             const stockLine = {
               item_id: line.item_id,
               warehouse_id: line.warehouse_id,
@@ -274,8 +282,9 @@ export class ItemJournalPostingService {
               location_id: locationId,
 
               batch_no: allocation.batch_no || null,
-              bin_code: allocation.bin_code,
-              serial_no: allocation.serial_no || null,
+              bin_code: trackingCode,
+              serial_no: trackingCode,
+              
               expiry_date: allocation.expiry_date || null,
 
               quantity: allocationQty,

@@ -724,6 +724,8 @@ export class PurchaseInvoiceService {
           AND pol.company_id = $2
           AND ia.company_id = $2
           AND ia.status = 'ACTIVE'
+          AND ia.source_allocation_id IS NULL
+          AND ia.sales_order_line_id IS NULL
 
         ORDER BY ia.created_at ASC, ia.id ASC
       `,

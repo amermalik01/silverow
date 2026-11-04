@@ -377,7 +377,8 @@ export class PurchaseOrderService {
       FROM inventory_allocations ia
       LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
       INNER JOIN purchase_order_lines pol ON ia.purchase_order_line_id = pol.id
-      WHERE pol.purchase_order_id = $1 AND ia.company_id = $2 AND ia.status = 'ACTIVE'
+      WHERE pol.purchase_order_id = $1 AND ia.company_id = $2 AND ia.status = 'ACTIVE' AND ia.source_allocation_id IS NULL
+      AND ia.sales_order_line_id IS NULL ORDER BY ia.created_at, ia.id;
       `,
       [id, companyId],
     );
