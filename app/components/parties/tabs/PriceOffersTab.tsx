@@ -288,7 +288,7 @@ export default function PriceOffersTab({
           <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
             Customer Price Offers (Sales)
           </h3>
-          {!isReadonly && (
+          {/* {!isReadonly && ( */}
             <Button
               type="button"
               onClick={() => setIsCustomerModalOpen(true)}
@@ -296,7 +296,7 @@ export default function PriceOffersTab({
             >
               Add Customer Offer
             </Button>
-          )}
+          {/* )} */}
         </div>
 
         <div className="rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
@@ -492,7 +492,7 @@ export default function PriceOffersTab({
           <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
             Supplier Price Offers (Purchase)
           </h3>
-          {!isReadonly && (
+          {/* {!isReadonly && ( */}
             <Button
               type="button"
               onClick={() => setIsSupplierModalOpen(true)}
@@ -500,7 +500,7 @@ export default function PriceOffersTab({
             >
               Add Supplier Offer
             </Button>
-          )}
+          {/* )} */}
         </div>
 
         <div className="rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">

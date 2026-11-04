@@ -1,6 +1,196 @@
 // app/api/purchase-invoices/[id]/posted-entries/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import type { QueryResultRow } from "pg";
+import { pool } from "@/lib/db";
+import { getCompanyId } from "@/lib/auth/getCompanyId";
+
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
+interface PurchaseOrderRow extends QueryResultRow {
+  id: string;
+}
+
+interface ReceiptRow extends QueryResultRow {
+  id: string;
+}
+
+interface PostedEntryRow extends QueryResultRow {
+  entry_no: string | number | null;
+  posting_date: string | null;
+  document_type: string | null;
+  document_number: string | null;
+  gl_no: string | null;
+  name: string | null;
+  source_no: string;
+  debit_lcy: string | number | null;
+  debit_fcy: string | number | null;
+  credit_lcy: string | number | null;
+  credit_fcy: string | number | null;
+  net_amount_lcy: string | number | null;
+  net_amount_fcy: string | number | null;
+  user_id: string;
+  created_at: Date | string | null;
+}
+
+export async function POST(_req: NextRequest, { params }: RouteContext) {
+  try {
+    const companyId = await getCompanyId();
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const { id: invoiceId } = await params;
+    const client = await pool.connect();
+
+    try {
+      // The purchase invoice is stored on the purchase order itself.
+      const orderResult = await client.query<PurchaseOrderRow>(
+        `
+        SELECT po.id
+        FROM purchase_orders po
+        WHERE po.id = $1
+          AND po.company_id = $2
+          AND po.invoice_status = 'INVOICED'
+        LIMIT 1
+        `,
+        [invoiceId, companyId],
+      );
+
+      if (orderResult.rows.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Purchase invoice not found." },
+          { status: 404 },
+        );
+      }
+
+      // Include the PO/invoice ID and all related goods receipt IDs.
+      const targetSourceIds: string[] = [orderResult.rows[0].id];
+
+      const receiptsResult = await client.query<ReceiptRow>(
+        `
+        SELECT pr.id
+        FROM purchase_receipts pr
+        WHERE pr.purchase_order_id = $1
+          AND pr.company_id = $2
+        `,
+        [invoiceId, companyId],
+      );
+
+      for (const receipt of receiptsResult.rows) {
+        targetSourceIds.push(receipt.id);
+      }
+
+      const query = `
+        SELECT
+          gle.transaction_id AS entry_no,
+          gle.posting_date::text AS posting_date,
+
+          CASE
+            WHEN gle.source_type::text = 'PURCHASE_RECEIPT'
+              THEN 'Purchase Receipt'
+            WHEN gle.source_type::text = 'PURCHASE_INVOICE'
+              THEN 'Purchase Invoice'
+            WHEN gle.source_type::text = 'FX_VARIANCE'
+              THEN 'Realized FX Variance'
+            ELSE gle.source_type::text
+          END AS document_type,
+
+          COALESCE(
+            gle.document_no,
+            gle.source_document_no,
+            gle.entry_no
+          ) AS document_number,
+
+          coa.code AS gl_no,
+          coa.name AS name,
+
+          COALESCE(
+            p.supplier_code,
+            gle.reference,
+            ''
+          ) AS source_no,
+
+          gle.debit AS debit_lcy,
+          gle.debit_fcy,
+          gle.credit AS credit_lcy,
+          gle.credit_fcy,
+          gle.net_amount AS net_amount_lcy,
+          gle.net_amount_fcy,
+
+          COALESCE(u.name, 'System') AS user_id,
+          gle.posted_at AS created_at
+
+        FROM gl_ledger_entries gle
+
+        INNER JOIN chart_of_accounts coa
+          ON coa.id = gle.account_id
+
+        LEFT JOIN parties p
+          ON p.id = gle.party_id
+         AND p.company_id = gle.company_id
+
+        LEFT JOIN users u
+          ON u.id = gle.posted_by
+
+        WHERE gle.company_id = $2
+          AND (
+            gle.source_document_id = ANY($1::uuid[])
+            OR gle.source_journal_id = ANY($1::uuid[])
+          )
+
+        ORDER BY
+          gle.transaction_id ASC,
+          gle.posting_date ASC,
+          gle.posted_at ASC
+      `;
+
+      const result = await client.query<PostedEntryRow>(query, [
+        targetSourceIds,
+        companyId,
+      ]);
+
+      const latestEntry = result.rows[result.rows.length - 1];
+
+      const postedAt = latestEntry?.created_at
+        ? new Date(latestEntry.created_at)
+            .toISOString()
+            .slice(0, 10)
+            .split("-")
+            .reverse()
+            .join("/")
+        : "";
+
+      return NextResponse.json({
+        success: true,
+        data: result.rows,
+        posted_by: latestEntry?.user_id || "System",
+        posted_at: postedAt,
+      });
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error("[GET_PURCHASE_INVOICE_POSTED_ENTRIES_ERROR]:", err);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to fetch ledger entries.",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+/* 
+import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 
@@ -117,4 +307,4 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       { status: 500 },
     );
   }
-}
+} */
