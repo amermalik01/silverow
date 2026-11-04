@@ -103,7 +103,6 @@ export default function ItemActivityTab({ itemId }: Props) {
   }, [fetchActivity]);
 
   const filteredTransactions = data.transactions.filter((tx) => {
-
     // console.log('searchQuery === ',searchQuery);
     // console.log('tx === ',tx);
     const matchesSearch =
@@ -114,7 +113,6 @@ export default function ItemActivityTab({ itemId }: Props) {
         tx.batch_no.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (tx.serial_no &&
         tx.serial_no.toLowerCase().includes(searchQuery.toLowerCase()));
-
 
     // console.log('matchesSearch === ',matchesSearch);
 
@@ -157,58 +155,6 @@ export default function ItemActivityTab({ itemId }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* KPI Cards */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500 capitalize tracking-wider">
-              Total Stock
-            </span>
-            <Icon icon="tabler:packages" className="w-5 h-5 text-slate-400" />
-          </div>
-          <div className="text-xl font-bold font-mono text-slate-800 dark:text-slate-100 mt-1">
-            {Number(data.summary.totalPhysical).toLocaleString(undefined, {
-              minimumFractionDigits: 0,
-            })}
-          </div>
-        </div>
-
-        <div className="p-3.5 bg-amber-50/50 dark:bg-amber-950/20 rounded border border-amber-200/50 dark:border-amber-900/30">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 capitalize tracking-wider">
-              Allocated Stock
-            </span>
-            <Icon
-              icon="tabler:lock-check"
-              className="w-5 h-5 text-amber-500 dark:text-amber-400"
-            />
-          </div>
-          <div className="text-xl font-bold font-mono text-amber-800 dark:text-amber-300 mt-1">
-            {Number(data.summary.totalReserved).toLocaleString(undefined, {
-              minimumFractionDigits: 0,
-            })}
-          </div>
-        </div>
-
-        <div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded border border-emerald-200/50 dark:border-emerald-900/30">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 capitalize tracking-wider">
-              Available Stock
-            </span>
-            <Icon
-              icon="tabler:circle-check"
-              className="w-5 h-5 text-emerald-500 dark:text-emerald-400"
-            />
-          </div>
-          <div className="text-xl font-bold font-mono text-emerald-800 dark:text-emerald-300 mt-1">
-            {Number(data.summary.totalAvailable).toLocaleString(undefined, {
-              minimumFractionDigits: 0,
-            })}
-          </div>
-        </div>
-      </div> */}
-
-      {/* Sub-navigation Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
         <div className="flex items-center gap-1 bg-[#eef3ec] dark:bg-slate-800 p-1 rounded-xl text-xs w-fit border border-[#d5e2d2] dark:border-slate-700">
           <button
@@ -233,17 +179,6 @@ export default function ItemActivityTab({ itemId }: Props) {
           >
             Movement Transactions
           </button>
-          {/* <button
-            type="button"
-            onClick={() => setActiveSubView("allocations")}
-            className={`px-4 py-2 rounded-lg transition-all duration-200 capitalize ${
-              activeSubView === "allocations"
-                ? "bg-[#d5e2d2] text-[#36543b] dark:bg-[#45634a] dark:text-white font-semibold shadow-sm"
-                : "text-[#6b806c] hover:bg-[#e1eadf] hover:text-[#36543b] dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
-            }`}
-          >
-            Allocations
-          </button> */}
         </div>
 
         {activeSubView === "transactions" && (
@@ -388,9 +323,6 @@ export default function ItemActivityTab({ itemId }: Props) {
                           ? format(new Date(tx.posting_date), "dd/MM/yyyy")
                           : "—"}
                       </td>
-                      {/* <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200 truncate" title={tx.reference_id}>
-                        {tx.reference_id || tx.id.slice(0, 8)}
-                      </td> */}
                       <td className="p-2.5 font-sans">
                         {getTransactionBadge(tx.transaction_type)}
                       </td>
@@ -435,71 +367,90 @@ export default function ItemActivityTab({ itemId }: Props) {
           </table>
         </div>
       )}
-
-      {/* 3. Allocations View */}
-      {/* {activeSubView === "allocations" && (
-        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded">
-          <table className="w-full text-left table-fixed text-xs border-collapse">
-            <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
-              <tr>
-                <th className="p-2.5">Created Date</th>
-                <th className="p-2.5">Warehouse</th>
-                <th className="p-2.5">Batch No.</th>
-                <th className="p-2.5">Bin Code</th>
-                <th className="p-2.5 text-right">Allocated Qty</th>
-                <th className="p-2.5 text-right">Unit Cost</th>
-    
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
-              {data.allocations.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="p-4 text-center text-slate-400 font-sans"
-                  >
-                    No active allocations found.
-                  </td>
-                </tr>
-              ) : (
-                data.allocations.map((alloc) => (
-                  <tr
-                    key={alloc.id}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
-                  >
-                    <td className="p-2.5 font-sans text-slate-600">
-                      {alloc.created_at
-                        ? format(new Date(alloc.created_at), "dd/MM/yyyy")
-                        : "—"}
-                    </td>
-                    <td className="p-2.5 font-sans text-slate-800 dark:text-slate-200">
-                      {alloc.warehouse_name}
-                    </td>
-                    <td className="p-2.5 text-slate-600">
-                      {alloc.batch_no || "-"}
-                    </td>
-                    <td className="p-2.5 text-slate-600">
-                      {alloc.bin_code || "-"}
-                    </td>
-                    <td className="p-2.5 text-slate-500 font-sans capitalize text-[10px]">{alloc.allocation_method || "FIFO"}</td>
-                    <td className="p-2.5 text-right font-bold text-amber-600">
-                      {Number(alloc.allocated_quantity)}
-                    </td>
-                    <td className="p-2.5 text-right text-slate-500">
-                      {Number(alloc.unit_cost || 0).toFixed(2)}
-                    </td>
-                    <td className="p-2.5 text-center">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                        {alloc.status || "ACTIVE"}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )} */}
     </div>
   );
 }
+
+{
+  /* <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200 truncate" title={tx.reference_id}>
+      {tx.reference_id || tx.id.slice(0, 8)}
+    </td> */
+}
+/* <button
+            type="button"
+            onClick={() => setActiveSubView("allocations")}
+            className={`px-4 py-2 rounded-lg transition-all duration-200 capitalize ${
+              activeSubView === "allocations"
+                ? "bg-[#d5e2d2] text-[#36543b] dark:bg-[#45634a] dark:text-white font-semibold shadow-sm"
+                : "text-[#6b806c] hover:bg-[#e1eadf] hover:text-[#36543b] dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+            }`}
+          >
+            Allocations
+          </button> */
+
+/* 3. Allocations View */
+
+/* 
+  {activeSubView === "allocations" && (
+    <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded">
+      <table className="w-full text-left table-fixed text-xs border-collapse">
+        <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+          <tr>
+            <th className="p-2.5">Created Date</th>
+            <th className="p-2.5">Warehouse</th>
+            <th className="p-2.5">Batch No.</th>
+            <th className="p-2.5">Bin Code</th>
+            <th className="p-2.5 text-right">Allocated Qty</th>
+            <th className="p-2.5 text-right">Unit Cost</th>
+
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
+          {data.allocations.length === 0 ? (
+            <tr>
+              <td
+                colSpan={7}
+                className="p-4 text-center text-slate-400 font-sans"
+              >
+                No active allocations found.
+              </td>
+            </tr>
+          ) : (
+            data.allocations.map((alloc) => (
+              <tr
+                key={alloc.id}
+                className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
+              >
+                <td className="p-2.5 font-sans text-slate-600">
+                  {alloc.created_at
+                    ? format(new Date(alloc.created_at), "dd/MM/yyyy")
+                    : "—"}
+                </td>
+                <td className="p-2.5 font-sans text-slate-800 dark:text-slate-200">
+                  {alloc.warehouse_name}
+                </td>
+                <td className="p-2.5 text-slate-600">
+                  {alloc.batch_no || "-"}
+                </td>
+                <td className="p-2.5 text-slate-600">
+                  {alloc.bin_code || "-"}
+                </td>
+                <td className="p-2.5 text-slate-500 font-sans capitalize text-[10px]">{alloc.allocation_method || "FIFO"}</td>
+                <td className="p-2.5 text-right font-bold text-amber-600">
+                  {Number(alloc.allocated_quantity)}
+                </td>
+                <td className="p-2.5 text-right text-slate-500">
+                  {Number(alloc.unit_cost || 0).toFixed(2)}
+                </td>
+                <td className="p-2.5 text-center">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {alloc.status || "ACTIVE"}
+                  </span>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  )} */

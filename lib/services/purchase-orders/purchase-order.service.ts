@@ -3,15 +3,90 @@
 import { PoolClient } from "pg";
 import { pool } from "@/lib/db";
 import { FetchParams, FetchResponse } from "@/types/table";
-import { getCompanyId } from "@/lib/auth/getCompanyId";
+// import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { PurchaseOrderPayloadSchema } from "@/lib/validations/purchase-order.schema";
 import {
   PurchaseOrder,
   PurchaseOrderAddress,
   PurchaseOrderLine,
   PurchaseOrderPayload,
+  PO_StockAllocationRecord,
 } from "@/types/purchase-order";
-import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
+
+type POAllocationInput = PO_StockAllocationRecord & {
+  tracking_code?: string | null;
+  serial_no?: string | null;
+  bin_code?: string | null;
+};
+
+type PurchaseOrderLineInput = PurchaseOrderPayload["lines"][number] & {
+  id?: string;
+  allocations?: POAllocationInput[];
+  initialAllocations?: POAllocationInput[];
+};
+
+type ExistingPurchaseOrderLine = {
+  id: string;
+  company_id: string;
+  purchase_order_id: string;
+  line_type: string;
+  item_id: string | null;
+  gl_account_id: string | null;
+  description: string | null;
+  warehouse_id: string | null;
+  uom_id: string | null;
+  quantity: string | number;
+  received_quantity: string | number | null;
+  cancelled_quantity: string | number | null;
+  invoiced_quantity: string | number | null;
+  unit_cost: string | number;
+  discount_type: string | null;
+  discount_value: string | number | null;
+  discount_amount: string | number | null;
+  vat_percent: string | number | null;
+  vat_amount: string | number | null;
+  net_amount: string | number;
+  gross_amount: string | number;
+  line_no: number;
+  is_deleted: boolean;
+};
+
+type ExistingAllocation = {
+  id: string;
+  status: string;
+  allocated_quantity: string | number;
+  unit_cost: string | number | null;
+  total_cost: string | number | null;
+  inbound_entry_id: string | null;
+  outbound_entry_id: string | null;
+  purchase_invoice_line_id: string | null;
+  sales_order_line_id: string | null;
+  debit_note_line_id: string | null;
+  credit_note_line_id: string | null;
+  journal_line_id: string | null;
+  source_allocation_id: string | null;
+};
+
+const normalizeNullableText = (value: unknown): string | null => {
+  if (value === null || value === undefined || value === "") return null;
+  return String(value);
+};
+
+const sameNullableText = (left: unknown, right: unknown): boolean =>
+  normalizeNullableText(left) === normalizeNullableText(right);
+
+const sameNumber = (left: unknown, right: unknown): boolean =>
+  Number(left ?? 0) === Number(right ?? 0);
+
+const getTrackingCode = (allocation: POAllocationInput): string | null => {
+  const value =
+    allocation.tracking_code?.trim() ||
+    allocation.serial_no?.trim() ||
+    allocation.bin_code?.trim() ||
+    "";
+
+  return value || null;
+};
 
 export class PurchaseOrderService {
   static async list(companyId: string): Promise<PurchaseOrder[]> {
@@ -295,13 +370,14 @@ export class PurchaseOrderService {
           ia.allocated_quantity AS quantity,
           ia.batch_no,
           ia.bin_code,
+          ia.serial_no,
           TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
           TO_CHAR(ia.date_received,'YYYY-MM-DD') AS date_received,
           TO_CHAR(ia.prod_date,'YYYY-MM-DD') AS prod_date
       FROM inventory_allocations ia
       LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
       INNER JOIN purchase_order_lines pol ON ia.purchase_order_line_id = pol.id
-      WHERE pol.purchase_order_id = $1 AND ia.company_id = $2
+      WHERE pol.purchase_order_id = $1 AND ia.company_id = $2 AND ia.status = 'ACTIVE'
       `,
       [id, companyId],
     );
@@ -315,7 +391,8 @@ export class PurchaseOrderService {
           prod_date: alloc.prod_date || "", // Set to blank string since it is not saved on this table
           expiry_date: alloc.expiry_date || "",
           batch_no: alloc.batch_no || "",
-          serial_no: alloc.bin_code || "",
+          serial_no: alloc.serial_no || "",
+          bin_code: alloc.bin_code || "",
 
           location_id: alloc.location_id || "",
           location_name: alloc.location_name || "",
@@ -556,13 +633,30 @@ export class PurchaseOrderService {
         ) as PurchaseOrderLine;
 
         // This will now compile cleanly without matching type errors
-        await this.insertLine(
+        const purchaseOrderLineId = await this.insertLine(
           client,
           companyId,
           createdOrder.id,
           sanitizedLine,
           lineNo,
         );
+
+        if (line.line_type === "ITEM" && line.item_id) {
+          const allocations = line.allocations ?? line.initialAllocations;
+
+          if (allocations !== undefined) {
+            await this.saveLineAllocations(
+              client,
+              companyId,
+              createdOrder.id,
+              purchaseOrderLineId,
+              line.item_id,
+              line.warehouse_id || null,
+              allocations,
+            );
+          }
+        }
+
         lineNo += 10000;
       }
 
@@ -610,6 +704,1382 @@ export class PurchaseOrderService {
   ): Promise<
     { id: string; item_id: string; warehouse_id: string; line_no: number }[]
   > {
+    const payload = PurchaseOrderPayloadSchema.parse(
+      rawPayload,
+    ) as PurchaseOrderPayload;
+
+    const order = payload.order;
+    const incomingLines = payload.lines as PurchaseOrderLineInput[];
+
+    // 1. Lock and validate the PO header.
+    const existingOrderResult = await client.query<{
+      id: string;
+      status: string;
+      is_posted: boolean;
+    }>(
+      `
+      SELECT id, status, is_posted
+      FROM purchase_orders
+      WHERE id = $1
+        AND company_id = $2
+      FOR UPDATE
+    `,
+      [id, companyId],
+    );
+
+    const existingOrder = existingOrderResult.rows[0];
+
+    if (!existingOrder) {
+      throw new Error("Purchase order not found");
+    }
+
+    if (existingOrder.is_posted === true || existingOrder.status === "posted") {
+      throw new Error("Posted purchase order cannot be modified");
+    }
+
+    // 2. Validate the supplier belongs to this company.
+    const supplierResult = await client.query(
+      `
+      SELECT id
+      FROM parties
+      WHERE id = $1
+        AND company_id = $2
+    `,
+      [order.supplier_id, companyId],
+    );
+
+    if (!supplierResult.rows.length) {
+      throw new Error("Supplier not found");
+    }
+
+    // 3. Lock every active PO line.
+    const existingLinesResult = await client.query<ExistingPurchaseOrderLine>(
+      `
+        SELECT
+          id,
+          company_id,
+          purchase_order_id,
+          line_type,
+          item_id,
+          gl_account_id,
+          description,
+          warehouse_id,
+          uom_id,
+          quantity,
+          received_quantity,
+          cancelled_quantity,
+          invoiced_quantity,
+          unit_cost,
+          discount_type,
+          discount_value,
+          discount_amount,
+          vat_percent,
+          vat_amount,
+          net_amount,
+          gross_amount,
+          line_no,
+          is_deleted
+        FROM purchase_order_lines
+        WHERE purchase_order_id = $1
+          AND company_id = $2
+          AND is_deleted = false
+        ORDER BY line_no
+        FOR UPDATE
+      `,
+      [id, companyId],
+    );
+
+    const existingLines = existingLinesResult.rows;
+    const existingLineMap = new Map(
+      existingLines.map((line) => [line.id, line]),
+    );
+
+    // 4. Reject duplicate submitted line IDs.
+    const incomingLineIds = incomingLines
+      .map((line) => line.id)
+      .filter((lineId): lineId is string => Boolean(lineId));
+
+    if (new Set(incomingLineIds).size !== incomingLineIds.length) {
+      throw new Error("Duplicate purchase order line IDs submitted");
+    }
+
+    // 5. Every submitted ID must belong to this active PO.
+    for (const lineId of incomingLineIds) {
+      if (!existingLineMap.has(lineId)) {
+        throw new Error(
+          `Purchase order line ${lineId} does not belong to this order or is deleted`,
+        );
+      }
+    }
+
+    // 6. Update PO header.
+    const supplierPostingGroupId =
+      order.supplier_posting_group_id ||
+      order.purchase_posting_group_id ||
+      null;
+
+    const vatBusinessPostingGroupId =
+      order.vat_business_posting_group_id || null;
+
+    const headerUpdateResult = await client.query(
+      `
+      UPDATE purchase_orders
+      SET
+        supplier_id = $1,
+        supplier_no = $2,
+        supplier_name = $3,
+
+        pay_to_supplier_id = $4,
+        pay_to_supplier_no = $5,
+        pay_to_supplier_name = $6,
+
+        purchaser = $7,
+        consignment_no = $8,
+        supp_order_no = $9,
+        link_to_so_no = $10,
+
+        currency_id = $11,
+        exchange_rate = $12,
+
+        order_date = $13,
+        req_receipt_date = $14,
+        receipt_date = $15,
+        expected_date = $16,
+        invoice_date = $17,
+        due_date = $18,
+
+        reference = $19,
+
+        payable_bank = $20,
+        payable_bank_id = $21,
+
+        payment_terms_id = $22,
+        payment_method_id = $23,
+
+        previous_code = $24,
+        link_to_cust = $25,
+        deduct_from_rebate = $26,
+
+        contact = $27,
+        book_in_phone = $28,
+        book_in_contact = $29,
+        book_in_email = $30,
+
+        shipment_method_id = $31,
+        shipping_agent = $32,
+        shipment_ref_no = $33,
+        warehouse_ref_no = $34,
+
+        reason = $35,
+        linked_po = $36,
+
+        notes = $37,
+        internal_notes = $38,
+
+        subtotal = $39,
+        tax_amount = $40,
+        total_amount = $41,
+
+        anonymous_supplier = $42,
+
+        supplier_posting_group_id = $43,
+        vat_business_posting_group_id = $44,
+
+        updated_at = NOW()
+
+      WHERE id = $45
+        AND company_id = $46
+    `,
+      [
+        order.supplier_id,
+        order.supplier_no,
+        order.supplier_name,
+
+        order.pay_to_supplier_id,
+        order.pay_to_supplier_no,
+        order.pay_to_supplier_name,
+
+        order.purchaser,
+        order.consignment_no,
+        order.supp_order_no,
+        order.link_to_so_no,
+
+        order.currency_id,
+        order.exchange_rate,
+
+        order.order_date || null,
+        order.req_receipt_date || null,
+        order.receipt_date || null,
+        order.expected_date || null,
+        order.invoice_date?.trim() ? order.invoice_date : null,
+        order.due_date || null,
+
+        order.reference,
+
+        order.payable_bank,
+        order.payable_bank_id,
+
+        order.payment_terms_id,
+        order.payment_method_id,
+
+        order.previous_code,
+        order.link_to_cust,
+        order.deduct_from_rebate || false,
+
+        order.contact,
+        order.book_in_phone,
+        order.book_in_contact,
+        order.book_in_email,
+
+        order.shipment_method_id,
+        order.shipping_agent,
+        order.shipment_ref_no,
+        order.warehouse_ref_no,
+
+        order.reason,
+        order.linked_po,
+
+        order.notes,
+        order.internal_notes,
+
+        order.subtotal,
+        order.tax_amount,
+        order.total_amount,
+
+        order.anonymous_supplier,
+
+        supplierPostingGroupId,
+        vatBusinessPostingGroupId,
+
+        id,
+        companyId,
+      ],
+    );
+
+    if (!headerUpdateResult.rowCount) {
+      throw new Error("Purchase order header update failed");
+    }
+
+    // 7. Soft-delete omitted lines only when they have no history.
+    for (const existingLine of existingLines) {
+      if (incomingLineIds.includes(existingLine.id)) continue;
+
+      const receivedQty = Number(existingLine.received_quantity || 0);
+      const cancelledQty = Number(existingLine.cancelled_quantity || 0);
+      const invoicedQty = Number(existingLine.invoiced_quantity || 0);
+
+      if (receivedQty > 0 || cancelledQty > 0 || invoicedQty > 0) {
+        throw new Error(
+          `Cannot remove PO line ${existingLine.line_no}: it has received, cancelled, or invoiced quantity`,
+        );
+      }
+
+      const dependencyResult = await client.query<{
+        has_receipts: boolean;
+        has_grni: boolean;
+      }>(
+        `
+        SELECT
+          EXISTS (
+            SELECT 1
+            FROM purchase_receipt_lines
+            WHERE purchase_order_line_id = $1
+              AND company_id = $2
+          ) AS has_receipts,
+
+          EXISTS (
+            SELECT 1
+            FROM grni_entries
+            WHERE purchase_order_line_id = $1
+              AND company_id = $2
+          ) AS has_grni
+      `,
+        [existingLine.id, companyId],
+      );
+
+      const dependencies = dependencyResult.rows[0];
+
+      if (dependencies?.has_receipts || dependencies?.has_grni) {
+        throw new Error(
+          `Cannot remove PO line ${existingLine.line_no}: receipt or GRNI history exists`,
+        );
+      }
+
+      // Lock all existing allocations before deciding whether they are removable.
+      const allocationsResult = await client.query<ExistingAllocation>(
+        `
+          SELECT
+            id,
+            status,
+            allocated_quantity,
+            unit_cost,
+            total_cost,
+            inbound_entry_id,
+            outbound_entry_id,
+            purchase_invoice_line_id,
+            sales_order_line_id,
+            debit_note_line_id,
+            credit_note_line_id,
+            journal_line_id,
+            source_allocation_id
+          FROM inventory_allocations
+          WHERE purchase_order_line_id = $1
+            AND company_id = $2
+          FOR UPDATE
+        `,
+        [existingLine.id, companyId],
+      );
+
+      for (const allocation of allocationsResult.rows) {
+        const hasReferences =
+          allocation.inbound_entry_id !== null ||
+          allocation.outbound_entry_id !== null ||
+          allocation.purchase_invoice_line_id !== null ||
+          allocation.sales_order_line_id !== null ||
+          allocation.debit_note_line_id !== null ||
+          allocation.credit_note_line_id !== null ||
+          allocation.journal_line_id !== null ||
+          allocation.source_allocation_id !== null;
+
+        if (
+          allocation.status !== "ACTIVE" ||
+          hasReferences ||
+          Number(allocation.unit_cost || 0) !== 0 ||
+          Number(allocation.total_cost || 0) !== 0
+        ) {
+          throw new Error(
+            `Cannot remove PO line ${existingLine.line_no}: allocation history or valued allocation exists`,
+          );
+        }
+      }
+
+      // Delete only verified, unused draft allocations.
+      if (allocationsResult.rows.length > 0) {
+        await client.query(
+          `
+          DELETE FROM inventory_allocations
+          WHERE purchase_order_line_id = $1
+            AND company_id = $2
+            AND status = 'ACTIVE'
+            AND inbound_entry_id IS NULL
+            AND outbound_entry_id IS NULL
+            AND purchase_invoice_line_id IS NULL
+            AND sales_order_line_id IS NULL
+            AND debit_note_line_id IS NULL
+            AND credit_note_line_id IS NULL
+            AND journal_line_id IS NULL
+            AND source_allocation_id IS NULL
+            AND COALESCE(unit_cost, 0) = 0
+            AND COALESCE(total_cost, 0) = 0
+        `,
+          [existingLine.id, companyId],
+        );
+      }
+
+      const deleteLineResult = await client.query(
+        `
+        UPDATE purchase_order_lines
+        SET
+          is_deleted = true,
+          updated_at = NOW()
+        WHERE id = $1
+          AND purchase_order_id = $2
+          AND company_id = $3
+          AND is_deleted = false
+      `,
+        [existingLine.id, id, companyId],
+      );
+
+      if (!deleteLineResult.rowCount) {
+        throw new Error(
+          `Failed to soft-delete PO line ${existingLine.line_no}`,
+        );
+      }
+    }
+
+    // 8. Insert or update submitted lines.
+    // let lineNo = 10000;
+
+    const usedLineNumbers = new Set(
+      existingLines.map((line) => Number(line.line_no)),
+    );
+
+    const maxExistingLineNo = Math.max(0, ...usedLineNumbers);
+
+    let nextLineNo = Math.ceil((maxExistingLineNo + 1) / 10000) * 10000;
+
+    const getNextLineNo = (): number => {
+      while (usedLineNumbers.has(nextLineNo)) {
+        nextLineNo += 10000;
+      }
+
+      const assignedLineNo = nextLineNo;
+
+      usedLineNumbers.add(assignedLineNo);
+      nextLineNo += 10000;
+
+      return assignedLineNo;
+    };
+
+    for (const line of incomingLines) {
+      let purchaseOrderLineId: string;
+      let isExistingLine = false;
+
+      const existingLine = line.id ? existingLineMap.get(line.id) : undefined;
+
+      // Existing lines retain their original number.
+      // New lines receive the next unused number.
+      const assignedLineNo = existingLine
+        ? existingLine.line_no
+        : getNextLineNo();
+
+      if (line.id) {
+        // const existingLine = existingLineMap.get(line.id);
+
+        if (!existingLine) {
+          throw new Error(`PO line ${line.id} was not found`);
+        }
+
+        const receivedQty = Number(existingLine.received_quantity || 0);
+        const cancelledQty = Number(existingLine.cancelled_quantity || 0);
+        const invoicedQty = Number(existingLine.invoiced_quantity || 0);
+
+        const hasHistoricalQuantity =
+          receivedQty > 0 || cancelledQty > 0 || invoicedQty > 0;
+
+        if (hasHistoricalQuantity) {
+          // Historical lines must not have their commercial details rewritten.
+          const unchanged =
+            sameNullableText(existingLine.line_type, line.line_type) &&
+            sameNullableText(existingLine.item_id, line.item_id) &&
+            sameNullableText(existingLine.gl_account_id, line.gl_account_id) &&
+            sameNullableText(existingLine.description, line.description) &&
+            sameNullableText(existingLine.warehouse_id, line.warehouse_id) &&
+            sameNullableText(existingLine.uom_id, line.uom_id) &&
+            sameNumber(existingLine.quantity, line.quantity) &&
+            sameNumber(existingLine.unit_cost, line.unit_cost) &&
+            sameNullableText(existingLine.discount_type, line.discount_type) &&
+            sameNumber(existingLine.discount_value, line.discount_value) &&
+            sameNumber(existingLine.discount_amount, line.discount_amount) &&
+            sameNumber(existingLine.vat_percent, line.vat_percent) &&
+            sameNumber(existingLine.vat_amount, line.vat_amount) &&
+            sameNumber(existingLine.net_amount, line.net_amount) &&
+            sameNumber(existingLine.gross_amount, line.gross_amount);
+
+          if (!unchanged) {
+            throw new Error(
+              `Cannot modify commercial details of PO line ${existingLine.line_no}: receipt, cancellation, or invoice history exists`,
+            );
+          }
+
+          // Keep the original line number and historical line values.
+          purchaseOrderLineId = existingLine.id;
+          isExistingLine = true;
+        } else {
+          const itemChanged = !sameNullableText(
+            existingLine.item_id,
+            line.item_id,
+          );
+
+          const warehouseChanged = !sameNullableText(
+            existingLine.warehouse_id,
+            line.warehouse_id,
+          );
+
+          const lineTypeChanged = !sameNullableText(
+            existingLine.line_type,
+            line.line_type,
+          );
+
+          const allocationsProvided =
+            line.allocations !== undefined ||
+            line.initialAllocations !== undefined;
+
+          // Do not permit an item/warehouse change without an explicit
+          // allocation decision.
+          if (
+            !hasHistoricalQuantity &&
+            existingLine.line_type === "ITEM" &&
+            line.line_type === "ITEM" &&
+            (itemChanged || warehouseChanged) &&
+            !allocationsProvided
+          ) {
+            throw new Error(
+              `PO line ${existingLine.line_no}: allocations must be submitted when the item or warehouse changes`,
+            );
+          }
+
+          // Prevent conversion to a non-item line while draft or historical
+          // allocation records are still attached.
+          if (
+            !hasHistoricalQuantity &&
+            existingLine.line_type === "ITEM" &&
+            line.line_type !== "ITEM"
+          ) {
+            const allocationCheck = await client.query<{ exists: boolean }>(
+              `
+    SELECT EXISTS (
+      SELECT 1
+      FROM inventory_allocations
+      WHERE purchase_order_line_id = $1
+        AND company_id = $2
+    ) AS exists
+    `,
+              [existingLine.id, companyId],
+            );
+
+            if (allocationCheck.rows[0]?.exists) {
+              throw new Error(
+                `Cannot change PO line ${existingLine.line_no} from ITEM to ${line.line_type}: allocation records exist. Resolve the allocations first.`,
+              );
+            }
+          }
+          const updateLineResult = await client.query(
+            `
+            UPDATE purchase_order_lines
+            SET
+              line_type = $1,
+              item_id = $2,
+              gl_account_id = $3,
+              description = $4,
+              warehouse_id = $5,
+              uom_id = $6,
+              quantity = $7,
+              unit_cost = $8,
+              discount_type = $9,
+              discount_value = $10,
+              discount_amount = $11,
+              vat_percent = $12,
+              vat_amount = $13,
+              net_amount = $14,
+              gross_amount = $15,
+              line_no = $16,
+              updated_at = NOW()
+            WHERE id = $17
+              AND purchase_order_id = $18
+              AND company_id = $19
+              AND is_deleted = false
+          `,
+            [
+              line.line_type,
+              line.item_id || null,
+              line.gl_account_id || null,
+              line.description || null,
+              line.warehouse_id || null,
+              line.uom_id || null,
+              line.quantity,
+              line.unit_cost,
+              line.discount_type || null,
+              line.discount_value || 0,
+              line.discount_amount || 0,
+              line.vat_percent || 0,
+              line.vat_amount || 0,
+              line.net_amount || 0,
+              line.gross_amount || 0,
+              // lineNo,
+              assignedLineNo,
+              line.id,
+              id,
+              companyId,
+            ],
+          );
+
+          if (!updateLineResult.rowCount) {
+            throw new Error(`Failed to update PO line ${line.id}`);
+          }
+
+          purchaseOrderLineId = line.id;
+          isExistingLine = true;
+        }
+      } else {
+        const entriesWithUndefined = Object.entries(line).map(
+          ([key, value]) => [key, value === null ? undefined : value],
+        );
+
+        const sanitizedLine = Object.fromEntries(
+          entriesWithUndefined,
+        ) as PurchaseOrderLine;
+
+        purchaseOrderLineId = await this.insertLine(
+          client,
+          companyId,
+          id,
+          sanitizedLine,
+          // lineNo,
+          assignedLineNo,
+        );
+      }
+
+      // 9. Save allocations only for editable ITEM lines.
+      // Received/cancelled/invoiced lines are deliberately preserved.
+      const hasHistoricalQuantity = isExistingLine
+        ? (() => {
+            const existing = existingLineMap.get(purchaseOrderLineId);
+            if (!existing) return false;
+
+            return (
+              Number(existing.received_quantity || 0) > 0 ||
+              Number(existing.cancelled_quantity || 0) > 0 ||
+              Number(existing.invoiced_quantity || 0) > 0
+            );
+          })()
+        : false;
+
+      const allocationsProvided =
+        line.allocations !== undefined || line.initialAllocations !== undefined;
+
+      if (
+        line.line_type === "ITEM" &&
+        !hasHistoricalQuantity &&
+        allocationsProvided
+      ) {
+        const allocations = line.allocations ?? line.initialAllocations ?? [];
+
+        if (!line.item_id) {
+          throw new Error(`Line ${assignedLineNo}: item is required`);
+        }
+
+        await this.saveLineAllocations(
+          client,
+          companyId,
+          id,
+          purchaseOrderLineId,
+          line.item_id,
+          line.warehouse_id || null,
+          allocations,
+        );
+      }
+
+      // lineNo += 10000;
+    }
+
+    // 10. Replace addresses within the caller's transaction.
+    await client.query(
+      `
+      DELETE FROM purchase_order_addresses
+      WHERE purchase_order_id = $1
+        AND company_id = $2
+    `,
+      [id, companyId],
+    );
+
+    if (payload.primary_address) {
+      await this.insertAddress(client, id, payload.primary_address, companyId);
+    }
+
+    if (payload.billing_address) {
+      await this.insertAddress(client, id, payload.billing_address, companyId);
+    }
+
+    if (payload.shipping_address) {
+      await this.insertAddress(client, id, payload.shipping_address, companyId);
+    }
+
+    // 11. Recalculate from actual active PO lines, not submitted header totals.
+    await this.recalculateTotals(client, id);
+    await this.recalculateStatus(client, id);
+
+    // 12. Return final active lines.
+    const finalLines = await client.query<{
+      id: string;
+      item_id: string;
+      warehouse_id: string;
+      line_no: number;
+    }>(
+      `
+      SELECT
+        id,
+        item_id,
+        warehouse_id,
+        line_no
+      FROM purchase_order_lines
+      WHERE purchase_order_id = $1
+        AND company_id = $2
+        AND is_deleted = false
+      ORDER BY line_no
+    `,
+      [id, companyId],
+    );
+
+    return finalLines.rows;
+  }
+
+  static async delete(companyId: string, id: string): Promise<void> {
+    const existing = await pool.query(
+      `SELECT status FROM purchase_orders WHERE id = $1 AND company_id = $2`,
+      [id, companyId],
+    );
+    if (!existing.rows.length) throw new Error("Purchase order not found");
+    if (
+      existing.rows[0].status === "received" ||
+      existing.rows[0].status === "partial_received"
+    ) {
+      throw new Error(
+        "Cannot delete document shell while historical ledger entries remain linked.",
+      );
+    }
+
+    const result = await pool.query(
+      `DELETE FROM purchase_orders WHERE id = $1 AND company_id = $2`,
+      [id, companyId],
+    );
+
+    if (!result.rowCount) throw new Error("Purchase order not found");
+  }
+
+  static async post(companyId: string, id: string): Promise<void> {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query(
+        `SELECT status, is_posted FROM purchase_orders WHERE id = $1 AND company_id = $2`,
+        [id, companyId],
+      );
+
+      if (!result.rows.length) throw new Error("Purchase order not found");
+      if (result.rows[0].is_posted)
+        throw new Error("Purchase order already posted");
+
+      await client.query(
+        `UPDATE purchase_orders SET is_posted = true, posted_at = NOW(), updated_at = NOW() WHERE id = $1`,
+        [id],
+      );
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  static async insertLine(
+    client: PoolClient,
+    companyId: string,
+    purchaseOrderId: string,
+    line: PurchaseOrderLine,
+    lineNo: number,
+  ): Promise<string> {
+    const result = await client.query<{ id: string }>(
+      `
+      INSERT INTO purchase_order_lines (
+        company_id,
+        purchase_order_id,
+        line_no,
+        line_type,
+        item_id,
+        gl_account_id,
+        description,
+        warehouse_id,
+        uom_id,
+        quantity,
+        received_quantity,
+        unit_cost,
+        discount_type,
+        discount_value,
+        discount_amount,
+        vat_percent,
+        vat_amount,
+        net_amount,
+        gross_amount,
+        is_deleted,
+        created_at
+      )
+      VALUES (
+        $1,$2,$3,$4,
+        $5,$6,$7,$8,
+        $9,$10,$11,$12,
+        $13,$14,$15,$16,
+        $17,$18,$19,
+        false,
+        NOW()
+      )
+      RETURNING id
+    `,
+      [
+        companyId,
+        purchaseOrderId,
+        lineNo,
+        line.line_type,
+        line.item_id || null,
+        line.gl_account_id || null,
+        line.description || null,
+        line.warehouse_id || null,
+        line.uom_id || null,
+        line.quantity || 0,
+        line.received_quantity || 0,
+        line.unit_cost || 0,
+        line.discount_type || null,
+        line.discount_value || 0,
+        line.discount_amount || 0,
+        line.vat_percent || 0,
+        line.vat_amount || 0,
+        line.net_amount || 0,
+        line.gross_amount || 0,
+      ],
+    );
+
+    const insertedId = result.rows[0]?.id;
+
+    if (!insertedId) {
+      throw new Error("Failed to create purchase order line");
+    }
+
+    return insertedId;
+  }
+
+  private static async insertAddress(
+    client: PoolClient,
+    purchaseOrderId: string,
+    address: PurchaseOrderAddress,
+    companyId: string,
+  ): Promise<void> {
+    await client.query(
+      `
+      INSERT INTO purchase_order_addresses
+      (
+          purchase_order_id,
+          company_id,
+          address_type,
+
+          name,
+          attention,
+
+          phone,
+          email,
+
+          address_1,
+          address_2,
+
+          city,
+          state,
+          county,
+
+          postcode,
+          country,
+
+          contact_person,
+          contact_name
+      )
+      VALUES
+      (
+          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+          $11,$12,$13,$14,$15,$16
+      )
+      `,
+      [
+        purchaseOrderId,
+        companyId,
+        address.address_type,
+
+        address.name,
+        address.attention,
+
+        address.phone,
+        address.email,
+
+        address.address_1,
+        address.address_2,
+
+        address.city,
+        address.state,
+        address.county,
+
+        address.postcode,
+        address.country,
+
+        address.contact_person,
+        address.contact_name,
+      ],
+    );
+  }
+
+  static async recalculateStatus(
+    client: PoolClient,
+    purchaseOrderId: string,
+  ): Promise<void> {
+    const result = await client.query<{
+      line_count: string;
+      all_received: boolean;
+      any_received: boolean;
+    }>(
+      `
+        SELECT
+          COUNT(*)::text AS line_count,
+
+          COALESCE(
+            BOOL_AND(
+              COALESCE(received_quantity, 0)
+              + COALESCE(cancelled_quantity, 0)
+              >= quantity
+            ),
+            false
+          ) AS all_received,
+
+          COALESCE(
+            BOOL_OR(
+              COALESCE(received_quantity, 0)
+              + COALESCE(cancelled_quantity, 0) > 0
+            ),
+            false
+          ) AS any_received
+
+        FROM purchase_order_lines
+        WHERE purchase_order_id = $1
+          AND is_deleted = false
+          AND line_type = 'ITEM'
+      `,
+      [purchaseOrderId],
+    );
+
+    const summary = result.rows[0];
+
+    let status: string;
+
+    if (Number(summary.line_count) === 0) {
+      status = "open";
+    } else if (summary.all_received) {
+      status = "received";
+    } else if (summary.any_received) {
+      status = "partial_received";
+    } else {
+      status = "open";
+    }
+
+    await client.query(
+      `
+        UPDATE purchase_orders
+        SET
+          status = $1,
+          updated_at = NOW()
+        WHERE id = $2
+      `,
+      [status, purchaseOrderId],
+    );
+  }
+
+  static async updateReceivedQuantity(
+    client: PoolClient,
+    purchaseOrderLineId: string,
+    receivedQty: number,
+  ): Promise<void> {
+    await client.query(
+      `
+    UPDATE purchase_order_lines
+    SET
+      received_quantity =
+        COALESCE(received_quantity, 0) + $1,
+
+      remaining_quantity =
+        quantity - (
+          COALESCE(received_quantity,0)
+          + $1
+          + COALESCE(cancelled_quantity,0)
+        ),
+
+      updated_at = NOW()
+
+    WHERE id = $2
+    `,
+      [receivedQty, purchaseOrderLineId],
+    );
+  }
+
+  // Add this inside your PurchaseOrderService class
+
+  static async saveLineAllocations(
+    client: PoolClient,
+    companyId: string,
+    purchaseOrderId: string,
+    purchaseOrderLineId: string,
+    itemId: string,
+    warehouseId: string | null,
+    initialAllocations: PO_StockAllocationRecord[],
+  ): Promise<void> {
+    // 1. Lock and validate the PO line.
+    const lineResult = await client.query<{
+      id: string;
+      item_id: string | null;
+      warehouse_id: string | null;
+      line_type: string;
+      quantity: string | number;
+      received_quantity: string | number | null;
+      cancelled_quantity: string | number | null;
+      invoiced_quantity: string | number | null;
+      is_deleted: boolean;
+    }>(
+      `
+      SELECT
+        id,
+        item_id,
+        warehouse_id,
+        line_type,
+        quantity,
+        COALESCE(received_quantity, 0) AS received_quantity,
+        COALESCE(cancelled_quantity, 0) AS cancelled_quantity,
+        COALESCE(invoiced_quantity, 0) AS invoiced_quantity,
+        is_deleted
+      FROM purchase_order_lines
+      WHERE id = $1
+        AND purchase_order_id = $2
+        AND company_id = $3
+      FOR UPDATE
+    `,
+      [purchaseOrderLineId, purchaseOrderId, companyId],
+    );
+
+    const line = lineResult.rows[0];
+
+    if (!line) {
+      throw new Error("Purchase order line not found");
+    }
+
+    if (line.is_deleted) {
+      throw new Error("Cannot save allocations for a deleted PO line");
+    }
+
+    if (line.line_type !== "ITEM") {
+      throw new Error("Allocations can only be saved for ITEM lines");
+    }
+
+    if (!line.item_id || line.item_id !== itemId) {
+      throw new Error("Allocation item does not match the PO line item");
+    }
+
+    if (!sameNullableText(line.warehouse_id, warehouseId)) {
+      throw new Error(
+        "Allocation warehouse does not match the PO line warehouse",
+      );
+    }
+
+    const receivedQty = Number(line.received_quantity || 0);
+    const cancelledQty = Number(line.cancelled_quantity || 0);
+    const invoicedQty = Number(line.invoiced_quantity || 0);
+
+    // 2. Never replace allocations after receiving or invoicing.
+    if (receivedQty > 0 || invoicedQty > 0) {
+      return;
+    }
+
+    // 3. Protect receipt and GRNI history even if received_quantity is inconsistent.
+    const historyResult = await client.query<{
+      has_receipts: boolean;
+      has_grni: boolean;
+    }>(
+      `
+      SELECT
+        EXISTS (
+          SELECT 1
+          FROM purchase_receipt_lines
+          WHERE purchase_order_line_id = $1
+            AND company_id = $2
+        ) AS has_receipts,
+
+        EXISTS (
+          SELECT 1
+          FROM grni_entries
+          WHERE purchase_order_line_id = $1
+            AND company_id = $2
+        ) AS has_grni
+    `,
+      [purchaseOrderLineId, companyId],
+    );
+
+    if (
+      historyResult.rows[0]?.has_receipts ||
+      historyResult.rows[0]?.has_grni
+    ) {
+      throw new Error(
+        "Cannot replace PO allocations because receipt or GRNI history exists",
+      );
+    }
+
+    // 4. Lock existing allocations.
+    const existingAllocationsResult = await client.query<ExistingAllocation>(
+      `
+        SELECT
+          id,
+          status,
+          allocated_quantity,
+          unit_cost,
+          total_cost,
+          inbound_entry_id,
+          outbound_entry_id,
+          purchase_invoice_line_id,
+          sales_order_line_id,
+          debit_note_line_id,
+          credit_note_line_id,
+          journal_line_id,
+          source_allocation_id
+        FROM inventory_allocations
+        WHERE purchase_order_line_id = $1
+          AND company_id = $2
+        FOR UPDATE
+      `,
+      [purchaseOrderLineId, companyId],
+    );
+
+    // 5. Only replace unused, zero-value draft reservations.
+    for (const allocation of existingAllocationsResult.rows) {
+      const hasReferences =
+        allocation.inbound_entry_id !== null ||
+        allocation.outbound_entry_id !== null ||
+        allocation.purchase_invoice_line_id !== null ||
+        allocation.sales_order_line_id !== null ||
+        allocation.debit_note_line_id !== null ||
+        allocation.credit_note_line_id !== null ||
+        allocation.journal_line_id !== null ||
+        allocation.source_allocation_id !== null;
+
+      if (
+        allocation.status !== "ACTIVE" ||
+        hasReferences ||
+        Number(allocation.unit_cost || 0) !== 0 ||
+        Number(allocation.total_cost || 0) !== 0
+      ) {
+        throw new Error(
+          "Existing allocation has historical references or a value and cannot be replaced",
+        );
+      }
+    }
+
+    // 6. Validate incoming allocations before deleting anything.
+    const allocations = (initialAllocations || []) as POAllocationInput[];
+
+    const outstandingQuantity = Math.max(
+      0,
+      Number(line.quantity) - receivedQty - cancelledQty,
+    );
+
+    let totalAllocationQuantity = 0;
+
+    for (const allocation of allocations) {
+      const quantity = Number(allocation.quantity);
+
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        throw new Error("Allocation quantity must be greater than zero");
+      }
+
+      totalAllocationQuantity += quantity;
+    }
+
+    if (totalAllocationQuantity > outstandingQuantity + 0.000001) {
+      throw new Error(
+        `Total allocation quantity (${totalAllocationQuantity}) exceeds outstanding PO quantity (${outstandingQuantity})`,
+      );
+    }
+
+    if (allocations.length > 0 && !warehouseId) {
+      throw new Error("A warehouse is required for stock allocations");
+    }
+
+    // 7. Delete only the previously verified draft reservations.
+    if (existingAllocationsResult.rows.length > 0) {
+      const deleteResult = await client.query(
+        `
+        DELETE FROM inventory_allocations
+        WHERE purchase_order_line_id = $1
+          AND company_id = $2
+          AND status = 'ACTIVE'
+          AND inbound_entry_id IS NULL
+          AND outbound_entry_id IS NULL
+          AND purchase_invoice_line_id IS NULL
+          AND sales_order_line_id IS NULL
+          AND debit_note_line_id IS NULL
+          AND credit_note_line_id IS NULL
+          AND journal_line_id IS NULL
+          AND source_allocation_id IS NULL
+          AND COALESCE(unit_cost, 0) = 0
+          AND COALESCE(total_cost, 0) = 0
+      `,
+        [purchaseOrderLineId, companyId],
+      );
+
+      if (deleteResult.rowCount !== existingAllocationsResult.rows.length) {
+        throw new Error(
+          "Allocation replacement failed: not all existing draft allocations could be removed",
+        );
+      }
+    }
+
+    // No new reservations requested.
+    if (allocations.length === 0) {
+      return;
+    }
+
+    // 8. Insert normalized allocation reservations.
+    for (const allocation of allocations) {
+      const trackingCode = getTrackingCode(allocation);
+
+      await client.query(
+        `
+        INSERT INTO inventory_allocations (
+          company_id,
+          inbound_entry_id,
+          outbound_entry_id,
+          purchase_order_line_id,
+          item_id,
+          warehouse_id,
+          warehouse_location_id,
+          batch_no,
+          bin_code,
+          serial_no,
+          expiry_date,
+          date_received,
+          prod_date,
+          allocated_quantity,
+          unit_cost,
+          total_cost,
+          allocation_method,
+          status
+        )
+        VALUES (
+          $1,
+          NULL,
+          NULL,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $7,
+          $8,
+          $9,
+          $10,
+          $11,
+          0,
+          0,
+          'FIFO',
+          'ACTIVE'
+        )
+      `,
+        [
+          companyId,
+          purchaseOrderLineId,
+          itemId,
+          warehouseId,
+          allocation.location_id || null,
+          allocation.batch_no || null,
+          trackingCode,
+          allocation.expiry_date || null,
+          allocation.date_received || null,
+          allocation.prod_date || null,
+          Number(allocation.quantity),
+        ],
+      );
+    }
+  }
+
+  private static validatePayload(payload: PurchaseOrderPayload): void {
+    const order = payload.order;
+
+    if (!order.supplier_id) {
+      throw new Error("Supplier is required");
+    }
+
+    if (!order.order_date) {
+      throw new Error("Order date is required");
+    }
+
+    if (!payload.lines.length) {
+      throw new Error("At least one line is required");
+    }
+
+    payload.lines.forEach((line, index) => {
+      const row = index + 1;
+
+      if (!line.line_type) {
+        throw new Error(`Line ${row}: line type is required`);
+      }
+
+      switch (line.line_type) {
+        case "ITEM":
+          if (!line.item_id) {
+            throw new Error(`Line ${row}: item is required`);
+          }
+
+          if (!line.uom_id) {
+            throw new Error(`Line ${row}: UOM is required`);
+          }
+
+          if (Number(line.quantity) <= 0) {
+            throw new Error(`Line ${row}: quantity must be greater than zero`);
+          }
+
+          if (Number(line.unit_cost) < 0) {
+            throw new Error(`Line ${row}: invalid unit cost`);
+          }
+
+          break;
+
+        case "GL_ACCOUNT":
+          if (!line.gl_account_id) {
+            throw new Error(`Line ${row}: GL account is required`);
+          }
+
+          if (Number(line.quantity) <= 0) {
+            throw new Error(`Line ${row}: quantity must be greater than zero`);
+          }
+
+          if (Number(line.unit_cost) < 0) {
+            throw new Error(`Line ${row}: invalid amount`);
+          }
+
+          break;
+
+        case "COMMENT":
+          break;
+
+        default:
+          throw new Error(`Line ${row}: invalid line type`);
+      }
+    });
+
+    if (!payload.billing_address) {
+      throw new Error("Billing address is required");
+    }
+
+    if (!payload.shipping_address) {
+      throw new Error("Shipping address is required");
+    }
+  }
+
+  public static async recalculateTotals(
+    client: PoolClient,
+    purchaseOrderId: string,
+  ): Promise<void> {
+    await client.query(
+      `
+    UPDATE purchase_orders
+    SET
+      subtotal = totals.subtotal,
+      tax_amount = totals.tax_amount,
+      total_amount = totals.total_amount,
+      updated_at = NOW()
+    FROM (
+      SELECT
+        COALESCE(SUM(net_amount), 0) AS subtotal,
+        COALESCE(SUM(vat_amount), 0) AS tax_amount,
+        COALESCE(SUM(gross_amount), 0) AS total_amount
+      FROM purchase_order_lines
+      WHERE purchase_order_id = $1
+        AND is_deleted = false
+    ) totals
+    WHERE purchase_orders.id = $1
+    `,
+      [purchaseOrderId],
+    );
+  }
+}
+/* static async update(
+    client: PoolClient,
+    companyId: string,
+    id: string,
+    rawPayload: unknown,
+  ): Promise<
+    { id: string; item_id: string; warehouse_id: string; line_no: number }[]
+  > {
     // const payload = PurchaseOrderPayloadSchema.parse(rawPayload);
     const payload = PurchaseOrderPayloadSchema.parse(
       rawPayload,
@@ -620,7 +2090,7 @@ export class PurchaseOrderService {
     const order = payload.order;
 
     const existingResult = await client.query(
-      `SELECT status FROM purchase_orders WHERE id = $1 AND company_id = $2`,
+      `SELECT id, status, is_posted FROM purchase_orders WHERE id = $1 AND company_id = $2 FOR UPDATE`,
       [id, companyId],
     );
 
@@ -779,7 +2249,7 @@ export class PurchaseOrderService {
 
     // Soft delete unlinked line entries
     const existingLinesResult = await client.query(
-      `SELECT id FROM purchase_order_lines WHERE purchase_order_id = $1 AND is_deleted = false`,
+      `SELECT id FROM purchase_order_lines WHERE purchase_order_id = $1 AND is_deleted = false FOR UPDATE`,
       [id],
     );
     const existingLineIds = existingLinesResult.rows.map((x) => x.id);
@@ -806,7 +2276,7 @@ export class PurchaseOrderService {
               unit_cost = $8, discount_type = $9, discount_value = $10, discount_amount = $11,
               vat_percent = $12, vat_amount = $13, net_amount = $14, gross_amount = $15,
               line_no = $16, updated_at = NOW()
-            WHERE id = $17
+            WHERE id = $17 AND purchase_order_id = $18 AND company_id = $19
             `,
           [
             line.line_type,
@@ -826,6 +2296,8 @@ export class PurchaseOrderService {
             line.gross_amount,
             lineNo,
             line.id,
+            id,
+            companyId,
           ],
         );
       } else {
@@ -881,58 +2353,8 @@ export class PurchaseOrderService {
     // } finally {
     //   client.release();
     // }
-  }
-
-  static async delete(companyId: string, id: string): Promise<void> {
-    const existing = await pool.query(
-      `SELECT status FROM purchase_orders WHERE id = $1 AND company_id = $2`,
-      [id, companyId],
-    );
-    if (!existing.rows.length) throw new Error("Purchase order not found");
-    if (
-      existing.rows[0].status === "received" ||
-      existing.rows[0].status === "partial_received"
-    ) {
-      throw new Error(
-        "Cannot delete document shell while historical ledger entries remain linked.",
-      );
-    }
-
-    const result = await pool.query(
-      `DELETE FROM purchase_orders WHERE id = $1 AND company_id = $2`,
-      [id, companyId],
-    );
-
-    if (!result.rowCount) throw new Error("Purchase order not found");
-  }
-
-  static async post(companyId: string, id: string): Promise<void> {
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-      const result = await client.query(
-        `SELECT status, is_posted FROM purchase_orders WHERE id = $1 AND company_id = $2`,
-        [id, companyId],
-      );
-
-      if (!result.rows.length) throw new Error("Purchase order not found");
-      if (result.rows[0].is_posted)
-        throw new Error("Purchase order already posted");
-
-      await client.query(
-        `UPDATE purchase_orders SET is_posted = true, posted_at = NOW(), updated_at = NOW() WHERE id = $1`,
-        [id],
-      );
-      await client.query("COMMIT");
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
-  }
-
-  static async insertLine(
+  } */
+/* static async insertLine(
     client: PoolClient,
     companyId: string,
     purchaseOrderId: string,
@@ -1008,144 +2430,8 @@ export class PurchaseOrderService {
         line.gross_amount || 0,
       ],
     );
-  }
-
-  private static async insertAddress(
-    client: PoolClient,
-    purchaseOrderId: string,
-    address: PurchaseOrderAddress,
-    companyId: string,
-  ): Promise<void> {
-    await client.query(
-      `
-      INSERT INTO purchase_order_addresses
-      (
-          purchase_order_id,
-          company_id,
-          address_type,
-
-          name,
-          attention,
-
-          phone,
-          email,
-
-          address_1,
-          address_2,
-
-          city,
-          state,
-          county,
-
-          postcode,
-          country,
-
-          contact_person,
-          contact_name
-      )
-      VALUES
-      (
-          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
-          $11,$12,$13,$14,$15,$16
-      )
-      `,
-      [
-        purchaseOrderId,
-        companyId,
-        address.address_type,
-
-        address.name,
-        address.attention,
-
-        address.phone,
-        address.email,
-
-        address.address_1,
-        address.address_2,
-
-        address.city,
-        address.state,
-        address.county,
-
-        address.postcode,
-        address.country,
-
-        address.contact_person,
-        address.contact_name,
-      ],
-    );
-  }
-
-  static async recalculateStatus(
-    client: PoolClient,
-    purchaseOrderId: string,
-  ): Promise<void> {
-    const result = await client.query(
-      `
-      SELECT quantity, received_quantity, COALESCE(cancelled_quantity, 0) as cancelled_quantity
-      FROM purchase_order_lines
-      WHERE purchase_order_id = $1 AND is_deleted = false AND line_type = 'ITEM'
-      `,
-      [purchaseOrderId],
-    );
-
-    const lines = result.rows;
-    if (!lines.length) return;
-
-    let fullyReceived = true;
-    let partiallyReceived = false;
-
-    for (const line of lines) {
-      const qty = Number(line.quantity || 0);
-      const received =
-        Number(line.received_quantity || 0) + Number(line.cancelled_quantity);
-
-      if (received > 0) partiallyReceived = true;
-      if (received < qty) fullyReceived = false;
-    }
-
-    const status = fullyReceived
-      ? "received"
-      : partiallyReceived
-        ? "partial_received"
-        : "open";
-
-    await client.query(
-      `UPDATE purchase_orders SET status = $1, updated_at = NOW() WHERE id = $2`,
-      [status, purchaseOrderId],
-    );
-  }
-
-  static async updateReceivedQuantity(
-    client: PoolClient,
-    purchaseOrderLineId: string,
-    receivedQty: number,
-  ): Promise<void> {
-    await client.query(
-      `
-    UPDATE purchase_order_lines
-    SET
-      received_quantity =
-        COALESCE(received_quantity, 0) + $1,
-
-      remaining_quantity =
-        quantity - (
-          COALESCE(received_quantity,0)
-          + $1
-          + COALESCE(cancelled_quantity,0)
-        ),
-
-      updated_at = NOW()
-
-    WHERE id = $2
-    `,
-      [receivedQty, purchaseOrderLineId],
-    );
-  }
-
-  // Add this inside your PurchaseOrderService class
-
-  static async saveLineAllocations(
+  } */
+/*  static async saveLineAllocations(
     client: PoolClient,
     companyId: string,
     purchaseOrderId: string,
@@ -1196,6 +2482,7 @@ export class PurchaseOrderService {
           warehouse_location_id,
           batch_no,
           bin_code,
+          serial_no,
           expiry_date,
           date_received,
           prod_date,
@@ -1205,7 +2492,7 @@ export class PurchaseOrderService {
           allocation_method,
           status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'FIFO', 'ACTIVE')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'FIFO', 'ACTIVE')
         `,
         [
           companyId,
@@ -1217,6 +2504,7 @@ export class PurchaseOrderService {
           alloc.location_id || null,
           alloc.batch_no || null,
           alloc.serial_no || null,
+          alloc.serial_no || null,
           alloc.expiry_date === "" ? null : alloc.expiry_date || null,
           alloc.date_received === "" ? null : alloc.date_received || null,
           alloc.prod_date === "" ? null : alloc.prod_date || null,
@@ -1226,106 +2514,43 @@ export class PurchaseOrderService {
         ],
       );
     }
-  }
-
-  private static validatePayload(payload: PurchaseOrderPayload): void {
-    const order = payload.order;
-
-    if (!order.supplier_id) {
-      throw new Error("Supplier is required");
-    }
-
-    if (!order.order_date) {
-      throw new Error("Order date is required");
-    }
-
-    if (!payload.lines.length) {
-      throw new Error("At least one line is required");
-    }
-
-    payload.lines.forEach((line, index) => {
-      const row = index + 1;
-
-      if (!line.line_type) {
-        throw new Error(`Line ${row}: line type is required`);
-      }
-
-      switch (line.line_type) {
-        case "ITEM":
-          if (!line.item_id) {
-            throw new Error(`Line ${row}: item is required`);
-          }
-
-          if (!line.uom_id) {
-            throw new Error(`Line ${row}: UOM is required`);
-          }
-
-          if (Number(line.quantity) <= 0) {
-            throw new Error(`Line ${row}: quantity must be greater than zero`);
-          }
-
-          if (Number(line.unit_cost) < 0) {
-            throw new Error(`Line ${row}: invalid unit cost`);
-          }
-
-          break;
-
-        case "GL_ACCOUNT":
-          if (!line.gl_account_id) {
-            throw new Error(`Line ${row}: GL account is required`);
-          }
-
-          if (Number(line.quantity) <= 0) {
-            throw new Error(`Line ${row}: quantity must be greater than zero`);
-          }
-
-          if (Number(line.unit_cost) < 0) {
-            throw new Error(`Line ${row}: invalid amount`);
-          }
-
-          break;
-
-        case "COMMENT":
-          break;
-
-        default:
-          throw new Error(`Line ${row}: invalid line type`);
-      }
-    });
-
-    if (!payload.billing_address) {
-      throw new Error("Billing address is required");
-    }
-
-    if (!payload.shipping_address) {
-      throw new Error("Shipping address is required");
-    }
-  }
-
-  public static async recalculateTotals(
+  } */
+/* static async recalculateStatus(
     client: PoolClient,
     purchaseOrderId: string,
   ): Promise<void> {
-    await client.query(
+    const result = await client.query(
       `
-    UPDATE purchase_orders
-    SET
-      subtotal = totals.subtotal,
-      tax_amount = totals.tax_amount,
-      total_amount = totals.total_amount,
-      updated_at = NOW()
-    FROM (
-      SELECT
-        COALESCE(SUM(net_amount), 0) AS subtotal,
-        COALESCE(SUM(vat_amount), 0) AS tax_amount,
-        COALESCE(SUM(gross_amount), 0) AS total_amount
+      SELECT quantity, received_quantity, COALESCE(cancelled_quantity, 0) as cancelled_quantity
       FROM purchase_order_lines
-      WHERE purchase_order_id = $1
-        AND is_deleted = false
-    ) totals
-    WHERE purchase_orders.id = $1
-    `,
+      WHERE purchase_order_id = $1 AND is_deleted = false AND line_type = 'ITEM'
+      `,
       [purchaseOrderId],
     );
-  }
-}
+
+    const lines = result.rows;
+    if (!lines.length) return;
+
+    let fullyReceived = true;
+    let partiallyReceived = false;
+
+    for (const line of lines) {
+      const qty = Number(line.quantity || 0);
+      const received =
+        Number(line.received_quantity || 0) + Number(line.cancelled_quantity);
+
+      if (received > 0) partiallyReceived = true;
+      if (received < qty) fullyReceived = false;
+    }
+
+    const status = fullyReceived
+      ? "received"
+      : partiallyReceived
+        ? "partial_received"
+        : "open";
+
+    await client.query(
+      `UPDATE purchase_orders SET status = $1, updated_at = NOW() WHERE id = $2`,
+      [status, purchaseOrderId],
+    );
+  } */

@@ -111,26 +111,15 @@ export function getPurchaseOrderCellRenderers(slug: string) {
     total_amount: (row: PurchaseOrder) => formatAmount(row.total_amount),
 
     // Actions
-    actions: (row: PurchaseOrder) => (
-      <div className="flex items-center gap-1.5">
-        <Link
-          href={`/${slug}/purchases/purchase-orders/${row.id}/edit`}
-          className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          Edit
-        </Link>
-      </div>
-    ),
+    // actions: (row: PurchaseOrder) => (
+    //   <div className="flex items-center gap-1.5">
+    //     <Link
+    //       href={`/${slug}/purchases/purchase-orders/${row.id}/edit`}
+    //       className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+    //     >
+    //       Edit
+    //     </Link>
+    //   </div>
+    // ),
   };
-}
-
-{
-  /* {row.status?.toLowerCase() === "open" && (
-  <Link
-    href={`/${slug}/purchases/receipts/create?po=${row.id}`}
-    className="rounded border border-emerald-600 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
-  >
-    Receive
-  </Link>
-)} */
 }

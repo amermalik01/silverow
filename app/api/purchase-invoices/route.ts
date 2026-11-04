@@ -90,21 +90,6 @@ export async function GET(req: NextRequest) {
         [...queryParams, limit, offset]
       );
 
-      // const listRes = await client.query(
-      //   `SELECT 
-      //     pi.*,
-      //     p.name AS supplier_name,
-      //     p.supplier_code AS supplier_no,
-      //     po.order_no AS purchase_order_no
-      //    FROM purchase_invoices pi
-      //    LEFT JOIN parties p ON p.id = pi.supplier_id
-      //    LEFT JOIN purchase_orders po ON po.id = pi.purchase_order_id
-      //    WHERE ${whereClause}
-      //    ORDER BY pi.created_at DESC
-      //    LIMIT $${paramCounter} OFFSET $${paramCounter + 1}`,
-      //   [...queryParams, limit, offset],
-      // );
-
       return NextResponse.json({
         success: true,
         data: listRes.rows,

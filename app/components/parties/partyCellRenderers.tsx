@@ -102,15 +102,15 @@ export function getPartyCellRenderers(
       </span>
     ),
 
-    actions: (row: PartyRecord) => (
-      <div className="flex items-center gap-1.5">
-        <Link
-          href={`/${slug}/${basePath}/${row.id}/edit`}
-          className="rounded border border-emerald-600 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
-        >
-          Edit
-        </Link>
-      </div>
-    ),
+    // actions: (row: PartyRecord) => (
+    //   <div className="flex items-center gap-1.5">
+    //     <Link
+    //       href={`/${slug}/${basePath}/${row.id}/edit`}
+    //       className="rounded border border-emerald-600 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+    //     >
+    //       Edit
+    //     </Link>
+    //   </div>
+    // ),
   };
 }

@@ -14,6 +14,7 @@ import {
   PurchaseOrderLine,
   PurchaseOrderLineUI,
   PurchaseOrderMasterData,
+  PO_StockAllocationRecord,
 } from "@/types/purchase-order";
 
 type FetchLinesAPIResponse = {
@@ -42,7 +43,7 @@ import {
   SalesOrderLookupItem,
   SalesOrderLookupModal,
 } from "../../shared/modals/SalesOrderLookupModal";
-import { PO_StockAllocationRecord } from "../../shared/modals/PO_StockAllocationModal";
+
 import SalespersonLookupModal, {
   Employee,
 } from "../../shared/modals/SalespersonLookupModal";
@@ -52,10 +53,16 @@ import {
   validatePurchaseOrder,
   validatePurchaseOrderForStockAction,
 } from "./utils/purchaseOrder.validation";
+
 import {
   calculatePurchaseOrderFinancials,
   isPurchaseOrderFullyReceived,
 } from "./utils/purchaseOrder.calculations";
+
+import {
+  validateReceiptScope,
+  type ReceiptScope,
+} from "./utils/purchaseOrder.stock-validation";
 
 interface Props {
   slug: string;
@@ -97,6 +104,10 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const [migrationPurchaseOrderId, setMigrationPurchaseOrderId] = useState<
     string | null
   >(null);
+
+  const [selectedReceiptLineIds, setSelectedReceiptLineIds] = useState<
+    string[]
+  >([]);
 
   // Manage view/edit state locally
   const [isEditMode, setIsEditMode] = useState<boolean>(!isReadOnly);
@@ -223,6 +234,17 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     loadMasterData();
   }, []);
 
+  const getReceiptScope = (): ReceiptScope => {
+    if (selectedReceiptLineIds.length > 0) {
+      return {
+        type: "SELECTED_LINES",
+        lineIds: selectedReceiptLineIds,
+      };
+    }
+
+    return { type: "ALL_LINES" };
+  };
+
   const refreshLines = async () => {
     if (!order.id) return;
 
@@ -252,7 +274,15 @@ export const PurchaseOrderForm: React.FC<Props> = ({
             _stableKey: line._stableKey || line.id || `line-${line.line_no}`,
             allocations: resolvedAllocations,
             initialAllocations: resolvedAllocations,
-            is_allocated: resolvedAllocations.length > 0,
+            // is_allocated: resolvedAllocations.length > 0,
+            is_allocated:
+              Number(line.quantity) > 0 &&
+              Math.abs(
+                resolvedAllocations.reduce(
+                  (sum, allocation) => sum + Number(allocation.quantity ?? 0),
+                  0,
+                ) - Number(line.quantity),
+              ) < 0.000001,
           };
         },
       );
@@ -637,25 +667,52 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     }
   };
 
-  const validateBeforeStockAction = (): boolean => {
-    const errors = validatePurchaseOrderForStockAction(lines);
+  // const validateBeforeStockAction = (): boolean => {
+  //   const errors = validatePurchaseOrderForStockAction(lines);
+
+  //   setValidationErrors(errors);
+
+  //   return errors.length === 0;
+  // };
+
+  const validateBeforeStockAction = (scope: ReceiptScope): boolean => {
+    const errors = validateReceiptScope(lines, scope);
 
     setValidationErrors(errors);
 
-    return errors.length === 0;
+    if (errors.length > 0) {
+      toast.error(errors[0]);
+      return false;
+    }
+
+    return true;
+  };
+
+  const toDateOnly = (value: string | null | undefined): string | undefined => {
+    if (!value) return undefined;
+
+    return value.slice(0, 10);
   };
 
   // 1. Separate Handler for Receiving Stock (Physical Intake)
   const handleReceiveStock = async () => {
-    if (!id) return;
+    // if (!id) return;
 
-    if (!validateBeforeStockAction()) {
+    // if (!validateBeforeStockAction()) {
+    //   return;
+    // }
+
+    if (!id || isPosting) return;
+
+    const scope = getReceiptScope();
+
+    if (!validateBeforeStockAction(scope)) {
       return;
     }
 
     setIsPosting(true);
-
-    show("Saving and Receiving Record...");
+    show("Receiving Stock...");
+    // show("Saving and Receiving Record...");
 
     try {
       toast.loading("Processing physical stock receipt...", {
@@ -665,24 +722,46 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       const res = await fetch(`/api/purchase-orders/${id}/receive`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order }), // , lines
+
+        body: JSON.stringify({
+          scope,
+          order: {
+            // receipt_date:
+            //   order.receipt_date || new Date().toISOString().slice(0, 10),
+            // posting_date:
+            //   order.order_date || new Date().toISOString().slice(0, 10),
+
+            receipt_date: toDateOnly(order.receipt_date),
+            posting_date: toDateOnly(order.order_date),
+            reference: order.reference,
+            notes: order.notes,
+          },
+        }),
+        // body: JSON.stringify({ order }), // , lines
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to receive stock");
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || "Failed to receive stock.");
+      }
 
-      toast.success("Stock received & ledger entries committed!", {
+      toast.success("Selected purchase order lines received successfully.", {
         id: "action-toast",
       });
+      // setShowReceiveModal(false);
+      // refreshLines();
+      // router.refresh();
+
+      setSelectedReceiptLineIds([]);
       setShowReceiveModal(false);
-      refreshLines();
+
+      await refreshLines();
       router.refresh();
-    } catch (err) {
-      if (err instanceof Error)
-        //setValidationErrors([err.message]);
-        toast.error(err.message || "Error receiving stock", {
-          id: "action-toast",
-        });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Stock receiving failed.",
+        { id: "action-toast" },
+      );
     } finally {
       setIsPosting(false);
       hide();
@@ -693,9 +772,17 @@ export const PurchaseOrderForm: React.FC<Props> = ({
   const handleReceiveAndPost = async () => {
     if (!id) return;
 
-    if (!validateBeforeStockAction()) {
+    const scope: ReceiptScope = {
+      type: "ALL_LINES",
+    };
+
+    if (!validateBeforeStockAction(scope)) {
       return;
     }
+
+    // if (!validateBeforeStockAction()) {
+    //   return;
+    // }
 
     setIsPosting(true);
 
@@ -709,11 +796,12 @@ export const PurchaseOrderForm: React.FC<Props> = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          scope,
           supplier_invoice_no: order.reference,
           invoice_date: order.invoice_date,
           posting_date: order.order_date,
-          financials: financials,
-          order: order,
+          financials,
+          order,
         }),
       });
 
@@ -743,14 +831,30 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   // Handler when user clicks the "Post Invoice" button
   const handlePostInvoiceClick = () => {
-    if (!validateBeforeStockAction()) {
-      return;
-    }
-
-    if (!order.reference) {
+    if (!order.reference?.trim()) {
       toast.error("Please enter a Supplier Invoice No. before posting.");
       return;
     }
+
+    if (isFullyReceived) {
+      setShowInvoiceModal(true);
+      return;
+    }
+
+    // The existing combined action invoices the whole PO.
+    // Therefore it must receive ALL outstanding lines,
+    // not merely the currently selected lines.
+    const scope: ReceiptScope = {
+      type: "ALL_LINES",
+    };
+
+    if (!validateBeforeStockAction(scope)) {
+      return;
+    }
+
+    // if (!validateBeforeStockAction()) {
+    //   return;
+    // }
 
     const allGLAccountLines = lines.every(
       (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
@@ -766,9 +870,17 @@ export const PurchaseOrderForm: React.FC<Props> = ({
 
   // 2. Separate Handler for Posting Invoice (Financial Posting to Accounts Payable)
   const handlePostInvoice = async () => {
-    if (!id) return;
+    if (!id || isPosting) return;
 
-    if (!validateBeforeStockAction()) {
+    if (!order.reference?.trim()) {
+      toast.error("Supplier invoice number is required.");
+      return;
+    }
+
+    if (!isFullyReceived) {
+      toast.error(
+        "All purchase order item lines must be received before posting the invoice.",
+      );
       return;
     }
     setIsPosting(true);
@@ -999,6 +1111,8 @@ export const PurchaseOrderForm: React.FC<Props> = ({
           purchaseOrder={order}
           refreshLines={refreshLines}
           onImportItems={handleImportItems}
+          selectedReceiptLineIds={selectedReceiptLineIds}
+          onReceiptLineSelectionChange={setSelectedReceiptLineIds}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-4 space-x-4 gap-4 items-end border-b border-slate-200 mb-2 pb-2 pt-4 px-2">
@@ -1146,7 +1260,9 @@ export const PurchaseOrderForm: React.FC<Props> = ({
                   type="button"
                   variant="dispatch"
                   onClick={() => {
-                    if (!validateBeforeStockAction()) return;
+                    const scope = getReceiptScope();
+
+                    if (!validateBeforeStockAction(scope)) return;
 
                     setShowReceiveModal(true);
                   }}
@@ -1199,7 +1315,13 @@ export const PurchaseOrderForm: React.FC<Props> = ({
       <StockReceiveConfirmModal
         isOpen={showReceiveModal}
         title="Confirmation"
-        message="Are you sure you want to receive the stock?"
+        // message="Are you sure you want to receive the stock?"
+
+        message={
+          selectedReceiptLineIds.length > 0
+            ? `Receive ${selectedReceiptLineIds.length} selected item line(s) in full?`
+            : "Receive all outstanding item lines in full?"
+        }
         onConfirm={handleReceiveStock}
         onCancel={() => setShowReceiveModal(false)}
         loading={isPosting}
@@ -1330,300 +1452,3 @@ export const PurchaseOrderForm: React.FC<Props> = ({
     </div>
   );
 };
-
-/* const validateLines = (): string[] => {
-    const errors: string[] = [];
-
-    if (lines.length === 0) {
-      errors.push("Purchase orders require at least one line.");
-      return errors;
-    }
-
-    lines.forEach((line, index) => {
-      const lineNo = index + 1;
-      const lineType = line.line_type || "ITEM";
-      const quantity = Number(line.quantity || 0);
-
-      if (lineType === "ITEM") {
-        if (!line.item_id) {
-          errors.push(`Line ${lineNo}: Please select an item.`);
-        }
-
-        if (!line.warehouse_id) {
-          errors.push(`Line ${lineNo}: Warehouse is required.`);
-        }
-
-        if (quantity <= 0) {
-          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
-        }
-      } else if (lineType === "GL_ACCOUNT") {
-        if (!line.gl_account_id) {
-          errors.push(`Line ${lineNo}: Please select a G/L account.`);
-        }
-
-        if (quantity <= 0) {
-          errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
-        }
-      } else {
-        errors.push(`Line ${lineNo}: Invalid line type.`);
-      }
-    });
-
-    return errors;
-  }; */
-
-/* const validateForm = (includeLines = true): boolean => {
-    const errors: string[] = [];
-    if (!order.supplier_id) errors.push("Supplier selection is required.");
-
-    // 💥 FIX: Validate Posting Group presence for Tax Matrix calculation
-    if (
-      !order.purchase_posting_group_id &&
-      !order.vat_business_posting_group_id
-    ) {
-      errors.push(
-        "Selected supplier does not have a valid Purchase/VAT Posting Group assigned.",
-      );
-    }
-
-    if (!currencyConfig.currency_id)
-      errors.push("Transactional currency is required.");
-
-    if (includeLines) {
-      errors.push(...validateLines());
-    }
-
-    errors.push(...validateDates());
-
-    setValidationErrors(errors);
-    return errors.length === 0;
-  }; */
-
-/* const validateDates = (): string[] => {
-    const errors: string[] = [];
-
-    const orderDate = order.order_date
-      ? new Date(order.order_date).getTime()
-      : null;
-
-    const invoiceDate = order.invoice_date
-      ? new Date(order.invoice_date).getTime()
-      : null;
-
-    const reqReceiptDate = order.req_receipt_date
-      ? new Date(order.req_receipt_date).getTime()
-      : null;
-
-    const receiptDate = order.receipt_date
-      ? new Date(order.receipt_date).getTime()
-      : null;
-
-    if (orderDate && invoiceDate && orderDate > invoiceDate) {
-      errors.push("Order Date cannot be after Invoice Date.");
-    }
-
-    if (orderDate && reqReceiptDate && orderDate > reqReceiptDate) {
-      errors.push("Order Date cannot be after Required Receipt Date.");
-    }
-
-    if (orderDate && receiptDate && orderDate > receiptDate) {
-      errors.push("Order Date cannot be after Receipt Date.");
-    }
-
-    if (reqReceiptDate && receiptDate && reqReceiptDate > receiptDate) {
-      errors.push("Receipt Date cannot be before Required Receipt Date.");
-    }
-
-    return errors;
-  }; */
-
-/* const validateBeforeStockAction = (): boolean => {
-    const errors: string[] = [];
-
-    if (lines.length === 0) {
-      errors.push("Purchase order has no lines.");
-    } else {
-      // Check whether every line is a G/L Account line
-      const allGLAccountLines = lines.every(
-        (line) => (line.line_type || "ITEM") === "GL_ACCOUNT",
-      );
-
-      if (allGLAccountLines) {
-        setValidationErrors([]);
-        return true;
-      }
-      const hasItemLines = lines.some(
-        (line) => (line.line_type || "ITEM") === "ITEM",
-      );
-
-      lines.forEach((line, index) => {
-        const lineNo = index + 1;
-        const lineType = line.line_type || "ITEM";
-
-        if (lineType === "ITEM") {
-          const quantity = Number(line.quantity || 0);
-
-          if (!line.item_id) {
-            errors.push(`Line ${lineNo}: Item is required.`);
-            return;
-          }
-
-          if (!line.warehouse_id) {
-            errors.push(`Line ${lineNo}: Warehouse is required.`);
-            return;
-          }
-
-          if (quantity <= 0) {
-            errors.push(`Line ${lineNo}: Quantity must be greater than zero.`);
-            return;
-          }
-
-          // Only validate allocation when there are ITEM lines.
-          if (hasItemLines) {
-            const allocations =
-              line.allocations || line.initialAllocations || [];
-
-            const allocatedQuantity = allocations.reduce(
-              (sum, allocation) => sum + Number(allocation.quantity || 0),
-              0,
-            );
-
-            if (allocatedQuantity !== quantity) {
-              errors.push(
-                `Line ${lineNo}: Stock allocation is incomplete. Allocated ${allocatedQuantity} of ${quantity}.`,
-              );
-            }
-          }
-        }
-
-        if (lineType === "GL_ACCOUNT" && !line.gl_account_id) {
-          errors.push(`Line ${lineNo}: G/L account is required.`);
-        }
-      });
-    }
-
-    if (errors.length > 0) {
-      setValidationErrors(errors);
-      // toast.error("Please complete the purchase order before continuing.");
-      return false;
-    }
-
-    setValidationErrors([]);
-
-    return true;
-  }; */
-
-/* const createEmptyPurchaseOrderLine = (): PurchaseOrderLineUI => ({
-    _key: `temp-${Date.now()}-${Math.random()}`,
-    line_type: "ITEM",
-
-    item_id: undefined,
-    item_code: undefined,
-    item_name: undefined,
-
-    description: "",
-    quantity: 1,
-
-    unit_cost: 0,
-    discount_type: "PERCENT",
-    discount_value: 0,
-
-    vat_percent: 0,
-    original_amount: 0,
-    discount_amount: 0,
-    net_amount: 0,
-    vat_amount: 0,
-    gross_amount: 0,
-
-    warehouse_id: undefined,
-    warehouse_code: undefined,
-    warehouse_name: undefined,
-
-    is_allocated: false,
-    received_quantity: 0,
-
-    allocations: [],
-    initialAllocations: [],
-  }); */
-// {
-//   showMigrationModal && (
-//     <MigrationUploadModal
-//       open={showMigrationModal}
-//       onClose={() => {
-//         setShowMigrationModal(false);
-//         setMigrationPurchaseOrderId(null);
-//       }}
-//       purchaseOrder={{
-//         ...order,
-//         id: migrationPurchaseOrderId || order.id,
-//       }}
-//       onCompleted={async () => {
-//         await refreshLines();
-
-//         setShowMigrationModal(false);
-//         setMigrationPurchaseOrderId(null);
-//       }}
-//     />
-//   );
-// }
-
-// if (activeId) {
-//   // Fetch persisted lines directly using activeId
-//   const linesRes = await fetch(
-//     `/api/purchase-orders/${activeId}/lines`,
-//   );
-//   if (linesRes.ok) {
-//     const linesData = await linesRes.json();
-//     if (linesData.lines) {
-//       setLines(linesData.lines);
-//     }
-//   }
-// }
-// if (refreshLines) {
-//   await refreshLines();
-// }
-// const [lines, setLines] = useState<PurchaseOrderLineUI[]>(
-//   id ? [] : [createEmptyPurchaseOrderLine()],
-// );
-
-/* const isFullyReceived = useMemo(() => {
-    if (lines.length === 0) return false;
-    const itemLines = lines.filter((l) => (l.line_type || "ITEM") === "ITEM");
-    if (itemLines.length === 0) return false;
-
-    return itemLines.every((l) => {
-      const qty = Number(l.quantity || 0);
-      const rcvd = Number(l.received_quantity || 0);
-      return qty > 0 && rcvd >= qty;
-    });
-  }, [lines]); */
-/* const financials = useMemo(() => {
-    const originalAmount = lines.reduce(
-      (sum, l) =>
-        sum + Number(Number(l.quantity || 0) * Number(l.unit_cost || 0) || 0),
-      0,
-    );
-    const totalDiscount = lines.reduce(
-      (sum, l) => sum + Number(l.discount_amount || 0),
-      0,
-    );
-    const amount = lines.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
-    const vat = lines.reduce((sum, l) => sum + Number(l.vat_amount || 0), 0);
-    const amountInclVat = amount + vat;
-
-    const rate =
-      Number(currencyConfig.exchange_rate) > 0
-        ? Number(currencyConfig.exchange_rate)
-        : 1;
-
-    const amountInclVatLCY = Number(amountInclVat) * rate;
-
-    return {
-      originalAmount,
-      totalDiscount,
-      amount,
-      vat,
-      amountInclVat,
-      amountInclVatLCY,
-    };
-  }, [lines, currencyConfig.exchange_rate]); */

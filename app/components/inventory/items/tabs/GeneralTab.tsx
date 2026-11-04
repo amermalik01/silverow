@@ -120,7 +120,7 @@ export default function GeneralTab({
                 onItemAdded={(newCat) =>
                   setCategories((prev) => [...prev, newCat])
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-sm"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-xs"
               />
               {/* <select
                 disabled={isReadonly}
@@ -176,7 +176,7 @@ export default function GeneralTab({
                 onItemAdded={(newBrand) =>
                   setBrands((prev) => [...prev, newBrand])
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-sm"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-xs"
               />
             </div>
           </div>
@@ -247,7 +247,7 @@ export default function GeneralTab({
                   },
                 ]}
                 onItemAdded={(newUom) => setUoms((prev) => [...prev, newUom])}
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-sm"
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-xs"
               />
               {errors["general.base_uom_id"] && (
                 <p className="text-red-500 text-[10px] mt-1">

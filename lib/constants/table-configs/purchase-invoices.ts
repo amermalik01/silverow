@@ -392,13 +392,13 @@ export const purchaseInvoicesConfig: ColumnConfig[] = [
     columnOrder: 43,
     columnWidth: 130,
   },
-  {
-    columnKey: "actions",
-    label: "Actions",
-    dataType: "text",
-    isVisible: true,
-    isPinned: false,
-    columnOrder: 44,
-    columnWidth: 100,
-  },
+  // {
+  //   columnKey: "actions",
+  //   label: "Actions",
+  //   dataType: "text",
+  //   isVisible: true,
+  //   isPinned: false,
+  //   columnOrder: 44,
+  //   columnWidth: 100,
+  // },
 ];

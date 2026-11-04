@@ -1,6 +1,6 @@
 // types/sales-quote.ts
 
-import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
+import type { PO_StockAllocationRecord } from "@/types/purchase-order";
 
 export type SalesQuoteStatus =
   | "draft"

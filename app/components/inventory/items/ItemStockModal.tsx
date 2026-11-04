@@ -61,7 +61,7 @@ const columns: ColumnDef[] = [
   { key: "warehouse", label: "Warehouse" },
   { key: "storage_location", label: "Storage Location" },
   { key: "qty", label: "Qty.", numeric: true },
-  { key: "sold_qty", label: "Sold Qty.", numeric: true },
+  // { key: "sold_qty", label: "Sold Qty.", numeric: true },
   { key: "allocated_qty", label: "Allocated Qty.", numeric: true },
   { key: "available_qty", label: "Available Qty.", numeric: true },
   { key: "uom", label: "U.O.M" },

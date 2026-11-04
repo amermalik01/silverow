@@ -445,106 +445,6 @@ const transactionsQuery = `
   LEFT JOIN journal_entries jnl
     ON bl.reference_type = 'ITEM_JOURNAL' AND jnl.id = bl.reference_id
 `;
-// const transactionsQuery = `
-//   SELECT
-//     ile.id,
-
-//     COALESCE(
-//       pi_from_po_pr.invoice_no,
-//       po_from_pr.order_no,
-//       jnl.entry_no,
-//       so_from_sd2.sales_invoice_no,
-//       so_from_sd2.order_no,
-//       cn_from_sd1.posted_credit_note_no,
-//       cn_from_sd1.credit_note_no,
-//       dn_from_sd.debit_note_invoice_no,
-//       dn_from_sd.debit_note_no,
-//       st.transfer_no,
-//       '-'::text
-//     ) AS transaction_no,
-
-//     ile.transaction_type,
-//     ile.reference_type,
-//     ile.reference_id,
-//     ile.reference_line_id,
-
-//     TO_CHAR(
-//       ile.posting_date,
-//       'YYYY-MM-DD'
-//     ) AS posting_date,
-
-//     ile.status,
-//     ile.warehouse_id,
-//     w.name AS warehouse_name,
-
-//     ile.location_id,
-//     wl.title AS location_name,
-
-//     ile.bin_code,
-//     ile.quantity,
-//     ile.remaining_quantity,
-
-//     ile.direction AS movement_direction,
-//     ile.unit_cost,
-//     ile.total_cost,
-//     ile.batch_no,
-//     ile.serial_no,
-
-//     TO_CHAR(
-//       ile.expiry_date,
-//       'YYYY-MM-DD'
-//     ) AS expiry_date,
-
-//     TO_CHAR(
-//       ile.created_at,
-//       'YYYY-MM-DD"T"HH24:MI:SS'
-//     ) AS created_at
-
-//   FROM inventory_ledger_entries ile
-
-//   JOIN warehouses w
-//     ON w.id = ile.warehouse_id
-
-//   LEFT JOIN warehouse_locations wl
-//     ON wl.id = ile.location_id
-
-//     -- Optional reference document joins for human-readable numbers
-//   LEFT JOIN purchase_receipts pr
-//     ON ile.reference_type = 'PURCHASE_RECEIPT' AND pr.id = ile.reference_id
-//   LEFT JOIN purchase_orders po_from_pr
-//     ON po_from_pr.id = pr.purchase_order_id
-//   LEFT JOIN purchase_invoices pi_from_po_pr
-//     ON pi_from_po_pr.purchase_order_id = po_from_pr.id
-
-//   LEFT JOIN stock_dispatches sd
-//     ON ile.reference_type IN ('STOCK_DISPATCH') AND sd.id = ile.reference_id
-//   LEFT JOIN debit_notes dn_from_sd ON  dn_from_sd.id = sd.debit_note_id
-
-//   LEFT JOIN stock_dispatches sd1
-//     ON ile.reference_type IN ('CREDIT_NOTE') AND sd1.id = ile.reference_id
-//   LEFT JOIN credit_notes cn_from_sd1 ON cn_from_sd1.id = sd1.credit_note_id
-
-// LEFT JOIN stock_dispatches sd2
-//     ON ile.reference_type IN ('SALES_SHIPMENT') AND sd2.id = ile.reference_id
-//   LEFT JOIN sales_orders so_from_sd2 ON so_from_sd2.id = sd2.sales_order_id
-
-//   LEFT JOIN transfer_headers st
-//     ON ile.reference_type IN ('STOCK_TRANSFER', 'TRANSFER') AND st.id = ile.reference_id
-
-//  LEFT JOIN journal_entries jnl
-//     ON ile.reference_type IN ('ITEM_JOURNAL') AND jnl.id = ile.reference_id
-
-//   WHERE ile.company_id = $1
-//     AND ile.item_id = $2
-//     AND ile.status <> 'CANCELLED'
-
-//   ORDER BY
-//     ile.posting_date DESC,
-//     ile.created_at DESC,
-//     ile.id DESC
-
-//   LIMIT 200
-// `;
 
 /**
  * Allocation history:
@@ -745,3 +645,103 @@ export class ItemActivityService {
     }
   }
 }
+// const transactionsQuery = `
+//   SELECT
+//     ile.id,
+
+//     COALESCE(
+//       pi_from_po_pr.invoice_no,
+//       po_from_pr.order_no,
+//       jnl.entry_no,
+//       so_from_sd2.sales_invoice_no,
+//       so_from_sd2.order_no,
+//       cn_from_sd1.posted_credit_note_no,
+//       cn_from_sd1.credit_note_no,
+//       dn_from_sd.debit_note_invoice_no,
+//       dn_from_sd.debit_note_no,
+//       st.transfer_no,
+//       '-'::text
+//     ) AS transaction_no,
+
+//     ile.transaction_type,
+//     ile.reference_type,
+//     ile.reference_id,
+//     ile.reference_line_id,
+
+//     TO_CHAR(
+//       ile.posting_date,
+//       'YYYY-MM-DD'
+//     ) AS posting_date,
+
+//     ile.status,
+//     ile.warehouse_id,
+//     w.name AS warehouse_name,
+
+//     ile.location_id,
+//     wl.title AS location_name,
+
+//     ile.bin_code,
+//     ile.quantity,
+//     ile.remaining_quantity,
+
+//     ile.direction AS movement_direction,
+//     ile.unit_cost,
+//     ile.total_cost,
+//     ile.batch_no,
+//     ile.serial_no,
+
+//     TO_CHAR(
+//       ile.expiry_date,
+//       'YYYY-MM-DD'
+//     ) AS expiry_date,
+
+//     TO_CHAR(
+//       ile.created_at,
+//       'YYYY-MM-DD"T"HH24:MI:SS'
+//     ) AS created_at
+
+//   FROM inventory_ledger_entries ile
+
+//   JOIN warehouses w
+//     ON w.id = ile.warehouse_id
+
+//   LEFT JOIN warehouse_locations wl
+//     ON wl.id = ile.location_id
+
+//     -- Optional reference document joins for human-readable numbers
+//   LEFT JOIN purchase_receipts pr
+//     ON ile.reference_type = 'PURCHASE_RECEIPT' AND pr.id = ile.reference_id
+//   LEFT JOIN purchase_orders po_from_pr
+//     ON po_from_pr.id = pr.purchase_order_id
+//   LEFT JOIN purchase_invoices pi_from_po_pr
+//     ON pi_from_po_pr.purchase_order_id = po_from_pr.id
+
+//   LEFT JOIN stock_dispatches sd
+//     ON ile.reference_type IN ('STOCK_DISPATCH') AND sd.id = ile.reference_id
+//   LEFT JOIN debit_notes dn_from_sd ON  dn_from_sd.id = sd.debit_note_id
+
+//   LEFT JOIN stock_dispatches sd1
+//     ON ile.reference_type IN ('CREDIT_NOTE') AND sd1.id = ile.reference_id
+//   LEFT JOIN credit_notes cn_from_sd1 ON cn_from_sd1.id = sd1.credit_note_id
+
+// LEFT JOIN stock_dispatches sd2
+//     ON ile.reference_type IN ('SALES_SHIPMENT') AND sd2.id = ile.reference_id
+//   LEFT JOIN sales_orders so_from_sd2 ON so_from_sd2.id = sd2.sales_order_id
+
+//   LEFT JOIN transfer_headers st
+//     ON ile.reference_type IN ('STOCK_TRANSFER', 'TRANSFER') AND st.id = ile.reference_id
+
+//  LEFT JOIN journal_entries jnl
+//     ON ile.reference_type IN ('ITEM_JOURNAL') AND jnl.id = ile.reference_id
+
+//   WHERE ile.company_id = $1
+//     AND ile.item_id = $2
+//     AND ile.status <> 'CANCELLED'
+
+//   ORDER BY
+//     ile.posting_date DESC,
+//     ile.created_at DESC,
+//     ile.id DESC
+
+//   LIMIT 200
+// `;

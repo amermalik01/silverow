@@ -4,9 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { PurchaseReceiptService } from "@/lib/services/purchase-receipts/purchase-receipt.service";
-import { PurchaseInvoicePostingService } from "@/lib/services/purchase-invoices/purchase-invoice-posting.service";
 import { PurchaseOrderService } from "@/lib/services/purchase-orders/purchase-order.service";
 import { PurchaseReceiptPayload } from "@/types/purchase-receipt";
+import { PurchaseOrderInvoicePostingService } from "@/lib/services/purchase-orders/purchase-order-invoice-posting.service";
+
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -40,7 +43,11 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const client = await pool.connect();
   try {
     const companyId = await getCompanyId();
-    const userId = req.headers.get("x-user-id") || undefined;
+
+    const session = await getServerSession(authOptions);
+    const userId = session?.user.id;
+    // const userId = req.headers.get("x-user-id") || undefined;
+
     const { id } = await params;
 
     if (!companyId) {
@@ -87,14 +94,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     );
 
     const dbLines = poLinesResult.rows;
+
     const unfulfilledLines = dbLines.filter((l) => {
       const qty = Number(l.quantity || 0);
       const rec = Number(l.received_quantity || 0);
       return qty - rec > 0;
     });
-
-    // console.log('unfulfilledLines ==== ',unfulfilledLines);
-    // console.log('dbLines ==== ',dbLines);
 
     if (unfulfilledLines.length > 0) {
       const receiptPayload: PurchaseReceiptPayload = {
@@ -132,9 +137,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         }),
       };
 
-      
-    // console.log('receiptPayload ==== ',receiptPayload);
-
       await PurchaseReceiptService.createTransactional(
         client,
         companyId,
@@ -145,23 +147,30 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     // ==========================================
     // STEP 2: POST PURCHASE INVOICE TO GL / AP
     // ==========================================
+
     const invoiceResult =
-      await PurchaseInvoicePostingService.postInvoiceTransactional(client, {
-        companyId,
-        purchaseOrderId: id,
-        userId,
-        skip3WayMatchCheck: true, // Bypass check since stock is received in Step 1
-        invoiceData: {
-          supplier_invoice_no: body.supplier_invoice_no,
-          invoice_date: body.invoice_date,
-          due_date: body.due_date,
-          posting_date: body.posting_date,
-          notes: body.notes,
-          currency_id: body.currency_id,
-          exchange_rate: body.exchange_rate,
+      await PurchaseOrderInvoicePostingService.postInvoiceTransactional(
+        client,
+        {
+          companyId,
+          purchaseOrderId: id,
+          userId: userId,
+          invoiceData: {
+            supplier_invoice_no: body.supplier_invoice_no,
+            invoice_date: body.invoice_date,
+            due_date: body.due_date,
+            posting_date: body.order.posting_date,
+            notes: body.order.notes,
+            currency_id: body.order.currency_id,
+            exchange_rate: Number(body.order.exchange_rate || 1),
+          },
+          financials: {
+            amount: Number(body.financials.amount),
+            vat: Number(body.financials.vat),
+            amountInclVat: Number(body.financials.amountInclVat),
+          },
         },
-        financials: body.financials,
-      });
+      );
 
     // ==========================================
     // STEP 3: RECALCULATE PO STATUS & COMMIT
@@ -193,3 +202,23 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     client.release();
   }
 }
+
+// import { PurchaseInvoicePostingService } from "@/lib/services/purchase-invoices/purchase-invoice-posting.service";
+
+// const invoiceResult =
+//   await PurchaseInvoicePostingService.postInvoiceTransactional(client, {
+//     companyId,
+//     purchaseOrderId: id,
+//     userId,
+//     skip3WayMatchCheck: true, // Bypass check since stock is received in Step 1
+//     invoiceData: {
+//       supplier_invoice_no: body.supplier_invoice_no,
+//       invoice_date: body.invoice_date,
+//       due_date: body.due_date,
+//       posting_date: body.posting_date,
+//       notes: body.notes,
+//       currency_id: body.currency_id,
+//       exchange_rate: body.exchange_rate,
+//     },
+//     financials: body.financials,
+//   });

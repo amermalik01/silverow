@@ -24,9 +24,6 @@ import StockAllocationModal, {
   StockSequenceRecord,
 } from "@/app/components/shared/modals/StockAllocationModal";
 
-// import PO_StockAllocationModal, {
-//   type PO_StockAllocationRecord,
-// } from "@/app/components/shared/modals/PO_StockAllocationModal";
 
 type Props = {
   itemModalOpen: boolean;

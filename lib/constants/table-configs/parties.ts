@@ -93,13 +93,13 @@ export const partyColumnsConfig: ColumnConfig[] = [
     columnOrder: 10,
     columnWidth: 100,
   },
-  {
-    columnKey: "actions",
-    label: "Actions",
-    dataType: "text",
-    isVisible: true,
-    isPinned: false,
-    columnOrder: 11,
-    columnWidth: 120,
-  },
+  // {
+  //   columnKey: "actions",
+  //   label: "Actions",
+  //   dataType: "text",
+  //   isVisible: true,
+  //   isPinned: false,
+  //   columnOrder: 11,
+  //   columnWidth: 120,
+  // },
 ];

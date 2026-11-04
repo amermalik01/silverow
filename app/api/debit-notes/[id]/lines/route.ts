@@ -78,49 +78,37 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
                 'source_allocation_id', ia.source_allocation_id,
 
                 'debit_note_line_id', ia.debit_note_line_id,
-
                 'inbound_entry_id', ia.inbound_entry_id,
 
-                'purchase_order_line_id',
-                  ia.purchase_order_line_id,
-
-                'purchase_invoice_line_id',
-                  ia.purchase_invoice_line_id,
+                'purchase_order_line_id', ia.purchase_order_line_id,
+                'purchase_invoice_line_id', ia.purchase_invoice_line_id,
 
                 'item_id', ia.item_id,
                 'warehouse_id', ia.warehouse_id,
+                'warehouse_location_id', ia.warehouse_location_id,
 
-                'warehouse_location_id',
-                  ia.warehouse_location_id,
-
-                'location_id',
-                  ia.warehouse_location_id,
-
-                'location_name',
-                  wl.title,
+                'location_id', ia.warehouse_location_id,
+                'location_code', wl.code,
+                'location_name', wl.title,
 
                 'batch_no', ia.batch_no,
                 'bin_code', ia.bin_code,
+                'serial_no', ia.serial_no,
 
                 'expiry_date',
                   TO_CHAR(
                     ia.expiry_date,
                     'YYYY-MM-DD'
                   ),
+                'date_received', ia.date_received,
+                'prod_date', ia.prod_date,
 
                 'unit_cost', ia.unit_cost,
 
-                'return_quantity',
-                  ia.allocated_quantity,
-
-                'allocated_quantity',
-                  ia.allocated_quantity,
-
-                'original_quantity',
-                  source.allocated_quantity,
-
-                'already_returned_before_this_dn',
-                  COALESCE(previous_returns.returned_quantity, 0),
+                'return_quantity', ia.allocated_quantity,
+                'allocated_quantity', ia.allocated_quantity,
+                'original_quantity', source.allocated_quantity,
+                'already_returned_before_this_dn', COALESCE(previous_returns.returned_quantity, 0),
 
                 'available_before_this_dn',
                   GREATEST(
@@ -132,8 +120,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
                     0
                   ),
 
-                'received_at',
-                  source.created_at
+                'received_at', source.created_at
               )
               ORDER BY source.created_at, ia.id
             )
@@ -161,10 +148,6 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
                 AND r.status = 'ACTIVE'
                 AND r.debit_note_line_id IS NOT NULL
 
-                /*
-                 * Exclude returns belonging to this
-                 * Debit Note.
-                 */
                 AND NOT EXISTS (
                   SELECT 1
                   FROM debit_note_lines rdl
@@ -183,15 +166,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
         ) AS allocations
 
       FROM debit_note_lines dnl
-
-      LEFT JOIN items i
-        ON i.id = dnl.item_id
-
-      LEFT JOIN warehouses w
-        ON w.id = dnl.warehouse_id
-
-      LEFT JOIN uoms u
-        ON u.id = dnl.uom_id
+      LEFT JOIN items i ON i.id = dnl.item_id
+      LEFT JOIN warehouses w ON w.id = dnl.warehouse_id
+      LEFT JOIN uoms u ON u.id = dnl.uom_id
 
       WHERE dnl.company_id = $1
         AND dnl.debit_note_id = $2
@@ -220,17 +197,11 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 
       return {
         ...line,
-
         quantity,
-
         unit_cost: Number(line.unit_cost) || 0,
-
         allocations,
-
         initialAllocations: allocations,
-
         is_allocated: quantity > 0 && allocatedQuantity >= quantity,
-
         allocated_quantity: allocatedQuantity,
       };
     });
@@ -251,33 +222,3 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     );
   }
 }
-
-//   const result = await pool.query(
-//     `
-//     SELECT
-//       dnl.*,
-
-//       i.item_code,
-//       i.name as item_name,
-
-//       w.code as warehouse_code,
-//       w.name as warehouse_name,
-
-//       u.name as uom_name,
-//       u.code as uom_code
-
-//     FROM debit_note_lines dnl
-//     LEFT JOIN items i ON i.id = dnl.item_id
-//     LEFT JOIN warehouses w ON w.id = dnl.warehouse_id
-//     LEFT JOIN uoms u ON u.id = dnl.uom_id
-
-//     WHERE dnl.company_id=$1 AND dnl.debit_note_id=$2 AND dnl.is_deleted=false
-//     ORDER BY dnl.line_no
-//     `,
-//     [companyId, id],
-//   );
-
-//   return NextResponse.json({
-//     lines: result.rows,
-//   });
-// }

@@ -34,7 +34,10 @@ export class FxVarianceService {
 
     // 2. Fetch Company FX Movement Accounts Setup
     const setupRes = await client.query(
-      `SELECT realised_gain_gl_id, realised_loss_gl_id 
+      `SELECT realised_gain_gl_id, 
+              realised_loss_gl_id,
+              unrealised_gain_gl_id,
+              unrealised_loss_gl_id
        FROM currency_movement_setup 
        WHERE company_id = $1`,
       [companyId],

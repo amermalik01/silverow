@@ -103,15 +103,15 @@ export const sitesColumnsConfig: ColumnConfig[] = [
     columnOrder: 11,
     columnWidth: 120,
   },
-  {
-    columnKey: "actions",
-    label: "Actions",
-    dataType: "text",
-    isVisible: true,
-    isPinned: false,
-    columnOrder: 12,
-    columnWidth: 110,
-  },
+  // {
+  //   columnKey: "actions",
+  //   label: "Actions",
+  //   dataType: "text",
+  //   isVisible: true,
+  //   isPinned: false,
+  //   columnOrder: 12,
+  //   columnWidth: 110,
+  // },
 ];
 
 

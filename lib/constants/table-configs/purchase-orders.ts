@@ -374,13 +374,13 @@ export const purchaseOrdersConfig: ColumnConfig[] = [
     columnOrder: 41,
     columnWidth: 130,
   },
-  {
-    columnKey: "actions",
-    label: "Actions",
-    dataType: "text",
-    isVisible: true,
-    isPinned: false,
-    columnOrder: 42,
-    columnWidth: 100,
-  },
+  // {
+  //   columnKey: "actions",
+  //   label: "Actions",
+  //   dataType: "text",
+  //   isVisible: true,
+  //   isPinned: false,
+  //   columnOrder: 42,
+  //   columnWidth: 100,
+  // },
 ];

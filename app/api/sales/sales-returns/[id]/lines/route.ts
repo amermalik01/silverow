@@ -40,9 +40,11 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
                 'return_quantity', ia.allocated_quantity,
                 'unit_cost', ia.unit_cost,
                 'batch_no', ia.batch_no,
-                'serial_no', ia.bin_code,
+                'serial_no', ia.serial_no,
                 'bin_code', ia.bin_code,
-                'expiry_date', ia.expiry_date
+                'expiry_date', ia.expiry_date,
+                'date_received', ia.date_received,
+                'prod_date', ia.prod_date
               )
             )
             FROM inventory_allocations ia

@@ -25,7 +25,7 @@ export default function EmployeeList({ slug }: Props) {
 
   // 3. Server Data Fetcher
   const fetchEmployees = async (
-    params: FetchParams
+    params: FetchParams,
   ): Promise<FetchResponse<Employee>> => {
     const res = await fetch("/api/hr/employees/listings", {
       method: "POST",
@@ -84,6 +84,8 @@ export default function EmployeeList({ slug }: Props) {
           fetchApi={fetchEmployees}
           columnsConfigApi={columnsConfigApi}
           renderRowCell={renderRowCell}
+          enableRowSelection={true}
+          rowKey="id"
         />
       </div>
     </div>

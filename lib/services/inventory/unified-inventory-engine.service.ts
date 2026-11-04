@@ -1,6 +1,30 @@
 // lib/services/inventory/unified-inventory-engine.service.ts
 
-import { PoolClient } from "pg";
+// import { PoolClient } from "pg";
+import type { PoolClient } from "pg";
+
+import {
+  InventoryCostingService,
+  assertNonNegativeCost,
+  assertPositiveQuantity,
+  roundMoney,
+  roundUnitCost,
+  roundQuantity,
+  type InventoryCostBalance,
+  type ItemCostingProfile,
+} from "./costing/inventory-costing.service";
+
+import { FifoCostingService } from "./costing/fifo-costing.service";
+import { LifoCostingService } from "./costing/lifo-costing.service";
+import { MovingAverageCostingService } from "./costing/moving-average-costing.service";
+import { StandardCostingService } from "./costing/standard-costing.service";
+
+import { ItemCostSyncService } from "./costing/item-cost-sync.service";
+
+import {
+  InventoryLayerAllocationService,
+  type PhysicalLayerAllocation,
+} from "./allocations/inventory-layer-allocation.service";
 
 export type InventoryTransactionType =
   | "PURCHASE_RECEIPT"
@@ -16,8 +40,10 @@ export type InventoryTransactionType =
 
 export interface StockLineInput {
   item_id: string;
+
   warehouse_id: string;
-  to_warehouse_id?: string; // For Stock Transfers
+  to_warehouse_id?: string;
+
   location_id?: string | null;
   bin_code?: string | null;
   batch_no?: string | null;
@@ -28,7 +54,8 @@ export interface StockLineInput {
   prod_date?: string | null;
 
   quantity: number;
-  unit_cost?: number; // Calculated or overridden
+  unit_cost?: number;
+
   reference_type: string; // e.g. 'PURCHASE_ORDER', 'SALES_ORDER', 'STOCK_TRANSFER', 'ITEM_JOURNAL'
   reference_id: string;
   reference_line_id?: string | null;
@@ -37,34 +64,566 @@ export interface StockLineInput {
   inbound_entry_id?: string | null;
 }
 
-/* 
-Document Module,        Action Required,        Engine Method Used,     Direction,      GL Accounting Impact
+export interface InventoryLedgerEntry {
+  id: string;
+  company_id: string;
+  item_id: string;
+  warehouse_id: string;
+  posting_date: string;
+  transaction_type: string;
+  reference_type: string | null;
+  reference_id: string | null;
+  reference_line_id: string | null;
+  quantity: string;
+  remaining_quantity: string;
+  unit_cost: string;
+  total_cost: string;
+  direction: "IN" | "OUT";
+  status: string;
+}
 
-Purchase Order,         Soft Reserve Stock,     reserveStock,           N/A,            No GL Impact
-Purchase Order,         Receive Goods,          processInboundStock,    IN,             DR Inventory / CR GRNI
-Sales Order/Invoice,    Reserve & Dispatch,     processOutboundStock,   OUT (FIFO),     DR COGS / CR Inventory
-Stock Transfer,         Inter-Warehouse Move,   transferStock,          OUT → IN,       In-Transit / Warehouse Asset Transfers
-Opening Balance,        Load Initial Stock,     processInboundStock,    IN,             DR Inventory / CR Equity (Opening Bal)
-Debit Note,             Vendor Return,          processOutboundStock,   OUT (FIFO),     DR Accounts Payable / CR Inventory
-Credit Note,            Customer Return,        processInboundStock,    IN,             DR Inventory / CR COGS
-Item Journal,           Positive Adjustment,    processInboundStock,    IN,             DR Inventory / CR Adj. Gain
-Item Journal,           Negative Adjustment,    processOutboundStock,   OUT (FIFO),     DR Adj. Loss / CR Inventory
-*/
+export interface InboundStockResult {
+  ledgerEntry: InventoryLedgerEntry;
+  ppvAmount: number;
+  totalCost: number;
+  unitCost: number;
+}
+
+export interface OutboundStockResult {
+  outboundEntry: InventoryLedgerEntry;
+  totalCost: number;
+  unitCost: number;
+}
+
+// Document Module,        Action Required,        Engine Method Used,     Direction,      GL Accounting Impact
+
+// Purchase Order,         Soft Reserve Stock,     reserveStock,           N/A,            No GL Impact
+// Purchase Order,         Receive Goods,          processInboundStock,    IN,             DR Inventory / CR GRNI
+// Sales Order/Invoice,    Reserve & Dispatch,     processOutboundStock,   OUT (FIFO),     DR COGS / CR Inventory
+// Stock Transfer,         Inter-Warehouse Move,   transferStock,          OUT → IN,       In-Transit / Warehouse Asset Transfers
+// Opening Balance,        Load Initial Stock,     processInboundStock,    IN,             DR Inventory / CR Equity (Opening Bal)
+// Debit Note,             Vendor Return,          processOutboundStock,   OUT (FIFO),     DR Accounts Payable / CR Inventory
+// Credit Note,            Customer Return,        processInboundStock,    IN,             DR Inventory / CR COGS
+// Item Journal,           Positive Adjustment,    processInboundStock,    IN,             DR Inventory / CR Adj. Gain
+// Item Journal,           Negative Adjustment,    processOutboundStock,   OUT (FIFO),     DR Adj. Loss / CR Inventory
 
 export class UnifiedInventoryEngineService {
-  /**
-   * Helper: Resolves item costing method from DB
-   * 1 = FIFO, 2 = LIFO, 3 = Moving Average, 4 = Standard Cost
-   */
+  //  * Guard against accidentally initializing existing
+  //  * physical inventory with a zero financial balance.
 
-  /**
-   * Helper: Resolves global company costing method and item standard cost from DB
-   * Costing methods mapping:
-   * 'FIFO' (or 1) = FIFO
-   * 'LIFO' (or 2) = LIFO
-   * 'WEIGHTED_AVERAGE' (or 3) = Moving Average
-   * 'STANDARD' (or 4) = Standard Cost
-   */
+  private static async assertBalanceInitialized(
+    client: PoolClient,
+    companyId: string,
+    itemId: string,
+  ): Promise<void> {
+    const result = await client.query<{
+      balance_exists: boolean;
+      physical_quantity: string;
+      estimated_value: string;
+      inbound_layer_count: string;
+    }>(
+      `
+    SELECT
+      EXISTS (
+        SELECT 1
+        FROM inventory_cost_balances b
+        WHERE b.company_id = $1
+          AND b.item_id = $2
+      ) AS balance_exists,
+
+      COALESCE(
+        SUM(ile.remaining_quantity),
+        0
+      )::text AS physical_quantity,
+
+      COALESCE(
+        SUM(
+          ile.remaining_quantity *
+          ile.unit_cost
+        ),
+        0
+      )::text AS estimated_value,
+
+      COUNT(ile.id)::text AS inbound_layer_count
+
+    FROM inventory_ledger_entries ile
+    WHERE ile.company_id = $1
+      AND ile.item_id = $2
+      AND ile.direction = 'IN'
+      AND ile.remaining_quantity > 0
+    `,
+      [companyId, itemId],
+    );
+
+    const row = result.rows[0];
+
+    if (!row || row.balance_exists) {
+      return;
+    }
+
+    const physicalQuantity = Number(row.physical_quantity);
+
+    if (!Number.isFinite(physicalQuantity)) {
+      throw new Error(`Invalid historical stock quantity for item ${itemId}.`);
+    }
+
+    if (physicalQuantity <= 0) {
+      return;
+    }
+
+    throw new Error(
+      `Historical inventory migration required for item ${itemId}. ` +
+        `Existing quantity: ${physicalQuantity}. ` +
+        `Inbound layers: ${row.inbound_layer_count}. ` +
+        `Estimated layer value: ${row.estimated_value}. ` +
+        "Initialize and reconcile inventory_cost_balances " +
+        "before posting new stock movements.",
+    );
+  }
+
+  private static async prepare(
+    client: PoolClient,
+    companyId: string,
+    itemId: string,
+  ): Promise<{
+    profile: ItemCostingProfile;
+    balance: InventoryCostBalance;
+  }> {
+    await this.assertBalanceInitialized(client, companyId, itemId);
+
+    const profile = await InventoryCostingService.getItemCostingProfile(
+      client,
+      companyId,
+      itemId,
+    );
+
+    const balance = await InventoryCostingService.lockBalance(
+      client,
+      companyId,
+      itemId,
+    );
+
+    return { profile, balance };
+  }
+
+  private static assertSupportedMovement(
+    transactionType: InventoryTransactionType,
+  ): void {
+    if (
+      transactionType === "STOCK_TRANSFER_OUT" ||
+      transactionType === "STOCK_TRANSFER_IN"
+    ) {
+      throw new Error(
+        "Stock transfers require a dedicated value-preserving " +
+          "transfer operation. Do not post transfers as " +
+          "independent financial IN/OUT movements.",
+      );
+    }
+
+    if (transactionType === "CREDIT_NOTE_RETURN") {
+      throw new Error(
+        "Sales returns must restore original shipment cost. " +
+          "Use a historical-allocation-aware return operation.",
+      );
+    }
+  }
+
+  static async processInboundStock(
+    client: PoolClient,
+    companyId: string,
+    postingDate: string,
+    transactionType: InventoryTransactionType,
+    line: StockLineInput,
+  ): Promise<InboundStockResult> {
+    this.assertSupportedMovement(transactionType);
+
+    const quantity = roundQuantity(Number(line.quantity));
+
+    assertPositiveQuantity(quantity);
+
+    if (line.unit_cost === undefined) {
+      throw new Error(
+        "Inbound unit_cost is required. " +
+          "Do not silently value receipts at zero.",
+      );
+    }
+
+    const purchaseUnitCost = Number(line.unit_cost);
+    assertNonNegativeCost(purchaseUnitCost);
+
+    const { profile, balance } = await this.prepare(
+      client,
+      companyId,
+      line.item_id,
+    );
+
+    let effectiveUnitCost = purchaseUnitCost;
+    let totalCost = roundMoney(quantity * purchaseUnitCost);
+    let ppvAmount = 0;
+
+    switch (profile.method) {
+      case "FIFO": {
+        const result = FifoCostingService.calculateInbound(
+          quantity,
+          purchaseUnitCost,
+        );
+
+        effectiveUnitCost = result.unitCost;
+        totalCost = result.totalCost;
+        break;
+      }
+
+      case "LIFO": {
+        const result = LifoCostingService.calculateInbound(
+          quantity,
+          purchaseUnitCost,
+        );
+
+        effectiveUnitCost = result.unitCost;
+        totalCost = result.totalCost;
+        break;
+      }
+
+      case "WEIGHTED_AVERAGE": {
+        const result = MovingAverageCostingService.calculateInbound(
+          balance,
+          quantity,
+          purchaseUnitCost,
+        );
+
+        // Receipt layer retains original purchase cost.
+        // Financial balance computes the company-wide average.
+        effectiveUnitCost = result.purchaseUnitCost;
+        totalCost = result.receiptValue;
+        break;
+      }
+
+      case "STANDARD": {
+        const result = StandardCostingService.calculateInbound(
+          quantity,
+          purchaseUnitCost,
+          profile.fixedStandardCost ?? NaN,
+        );
+
+        effectiveUnitCost = result.standardUnitCost;
+        totalCost = result.inventoryValue;
+        ppvAmount = result.ppvAmount;
+        break;
+      }
+    }
+
+    const inserted = await client.query<InventoryLedgerEntry>(
+      `
+      INSERT INTO inventory_ledger_entries (
+        company_id,
+        posting_date,
+        transaction_type,
+        reference_type,
+        reference_id,
+        reference_line_id,
+        item_id,
+        warehouse_id,
+        location_id,
+        bin_code,
+        batch_no,
+        serial_no,
+        expiry_date,
+        date_received,
+        prod_date,
+        quantity,
+        remaining_quantity,
+        unit_cost,
+        original_unit_cost,
+        total_cost,
+        remaining_value,
+        costing_method,
+        direction,
+        status
+      )
+      VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+        $11,$12,$13,$14,$15,$16,$16,$17,$18,
+        $19,$19,$20,'IN','OPEN'
+      )
+      RETURNING *
+      `,
+      [
+        companyId,
+        postingDate,
+        transactionType,
+        line.reference_type,
+        line.reference_id,
+        line.reference_line_id ?? null,
+        line.item_id,
+        line.warehouse_id,
+        line.location_id ?? null,
+        line.bin_code ?? null,
+        line.batch_no ?? null,
+        line.serial_no ?? null,
+        line.expiry_date ?? null,
+        line.date_received ?? null,
+        line.prod_date ?? null,
+        quantity,
+        effectiveUnitCost,
+        purchaseUnitCost,
+        totalCost,
+        profile.method,
+      ],
+    );
+
+    const ledgerEntry = inserted.rows[0];
+
+    if (!ledgerEntry) {
+      throw new Error("Failed to create inbound ledger entry.");
+    }
+
+    await InventoryCostingService.applyMovement(client, balance, {
+      companyId,
+      itemId: line.item_id,
+      warehouseId: line.warehouse_id,
+      ledgerEntryId: ledgerEntry.id,
+      postingDate,
+      transactionType,
+      direction: "IN",
+      quantity,
+      totalCost,
+      costingMethod: profile.method,
+      referenceType: line.reference_type,
+      referenceId: line.reference_id,
+      referenceLineId: line.reference_line_id,
+    });
+
+    await ItemCostSyncService.syncItemCost(
+      client,
+      companyId,
+      line.item_id,
+      balance,
+    );
+
+    return {
+      ledgerEntry,
+      ppvAmount,
+      totalCost,
+      unitCost: effectiveUnitCost,
+    };
+  }
+
+  static async processOutboundStock(
+    client: PoolClient,
+    companyId: string,
+    postingDate: string,
+    transactionType: InventoryTransactionType,
+    line: StockLineInput,
+  ): Promise<OutboundStockResult> {
+    this.assertSupportedMovement(transactionType);
+
+    const quantity = roundQuantity(Number(line.quantity));
+
+    assertPositiveQuantity(quantity);
+
+    const { profile, balance } = await this.prepare(
+      client,
+      companyId,
+      line.item_id,
+    );
+
+    if (quantity > balance.quantityOnHand) {
+      throw new Error(
+        `Insufficient company-wide stock for item ${line.item_id}.`,
+      );
+    }
+
+    const allocations = await InventoryLayerAllocationService.allocate(client, {
+      companyId,
+      itemId: line.item_id,
+      warehouseId: line.warehouse_id,
+      quantity,
+      method: profile.method,
+      inboundEntryId: line.inbound_entry_id,
+      sourceAllocationId: line.source_allocation_id,
+      locationId: line.location_id,
+      batchNo: line.batch_no,
+      binCode: line.bin_code,
+      serialNo: line.serial_no,
+      expiryDate: line.expiry_date,
+    });
+
+    let totalCost = this.calculateOutboundCost(
+      profile,
+      balance,
+      quantity,
+      allocations,
+    );
+
+    // The final company-wide issue must consume the exact
+    // remaining inventory value, including rounding residue.
+    if (roundQuantity(balance.quantityOnHand - quantity) === 0) {
+      const difference = roundMoney(balance.inventoryValue - totalCost);
+
+      if (Math.abs(difference) > 0.01) {
+        throw new Error(
+          "Final issue cost differs materially from " +
+            "remaining inventory value. Reconcile before posting.",
+        );
+      }
+
+      totalCost = roundMoney(balance.inventoryValue);
+    }
+
+    const unitCost = roundUnitCost(totalCost / quantity);
+
+    const inserted = await client.query<InventoryLedgerEntry>(
+      `
+      INSERT INTO inventory_ledger_entries (
+        company_id,
+        posting_date,
+        transaction_type,
+        reference_type,
+        reference_id,
+        reference_line_id,
+        item_id,
+        warehouse_id,
+        location_id,
+        bin_code,
+        batch_no,
+        serial_no,
+        expiry_date,
+        quantity,
+        remaining_quantity,
+        unit_cost,
+        total_cost,
+        costing_method,
+        direction,
+        status
+      )
+      VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+        $11,$12,$13,$14,0,$15,$16,$17,
+        'OUT','CLOSED'
+      )
+      RETURNING *
+      `,
+      [
+        companyId,
+        postingDate,
+        transactionType,
+        line.reference_type,
+        line.reference_id,
+        line.reference_line_id ?? null,
+        line.item_id,
+        line.warehouse_id,
+        line.location_id ?? null,
+        line.bin_code ?? null,
+        line.batch_no ?? null,
+        line.serial_no ?? null,
+        line.expiry_date ?? null,
+        quantity,
+        unitCost,
+        totalCost,
+        profile.method,
+      ],
+    );
+
+    const outboundEntry = inserted.rows[0];
+
+    if (!outboundEntry) {
+      throw new Error("Failed to create outbound ledger entry.");
+    }
+
+    await InventoryLayerAllocationService.consume(client, {
+      companyId,
+      itemId: line.item_id,
+      warehouseId: line.warehouse_id,
+      outboundEntryId: outboundEntry.id,
+      outboundLineId: line.reference_line_id,
+      sourceAllocationId: line.source_allocation_id,
+      allocations,
+      totalFinancialCost: totalCost,
+      method: profile.method,
+    });
+
+    await InventoryCostingService.applyMovement(client, balance, {
+      companyId,
+      itemId: line.item_id,
+      warehouseId: line.warehouse_id,
+      ledgerEntryId: outboundEntry.id,
+      postingDate,
+      transactionType,
+      direction: "OUT",
+      quantity,
+      totalCost,
+      costingMethod: profile.method,
+      referenceType: line.reference_type,
+      referenceId: line.reference_id,
+      referenceLineId: line.reference_line_id,
+    });
+
+    await ItemCostSyncService.syncItemCost(
+      client,
+      companyId,
+      line.item_id,
+      balance,
+    );
+
+    return {
+      outboundEntry,
+      totalCost,
+      unitCost,
+    };
+  }
+
+  private static calculateOutboundCost(
+    profile: ItemCostingProfile,
+    balance: InventoryCostBalance,
+    quantity: number,
+    allocations: PhysicalLayerAllocation[],
+  ): number {
+    if (profile.method === "WEIGHTED_AVERAGE") {
+      return MovingAverageCostingService.calculateOutbound(balance, quantity)
+        .totalCost;
+    }
+
+    if (profile.method === "STANDARD") {
+      return StandardCostingService.calculateOutbound(
+        quantity,
+        profile.fixedStandardCost ?? NaN,
+      ).totalCost;
+    }
+
+    // Explicit source selection can override the normal
+    // FIFO/LIFO physical sequence. Cost always follows
+    // the selected physical layers.
+    const physicalTotal = roundMoney(
+      allocations.reduce(
+        (sum, allocation) => sum + allocation.physicalValue,
+        0,
+      ),
+    );
+
+    // Keep both costing strategies integrated and available
+    // for document-level costing previews.
+    if (profile.method === "FIFO") {
+      return physicalTotal;
+    }
+
+    if (profile.method === "LIFO") {
+      return physicalTotal;
+    }
+
+    throw new Error("Unsupported outbound costing method.");
+  }
+}
+
+/* export class UnifiedInventoryEngineService {
+  //  * Helper: Resolves item costing method from DB
+  //  * 1 = FIFO, 2 = LIFO, 3 = Moving Average, 4 = Standard Cost
+
+  //  * Helper: Resolves global company costing method and item standard cost from DB
+  //  * Costing methods mapping:
+  //  * 'FIFO' (or 1) = FIFO
+  //  * 'LIFO' (or 2) = LIFO
+  //  * 'WEIGHTED_AVERAGE' (or 3) = Moving Average
+  //  * 'STANDARD' (or 4) = Standard Cost
 
   private static async getItemCostingProfile(
     client: PoolClient,
@@ -87,11 +646,10 @@ export class UnifiedInventoryEngineService {
       throw new Error(`Item record ${itemId} or company setup not found.`);
     }
 
-    // You can normalize this string or numeric value depending on how your DB stores it
     const costingMethodRaw = res.rows[0].global_costing_method;
 
     // Map string values to numbers if your engine relies on numerical checks (1, 2, 3, 4)
-    let costingMethodNum = 1; // Default FIFO
+    let costingMethodNum = 1;
     if (costingMethodRaw === "LIFO" || costingMethodRaw === 2)
       costingMethodNum = 2;
     else if (costingMethodRaw === "WEIGHTED_AVERAGE" || costingMethodRaw === 3)
@@ -105,12 +663,11 @@ export class UnifiedInventoryEngineService {
     };
   }
 
-  /**
-   * =========================================================================
-   * 1. INBOUND STOCK ENGINE
-   * Handles FIFO, LIFO, Moving Average, and Standard Cost Variants
-   * =========================================================================
-   */
+  //  * =========================================================================
+  //  * 1. INBOUND STOCK ENGINE
+  //  * Handles FIFO, LIFO, Moving Average, and Standard Cost Variants
+  //  * =========================================================================
+
   static async processInboundStock(
     client: PoolClient,
     companyId: string,
@@ -201,11 +758,9 @@ export class UnifiedInventoryEngineService {
     return { ledgerEntry: ledgerRes.rows[0], ppvAmount };
   }
 
-  /**
-   * =========================================================================
-   * 2. OUTBOUND STOCK ENGINE WITH DYNAMIC COSTING SCHEMES
-   * =========================================================================
-   */
+  //  * =========================================================================
+  //  * 2. OUTBOUND STOCK ENGINE WITH DYNAMIC COSTING SCHEMES
+  //  * =========================================================================
 
   static async processOutboundStock(
     client: PoolClient,
@@ -238,17 +793,17 @@ export class UnifiedInventoryEngineService {
     let accumulatedCost = 0;
     let remainingToDeduct = qtyNeeded;
 
-    /*
-     * =========================================================
-     * EXPLICIT SOURCE ALLOCATION
-     *
-     * Used by:
-     *   - Item Journal Negative Entry
-     *   - any future document that explicitly selects stock
-     *
-     * When inbound_entry_id is supplied, DO NOT run FIFO/LIFO.
-     * =========================================================
-     */
+    
+    //  * =========================================================
+    //  * EXPLICIT SOURCE ALLOCATION
+    //  *
+    //  * Used by:
+    //  *   - Item Journal Negative Entry
+    //  *   - any future document that explicitly selects stock
+    //  *
+    //  * When inbound_entry_id is supplied, DO NOT run FIFO/LIFO.
+    //  * =========================================================
+    
     if (line.inbound_entry_id) {
       const inboundResult = await client.query(
         `
@@ -361,13 +916,13 @@ export class UnifiedInventoryEngineService {
         totalCost: layerTotalCost,
       });
     } else {
-      /*
-       * =========================================================
-       * EXISTING FIFO / LIFO BEHAVIOR
-       *
-       * Existing SO and other callers continue using this path.
-       * =========================================================
-       */
+      
+      //  * =========================================================
+      //  * EXISTING FIFO / LIFO BEHAVIOR
+      //  *
+      //  * Existing SO and other callers continue using this path.
+      //  * =========================================================
+      
 
       let orderByClause = "posting_date ASC, created_at ASC";
 
@@ -429,11 +984,11 @@ export class UnifiedInventoryEngineService {
 
     const blendedUnitCost = Number((accumulatedCost / qtyNeeded).toFixed(6));
 
-    /*
-     * =========================================================
-     * CREATE OUTBOUND LEDGER ENTRY
-     * =========================================================
-     */
+    
+    //  * =========================================================
+    //  * CREATE OUTBOUND LEDGER ENTRY
+    //  * =========================================================
+    
 
     const outboundLedgerRes = await client.query(
       `
@@ -477,11 +1032,11 @@ export class UnifiedInventoryEngineService {
 
     const outboundEntry = outboundLedgerRes.rows[0];
 
-    /*
-     * =========================================================
-     * WRITE ALLOCATIONS + DECREASE INBOUND LAYERS
-     * =========================================================
-     */
+    
+    //  * =========================================================
+    //  * WRITE ALLOCATIONS + DECREASE INBOUND LAYERS
+    //  * =========================================================
+    
 
     for (const allocation of allocatedLayers) {
       await client.query(
@@ -549,35 +1104,5 @@ export class UnifiedInventoryEngineService {
       totalCost: accumulatedCost,
       unitCost: blendedUnitCost,
     };
-    // return { outboundEntry, allocatedLayers };
   }
-}
-/* 
-private static async getItemCostingProfile(
-    client: PoolClient,
-    itemId: string,
-    companyId: string,
-    companyDefaultCostingMethod: number = 1,
-  ): Promise<{ costing_method: number; standard_cost: number }> {
-    const res = await client.query(
-      `
-      SELECT 
-        COALESCE(i.costing_method, c.default_costing_method, $3) AS costing_method,
-        COALESCE(i.standard_cost, 0) AS standard_cost
-      FROM items i
-      LEFT JOIN companies c ON c.id = i.company_id
-      WHERE i.id = $1 AND i.company_id = $2
-      `,
-      [itemId, companyId, companyDefaultCostingMethod],
-    );
-
-    if (!res.rows.length) {
-      throw new Error(`Item record ${itemId} not found.`);
-    }
-
-    return {
-      costing_method: Number(res.rows[0].costing_method),
-      standard_cost: Number(res.rows[0].standard_cost),
-    };
-  }
-*/
+} */

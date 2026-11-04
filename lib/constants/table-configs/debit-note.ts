@@ -365,13 +365,13 @@ export const debitNotesConfig: ColumnConfig[] = [
     columnOrder: 40,
     columnWidth: 120,
   },
-  {
-    columnKey: "actions",
-    label: "Actions",
-    dataType: "text",
-    isVisible: true,
-    isPinned: false,
-    columnOrder: 41,
-    columnWidth: 100,
-  },
+  // {
+  //   columnKey: "actions",
+  //   label: "Actions",
+  //   dataType: "text",
+  //   isVisible: true,
+  //   isPinned: false,
+  //   columnOrder: 41,
+  //   columnWidth: 100,
+  // },
 ];

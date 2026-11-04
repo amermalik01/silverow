@@ -19,7 +19,7 @@ export interface CreateVendorLedgerEntryInput {
   dueDate?: string;
   description?: string;
   originalAmount: number;
-  currencyId?: string;
+  currencyId?: string | null;
   exchangeRate?: number;
   journalEntryId?: string;
   journalLineId?: string | null;
@@ -36,7 +36,20 @@ export class VendorLedgerService {
   ) {
     const exchangeRate = input.exchangeRate ?? 1;
     const originalAmountFCY = input.originalAmount;
-    const originalAmountLCY = originalAmountFCY * exchangeRate;
+    const originalAmountLCY = Number(
+      (originalAmountFCY * exchangeRate).toFixed(2),
+    );
+    // const originalAmountLCY = originalAmountFCY * exchangeRate;
+
+    if (!Number.isFinite(originalAmountFCY) || originalAmountFCY <= 0) {
+      throw new Error("Vendor invoice amount must be greater than zero.");
+    }
+
+    if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+      throw new Error(
+        "Vendor invoice exchange rate must be greater than zero.",
+      );
+    }
 
     const res = await client.query(
       `

@@ -276,6 +276,8 @@ export default function StockTransferList({
             fetchApi={fetchTransfers}
             columnsConfigApi={columnsConfigApi}
             renderRowCell={renderRowCell}
+            enableRowSelection={true}
+            rowKey="id"
           />
         </div>
       </div>

@@ -9,17 +9,27 @@ import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { Icon } from "@iconify/react";
 
-export type PO_StockAllocationRecord = {
-  location_id: string;
-  location_name: string;
+import {
+  validateStockAllocations,
+  type ItemTrackingType,
+} from "@/app/components/purchases/purchase-orders/utils/purchaseOrder.stock-validation";
 
-  date_received: string;
-  prod_date: string;
-  expiry_date: string;
-  batch_no: string;
-  serial_no: string;
-  quantity: number;
-};
+import type {
+  PO_StockAllocationRecord,
+} from "@/types/purchase-order";
+
+// export type PO_StockAllocationRecord = {
+//   location_id: string;
+//   location_name: string;
+
+//   date_received: string;
+//   prod_date: string;
+//   expiry_date: string;
+//   batch_no: string;
+//   bin_code: string;
+//   serial_no: string;
+//   quantity: number;
+// };
 
 type WarehouseLocation = {
   id: string;
@@ -39,6 +49,7 @@ type Props = {
   warehouseId?: string;
   warehouseName: string;
   uomName?: string;
+  trackingType?: ItemTrackingType;
   initialAllocations?: PO_StockAllocationRecord[];
 };
 
@@ -54,12 +65,15 @@ export default function PO_StockAllocationModal({
   warehouseId,
   warehouseName,
   uomName,
+  trackingType = "NONE",
   initialAllocations = [],
 }: Props) {
   const [locations, setLocations] = useState<WarehouseLocation[]>([]);
 
   const [allocations, setAllocations] =
     useState<PO_StockAllocationRecord[]>(initialAllocations);
+
+  const [allocationErrors, setAllocationErrors] = useState<string[]>([]);
 
   const [newRowInput, setNewRowInput] = useState({
     location_id: "",
@@ -69,6 +83,7 @@ export default function PO_StockAllocationModal({
     prod_date: "",
     expiry_date: "",
     batch_no: "",
+    bin_code: "",
     serial_no: "",
     quantity: "",
   });
@@ -79,7 +94,15 @@ export default function PO_StockAllocationModal({
   );
   const qtyToAllocate = targetQuantity - totalAllocated;
 
-  const derivedDefaultQty = Math.max(0, qtyToAllocate);
+  // const derivedDefaultQty = Math.max(0, qtyToAllocate);
+
+  const isSerialTracked =
+    trackingType === "SERIAL" || trackingType === "BATCH_SERIAL";
+
+  const derivedDefaultQty = isSerialTracked
+    ? Math.min(1, Math.max(0, qtyToAllocate))
+    : Math.max(0, qtyToAllocate);
+
   const currentInputQty =
     newRowInput.quantity === ""
       ? derivedDefaultQty
@@ -116,10 +139,50 @@ export default function PO_StockAllocationModal({
   }, [warehouseId]);
 
   const handleAddRow = () => {
+    // const isSerialTracked =
+    //   trackingType === "SERIAL" || trackingType === "BATCH_SERIAL";
+
+    if (isSerialTracked && currentInputQty !== 1) {
+      setAllocationErrors([
+        "Each serial number must represent exactly one unit.",
+      ]);
+      return;
+    }
+
+    const candidate = {
+      ...newRowInput,
+      quantity: currentInputQty,
+    };
+
+    const errors = validateStockAllocations(
+      [...allocations, candidate],
+      targetQuantity,
+      trackingType,
+    ).filter((error) => !error.startsWith("Stock allocation incomplete"));
+
+    if (errors.length > 0) {
+      setAllocationErrors(errors);
+      return;
+    }
+
     if (!newRowInput.location_id || currentInputQty <= 0 || qtyToAllocate <= 0)
       return;
 
-    const allowedQty = Math.min(currentInputQty, qtyToAllocate);
+    // const allowedQty = Math.min(currentInputQty, qtyToAllocate);
+
+    if (!Number.isFinite(currentInputQty) || currentInputQty <= 0) {
+      setAllocationErrors(["Allocation quantity must be greater than zero."]);
+      return;
+    }
+
+    if (currentInputQty > qtyToAllocate + 0.000001) {
+      setAllocationErrors([
+        `Allocation quantity cannot exceed ${qtyToAllocate}.`,
+      ]);
+      return;
+    }
+
+    const allowedQty = currentInputQty;
 
     const rowToAdd: PO_StockAllocationRecord = {
       ...newRowInput,
@@ -127,7 +190,9 @@ export default function PO_StockAllocationModal({
     };
 
     const updatedAllocations = [...allocations, rowToAdd];
+
     setAllocations(updatedAllocations);
+    setAllocationErrors([]);
 
     const nextTotalAllocated = updatedAllocations.reduce(
       (sum, item) => sum + item.quantity,
@@ -143,8 +208,13 @@ export default function PO_StockAllocationModal({
       prod_date: "",
       expiry_date: "",
       batch_no: "",
+      bin_code: "",
       serial_no: "",
-      quantity: nextRemaining > 0 ? nextRemaining.toString() : "",
+      // quantity: nextRemaining > 0 ? nextRemaining.toString() : "",
+      quantity:
+        nextRemaining > 0
+          ? String(isSerialTracked ? Math.min(1, nextRemaining) : nextRemaining)
+          : "",
     });
   };
 
@@ -153,6 +223,18 @@ export default function PO_StockAllocationModal({
   };
 
   const handleCommitSave = () => {
+    const errors = validateStockAllocations(
+      allocations,
+      targetQuantity,
+      trackingType,
+    );
+
+    if (errors.length > 0) {
+      setAllocationErrors(errors);
+      return;
+    }
+
+    setAllocationErrors([]);
     onSave(allocations);
     onClose();
   };
@@ -260,9 +342,21 @@ export default function PO_StockAllocationModal({
                   key={index}
                   className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
                 >
-                  <td className="p-3">{item.date_received ? format(item.date_received, "dd/MM/yyyy") : "-"}</td>
-                  <td className="p-3">{item.prod_date ? format(item.prod_date, "dd/MM/yyyy") : "-"}</td>
-                  <td className="p-3">{item.expiry_date ? format(item.expiry_date, "dd/MM/yyyy") : "-"}</td>
+                  <td className="p-3">
+                    {item.date_received
+                      ? format(item.date_received, "dd/MM/yyyy")
+                      : "-"}
+                  </td>
+                  <td className="p-3">
+                    {item.prod_date
+                      ? format(item.prod_date, "dd/MM/yyyy")
+                      : "-"}
+                  </td>
+                  <td className="p-3">
+                    {item.expiry_date
+                      ? format(item.expiry_date, "dd/MM/yyyy")
+                      : "-"}
+                  </td>
                   {/* <td className="p-3">{item.prod_date || "-"}</td>
                   <td className="p-3">{item.expiry_date || "-"}</td> */}
                   <td className="p-3">{item.location_name}</td>
@@ -409,18 +503,36 @@ export default function PO_StockAllocationModal({
                   </td>
                   <td className="p-2">
                     <NumericTextInput
+                      // value={
+                      //   qtyToAllocate <= 0 ? 0 : Number(newRowInput.quantity)
+                      // }
+                      // allowDecimals={false}
                       value={
-                        qtyToAllocate <= 0 ? 0 : Number(newRowInput.quantity)
+                        qtyToAllocate <= 0
+                          ? 0
+                          : newRowInput.quantity === ""
+                            ? derivedDefaultQty
+                            : Number(newRowInput.quantity)
                       }
-                      allowDecimals={false}
+                      allowDecimals={
+                        trackingType !== "SERIAL" &&
+                        trackingType !== "BATCH_SERIAL"
+                      }
                       min="0"
                       disabled={qtyToAllocate <= 0 || isReadonly}
                       className="border border-slate-200 dark:border-slate-700 rounded p-1.5 w-full text-right bg-white dark:bg-slate-900 font-semibold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-green-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500"
-                      onChange={(val) =>
-                        setNewRowInput({
-                          ...newRowInput,
-                          quantity: String(val),
-                        })
+                      // onChange={(val) =>
+                      //   setNewRowInput({
+                      //     ...newRowInput,
+                      //     quantity: String(val),
+                      //   })
+                      // }
+
+                      onChange={(value) =>
+                        setNewRowInput((prev) => ({
+                          ...prev,
+                          quantity: String(value),
+                        }))
                       }
                       placeholder={
                         derivedDefaultQty > 0
@@ -449,6 +561,14 @@ export default function PO_StockAllocationModal({
             </tbody>
           </table>
         </div>
+
+        {allocationErrors.length > 0 && (
+          <div className="mx-4 mb-3 rounded border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+            {allocationErrors.map((error, index) => (
+              <p key={index}>{error}</p>
+            ))}
+          </div>
+        )}
 
         <div className="bg-slate-50 dark:bg-slate-800/40 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
           <Button

@@ -1,20 +1,9 @@
 //  lib/services/sales-invoices/sales-invoice.service.ts
-import { PoolClient } from "pg";
+
 import { pool } from "@/lib/db";
 import { FetchParams, FetchResponse } from "@/types/table";
 
-import {
-  SalesOrder,
-  SalesOrderAddress,
-  SalesOrderLine,
-  SalesOrderPayload,
-} from "@/types/sales-order";
-
-// import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
-// import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
-// import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
-// import { JournalLineInput } from "@/types/journal";
-// import { SalesInvoice } from "@/types/sales-invoice";
+import { SalesOrder } from "@/types/sales-order";
 
 export class SalesInvoiceService {
   static async listPaginated(
@@ -245,7 +234,14 @@ export class SalesInvoiceService {
       totalRecords,
     };
   }
-  /* static async listPaginated(
+}
+
+// import { GLPostingService } from "@/lib/services/gl/gl-posting.service";
+// import { AccountResolutionService } from "@/lib/services/gl/account-resolution.service";
+// import { GLValidationService } from "@/lib/services/gl/gl-validation.service";
+// import { JournalLineInput } from "@/types/journal";
+// import { SalesInvoice } from "@/types/sales-invoice";
+/* static async listPaginated(
     companyId: string,
     params: FetchParams,
   ): Promise<FetchResponse<SalesInvoice>> {
@@ -412,7 +408,7 @@ export class SalesInvoiceService {
     };
   } */
 
-  /* private static async getReceivableAccount(
+/* private static async getReceivableAccount(
     client: PoolClient,
     companyId: string,
   ): Promise<string> {
@@ -433,7 +429,7 @@ export class SalesInvoiceService {
     return result.rows[0].receivable_account_id;
   } */
 
-  /* static async postInvoice(
+/* static async postInvoice(
     client: PoolClient,
     companyId: string,
     invoiceId: string,
@@ -595,7 +591,7 @@ export class SalesInvoiceService {
     );
   } */
 
-  /*  static async createFromSalesOrder(
+/*  static async createFromSalesOrder(
     client: PoolClient,
     companyId: string,
     salesOrderId: string,
@@ -880,4 +876,3 @@ export class SalesInvoiceService {
 
     return invoice;
   } */
-}

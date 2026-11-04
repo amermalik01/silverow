@@ -102,15 +102,15 @@ export function getPurchaseInvoiceCellRenderers(slug: string) {
     LinkToSo: (row: PurchaseInvoice) => row.LinkToSo || "-",
 
     // Actions Column
-    actions: (row: PurchaseInvoice) => (
-      <div className="flex items-center gap-1.5">
-        <Link
-          href={`/${slug}/purchases/purchase-invoices/${row.id}`}
-          className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          View
-        </Link>
-      </div>
-    ),
+    // actions: (row: PurchaseInvoice) => (
+    //   <div className="flex items-center gap-1.5">
+    //     <Link
+    //       href={`/${slug}/purchases/purchase-invoices/${row.id}`}
+    //       className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+    //     >
+    //       View
+    //     </Link>
+    //   </div>
+    // ),
   };
 }

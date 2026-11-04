@@ -71,7 +71,8 @@ export default function ItemList({ slug }: Props) {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <div>
-          <h2 className="text-xl font-semibold">Items</h2>{/* Inventory/ */}
+          <h2 className="text-xl font-semibold">Items</h2>
+          {/* Inventory/ */}
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Manage inventory items, categories, brands, and product
             configurations
@@ -94,6 +95,8 @@ export default function ItemList({ slug }: Props) {
           fetchApi={fetchItems}
           columnsConfigApi={columnsConfigApi}
           renderRowCell={renderRowCell}
+          enableRowSelection={true}
+          rowKey="id"
         />
       </div>
     </div>

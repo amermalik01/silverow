@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 import { PurchaseOrderService } from "@/lib/services/purchase-orders/purchase-order.service";
-// import { InventoryAllocationEngineService } from "@/lib/services/inventory/inventory-allocation-engine.service";
 import { PurchaseReceiptService } from "@/lib/services/purchase-receipts/purchase-receipt.service";
 import { PurchaseReceiptPayload } from "@/types/purchase-receipt";
 

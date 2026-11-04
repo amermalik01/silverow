@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const allocationsResult = await client.query(
       `
       SELECT id, credit_note_line_id, warehouse_location_id, allocated_quantity,
-             unit_cost, batch_no, bin_code, expiry_date, source_allocation_id
+             unit_cost, batch_no, bin_code, serial_no, expiry_date, source_allocation_id
       FROM inventory_allocations
       WHERE credit_note_line_id = ANY($1::uuid[])
         AND company_id = $2

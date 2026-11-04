@@ -68,6 +68,27 @@ export const PurchaseOrderAddressSchema = z.object({
   country: looseString,
 });
 
+export const POAllocationSchema = z.object({
+  id: looseUuid.optional(),
+
+  location_id: looseUuid,
+  location_name: looseString,
+
+  date_received: looseString,
+  prod_date: looseString,
+  expiry_date: looseString,
+
+  batch_no: looseString,
+  bin_code: looseString,
+  serial_no: looseString,
+
+  tracking_code: looseString.optional(),
+
+  quantity: z.coerce
+    .number()
+    .positive("Allocation quantity must be greater than zero"),
+});
+
 export const PurchaseOrderLineSchema = z
   .object({
     id: looseUuid,
@@ -94,6 +115,11 @@ export const PurchaseOrderLineSchema = z
     vat_amount: looseNumber,
     net_amount: looseNumber,
     gross_amount: looseNumber,
+
+    allocations: z.array(POAllocationSchema).optional(),
+    initialAllocations: z.array(POAllocationSchema).optional(),
+    stock_allocations: z.array(POAllocationSchema).optional(),
+    po_line_allocations: z.array(POAllocationSchema).optional(),
   })
   .superRefine((line, ctx) => {
     if (line.line_type === "ITEM") {
@@ -199,19 +225,6 @@ export const PurchaseOrderSchema = z.object({
 
   status: looseString,
 });
-
-// export const PurchaseOrderPayloadSchema = z.object({
-//   order: PurchaseOrderSchema,
-//   lines: z
-//     .array(PurchaseOrderLineSchema)
-//     .min(
-//       1,
-//       "Transactional document records must contain at least 1 visual item line entry",
-//     ),
-//   primary_address: PurchaseOrderAddressSchema.nullable().optional(),
-//   billing_address: PurchaseOrderAddressSchema.nullable().optional(),
-//   shipping_address: PurchaseOrderAddressSchema.nullable().optional(),
-// });
 
 export const PurchaseOrderPayloadSchema = z
   .object({

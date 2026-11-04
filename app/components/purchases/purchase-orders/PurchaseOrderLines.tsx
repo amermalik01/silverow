@@ -8,6 +8,7 @@ import {
   PurchaseOrder,
   PurchaseOrderLine,
   PurchaseOrderLineUI,
+  PO_StockAllocationRecord,
 } from "@/types/purchase-order";
 
 import ItemLookupModal, {
@@ -22,11 +23,16 @@ import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
 
-import PO_StockAllocationModal, {
-  PO_StockAllocationRecord,
-} from "@/app/components/shared/modals/PO_StockAllocationModal";
+import PO_StockAllocationModal from "@/app/components/shared/modals/PO_StockAllocationModal";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+
+import {
+  isLineFullyAllocated,
+  isLineFullyReceived,
+  getLineAllocations,
+  type ItemTrackingType,
+} from "./utils/purchaseOrder.stock-validation";
 
 type VatPostingOption = {
   id: string;
@@ -45,6 +51,10 @@ type Props = {
   refreshLines?: () => Promise<void>;
 
   onImportItems?: () => void;
+
+  selectedReceiptLineIds?: string[];
+
+  onReceiptLineSelectionChange?: (lineIds: string[]) => void;
 };
 
 export default function PurchaseOrderLines({
@@ -54,6 +64,8 @@ export default function PurchaseOrderLines({
   purchaseOrder,
   refreshLines,
   onImportItems,
+  selectedReceiptLineIds = [],
+  onReceiptLineSelectionChange,
 }: Props) {
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [glModalOpen, setGlModalOpen] = useState(false);
@@ -133,6 +145,18 @@ export default function PurchaseOrderLines({
 
   const addGLLine = () => {
     setGlModalOpen(true);
+  };
+
+  const toggleReceiptLine = (lineId: string, checked: boolean) => {
+    const next = new Set(selectedReceiptLineIds);
+
+    if (checked) {
+      next.add(lineId);
+    } else {
+      next.delete(lineId);
+    }
+
+    onReceiptLineSelectionChange?.([...next]);
   };
 
   const buildItemLine = async (
@@ -339,7 +363,8 @@ export default function PurchaseOrderLines({
       gross_amount: gross,
       allocations: currentAllocations,
       initialAllocations: line.initialAllocations || currentAllocations,
-      is_allocated: qty > 0 && totalAllocated === qty,
+      // is_allocated: qty > 0 && totalAllocated === qty,
+      is_allocated: qty > 0 && Math.abs(totalAllocated - qty) < 0.000001,
     };
   };
 
@@ -520,7 +545,9 @@ export default function PurchaseOrderLines({
           ...line,
           allocations: allocationsData,
           initialAllocations: allocationsData,
-          is_allocated: lineQty > 0 && totalAllocated === lineQty,
+          // is_allocated: lineQty > 0 && totalAllocated === lineQty,
+          is_allocated:
+            lineQty > 0 && Math.abs(totalAllocated - lineQty) < 0.000001,
         };
       }),
     );
@@ -968,6 +995,7 @@ export default function PurchaseOrderLines({
           warehouseId={activeAllocationLine.warehouse_id || ""}
           warehouseName={activeAllocationLine.warehouse_name || ""}
           uomName={activeAllocationLine.uom_name || ""}
+          trackingType={activeAllocationLine.tracking_type ?? "NONE"}
           initialAllocations={(
             activeAllocationLine.allocations ||
             activeAllocationLine.initialAllocations ||
@@ -979,7 +1007,7 @@ export default function PurchaseOrderLines({
             prod_date: String(alloc.prod_date || ""),
             expiry_date: String(alloc.expiry_date || ""),
             batch_no: String(alloc.batch_no || ""),
-            // bin_code: String(alloc.bin_code || ""),
+            bin_code: String(alloc.bin_code || ""),
             serial_no: String(alloc.serial_no || ""),
             quantity: Number(alloc.quantity || 0),
           }))}

@@ -66,13 +66,13 @@ export const itemColumnsConfig: ColumnConfig[] = [
     columnOrder: 8,
     columnWidth: 120,
   },
-  {
-    columnKey: "actions",
-    label: "Actions",
-    dataType: "text",
-    isVisible: true,
-    isPinned: false,
-    columnOrder: 9,
-    columnWidth: 100,
-  },
+  // {
+  //   columnKey: "actions",
+  //   label: "Actions",
+  //   dataType: "text",
+  //   isVisible: true,
+  //   isPinned: false,
+  //   columnOrder: 9,
+  //   columnWidth: 100,
+  // },
 ];

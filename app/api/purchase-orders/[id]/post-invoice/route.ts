@@ -1,8 +1,12 @@
 // app/api/purchase-orders/[id]/post-invoice/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
-import { PurchaseInvoicePostingService } from "@/lib/services/purchase-invoices/purchase-invoice-posting.service";
+
+import { PurchaseOrderInvoicePostingService } from "@/lib/services/purchase-orders/purchase-order-invoice-posting.service";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -27,7 +31,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
     const companyId = await getCompanyId();
     const { id } = await params;
-    const userId = req.headers.get("x-user-id") || undefined;
+    // const userId = req.headers.get("x-user-id") || undefined;
+    const session = await getServerSession(authOptions);
+
+    const userId = session?.user.id;
 
     if (!companyId) {
       return NextResponse.json(
@@ -45,10 +52,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const result = await PurchaseInvoicePostingService.postInvoice({
+    const result = await PurchaseOrderInvoicePostingService.postInvoice({
       companyId,
       purchaseOrderId: id,
-      userId,
+      userId: userId,
       invoiceData: {
         supplier_invoice_no: body.supplier_invoice_no,
         invoice_date: body.invoice_date,
@@ -58,7 +65,11 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         currency_id: body.currency_id,
         exchange_rate: body.exchange_rate,
       },
-      financials: body.financials,
+      financials: {
+        amount: Number(body.financials.amount),
+        vat: Number(body.financials.vat),
+        amountInclVat: Number(body.financials.amountInclVat),
+      },
     });
 
     return NextResponse.json({
@@ -78,3 +89,21 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     );
   }
 }
+
+// import { PurchaseInvoicePostingService } from "@/lib/services/purchase-invoices/purchase-invoice-posting.service";
+
+// const result = await PurchaseInvoicePostingService.postInvoice({
+//   companyId,
+//   purchaseOrderId: id,
+//   userId,
+//   invoiceData: {
+//     supplier_invoice_no: body.supplier_invoice_no,
+//     invoice_date: body.invoice_date,
+//     due_date: body.due_date,
+//     posting_date: body.posting_date,
+//     notes: body.notes,
+//     currency_id: body.currency_id,
+//     exchange_rate: body.exchange_rate,
+//   },
+//   financials: body.financials,
+// });

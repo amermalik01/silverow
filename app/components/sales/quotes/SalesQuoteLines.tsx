@@ -7,6 +7,8 @@ import { Icon } from "@iconify/react";
 
 import { SalesQuote, SalesQuoteLineUI } from "@/types/sales-quote";
 
+import type { PO_StockAllocationRecord } from "@/types/purchase-order";
+
 import ItemLookupModal, {
   ItemLookupRecord,
 } from "@/app/components/shared/modals/ItemLookupModal";
@@ -18,10 +20,6 @@ import GLAccountLookupModal, {
 import WarehouseLookupModal, {
   WarehouseLookupRecord,
 } from "@/app/components/shared/modals/WarehouseLookupModal";
-
-import PO_StockAllocationModal, {
-  PO_StockAllocationRecord,
-} from "@/app/components/shared/modals/PO_StockAllocationModal";
 
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";

@@ -1,6 +1,26 @@
 // types/purchase-order.ts
 
-import { PO_StockAllocationRecord } from "@/app/components/shared/modals/PO_StockAllocationModal";
+import type { ItemTrackingType } from "@/app/components/purchases/purchase-orders/utils/purchaseOrder.stock-validation";
+
+export interface PO_StockAllocationRecord {
+  id?: string;
+
+  location_id: string;
+  location_name: string;
+
+  date_received: string;
+  prod_date: string;
+  expiry_date: string;
+
+  batch_no: string;
+  bin_code: string;
+  serial_no: string;
+
+  // Canonical application-level tracking field.
+  tracking_code?: string;
+
+  quantity: number;
+}
 
 export type PurchaseOrderStatus = string;
 export interface PurchaseOrder {
@@ -12,7 +32,7 @@ export interface PurchaseOrder {
   supplier_id: string;
   supplier_no?: string;
   supplier_name?: string;
-  
+
   pay_to_supplier_id: string;
   pay_to_supplier_no?: string;
   pay_to_supplier_name?: string;
@@ -186,29 +206,43 @@ export interface PurchaseOrderLine {
   deleted_at?: string;
   deleted_by?: string;
   updated_at?: string;
-}
 
-export interface PurchaseOrderLineUI extends PurchaseOrderLine {
-  _stableKey?: string;
-  reserved_quantity?: string | number;
-  available_stock?: string | number;
-  is_allocated?: boolean;
-
-  // allocations?: Array<{
-  //   quantity: number;
-  //   [key: string]: unknown;
-  // }>;
-
-  // initialAllocations?: Array<{
-  //   quantity: number;
-  //   [key: string]: unknown;
-  // }>;
-
+  // Stock allocation data
   allocations?: PO_StockAllocationRecord[];
   initialAllocations?: PO_StockAllocationRecord[];
   stock_allocations?: PO_StockAllocationRecord[];
   po_line_allocations?: PO_StockAllocationRecord[];
+
+  tracking_type?: ItemTrackingType;
 }
+
+export interface PurchaseOrderLineUI extends PurchaseOrderLine {
+  _stableKey?: string;
+  available_stock?: string | number;
+}
+
+// export interface PurchaseOrderLineUI extends PurchaseOrderLine {
+//   _stableKey?: string;
+//   // reserved_quantity?: string | number;
+//   available_stock?: string | number;
+//   // is_allocated?: boolean;
+
+//   // allocations?: Array<{
+//   //   quantity: number;
+//   //   [key: string]: unknown;
+//   // }>;
+
+//   // initialAllocations?: Array<{
+//   //   quantity: number;
+//   //   [key: string]: unknown;
+//   // }>;
+
+//   // allocations?: PO_StockAllocationRecord[];
+//   // initialAllocations?: PO_StockAllocationRecord[];
+//   // stock_allocations?: PO_StockAllocationRecord[];
+//   // po_line_allocations?: PO_StockAllocationRecord[];
+//   // tracking_type?: ItemTrackingType;
+// }
 
 export interface StockAllocationRecord {
   production_date?: string;

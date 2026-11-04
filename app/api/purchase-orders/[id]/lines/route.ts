@@ -34,12 +34,20 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
               json_build_object(
                 'id', ia.id,
                 'location_id', ia.warehouse_location_id,
+                'location_code', wl.code,
+                'location_name', wl.title,
                 'quantity', ia.allocated_quantity,
                 'batch_no', ia.batch_no,
-                'expiry_date', ia.expiry_date
+                'bin_code', ia.bin_code,
+                'serial_no', ia.serial_no,
+                'expiry_date', ia.expiry_date,
+                'date_received', ia.date_received,
+                'prod_date', ia.prod_date
               )
             )
             FROM inventory_allocations ia
+            LEFT JOIN warehouse_locations wl 
+              ON wl.id = ia.warehouse_location_id AND wl.company_id = $1
             WHERE ia.purchase_order_line_id = pol.id 
               AND ia.company_id = $1
               AND ia.status = 'ACTIVE'
@@ -61,7 +69,6 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     return NextResponse.json({
       lines: result.rows,
     });
-
   } catch (error) {
     console.error("GET Purchase Order Lines Error:", error);
     return NextResponse.json(

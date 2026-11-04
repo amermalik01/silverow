@@ -425,11 +425,11 @@ export default function PriceListTab({
             </button>
           ))}
         </div>
-        {!isReadonly && (
+        {/* {!isReadonly && ( */}
           <Button type="button" onClick={addPriceList} variant="add_line">
             Add Price List
           </Button>
-        )}
+        {/* )} */}
       </div>
 
       {priceLists.length === 0 || !activeList ? (

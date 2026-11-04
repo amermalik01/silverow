@@ -275,7 +275,7 @@ export default function ItemForm({ id }: Props) {
                   category_id: e.target.value,
                 })
               }
-              className="border p-2 w-full"
+              className="border p-2 w-full text-xs"
             >
               <option value="">Select</option>
 
