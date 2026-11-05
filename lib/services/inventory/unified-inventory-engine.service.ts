@@ -23,6 +23,7 @@ import { ItemCostSyncService } from "./costing/item-cost-sync.service";
 
 import {
   InventoryLayerAllocationService,
+  getLayerTrackingCode,
   type PhysicalLayerAllocation,
 } from "./allocations/inventory-layer-allocation.service";
 
@@ -89,9 +90,32 @@ export interface InboundStockResult {
   unitCost: number;
 }
 
+// export interface OutboundStockResult {
+//   outboundEntry: InventoryLedgerEntry;
+//   totalCost: number;
+//   unitCost: number;
+// }
+
 export interface OutboundStockResult {
+  /**
+   * Backward-compatible first outbound entry.
+   * New code should use outboundEntries.
+   */
   outboundEntry: InventoryLedgerEntry;
+
+  /**
+   * One entry per physical inbound layer consumed.
+   */
+  outboundEntries: InventoryLedgerEntry[];
+
+  /**
+   * Aggregate financial cost across all physical layers.
+   */
   totalCost: number;
+
+  /**
+   * Aggregate financial unit cost for the dispatched quantity.
+   */
   unitCost: number;
 }
 
@@ -312,6 +336,17 @@ export class UnifiedInventoryEngineService {
       }
     }
 
+    const binCode = line.bin_code?.trim() || null;
+    const serialNo = line.serial_no?.trim() || null;
+
+    if (binCode && serialNo && binCode !== serialNo) {
+      throw new Error(
+        "bin_code and serial_no must contain the same tracking value.",
+      );
+    }
+
+    const trackingCode = serialNo ?? binCode;
+
     const inserted = await client.query<InventoryLedgerEntry>(
       `
       INSERT INTO inventory_ledger_entries (
@@ -357,9 +392,9 @@ export class UnifiedInventoryEngineService {
         line.item_id,
         line.warehouse_id,
         line.location_id ?? null,
-        line.bin_code ?? null,
+        trackingCode,
         line.batch_no ?? null,
-        line.serial_no ?? null,
+        trackingCode,
         line.expiry_date ?? null,
         line.date_received ?? null,
         line.prod_date ?? null,
@@ -433,6 +468,7 @@ export class UnifiedInventoryEngineService {
       );
     }
 
+    // Lock and select the physical inbound layers.
     const allocations = await InventoryLayerAllocationService.allocate(client, {
       companyId,
       itemId: line.item_id,
@@ -468,6 +504,240 @@ export class UnifiedInventoryEngineService {
       }
 
       totalCost = roundMoney(balance.inventoryValue);
+    }
+
+    totalCost = roundMoney(totalCost);
+
+    if (!Number.isFinite(totalCost) || totalCost < 0) {
+      throw new Error("Invalid outbound inventory cost.");
+    }
+
+    const unitCost = roundUnitCost(totalCost / quantity);
+
+    // Distribute the final financial cost across physical layers.
+    // This is also used by consume(), ensuring the allocation
+    // rows and outbound ledger entries receive matching values.
+    const financialAllocations =
+      InventoryLayerAllocationService.calculateFinancialAllocations(
+        allocations,
+        totalCost,
+        profile.method,
+      );
+
+    const outboundEntries: InventoryLedgerEntry[] = [];
+
+    // Create exactly one outbound ledger entry per physical layer.
+    for (const allocation of financialAllocations) {
+      const layer = allocation.layer;
+      const trackingCode = getLayerTrackingCode(layer);
+
+      const inserted = await client.query<InventoryLedgerEntry>(
+        `
+        INSERT INTO inventory_ledger_entries (
+          company_id,
+          posting_date,
+          transaction_type,
+          reference_type,
+          reference_id,
+          reference_line_id,
+          item_id,
+          warehouse_id,
+          location_id,
+          bin_code,
+          batch_no,
+          serial_no,
+          expiry_date,
+          date_received,
+          prod_date,
+          quantity,
+          remaining_quantity,
+          unit_cost,
+          original_unit_cost,
+          total_cost,
+          costing_method,
+          direction,
+          status
+        )
+        VALUES (
+          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+          $11,$12,$13,$14,$15,$16,0,$17,$18,$19,
+          $20,'OUT','CLOSED'
+        )
+        RETURNING *
+        `,
+        [
+          companyId,
+          postingDate,
+          transactionType,
+          line.reference_type,
+          line.reference_id,
+          line.reference_line_id ?? null,
+          line.item_id,
+          line.warehouse_id,
+
+          // Preserve the physical layer's actual location.
+          layer.locationId,
+
+          // bin_code and serial_no are mirrored aliases
+          // for the canonical tracking value.
+          trackingCode,
+          layer.batchNo,
+          trackingCode,
+
+          layer.expiryDate,
+          layer.dateReceived,
+          layer.prodDate,
+          allocation.quantity,
+          allocation.financialUnitCost,
+          layer.unitCost,
+          allocation.financialCost,
+          profile.method,
+        ],
+      );
+
+      const outboundEntry = inserted.rows[0];
+
+      if (!outboundEntry) {
+        throw new Error(
+          `Failed to create outbound ledger entry for layer ${layer.id}.`,
+        );
+      }
+
+      outboundEntries.push(outboundEntry);
+    }
+
+    if (outboundEntries.length !== allocations.length) {
+      throw new Error(
+        "Outbound ledger entry count does not match physical layer allocation count.",
+      );
+    }
+
+    // Save one allocation per physical layer. Each allocation
+    // points to its own outbound ledger entry.
+    await InventoryLayerAllocationService.consume(client, {
+      companyId,
+      itemId: line.item_id,
+      warehouseId: line.warehouse_id,
+      outboundEntryIds: outboundEntries.map((entry) => entry.id),
+      outboundLineId: line.reference_line_id,
+      sourceAllocationId: line.source_allocation_id,
+      allocations,
+      totalFinancialCost: totalCost,
+      method: profile.method,
+    });
+
+    // Important: update the company-wide balance only once,
+    // regardless of how many physical layers were consumed.
+    //
+    // This movement represents the whole dispatch, not one
+    // particular physical outbound ledger entry.
+    await InventoryCostingService.applyMovement(client, balance, {
+      companyId,
+      itemId: line.item_id,
+      warehouseId: line.warehouse_id,
+      ledgerEntryId: null,
+      postingDate,
+      transactionType,
+      direction: "OUT",
+      quantity,
+      totalCost,
+      costingMethod: profile.method,
+      referenceType: line.reference_type,
+      referenceId: line.reference_id,
+      referenceLineId: line.reference_line_id,
+    });
+
+    await ItemCostSyncService.syncItemCost(
+      client,
+      companyId,
+      line.item_id,
+      balance,
+    );
+
+    const firstOutboundEntry = outboundEntries[0];
+
+    if (!firstOutboundEntry) {
+      throw new Error("No outbound ledger entries were created.");
+    }
+
+    return {
+      // Keep existing callers working.
+      outboundEntry: firstOutboundEntry,
+
+      // New callers can inspect every physical layer entry.
+      outboundEntries,
+
+      totalCost,
+      unitCost,
+    };
+  }
+
+  /* static async processOutboundStock(
+    client: PoolClient,
+    companyId: string,
+    postingDate: string,
+    transactionType: InventoryTransactionType,
+    line: StockLineInput,
+  ): Promise<OutboundStockResult> {
+    this.assertSupportedMovement(transactionType);
+
+    const quantity = roundQuantity(Number(line.quantity));
+
+    assertPositiveQuantity(quantity);
+
+    const { profile, balance } = await this.prepare(
+      client,
+      companyId,
+      line.item_id,
+    );
+
+    if (quantity > balance.quantityOnHand) {
+      throw new Error(
+        `Insufficient company-wide stock for item ${line.item_id}.`,
+      );
+    }
+
+    const allocations = await InventoryLayerAllocationService.allocate(client, {
+      companyId,
+      itemId: line.item_id,
+      warehouseId: line.warehouse_id,
+      quantity,
+      method: profile.method,
+      inboundEntryId: line.inbound_entry_id,
+      sourceAllocationId: line.source_allocation_id,
+      locationId: line.location_id,
+      batchNo: line.batch_no,
+      binCode: line.bin_code,
+      serialNo: line.serial_no,
+      expiryDate: line.expiry_date,
+    });
+
+    let totalCost = this.calculateOutboundCost(
+      profile,
+      balance,
+      quantity,
+      allocations,
+    );
+
+    // The final company-wide issue must consume the exact
+    // remaining inventory value, including rounding residue.
+    if (roundQuantity(balance.quantityOnHand - quantity) === 0) {
+      const difference = roundMoney(balance.inventoryValue - totalCost);
+
+      if (Math.abs(difference) > 0.01) {
+        throw new Error(
+          "Final issue cost differs materially from " +
+            "remaining inventory value. Reconcile before posting.",
+        );
+      }
+
+      totalCost = roundMoney(balance.inventoryValue);
+    }
+
+    totalCost = roundMoney(totalCost);
+
+    if (!Number.isFinite(totalCost) || totalCost < 0) {
+      throw new Error("Invalid outbound inventory cost.");
     }
 
     const unitCost = roundUnitCost(totalCost / quantity);
@@ -570,7 +840,7 @@ export class UnifiedInventoryEngineService {
       totalCost,
       unitCost,
     };
-  }
+  } */
 
   private static calculateOutboundCost(
     profile: ItemCostingProfile,

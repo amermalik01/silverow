@@ -35,6 +35,11 @@ export interface PhysicalLayerAllocation {
   physicalValue: number;
 }
 
+export interface FinancialLayerAllocation extends PhysicalLayerAllocation {
+  financialCost: number;
+  financialUnitCost: number;
+}
+
 export interface AllocateLayersInput {
   companyId: string;
   itemId: string;
@@ -54,9 +59,13 @@ export interface SaveLayerAllocationsInput {
   companyId: string;
   itemId: string;
   warehouseId: string;
-  outboundEntryId: string;
+
+  outboundEntryIds?: string[];
+  outboundEntryId?: string;
+
   outboundLineId?: string | null;
   sourceAllocationId?: string | null;
+
   allocations: PhysicalLayerAllocation[];
   totalFinancialCost: number;
   method: CostingMethod;
@@ -68,17 +77,42 @@ interface LayerRow {
   item_id: string;
   warehouse_id: string;
   location_id: string | null;
+
   bin_code: string | null;
   batch_no: string | null;
   serial_no: string | null;
+
   expiry_date: string | null;
   date_received: string | null;
   prod_date: string | null;
+
   posting_date: string;
   created_at: string;
   remaining_quantity: string;
   remaining_value: string | null;
   unit_cost: string;
+}
+
+interface SourceAllocationRow {
+  inbound_entry_id: string | null;
+  item_id: string;
+  warehouse_id: string;
+  status: string;
+}
+
+export function getLayerTrackingCode(
+  layer: Pick<PhysicalStockLayer, "binCode" | "serialNo">,
+): string | null {
+  const binCode = layer.binCode?.trim() || null;
+  const serialNo = layer.serialNo?.trim() || null;
+
+  if (binCode && serialNo && binCode !== serialNo) {
+    throw new Error(
+      "Conflicting bin_code and serial_no values found on inventory layer.",
+    );
+  }
+
+  return serialNo ?? binCode;
 }
 
 export class InventoryLayerAllocationService {
@@ -88,17 +122,23 @@ export class InventoryLayerAllocationService {
   ): Promise<PhysicalLayerAllocation[]> {
     assertPositiveQuantity(input.quantity);
 
+    if (
+      input.binCode?.trim() &&
+      input.serialNo?.trim() &&
+      input.binCode.trim() !== input.serialNo.trim()
+    ) {
+      throw new Error(
+        "bin_code and serial_no must contain the same tracking value.",
+      );
+    }
+
     if (input.sourceAllocationId) {
       if (!input.inboundEntryId) {
         throw new Error("source_allocation_id requires inbound_entry_id.");
       }
 
-      const source = await client.query<{
-        inbound_entry_id: string | null;
-        item_id: string;
-        warehouse_id: string;
-        status: string;
-      }>(
+
+      const source = await client.query<SourceAllocationRow>(
         `
         SELECT
           inbound_entry_id,
@@ -157,9 +197,17 @@ export class InventoryLayerAllocationService {
         AND ($4::uuid IS NULL OR id = $4::uuid)
         AND ($5::uuid IS NULL OR location_id = $5::uuid)
         AND ($6::text IS NULL OR batch_no = $6)
-        AND ($7::text IS NULL OR bin_code = $7)
-        AND ($8::text IS NULL OR serial_no = $8)
-        AND ($9::date IS NULL OR expiry_date = $9::date)
+        AND (
+          $7::text IS NULL
+          OR COALESCE(
+            NULLIF(BTRIM(serial_no), ''),
+            NULLIF(BTRIM(bin_code), '')
+          ) = $7
+        )
+        AND (
+          $8::date IS NULL
+          OR expiry_date = $8::date
+        )
       ORDER BY
         posting_date ${order},
         created_at ${order},
@@ -173,8 +221,9 @@ export class InventoryLayerAllocationService {
         input.inboundEntryId ?? null,
         input.locationId ?? null,
         input.batchNo ?? null,
-        input.binCode ?? null,
-        input.serialNo ?? null,
+        input.serialNo?.trim() ||
+          input.binCode?.trim() ||
+          null,
         input.expiryDate ?? null,
       ],
     );
@@ -188,35 +237,58 @@ export class InventoryLayerAllocationService {
       const available = Number(row.remaining_quantity);
       const quantity = roundQuantity(Math.min(available, remaining));
 
+      if (
+        !Number.isFinite(available) ||
+        available <= 0 ||
+        !Number.isFinite(quantity) ||
+        quantity <= 0
+      ) {
+        continue;
+      }
+
       const unitCost = Number(row.unit_cost);
       const remainingValue = Number(
         row.remaining_value ?? roundMoney(available * unitCost),
       );
 
+      if (
+        !Number.isFinite(unitCost) ||
+        unitCost < 0 ||
+        !Number.isFinite(remainingValue) ||
+        remainingValue < 0
+      ) {
+        throw new Error(`Invalid physical layer valuation: ${row.id}`);
+      }
+
       const physicalValue =
         quantity === available
           ? roundMoney(remainingValue)
-          : roundMoney(quantity * unitCost);
+          : roundMoney((remainingValue * quantity) / available);
+
+      const layer: PhysicalStockLayer = {
+        id: row.id,
+        companyId: row.company_id,
+        itemId: row.item_id,
+        warehouseId: row.warehouse_id,
+        locationId: row.location_id,
+        binCode: row.bin_code,
+        batchNo: row.batch_no,
+        serialNo: row.serial_no,
+        expiryDate: row.expiry_date,
+        dateReceived: row.date_received,
+        prodDate: row.prod_date,
+        postingDate: row.posting_date,
+        createdAt: row.created_at,
+        remainingQuantity: available,
+        remainingValue,
+        unitCost,
+      };
+
+      // Detect conflicting legacy aliases before using this layer.
+      getLayerTrackingCode(layer);
 
       allocations.push({
-        layer: {
-          id: row.id,
-          companyId: row.company_id,
-          itemId: row.item_id,
-          warehouseId: row.warehouse_id,
-          locationId: row.location_id,
-          binCode: row.bin_code,
-          batchNo: row.batch_no,
-          serialNo: row.serial_no,
-          expiryDate: row.expiry_date,
-          dateReceived: row.date_received,
-          prodDate: row.prod_date,
-          postingDate: row.posting_date,
-          createdAt: row.created_at,
-          remainingQuantity: available,
-          remainingValue,
-          unitCost,
-        },
+        layer,
         quantity,
         physicalValue,
       });
@@ -236,6 +308,72 @@ export class InventoryLayerAllocationService {
   }
 
   /**
+   * Distributes the financial issue value across physical layers.
+   *
+   * FIFO/LIFO:
+   *   Financial value follows the selected physical layers.
+   *
+   * WEIGHTED_AVERAGE/STANDARD:
+   *   Financial value is distributed proportionally by quantity.
+   *
+   * The final layer absorbs rounding differences.
+   */
+  static calculateFinancialAllocations(
+    allocations: PhysicalLayerAllocation[],
+    totalFinancialCost: number,
+    method: CostingMethod,
+  ): FinancialLayerAllocation[] {
+    if (!Number.isFinite(totalFinancialCost) || totalFinancialCost < 0) {
+      throw new Error("Invalid total financial allocation cost.");
+    }
+
+    if (allocations.length === 0) {
+      throw new Error("No physical stock allocated.");
+    }
+
+    const totalQuantity = roundQuantity(
+      allocations.reduce(
+        (sum, allocation) => sum + allocation.quantity,
+        0,
+      ),
+    );
+
+    assertPositiveQuantity(totalQuantity);
+
+    let assignedFinancialCost = 0;
+
+    return allocations.map((allocation, index) => {
+      const isLast = index === allocations.length - 1;
+
+      const financialCost = isLast
+        ? roundMoney(totalFinancialCost - assignedFinancialCost)
+        : method === "FIFO" || method === "LIFO"
+          ? roundMoney(allocation.physicalValue)
+          : roundMoney(
+              (totalFinancialCost * allocation.quantity) / totalQuantity,
+            );
+
+      if (financialCost < -0.01) {
+        throw new Error("Financial layer allocation cannot be negative.");
+      }
+
+      const normalizedFinancialCost = Math.max(0, financialCost);
+
+      assignedFinancialCost = roundMoney(
+        assignedFinancialCost + normalizedFinancialCost,
+      );
+
+      return {
+        ...allocation,
+        financialCost: normalizedFinancialCost,
+        financialUnitCost: roundUnitCost(
+          normalizedFinancialCost / allocation.quantity,
+        ),
+      };
+    });
+  }
+
+  /**
    * Persist financial allocations and deduct physical stock.
    * The caller must already hold the company-item balance lock.
    */
@@ -250,30 +388,51 @@ export class InventoryLayerAllocationService {
       ),
     );
 
-    if (totalQuantity <= 0) {
-      throw new Error("No physical stock allocated.");
+    assertPositiveQuantity(totalQuantity);
+
+    const financialAllocations = this.calculateFinancialAllocations(
+      input.allocations,
+      input.totalFinancialCost,
+      input.method,
+    );
+
+    let outboundEntryIds: string[];
+
+    if (input.outboundEntryIds) {
+      if (input.outboundEntryIds.length !== input.allocations.length) {
+        throw new Error(
+          "Each physical layer allocation requires one outbound ledger entry.",
+        );
+      }
+
+      if (new Set(input.outboundEntryIds).size !== input.outboundEntryIds.length) {
+        throw new Error(
+          "Outbound ledger entry IDs must be unique per physical layer.",
+        );
+      }
+
+      outboundEntryIds = input.outboundEntryIds;
+    } else if (input.outboundEntryId) {
+      // Compatibility path for older single-entry callers.
+      outboundEntryIds = input.allocations.map(
+        () => input.outboundEntryId as string,
+      );
+    } else {
+      throw new Error("Outbound ledger entry ID is required.");
     }
 
-    let assignedFinancialCost = 0;
-
-    for (let index = 0; index < input.allocations.length; index++) {
-      const allocation = input.allocations[index];
+    for (let index = 0; index < financialAllocations.length; index++) {
+      const allocation = financialAllocations[index];
       const layer = allocation.layer;
-      const isLast = index === input.allocations.length - 1;
+      const outboundEntryId = outboundEntryIds[index];
 
-      const financialCost = isLast
-        ? roundMoney(input.totalFinancialCost - assignedFinancialCost)
-        : input.method === "FIFO" || input.method === "LIFO"
-          ? allocation.physicalValue
-          : roundMoney(
-              (input.totalFinancialCost * allocation.quantity) / totalQuantity,
-            );
+      if (!outboundEntryId) {
+        throw new Error(
+          `Missing outbound ledger entry for physical layer ${layer.id}.`,
+        );
+      }
 
-      assignedFinancialCost = roundMoney(assignedFinancialCost + financialCost);
-
-      const financialUnitCost = roundUnitCost(
-        financialCost / allocation.quantity,
-      );
+      const trackingCode = getLayerTrackingCode(layer);
 
       await client.query(
         `
@@ -306,7 +465,7 @@ export class InventoryLayerAllocationService {
         `,
         [
           input.companyId,
-          input.outboundEntryId,
+          outboundEntryId,
           input.outboundLineId ?? null,
           layer.id,
           input.sourceAllocationId ?? null,
@@ -314,16 +473,16 @@ export class InventoryLayerAllocationService {
           input.warehouseId,
           layer.locationId,
           layer.batchNo,
-          layer.binCode,
-          layer.serialNo,
+          trackingCode,
+          trackingCode,
           layer.expiryDate,
           layer.dateReceived,
           layer.prodDate,
           allocation.quantity,
-          financialUnitCost,
-          financialCost,
+          allocation.financialUnitCost,
+          allocation.financialCost,
           layer.unitCost,
-          financialUnitCost,
+          allocation.financialUnitCost,
         ],
       );
 
@@ -335,6 +494,10 @@ export class InventoryLayerAllocationService {
         newRemainingQuantity === 0
           ? 0
           : roundMoney(layer.remainingValue - allocation.physicalValue);
+
+      if (newRemainingQuantity < -0.000001) {
+        throw new Error(`Negative physical layer quantity: ${layer.id}`);
+      }
 
       if (newRemainingValue < -0.01) {
         throw new Error(`Negative physical layer value: ${layer.id}`);
@@ -352,19 +515,22 @@ export class InventoryLayerAllocationService {
           END
         WHERE id = $1
           AND company_id = $2
+          AND direction = 'IN'
           AND remaining_quantity >= $5
         `,
         [
           layer.id,
           input.companyId,
-          newRemainingQuantity,
+          Math.max(0, newRemainingQuantity),
           Math.max(0, newRemainingValue),
           allocation.quantity,
         ],
       );
 
       if (updated.rowCount !== 1) {
-        throw new Error(`Stock layer changed during allocation: ${layer.id}`);
+        throw new Error(
+          `Stock layer changed during allocation: ${layer.id}`,
+        );
       }
     }
   }

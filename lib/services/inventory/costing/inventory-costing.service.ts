@@ -229,7 +229,181 @@ export class InventoryCostingService {
    * Do not call lockBalance a second time between cost
    * calculation and this operation.
    */
+
   static async applyMovement(
+    client: PoolClient,
+    balance: InventoryCostBalance,
+    input: InventoryCostMovementInput,
+  ): Promise<InventoryCostMovementResult> {
+    if (
+      balance.companyId !== input.companyId ||
+      balance.itemId !== input.itemId
+    ) {
+      throw new Error("Inventory balance identity mismatch.");
+    }
+
+    if (!Number.isFinite(input.totalCost)) {
+      throw new Error("Invalid inventory movement value.");
+    }
+
+    if (input.direction === "IN" || input.direction === "OUT") {
+      assertPositiveQuantity(input.quantity);
+      assertNonNegativeCost(input.totalCost);
+    } else if (input.quantity !== 0) {
+      throw new Error("Revaluation quantity must be zero.");
+    }
+
+    const quantityBefore = balance.quantityOnHand;
+    const valueBefore = balance.inventoryValue;
+
+    const quantityDelta =
+      input.direction === "IN"
+        ? input.quantity
+        : input.direction === "OUT"
+          ? -input.quantity
+          : 0;
+
+    const valueDelta =
+      input.direction === "IN"
+        ? input.totalCost
+        : input.direction === "OUT"
+          ? -input.totalCost
+          : input.totalCost;
+
+    const quantityAfter = roundQuantity(quantityBefore + quantityDelta);
+
+    let valueAfter = roundMoney(valueBefore + valueDelta);
+
+    if (quantityAfter < -COST_EPSILON) {
+      throw new Error(
+        `Insufficient company-wide stock for item ${input.itemId}.`,
+      );
+    }
+
+    if (valueAfter < -0.01) {
+      throw new Error(
+        `Inventory value would become negative for item ${input.itemId}.`,
+      );
+    }
+
+    // Clear residual rounding pennies when stock reaches zero.
+    if (quantityAfter === 0) {
+      if (input.direction === "OUT") {
+        valueAfter = 0;
+      } else if (Math.abs(valueAfter) > 0.01) {
+        throw new Error(
+          "Zero-quantity inventory cannot retain material value.",
+        );
+      } else {
+        valueAfter = 0;
+      }
+    }
+
+    const averageUnitCost = this.calculateAverageCost(
+      quantityAfter,
+      valueAfter,
+    );
+
+    const totalCost = roundMoney(input.totalCost);
+
+    const unitCost =
+      input.direction === "REVALUE"
+        ? 0
+        : roundUnitCost(totalCost / input.quantity);
+
+    const updated = await client.query(
+      `
+      UPDATE inventory_cost_balances
+      SET
+        quantity_on_hand = $3,
+        inventory_value = $4,
+        average_unit_cost = $5,
+        last_movement_date = $6::date,
+        updated_at = NOW()
+      WHERE company_id = $1
+        AND item_id = $2
+      `,
+      [
+        input.companyId,
+        input.itemId,
+        quantityAfter,
+        valueAfter,
+        averageUnitCost,
+        input.postingDate,
+      ],
+    );
+
+    if (updated.rowCount !== 1) {
+      throw new Error("Failed to update inventory cost balance.");
+    }
+
+    await client.query(
+      `
+      INSERT INTO inventory_cost_movements (
+        company_id,
+        item_id,
+        warehouse_id,
+        ledger_entry_id,
+        posting_date,
+        transaction_type,
+        direction,
+        quantity,
+        unit_cost,
+        total_cost,
+        quantity_before,
+        value_before,
+        quantity_after,
+        value_after,
+        costing_method,
+        reference_type,
+        reference_id,
+        reference_line_id
+      )
+      VALUES (
+        $1, $2, $3, $4, $5::date, $6,
+        $7, $8, $9, $10, $11, $12,
+        $13, $14, $15, $16, $17, $18
+      )
+      `,
+      [
+        input.companyId,
+        input.itemId,
+        input.warehouseId ?? null,
+        input.ledgerEntryId ?? null,
+        input.postingDate,
+        input.transactionType,
+        input.direction,
+        input.quantity,
+        unitCost,
+        totalCost,
+        quantityBefore,
+        valueBefore,
+        quantityAfter,
+        valueAfter,
+        input.costingMethod,
+        input.referenceType ?? null,
+        input.referenceId ?? null,
+        input.referenceLineId ?? null,
+      ],
+    );
+
+    // Keep the in-memory locked balance synchronized.
+    balance.quantityOnHand = quantityAfter;
+    balance.inventoryValue = valueAfter;
+    balance.averageUnitCost = averageUnitCost;
+
+    return {
+      quantityBefore,
+      valueBefore,
+      quantityAfter,
+      valueAfter,
+      unitCost,
+      totalCost,
+      averageUnitCost,
+    };
+  }
+}
+/* static async applyMovement(
     client: PoolClient,
     balance: InventoryCostBalance,
     input: InventoryCostMovementInput,
@@ -395,5 +569,4 @@ export class InventoryCostingService {
       totalCost,
       averageUnitCost,
     };
-  }
-}
+  } */
