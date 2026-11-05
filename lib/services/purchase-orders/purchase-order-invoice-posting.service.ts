@@ -111,7 +111,7 @@ interface InvoiceLineTotals {
   gross: number;
 }
 
-const MONEY_TOLERANCE = 0.02;
+const MONEY_TOLERANCE = 0.005;
 const QUANTITY_TOLERANCE = 0.000001;
 
 function toNumber(value: string | number | null | undefined): number {
@@ -1064,7 +1064,8 @@ export class PurchaseOrderInvoicePostingService {
 
       fxVarianceLCY = roundMoney(fxVarianceLCY);
 
-      if (Math.abs(fxVarianceLCY) > MONEY_TOLERANCE) {
+      // if (Math.abs(fxVarianceLCY) > MONEY_TOLERANCE) {
+      if (Math.abs(fxVarianceLCY) >= 0.01) {
         const fxSetupResult =
           await client.query<CurrencyMovementSetupRow>(
             `
