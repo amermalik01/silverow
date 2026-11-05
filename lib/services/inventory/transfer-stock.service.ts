@@ -587,7 +587,7 @@ export class TransferStockService {
             unit_cost: allocation.unit_cost,
             movement_direction: "OUT",
             batch_no: allocation.batch_no,
-            serial_no: allocation.batch_no,
+            serial_no: allocation.serial_no,
             expiry_date: allocation.expiry_date,
           });
 
@@ -600,7 +600,7 @@ export class TransferStockService {
             unit_cost: allocation.unit_cost,
             movement_direction: "IN",
             batch_no: allocation.batch_no,
-            serial_no: allocation.batch_no,
+            serial_no: allocation.serial_no,
             expiry_date: allocation.expiry_date,
           });
         }
@@ -784,63 +784,3 @@ export class TransferStockService {
     }
   }
 }
-/**
- * Fetch paginated list records with conditional criteria filters
- */
-/* static async getPaginatedTransfers(
-    companyId: string,
-    options: TransferListFilterOptions,
-  ): Promise<PaginatedTransfersResult> {
-    const { status, page, limit } = options;
-    const offset = (page - 1) * limit;
-
-    const queryParams: (string | number | boolean)[] = [companyId];
-    let whereClause = `WHERE h.company_id = $1`;
-
-    // Append relational filter state flags dynamically
-    if (status === "posted") {
-      whereClause += ` AND h.is_posted = true`;
-    } else if (status === "unposted") {
-      whereClause += ` AND h.is_posted = false`;
-    }
-
-    // Calculate baseline total row limits matching criteria parameters
-    const countQuery = `
-      SELECT COUNT(*) as total 
-      FROM public.transfer_headers h
-      ${whereClause}
-    `;
-    const countResult = await pool.query(countQuery, queryParams);
-    const totalRows = parseInt(countResult.rows[0]?.total || "0", 10);
-
-    // Fetch primary line values utilizing sorting structures
-    const dataArgs = [...queryParams, limit, offset];
-    const dataQuery = `
-      SELECT 
-        h.id,
-        h.transfer_no,
-        h.transfer_date,
-        h.warehouse_from_id,
-        h.warehouse_to_id,
-        h.in_transit_code,
-        h.shipping_charge,
-        h.is_posted
-      FROM public.transfer_headers h
-      ${whereClause}
-      ORDER BY h.transfer_date DESC, h.created_at DESC
-      LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
-    `;
-
-    const dataResult = await pool.query(dataQuery, dataArgs);
-    const totalPages = Math.ceil(totalRows / limit) || 1;
-
-    return {
-      rows: dataResult.rows,
-      pagination: {
-        totalRows,
-        page,
-        limit,
-        totalPages,
-      },
-    };
-  } */

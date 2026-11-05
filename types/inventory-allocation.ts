@@ -11,6 +11,7 @@ export interface InventoryAllocationResult {
   total_cost: number;
   batch_no?: string | null;
   bin_code?: string | null;
+  serial_no?: string | null;
 
   expiry_date?: string | null;
   date_received?: string | null;
