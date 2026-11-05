@@ -1,6 +1,5 @@
 // app/api/inventory/items/[id]/cards-activity/route.ts
 
-
 import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";
 
@@ -65,9 +64,7 @@ function getTransactionLabel(
   );
 }
 
-function getAllocationLabel(
-  allocation: ItemAllocation,
-): string {
+function getAllocationLabel(allocation: ItemAllocation): string {
   if (allocation.allocation_category === "CONSUMPTION") {
     return "Posted Stock Consumption";
   }
@@ -103,9 +100,7 @@ function getAllocationLabel(
   return "Stock Allocation";
 }
 
-function mapTransaction(
-  movement: ItemMovement,
-): StockDetailRow {
+function mapTransaction(movement: ItemMovement): StockDetailRow {
   const isInbound = movement.movement_direction === "IN";
 
   return {
@@ -125,20 +120,14 @@ function mapTransaction(
     batch_no: movement.batch_no,
     production_date: null,
     use_by_date: movement.expiry_date,
-    received_date: isInbound
-      ? movement.posting_date
-      : null,
-    dispatch_date: isInbound
-      ? null
-      : movement.posting_date,
+    received_date: isInbound ? movement.posting_date : null,
+    dispatch_date: isInbound ? null : movement.posting_date,
 
     warehouse: movement.warehouse_name,
     storage_location:
-      movement.location_name ?? movement.bin_code,
+      movement.location_name ?? movement.tracking_code ?? movement.bin_code,
 
-    qty: isInbound
-      ? movement.quantity
-      : -movement.quantity,
+    qty: isInbound ? movement.quantity : -movement.quantity,
 
     sold_qty:
       movement.transaction_type === "SALES_SHIPMENT" ||
@@ -148,9 +137,7 @@ function mapTransaction(
 
     allocated_qty: null,
 
-    available_qty: isInbound
-      ? movement.remaining_quantity
-      : null,
+    available_qty: isInbound ? movement.remaining_quantity : null,
 
     uom: null,
     direction: movement.movement_direction,
@@ -158,11 +145,8 @@ function mapTransaction(
   };
 }
 
-function mapAllocation(
-  allocation: ItemAllocation,
-): StockDetailRow {
-  const isReservation =
-    allocation.allocation_category === "RESERVATION";
+function mapAllocation(allocation: ItemAllocation): StockDetailRow {
+  const isReservation = allocation.allocation_category === "RESERVATION";
 
   return {
     id: allocation.id,
@@ -185,7 +169,9 @@ function mapAllocation(
     warehouse: allocation.warehouse_name,
 
     storage_location:
-      allocation.location_name ?? allocation.bin_code,
+      allocation.location_name ??
+      allocation.tracking_code ??
+      allocation.bin_code,
 
     qty: allocation.allocated_quantity,
     sold_qty: null,
@@ -204,18 +190,12 @@ function mapAllocation(
   };
 }
 
-export async function GET(
-  _req: NextRequest,
-  { params }: RouteContext,
-) {
+export async function GET(_req: NextRequest, { params }: RouteContext) {
   try {
     const companyId = await getCompanyId();
 
     if (!companyId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id: itemId } = await params;
@@ -227,10 +207,7 @@ export async function GET(
       );
     }
 
-    const activity = await ItemActivityService.getActivity(
-      companyId,
-      itemId,
-    );
+    const activity = await ItemActivityService.getActivity(companyId, itemId);
 
     const transactions: StockDetailRow[] =
       activity.transactions.map(mapTransaction);
@@ -245,14 +222,8 @@ export async function GET(
       allocations,
     });
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.message === "ITEM_NOT_FOUND"
-    ) {
-      return NextResponse.json(
-        { error: "Item not found" },
-        { status: 404 },
-      );
+    if (error instanceof Error && error.message === "ITEM_NOT_FOUND") {
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
     console.error("Item Cards Activity API Error:", error);
@@ -268,7 +239,6 @@ export async function GET(
     );
   }
 }
-
 
 /* import { NextRequest, NextResponse } from "next/server";
 import { getCompanyId } from "@/lib/auth/getCompanyId";

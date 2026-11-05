@@ -43,6 +43,7 @@ export interface ItemMovement {
   location_id: string | null;
   location_name: string | null;
   bin_code: string | null;
+  tracking_code: string | null;
   quantity: number;
   remaining_quantity: number;
   movement_direction: "IN" | "OUT";
@@ -62,12 +63,16 @@ export interface ItemAllocation {
   location_name: string | null;
   batch_no: string | null;
   bin_code: string | null;
+  serial_no: string | null;
+  tracking_code: string | null;
   expiry_date: string | null;
   date_received: string | null;
   prod_date: string | null;
   allocated_quantity: number;
   unit_cost: number;
   total_cost: number;
+  physical_layer_unit_cost: number;
+  valuation_unit_cost: number;
   allocation_method: string | null;
   status: string;
   created_at: string;
@@ -123,6 +128,7 @@ interface MovementRow extends QueryResultRow {
   location_id: string | null;
   location_name: string | null;
   bin_code: string | null;
+  tracking_code: string | null;
   quantity: NumericValue;
   remaining_quantity: NumericValue;
   movement_direction: "IN" | "OUT";
@@ -142,12 +148,16 @@ interface AllocationRow extends QueryResultRow {
   location_name: string | null;
   batch_no: string | null;
   bin_code: string | null;
+  serial_no: string | null;
+  tracking_code: string | null;
   expiry_date: string | null;
   date_received: string | null;
   prod_date: string | null;
   allocated_quantity: NumericValue;
   unit_cost: NumericValue;
   total_cost: NumericValue;
+  physical_layer_unit_cost: NumericValue;
+  valuation_unit_cost: NumericValue;
   allocation_method: string | null;
   status: string;
   created_at: string;
@@ -170,92 +180,139 @@ const toNumber = (value: NumericValue): number => {
 };
 
 /**
- * Physical stock is calculated from unconsumed
- * inbound inventory ledger layers.
+ * Canonical tracking value.
  *
- * Reservations are currently defined as ACTIVE
- * sales-order allocations without a posted
- * outbound ledger entry.
+ * serial_no and bin_code are aliases in the current
+ * inventory allocation/ledger implementation.
+ */
+const trackingExpression = `
+  COALESCE(
+    NULLIF(BTRIM(serial_no), ''),
+    NULLIF(BTRIM(bin_code), '')
+  )
+`;
+
+/**
+ * Warehouse stock summary.
  *
- * Important:
- * This assumes the sales-order allocation lifecycle
- * releases or updates reservations when dispatched.
+ * Physical quantity:
+ *   Sum of remaining quantities on inbound ledger layers.
+ *
+ * Physical value:
+ *   Sum of remaining_value, not remaining_quantity * unit_cost.
+ *
+ * This is important because remaining_value preserves
+ * partial-layer valuation and revaluation adjustments.
+ *
+ * Reservations:
+ *   Active sales-order allocations without an outbound entry.
+ *
+ * Posted consumption is not a reservation.
  */
 const warehouseStockQuery = `
   WITH physical_layers AS (
     SELECT
       ile.warehouse_id,
-      ile.location_id,
-      ile.batch_no,
-      ile.serial_no,
-      ile.expiry_date,
-      ile.created_at,
       ile.remaining_quantity,
-      ile.unit_cost
+
+      COALESCE(
+        ile.remaining_value,
+        ile.remaining_quantity * ile.unit_cost
+      ) AS remaining_value,
+
+      ile.expiry_date,
+      ile.created_at
+
     FROM inventory_ledger_entries ile
+
     WHERE ile.company_id = $1
       AND ile.item_id = $2
       AND ile.direction = 'IN'
-      AND ile.status = 'OPEN'
+      AND ile.status <> 'CANCELLED'
       AND ile.remaining_quantity > 0
   ),
 
   physical_stock AS (
     SELECT
-      pl.warehouse_id,
-      pl.location_id,
-      pl.batch_no,
-      pl.serial_no,
-      SUM(pl.remaining_quantity) AS physical_qty,
-      SUM(
-        pl.remaining_quantity * pl.unit_cost
-      ) AS stock_value,
-      MAX(pl.expiry_date) AS expiry_date,
-      MAX(pl.created_at) AS last_movement_at
-    FROM physical_layers pl
-    GROUP BY
-      pl.warehouse_id,
-      pl.location_id,
-      pl.batch_no,
-      pl.serial_no
+      warehouse_id,
+      SUM(remaining_quantity) AS physical_qty,
+      SUM(remaining_value) AS stock_value,
+      MAX(expiry_date) AS expiry_date,
+      MAX(created_at) AS last_movement_at
+
+    FROM physical_layers
+
+    GROUP BY warehouse_id
   ),
 
-  reservations AS (
+  /*
+   * Current outstanding sales-order reservations.
+   *
+   * Exclude:
+   * - Cancelled allocations
+   * - Posted consumption allocations
+   * - Allocations that are not sales-order reservations
+   * - Deleted sales-order lines
+   *
+   * quantity_reserved is the remaining reservation quantity
+   * maintained on the sales-order line.
+   */
+  reservation_totals AS (
     SELECT
-      ia.warehouse_id,
-      ia.warehouse_location_id AS location_id,
-      ia.batch_no,
-      SUM(ia.allocated_quantity) AS reserved_qty
+      ia.company_id,
+      ia.item_id,
+      sol.id AS sales_order_line_id,
+      sol.warehouse_id,
+
+      SUM(ia.allocated_quantity) AS allocation_quantity,
+
+      GREATEST(
+        COALESCE(sol.quantity_reserved, 0),
+        0
+      ) AS remaining_reserved_quantity
+
     FROM inventory_allocations ia
+
+    INNER JOIN sales_order_lines sol
+      ON sol.id = ia.sales_order_line_id
+     AND sol.company_id = ia.company_id
+
     WHERE ia.company_id = $1
       AND ia.item_id = $2
       AND ia.status = 'ACTIVE'
       AND ia.outbound_entry_id IS NULL
+      AND ia.inbound_entry_id IS NULL
+      AND ia.source_allocation_id IS NOT NULL
       AND ia.sales_order_line_id IS NOT NULL
-      AND ia.allocated_quantity > 0
+      AND COALESCE(sol.is_deleted, false) = false
+
     GROUP BY
-      ia.warehouse_id,
-      ia.warehouse_location_id,
-      ia.batch_no
+      ia.company_id,
+      ia.item_id,
+      sol.id,
+      sol.warehouse_id,
+      sol.quantity_reserved
   ),
 
-  physical_warehouse AS (
+  reservations AS (
     SELECT
+      company_id,
+      item_id,
       warehouse_id,
-      SUM(physical_qty) AS physical_qty,
-      SUM(stock_value) AS stock_value,
-      MAX(expiry_date) AS expiry_date,
-      MAX(last_movement_at) AS last_movement_at
-    FROM physical_stock
-    GROUP BY warehouse_id
-  ),
 
-  reserved_warehouse AS (
-    SELECT
-      warehouse_id,
-      SUM(reserved_qty) AS reserved_qty
-    FROM reservations
-    GROUP BY warehouse_id
+      SUM(
+        LEAST(
+          allocation_quantity,
+          remaining_reserved_quantity
+        )
+      ) AS reserved_quantity
+
+    FROM reservation_totals
+
+    GROUP BY
+      company_id,
+      item_id,
+      warehouse_id
   )
 
   SELECT
@@ -269,45 +326,60 @@ const warehouseStockQuery = `
     NULL::text AS batch_no,
     NULL::text AS serial_no,
 
-    COALESCE(pw.physical_qty, 0) AS quantity,
-    COALESCE(rw.reserved_qty, 0) AS reserved_quantity,
+    COALESCE(ps.physical_qty, 0) AS quantity,
 
-    COALESCE(pw.physical_qty, 0)
-      - COALESCE(rw.reserved_qty, 0)
-      AS available_quantity,
+    COALESCE(r.reserved_quantity, 0) AS reserved_quantity,
+
+    GREATEST(
+      COALESCE(ps.physical_qty, 0)
+      - COALESCE(r.reserved_quantity, 0),
+      0
+    ) AS available_quantity,
 
     CASE
-      WHEN COALESCE(pw.physical_qty, 0) > 0
-      THEN pw.stock_value / pw.physical_qty
+      WHEN COALESCE(ps.physical_qty, 0) > 0
+      THEN
+        COALESCE(ps.stock_value, 0)
+        / ps.physical_qty
       ELSE 0
     END AS average_cost,
 
-    pw.expiry_date,
-    pw.last_movement_at
+    ps.expiry_date,
+    ps.last_movement_at
 
   FROM warehouses w
 
-  LEFT JOIN physical_warehouse pw
-    ON pw.warehouse_id = w.id
+  LEFT JOIN physical_stock ps
+    ON ps.warehouse_id = w.id
 
-  LEFT JOIN reserved_warehouse rw
-    ON rw.warehouse_id = w.id
+  LEFT JOIN reservations r
+    ON r.company_id = w.company_id
+   AND r.warehouse_id = w.id
 
-  WHERE
-    pw.warehouse_id IS NOT NULL
-    OR rw.warehouse_id IS NOT NULL
+  WHERE w.company_id = $1
+    AND (
+      ps.warehouse_id IS NOT NULL
+      OR r.warehouse_id IS NOT NULL
+    )
 
   ORDER BY w.name ASC
 `;
 
 /**
- * Full posted inventory movement history.
+ * Inventory ledger movement history.
  *
- * Both inbound and outbound entries are returned.
- * The original transaction type and references
- * are preserved for document traceability.
+ * The updated engine creates one OUT ledger entry
+ * per physical inbound layer consumed.
+ *
+ * Therefore:
+ *   - Multiple rows can represent one dispatch line.
+ *   - Each row preserves its own physical layer location.
+ *   - Each row preserves its own tracking/batch information.
+ *   - Each row preserves its allocated financial cost.
+ *
+ * Do not group these rows by reference_id. They represent
+ * separate physical layer movements.
  */
-
 const transactionsQuery = `
   WITH base_ledger AS (
     SELECT
@@ -321,13 +393,19 @@ const transactionsQuery = `
       ile.warehouse_id,
       ile.location_id,
       ile.bin_code,
+      ile.serial_no,
+
+      COALESCE(
+        NULLIF(BTRIM(ile.serial_no), ''),
+        NULLIF(BTRIM(ile.bin_code), '')
+      ) AS tracking_code,
+
       ile.quantity,
       ile.remaining_quantity,
       ile.direction,
       ile.unit_cost,
       ile.total_cost,
       ile.batch_no,
-      ile.serial_no,
       ile.expiry_date,
       ile.created_at,
 
@@ -347,6 +425,10 @@ const transactionsQuery = `
     WHERE ile.company_id = $1
       AND ile.item_id = $2
       AND ile.status <> 'CANCELLED'
+      AND (
+        ile.direction = 'OUT'
+        OR ile.remaining_quantity > 0
+      )
 
     ORDER BY
       ile.posting_date DESC,
@@ -359,41 +441,30 @@ const transactionsQuery = `
   SELECT
     bl.id,
 
-    /*
-     * Purchase receipt:
-     *   Show invoice number if the PO has been invoiced,
-     *   otherwise show the original PO number.
-     *
-     * No purchase_invoices join is required.
-     */
     COALESCE(
       po_from_pr.purchase_invoice_no,
       po_from_pr.order_no,
-
       jnl.entry_no,
-
-      so_from_sd2.sales_invoice_no,
-      so_from_sd2.order_no,
-
-      cn_from_sd1.posted_credit_note_no,
-      cn_from_sd1.credit_note_no,
-
+      so_from_sd.sales_invoice_no,
+      so_from_sd.order_no,
+      cn_from_sd.posted_credit_note_no,
+      cn_from_sd.credit_note_no,
       dn_from_sd.debit_note_invoice_no,
       dn_from_sd.debit_note_no,
-
       st.transfer_no,
-
-      '-'::text
+      bl.reference_id::text,
+      '-'
     ) AS transaction_no,
 
     COALESCE(
       po_from_pr.id::text,
       jnl.id::text,
-      so_from_sd2.id::text,
-      cn_from_sd1.id::text,
+      so_from_sd.id::text,
+      cn_from_sd.id::text,
       dn_from_sd.id::text,
       st.id::text,
-      '-'::text
+      bl.reference_id::text,
+      '-'
     ) AS doc_id,
 
     bl.transaction_type,
@@ -401,10 +472,7 @@ const transactionsQuery = `
     bl.reference_id,
     bl.reference_line_id,
 
-    TO_CHAR(
-      bl.posting_date,
-      'YYYY-MM-DD'
-    ) AS posting_date,
+    TO_CHAR(bl.posting_date, 'YYYY-MM-DD') AS posting_date,
 
     bl.status,
 
@@ -415,6 +483,7 @@ const transactionsQuery = `
     bl.location_name,
 
     bl.bin_code,
+    bl.tracking_code,
 
     bl.quantity,
     bl.remaining_quantity,
@@ -427,10 +496,7 @@ const transactionsQuery = `
     bl.batch_no,
     bl.serial_no,
 
-    TO_CHAR(
-      bl.expiry_date,
-      'YYYY-MM-DD'
-    ) AS expiry_date,
+    TO_CHAR(bl.expiry_date, 'YYYY-MM-DD') AS expiry_date,
 
     TO_CHAR(
       bl.created_at,
@@ -441,10 +507,6 @@ const transactionsQuery = `
 
   /*
    * PURCHASE RECEIPT
-   * inventory_ledger_entries.reference_id
-   *     -> purchase_receipts.id
-   * purchase_receipts.purchase_order_id
-   *     -> purchase_orders.id
    */
   LEFT JOIN purchase_receipts pr
     ON bl.reference_type = 'PURCHASE_RECEIPT'
@@ -456,7 +518,7 @@ const transactionsQuery = `
    AND po_from_pr.company_id = $1
 
   /*
-   * PURCHASE / ITEM JOURNAL
+   * ITEM JOURNAL
    */
   LEFT JOIN journal_entries jnl
     ON bl.reference_type = 'ITEM_JOURNAL'
@@ -464,7 +526,7 @@ const transactionsQuery = `
    AND jnl.company_id = $1
 
   /*
-   * DEBIT NOTE
+   * STOCK DISPATCH - DEBIT NOTE
    */
   LEFT JOIN stock_dispatches sd
     ON bl.reference_type = 'STOCK_DISPATCH'
@@ -476,28 +538,28 @@ const transactionsQuery = `
    AND dn_from_sd.company_id = $1
 
   /*
-   * CREDIT NOTE
+   * STOCK DISPATCH - CREDIT NOTE
    */
-  LEFT JOIN stock_dispatches sd1
+  LEFT JOIN stock_dispatches sd_credit
     ON bl.reference_type = 'CREDIT_NOTE'
-   AND sd1.id = bl.reference_id
-   AND sd1.company_id = $1
+   AND sd_credit.id = bl.reference_id
+   AND sd_credit.company_id = $1
 
-  LEFT JOIN credit_notes cn_from_sd1
-    ON cn_from_sd1.id = sd1.credit_note_id
-   AND cn_from_sd1.company_id = $1
+  LEFT JOIN credit_notes cn_from_sd
+    ON cn_from_sd.id = sd_credit.credit_note_id
+   AND cn_from_sd.company_id = $1
 
   /*
    * SALES SHIPMENT
    */
-  LEFT JOIN stock_dispatches sd2
+  LEFT JOIN stock_dispatches sd_sales
     ON bl.reference_type = 'SALES_SHIPMENT'
-   AND sd2.id = bl.reference_id
-   AND sd2.company_id = $1
+   AND sd_sales.id = bl.reference_id
+   AND sd_sales.company_id = $1
 
-  LEFT JOIN sales_orders so_from_sd2
-    ON so_from_sd2.id = sd2.sales_order_id
-   AND so_from_sd2.company_id = $1
+  LEFT JOIN sales_orders so_from_sd
+    ON so_from_sd.id = sd_sales.sales_order_id
+   AND so_from_sd.company_id = $1
 
   /*
    * STOCK TRANSFER
@@ -509,19 +571,23 @@ const transactionsQuery = `
 `;
 
 /**
- * Allocation history:
- *
- * RESERVATION:
- *   Unposted active sales-order allocation.
+ * Allocation history.
  *
  * CONSUMPTION:
- *   Allocation linked to a posted OUT entry.
+ *   Allocation linked to a posted outbound ledger entry.
+ *
+ * RESERVATION:
+ *   Active sales-order allocation without an outbound entry.
  *
  * OTHER:
- *   Inbound/source allocations or allocations
- *   whose lifecycle cannot be determined here.
+ *   Remaining allocation records that are not reservations
+ *   or posted outbound consumption.
+ *
+ * Important:
+ * Do not filter out outbound_entry_id rows. The updated
+ * allocation engine creates one allocation for every
+ * physical layer consumed.
  */
-
 const allocationsQuery = `
   SELECT
     ia.id,
@@ -533,26 +599,48 @@ const allocationsQuery = `
     wl.title AS location_name,
 
     ia.batch_no,
-    ia.bin_code,
 
-    TO_CHAR(
-      ia.expiry_date,
-      'YYYY-MM-DD'
-    ) AS expiry_date,
+    COALESCE(
+      NULLIF(BTRIM(ia.serial_no), ''),
+      NULLIF(BTRIM(ia.bin_code), '')
+    ) AS tracking_code,
 
-    TO_CHAR(
-      ia.date_received,
-      'YYYY-MM-DD'
-    ) AS date_received,
+    COALESCE(
+      NULLIF(BTRIM(ia.serial_no), ''),
+      NULLIF(BTRIM(ia.bin_code), '')
+    ) AS bin_code,
 
-    TO_CHAR(
-      ia.prod_date,
-      'YYYY-MM-DD'
-    ) AS prod_date,
+    COALESCE(
+      NULLIF(BTRIM(ia.serial_no), ''),
+      NULLIF(BTRIM(ia.bin_code), '')
+    ) AS serial_no,
+
+    TO_CHAR(ia.expiry_date, 'YYYY-MM-DD') AS expiry_date,
+    TO_CHAR(ia.date_received, 'YYYY-MM-DD') AS date_received,
+    TO_CHAR(ia.prod_date, 'YYYY-MM-DD') AS prod_date,
 
     ia.allocated_quantity,
+
+    /*
+     * unit_cost is the financial valuation cost
+     * stored on the allocation.
+     */
     ia.unit_cost,
     ia.total_cost,
+
+    /*
+     * Physical and financial unit costs are now
+     * stored separately by the allocation engine.
+     */
+    COALESCE(
+      ia.physical_layer_unit_cost,
+      ia.unit_cost
+    ) AS physical_layer_unit_cost,
+
+    COALESCE(
+      ia.valuation_unit_cost,
+      ia.unit_cost
+    ) AS valuation_unit_cost,
 
     ia.allocation_method,
     ia.status,
@@ -568,9 +656,7 @@ const allocationsQuery = `
     ia.source_allocation_id,
 
     ia.purchase_order_line_id,
-
-    -- Legacy frontend compatibility.
-    ia.purchase_order_line_id AS purchase_invoice_line_id,
+    ia.purchase_invoice_line_id,
 
     ia.debit_note_line_id,
     ia.sales_order_line_id,
@@ -601,8 +687,7 @@ const allocationsQuery = `
 
   WHERE ia.company_id = $1
     AND ia.item_id = $2
-    AND ia.outbound_entry_id IS NULL
-    AND ia.status = 'ACTIVE'
+    AND ia.status <> 'CANCELLED'
 
   ORDER BY
     ia.created_at DESC,
@@ -618,10 +703,14 @@ export class ItemActivityService {
   ): Promise<ItemActivityResult> {
     const client: PoolClient = await pool.connect();
 
+    let transactionStarted = false;
+
     try {
       await client.query(
         "BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
       );
+
+      transactionStarted = true;
 
       const itemResult = await client.query<{ id: string }>(
         `
@@ -640,23 +729,12 @@ export class ItemActivityService {
 
       const params = [companyId, itemId];
 
-      const stockResult = await client.query<StockRow>(
-        warehouseStockQuery,
-        params,
-      );
-
-      // console.log("transactionsQuery === ", transactionsQuery);
-      // console.log("params === ", params);
-
-      const transactionResult = await client.query<MovementRow>(
-        transactionsQuery,
-        params,
-      );
-
-      const allocationResult = await client.query<AllocationRow>(
-        allocationsQuery,
-        params,
-      );
+      const [stockResult, transactionResult, allocationResult] =
+        await Promise.all([
+          client.query<StockRow>(warehouseStockQuery, params),
+          client.query<MovementRow>(transactionsQuery, params),
+          client.query<AllocationRow>(allocationsQuery, params),
+        ]);
 
       const warehouseStock: ItemWarehouseStock[] = stockResult.rows.map(
         (row) => ({
@@ -684,6 +762,8 @@ export class ItemActivityService {
           allocated_quantity: toNumber(row.allocated_quantity),
           unit_cost: toNumber(row.unit_cost),
           total_cost: toNumber(row.total_cost),
+          physical_layer_unit_cost: toNumber(row.physical_layer_unit_cost),
+          valuation_unit_cost: toNumber(row.valuation_unit_cost),
         }),
       );
 
@@ -700,6 +780,7 @@ export class ItemActivityService {
       }
 
       await client.query("COMMIT");
+      transactionStarted = false;
 
       return {
         summary,
@@ -707,232 +788,15 @@ export class ItemActivityService {
         transactions,
         allocations,
       };
-    } catch (error) {
-      await client.query("ROLLBACK");
+    } catch (error: unknown) {
+      if (transactionStarted) {
+        await client.query("ROLLBACK");
+      }
+
       throw error;
     } finally {
       client.release();
     }
   }
 }
-/* 
-const transactionsQuery = `
-  WITH base_ledger AS (
-    SELECT
-      ile.id,
-      ile.transaction_type,
-      ile.reference_type,
-      ile.reference_id,
-      ile.reference_line_id,
-      ile.posting_date,
-      ile.status,
-      ile.warehouse_id,
-      ile.location_id,
-      ile.bin_code,
-      ile.quantity,
-      ile.remaining_quantity,
-      ile.direction,
-      ile.unit_cost,
-      ile.total_cost,
-      ile.batch_no,
-      ile.serial_no,
-      ile.expiry_date,
-      ile.created_at,
-      w.name AS warehouse_name,
-      wl.title AS location_name
-    FROM inventory_ledger_entries ile
-    JOIN warehouses w
-      ON w.id = ile.warehouse_id
-    LEFT JOIN warehouse_locations wl
-      ON wl.id = ile.location_id
-    WHERE ile.company_id = $1
-      AND ile.item_id = $2
-      AND ile.status <> 'CANCELLED'
-    ORDER BY
-      ile.posting_date DESC,
-      ile.created_at DESC,
-      ile.id DESC
-    LIMIT 200
-  )
-  SELECT
-    bl.id,
 
-    COALESCE(
-      pi_from_po_pr.invoice_no,
-      po_from_pr.order_no,
-      jnl.entry_no,
-      so_from_sd2.sales_invoice_no,
-      so_from_sd2.order_no,
-      cn_from_sd1.posted_credit_note_no,
-      cn_from_sd1.credit_note_no,
-      dn_from_sd.debit_note_invoice_no,
-      dn_from_sd.debit_note_no,
-      st.transfer_no,
-      '-'::text
-    ) AS transaction_no,
-
-    COALESCE(
-      pi_from_po_pr.id::text,
-      po_from_pr.id::text,
-      jnl.id::text,
-      so_from_sd2.id::text,
-      so_from_sd2.id::text,
-      cn_from_sd1.id::text,
-      cn_from_sd1.id::text,
-      dn_from_sd.id::text,
-      dn_from_sd.id::text,
-      st.id::text,
-      '-'::text
-    ) AS doc_id,
-
-    bl.transaction_type,
-    bl.reference_type,
-    bl.reference_id,
-    bl.reference_line_id,
-
-    TO_CHAR(
-      bl.posting_date,
-      'YYYY-MM-DD'
-    ) AS posting_date,
-
-    bl.status,
-    bl.warehouse_id,
-    bl.warehouse_name,
-
-    bl.location_id,
-    bl.location_name,
-
-    bl.bin_code,
-    bl.quantity,
-    bl.remaining_quantity,
-
-    bl.direction AS movement_direction,
-    bl.unit_cost,
-    bl.total_cost,
-    bl.batch_no,
-    bl.serial_no,
-
-    TO_CHAR(
-      bl.expiry_date,
-      'YYYY-MM-DD'
-    ) AS expiry_date,
-
-    TO_CHAR(
-      bl.created_at,
-      'YYYY-MM-DD"T"HH24:MI:SS'
-    ) AS created_at
-
-  FROM base_ledger bl
-
-  -- Optional reference document joins evaluated ONLY on the top 200 rows
-  LEFT JOIN purchase_receipts pr 
-    ON bl.reference_type = 'PURCHASE_RECEIPT' AND pr.id = bl.reference_id
-  LEFT JOIN purchase_orders po_from_pr 
-    ON po_from_pr.id = pr.purchase_order_id
-  LEFT JOIN purchase_invoices pi_from_po_pr 
-    ON pi_from_po_pr.purchase_order_id = po_from_pr.id
-
-  LEFT JOIN stock_dispatches sd
-    ON bl.reference_type = 'STOCK_DISPATCH' AND sd.id = bl.reference_id
-  LEFT JOIN debit_notes dn_from_sd 
-    ON dn_from_sd.id = sd.debit_note_id
-
-  LEFT JOIN stock_dispatches sd1
-    ON bl.reference_type = 'CREDIT_NOTE' AND sd1.id = bl.reference_id
-  LEFT JOIN credit_notes cn_from_sd1 
-    ON cn_from_sd1.id = sd1.credit_note_id
-
-  LEFT JOIN stock_dispatches sd2
-    ON bl.reference_type = 'SALES_SHIPMENT' AND sd2.id = bl.reference_id
-  LEFT JOIN sales_orders so_from_sd2 
-    ON so_from_sd2.id = sd2.sales_order_id
-  
-  LEFT JOIN transfer_headers st
-    ON bl.reference_type IN ('STOCK_TRANSFER', 'TRANSFER') AND st.id = bl.reference_id
-
-  LEFT JOIN journal_entries jnl
-    ON bl.reference_type = 'ITEM_JOURNAL' AND jnl.id = bl.reference_id
-`;
-
-const allocationsQuery = `
-  SELECT
-    ia.id,
-    ia.warehouse_id,
-    w.name AS warehouse_name,
-
-    ia.warehouse_location_id,
-    wl.title AS location_name,
-
-    ia.batch_no,
-    ia.bin_code,
-
-    TO_CHAR(
-      ia.expiry_date,
-      'YYYY-MM-DD'
-    ) AS expiry_date,
-
-    TO_CHAR(
-      ia.date_received,
-      'YYYY-MM-DD'
-    ) AS date_received,
-
-    TO_CHAR(
-      ia.prod_date,
-      'YYYY-MM-DD'
-    ) AS prod_date,
-
-    ia.allocated_quantity,
-    ia.unit_cost,
-    ia.total_cost,
-    ia.allocation_method,
-    ia.status,
-
-    TO_CHAR(
-      ia.created_at,
-      'YYYY-MM-DD"T"HH24:MI:SS'
-    ) AS created_at,
-
-    ia.outbound_entry_id,
-    ia.outbound_line_id,
-    ia.inbound_entry_id,
-    ia.source_allocation_id,
-
-    ia.purchase_order_line_id,
-    ia.purchase_invoice_line_id,
-    ia.debit_note_line_id,
-    ia.sales_order_line_id,
-    ia.credit_note_line_id,
-    ia.journal_line_id,
-
-    CASE
-      WHEN ia.outbound_entry_id IS NOT NULL
-        THEN 'CONSUMPTION'
-
-      WHEN ia.status = 'ACTIVE'
-        AND ia.outbound_entry_id IS NULL
-        AND ia.sales_order_line_id IS NOT NULL
-        THEN 'RESERVATION'
-
-      ELSE 'OTHER'
-    END AS allocation_category
-
-  FROM inventory_allocations ia
-
-  JOIN warehouses w
-    ON w.id = ia.warehouse_id
-
-  LEFT JOIN warehouse_locations wl
-    ON wl.id = ia.warehouse_location_id
-
-  WHERE ia.company_id = $1
-    AND ia.item_id = $2
-    AND ia.outbound_entry_id IS NULL  -- Removes records already taken out / fulfilled
-    AND ia.status = 'ACTIVE'         -- Ensures only active/open allocations are returned
-
-  ORDER BY
-    ia.created_at DESC,
-    ia.id DESC
-
-  LIMIT 200
-`;
-*/

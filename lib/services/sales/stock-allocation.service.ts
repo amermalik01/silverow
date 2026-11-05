@@ -20,7 +20,7 @@ export class StockAllocationService {
       const dispatch = await this.createTransactional(
         client,
         companyId,
-        payload
+        payload,
       );
       await client.query("COMMIT");
       return dispatch;
@@ -38,11 +38,11 @@ export class StockAllocationService {
   static async createTransactional(
     client: PoolClient,
     companyId: string,
-    payload: StockAllocationPayload
+    payload: StockAllocationPayload,
   ) {
     // 1. Generate Dispatch Sequence Number
     const dispatchNoRes = await client.query(
-      `SELECT 'DSP-' || LPAD(NEXTVAL('stock_dispatch_no_seq')::text, 6, '0') AS dispatch_no`
+      `SELECT 'DSP-' || LPAD(NEXTVAL('stock_dispatch_no_seq')::text, 6, '0') AS dispatch_no`,
     );
     const dispatchNo =
       payload.dispatch.dispatch_no || dispatchNoRes.rows[0]?.dispatch_no;
@@ -78,7 +78,7 @@ export class StockAllocationService {
         payload.dispatch.reference_no || null,
         payload.dispatch.notes || null,
         payload.dispatch.userId || null,
-      ]
+      ],
     );
 
     const dispatch = dispatchResult.rows[0];
@@ -91,14 +91,14 @@ export class StockAllocationService {
     // Check inventory accounting system
     const companyRes = await client.query(
       `SELECT inventory_system FROM companies WHERE id = $1`,
-      [companyId]
+      [companyId],
     );
     const inventorySystem = companyRes.rows[0]?.inventory_system || "PERIODIC";
 
     for (const line of payload.lines) {
       if (line.item_id && !line.warehouse_id) {
         throw new Error(
-          `Warehouse identification is required for item ${line.item_id}`
+          `Warehouse identification is required for item ${line.item_id}`,
         );
       }
 
@@ -115,12 +115,12 @@ export class StockAllocationService {
           FROM sales_order_lines 
           WHERE id = $1 FOR UPDATE
           `,
-          [line.sales_order_line_id]
+          [line.sales_order_line_id],
         );
 
         if (!soLineResult.rows.length) {
           throw new Error(
-            `Sales Order line ${line.sales_order_line_id} not found`
+            `Sales Order line ${line.sales_order_line_id} not found`,
           );
         }
 
@@ -130,7 +130,7 @@ export class StockAllocationService {
 
         if (qtyShipped > Number(remainingAllowed.toFixed(6))) {
           throw new Error(
-            `Dispatch quantity (${qtyShipped}) exceeds remaining open line quantity (${remainingAllowed})`
+            `Dispatch quantity (${qtyShipped}) exceeds remaining open line quantity (${remainingAllowed})`,
           );
         }
       }
@@ -165,7 +165,7 @@ export class StockAllocationService {
           qtyShipped,
           unitPrice,
           lineTotalAmount,
-        ]
+        ],
       );
 
       const dispatchLine = lineResult.rows[0];
@@ -194,32 +194,107 @@ export class StockAllocationService {
               reference_type: "SALES_SHIPMENT",
               reference_id: dispatch.id,
               reference_line_id: dispatchLine.id,
-            }
+            },
           );
 
         actualCostDeducted = Number(outboundRes.totalCost);
         outboundUnitCost = Number(outboundRes.unitCost);
       }
 
-      // 6. Update Sales Order Line Shipped Quantities
+      // 6. Update shipped and reserved quantities atomically.
+
       if (line.sales_order_line_id) {
-        await client.query(
+        const updateLineResult = await client.query<{
+          quantity_reserved: string | number;
+        }>(
           `
-          UPDATE sales_order_lines 
-          SET quantity_shipped = COALESCE(quantity_shipped, 0) + $1, 
-              updated_at = NOW()
+          UPDATE sales_order_lines
+          SET
+            quantity_shipped =
+              COALESCE(quantity_shipped, 0) + $1,
+
+            quantity_reserved =
+              GREATEST(
+                0,
+                COALESCE(quantity_reserved, 0) - $1
+              ),
+
+            updated_at = NOW()
           WHERE id = $2
+            AND company_id = $3
+          RETURNING quantity_reserved
           `,
-          [qtyShipped, line.sales_order_line_id]
+          [qtyShipped, line.sales_order_line_id, companyId],
         );
+
+        if (!updateLineResult.rowCount) {
+          throw new Error(
+            `Sales order line ${line.sales_order_line_id} could not be updated.`,
+          );
+        }
+
+        const remainingReserved = Number(
+          updateLineResult.rows[0].quantity_reserved || 0,
+        );
+
+        // Close reservation records only when no reserved quantity remains.
+        if (remainingReserved <= 0.000001) {
+          await client.query(
+            `
+            UPDATE inventory_allocations
+            SET status = 'CLOSED'
+            WHERE company_id = $1
+              AND sales_order_line_id = $2
+              AND source_allocation_id IS NOT NULL
+              AND outbound_entry_id IS NULL
+              AND inbound_entry_id IS NULL
+              AND status = 'ACTIVE'
+            `,
+            [companyId, line.sales_order_line_id],
+          );
+        }
       }
+
+      // 6. Update Sales Order Line Shipped Quantities
+      // if (line.sales_order_line_id) {
+      //   await client.query(
+      //     `
+      //     UPDATE sales_order_lines
+      //     SET quantity_shipped = COALESCE(quantity_shipped, 0) + $1,
+      //         updated_at = NOW()
+      //     WHERE id = $2
+      //     `,
+      //     [qtyShipped, line.sales_order_line_id],
+      //   );
+      // }
+
+      // 6.1 Close reservations once the sales order line has no
+      // remaining reserved quantity.
+      //
+      // Keep partially outstanding reservations active.
+      // await client.query(
+      //   `
+      //     UPDATE inventory_allocations ia
+      //     SET status = 'CLOSED'
+      //     FROM sales_order_lines sol
+      //     WHERE ia.sales_order_line_id = sol.id
+      //       AND ia.company_id = sol.company_id
+      //       AND ia.company_id = $1
+      //       AND ia.sales_order_line_id = $2
+      //       AND ia.status = 'ACTIVE'
+      //       AND ia.outbound_entry_id IS NULL
+      //       AND ia.inbound_entry_id IS NULL
+      //       AND COALESCE(sol.quantity_reserved, 0) <= 0
+      //     `,
+      //   [companyId, line.sales_order_line_id],
+      // );
 
       // 7. Generate GL Journal Lines (Perpetual Inventory Mode)
       if (inventorySystem === "PERPETUAL") {
         const accounts = await AccountResolutionService.resolveSalesAccounts(
           client,
           companyId,
-          line.item_id
+          line.item_id,
         );
 
         // DR - Cost of Goods Sold (COGS)
@@ -279,7 +354,7 @@ export class StockAllocationService {
       SET is_posted = true, posted_at = NOW(), status = 'POSTED'
       WHERE id = $1
       `,
-      [dispatch.id]
+      [dispatch.id],
     );
 
     // 10. Sync Parent Sales Order Status Pipeline
@@ -299,11 +374,10 @@ export class StockAllocationService {
         updated_at = NOW()
         WHERE so.id = $1
         `,
-        [payload.dispatch.sales_order_id]
+        [payload.dispatch.sales_order_id],
       );
     }
 
     return dispatch;
   }
 }
-

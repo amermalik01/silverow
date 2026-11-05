@@ -312,33 +312,72 @@ export class SalesOrderService {
       [id, companyId],
     );
 
+    // const allocationsResult = await pool.query(
+    //   `
+    //   SELECT
+    //       ia.id,
+    //       ia.source_allocation_id,
+    //       ia.inbound_entry_id,
+
+    //       ia.sales_order_line_id,
+    //       ia.item_id,
+    //       ia.warehouse_id,
+    //       ia.warehouse_location_id AS location_id,
+
+    //       wl.title AS location_name,
+    //       ia.allocated_quantity AS quantity,
+
+    //       ia.batch_no,
+    //       ia.bin_code,
+
+    //       TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
+    //       TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_received,
+
+    //       ia.unit_cost
+
+    //   FROM inventory_allocations ia
+    //   LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
+    //   INNER JOIN sales_order_lines sol ON ia.sales_order_line_id = sol.id
+    //   WHERE sol.sales_order_id = $1 AND ia.company_id = $2
+    //   `,
+    //   [id, companyId],
+    // );
+
     const allocationsResult = await pool.query(
       `
       SELECT
           ia.id,
           ia.source_allocation_id,
           ia.inbound_entry_id,
-
           ia.sales_order_line_id,
           ia.item_id,
           ia.warehouse_id,
           ia.warehouse_location_id AS location_id,
-
           wl.title AS location_name,
           ia.allocated_quantity AS quantity,
-
           ia.batch_no,
           ia.bin_code,
-
-          TO_CHAR(ia.expiry_date,'YYYY-MM-DD') AS expiry_date,
-          TO_CHAR(ia.created_at,'YYYY-MM-DD') AS date_received,
-
-          ia.unit_cost
-
+          COALESCE(
+            NULLIF(BTRIM(ia.serial_no), ''),
+            NULLIF(BTRIM(ia.bin_code), '')
+          ) AS tracking_code,
+          TO_CHAR(ia.expiry_date, 'YYYY-MM-DD') AS expiry_date,
+          TO_CHAR(ia.created_at, 'YYYY-MM-DD') AS date_received,
+          ia.unit_cost,
+          ia.status
       FROM inventory_allocations ia
-      LEFT JOIN warehouse_locations wl ON wl.id = ia.warehouse_location_id
-      INNER JOIN sales_order_lines sol ON ia.sales_order_line_id = sol.id
-      WHERE sol.sales_order_id = $1 AND ia.company_id = $2
+      INNER JOIN sales_order_lines sol
+          ON ia.sales_order_line_id = sol.id
+        AND ia.company_id = sol.company_id
+      LEFT JOIN warehouse_locations wl
+          ON wl.id = ia.warehouse_location_id
+      WHERE sol.sales_order_id = $1
+        AND ia.company_id = $2
+        AND ia.status = 'ACTIVE'
+        AND ia.source_allocation_id IS NOT NULL
+        AND ia.outbound_entry_id IS NULL
+        AND ia.inbound_entry_id IS NULL
+      ORDER BY ia.created_at, ia.id
       `,
       [id, companyId],
     );
@@ -357,8 +396,8 @@ export class SalesOrderService {
           expiry_date: alloc.expiry_date || "",
 
           batch_no: alloc.batch_no || "",
-          serial_no: alloc.bin_code || "",
-          bin_code: alloc.bin_code || "",
+          serial_no: alloc.tracking_code || "",
+          bin_code: alloc.tracking_code || "",
 
           location_id: alloc.location_id || "",
           location_name: alloc.location_name || "",
@@ -366,16 +405,6 @@ export class SalesOrderService {
           quantity: Number(alloc.quantity) || 0,
 
           unit_cost: Number(alloc.unit_cost) || 0,
-
-          // date_shipped: alloc.date_shipped || "",
-          // prod_date: "",
-          // expiry_date: alloc.expiry_date || "",
-          // batch_no: alloc.batch_no || "",
-          // serial_no: alloc.bin_code || "",
-
-          // location_id: alloc.location_id || "",
-          // location_name: alloc.location_name || "",
-          // quantity: Number(alloc.quantity) || 0,
         }));
 
       return {
@@ -1293,13 +1322,27 @@ export class SalesOrderService {
      * ---------------------------------------------------------
      */
 
+    // await client.query(
+    //   `
+    // DELETE FROM inventory_allocations
+    // WHERE company_id = $1
+    //   AND sales_order_line_id = $2
+    //   AND status = 'ACTIVE'
+    // `,
+    //   [companyId, salesOrderLineId],
+    // );
+
     await client.query(
       `
-    DELETE FROM inventory_allocations
-    WHERE company_id = $1
-      AND sales_order_line_id = $2
-      AND status = 'ACTIVE'
-    `,
+      UPDATE inventory_allocations
+      SET status = 'CLOSED'
+      WHERE company_id = $1
+        AND sales_order_line_id = $2
+        AND source_allocation_id IS NOT NULL
+        AND outbound_entry_id IS NULL
+        AND inbound_entry_id IS NULL
+        AND status = 'ACTIVE'
+      `,
       [companyId, salesOrderLineId],
     );
 
@@ -1475,29 +1518,64 @@ export class SalesOrderService {
 
       const reservedResult = await client.query(
         `
-      SELECT
-        COALESCE(
-          SUM(ia.allocated_quantity),
-          0
-        ) AS reserved_quantity
-
-      FROM inventory_allocations ia
-
-      INNER JOIN sales_order_lines sol
-        ON sol.id = ia.sales_order_line_id
-
-      WHERE ia.company_id = $1
-
-        AND ia.source_allocation_id = $2
-
-        AND ia.status = 'ACTIVE'
-
-        AND ia.sales_order_line_id IS NOT NULL
-
-        AND sol.sales_order_id <> $3
-      `,
+        SELECT
+          COALESCE(
+            SUM(
+              LEAST(
+                reservation_totals.allocation_quantity,
+                GREATEST(reservation_totals.remaining_reserved_quantity, 0)
+              )
+            ),
+            0
+          ) AS reserved_quantity
+        FROM (
+          SELECT
+            sol.id,
+            SUM(ia.allocated_quantity) AS allocation_quantity,
+            COALESCE(sol.quantity_reserved, 0) AS remaining_reserved_quantity
+          FROM inventory_allocations ia
+          INNER JOIN sales_order_lines sol
+            ON sol.id = ia.sales_order_line_id
+          AND sol.company_id = ia.company_id
+          WHERE ia.company_id = $1
+            AND ia.source_allocation_id = $2
+            AND ia.status = 'ACTIVE'
+            AND ia.sales_order_line_id IS NOT NULL
+            AND ia.outbound_entry_id IS NULL
+            AND ia.inbound_entry_id IS NULL
+            AND sol.sales_order_id <> $3
+            AND COALESCE(sol.is_deleted, false) = false
+          GROUP BY sol.id, sol.quantity_reserved
+        ) reservation_totals
+        `,
         [companyId, source.id, salesOrderId],
       );
+
+      // const reservedResult = await client.query(
+      //   `
+      //     SELECT
+      //       COALESCE(
+      //         SUM(ia.allocated_quantity),
+      //         0
+      //       ) AS reserved_quantity
+
+      //     FROM inventory_allocations ia
+
+      //     INNER JOIN sales_order_lines sol
+      //       ON sol.id = ia.sales_order_line_id
+
+      //     WHERE ia.company_id = $1
+
+      //       AND ia.source_allocation_id = $2
+
+      //       AND ia.status = 'ACTIVE'
+
+      //       AND ia.sales_order_line_id IS NOT NULL
+
+      //       AND sol.sales_order_id <> $3
+      //     `,
+      //   [companyId, source.id, salesOrderId],
+      // );
 
       const reservedQuantity = Number(
         reservedResult.rows[0]?.reserved_quantity || 0,
@@ -1697,6 +1775,30 @@ export class SalesOrderService {
         ],
       );
     }
+
+    await client.query(
+      `
+      UPDATE sales_order_lines sol
+      SET
+        quantity_reserved = COALESCE(
+          (
+            SELECT SUM(ia.allocated_quantity)
+            FROM inventory_allocations ia
+            WHERE ia.company_id = sol.company_id
+              AND ia.sales_order_line_id = sol.id
+              AND ia.source_allocation_id IS NOT NULL
+              AND ia.outbound_entry_id IS NULL
+              AND ia.inbound_entry_id IS NULL
+              AND ia.status = 'ACTIVE'
+          ),
+          0
+        ),
+        updated_at = NOW()
+      WHERE sol.id = $1
+        AND sol.company_id = $2
+      `,
+      [salesOrderLineId, companyId],
+    );
   }
 
   private static validatePayload(payload: SalesOrderPayload): void {
