@@ -35,6 +35,13 @@ export type ItemFormData = {
   sales_uom_id: string;
   stock_tracking: boolean;
   reorder_qty: string;
+  net_weight: string;
+  gross_weight: string;
+
+  height: string;
+  width: string;
+  length: string;
+  
   standard_sales_price: string;
   minimum_sales_price?: string;
   standard_cost: string;

@@ -51,7 +51,7 @@ export default function GeneralTab({
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
-                  disabled={autoCode || isReadonly}
+                  disabled={autoCode || effectiveReadonly}
                   value={item.item_code}
                   onChange={(e) =>
                     setItem((prev) => ({ ...prev, item_code: e.target.value }))
@@ -59,7 +59,7 @@ export default function GeneralTab({
                   placeholder={autoCode ? "Auto-generated" : "Enter item code"}
                   className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 dark:disabled:bg-slate-800/50"
                 />
-                {!isReadonly && (
+                {!effectiveReadonly && (
                   <label className="flex items-center gap-1.5 text-slate-500 cursor-pointer">
                     <input
                       type="checkbox"
@@ -85,7 +85,7 @@ export default function GeneralTab({
             <div className="col-span-2">
               <input
                 type="text"
-                disabled={isReadonly}
+                disabled={effectiveReadonly}
                 value={item.name}
                 onChange={(e) =>
                   setItem((prev) => ({ ...prev, name: e.target.value }))
@@ -183,11 +183,33 @@ export default function GeneralTab({
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Item Type
+            </label>
+            <div className="col-span-2">
+              <select
+                disabled={effectiveReadonly}
+                value={item.item_type}
+                onChange={(e) =>
+                  setItem((prev) => ({
+                    ...prev,
+                    item_type: Number(e.target.value),
+                  }))
+                }
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
+              >
+                <option value={1}>Inventory</option>
+                <option value={2}>Service</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               {/* VAT Product Posting Group */}VAT Rate
             </label>
             <div className="col-span-2">
               <select
-                disabled={isReadonly}
+                disabled={effectiveReadonly}
                 value={item.vat_product_group_id || ""}
                 onChange={(e) =>
                   setItem((prev) => ({
@@ -265,7 +287,7 @@ export default function GeneralTab({
               <NumericTextInput
                 placeholder="0"
                 min="0"
-                disabled={isReadonly}
+                disabled={effectiveReadonly}
                 value={Number(item.reorder_qty)}
                 onChange={(val) =>
                   setItem((prev) => ({ ...prev, reorder_qty: String(val) }))
@@ -277,25 +299,132 @@ export default function GeneralTab({
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Item Type
+              Net Weight
             </label>
-            <div className="col-span-2">
-              <select
-                disabled={isReadonly}
-                value={item.item_type}
-                onChange={(e) =>
-                  setItem((prev) => ({
-                    ...prev,
-                    item_type: Number(e.target.value),
-                  }))
+
+            <div className="col-span-2 flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
+              <NumericTextInput
+                placeholder="0"
+                min="0"
+                allowDecimals
+                decimalScale={2}
+                disabled={effectiveReadonly}
+                value={Number(item.net_weight)}
+                onChange={(val) =>
+                  setItem((prev) => ({ ...prev, net_weight: String(val) }))
                 }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
-              >
-                <option value={1}>Inventory</option>
-                <option value={2}>Service</option>
-              </select>
+                className="w-full p-2.5 border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
+              />
+              <span className="px-3 text-slate-500 dark:text-slate-400 text-xs font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
+                kg
+              </span>
+            </div>
+            {/* <div className="col-span-2">
+              <NumericTextInput
+                placeholder="0"
+                min="0"
+                allowDecimals
+                decimalScale={2}
+                disabled={effectiveReadonly}
+                value={Number(item.net_weight)}
+                onChange={(val) =>
+                  setItem((prev) => ({ ...prev, net_weight: String(val) }))
+                }
+                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
+              />
+            </div> */}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Gross Weight
+            </label>
+            <div className="col-span-2 flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
+              <NumericTextInput
+                placeholder="0"
+                min="0"
+                allowDecimals
+                decimalScale={2}
+                disabled={effectiveReadonly}
+                value={Number(item.gross_weight)}
+                onChange={(val) =>
+                  setItem((prev) => ({ ...prev, gross_weight: String(val) }))
+                }
+                className="w-full p-2.5 border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
+              />
+              <span className="px-3 text-slate-500 dark:text-slate-400 text-xs font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
+                kg
+              </span>
             </div>
           </div>
+
+
+          {/* Dimensions (Height, Width, Length in a single row) */}
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Dimensions (H × W × L)
+            </label>
+            <div className="col-span-2 grid grid-cols-3 gap-1.5">
+              {/* Height */}
+              <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
+                <NumericTextInput
+                  placeholder="H"
+                  min="0"
+                  allowDecimals
+                  decimalScale={2}
+                  disabled={effectiveReadonly}
+                  value={Number(item.height)}
+                  onChange={(val) =>
+                    setItem((prev) => ({ ...prev, height: String(val) }))
+                  }
+                  className="w-full p-2.5 text-xs border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
+                />
+                <span className="px-1.5 text-slate-500 dark:text-slate-400 text-[10px] font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
+                  cm
+                </span>
+              </div>
+
+              {/* Width */}
+              <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
+                <NumericTextInput
+                  placeholder="W"
+                  min="0"
+                  allowDecimals
+                  decimalScale={2}
+                  disabled={effectiveReadonly}
+                  value={Number(item.width)}
+                  onChange={(val) =>
+                    setItem((prev) => ({ ...prev, width: String(val) }))
+                  }
+                  className="w-full p-2.5 text-xs border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
+                />
+                <span className="px-1.5  text-slate-500 dark:text-slate-400 text-[10px] font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
+                  cm
+                </span>
+              </div>
+
+              {/* Length */}
+              <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
+                <NumericTextInput
+                  placeholder="L"
+                  min="0"
+                  allowDecimals
+                  decimalScale={2}
+                  disabled={effectiveReadonly}
+                  value={Number(item.length)}
+                  onChange={(val) =>
+                    setItem((prev) => ({ ...prev, length: String(val) }))
+                  }
+                  className="w-full p-2.5 text-xs border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
+                />
+                <span className="px-1.5 text-slate-500 dark:text-slate-400 text-[10px] font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
+                  cm
+                </span>
+              </div>
+            </div>
+          </div>
+
+          
         </div>
       </div>
     </div>

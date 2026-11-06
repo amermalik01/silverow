@@ -47,6 +47,13 @@ const defaultItemForm: ItemFormData = {
   sales_uom_id: "",
   stock_tracking: true,
   reorder_qty: "",
+  net_weight: "",
+  gross_weight: "",
+
+  height: "",
+  width: "",
+  length: "",
+
   standard_sales_price: "",
   standard_cost: "",
   // costing_method: 1,
@@ -191,16 +198,24 @@ export default function ItemRecord({
             category_id: itemData.category_id || "",
             brand_id: itemData.brand_id || "",
             base_uom_id: itemData.base_uom_id || "",
-            purchase_uom_id: itemData.purchase_uom_id || "",
-            sales_uom_id: itemData.sales_uom_id || "",
+            purchase_uom_id:
+              itemData.purchase_uom_id || itemData.base_uom_id || "",
+            sales_uom_id: itemData.sales_uom_id || itemData.base_uom_id || "",
             stock_tracking: itemData.stock_tracking ?? true,
             reorder_qty: itemData.reorder_qty?.toString() || "",
+            net_weight: itemData.net_weight?.toString() || "",
+            gross_weight: itemData.gross_weight?.toString() || "",
+
+            height: itemData.height?.toString() || "",
+            width: itemData.width?.toString() || "",
+            length: itemData.length?.toString() || "",
 
             standard_sales_price:
               itemData.standard_sales_price?.toString() || "",
             minimum_sales_price: itemData.minimum_sales_price?.toString() || "",
             standard_cost: itemData.standard_cost?.toString() || "",
-            standard_purchase_price: itemData.standard_purchase_price?.toString() || "",
+            standard_purchase_price:
+              itemData.standard_purchase_price?.toString() || "",
             min_purchase_qty: itemData.min_purchase_qty?.toString() || "1",
             max_purchase_qty: itemData.max_purchase_qty?.toString() || "100",
 
@@ -363,6 +378,12 @@ export default function ItemRecord({
           purchase_uom_id: item.purchase_uom_id || null,
           sales_uom_id: item.sales_uom_id || null,
           reorder_qty: item.reorder_qty || null,
+          net_weight: item.net_weight || null,
+          gross_weight: item.gross_weight || null,
+
+          height: item.height || null,
+          width: item.width || null,
+          length: item.length || null,
 
           standard_sales_price: item.standard_sales_price || null,
           minimum_sales_price: item.minimum_sales_price || null,

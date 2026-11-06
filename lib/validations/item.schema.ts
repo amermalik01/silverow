@@ -25,6 +25,14 @@ export const ItemSchema = z.object({
   stock_tracking: z.boolean().default(true),
 
   reorder_qty: z.union([z.string(), z.number()]).optional().nullable(),
+
+  net_weight: z.union([z.string(), z.number()]).optional().nullable(),
+  gross_weight: z.union([z.string(), z.number()]).optional().nullable(),
+
+  height: z.union([z.string(), z.number()]).optional().nullable(),
+  width: z.union([z.string(), z.number()]).optional().nullable(),
+  length: z.union([z.string(), z.number()]).optional().nullable(),
+
   minimum_sales_price: z.union([z.string(), z.number()]).optional().nullable(),
   standard_sales_price: z.union([z.string(), z.number()]).optional().nullable(),
 

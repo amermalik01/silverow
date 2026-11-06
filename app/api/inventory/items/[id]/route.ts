@@ -146,19 +146,25 @@ export async function PUT(req: Request, { params }: Props) {
           status = $11,
           stock_tracking = $12,
           reorder_qty = $13,
-          minimum_sales_price = $14,
-          standard_sales_price = $15,
-          standard_purchase_price = $16,
-          standard_cost = $17,
-          costing_method = $18,
-          inventory_posting_group_id = $19,
-          inventory_gl_id = $20,
-          cogs_gl_id = $21,
-          sales_gl_id = $22,
-          purchase_gl_id = $23,
-          vat_product_group_id = $24,
+          net_weight = $14,
+          gross_weight = $15,
+          height = $16,
+          width = $17,
+          length = $18,
+
+          minimum_sales_price = $19,
+          standard_sales_price = $20,
+          standard_purchase_price = $21,
+          standard_cost = $22,
+          costing_method = $23,
+          inventory_posting_group_id = $24,
+          inventory_gl_id = $25,
+          cogs_gl_id = $26,
+          sales_gl_id = $27,
+          purchase_gl_id = $28,
+          vat_product_group_id = $29,
           updated_at = NOW()
-        WHERE id = $25 AND company_id = $26
+        WHERE id = $30 AND company_id = $31
         RETURNING *;
       `;
 
@@ -176,6 +182,14 @@ export async function PUT(req: Request, { params }: Props) {
         toNumberOrDefault(validatedItem.status, 1),
         !!validatedItem.stock_tracking,
         toNumberOrDefault(validatedItem.reorder_qty, 0),
+
+        toNumberOrDefault(validatedItem.net_weight, 0),
+        toNumberOrDefault(validatedItem.gross_weight, 0),
+
+        toNumberOrDefault(validatedItem.height, 0),
+        toNumberOrDefault(validatedItem.width, 0),
+        toNumberOrDefault(validatedItem.length, 0),
+
         toNumberOrDefault(validatedItem.minimum_sales_price, 0),
         toNumberOrDefault(validatedItem.standard_sales_price, 0),
 

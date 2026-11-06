@@ -104,12 +104,12 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             icon: "solar:user-rounded-linear",
             url: `/${slug}/sales/customer`,
           },
-          {
-            id: "OpportunityCycle",
-            name: "Opportunity Cycle",
-            icon: "solar:user-rounded-linear",
-            url: `/${slug}/sales/customer`,
-          },
+          // {
+          //   id: "OpportunityCycle",
+          //   name: "Opportunity Cycle",
+          //   icon: "solar:user-rounded-linear",
+          //   url: `/${slug}/sales/customer`,
+          // },
 
           {
             id: "Sales Quotes",

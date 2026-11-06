@@ -4,7 +4,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ItemFormData, ItemLookupOption, InventoryCostingMethod } from "@/types/inventory";
+import {
+  ItemFormData,
+  ItemLookupOption,
+  InventoryCostingMethod,
+} from "@/types/inventory";
 import { Button } from "@/components/ui/button";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 
@@ -33,6 +37,14 @@ const defaultForm: ItemFormData = {
   stock_tracking: true,
 
   reorder_qty: "",
+
+  net_weight: "",
+  gross_weight: "",
+
+  height: "",
+  width: "",
+  length: "",
+
   standard_sales_price: "",
   standard_cost: "",
   costing_method: "FIFO",
@@ -87,6 +99,13 @@ export default function ItemForm({ id }: Props) {
 
           stock_tracking: itemData.stock_tracking ?? true,
           reorder_qty: itemData.reorder_qty?.toString() || "",
+          net_weight: itemData.net_weight?.toString() || "",
+          gross_weight: itemData.gross_weight?.toString() || "",
+
+          height: itemData.height?.toString() || "",
+          width: itemData.width?.toString() || "",
+          length: itemData.length?.toString() || "",
+
           standard_sales_price: itemData.standard_sales_price?.toString() || "",
           standard_cost: itemData.standard_cost?.toString() || "",
           costing_method: validMethods.includes(itemData.costing_method)
@@ -137,6 +156,11 @@ export default function ItemForm({ id }: Props) {
         purchase_uom_id: form.purchase_uom_id || null,
         sales_uom_id: form.sales_uom_id || null,
         reorder_qty: form.reorder_qty || null,
+        net_weight: form.net_weight || null,
+        gross_weight: form.gross_weight || null,
+        height: form.height || null,
+        width: form.width || null,
+        length: form.length || null,
         standard_sales_price: form.standard_sales_price || null,
         standard_cost: form.standard_cost || null,
       };

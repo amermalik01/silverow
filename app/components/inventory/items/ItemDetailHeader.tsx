@@ -267,13 +267,35 @@ export default function ItemDetailHeader({
               <div
                 key={card.title}
                 onClick={() => setActiveModal(card.modalKey)}
-                className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${card.container}`}
+                // className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${card.container}`}
+                className={`group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md  text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${card.container}`}
               >
                 <div
                   className={`absolute -right-5 -top-5 h-20 w-20 rounded-full transition-transform duration-300 group-hover:scale-125 ${card.decoration}`}
                 />
 
                 <div className="relative flex items-start justify-between gap-3">
+                  <div>
+                    <div
+                      className={`flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-amber-700 dark:text-amber-400 ${card.titleColor}`}
+                    >
+                      <Icon icon={card.icon} className="h-4 w-4 shrink-0" />
+                      {card.title}
+                    </div>
+
+                    <div className="mt-1.5 text-sm text-center font-semibold tracking-tight text-amber-950 dark:text-amber-100">
+                      {formatQuantity(card.value)}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-amber-600 shadow-sm ${card.titleColor}`}
+                  >
+                    <Icon icon="tabler:external-link" className="w-4 h-4" />
+                  </div>
+                </div>
+
+                {/* <div className="relative flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div
                       className={`flex items-center gap-2 text-md capitalize tracking-wider ${card.titleColor}`}
@@ -300,7 +322,7 @@ export default function ItemDetailHeader({
                           : "w-full bg-emerald-500"
                     }`}
                   />
-                </div>
+                </div> */}
               </div>
             ))}
           </div>

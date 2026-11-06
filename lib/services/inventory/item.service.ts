@@ -2,7 +2,11 @@
 
 import { pool } from "@/lib/db";
 import { QueryResult, QueryResultRow } from "pg";
-import { ItemListRow, ItemWarehouseDraft,InventoryCostingMethod } from "@/types/inventory";
+import {
+  ItemListRow,
+  ItemWarehouseDraft,
+  InventoryCostingMethod,
+} from "@/types/inventory";
 
 type GetItemListOptions = {
   companyId: string;
@@ -24,6 +28,13 @@ type CreateItemInput = {
   status?: number;
   stock_tracking?: boolean;
   reorder_qty?: string | number | null;
+  net_weight?: string | number | null;
+  gross_weight?: string | number | null;
+
+  height?: string | number | null;
+  width?: string | number | null;
+  length?: string | number | null;
+
   standard_sales_price?: string | number | null;
 
   standard_cost?: string | number | null;
@@ -273,7 +284,14 @@ export async function updateItem({ id, companyId, data }: UpdateItemOptions) {
 
     // Extract warehouses array out of the main update payload
     // const { warehouses, ...itemData } = data;
-    const { warehouses, id: _, company_id: __, created_at: ___, updated_at: ____, ...itemData } = data;
+    const {
+      warehouses,
+      id: _,
+      company_id: __,
+      created_at: ___,
+      updated_at: ____,
+      ...itemData
+    } = data;
 
     const cleanData = Object.fromEntries(
       Object.entries(itemData).map(([key, value]) => {
