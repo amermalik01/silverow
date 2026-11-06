@@ -36,6 +36,11 @@ export interface ItemMovement {
   reference_type: string | null;
   reference_id: string | null;
   reference_line_id: string | null;
+
+  invoice_no: string | null;
+  document_url: string | null;
+  invoice_url: string | null;
+
   posting_date: string;
   status: string;
   warehouse_id: string;
@@ -121,6 +126,11 @@ interface MovementRow extends QueryResultRow {
   reference_type: string | null;
   reference_id: string | null;
   reference_line_id: string | null;
+
+  invoice_no: string | null;
+  document_url: string | null;
+  invoice_url: string | null;
+
   posting_date: string;
   status: string;
   warehouse_id: string;
@@ -262,6 +272,23 @@ const warehouseStockQuery = `
       ia.company_id,
       ia.item_id,
       sol.id AS sales_order_line_id,
+
+      so.order_no AS sales_order_no,
+      CASE
+          WHEN so.id IS NOT NULL
+              THEN '/sales/invoices/' || so.id::text
+          ELSE NULL
+      END AS document_url,
+
+      so.sales_invoice_no AS invoice_no,
+
+      CASE
+          WHEN so.id IS NOT NULL
+              AND NULLIF(BTRIM(so.sales_invoice_no), '') IS NOT NULL
+              THEN '/sales/invoices/' || so.id::text
+          ELSE NULL
+      END AS invoice_url,
+
       sol.warehouse_id,
 
       SUM(ia.allocated_quantity) AS allocation_quantity,
@@ -273,9 +300,13 @@ const warehouseStockQuery = `
 
     FROM inventory_allocations ia
 
-    INNER JOIN sales_order_lines sol
-      ON sol.id = ia.sales_order_line_id
-     AND sol.company_id = ia.company_id
+    LEFT JOIN sales_order_lines sol
+        ON sol.id = ia.sales_order_line_id
+      AND sol.company_id = ia.company_id
+
+    LEFT JOIN sales_orders so
+        ON so.id = sol.sales_order_id
+      AND so.company_id = sol.company_id
 
     WHERE ia.company_id = $1
       AND ia.item_id = $2
@@ -288,6 +319,8 @@ const warehouseStockQuery = `
 
     GROUP BY
       ia.company_id,
+      so.id,
+      so.order_no,
       ia.item_id,
       sol.id,
       sol.warehouse_id,
@@ -472,6 +505,38 @@ const transactionsQuery = `
     bl.reference_id,
     bl.reference_line_id,
 
+    CASE
+        WHEN so_from_sd.id IS NOT NULL
+            THEN '/sales/invoices/' || so_from_sd.id::text
+        WHEN po_from_pr.id IS NOT NULL
+            THEN '/purchases/purchase-invoices/' || po_from_pr.id::text
+        WHEN jnl.id IS NOT NULL
+            THEN '/finance/journals/' || jnl.id::text
+        WHEN st.id IS NOT NULL
+            THEN '/inventory/transfers/' || st.id::text
+        WHEN dn_from_sd.id IS NOT NULL
+            THEN '/purchases/posted-debit-notes/' || dn_from_sd.id::text
+        WHEN cn_from_sd.id IS NOT NULL
+            THEN '/sales/posted-credit-notes/' || cn_from_sd.id::text
+        ELSE NULL
+    END AS document_url,
+
+    CASE
+        WHEN NULLIF(BTRIM(so_from_sd.sales_invoice_no), '') IS NOT NULL
+            THEN so_from_sd.sales_invoice_no
+        WHEN NULLIF(BTRIM(po_from_pr.purchase_invoice_no), '') IS NOT NULL
+            THEN po_from_pr.purchase_invoice_no
+        ELSE NULL
+    END AS invoice_no,
+
+    CASE
+        WHEN NULLIF(BTRIM(so_from_sd.sales_invoice_no), '') IS NOT NULL
+            THEN '/sales/invoices/' || so_from_sd.id::text
+        WHEN NULLIF(BTRIM(po_from_pr.purchase_invoice_no), '') IS NOT NULL
+            THEN '/purchases/purchase-invoices/' || po_from_pr.id::text
+        ELSE NULL
+    END AS invoice_url, 
+
     TO_CHAR(bl.posting_date, 'YYYY-MM-DD') AS posting_date,
 
     bl.status,
@@ -500,8 +565,7 @@ const transactionsQuery = `
 
     TO_CHAR(
       bl.created_at,
-      'YYYY-MM-DD"T"HH24:MI:SS'
-    ) AS created_at
+      'YYYY-MM-DD') AS created_at
 
   FROM base_ledger bl
 
@@ -647,8 +711,7 @@ const allocationsQuery = `
 
     TO_CHAR(
       ia.created_at,
-      'YYYY-MM-DD"T"HH24:MI:SS'
-    ) AS created_at,
+      'YYYY-MM-DD') AS created_at,
 
     ia.outbound_entry_id,
     ia.outbound_line_id,
@@ -799,4 +862,6 @@ export class ItemActivityService {
     }
   }
 }
-
+    // INNER JOIN sales_order_lines sol
+    //   ON sol.id = ia.sales_order_line_id
+    //  AND sol.company_id = ia.company_id

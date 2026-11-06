@@ -5,15 +5,43 @@ import Link from "next/link";
 import type { StockDetailRow } from "./ItemStockModal";
 
 function getCurrentSlug(): string {
-  if (typeof window === "undefined") return "";
-  const segments = window.location.pathname.split("/").filter(Boolean);
-  return segments.length > 0 ? segments[0] : "";
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const segments = window.location.pathname
+    .split("/")
+    .filter(Boolean);
+
+  return segments[0] ?? "";
 }
+
+function getTenantDocumentUrl(
+  path: string | null | undefined,
+): string | null {
+  if (!path || !path.startsWith("/") || path.startsWith("//")) {
+    return null;
+  }
+
+  const slug = getCurrentSlug();
+
+  if (!slug) {
+    return null;
+  }
+
+  return `/${slug}${path}`;
+}
+
+// function getCurrentSlug(): string {
+//   if (typeof window === "undefined") return "";
+//   const segments = window.location.pathname.split("/").filter(Boolean);
+//   return segments.length > 0 ? segments[0] : "";
+// }
 
 /**
  * Generates the appropriate ERP module URL for a given document type and reference ID/No.
  */
-function getDocumentUrl(
+/* function getDocumentUrl(
   documentType: string,
   referenceId?: string | null,
 ): string {
@@ -58,54 +86,88 @@ function getDocumentUrl(
   }
 
   return "#";
-}
+} */
 
 export const itemStockCellRenderers: Record<
   string,
   (row: StockDetailRow) => React.ReactNode
 > = {
   document_no: (row) => {
-    const docNo = row.document_no;
+    const documentUrl = getTenantDocumentUrl(row.document_url);
 
-    if (!docNo || docNo === "-") return "-";
-
-    if (!row.document_url) {
-      return <span>{docNo}</span>;
-    }
-
-    return (
+    return documentUrl ? (
       <Link
-        href={row.document_url}
+        href={documentUrl}
+        // className="text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400"
         target="_blank"
         rel="noopener noreferrer"
         className="font-medium text-[#1b431c] underline decoration-emerald-600/40 hover:decoration-emerald-600 dark:text-emerald-400"
         title="Open source document in new tab"
       >
-        {docNo}
+        {row.document_no || "-"}
       </Link>
+    ) : (
+      <span>{row.document_no || "-"}</span>
     );
+
+    // const docNo = row.document_no;
+
+    // if (!docNo || docNo === "-") return "-";
+
+    // if (!row.document_url) {
+    //   return <span>{docNo}</span>;
+    // }
+
+    // return (
+    //   <Link
+    //     href={row.document_url}
+    //     target="_blank"
+    //     rel="noopener noreferrer"
+    //     className="font-medium text-[#1b431c] underline decoration-emerald-600/40 hover:decoration-emerald-600 dark:text-emerald-400"
+    //     title="Open source document in new tab"
+    //   >
+    //     {docNo}
+    //   </Link>
+    // );
   },
 
   invoice_no: (row) => {
-    const invoiceNo = row.invoice_no;
+    // Invoice number cell
+    const invoiceUrl = getTenantDocumentUrl(row.invoice_url);
 
-    if (!invoiceNo || invoiceNo === "-") return "-";
-
-    if (!row.invoice_url) {
-      return <span>{invoiceNo}</span>;
-    }
-
-    return (
+    return invoiceUrl ? (
       <Link
-        href={row.invoice_url}
+        href={invoiceUrl}
+        // className="text-emerald-600 hover:text-emerald-800 hover:underline dark:text-emerald-400"
         target="_blank"
         rel="noopener noreferrer"
         className="font-medium text-[#1b431c] underline decoration-emerald-600/40 hover:decoration-emerald-600 dark:text-emerald-400"
         title="Open related invoice in new tab"
       >
-        {invoiceNo}
+        {row.invoice_no || "-"}
       </Link>
+    ) : (
+      <span>{row.invoice_no || "-"}</span>
     );
+    // const invoiceNo = row.invoice_no;
+
+    // if (!invoiceNo || invoiceNo === "-") return "-";
+
+    // if (!row.invoice_url) {
+    //   return <span>{invoiceNo}</span>;
+    // }
+
+    // return (
+    //   <Link
+    //     href={row.invoice_url}
+    //     target="_blank"
+    //     rel="noopener noreferrer"
+    //     className="font-medium text-[#1b431c] underline decoration-emerald-600/40 hover:decoration-emerald-600 dark:text-emerald-400"
+    //     title="Open related invoice in new tab"
+    //   >
+    //     {invoiceNo}
+    //   </Link>
+    // );
   },
 };
 
