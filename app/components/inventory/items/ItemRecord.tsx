@@ -287,7 +287,7 @@ export default function ItemRecord({
     loadInitialData();
   }, [id]);
 
-  useEffect(() => {
+  /* useEffect(() => {
     if (!id) return;
 
     let cancelled = false;
@@ -325,6 +325,50 @@ export default function ItemRecord({
 
     return () => {
       cancelled = true;
+    };
+  }, [id]); */
+
+  useEffect(() => {
+    if (!id) return;
+
+    const controller = new AbortController();
+
+    const loadStockMetrics = async () => {
+      try {
+        const res = await fetch(`/api/inventory/items/${id}/stock-summary`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to load stock summary");
+        }
+
+        const result = await res.json();
+
+        const summary = result.summary;
+
+        if (!summary) return;
+
+        setStockMetrics((prev) => ({
+          ...prev,
+          totalStock: Number(summary.totalPhysical ?? 0),
+          allocatedStock: Number(summary.totalReserved ?? 0),
+          availableStock: Number(summary.totalAvailable ?? 0),
+        }));
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+
+        console.error("Failed to load item stock metrics:", error);
+      }
+    };
+
+    loadStockMetrics();
+
+    return () => {
+      controller.abort();
     };
   }, [id]);
 

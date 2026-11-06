@@ -48,24 +48,28 @@ export default function ItemDetailHeader({
     "total" | "allocated" | "available" | null
   >(null);
 
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  const [activityError, setActivityError] = useState<string | null>(null);
+
   // Fetch activity breakdown when item id is present
-  useEffect(() => {
-    if (!item.id) return;
-    fetch(`/api/inventory/items/${item.id}/cards-activity`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.error) {
-          setActivityData({
-            warehouseStock: data.warehouseStock || [],
-            transactions: data.transactions || [],
-            allocations: data.allocations || [],
-          });
-        }
-      })
-      .catch((err) =>
-        console.error("Failed to load item activity metrics", err),
-      );
-  }, [item.id]);
+  // useEffect(() => {
+  //   if (!item.id) return;
+  //   fetch(`/api/inventory/items/${item.id}/cards-activity`)
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       if (!data.error) {
+  //         setActivityData({
+  //           warehouseStock: data.warehouseStock || [],
+  //           transactions: data.transactions || [],
+  //           allocations: data.allocations || [],
+  //         });
+  //       }
+  //     })
+  //     .catch((err) =>
+  //       console.error("Failed to load item activity metrics", err),
+  //     );
+  // }, [item.id]);
 
   const formatQuantity = (value: number) =>
     Number(value || 0).toLocaleString(undefined, {
@@ -148,6 +152,62 @@ export default function ItemDetailHeader({
       isOpen: true,
       targetStatus: status,
     });
+  };
+
+  const handleStockCardClick = async (
+    type: "total" | "allocated" | "available",
+  ) => {
+    if (!item.id || activityLoading) return;
+
+    setActiveModal(type);
+    setActivityLoading(true);
+    setActivityError(null);
+
+    // Clear previous card data.
+    setActivityData({
+      warehouseStock: [],
+      transactions: [],
+      allocations: [],
+    });
+
+    try {
+      const res = await fetch(
+        `/api/inventory/items/${item.id}/cards-activity?type=${type}`,
+        {
+          cache: "no-store",
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to load stock activity");
+      }
+
+      if (type === "allocated") {
+        setActivityData({
+          warehouseStock: [],
+          transactions: [],
+          allocations: data.allocations || [],
+        });
+      } else {
+        setActivityData({
+          warehouseStock: [],
+          transactions: data.transactions || [],
+          allocations: [],
+        });
+      }
+    } catch (error: unknown) {
+      console.error("Failed to load stock card activity:", error);
+
+      setActivityError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load stock activity",
+      );
+    } finally {
+      setActivityLoading(false);
+    }
   };
 
   const handleStatusChange = async () => {
@@ -266,7 +326,7 @@ export default function ItemDetailHeader({
             {stockCards.map((card) => (
               <div
                 key={card.title}
-                onClick={() => setActiveModal(card.modalKey)}
+                onClick={() => handleStockCardClick(card.modalKey)}
                 // className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${card.container}`}
                 className={`group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md  text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${card.container}`}
               >
@@ -294,35 +354,6 @@ export default function ItemDetailHeader({
                     <Icon icon="tabler:external-link" className="w-4 h-4" />
                   </div>
                 </div>
-
-                {/* <div className="relative flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div
-                      className={`flex items-center gap-2 text-md capitalize tracking-wider ${card.titleColor}`}
-                    >
-                      <Icon icon={card.icon} className="h-4 w-4 shrink-0" />
-                      {card.title}
-                    </div>
-                  </div>
-
-                  <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm ${card.iconContainer}`}
-                  >
-                    {formatQuantity(card.value)}
-                  </div>
-                </div>
-
-                <div className="relative mt-2 h-1 overflow-hidden rounded-full bg-white/70 dark:bg-slate-800/60">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      card.color === "blue"
-                        ? "w-full bg-blue-500"
-                        : card.color === "amber"
-                          ? "w-full bg-amber-500"
-                          : "w-full bg-emerald-500"
-                    }`}
-                  />
-                </div> */}
               </div>
             ))}
           </div>
@@ -453,8 +484,57 @@ export default function ItemDetailHeader({
         </div>
       )}
 
+      {activeModal && activityLoading && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400">
+          <Icon icon="svg-spinners:180-ring-with-bg" className="h-4 w-4" />
+          Loading stock details...
+        </div>
+      )}
+
+      {activeModal && activityError && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+          <span>{activityError}</span>
+
+          <button
+            type="button"
+            onClick={() => handleStockCardClick(activeModal)}
+            className="font-semibold underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Dynamic Stock Modal */}
+
       <ItemStockModal
+        isOpen={Boolean(activeModal)}
+        // title={activeModalTitle}
+        title={`${item.item_code || ""} - (${item.name || "Item"}) ${
+          activeModal === "total"
+            ? "Stock Sheet"
+            : activeModal === "allocated"
+              ? "Allocated Stock"
+              : "Available Stock"
+        }`}
+        data={
+          activeModal === "allocated"
+            ? activityData.allocations
+            : activityData.transactions
+        }
+        loading={activityLoading}
+        error={activityError}
+        onRetry={() => {
+          if (activeModal) {
+            void handleStockCardClick(activeModal);
+          }
+        }}
+        onClose={() => {
+          setActiveModal(null);
+          setActivityError(null);
+        }}
+      />
+      {/* <ItemStockModal
         isOpen={activeModal !== null}
         title={`${item.item_code || ""} - (${item.name || "Item"}) ${
           activeModal === "total"
@@ -464,16 +544,51 @@ export default function ItemDetailHeader({
               : "Available Stock"
         }`}
         data={
-          activeModal === "total"
-            ? activityData.transactions
-            : activeModal === "allocated"
-              ? activityData.allocations
-              : activityData.transactions.filter(
-                  (t) => Number(t.available_qty || 0) > 0,
-                )
+          activeModal === "allocated"
+            ? activityData.allocations
+            : activityData.transactions
         }
+        // data={
+        //   activeModal === "total"
+        //     ? activityData.transactions
+        //     : activeModal === "allocated"
+        //       ? activityData.allocations
+        //       : activityData.transactions.filter(
+        //           (t) => Number(t.available_qty || 0) > 0,
+        //         )
+        // }
         onClose={() => setActiveModal(null)}
-      />
+      /> */}
     </>
   );
+}
+{
+  /* <div className="relative flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div
+                      className={`flex items-center gap-2 text-md capitalize tracking-wider ${card.titleColor}`}
+                    >
+                      <Icon icon={card.icon} className="h-4 w-4 shrink-0" />
+                      {card.title}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm ${card.iconContainer}`}
+                  >
+                    {formatQuantity(card.value)}
+                  </div>
+                </div>
+
+                <div className="relative mt-2 h-1 overflow-hidden rounded-full bg-white/70 dark:bg-slate-800/60">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      card.color === "blue"
+                        ? "w-full bg-blue-500"
+                        : card.color === "amber"
+                          ? "w-full bg-amber-500"
+                          : "w-full bg-emerald-500"
+                    }`}
+                  />
+                </div> */
 }

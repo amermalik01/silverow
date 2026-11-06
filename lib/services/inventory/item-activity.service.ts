@@ -184,6 +184,14 @@ interface AllocationRow extends QueryResultRow {
   allocation_category: "RESERVATION" | "CONSUMPTION" | "OTHER";
 }
 
+export type ItemCardActivityType = "total" | "allocated" | "available";
+
+export interface ItemCardActivityResult {
+  type: ItemCardActivityType;
+  transactions?: ItemMovement[];
+  allocations?: ItemAllocation[];
+}
+
 const toNumber = (value: NumericValue): number => {
   const result = Number(value ?? 0);
   return Number.isFinite(result) ? result : 0;
@@ -861,7 +869,160 @@ export class ItemActivityService {
       client.release();
     }
   }
+
+  static async getStockSummary(
+    companyId: string,
+    itemId: string,
+  ): Promise<ItemStockSummary> {
+    const client = await pool.connect();
+
+    try {
+      await client.query(
+        "BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
+      );
+
+      const itemResult = await client.query<{ id: string }>(
+        `
+        SELECT id
+        FROM items
+        WHERE id = $1
+          AND company_id = $2
+        LIMIT 1
+      `,
+        [itemId, companyId],
+      );
+
+      if (itemResult.rowCount === 0) {
+        throw new Error("ITEM_NOT_FOUND");
+      }
+
+      // Only warehouse stock query.
+      // No transaction history.
+      // No allocation history.
+      const stockResult = await client.query<StockRow>(warehouseStockQuery, [
+        companyId,
+        itemId,
+      ]);
+
+      const summary: ItemStockSummary = {
+        totalPhysical: 0,
+        totalReserved: 0,
+        totalAvailable: 0,
+      };
+
+      for (const row of stockResult.rows) {
+        summary.totalPhysical += toNumber(row.quantity);
+        summary.totalReserved += toNumber(row.reserved_quantity);
+        summary.totalAvailable += toNumber(row.available_quantity);
+      }
+
+      await client.query("COMMIT");
+
+      return summary;
+    } catch (error: unknown) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError: unknown) {
+        console.error("Stock summary rollback failed:", rollbackError);
+      }
+
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  static async getCardActivity(
+    companyId: string,
+    itemId: string,
+    type: ItemCardActivityType,
+  ): Promise<ItemCardActivityResult> {
+    const client = await pool.connect();
+
+    try {
+      await client.query(
+        "BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
+      );
+
+      const itemResult = await client.query<{ id: string }>(
+        `
+        SELECT id
+        FROM items
+        WHERE id = $1
+          AND company_id = $2
+        LIMIT 1
+      `,
+        [itemId, companyId],
+      );
+
+      if (itemResult.rowCount === 0) {
+        throw new Error("ITEM_NOT_FOUND");
+      }
+
+      const params = [companyId, itemId];
+
+      if (type === "allocated") {
+        const result = await client.query<AllocationRow>(
+          allocationsQuery,
+          params,
+        );
+
+        const allocations: ItemAllocation[] = result.rows.map((row) => ({
+          ...row,
+          allocated_quantity: toNumber(row.allocated_quantity),
+          unit_cost: toNumber(row.unit_cost),
+          total_cost: toNumber(row.total_cost),
+          physical_layer_unit_cost: toNumber(row.physical_layer_unit_cost),
+          valuation_unit_cost: toNumber(row.valuation_unit_cost),
+        }));
+
+        await client.query("COMMIT");
+
+        return {
+          type,
+          allocations,
+        };
+      }
+
+      const result = await client.query<MovementRow>(transactionsQuery, params);
+
+      let transactions: ItemMovement[] = result.rows.map((row) => ({
+        ...row,
+        quantity: toNumber(row.quantity),
+        remaining_quantity: toNumber(row.remaining_quantity),
+        unit_cost: toNumber(row.unit_cost),
+        total_cost: toNumber(row.total_cost),
+      }));
+
+      // Available Stock modal only shows inbound stock
+      // layers with remaining available quantity.
+      if (type === "available") {
+        transactions = transactions.filter(
+          (movement) =>
+            movement.movement_direction === "IN" &&
+            movement.remaining_quantity > 0,
+        );
+      }
+
+      await client.query("COMMIT");
+
+      return {
+        type,
+        transactions,
+      };
+    } catch (error: unknown) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError: unknown) {
+        console.error("Card activity rollback failed:", rollbackError);
+      }
+
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
 }
-    // INNER JOIN sales_order_lines sol
-    //   ON sol.id = ia.sales_order_line_id
-    //  AND sol.company_id = ia.company_id
+// INNER JOIN sales_order_lines sol
+//   ON sol.id = ia.sales_order_line_id
+//  AND sol.company_id = ia.company_id
