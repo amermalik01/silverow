@@ -464,19 +464,36 @@ const transactionsQuery = `
      AND wl.company_id = ile.company_id
 
     WHERE ile.company_id = $1
-      AND ile.item_id = $2
-      AND ile.status <> 'CANCELLED'
-      AND (
-        ile.direction = 'OUT'
-        OR ile.remaining_quantity > 0
-      )
+        AND ile.item_id = $2
+        AND ile.status <> 'CANCELLED'
+
+        /*
+        * Full activity:
+        *   $3 = false -> include every non-cancelled ledger movement.
+        *
+        * Stock card:
+        *   $3 = true -> only inbound layers with remaining quantity.
+        */
+        AND (
+          $3::boolean = false
+
+          OR (
+            ile.direction = 'IN'
+            AND ile.remaining_quantity > 0
+          )
+        )
 
     ORDER BY
       ile.posting_date DESC,
       ile.created_at DESC,
       ile.id DESC
 
-    LIMIT 200
+    LIMIT CASE
+      WHEN $3::boolean = true THEN 200
+      ELSE NULL
+    END
+
+    -- LIMIT 200
   )
 
   SELECT
@@ -660,6 +677,7 @@ const transactionsQuery = `
  * allocation engine creates one allocation for every
  * physical layer consumed.
  */
+
 const allocationsQuery = `
   SELECT
     ia.id,
@@ -693,17 +711,9 @@ const allocationsQuery = `
 
     ia.allocated_quantity,
 
-    /*
-     * unit_cost is the financial valuation cost
-     * stored on the allocation.
-     */
     ia.unit_cost,
     ia.total_cost,
 
-    /*
-     * Physical and financial unit costs are now
-     * stored separately by the allocation engine.
-     */
     COALESCE(
       ia.physical_layer_unit_cost,
       ia.unit_cost
@@ -717,9 +727,7 @@ const allocationsQuery = `
     ia.allocation_method,
     ia.status,
 
-    TO_CHAR(
-      ia.created_at,
-      'YYYY-MM-DD') AS created_at,
+    TO_CHAR(ia.created_at, 'YYYY-MM-DD') AS created_at,
 
     ia.outbound_entry_id,
     ia.outbound_line_id,
@@ -740,7 +748,11 @@ const allocationsQuery = `
 
       WHEN ia.status = 'ACTIVE'
         AND ia.outbound_entry_id IS NULL
+        AND ia.inbound_entry_id IS NULL
+        AND ia.source_allocation_id IS NOT NULL
         AND ia.sales_order_line_id IS NOT NULL
+        AND COALESCE(sol.is_deleted, false) = false
+        AND COALESCE(sol.quantity_reserved, 0) > 0
         THEN 'RESERVATION'
 
       ELSE 'OTHER'
@@ -756,15 +768,43 @@ const allocationsQuery = `
     ON wl.id = ia.warehouse_location_id
    AND wl.company_id = ia.company_id
 
+  LEFT JOIN sales_order_lines sol
+    ON sol.id = ia.sales_order_line_id
+   AND sol.company_id = ia.company_id
+
   WHERE ia.company_id = $1
     AND ia.item_id = $2
     AND ia.status <> 'CANCELLED'
+
+    /*
+     * Full activity:
+     *   $3 = false -> all non-cancelled allocations.
+     *
+     * Allocated stock card:
+     *   $3 = true -> only current outstanding reservations.
+     */
+    AND (
+      $3::boolean = false
+
+      OR (
+        ia.status = 'ACTIVE'
+        AND ia.outbound_entry_id IS NULL
+        AND ia.inbound_entry_id IS NULL
+        AND ia.source_allocation_id IS NOT NULL
+        AND ia.sales_order_line_id IS NOT NULL
+        AND COALESCE(sol.is_deleted, false) = false
+        AND COALESCE(sol.quantity_reserved, 0) > 0
+      )
+    )
 
   ORDER BY
     ia.created_at DESC,
     ia.id DESC
 
-  LIMIT 200
+  LIMIT CASE
+    WHEN $3::boolean = true THEN 200
+    ELSE NULL
+  END
 `;
 
 export class ItemActivityService {
@@ -803,9 +843,26 @@ export class ItemActivityService {
       const [stockResult, transactionResult, allocationResult] =
         await Promise.all([
           client.query<StockRow>(warehouseStockQuery, params),
-          client.query<MovementRow>(transactionsQuery, params),
-          client.query<AllocationRow>(allocationsQuery, params),
+
+          client.query<MovementRow>(transactionsQuery, [
+            companyId,
+            itemId,
+            false,
+          ]),
+
+          client.query<AllocationRow>(allocationsQuery, [
+            companyId,
+            itemId,
+            false,
+          ]),
         ]);
+
+      // const [stockResult, transactionResult, allocationResult] =
+      //   await Promise.all([
+      //     client.query<StockRow>(warehouseStockQuery, params),
+      //     client.query<MovementRow>(transactionsQuery, params),
+      //     client.query<AllocationRow>(allocationsQuery, params),
+      //   ]);
 
       const warehouseStock: ItemWarehouseStock[] = stockResult.rows.map(
         (row) => ({
@@ -959,6 +1016,106 @@ export class ItemActivityService {
         throw new Error("ITEM_NOT_FOUND");
       }
 
+      if (type === "allocated") {
+        /*
+         * Only current outstanding reservations.
+         *
+         * Excludes:
+         * - Posted consumption
+         * - Fully consumed allocations
+         * - Cancelled allocations
+         * - Non-sales allocations
+         * - Deleted sales-order lines
+         */
+        const result = await client.query<AllocationRow>(allocationsQuery, [
+          companyId,
+          itemId,
+          true,
+        ]);
+
+        const allocations: ItemAllocation[] = result.rows.map((row) => ({
+          ...row,
+          allocated_quantity: toNumber(row.allocated_quantity),
+          unit_cost: toNumber(row.unit_cost),
+          total_cost: toNumber(row.total_cost),
+          physical_layer_unit_cost: toNumber(row.physical_layer_unit_cost),
+          valuation_unit_cost: toNumber(row.valuation_unit_cost),
+        }));
+
+        await client.query("COMMIT");
+
+        return {
+          type,
+          allocations,
+        };
+      }
+
+      /*
+       * Total and Available cards:
+       *
+       * Only inbound ledger layers with remaining quantity.
+       * Sold/consumed stock is excluded.
+       */
+      const result = await client.query<MovementRow>(transactionsQuery, [
+        companyId,
+        itemId,
+        true,
+      ]);
+
+      const transactions: ItemMovement[] = result.rows.map((row) => ({
+        ...row,
+        quantity: toNumber(row.quantity),
+        remaining_quantity: toNumber(row.remaining_quantity),
+        unit_cost: toNumber(row.unit_cost),
+        total_cost: toNumber(row.total_cost),
+      }));
+
+      await client.query("COMMIT");
+
+      return {
+        type,
+        transactions,
+      };
+    } catch (error: unknown) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError: unknown) {
+        console.error("Card activity rollback failed:", rollbackError);
+      }
+
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+}
+/* static async getCardActivity(
+    companyId: string,
+    itemId: string,
+    type: ItemCardActivityType,
+  ): Promise<ItemCardActivityResult> {
+    const client = await pool.connect();
+
+    try {
+      await client.query(
+        "BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
+      );
+
+      const itemResult = await client.query<{ id: string }>(
+        `
+        SELECT id
+        FROM items
+        WHERE id = $1
+          AND company_id = $2
+        LIMIT 1
+      `,
+        [itemId, companyId],
+      );
+
+      if (itemResult.rowCount === 0) {
+        throw new Error("ITEM_NOT_FOUND");
+      }
+
       const params = [companyId, itemId];
 
       if (type === "allocated") {
@@ -1021,8 +1178,107 @@ export class ItemActivityService {
     } finally {
       client.release();
     }
-  }
-}
+  } */
+
 // INNER JOIN sales_order_lines sol
 //   ON sol.id = ia.sales_order_line_id
 //  AND sol.company_id = ia.company_id
+/* const allocationsQuery = `
+  SELECT
+    ia.id,
+
+    ia.warehouse_id,
+    w.name AS warehouse_name,
+
+    ia.warehouse_location_id,
+    wl.title AS location_name,
+
+    ia.batch_no,
+
+    COALESCE(
+      NULLIF(BTRIM(ia.serial_no), ''),
+      NULLIF(BTRIM(ia.bin_code), '')
+    ) AS tracking_code,
+
+    COALESCE(
+      NULLIF(BTRIM(ia.serial_no), ''),
+      NULLIF(BTRIM(ia.bin_code), '')
+    ) AS bin_code,
+
+    COALESCE(
+      NULLIF(BTRIM(ia.serial_no), ''),
+      NULLIF(BTRIM(ia.bin_code), '')
+    ) AS serial_no,
+
+    TO_CHAR(ia.expiry_date, 'YYYY-MM-DD') AS expiry_date,
+    TO_CHAR(ia.date_received, 'YYYY-MM-DD') AS date_received,
+    TO_CHAR(ia.prod_date, 'YYYY-MM-DD') AS prod_date,
+
+    ia.allocated_quantity,
+
+
+    ia.unit_cost,
+    ia.total_cost,
+
+    COALESCE(
+      ia.physical_layer_unit_cost,
+      ia.unit_cost
+    ) AS physical_layer_unit_cost,
+
+    COALESCE(
+      ia.valuation_unit_cost,
+      ia.unit_cost
+    ) AS valuation_unit_cost,
+
+    ia.allocation_method,
+    ia.status,
+
+    TO_CHAR(
+      ia.created_at,
+      'YYYY-MM-DD') AS created_at,
+
+    ia.outbound_entry_id,
+    ia.outbound_line_id,
+    ia.inbound_entry_id,
+    ia.source_allocation_id,
+
+    ia.purchase_order_line_id,
+    ia.purchase_invoice_line_id,
+
+    ia.debit_note_line_id,
+    ia.sales_order_line_id,
+    ia.credit_note_line_id,
+    ia.journal_line_id,
+
+    CASE
+      WHEN ia.outbound_entry_id IS NOT NULL
+        THEN 'CONSUMPTION'
+
+      WHEN ia.status = 'ACTIVE'
+        AND ia.outbound_entry_id IS NULL
+        AND ia.sales_order_line_id IS NOT NULL
+        THEN 'RESERVATION'
+
+      ELSE 'OTHER'
+    END AS allocation_category
+
+  FROM inventory_allocations ia
+
+  INNER JOIN warehouses w
+    ON w.id = ia.warehouse_id
+   AND w.company_id = ia.company_id
+
+  LEFT JOIN warehouse_locations wl
+    ON wl.id = ia.warehouse_location_id
+   AND wl.company_id = ia.company_id
+
+  WHERE ia.company_id = $1
+    AND ia.item_id = $2
+    AND ia.status <> 'CANCELLED'
+
+  ORDER BY
+    ia.created_at DESC,
+    ia.id DESC
+
+  LIMIT 200
+`; */

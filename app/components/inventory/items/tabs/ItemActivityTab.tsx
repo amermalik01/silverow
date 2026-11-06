@@ -1,11 +1,11 @@
 // app/components/inventory/items/tabs/ItemActivityTab.tsx
 
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { format } from "date-fns";
+import Link from "next/link";
 
 interface WarehouseStock {
   warehouse_id: string;
@@ -25,6 +25,11 @@ interface TransactionMovement {
   id: string;
   transaction_no: string;
   transaction_type: string;
+
+  invoice_no: string | null;
+  invoice_url: string | null;
+  document_url: string | null;
+
   reference_type?: string;
   posting_date: string;
   status: string;
@@ -37,6 +42,23 @@ interface TransactionMovement {
   serial_no?: string;
   created_at: string;
 }
+
+// interface TransactionMovement {
+//   id: string;
+//   transaction_no: string;
+//   transaction_type: string;
+//   reference_type?: string;
+//   posting_date: string;
+//   status: string;
+//   warehouse_name: string;
+//   quantity: number;
+//   movement_direction: "IN" | "OUT";
+//   unit_cost: number;
+//   total_cost: number;
+//   batch_no?: string;
+//   serial_no?: string;
+//   created_at: string;
+// }
 
 interface InventoryAllocation {
   id: string;
@@ -78,9 +100,9 @@ export default function ItemActivityTab({ itemId }: Props) {
     allocations: [],
   });
 
-  const [activeSubView, setActiveSubView] = useState<
-    "stock" | "transactions"
-  >("stock");
+  const [activeSubView, setActiveSubView] = useState<"stock" | "transactions">(
+    "stock",
+  );
 
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
@@ -105,14 +127,13 @@ export default function ItemActivityTab({ itemId }: Props) {
         );
 
         if (!response.ok) {
-          const result = (await response.json().catch(() => null)) as
-            | { error?: string; message?: string }
-            | null;
+          const result = (await response.json().catch(() => null)) as {
+            error?: string;
+            message?: string;
+          } | null;
 
           throw new Error(
-            result?.error ||
-              result?.message ||
-              "Failed to load item activity.",
+            result?.error || result?.message || "Failed to load item activity.",
           );
         }
 
@@ -140,9 +161,7 @@ export default function ItemActivityTab({ itemId }: Props) {
         if (signal?.aborted) return;
 
         const message =
-          err instanceof Error
-            ? err.message
-            : "Error fetching item activity.";
+          err instanceof Error ? err.message : "Error fetching item activity.";
 
         setError(message);
       } finally {
@@ -219,12 +238,14 @@ export default function ItemActivityTab({ itemId }: Props) {
 
     const date = new Date(value);
 
-    return Number.isNaN(date.getTime())
-      ? "—"
-      : format(date, "dd/MM/yyyy");
+    return Number.isNaN(date.getTime()) ? "—" : format(date, "dd/MM/yyyy");
   };
 
-  if (loading && data.warehouseStock.length === 0 && data.transactions.length === 0) {
+  if (
+    loading &&
+    data.warehouseStock.length === 0 &&
+    data.transactions.length === 0
+  ) {
     return (
       <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <Icon
@@ -238,16 +259,15 @@ export default function ItemActivityTab({ itemId }: Props) {
     );
   }
 
-  if (error && data.warehouseStock.length === 0 && data.transactions.length === 0) {
+  if (
+    error &&
+    data.warehouseStock.length === 0 &&
+    data.transactions.length === 0
+  ) {
     return (
       <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-lg border border-rose-200 bg-white px-4 dark:border-rose-900/50 dark:bg-slate-900">
-        <Icon
-          icon="tabler:alert-circle"
-          className="h-8 w-8 text-rose-500"
-        />
-        <p className="text-sm text-rose-600 dark:text-rose-400">
-          {error}
-        </p>
+        <Icon icon="tabler:alert-circle" className="h-8 w-8 text-rose-500" />
+        <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
         <button
           type="button"
           onClick={() => void fetchActivity()}
@@ -418,6 +438,7 @@ export default function ItemActivityTab({ itemId }: Props) {
             <thead className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-400">
               <tr>
                 <th className="p-2.5">Date</th>
+                <th className="p-2.5">Invoice No.</th>
                 <th className="p-2.5">Transaction Type</th>
                 <th className="p-2.5">Warehouse</th>
                 <th className="p-2.5">Batch</th>
@@ -441,8 +462,7 @@ export default function ItemActivityTab({ itemId }: Props) {
                 </tr>
               ) : (
                 filteredTransactions.map((tx) => {
-                  const isIn =
-                    tx.movement_direction?.toUpperCase() === "IN";
+                  const isIn = tx.movement_direction?.toUpperCase() === "IN";
 
                   return (
                     <tr
@@ -451,6 +471,22 @@ export default function ItemActivityTab({ itemId }: Props) {
                     >
                       <td className="p-2.5 font-sans text-slate-600 dark:text-slate-400">
                         {formatDate(tx.posting_date)}
+                      </td>
+
+                      <td className="p-2.5 font-sans">
+                        {tx.invoice_no && tx.invoice_url ? (
+                          <Link
+                            href={tx.invoice_url}
+                            className="font-semibold text-[#1b431c] underline decoration-dotted underline-offset-2 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {tx.invoice_no}
+                          </Link>
+                        ) : (
+                          <span className="text-slate-400">
+                            {tx.invoice_no || "-"}
+                          </span>
+                        )}
                       </td>
 
                       <td className="p-2.5 font-sans">
@@ -504,7 +540,6 @@ export default function ItemActivityTab({ itemId }: Props) {
     </div>
   );
 }
-
 
 /* "use client";
 
@@ -874,4 +909,3 @@ export default function ItemActivityTab({ itemId }: Props) {
     </div>
   );
 } */
-
