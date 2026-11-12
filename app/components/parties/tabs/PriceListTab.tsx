@@ -57,14 +57,45 @@ export type PriceListDraft = {
   items: PriceListItemDraft[];
 };
 
+// type PriceHistoryRecord = {
+//   id: string;
+//   item_id: string;
+//   price_list_id: string;
+//   price_list_item_id: string;
+//   action: "CREATE" | "UPDATE" | "DELETE";
+
+//   old_snapshot: {
+//     price_list: Record<string, unknown>;
+//     price_list_item: Record<string, unknown>;
+//     volume_discounts: Record<string, unknown>[];
+//   } | null;
+
+//   new_snapshot: {
+//     price_list: Record<string, unknown>;
+//     price_list_item: Record<string, unknown>;
+//     volume_discounts: Record<string, unknown>[];
+//   } | null;
+
+//   changed_fields: string[];
+//   changed_at: string;
+//   changed_by_name: string | null;
+// };
+
+type PriceHistorySnapshot = {
+  price_list: Record<string, unknown>;
+  price_list_item: Record<string, unknown>;
+  volume_discounts: Record<string, unknown>[];
+};
+
 type PriceHistoryRecord = {
   id: string;
-  old_offered_price: number | null;
-  new_offered_price: number;
-  old_min_order_qty: number | null;
-  new_min_order_qty: number;
-  old_max_order_qty: number | null;
-  new_max_order_qty: number | null;
+  item_id: string;
+  price_list_id: string;
+  price_list_item_id: string;
+  action: "CREATE" | "UPDATE" | "DELETE";
+  old_snapshot: PriceHistorySnapshot | null;
+  new_snapshot: PriceHistorySnapshot | null;
+  changed_fields: string[];
   changed_at: string;
   changed_by_name: string | null;
 };
@@ -94,6 +125,45 @@ function parseStoredDate(value?: string): Date | undefined {
   }
 
   return isValid(date) ? date : undefined;
+}
+
+function formatHistoryValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value, null, 2);
+  }
+
+  return String(value);
+}
+
+function formatHistoryDate(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return format(date, "dd/MM/yyyy HH:mm:ss");
+}
+
+function getHistoryActionClass(action: PriceHistoryRecord["action"]) {
+  switch (action) {
+    case "CREATE":
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "UPDATE":
+      return "bg-blue-50 text-blue-700 border-blue-200";
+    case "DELETE":
+      return "bg-red-50 text-red-700 border-red-200";
+    default:
+      return "bg-slate-50 text-slate-700 border-slate-200";
+  }
 }
 
 export default function PriceListTab({
@@ -280,12 +350,20 @@ export default function PriceListTab({
 
   const fetchHistory = async (priceListItemId: string, itemName: string) => {
     if (!priceListItemId) return;
+
     setHistoryModalItem({ priceListItemId, itemName });
+    setHistoryLogs([]);
     setIsLoadingHistory(true);
+
     try {
       const res = await fetch(
         `/api/inventory/items/price-history/${priceListItemId}`,
       );
+
+      if (!res.ok) {
+        throw new Error("Failed to load price history");
+      }
+
       const data = await res.json();
       setHistoryLogs(data.history || []);
     } catch (err) {
@@ -426,9 +504,9 @@ export default function PriceListTab({
           ))}
         </div>
         {/* {!isReadonly && ( */}
-          <Button type="button" onClick={addPriceList} variant="add_line">
-            Add Price List
-          </Button>
+        <Button type="button" onClick={addPriceList} variant="add_line">
+          Add Price List
+        </Button>
         {/* )} */}
       </div>
 
@@ -715,24 +793,29 @@ export default function PriceListTab({
                           disabled={isReadonly}
                           className="w-4 h-4 rounded text-blue-600"
                         /> */}
-                      <button
+                        <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveItemIdx(
                               itemIdx === activeItemIdx ? null : itemIdx,
                             );
-                            if (!item.has_volume_discount && item.volume_discounts.length === 0) {
+                            if (
+                              !item.has_volume_discount &&
+                              item.volume_discounts.length === 0
+                            ) {
                               addVolumeDiscountRow(itemIdx);
                             }
                           }}
                           className={`px-2 py-1 rounded text-[11px] font-semibold border ${
-                            item.has_volume_discount && item.volume_discounts.length > 0
+                            item.has_volume_discount &&
+                            item.volume_discounts.length > 0
                               ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                               : "bg-slate-100 text-slate-600 border-slate-300"
                           }`}
                         >
-                          {item.has_volume_discount && item.volume_discounts.length > 0
+                          {item.has_volume_discount &&
+                          item.volume_discounts.length > 0
                             ? `${item.volume_discounts.length} Tiers`
                             : "Configure Tiers"}
                         </button>
@@ -905,7 +988,263 @@ export default function PriceListTab({
         </div>
       )}
 
-      {/* ================= HISTORY MODAL ================= */}
+      {/* ================= COMPLETE PRICE HISTORY MODAL ================= */}
+      {historyModalItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 p-5">
+              <div>
+                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                  Complete Price List History
+                </h4>
+                <p className="text-xs text-slate-500 mt-1">
+                  {historyModalItem.itemName}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setHistoryModalItem(null)}
+                className="text-slate-500 hover:text-red-500 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 overflow-y-auto flex-1 space-y-4">
+              {isLoadingHistory ? (
+                <div className="p-8 text-center text-slate-400">
+                  Loading history logs...
+                </div>
+              ) : historyLogs.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 italic">
+                  No price list history found.
+                </div>
+              ) : (
+                historyLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden"
+                  >
+                    {/* Event header */}
+                    <div className="flex flex-wrap justify-between items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded border ${getHistoryActionClass(log.action)}`}
+                        >
+                          {log.action}
+                        </span>
+
+                        <div>
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            {log.changed_by_name || "System User"}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {formatHistoryDate(log.changed_at)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="text-[11px] text-slate-500">
+                        {log.changed_fields.length} changed section(s)
+                      </span>
+                    </div>
+
+                    {/* Changed fields */}
+                    <div className="p-3 space-y-3">
+                      <div>
+                        <h5 className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                          Changed Fields
+                        </h5>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {log.changed_fields.map((field) => (
+                            <span
+                              key={field}
+                              className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-[10px] border border-blue-100 dark:border-blue-900"
+                            >
+                              {field.replaceAll("_", " ")}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Before / After snapshots */}
+                      <details className="border border-slate-200 dark:border-slate-700 rounded-md">
+                        <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+                          View complete before and after details
+                        </summary>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 p-3">
+                          {/* Old snapshot */}
+                          <div className="min-w-0">
+                            <h6 className="text-xs font-bold text-red-600 mb-2">
+                              Before Change
+                            </h6>
+
+                            {log.old_snapshot ? (
+                              <div className="space-y-3 text-xs">
+                                <div>
+                                  <p className="font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                                    Price List Settings
+                                  </p>
+                                  <pre className="text-[10px] whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800 p-3 rounded">
+                                    {JSON.stringify(
+                                      log.old_snapshot.price_list,
+                                      null,
+                                      2,
+                                    )}
+                                  </pre>
+                                </div>
+
+                                <div>
+                                  <p className="font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                                    Item Pricing
+                                  </p>
+                                  <pre className="text-[10px] whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800 p-3 rounded">
+                                    {JSON.stringify(
+                                      log.old_snapshot.price_list_item,
+                                      null,
+                                      2,
+                                    )}
+                                  </pre>
+                                </div>
+
+                                <div>
+                                  <p className="font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                                    Volume Discount Tiers
+                                  </p>
+                                  <pre className="text-[10px] whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800 p-3 rounded">
+                                    {JSON.stringify(
+                                      log.old_snapshot.volume_discounts,
+                                      null,
+                                      2,
+                                    )}
+                                  </pre>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-400 italic">
+                                No previous configuration. This is a new record.
+                              </p>
+                            )}
+                          </div>
+
+                          {/* New snapshot */}
+                          <div className="min-w-0">
+                            <h6 className="text-xs font-bold text-emerald-600 mb-2">
+                              After Change
+                            </h6>
+
+                            {log.new_snapshot ? (
+                              <div className="space-y-3 text-xs">
+                                <div>
+                                  <p className="font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                                    Price List Settings
+                                  </p>
+                                  <pre className="text-[10px] whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800 p-3 rounded">
+                                    {JSON.stringify(
+                                      log.new_snapshot.price_list,
+                                      null,
+                                      2,
+                                    )}
+                                  </pre>
+                                </div>
+
+                                <div>
+                                  <p className="font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                                    Item Pricing
+                                  </p>
+                                  <pre className="text-[10px] whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800 p-3 rounded">
+                                    {JSON.stringify(
+                                      log.new_snapshot.price_list_item,
+                                      null,
+                                      2,
+                                    )}
+                                  </pre>
+                                </div>
+
+                                <div>
+                                  <p className="font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                                    Volume Discount Tiers
+                                  </p>
+                                  <pre className="text-[10px] whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800 p-3 rounded">
+                                    {JSON.stringify(
+                                      log.new_snapshot.volume_discounts,
+                                      null,
+                                      2,
+                                    )}
+                                  </pre>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-400 italic">
+                                This configuration was deleted.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </details>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end border-t border-slate-200 dark:border-slate-800 p-4">
+              <Button
+                type="button"
+                onClick={() => setHistoryModalItem(null)}
+                variant="outline"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modals for Item & Salesperson Lookups */}
+      {isItemModalOpen && (
+        <ItemLookupModal
+          open={isItemModalOpen}
+          onClose={() => setIsItemModalOpen(false)}
+          multiple={true}
+          onSelect={(item) => handleMultipleItemSelect([item])}
+          onSelectMultiple={handleMultipleItemSelect}
+        />
+      )}
+
+      {isSalespersonModalOpen && (
+        <SalespersonLookupModal
+          open={isSalespersonModalOpen}
+          onClose={() => setIsSalespersonModalOpen(false)}
+          // onSelect={handleAssignPersonSelect}
+          onSelect={(emp: Employee) => {
+            onRequestEdit?.();
+            setPriceLists(
+              priceLists.map((list, idx) =>
+                idx === selectedListIdx
+                  ? {
+                      ...list,
+                      salesperson_id: emp.id,
+                      salesperson_name:
+                        emp.employee_code + "-" + emp.display_name,
+                    }
+                  : list,
+              ),
+            );
+            setIsSalespersonModalOpen(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+/* // ================= HISTORY MODAL ================= 
       {historyModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800">
@@ -978,42 +1317,4 @@ export default function PriceListTab({
             </div>
           </div>
         </div>
-      )}
-
-      {/* Modals for Item & Salesperson Lookups */}
-      {isItemModalOpen && (
-        <ItemLookupModal
-          open={isItemModalOpen}
-          onClose={() => setIsItemModalOpen(false)}
-          multiple={true}
-          onSelect={(item) => handleMultipleItemSelect([item])}
-          onSelectMultiple={handleMultipleItemSelect}
-        />
-      )}
-
-      {isSalespersonModalOpen && (
-        <SalespersonLookupModal
-          open={isSalespersonModalOpen}
-          onClose={() => setIsSalespersonModalOpen(false)}
-          // onSelect={handleAssignPersonSelect}
-          onSelect={(emp: Employee) => {
-            onRequestEdit?.();
-            setPriceLists(
-              priceLists.map((list, idx) =>
-                idx === selectedListIdx
-                  ? {
-                      ...list,
-                      salesperson_id: emp.id,
-                      salesperson_name:
-                        emp.employee_code + "-" + emp.display_name,
-                    }
-                  : list,
-              ),
-            );
-            setIsSalespersonModalOpen(false);
-          }}
-        />
-      )}
-    </div>
-  );
-}
+      )} */

@@ -1,4 +1,4 @@
-// app/components/inventory/items/tabs/PriceOffersTab.tsx
+// app/components/parties/tabs/PriceOffersTab.tsx
 
 "use client";
 
@@ -49,14 +49,33 @@ export type ItemPriceOfferDraft = {
   is_dirty?: boolean;
 };
 
+// type PriceHistoryRecord = {
+//   id: string;
+//   old_offered_price: number | null;
+//   new_offered_price: number;
+//   old_min_order_qty: number | null;
+//   new_min_order_qty: number;
+//   old_max_order_qty: number | null;
+//   new_max_order_qty: number | null;
+//   changed_at: string;
+//   changed_by_name: string | null;
+// };
+
+type PriceListSnapshot = {
+  price_list: Record<string, unknown>;
+  price_list_item: Record<string, unknown>;
+  volume_discounts: Record<string, unknown>[];
+};
+
 type PriceHistoryRecord = {
   id: string;
-  old_offered_price: number | null;
-  new_offered_price: number;
-  old_min_order_qty: number | null;
-  new_min_order_qty: number;
-  old_max_order_qty: number | null;
-  new_max_order_qty: number | null;
+  item_id: string;
+  price_list_id: string;
+  price_list_item_id: string;
+  action: "CREATE" | "UPDATE" | "DELETE";
+  old_snapshot: PriceListSnapshot | null;
+  new_snapshot: PriceListSnapshot | null;
+  changed_fields: string[];
   changed_at: string;
   changed_by_name: string | null;
 };
@@ -159,22 +178,314 @@ export default function PriceOffersTab({
     if (activeTierOfferIdx === originalIdx) setActiveTierOfferIdx(null);
   };
 
+  // const fetchHistory = async (priceListItemId: string, partyName: string) => {
+  //   if (!priceListItemId) return;
+  //   setHistoryModalItem({ priceListItemId, partyName });
+  //   setIsLoadingHistory(true);
+  //   try {
+  //     const res = await fetch(
+  //       `/api/inventory/items/price-history/${priceListItemId}`,
+  //     );
+  //     const data = await res.json();
+  //     setHistoryLogs(data.history || []);
+  //   } catch (err) {
+  //     console.error("Failed to load price history", err);
+  //     setHistoryLogs([]);
+  //   } finally {
+  //     setIsLoadingHistory(false);
+  //   }
+  // };
+
   const fetchHistory = async (priceListItemId: string, partyName: string) => {
     if (!priceListItemId) return;
+
     setHistoryModalItem({ priceListItemId, partyName });
+    setHistoryLogs([]);
     setIsLoadingHistory(true);
+
     try {
       const res = await fetch(
         `/api/inventory/items/price-history/${priceListItemId}`,
       );
-      const data = await res.json();
-      setHistoryLogs(data.history || []);
-    } catch (err) {
-      console.error("Failed to load price history", err);
+
+      const data: {
+        history?: PriceHistoryRecord[];
+        error?: string;
+      } = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to load price history.");
+      }
+
+      setHistoryLogs(data.history ?? []);
+    } catch (err: unknown) {
+      console.error("Failed to load price history:", err);
       setHistoryLogs([]);
     } finally {
       setIsLoadingHistory(false);
     }
+  };
+
+  const formatHistoryDate = (value: string): string => {
+    const date = new Date(value);
+
+    if (!isValid(date)) {
+      return value || "-";
+    }
+
+    return format(date, "dd/MM/yyyy HH:mm:ss");
+  };
+
+  const getHistoryActionClass = (
+    action: PriceHistoryRecord["action"],
+  ): string => {
+    switch (action) {
+      case "CREATE":
+        return "bg-emerald-100 text-emerald-700 border-emerald-300";
+
+      case "UPDATE":
+        return "bg-blue-100 text-blue-700 border-blue-300";
+
+      case "DELETE":
+        return "bg-red-100 text-red-700 border-red-300";
+
+      default:
+        return "bg-slate-100 text-slate-700 border-slate-300";
+    }
+  };
+
+  const getHistoryFieldLabel = (field: string): string => {
+    const labels: Record<string, string> = {
+      name: "Price List Name",
+      list_type: "Offer Type",
+      offer_method: "Offer Method",
+      start_date: "Valid From",
+      end_date: "Valid Until",
+      status: "Status",
+      standard_price: "Standard Price",
+      offered_price: "Offered Price",
+      min_order_qty: "Minimum Order Quantity",
+      max_order_qty: "Maximum Order Quantity",
+      has_volume_discount: "Volume Discounts Enabled",
+      volume_discounts: "Volume Discount Tiers",
+      discount_type: "Discount Type",
+      discount_value: "Discount Value",
+      discounted_price: "Discounted Price",
+      salesperson_id: "Salesperson",
+      currency_id: "Currency",
+      party_id: "Customer / Supplier",
+    };
+
+    const normalized = field
+      .replace(/^price_list\./, "")
+      .replace(/^price_list_item\./, "")
+      .replace(/^volume_discounts\./, "");
+
+    return (
+      labels[normalized] ||
+      normalized
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase())
+    );
+  };
+
+  const formatHistoryValue = (field: string, value: unknown): string => {
+    if (value === null || value === undefined || value === "") {
+      return "Not specified";
+    }
+
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
+    }
+
+    if (field === "list_type") {
+      return value === "SALES" ? "Sales Offer" : "Purchase Offer";
+    }
+
+    if (field === "discount_type") {
+      return value === "PERCENTAGE" ? "Percentage" : "Fixed Amount";
+    }
+
+    if (field === "has_volume_discount") {
+      return value ? "Enabled" : "Disabled";
+    }
+
+    if (
+      field === "standard_price" ||
+      field === "offered_price" ||
+      field === "discounted_price" ||
+      field === "discount_value"
+    ) {
+      const number = Number(value);
+
+      return Number.isFinite(number) ? number.toFixed(2) : String(value);
+    }
+
+    if (field === "min_order_qty" || field === "max_order_qty") {
+      return `${Number(value).toFixed(0)} units`;
+    }
+
+    if (field === "start_date" || field === "end_date") {
+      const date = new Date(String(value));
+
+      return isValid(date) ? format(date, "dd/MM/yyyy") : String(value);
+    }
+
+    if (field === "status") {
+      return String(value)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    return String(value);
+  };
+
+  const getSnapshotRows = (
+    snapshot: PriceListSnapshot | null,
+  ): { label: string; value: string }[] => {
+    if (!snapshot) return [];
+
+    // Only business-facing fields are displayed.
+    // UUIDs and database relationship fields are deliberately excluded.
+    const allowedFields = [
+      "name",
+      "list_type",
+      "offer_method",
+      "start_date",
+      "end_date",
+      "status",
+      "standard_price",
+      "offered_price",
+      "min_order_qty",
+      "max_order_qty",
+      "has_volume_discount",
+    ];
+
+    const sections = [snapshot.price_list, snapshot.price_list_item];
+
+    const rows: { label: string; value: string }[] = [];
+
+    sections.forEach((section) => {
+      allowedFields.forEach((field) => {
+        if (Object.prototype.hasOwnProperty.call(section, field)) {
+          const value = section[field];
+
+          if (value === null || value === undefined) return;
+
+          rows.push({
+            label: getHistoryFieldLabel(field),
+            value: formatHistoryValue(field, value),
+          });
+        }
+      });
+    });
+
+    return rows;
+  };
+
+  const renderSnapshot = (snapshot: PriceListSnapshot | null) => {
+    if (!snapshot) {
+      return (
+        <div className="rounded-lg border border-dashed p-4 text-center text-xs text-slate-400">
+          No previous information available.
+        </div>
+      );
+    }
+
+    const rows = getSnapshotRows(snapshot);
+
+    return (
+      <div className="space-y-3">
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 font-semibold text-xs">
+            Price Offer Details
+          </div>
+
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {rows.length === 0 ? (
+              <div className="p-3 text-xs text-slate-400">
+                No details available.
+              </div>
+            ) : (
+              rows.map((row, index) => (
+                <div
+                  key={`${row.label}-${index}`}
+                  className="flex justify-between gap-4 px-3 py-2 text-xs"
+                >
+                  <span className="text-slate-500">{row.label}</span>
+
+                  <span className="text-right font-medium text-slate-800 dark:text-slate-200">
+                    {row.value}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {snapshot.volume_discounts.length > 0 && (
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 font-semibold text-xs">
+              Volume Discount Tiers
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-slate-500 border-b">
+                    <th className="p-2">Minimum Qty</th>
+                    <th className="p-2">Discount Type</th>
+                    <th className="p-2">Discount</th>
+                    <th className="p-2">Final Price</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {snapshot.volume_discounts.map((tier, index) => (
+                    <tr key={index} className="border-b last:border-0">
+                      <td className="p-2">
+                        {String(Number(tier.min_order_qty).toFixed(0) ?? "-")}{" "}
+                        units
+                      </td>
+
+                      <td className="p-2">
+                        {formatHistoryValue(
+                          "discount_type",
+                          tier.discount_type,
+                        )}
+                      </td>
+
+                      <td className="p-2">
+                        {formatHistoryValue(
+                          "discount_value",
+                          tier.discount_value,
+                        )}
+                        {tier.discount_type === "PERCENTAGE" ? "%" : ""}
+                      </td>
+
+                      <td className="p-2 font-semibold">
+                        {formatHistoryValue(
+                          "discounted_price",
+                          tier.discounted_price,
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const getChangedFieldLabel = (field: string): string => {
+    const normalized = field
+      .replace(/^price_list\./, "")
+      .replace(/^price_list_item\./, "");
+
+    return getHistoryFieldLabel(normalized);
   };
 
   const calculateDiscountedPrice = (
@@ -289,13 +600,13 @@ export default function PriceOffersTab({
             Customer Price Offers (Sales)
           </h3>
           {/* {!isReadonly && ( */}
-            <Button
-              type="button"
-              onClick={() => setIsCustomerModalOpen(true)}
-              variant="add_line"
-            >
-              Add Customer Offer
-            </Button>
+          <Button
+            type="button"
+            onClick={() => setIsCustomerModalOpen(true)}
+            variant="add_line"
+          >
+            Add Customer Offer
+          </Button>
           {/* )} */}
         </div>
 
@@ -493,13 +804,13 @@ export default function PriceOffersTab({
             Supplier Price Offers (Purchase)
           </h3>
           {/* {!isReadonly && ( */}
-            <Button
-              type="button"
-              onClick={() => setIsSupplierModalOpen(true)}
-              variant="add_line"
-            >
-              Add Supplier Offer
-            </Button>
+          <Button
+            type="button"
+            onClick={() => setIsSupplierModalOpen(true)}
+            variant="add_line"
+          >
+            Add Supplier Offer
+          </Button>
           {/* )} */}
         </div>
 
@@ -848,14 +1159,25 @@ export default function PriceOffersTab({
       )}
 
       {/* ================= HISTORY MODAL ================= */}
+      {/* ================= COMPLETE PRICE HISTORY MODAL ================= */}
+
       {historyModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                Price Update History — {historyModalItem.partyName}
-              </h4>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 p-5">
+              <div>
+                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                  Price Offer History
+                </h4>
+
+                <p className="text-xs text-slate-500 mt-1">
+                  {historyModalItem.partyName}
+                </p>
+              </div>
+
               <button
+                type="button"
                 onClick={() => setHistoryModalItem(null)}
                 className="text-slate-500 hover:text-red-500 font-bold"
               >
@@ -863,55 +1185,112 @@ export default function PriceOffersTab({
               </button>
             </div>
 
-            {isLoadingHistory ? (
-              <div className="p-8 text-center text-slate-400">
-                Loading history logs...
-              </div>
-            ) : historyLogs.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 italic">
-                No price update history found.
-              </div>
-            ) : (
-              <div className="max-h-80 overflow-y-auto border rounded">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 border-b">
-                      <th className="p-2.5">Date & Time</th>
-                      <th className="p-2.5">Updated By</th>
-                      <th className="p-2.5 text-right">Old Price</th>
-                      <th className="p-2.5 text-right">New Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyLogs.map((log) => (
-                      <tr
-                        key={log.id}
-                        className="border-b hover:bg-slate-50/50"
-                      >
-                        <td className="p-2.5 text-slate-600 dark:text-slate-300">
-                          {/* {log.changed_at} */}
-                          {format(log.changed_at, "dd/MM/yyyy hh:mm:ss")}
-                        </td>
-                        <td className="p-2.5 font-medium">
-                          {log.changed_by_name || "System User"}
-                        </td>
-                        <td className="p-2.5 text-right text-slate-500">
-                          {/* {log.old_offered_price ?? "-"} */}
-                          {log.old_offered_price
-                            ? Number(log.old_offered_price)?.toFixed(2)
-                            : "-"}
-                        </td>
-                        <td className="p-2.5 text-right font-semibold text-emerald-600">
-                          {Number(log.new_offered_price)?.toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {/* Content */}
+            <div className="p-5 overflow-y-auto space-y-4">
+              {isLoadingHistory ? (
+                <div className="p-8 text-center text-slate-400">
+                  Loading history logs...
+                </div>
+              ) : historyLogs.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 italic">
+                  No price list history found.
+                </div>
+              ) : (
+                historyLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden"
+                  >
+                    {/* Event Header */}
+                    <div className="flex flex-wrap justify-between items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/60">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`px-2.5 py-1 rounded border text-[10px] font-bold ${getHistoryActionClass(
+                            log.action,
+                          )}`}
+                        >
+                          {/* {log.action} */}
+                          {log.action === "CREATE"
+                            ? "Created"
+                            : log.action === "UPDATE"
+                              ? "Updated"
+                              : "Deleted"}
+                        </span>
 
-            <div className="flex justify-end pt-2">
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                          {log.changed_by_name || "System User"}
+                        </span>
+                      </div>
+
+                      <span className="text-xs text-slate-500">
+                        {formatHistoryDate(log.changed_at)}
+                      </span>
+                    </div>
+
+                    <div className="p-4 space-y-4">
+                      {/* Changed Fields */}
+                      <div>
+                        <h5 className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
+                          Changed Fields
+                        </h5>
+
+                        {log.changed_fields.map((field, index) => (
+                          <span
+                            key={`${log.id}-${field}-${index}`}
+                            className="px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[10px]"
+                          >
+                            {getChangedFieldLabel(field)}
+                          </span>
+                        ))}
+
+                        {/* {log.changed_fields?.length ? (
+                          <div className="flex flex-wrap gap-2">
+                            {log.changed_fields.map((field, index) => (
+                              <span
+                                key={`${log.id}-${field}-${index}`}
+                                className="px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[10px]"
+                              >
+                                {field}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">
+                            No individual field changes recorded.
+                          </span>
+                        )} */}
+                      </div>
+
+                      {/* Before / After */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="min-w-0">
+                          <h5 className="text-xs font-bold text-red-600 mb-2">
+                            Before
+                          </h5>
+
+                          <div className="space-y-2">
+                            {renderSnapshot(log.old_snapshot)}
+                          </div>
+                        </div>
+
+                        <div className="min-w-0">
+                          <h5 className="text-xs font-bold text-emerald-600 mb-2">
+                            After
+                          </h5>
+
+                          <div className="space-y-2">
+                            {renderSnapshot(log.new_snapshot)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end border-t border-slate-200 dark:border-slate-800 p-4">
               <Button
                 type="button"
                 onClick={() => setHistoryModalItem(null)}
@@ -1002,3 +1381,78 @@ export default function PriceOffersTab({
     </div>
   );
 }
+/* {historyModalItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                Price Update History — {historyModalItem.partyName}
+              </h4>
+              <button
+                onClick={() => setHistoryModalItem(null)}
+                className="text-slate-500 hover:text-red-500 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {isLoadingHistory ? (
+              <div className="p-8 text-center text-slate-400">
+                Loading history logs...
+              </div>
+            ) : historyLogs.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 italic">
+                No price update history found.
+              </div>
+            ) : (
+              <div className="max-h-80 overflow-y-auto border rounded">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 border-b">
+                      <th className="p-2.5">Date & Time</th>
+                      <th className="p-2.5">Updated By</th>
+                      <th className="p-2.5 text-right">Old Price</th>
+                      <th className="p-2.5 text-right">New Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyLogs.map((log) => (
+                      <tr
+                        key={log.id}
+                        className="border-b hover:bg-slate-50/50"
+                      >
+                        <td className="p-2.5 text-slate-600 dark:text-slate-300">
+                   
+                          {format(log.changed_at, "dd/MM/yyyy hh:mm:ss")}
+                        </td>
+                        <td className="p-2.5 font-medium">
+                          {log.changed_by_name || "System User"}
+                        </td>
+                        <td className="p-2.5 text-right text-slate-500">
+                  
+                          {log.old_offered_price
+                            ? Number(log.old_offered_price)?.toFixed(2)
+                            : "-"}
+                        </td>
+                        <td className="p-2.5 text-right font-semibold text-emerald-600">
+                          {Number(log.new_offered_price)?.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <Button
+                type="button"
+                onClick={() => setHistoryModalItem(null)}
+                variant="outline"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )} */

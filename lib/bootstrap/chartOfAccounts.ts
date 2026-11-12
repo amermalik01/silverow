@@ -7,7 +7,7 @@ export async function initializeChartOfAccounts(
   companyId: string
 ) {
   const result = await client.query(`
-    SELECT code, name, type
+    SELECT code, name, account_type AS type
     FROM default_chart_of_accounts
     ORDER BY code
   `);
