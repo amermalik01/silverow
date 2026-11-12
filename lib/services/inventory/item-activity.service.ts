@@ -227,7 +227,7 @@ const trackingExpression = `
  *
  * Posted consumption is not a reservation.
  */
-const warehouseStockQuery = `
+export const warehouseStockQuery = `
   WITH physical_layers AS (
     SELECT
       ile.warehouse_id,
@@ -421,7 +421,7 @@ const warehouseStockQuery = `
  * Do not group these rows by reference_id. They represent
  * separate physical layer movements.
  */
-const transactionsQuery = `
+export const transactionsQuery = `
   WITH base_ledger AS (
     SELECT
       ile.id,

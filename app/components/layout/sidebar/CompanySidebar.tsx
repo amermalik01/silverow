@@ -136,7 +136,7 @@ const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
 
       const label = (
         <span
-          className={` min-w-0 flex-1 truncate text-left text-xs transition-all duration-150 ${collapsed ? "hidden" : "block"}`}
+          className={` min-w-0 flex-1 truncate text-left text-md transition-all duration-150 ${collapsed ? "hidden" : "block"}`}
         >
           {item.title || item.name}
         </span>
@@ -160,7 +160,7 @@ const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
 
           {/* Tooltip when collapsed */}
           {collapsed && (
-            <span className=" pointer-events-none absolute left-full z-50 ml-2 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+            <span className=" pointer-events-none absolute left-full z-50 ml-2 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-md text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
               {item.title || item.name}
             </span>
           )}
@@ -185,7 +185,7 @@ const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
 
             {isOpen && (
               <div className=" absolute left-full top-0 z-50 ml-2 min-w-[220px] rounded-lg border border-slate-700 bg-[#11161D] p-2 shadow-2xl ">
-                <div className="mb-1 px-2 py-1.5 text-xs font-semibold text-white">
+                <div className="mb-1 px-2 py-1.5 text-md font-semibold text-white">
                   {item.title || item.name}
                 </div>
 
@@ -244,7 +244,7 @@ const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
 
   return (
     <SimpleBar
-      className=" h-full overflow-x-visible bg-[#103701] text-xs text-white dark:bg-[#11161D] dark:text-[#8C9DAF] "
+      className=" h-full overflow-x-visible bg-[#103701] text-md text-white dark:bg-[#11161D] dark:text-[#8C9DAF] "
       style={{ height: "100%" }}
     >
       <div

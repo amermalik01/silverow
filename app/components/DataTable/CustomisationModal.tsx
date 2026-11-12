@@ -17,7 +17,7 @@ interface Props {
   onResetDefault: () => Promise<void>;
 }
 
-const COLOR_OPTIONS = ["#064e3b", "#1e293b", "#1e3a8a", "#701a75", "#7f1d1d"];
+const COLOR_OPTIONS = ["#103701", "#1e293b", "#1e3a8a", "#701a75", "#7f1d1d"];
 
 export const CustomisationModal: React.FC<Props> = ({
   isOpen,
@@ -402,7 +402,7 @@ interface Props {
 }
 
 const COLOR_OPTIONS = [
-  "#064e3b", // Dark Emerald
+  "#103701", // Dark Emerald
   "#1e293b", // Dark Slate
   "#1e3a8a", // Dark Navy
   "#701a75", // Dark Plum

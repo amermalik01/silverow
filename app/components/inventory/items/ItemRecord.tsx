@@ -26,6 +26,7 @@ import {
 } from "@/types/inventory";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 import { toast } from "sonner";
+import WarehouseStockTab from "./tabs/WarehouseStockTab";
 
 type Props = {
   id: string;
@@ -287,46 +288,7 @@ export default function ItemRecord({
     loadInitialData();
   }, [id]);
 
-  /* useEffect(() => {
-    if (!id) return;
-
-    let cancelled = false;
-
-    const loadStockMetrics = async () => {
-      try {
-        const res = await fetch(`/api/inventory/items/${id}/activity`, {
-          cache: "no-store",
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to load stock summary");
-        }
-
-        const result = await res.json();
-
-        if (cancelled) return;
-
-        const summary = result.summary;
-
-        if (summary) {
-          setStockMetrics((prev) => ({
-            ...prev,
-            totalStock: Number(summary.totalPhysical ?? 0),
-            allocatedStock: Number(summary.totalReserved ?? 0),
-            availableStock: Number(summary.totalAvailable ?? 0),
-          }));
-        }
-      } catch (error) {
-        console.error("Failed to load item stock metrics:", error);
-      }
-    };
-
-    loadStockMetrics();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id]); */
+  
 
   useEffect(() => {
     if (!id) return;
@@ -480,6 +442,7 @@ export default function ItemRecord({
     { key: "price_offers", label: "Price Offers" },
     // { key: "margin", label: "Item Margin Analysis" },
     { key: "warehouse", label: "Warehouse Location & Cost" },
+    // { key: "warehouse_activities", label: "Warehouse Activity" },
     { key: "activities", label: "Activities" },
   ];
 
@@ -622,6 +585,7 @@ export default function ItemRecord({
             />
           )}
 
+          {activeTab === "warehouse_activities" && <WarehouseStockTab itemId={id} />}
           {activeTab === "activities" && <ItemActivityTab itemId={id} />}
         </div>
 
