@@ -2,16 +2,16 @@
 
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import { DataTable } from "@/app/components/DataTable/DataTable";
 
-import type { FetchParams, FetchResponse, ColumnConfig } from "@/types/table";
+import type { FetchParams, FetchResponse } from "@/types/table";
 
 import type { ItemWarehouseStock } from "@/lib/services/inventory/item-activity.service";
 
 import { warehouseStockColumnsConfig } from "./activity/warehouse-stock-columns";
-import { activityTableConfigApi } from "./activity/activity-table-config";
+import { createActivityTableConfigApi } from "./activity/activity-table-config";
 import { fetchActivityListing } from "./activity/activity-listing-fetch";
 
 interface Props {
@@ -123,11 +123,16 @@ export default function WarehouseStockTab({ itemId }: Props) {
     [],
   );
 
-  const columnsConfigApi = activityTableConfigApi as {
-    get: (moduleKey: string) => Promise<ColumnConfig[]>;
-    save: (moduleKey: string, columns: ColumnConfig[]) => Promise<void>;
-    reset: (moduleKey: string) => Promise<ColumnConfig[]>;
-  };
+  const columnsConfigApi = useMemo(
+    () => createActivityTableConfigApi(warehouseStockColumnsConfig),
+    [],
+  );
+
+  //   const columnsConfigApi = activityTableConfigApi as {
+  //     get: (moduleKey: string) => Promise<ColumnConfig[]>;
+  //     save: (moduleKey: string, columns: ColumnConfig[]) => Promise<void>;
+  //     reset: (moduleKey: string) => Promise<ColumnConfig[]>;
+  //   };
 
   if (!itemId) {
     return (

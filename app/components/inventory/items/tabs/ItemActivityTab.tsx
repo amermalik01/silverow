@@ -1,21 +1,20 @@
 // app/components/inventory/items/tabs/ItemActivityTab.tsx
 
-// app/components/inventory/items/tabs/ItemActivityTab.tsx
-
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import Link from "next/link";
 
 import { DataTable } from "@/app/components/DataTable/DataTable";
 
-import type { FetchParams, FetchResponse, ColumnConfig } from "@/types/table";
+import type { FetchParams, FetchResponse } from "@/types/table";
 
 import type { ItemMovement } from "@/lib/services/inventory/item-activity.service";
 
 import { movementColumnsConfig } from "./activity/movement-columns";
-import { activityTableConfigApi } from "./activity/activity-table-config";
+// import { activityTableConfigApi } from "./activity/activity-table-config";
 import { fetchActivityListing } from "./activity/activity-listing-fetch";
+import { createActivityTableConfigApi } from "./activity/activity-table-config";
 
 interface Props {
   itemId: string;
@@ -208,11 +207,16 @@ export default function ItemActivityTab({ itemId }: Props) {
     [],
   );
 
-  const columnsConfigApi = activityTableConfigApi as {
-    get: (moduleKey: string) => Promise<ColumnConfig[]>;
-    save: (moduleKey: string, columns: ColumnConfig[]) => Promise<void>;
-    reset: (moduleKey: string) => Promise<ColumnConfig[]>;
-  };
+  const columnsConfigApi = useMemo(
+    () => createActivityTableConfigApi(movementColumnsConfig),
+    [],
+  );
+
+  // const columnsConfigApi = activityTableConfigApi as {
+  //   get: (moduleKey: string) => Promise<ColumnConfig[]>;
+  //   save: (moduleKey: string, columns: ColumnConfig[]) => Promise<void>;
+  //   reset: (moduleKey: string) => Promise<ColumnConfig[]>;
+  // };
 
   if (!itemId) {
     return (

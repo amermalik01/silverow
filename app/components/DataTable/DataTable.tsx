@@ -721,105 +721,7 @@ export function DataTable<T extends object>({
         </div>
       </div>
 
-      {/* <div className="flex flex-col sm:flex-row items-center justify-between bg-emerald-950 px-3 py-2 text-emerald-100 border-b border-emerald-900 gap-2">
-        <div className="flex items-center gap-1.5 w-full">
-          // Search
-          <div className="relative w-full max-w-md">
-            <input
-              type="text"
-              placeholder="Search current page data..."
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
-              className="w-full rounded-md bg-emerald-900/60 border border-emerald-700/50 px-3 py-1.5 pl-8 text-xs text-emerald-100 placeholder-emerald-400/70 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-            />
-
-            // Active / Inactive Filter
-            <div className="flex items-center gap-1 shrink-0 rounded-md border border-emerald-700/50 bg-emerald-900/60 p-1">
-              <button
-                type="button"
-                aria-pressed={statusFilter === "active"}
-                disabled={loading && statusFilter === "active"}
-                onClick={() => handleStatusChange("active")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  statusFilter === "active"
-                    ? "bg-emerald-500 text-white"
-                    : "text-emerald-200 hover:bg-emerald-800"
-                }`}
-              >
-                Active
-              </button>
-
-              <button
-                type="button"
-                aria-pressed={statusFilter === "inactive"}
-                disabled={loading && statusFilter === "inactive"}
-                onClick={() => handleStatusChange("inactive")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  statusFilter === "inactive"
-                    ? "bg-amber-500 text-white"
-                    : "text-emerald-200 hover:bg-emerald-800"
-                }`}
-              >
-                Inactive
-              </button>
-            </div>
-
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-emerald-400">
-              🔍
-            </span>
-
-            {globalSearch && (
-              <button
-                type="button"
-                onClick={() => setGlobalSearch("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-emerald-400 hover:text-white"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          // Customize
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="p-1.5 rounded-md bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50 transition-colors shrink-0"
-          >
-            ⚙️ Customise Table
-          </button>
-
-          //Filters
-          <button
-            type="button"
-            onClick={() => setShowFilters((previous) => !previous)}
-            className={`relative p-1.5 rounded-md transition-colors border shrink-0 ${
-              showFilters
-                ? "bg-emerald-700 text-white border-emerald-500"
-                : "bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50"
-            }`}
-          >
-            🔻 Column Filters
-          </button>
-
-          // Clear Filters
-          {activeFilterCount > 0 && (
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className="flex items-center gap-1 text-[11px] font-semibold bg-rose-950/80 hover:bg-rose-900 text-rose-200 px-2.5 py-1 rounded-md border border-rose-800/80 transition-colors shrink-0"
-            >
-              ✕ Clear ({activeFilterCount})
-            </button>
-          )}
-        </div>
-
-        // Selection count 
-        <div className="text-xs text-emerald-300 font-medium self-end sm:self-auto whitespace-nowrap">
-          {enableRowSelection && selectedIds.size > 0 && (
-            <>{selectedIds.size} selected</>
-          )}
-        </div>
-      </div> */}
+      
 
       {/* ------------------------------------------------------------------ */}
       {/* Table                                                              */}
@@ -1052,3 +954,102 @@ export function DataTable<T extends object>({
     </div>
   );
 }
+{/* <div className="flex flex-col sm:flex-row items-center justify-between bg-emerald-950 px-3 py-2 text-emerald-100 border-b border-emerald-900 gap-2">
+        <div className="flex items-center gap-1.5 w-full">
+          // Search
+          <div className="relative w-full max-w-md">
+            <input
+              type="text"
+              placeholder="Search current page data..."
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              className="w-full rounded-md bg-emerald-900/60 border border-emerald-700/50 px-3 py-1.5 pl-8 text-xs text-emerald-100 placeholder-emerald-400/70 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+            />
+
+            // Active / Inactive Filter
+            <div className="flex items-center gap-1 shrink-0 rounded-md border border-emerald-700/50 bg-emerald-900/60 p-1">
+              <button
+                type="button"
+                aria-pressed={statusFilter === "active"}
+                disabled={loading && statusFilter === "active"}
+                onClick={() => handleStatusChange("active")}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  statusFilter === "active"
+                    ? "bg-emerald-500 text-white"
+                    : "text-emerald-200 hover:bg-emerald-800"
+                }`}
+              >
+                Active
+              </button>
+
+              <button
+                type="button"
+                aria-pressed={statusFilter === "inactive"}
+                disabled={loading && statusFilter === "inactive"}
+                onClick={() => handleStatusChange("inactive")}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  statusFilter === "inactive"
+                    ? "bg-amber-500 text-white"
+                    : "text-emerald-200 hover:bg-emerald-800"
+                }`}
+              >
+                Inactive
+              </button>
+            </div>
+
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-emerald-400">
+              🔍
+            </span>
+
+            {globalSearch && (
+              <button
+                type="button"
+                onClick={() => setGlobalSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-emerald-400 hover:text-white"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          // Customize
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="p-1.5 rounded-md bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50 transition-colors shrink-0"
+          >
+            ⚙️ Customise Table
+          </button>
+
+          //Filters
+          <button
+            type="button"
+            onClick={() => setShowFilters((previous) => !previous)}
+            className={`relative p-1.5 rounded-md transition-colors border shrink-0 ${
+              showFilters
+                ? "bg-emerald-700 text-white border-emerald-500"
+                : "bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50"
+            }`}
+          >
+            🔻 Column Filters
+          </button>
+
+          // Clear Filters
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="flex items-center gap-1 text-[11px] font-semibold bg-rose-950/80 hover:bg-rose-900 text-rose-200 px-2.5 py-1 rounded-md border border-rose-800/80 transition-colors shrink-0"
+            >
+              ✕ Clear ({activeFilterCount})
+            </button>
+          )}
+        </div>
+
+        // Selection count 
+        <div className="text-xs text-emerald-300 font-medium self-end sm:self-auto whitespace-nowrap">
+          {enableRowSelection && selectedIds.size > 0 && (
+            <>{selectedIds.size} selected</>
+          )}
+        </div>
+      </div> */}
