@@ -11,6 +11,8 @@ import SimpleBar from "simplebar-react";
 import { getCompanySidebarItems } from "./company_sidebaritems";
 import FullLogo from "../shared/logo/FullLogo";
 
+import SidebarSvgIcon from "@/app/components/layout/sidebar/components/SidebarSvgIcon";
+
 interface SidebarItemType {
   heading?: string;
   id?: number | string;
@@ -135,15 +137,24 @@ const CompanySidebar = ({
           : "solar:record-circle-linear");
 
       const icon = (
-        <Icon
-          icon={iconName}
-          width={level === 0 ? 18 : 16}
-          height={level === 0 ? 18 : 16}
-          // width={18}
-          // height={18}
+        <SidebarSvgIcon
+          src={iconName}
+          size={level === 0 ? 20 : 18}
+          collapsed={collapsed}
           className={` shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
         />
       );
+
+      // const icon = (
+      //   <Icon
+      //     icon={iconName}
+      //     width={level === 0 ? 18 : 16}
+      //     height={level === 0 ? 18 : 16}
+      //     // width={18}
+      //     // height={18}
+      //     className={` shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
+      //   />
+      // );
 
       const label = (
         <span

@@ -22,7 +22,8 @@ const Profile = () => {
         <DropdownMenuTrigger asChild>
           <span className='hover:text-primary hover:bg-lightprimary rounded-full flex justify-center items-center cursor-pointer group-hover/menu:bg-lightprimary group-hover/menu:text-primary'>
             <Image
-              src='/images/profile/user-1.jpg'
+              // src='/images/profile/user-1.jpg'
+              src='/images/profile/emblem.png'
               alt='logo'
               height={35}
               width={35}

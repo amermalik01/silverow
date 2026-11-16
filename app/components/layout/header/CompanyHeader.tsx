@@ -282,34 +282,26 @@ const CompanyHeader = () => {
           </div>
 
           {/* ===============================================
-    Desktop Header - Right Side Actions
-================================================= */}
-          <div
-            className="
-    hidden
-    xl:flex
-    items-center
-    justify-end
-    w-full
-  "
-          >
+                  Desktop Header - Right Side Actions
+              ================================================= */}
+          <div className=" hidden xl:flex items-center justify-end w-full">
             <div className="flex items-center gap-2">
               {/* =============================================
-        Management Settings
-    ============================================= */}
+                      Management Settings
+                  ============================================= */}
               <div ref={managementRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setManagementOpen((prev) => !prev)}
                   className={`
-          flex h-9 w-9 items-center justify-center
-          rounded-full transition
-          ${
-            managementOpen
-              ? "bg-white/15 text-white"
-              : "text-white/80 hover:bg-white/10 hover:text-white"
-          }
-        `}
+                    flex h-9 w-9 items-center justify-center
+                    rounded-full transition
+                    ${
+                      managementOpen
+                        ? "bg-white/15 text-white"
+                        : "text-white/80 hover:bg-white/10 hover:text-white"
+                    }
+                  `}
                   title="Management"
                   aria-label="Management"
                   aria-expanded={managementOpen}
@@ -321,27 +313,21 @@ const CompanyHeader = () => {
                 {managementOpen && (
                   <div
                     className="
-            absolute right-0 top-full z-[100] mt-2
-            w-[300px] max-w-[calc(100vw-2rem)]
-            overflow-hidden rounded-xl
-            border border-slate-200 bg-white
-            shadow-2xl
-            dark:border-slate-700 dark:bg-[#11161D]
-          "
+                      absolute right-0 top-full z-[100] mt-2
+                      w-[300px] max-w-[calc(100vw-2rem)]
+                      overflow-hidden rounded-xl
+                      border border-slate-200 bg-white
+                      shadow-2xl
+                      dark:border-slate-700 dark:bg-[#11161D]
+                      "
                   >
-                    <div
-                      className="
-              border-b border-slate-200
-              px-4 py-3
-              dark:border-slate-700
-            "
-                    >
+                    <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
                       <div className="flex items-center gap-3">
                         <div
                           className="
-                  flex h-9 w-9 shrink-0 items-center justify-center
-                  rounded-lg bg-emerald-500/10 text-emerald-500
-                "
+                            flex h-9 w-9 shrink-0 items-center justify-center
+                            rounded-lg bg-emerald-500/10 text-emerald-500
+                          "
                         >
                           <Icon
                             icon="solar:settings-linear"

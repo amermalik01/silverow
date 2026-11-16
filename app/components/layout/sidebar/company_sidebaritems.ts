@@ -1,7 +1,6 @@
 // app/components/layout/sidebar/company_sidebaritems.ts
-"use client";
 
-// import { uniqueId } from "lodash";
+"use client";
 
 export interface ChildItem {
   id?: number | string;
@@ -41,7 +40,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
     children: [
       {
         name: "Dashboard",
-        icon: "solar:widget-2-linear",
+        // icon: "solar:widget-2-linear",
+        icon: "/images/side-bar/dashboard.svg",
         id: "Dashboard",
         url: `/${slug}/dashboard`,
         isPro: false,
@@ -50,8 +50,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         name: "Finance",
         id: "Finance",
-        // icon: "solar:shield-keyhole-minimalistic-linear",
-        icon: "solar:wallet-money-linear",
+        // icon: "solar:wallet-money-linear",
+        icon: "/images/side-bar/finance.svg",
         children: [
           {
             id: "Chart of Accounts",
@@ -89,8 +89,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Sales",
         name: "Sales",
-        icon: "solar:chart-square-2-linear",
-        // icon: "solar:cart-large-2-linear",
+        // icon: "solar:chart-square-2-linear",
+        icon: "/images/side-bar/sales.svg",
         children: [
           {
             id: "CRM",
@@ -153,7 +153,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Purchases",
         name: "Purchases",
-        icon: "solar:shield-keyhole-minimalistic-linear",
+        // icon: "solar:shield-keyhole-minimalistic-linear",        
+        icon: "/images/side-bar/purchases.svg",
         children: [
           {
             id: "SRM",
@@ -199,8 +200,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Inventory",
         name: "Inventory",
-        // icon: "solar:shield-keyhole-minimalistic-linear",
-        icon: "solar:box-minimalistic-linear",
+        // icon: "solar:box-minimalistic-linear",        
+        icon: "/images/side-bar/inventory.svg",
         children: [
           {
             id: "Items",
@@ -220,8 +221,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Reports",
         name: "Reports",
-        // icon: "solar:shield-keyhole-minimalistic-linear",
-        icon: "solar:chart-2-linear",
+        // icon: "solar:chart-2-linear",        
+        icon: "/images/side-bar/reports.svg",
         children: [
           {
             id: "All Reports",
@@ -235,8 +236,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Human Resources",
         name: "Human Resources",
-        // icon: "solar:shield-keyhole-minimalistic-linear",
-        icon: "solar:users-group-two-rounded-linear",
+        icon: "/images/side-bar/finance.svg",
+        // icon: "solar:users-group-two-rounded-linear",
         children: [
           {
             id: "Employees",
@@ -274,7 +275,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
       {
         id: "Energy",
         name: "Energy",
-        icon: "griddy-icons:solar-energy-alt-filled",
+        // icon: "griddy-icons:solar-energy-alt-filled",
+        icon: "/images/side-bar/energy.svg",
         children: [
           {
             id: "Sites",
@@ -325,18 +327,6 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
             name: "Warehouse",
             icon: "solar:warehouse-linear",
             url: `/${slug}/setup/inventory/warehouses`,
-            // children: [
-            //   {
-            //     id: "Warehouse",
-            //     name: "Warehouse",
-            //     url: `/${slug}/setup/inventory/warehouses`,
-            //   },
-            //   {
-            //     id: "Storage Types",
-            //     name: "Storage Types",
-            //     url: `/${slug}/setup/system/warehouse-storage-types`,
-            //   },
-            // ],
           },
 
           {
@@ -566,5 +556,17 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
 //     id: "Roles",
 //     name: "Roles",
 //     url: `/${slug}/setup/system/roles`,
+//   },
+// ],
+// children: [
+//   {
+//     id: "Warehouse",
+//     name: "Warehouse",
+//     url: `/${slug}/setup/inventory/warehouses`,
+//   },
+//   {
+//     id: "Storage Types",
+//     name: "Storage Types",
+//     url: `/${slug}/setup/system/warehouse-storage-types`,
 //   },
 // ],
