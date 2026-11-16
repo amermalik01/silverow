@@ -8,17 +8,17 @@ const FullLogo = () => {
       {/* Dark Logo */}
       <Image
         // src="/images/logos/dark-logo.svg"
-        src="/images/logos/nevico-logo-new.png"
+        src="/images/logos/nevico-logo-3.png"
         // src="/images/logos/nevico-logo.png"
         alt="logo"
-        width={140}
-        height={16}
+        width={240}
+        height={24}
         className="block dark:hidden rtl:scale-x-[-1]"
       />
       {/* Light Logo */}
       <Image
         // src="/images/logos/light-logo.svg"
-        src="/images/logos/nevico-logo-new.png"
+        src="/images/logos/nevico-logo-3.png"
         // src="/images/logos/nevico-logo.png"
         alt="logo"
         width={204}

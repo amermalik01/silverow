@@ -152,20 +152,22 @@ export const Login = () => {
                   "
                 >
                   <FullLogo />
-                </div> */}
+                </div> 
+                bg-emerald-800
+                */}
 
-                <div
+                {/* <div
                   className="
-                  bg-emerald-800
+                  bg-[#0D2F19]
                   rounded-md
                   px-8
                   py-4
                   shadow-md
                   shadow-emerald-950/20
                 "
-                >
-                  <FullLogo />
-                </div>
+                > */}
+                <FullLogo />
+                {/* </div> */}
               </div>
 
               {/* <div>
@@ -298,6 +300,8 @@ export const Login = () => {
               </div>
 
               {/* <div className="flex items center gap-2 justify-center mt-6 flex-wrap"> */}
+              {/* bg-emerald-700
+                    hover:bg-emerald-800 */}
               <Button
                 className="
                     w-full
