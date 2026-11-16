@@ -182,15 +182,15 @@ export const Login = () => {
               </div>
 
               <div>
-                <span className="text-xs font-bold tracking-widest text-emerald-800 uppercase block mb-1">
-                  {/* Go Beyond With Silvin */} ALL-IN-ONE BUSINESS MANAGEMENT
-                </span>
+                {/* <span className="text-xs font-bold tracking-widest text-emerald-800 uppercase block mb-1">
+                   Go Beyond With Silvin  ALL-IN-ONE BUSINESS MANAGEMENT
+                </span> */}
                 <h2 className=" text-center text-xl font-semibold text-slate-800">
                   Business Made Simple
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Sign in to continue to your workspace
-                </p>
+                  Sign in to your workspace
+                </p>{/* to continue */}
               </div>
             </div>
 
@@ -321,9 +321,9 @@ export const Login = () => {
 
           {/* Bottom Modules Section */}
           <div className="mt-8 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/90 drop-shadow-sm mb-4">
+            {/* <p className="text-xs font-semibold uppercase tracking-wider text-white/90 drop-shadow-sm mb-4">
               Business in Motion
-            </p>
+            </p> */}
 
             <div className="grid grid-cols-5 gap-2.5">
               {modules.map((item) => (
