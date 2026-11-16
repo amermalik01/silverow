@@ -121,7 +121,8 @@ export const Login = () => {
         {/* bg-[url('/images/logos/nevico-login-bg-1.png')] */}
         {/* bg-lightprimary */}
         {/* <div className="md:min-w-[480px] min-w-max "> */}
-        <div className="w-full sm:max-w-[480px] md:max-w-[520px] ">{/* CardBox */}
+        <div className="w-full sm:max-w-[480px] md:max-w-[520px] ">
+          {/* CardBox */}
           <div
             className="
             w-full
@@ -131,7 +132,7 @@ export const Login = () => {
             border border-emerald-100/60
             shadow-[0_20px_80px_rgba(0,0,0,0.15)]
             text-slate-800
-            p-8 sm:p-10 
+            p-4 sm:p-8 
           "
           >
             {/* <div className="h-1.5 w-20 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-700 mx-auto mb-6" /> */}
@@ -159,8 +160,10 @@ export const Login = () => {
                 <Image
                   src="/images/logos/login-logo.png"
                   alt="logo"
-                  width={240}
-                  height={24}
+                  width={320}
+                  height={36}
+                  // width={240}
+                  // height={24}
                   className="block dark:hidden rtl:scale-x-[-1]"
                 />
 
@@ -178,27 +181,10 @@ export const Login = () => {
                 </div> */}
               </div>
 
-              {/* <div>
-                <h1 className="text-3xl font-bold text-slate-800">
-                  GO BEYOND WITH Silvin
-                </h1>
-
-                <h1 className="text-3xl font-bold text-slate-800">
-                  Welcome Back
-                </h1>
-
-                <p className="text-sm text-slate-500 mt-2">
-                  Sign in to continue to your workspace
-                </p>
-              </div> */}
-
               <div>
                 <span className="text-xs font-bold tracking-widest text-emerald-800 uppercase block mb-1">
                   {/* Go Beyond With Silvin */} ALL-IN-ONE BUSINESS MANAGEMENT
                 </span>
-                {/* <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
-                  Welcome Back
-                </h1> */}
                 <h2 className=" text-center text-xl font-semibold text-slate-800">
                   Business Made Simple
                 </h2>
@@ -233,8 +219,6 @@ export const Login = () => {
             <form onSubmit={handleLogin} className="mt-6 space-y-4">
               <div>
                 <div>
-                  {/* className="mb-2 block" */}
-                  {/* <Label htmlFor="email1" className="font-medium"> */}
                   <Label
                     htmlFor="email1"
                     className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-700"
@@ -372,143 +356,8 @@ export const Login = () => {
               ))}
             </div>
           </div>
-
-          {/* <div className="mt-10">
-            <p className="text-center text-white font-semibold tracking-wide mb-5">
-              Business in Motion
-            </p>
-
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                {
-                  icon: "streamline:money-graph-analytics-business-product-graph-data-chart-analysis",
-                  title: "Finance",
-                },
-                {
-                  icon: "hugeicons:sale-tag-01",
-                  title: "Sales",
-                },
-                {
-                  icon: "bx:purchase-tag-alt",
-                  title: "Purchases",
-                },
-                {
-                  icon: "carbon:inventory-management",
-                  title: "Inventory",
-                },
-                {
-                  icon: "material-symbols:mail-outline-rounded",
-                  title: "Mail",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="
-                    backdrop-blur-md
-                    bg-white/15
-                    border
-                    border-white/20
-                    rounded-xl
-                    py-4
-                    flex
-                    flex-col
-                    items-center
-                    transition-all
-                    duration-300
-                    hover:bg-white/25
-                    hover:-translate-y-1
-                "
-                >
-                  <Icon icon={item.icon} className="text-2xl text-white" />
-
-                  <span className="mt-2 text-xs font-medium text-white">
-                    {item.title}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div> */}
         </div>
       </div>
     </>
   );
 };
-
-{
-  /* // shadow-[0_20px_60px_rgba(16,24,40,0.15)] */
-}
-{
-  /* className="bg-[#010d0c] text-white" */
-}
-{
-  /* <div className="flex justify-center mb-4">
-              <FullLogo />
-            </div>
-
-            <div className="flex items-center justify-center gap-2">
-              <hr className="grow border-ld" />
-              <p className="text-base text-ld font-medium">
-                GO BEYOND WITH Silvin 
-              </p>
-              <hr className="grow border-ld" />
-            </div> */
-}
-{
-  /* <div className=" w-[480px] min-h-[180px] mx-auto text-center ">
-            <div className=" w-full float-right px-5 mt-5 text-white">
-              <p className="mt-5 font-medium">Business in Motion</p>
-
-              <div className="flex flex-wrap justify-between mt-4">
-                <div className="icon-holder text-center ">
-                  <Icon
-                    icon="streamline:money-graph-analytics-business-product-graph-data-chart-analysis"
-                    className="text-[20px] mx-auto"
-                  />
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Finance
-                  </div>
-                </div>
-
-                <div className="icon-holder text-center ">
-                  <Icon
-                    icon="hugeicons:sale-tag-01"
-                    className="text-[20px] mx-auto"
-                  />
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Sales
-                  </div>
-                </div>
-
-                <div className="icon-holder text-center">
-                  <Icon
-                    icon="bx:purchase-tag-alt"
-                    className="text-[20px] mx-auto"
-                  />
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Purchases
-                  </div>
-                </div>
-
-                <div className="icon-holder text-center">
-                  <Icon
-                    icon="carbon:inventory-management"
-                    className="text-[20px] mx-auto"
-                  />
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Inventory
-                  </div>
-                </div>
-
-                <div className="icon-holder text-center ">
-                  <Icon
-                    icon="material-symbols:mail-outline-rounded"
-                    className="text-[20px]"
-                  />
-                  <div className="icon-name font-bold text-[10px] mt-2">
-                    Mail
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div> */
-}
