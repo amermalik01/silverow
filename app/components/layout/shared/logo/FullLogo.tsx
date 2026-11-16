@@ -11,8 +11,8 @@ const FullLogo = () => {
         src="/images/logos/nevico-logo-3.png"
         // src="/images/logos/nevico-logo.png"
         alt="logo"
-        width={240}
-        height={24}
+        width={180}
+        height={12}
         className="block dark:hidden rtl:scale-x-[-1]"
       />
       {/* Light Logo */}

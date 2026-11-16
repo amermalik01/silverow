@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Nevico Admin Dashboard',
-    short_name: 'Nevico',
+    name: 'Silvin Admin Dashboard',
+    short_name: 'Silvin',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

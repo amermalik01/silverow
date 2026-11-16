@@ -3,9 +3,14 @@
 @import "tailwindcss";
 
 :root {
-  /* --background: #ffffff; */
-  --background: #F4F7F2;
+  --background: #f4f7f2;
   --foreground: #171717;
+}
+
+@theme {
+  --color-erp-primary: #114723;
+  --color-erp-primary-hover: #0d2f19;
+  --color-erp-header-dark: #0d2f19;
 }
 
 @theme inline {
@@ -28,8 +33,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.custom-attachment{
-  /* padding: 2px !important; */
-  @apply p-2
-
+.custom-attachment {
+  @apply p-2;
 }

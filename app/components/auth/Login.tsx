@@ -156,6 +156,14 @@ export const Login = () => {
                 bg-emerald-800
                 */}
 
+                <Image
+                  src="/images/logos/nevico-logo-3.png"
+                  alt="logo"
+                  width={240}
+                  height={24}
+                  className="block dark:hidden rtl:scale-x-[-1]"
+                />
+
                 {/* <div
                   className="
                   bg-[#0D2F19]
@@ -165,14 +173,14 @@ export const Login = () => {
                   shadow-md
                   shadow-emerald-950/20
                 "
-                > */}
+                >
                 <FullLogo />
-                {/* </div> */}
+                </div> */}
               </div>
 
               {/* <div>
                 <h1 className="text-3xl font-bold text-slate-800">
-                  GO BEYOND WITH NEVICO
+                  GO BEYOND WITH Silvin
                 </h1>
 
                 <h1 className="text-3xl font-bold text-slate-800">
@@ -186,7 +194,7 @@ export const Login = () => {
 
               <div>
                 <span className="text-xs font-bold tracking-widest text-emerald-800 uppercase block mb-1">
-                  Go Beyond With Nevico{/* SILVEROW */}
+                  Go Beyond With Silvin{/* SILVEROW */}
                 </span>
                 {/* <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
                   Welcome Back
@@ -440,7 +448,7 @@ export const Login = () => {
             <div className="flex items-center justify-center gap-2">
               <hr className="grow border-ld" />
               <p className="text-base text-ld font-medium">
-                GO BEYOND WITH NEVICO 
+                GO BEYOND WITH Silvin 
               </p>
               <hr className="grow border-ld" />
             </div> */

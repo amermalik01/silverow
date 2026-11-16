@@ -61,13 +61,7 @@ const ManagementMenuItem = ({
   const hasChildren = Boolean(item.children?.length);
   const active = isItemActive(item, pathname);
 
-  // const [open, setOpen] = useState(active && hasChildren);
-
   const [open, setOpen] = useState(defaultOpen || (active && hasChildren));
-
-  // useEffect(() => {
-  //   setOpen(true);
-  // }, []);
 
   if (item.url) {
     return (
@@ -76,14 +70,11 @@ const ManagementMenuItem = ({
         className={` group flex items-center gap-2 rounded-md px-2.5 py-2 text-xs transition-colors ${active ? "bg-emerald-500/10 text-emerald-500" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"} `}
         style={{ marginLeft: level * 12 }}
       >
-        {" "}
-        {/* Nested item bullet */}{" "}
         {level > 0 && (
           <span
             className={` h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-emerald-500" : "bg-slate-400 dark:bg-slate-600"} `}
           />
         )}
-        {/* Top-level icon */}
         {level === 0 && item.icon && (
           <Icon icon={item.icon} width={17} height={17} className="shrink-0" />
         )}
@@ -95,10 +86,6 @@ const ManagementMenuItem = ({
     );
   }
 
-  /*
-
-  Parent item with children
-  */
   return (
     <div>
       <button
@@ -114,7 +101,6 @@ const ManagementMenuItem = ({
           <Icon icon={item.icon} width={17} height={17} className="shrink-0" />
         )}
 
-        {/* Nested bullet */}
         {level > 0 && (
           <span
             className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-emerald-500" : "bg-slate-400 dark:bg-slate-600"}`}
@@ -134,8 +120,6 @@ const ManagementMenuItem = ({
           className="shrink-0 text-slate-400"
         />
       </button>
-
-      {/* Children */}
 
       <div
         className={` overflow-hidden transition-[max-height,opacity] duration-200 ease-in-out ${open ? "max-h-[2000px] opacity-100" : "pointer-events-none max-h-0 opacity-0"} `}
@@ -220,21 +204,16 @@ const CompanyHeader = ({
     };
   }, []);
 
-  /* =======================================================
-      Close Management After Navigation
-      ======================================================= */
-
-  // useEffect(() => {
-  //   setManagementOpen(false);
-  // }, [pathname]);
-
-  /* =======================================================
-      Render
-      ======================================================= */
-
   return (
     <>
-      <header className=" h-16 shrink-0 border-b bg-[#103701] text-white dark:bg-[#262F3C] ">
+      <header
+        className=" h-16 shrink-0 border-b text-white"
+        style={{
+          backgroundColor: "#0d2f19",
+        }}
+      >
+        {/* #103701 0d2f19 */}
+        {/* bg-erp-header-dark dark:bg-[#262F3C]  */}
         <nav className=" h-16 px-4 xl:px-6 flex items-center justify-between w-full ">
           {/* =================================================
               Mobile Toggle
@@ -582,102 +561,3 @@ const CompanyHeader = ({
 };
 
 export default CompanyHeader;
-
-/* "use client";
-
-import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
-import { Icon } from "@iconify/react";
-import Profile from "./Profile";
-import Notifications from "./Notifications";
-import SidebarLayout from "../sidebar/Sidebar";
-import FullLogo from "../shared/logo/FullLogo";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-
-const CompanyHeader = () => {
-  const { theme, setTheme } = useTheme();
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleMode = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
-  };
-
-  return (
-    <>
-      <header className="h-16 shrink-0 border-b bg-[#103701] dark:bg-[#262F3C] text-white">
-        <nav className="h-16 px-6 flex justify-between items-center w-full">
-
-          <div
-            onClick={() => setIsOpen(true)}
-            className="p-2 xl:hidden flex justify-center items-center cursor-pointer rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <Icon icon="tabler:menu-2" height={20} width={20} />
-          </div>
-
-
-          <div className="block xl:hidden">
-            <FullLogo />
-          </div>
-
-
-          <div className="flex xl:hidden items-center gap-2">
-            <button
-              onClick={toggleMode}
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              <Icon
-                icon={
-                  theme === "light" ? "tabler:moon" : "solar:sun-bold-duotone"
-                }
-                width="20"
-              />
-            </button>
-
-            <Profile />
-          </div>
-
-
-          <div className="hidden xl:flex items-center justify-between w-full">
-            <FullLogo />
-
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleMode}
-                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              >
-                <Icon
-                  icon={
-                    theme === "light" ? "tabler:moon" : "solar:sun-bold-duotone"
-                  }
-                  width="20"
-                />
-              </button>
-
-              <Notifications />
-
-              <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
-
-              <Profile />
-            </div>
-          </div>
-        </nav>
-      </header>
-
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent
-          side="left"
-          className="w-64 p-0 bg-slate-950 border-r border-slate-800 text-white"
-        >
-          <VisuallyHidden>
-            <SheetTitle>sidebar</SheetTitle>
-          </VisuallyHidden>
-
-          <SidebarLayout onClose={() => setIsOpen(false)} />
-        </SheetContent>
-      </Sheet>
-    </>
-  );
-};
-
-export default CompanyHeader; */
