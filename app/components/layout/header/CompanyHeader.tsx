@@ -19,10 +19,10 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 import { getCompanySidebarItems } from "../sidebar/company_sidebaritems";
 
-interface CompanyHeaderProps {
-  sidebarCollapsed?: boolean;
-  onToggleSidebar?: () => void;
-}
+// interface CompanyHeaderProps {
+//   sidebarCollapsed?: boolean;
+//   onToggleSidebar?: () => void;
+// }
 
 interface MenuItem {
   id?: number | string;
@@ -145,10 +145,12 @@ const ManagementMenuItem = ({
     Company Header
     ========================================================= */
 
-const CompanyHeader = ({
-  sidebarCollapsed = false,
-  onToggleSidebar,
-}: CompanyHeaderProps) => {
+// const CompanyHeader = ({
+//   sidebarCollapsed = false,
+//   onToggleSidebar,
+// }: CompanyHeaderProps) => {
+
+const CompanyHeader = () => {
   const { theme, setTheme } = useTheme();
 
   const pathname = usePathname();
@@ -279,9 +281,148 @@ const CompanyHeader = ({
             <Profile />
           </div>
 
-          {/* =================================================
-                  Desktop Header
-              ================================================= */}
+          {/* ===============================================
+    Desktop Header - Right Side Actions
+================================================= */}
+          <div
+            className="
+    hidden
+    xl:flex
+    items-center
+    justify-end
+    w-full
+  "
+          >
+            <div className="flex items-center gap-2">
+              {/* =============================================
+        Management Settings
+    ============================================= */}
+              <div ref={managementRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setManagementOpen((prev) => !prev)}
+                  className={`
+          flex h-9 w-9 items-center justify-center
+          rounded-full transition
+          ${
+            managementOpen
+              ? "bg-white/15 text-white"
+              : "text-white/80 hover:bg-white/10 hover:text-white"
+          }
+        `}
+                  title="Management"
+                  aria-label="Management"
+                  aria-expanded={managementOpen}
+                >
+                  <Icon icon="solar:settings-linear" width={20} height={20} />
+                </button>
+
+                {/* Management Dropdown */}
+                {managementOpen && (
+                  <div
+                    className="
+            absolute right-0 top-full z-[100] mt-2
+            w-[300px] max-w-[calc(100vw-2rem)]
+            overflow-hidden rounded-xl
+            border border-slate-200 bg-white
+            shadow-2xl
+            dark:border-slate-700 dark:bg-[#11161D]
+          "
+                  >
+                    <div
+                      className="
+              border-b border-slate-200
+              px-4 py-3
+              dark:border-slate-700
+            "
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="
+                  flex h-9 w-9 shrink-0 items-center justify-center
+                  rounded-lg bg-emerald-500/10 text-emerald-500
+                "
+                        >
+                          <Icon
+                            icon="solar:settings-linear"
+                            width={19}
+                            height={19}
+                          />
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                            Management
+                          </div>
+
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            System configuration
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="max-h-[70vh] overflow-y-auto p-2">
+                      {managementItems.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {managementItems.map((item) => (
+                            <ManagementMenuItem
+                              key={item.id ?? item.name}
+                              item={item}
+                              pathname={pathname}
+                              defaultOpen={item.id === "Settings"}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-3 py-5 text-center text-xs text-slate-500">
+                          No management options available.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Separator */}
+              <div className="mx-1 h-8 w-px bg-white/20" />
+
+              {/* Profile */}
+              <Profile />
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      {/* =====================================================
+              Mobile Sidebar
+          ===================================================== */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent
+          side="left"
+          className="
+              w-64
+              p-0
+              bg-slate-950
+              border-r
+              border-slate-800
+              text-white
+            "
+        >
+          <VisuallyHidden>
+            <SheetTitle>Sidebar</SheetTitle>
+          </VisuallyHidden>
+
+          <SidebarLayout onClose={() => setIsOpen(false)} />
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+};
+
+export default CompanyHeader;
+
+/* 
           <div
             className="
                 hidden
@@ -291,11 +432,9 @@ const CompanyHeader = ({
                 w-full
               "
           >
-            {/* ===============================================
-                    Left Side
-                =============================================== */}
+
             <div className="flex items-center gap-3">
-              {/* Sidebar Collapse Button */}
+
               <button
                 type="button"
                 onClick={onToggleSidebar}
@@ -327,15 +466,13 @@ const CompanyHeader = ({
                 />
               </button>
 
-              {/* Logo */}
+
               <FullLogo />
             </div>
 
-            {/* ===============================================
-                    Right Side
-                =============================================== */}
+
             <div className="flex items-center gap-2">
-              {/* <button
+               <button
                 type="button"
                 onClick={toggleMode}
                 className="
@@ -355,11 +492,9 @@ const CompanyHeader = ({
               </button>
 
              
-              <Notifications /> */}
+              <Notifications /> 
 
-              {/* =============================================
-                      Management Settings
-                  ============================================= */}
+
               <div ref={managementRef} className="relative">
                 <button
                   type="button"
@@ -385,9 +520,7 @@ const CompanyHeader = ({
                   <Icon icon="solar:settings-linear" width={20} height={20} />
                 </button>
 
-                {/* =========================================
-                        Management Dropdown
-                    ========================================= */}
+
                 {managementOpen && (
                   <div
                     className="
@@ -413,9 +546,7 @@ const CompanyHeader = ({
                       dark:bg-[#11161D]
                     "
                   >
-                    {/* -------------------------------------
-                            Dropdown Header
-                        ------------------------------------- */}
+
                     <div
                       className="
                         border-b
@@ -471,9 +602,7 @@ const CompanyHeader = ({
                       </div>
                     </div>
 
-                    {/* -------------------------------------
-                            Dropdown Menu
-                        ------------------------------------- */}
+
                     <div
                       className="
                         max-h-[70vh]
@@ -491,13 +620,7 @@ const CompanyHeader = ({
                               defaultOpen={item.id === "Settings"}
                             />
                           ))}
-                          {/* {managementItems.map((item) => (
-                            <ManagementMenuItem
-                              key={item.id ?? item.name}
-                              item={item}
-                              pathname={pathname}
-                            />
-                          ))} */}
+                          
                         </div>
                       ) : (
                         <div
@@ -517,7 +640,7 @@ const CompanyHeader = ({
                 )}
               </div>
 
-              {/* Separator */}
+  
               <div
                 className="
                   mx-1
@@ -527,37 +650,7 @@ const CompanyHeader = ({
                 "
               />
 
-              {/* Profile */}
+              
               <Profile />
             </div>
-          </div>
-        </nav>
-      </header>
-
-      {/* =====================================================
-              Mobile Sidebar
-          ===================================================== */}
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent
-          side="left"
-          className="
-              w-64
-              p-0
-              bg-slate-950
-              border-r
-              border-slate-800
-              text-white
-            "
-        >
-          <VisuallyHidden>
-            <SheetTitle>Sidebar</SheetTitle>
-          </VisuallyHidden>
-
-          <SidebarLayout onClose={() => setIsOpen(false)} />
-        </SheetContent>
-      </Sheet>
-    </>
-  );
-};
-
-export default CompanyHeader;
+          </div> */

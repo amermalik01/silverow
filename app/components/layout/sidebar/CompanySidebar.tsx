@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Icon } from "@iconify/react";
 import SimpleBar from "simplebar-react";
 import { getCompanySidebarItems } from "./company_sidebaritems";
+import FullLogo from "../shared/logo/FullLogo";
 
 interface SidebarItemType {
   heading?: string;
@@ -20,8 +21,13 @@ interface SidebarItemType {
   children?: SidebarItemType[];
 }
 
+// interface CompanySidebarProps {
+//   collapsed?: boolean;
+// }
+
 interface CompanySidebarProps {
   collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 const isItemActive = (item: SidebarItemType, currentPath: string): boolean => {
@@ -54,7 +60,12 @@ const getActiveParentIds = (
   return result;
 };
 
-const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
+// const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
+
+const CompanySidebar = ({
+  collapsed = false,
+  onToggleCollapse,
+}: CompanySidebarProps) => {
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -241,54 +252,110 @@ const CompanySidebar = ({ collapsed = false }: CompanySidebarProps) => {
     });
   };
 
-
-return (
-  <div className="relative h-full w-full overflow-hidden">
-
-    {/* Sidebar Background Image */}
-    <div
-      className="absolute inset-0 bg-no-repeat"
-      style={{
-        backgroundImage: "url('/images/logos/Silvin_sidebar_bg.png')",
-        backgroundSize: collapsed ? "auto 100%" : "cover",
-        backgroundPosition: "center top",
-      }}
-    />
-
-    {/* Background Overlay */}
-    <div
-      className="absolute inset-0"
-      style={{
-        background:
-          "linear-gradient(180deg, rgba(5, 20, 12, 0.78) 0%, rgba(5, 20, 12, 0.88) 100%)",
-      }}
-    />
-
-    {/* Sidebar Menu */}
-    <SimpleBar
-      className="relative z-10 h-full overflow-x-visible bg-transparent text-md text-white"
-      style={{ height: "100%" }}
-    >
+  return (
+    <div className="relative flex h-full w-full flex-col overflow-hidden">
+      {/* =========================================
+        Sidebar Background Image
+    ========================================= */}
       <div
-        className={`py-3 transition-all duration-200 ${
-          collapsed ? "px-1.5" : "px-1.5"
-        }`}
+        className="absolute inset-0 bg-no-repeat"
+        style={{
+          backgroundImage: "url('/images/logos/Silvin_sidebar_bg.png')",
+          backgroundSize: collapsed ? "auto 100%" : "cover",
+          backgroundPosition: "center top",
+        }}
+      />
+
+      {/* Background Overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(5, 20, 12, 0.78) 0%, rgba(5, 20, 12, 0.88) 100%)",
+        }}
+      />
+
+      {/* =========================================
+        Sidebar Brand / Logo Section
+    ========================================= */}
+      <div
+        className={`
+        relative z-20
+        flex h-16 shrink-0 items-center
+        border-b border-white/10
+        transition-all duration-200
+        ${collapsed ? "justify-center px-1" : "justify-between px-3"}
+      `}
       >
-        {menuItems.map((section, index) => (
-          <div key={index} className="mb-4 space-y-0.5">
-            {renderItems([
-              ...(section.heading ? [{ heading: section.heading }] : []),
-              ...(section.children || []),
-            ])}
+        {/* Logo */}
+        {!collapsed && (
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <FullLogo />
           </div>
-        ))}
+        )}
+
+        {/* Collapse / Expand Button */}
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="
+          flex h-9 w-9 shrink-0
+          items-center justify-center
+          rounded-md
+          text-white/80
+          transition-colors
+          hover:bg-white/10
+          hover:text-white
+        "
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <Icon
+            icon={
+              collapsed
+                ? "solar:sidebar-minimalistic-outline"
+                : "solar:sidebar-minimalistic-outline"
+            }
+            width={20}
+            height={20}
+          />
+        </button>
       </div>
-    </SimpleBar>
-  </div>
-);
 
+      {/* =========================================
+        Sidebar Navigation
+    ========================================= */}
+      <SimpleBar
+        className="
+        relative z-10
+        min-h-0 flex-1
+        overflow-x-visible
+        bg-transparent
+        text-md text-white
+      "
+        style={{ height: "auto" }}
+      >
+        <div
+          className={`py-3 transition-all duration-200 ${
+            collapsed ? "px-1.5" : "px-1.5"
+          }`}
+        >
+          {menuItems.map((section, index) => (
+            <div key={index} className="mb-4 space-y-0.5">
+              {renderItems([
+                ...(section.heading ? [{ heading: section.heading }] : []),
+                ...(section.children || []),
+              ])}
+            </div>
+          ))}
+        </div>
+      </SimpleBar>
+    </div>
+  );
+};
 
-  /* return (
+export default CompanySidebar;
+/* return (
     <SimpleBar
       className=" h-full overflow-x-visible bg-[#103701] text-md text-white dark:bg-[#11161D] dark:text-[#8C9DAF] "
       style={{ height: "100%" }}
@@ -307,6 +374,47 @@ return (
       </div>
     </SimpleBar>
   ); */
-};
 
-export default CompanySidebar;
+/* return (
+    <div className="relative h-full w-full overflow-hidden">
+
+      <div
+        className="absolute inset-0 bg-no-repeat"
+        style={{
+          backgroundImage: "url('/images/logos/Silvin_sidebar_bg.png')",
+          backgroundSize: collapsed ? "auto 100%" : "cover",
+          backgroundPosition: "center top",
+        }}
+      />
+
+      
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(5, 20, 12, 0.78) 0%, rgba(5, 20, 12, 0.88) 100%)",
+        }}
+      />
+
+
+      <SimpleBar
+        className="relative z-10 h-full overflow-x-visible bg-transparent text-md text-white"
+        style={{ height: "100%" }}
+      >
+        <div
+          className={`py-3 transition-all duration-200 ${
+            collapsed ? "px-1.5" : "px-1.5"
+          }`}
+        >
+          {menuItems.map((section, index) => (
+            <div key={index} className="mb-4 space-y-0.5">
+              {renderItems([
+                ...(section.heading ? [{ heading: section.heading }] : []),
+                ...(section.children || []),
+              ])}
+            </div>
+          ))}
+        </div>
+      </SimpleBar>
+    </div>
+  ); */
