@@ -278,13 +278,13 @@ const CompanySidebar = ({
       />
 
       {/* Background Overlay */}
-      <div
+      {/* <div
         className="absolute inset-0"
         style={{
           background:
             "linear-gradient(180deg, rgba(5, 20, 12, 0.78) 0%, rgba(5, 20, 12, 0.88) 100%)",
         }}
-      />
+      /> */}
 
       {/* =========================================
         Sidebar Brand / Logo Section
@@ -342,7 +342,7 @@ const CompanySidebar = ({
         min-h-0 flex-1
         overflow-x-visible
         bg-transparent
-        text-lg text-white
+        text-[16px] text-white
       "
         style={{ height: "auto" }}
       >
