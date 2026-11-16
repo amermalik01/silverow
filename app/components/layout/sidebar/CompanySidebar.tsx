@@ -130,7 +130,20 @@ const CompanySidebar = ({
           ${isSelected ? "bg-slate-900/50 font-semibold text-emerald-400" : isActive ? "bg-slate-800/40 text-white" : "text-slate-300"} hover:bg-slate-800/60 hover:text-white `;
 
       // const iconName = item.icon || "solar:widget-2-linear";
-      const iconName =
+      /* const icon =
+        level === 0 && item.icon ? (
+          <SidebarSvgIcon
+            src={item.icon}
+            size={level === 0 ? 20 : 18}
+            collapsed={collapsed}
+            className={`shrink-0 ${
+              isSelected
+                ? "text-emerald-400"
+                : "text-slate-400 group-hover:text-slate-200"
+            }`}
+          />
+        ) : null; */
+      /* const iconName =
         item.icon ||
         (hasChildren
           ? "solar:folder-with-files-linear"
@@ -143,18 +156,25 @@ const CompanySidebar = ({
           collapsed={collapsed}
           className={` shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
         />
-      );
+      ); */
 
-      // const icon = (
-      //   <Icon
-      //     icon={iconName}
-      //     width={level === 0 ? 18 : 16}
-      //     height={level === 0 ? 18 : 16}
-      //     // width={18}
-      //     // height={18}
-      //     className={` shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
-      //   />
-      // );
+      const iconName =
+        item.icon ||
+        (hasChildren
+          ? "solar:folder-with-files-linear"
+          : "");
+          // solar:record-circle-linear
+
+      const icon = (
+        <Icon
+          icon={iconName}
+          width={level === 0 ? 18 : 16}
+          height={level === 0 ? 18 : 16}
+          // width={18}
+          // height={18}
+          className={` shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
+        />
+      );
 
       const label = (
         <span
@@ -342,7 +362,7 @@ const CompanySidebar = ({
         min-h-0 flex-1
         overflow-x-visible
         bg-transparent
-        text-md text-white
+        text-[16px] text-white
       "
         style={{ height: "auto" }}
       >

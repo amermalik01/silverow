@@ -211,7 +211,7 @@ const CompanyHeader = () => {
       <header
         className=" h-16 shrink-0 border-b text-white"
         style={{
-          backgroundColor: "#0d2f19",
+          backgroundColor: "#fff",
         }}
       >
         {/* #103701 0d2f19 */}
@@ -298,8 +298,8 @@ const CompanyHeader = () => {
                     rounded-full transition
                     ${
                       managementOpen
-                        ? "bg-white/15 text-white"
-                        : "text-white/80 hover:bg-white/10 hover:text-white"
+                        ? "bg-white/15 text-black"
+                        : "text-black/80 hover:bg-white/10 hover:text-white"
                     }
                   `}
                   title="Management"
@@ -371,7 +371,7 @@ const CompanyHeader = () => {
               </div>
 
               {/* Separator */}
-              <div className="mx-1 h-8 w-px bg-white/20" />
+              <div className="mx-1 h-8 w-px bg-black/20" />
 
               {/* Profile */}
               <Profile />
