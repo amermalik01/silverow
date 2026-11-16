@@ -121,8 +121,8 @@ export const Login = () => {
         {/* bg-[url('/images/logos/nevico-login-bg-1.png')] */}
         {/* bg-lightprimary */}
         {/* <div className="md:min-w-[480px] min-w-max "> */}
-        <div className="w-full sm:max-w-[480px] md:max-w-[520px] ">
-          <CardBox
+        <div className="w-full sm:max-w-[480px] md:max-w-[520px] ">{/* CardBox */}
+          <div
             className="
             w-full
             rounded-3xl
@@ -157,7 +157,7 @@ export const Login = () => {
                 */}
 
                 <Image
-                  src="/images/logos/nevico-logo-3.png"
+                  src="/images/logos/login-logo.png"
                   alt="logo"
                   width={240}
                   height={24}
@@ -194,13 +194,13 @@ export const Login = () => {
 
               <div>
                 <span className="text-xs font-bold tracking-widest text-emerald-800 uppercase block mb-1">
-                  Go Beyond With Silvin{/* SILVEROW */}
+                  {/* Go Beyond With Silvin */} ALL-IN-ONE BUSINESS MANAGEMENT
                 </span>
                 {/* <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
                   Welcome Back
                 </h1> */}
                 <h2 className=" text-center text-xl font-semibold text-slate-800">
-                  Take full control of your business
+                  Business Made Simple
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">
                   Sign in to continue to your workspace
@@ -333,7 +333,7 @@ export const Login = () => {
               </Button>
               {/* </div> */}
             </form>
-          </CardBox>
+          </div>
 
           {/* Bottom Modules Section */}
           <div className="mt-8 text-center">
