@@ -271,7 +271,7 @@ const CompanySidebar = ({
       <div
         className="absolute inset-0 bg-no-repeat"
         style={{
-          backgroundImage: "url('/images/logos/Silvin_sidebar_bg.png')",
+          backgroundImage: "url('/images/logos/Silvin_sidebar_bg-1.png')",
           backgroundSize: collapsed ? "auto 100%" : "cover",
           backgroundPosition: "center top",
         }}
