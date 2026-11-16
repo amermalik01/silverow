@@ -23,7 +23,7 @@ export default async function CompanyDashboard()  {
         <div>Company Admin Dashboard</div>
 
         <div className="col-span-12">
-          <TopCards />
+          {/* <TopCards /> */}
         </div>
         <div className="lg:col-span-8 col-span-12">
           <SalesOverview />

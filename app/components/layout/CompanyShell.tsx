@@ -14,7 +14,8 @@ export default function CompanyShell({ children }: CompanyShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="h-screen overflow-hidden bg-background bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] flex flex-col">
+    <div className="h-screen overflow-hidden  flex flex-col">
+      {/* bg-background bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] */}
       <div className="shrink-0 h-16">
         <CompanyHeader
           sidebarCollapsed={sidebarCollapsed}
