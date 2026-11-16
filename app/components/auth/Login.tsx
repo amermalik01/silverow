@@ -98,7 +98,8 @@ export const Login = () => {
     {
       // icon: "material-symbols:mail-outline-rounded",
       icon: "solar:users-group-two-rounded-linear",
-      title: "Human Resources",
+      // title: "Human Resources",
+      title: "HR",
       // title: "Mail",
     },
   ];
@@ -185,10 +186,10 @@ export const Login = () => {
                 {/* <span className="text-xs font-bold tracking-widest text-emerald-800 uppercase block mb-1">
                    Go Beyond With Silvin  ALL-IN-ONE BUSINESS MANAGEMENT
                 </span> */}
-                <h2 className=" text-center text-xl font-semibold text-slate-800">
+                <h2 className=" text-center text-2xl font-semibold text-slate-800">
                   Business Made Simple
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                <p className="text-lg sm:text-lg text-slate-500 mt-1">
                   Sign in to your workspace
                 </p>{/* to continue */}
               </div>
@@ -221,7 +222,7 @@ export const Login = () => {
                 <div>
                   <Label
                     htmlFor="email1"
-                    className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-700"
+                    className="mb-1.5 block text-lg  text-slate-700 dark:text-slate-700"
                   >
                     Email
                   </Label>
@@ -237,6 +238,7 @@ export const Login = () => {
                         h-12
                         pl-11
                         rounded-md
+                        text-[16px]
                         border-slate-200
                         bg-slate-50/80
                         focus:bg-white
@@ -258,7 +260,7 @@ export const Login = () => {
                 <div>
                   <Label
                     htmlFor="password1"
-                    className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-700"
+                    className="mb-1.5 block text-lg  text-slate-700 dark:text-slate-700"
                   >
                     Password
                   </Label>
@@ -281,6 +283,7 @@ export const Login = () => {
                       focus:ring-4
                       focus:ring-emerald-100
                       transition-all
+                      text-[16px]
                     "
                     id="password1"
                     type="password"
@@ -299,6 +302,7 @@ export const Login = () => {
                     w-full
                     h-12
                     mt-2
+                    text-lg
                     rounded-md
                     bg-emerald-700
                     hover:bg-emerald-800
@@ -346,10 +350,11 @@ export const Login = () => {
                   hover:bg-slate-900/60
                   hover:-translate-y-0.5
                   shadow-sm
+                  
                 "
                 >
-                  <Icon icon={item.icon} className="text-xl text-emerald-300" />
-                  <span className="mt-1.5 text-[11px] font-medium text-slate-100">
+                  <Icon icon={item.icon} className="text-2xl text-emerald-300" />
+                  <span className="mt-1.5 text-[16px] font-medium text-slate-100">
                     {item.title}
                   </span>
                 </div>

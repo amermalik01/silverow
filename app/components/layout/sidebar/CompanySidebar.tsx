@@ -342,7 +342,7 @@ const CompanySidebar = ({
         min-h-0 flex-1
         overflow-x-visible
         bg-transparent
-        text-md text-white
+        text-lg text-white
       "
         style={{ height: "auto" }}
       >

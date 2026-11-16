@@ -235,7 +235,7 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
 
       {
         id: "Human Resources",
-        name: "Human Resources",
+        name: "HR",
         icon: "/images/side-bar/finance.svg",
         // icon: "solar:users-group-two-rounded-linear",
         children: [
