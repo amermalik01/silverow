@@ -2,18 +2,15 @@
 
 import SupportTicketListView from "@/app/components/sales/tickets/SupportTicketListView";
 
-type Props = {
-  params: Promise<{
-    slug: string;
-  }>;
-};
-
-export default async function SupportTicketPage({ params }: Props) {
+export default async function SupportTicketPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
-
   return (
-    <div>
-      <SupportTicketListView slug={slug} />
-    </div>
+    <SupportTicketListView
+      slug={slug}
+    />
   );
 }

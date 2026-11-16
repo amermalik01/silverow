@@ -1,13 +1,224 @@
-// /app/components/sales/tickets/SupportTicketListView.tsx
+// app/components/sales/tickets/SupportTicketListView.tsx
 
 "use client";
+
+import { useCallback, useMemo } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+import { DataTable } from "@/app/components/DataTable/DataTable";
+import { supportTicketsColumnsConfig } from "@/lib/constants/table-configs/support-tickets";
+import { supportTicketCellRenderer } from "./supportTicketCellRenderers";
+
+import type { SupportTicketStage } from "@/lib/validations/support-ticket.schema";
+
+import type { ColumnConfig, FetchParams, FetchResponse } from "@/types/table";
+import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+
+type Props = {
+  slug: string;
+};
+
+type SupportTicketListRow = {
+  id: string;
+  ticket_no: string;
+  customer_no: string;
+  customer_name: string;
+  open_date: string;
+  close_date: string | null;
+  status: SupportTicketStage;
+  apply_to_si: string | null;
+  apply_to_item: string | null;
+  ref_no: string | null;
+  batch_frame_no: string | null;
+  cust_order_no: string | null;
+  city: string | null;
+  docs_attached: number;
+};
+
+export default function SupportTicketListView({ slug }: Props) {
+  const fetchTickets = useCallback(
+    async (
+      params: FetchParams,
+    ): Promise<FetchResponse<SupportTicketListRow>> => {
+      const response = await fetch("/api/sales/support-tickets/listing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        const result: unknown = await response.json().catch(() => null);
+
+        const message =
+          typeof result === "object" &&
+          result !== null &&
+          "error" in result &&
+          typeof result.error === "string"
+            ? result.error
+            : "Failed to load support tickets.";
+
+        throw new Error(message);
+      }
+
+      return (await response.json()) as FetchResponse<SupportTicketListRow>;
+    },
+    [],
+  );
+
+  const columnsConfigApi = useMemo(
+    () => ({
+      get: async (moduleKey: string): Promise<ColumnConfig[]> => {
+        const response = await fetch(
+          `/api/table-config?moduleKey=${encodeURIComponent(moduleKey)}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to load table configuration.");
+        }
+
+        const result: unknown = await response.json();
+
+        if (Array.isArray(result)) {
+          return result as ColumnConfig[];
+        }
+
+        if (
+          typeof result === "object" &&
+          result !== null &&
+          "columns" in result &&
+          Array.isArray(result.columns)
+        ) {
+          return result.columns as ColumnConfig[];
+        }
+
+        return supportTicketsColumnsConfig;
+      },
+
+      save: async (
+        moduleKey: string,
+        columns: ColumnConfig[],
+      ): Promise<void> => {
+        const response = await fetch("/api/table-config", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            moduleKey,
+            columns,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save table configuration.");
+        }
+      },
+
+      reset: async (moduleKey: string): Promise<ColumnConfig[]> => {
+        const response = await fetch("/api/table-config/reset", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            moduleKey,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to reset table configuration.");
+        }
+
+        const result: unknown = await response.json();
+
+        if (Array.isArray(result)) {
+          return result as ColumnConfig[];
+        }
+
+        if (
+          typeof result === "object" &&
+          result !== null &&
+          "columns" in result &&
+          Array.isArray(result.columns)
+        ) {
+          return result.columns as ColumnConfig[];
+        }
+
+        return supportTicketsColumnsConfig;
+      },
+    }),
+    [],
+  );
+
+  const renderRowCell = useCallback(
+    (row: SupportTicketListRow, columnKey: string) =>
+      supportTicketCellRenderer({
+        ticket: row,
+        columnKey,
+        slug,
+      }),
+    [slug],
+  );
+
+  return (
+    <div className="space-y-4">
+      <Breadcrumbs
+        items={[
+          {
+            label: `Support Tickets`,
+          },
+        ]}
+      />
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-slate-800/80 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            Support Tickets
+          </h2>
+          <p className="text-xs text-slate-500">
+            Manage support tickets records.
+          </p>
+        </div>
+
+        <Button
+          asChild
+          size="sm"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-sm gap-1.5"
+        >
+          <Link href={`/${slug}/sales/support-ticket/new`}>+ Create</Link>
+        </Button>
+      </div>
+
+      <div className="rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <DataTable<SupportTicketListRow>
+          moduleKey="support_tickets"
+          fetchApi={fetchTickets}
+          columnsConfigApi={columnsConfigApi}
+          renderRowCell={renderRowCell}
+          rowKey="id"
+          enableRowSelection
+        />
+      </div>
+    </div>
+  );
+}
+
+/* "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
-import { SupportTicket } from "./SupportTicketFormView";
+// import { SupportTicket } from "./SupportTicketFormView";
 import { Button } from "@/components/ui/button";
+import { SupportTicket } from "@/types/support-ticket";
 
 type Props = {
   slug: string;
@@ -67,15 +278,15 @@ export default function SupportTicketListView({ slug }: Props) {
           setTickets(data || []);
         } else {
           // Fallback static visualization data matching screenshot properties if api isn't bound yet
-          setTickets([
-            { ticket_no: "ST0033", customer_no: "CU0120", customer_name: "E-Bikes Direct", open_date: "2026-01-28", close_date: "2026-01-28", apply_to_si: "SI4911", apply_to_item: "HY0243 - Hygge Vester Step25 - Heron White", ref_no: "GL10GI-709", status: "Open", city: "Bodiam", country: "UK" },
-            { ticket_no: "ST0032", customer_no: "CU0145", customer_name: "Apex Wheels", open_date: "2026-01-26", close_date: "2026-01-26", apply_to_si: "", apply_to_item: "", ref_no: "", status: "In Progress", city: "London", country: "UK" },
-            { ticket_no: "ST0031", customer_no: "CU0092", customer_name: "Velocipede Traders", open_date: "2026-01-13", close_date: "2026-01-26", apply_to_si: "SI4494", apply_to_item: "HY0238 - Hygge Vester", ref_no: "GL10GI-798", status: "Waiting Return", city: "Manchester", country: "UK" },
-            { ticket_no: "ST0030", customer_no: "CU0120", customer_name: "E-Bikes Direct", open_date: "2026-01-19", close_date: "2026-01-19", apply_to_si: "", apply_to_item: "", ref_no: "", status: "Repair", city: "Bodiam", country: "UK" },
-            { ticket_no: "ST0029", customer_no: "CU0301", customer_name: "Volt Logistics", open_date: "2026-01-16", close_date: "2026-01-16", apply_to_si: "SI4938", apply_to_item: "HY0239 - Hygge", ref_no: "", status: "Closed", city: "Bristol", country: "UK" },
-            { ticket_no: "ST0028", customer_no: "CU0210", customer_name: "Cycle Dynamics", open_date: "2026-01-14", close_date: "2026-01-14", apply_to_si: "SI5560", apply_to_item: "HY0024 - Hygge", ref_no: "", status: "Closed", city: "Leeds", country: "UK" },
-            { ticket_no: "ST0027", customer_no: "CU0111", customer_name: "Eco Motion Ltd", open_date: "2025-03-20", close_date: "2025-03-20", apply_to_si: "SI2754", apply_to_item: "HY0114 - Hygge", ref_no: "", status: "Closed", city: "Glasgow", country: "UK" },
-          ]);
+          // setTickets([
+          //   { ticket_no: "ST0033", customer_no: "CU0120", customer_name: "E-Bikes Direct", open_date: "2026-01-28", close_date: "2026-01-28", apply_to_si: "SI4911", apply_to_item: "HY0243 - Hygge Vester Step25 - Heron White", ref_no: "GL10GI-709", status: "Open", city: "Bodiam", country: "UK" },
+          //   { ticket_no: "ST0032", customer_no: "CU0145", customer_name: "Apex Wheels", open_date: "2026-01-26", close_date: "2026-01-26", apply_to_si: "", apply_to_item: "", ref_no: "", status: "In Progress", city: "London", country: "UK" },
+          //   { ticket_no: "ST0031", customer_no: "CU0092", customer_name: "Velocipede Traders", open_date: "2026-01-13", close_date: "2026-01-26", apply_to_si: "SI4494", apply_to_item: "HY0238 - Hygge Vester", ref_no: "GL10GI-798", status: "Waiting Return", city: "Manchester", country: "UK" },
+          //   { ticket_no: "ST0030", customer_no: "CU0120", customer_name: "E-Bikes Direct", open_date: "2026-01-19", close_date: "2026-01-19", apply_to_si: "", apply_to_item: "", ref_no: "", status: "Repair", city: "Bodiam", country: "UK" },
+          //   { ticket_no: "ST0029", customer_no: "CU0301", customer_name: "Volt Logistics", open_date: "2026-01-16", close_date: "2026-01-16", apply_to_si: "SI4938", apply_to_item: "HY0239 - Hygge", ref_no: "", status: "Closed", city: "Bristol", country: "UK" },
+          //   { ticket_no: "ST0028", customer_no: "CU0210", customer_name: "Cycle Dynamics", open_date: "2026-01-14", close_date: "2026-01-14", apply_to_si: "SI5560", apply_to_item: "HY0024 - Hygge", ref_no: "", status: "Closed", city: "Leeds", country: "UK" },
+          //   { ticket_no: "ST0027", customer_no: "CU0111", customer_name: "Eco Motion Ltd", open_date: "2025-03-20", close_date: "2025-03-20", apply_to_si: "SI2754", apply_to_item: "HY0114 - Hygge", ref_no: "", status: "Closed", city: "Glasgow", country: "UK" },
+          // ]);
         }
       } catch (err) {
         console.error("Could not fetch tickets dynamic payload:", err);
@@ -154,7 +365,7 @@ export default function SupportTicketListView({ slug }: Props) {
   return (
     <div className="space-y-3 p-1 text-black dark:text-white ">
       
-      {/* Top Main Command Header Strip */}
+
       <div className="flex justify-between items-center bg-transparent border-b pb-2">
         <div className="flex items-center gap-1">
           <span className="text-xs font-semibold text-slate-500 capitalize tracking-wider">Sales</span>
@@ -174,7 +385,7 @@ export default function SupportTicketListView({ slug }: Props) {
         </Button>
       </div>
 
-      {/* Ribbon Toolbar Quick Configuration Icons */}
+
       <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400 pb-1">
         <button type="button" className="p-1 border bg-white dark:bg-slate-800 rounded hover:bg-slate-100 dark:hover:bg-slate-700" title="Grid Config">
           <Icon icon="tabler:settings" className="w-4 h-4 text-emerald-700" />
@@ -193,14 +404,14 @@ export default function SupportTicketListView({ slug }: Props) {
         </button>
       </div>
 
-      {/* Main Table Grid Canvas Matrix Frame Container */}
+
       <div className="border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left table-fixed text-xs min-w-[1800px]">
-            {/* Header Matrix Configuration Layer Row */}
+
             <thead className="bg-emerald-800 dark:bg-emerald-950 text-white select-none font-bold text-[11px]">
               <tr>
-                {/* CHECKBOX CELL HEAD */}
+      
                 <th className="p-1.5 w-10 text-center border-r border-emerald-700/50">
                   <input
                     type="checkbox"
@@ -226,17 +437,17 @@ export default function SupportTicketListView({ slug }: Props) {
                 <th className="p-1.5 w-28">City</th>
               </tr>
 
-              {/* FILTER INPUT MATRIX ROW - Directly maps structure from screenshot */}
+       
               <tr className="bg-emerald-900/60 dark:bg-emerald-950/80 border-t border-emerald-800">
                 <td className="p-1 border-r border-emerald-700/40 text-center">-</td>
                 
-                {/* Open Date Split Input Block */}
+       
                 <td className="p-1 border-r border-emerald-700/40 space-y-0.5">
                   <input type="text" placeholder="From" className={headerFilterInputStyle} value={filters.open_date_from} onChange={(e) => handleFilterChange("open_date_from", e.target.value)} />
                   <input type="text" placeholder="To" className={headerFilterInputStyle} value={filters.open_date_to} onChange={(e) => handleFilterChange("open_date_to", e.target.value)} />
                 </td>
 
-                {/* Close Date Split Input Block */}
+          
                 <td className="p-1 border-r border-emerald-700/40 space-y-0.5">
                   <input type="text" placeholder="From" className={headerFilterInputStyle} value={filters.close_date_from} onChange={(e) => handleFilterChange("close_date_from", e.target.value)} />
                   <input type="text" placeholder="To" className={headerFilterInputStyle} value={filters.close_date_to} onChange={(e) => handleFilterChange("close_date_to", e.target.value)} />
@@ -255,7 +466,7 @@ export default function SupportTicketListView({ slug }: Props) {
                   <input type="text" className={headerFilterInputStyle} value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)} />
                 </td>
                 
-                {/* Docs. Attached Tracker Filter Placeholder */}
+      
                 <td className="p-1 border-r border-emerald-700/40 space-y-0.5">
                   <input type="text" placeholder="From" className={headerFilterInputStyle} disabled />
                   <input type="text" placeholder="To" className={headerFilterInputStyle} disabled />
@@ -282,7 +493,7 @@ export default function SupportTicketListView({ slug }: Props) {
               </tr>
             </thead>
 
-            {/* Content Rendering Grid Array Stream */}
+       
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
               {loading ? (
                 <tr>
@@ -346,7 +557,7 @@ export default function SupportTicketListView({ slug }: Props) {
         </div>
       </div>
 
-      {/* Bottom Drawer Control Pagination Dashboard Bar Component */}
+
       <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500">
         <div className="flex items-center gap-1">
           <span className="text-emerald-700 font-bold">{filteredTickets.length}</span>
@@ -371,7 +582,7 @@ export default function SupportTicketListView({ slug }: Props) {
             </select>
           </div>
 
-          {/* Navigation Control Buttons */}
+
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -396,4 +607,4 @@ export default function SupportTicketListView({ slug }: Props) {
 
     </div>
   );
-}
+} */

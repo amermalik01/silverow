@@ -739,6 +739,44 @@ export default function GeneralTab({
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-3 gap-2 items-center">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  {account.is_crm_lead || account.is_customer
+                    ? "Buying Group"
+                    : "Purchasing Group"}
+                </label>
+                <div className="col-span-2">
+
+                  <SelectWithAddModal
+                    disabled={isReadonly}
+                    value={account.buying_group_id || ""}
+                    onChange={(val) => updateField("buying_group_id", val)}
+                    items={buyingGroups}
+                    placeholder="Select  Group..."
+                    apiEndpoint={`/api/setup/sales/buying_groups`}
+                    onItemAdded={(newItem) =>
+                      setBuyingGroups((prev) => [...prev, newItem])
+                    }
+                    className={getInputClass("general.buying_group_id")}
+                  />
+                  {/* <select
+                    disabled={isReadonly}
+                    value={account.buying_group_id || ""}
+                    onChange={(e) =>
+                      updateField("buying_group_id", e.target.value)
+                    }
+                    className={getInputClass("general.buying_group_id")}
+                  >
+                    <option value="">Select Group Allocation...</option>
+                    {buyingGroups.map((bg) => (
+                      <option key={bg.id} value={bg.id}>
+                        {bg.name}
+                      </option>
+                    ))}
+                  </select> */}
+                </div>
+              </div>
               {/* <div className="grid grid-cols-3 gap-2 items-center">
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   No. Of Employee(s)
@@ -896,28 +934,7 @@ export default function GeneralTab({
             </div>
           </div>
 
-          {/* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              {account.is_crm_lead || account.is_customer
-                ? "Buying Group"
-                : "Selling Group"}
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={isReadonly}
-                value={account.buying_group_id || ""}
-                onChange={(e) => updateField("buying_group_id", e.target.value)}
-                className={getInputClass("general.buying_group_id")}
-              >
-                <option value="">Select Group Allocation...</option>
-                {buyingGroups.map((bg) => (
-                  <option key={bg.id} value={bg.id}>
-                    {bg.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          {/* 
 
           <div className="grid grid-cols-3 gap-2 items-center">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">

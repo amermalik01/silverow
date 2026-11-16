@@ -16,6 +16,8 @@ import { suppliersConfig } from "./suppliers";
 import { CRM_LeadConfig } from "./crm_leads";
 import { customersConfig } from "./customers";
 
+import { supportTicketsColumnsConfig } from "./support-tickets";
+
 import { salesQuotesConfig } from "./sales-quotes";
 import { salesOrdersConfig } from "./sales-orders";
 import { salesInvoicesConfig } from "./sales-invoices";
@@ -55,6 +57,7 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   stock_transfer_orders: stockTransferColumnsConfig,
 
   parties: partyColumnsConfig,
+  support_tickets: supportTicketsColumnsConfig,  
 
   srm_vendors: SRM_VendorsConfig,
   suppliers: suppliersConfig,

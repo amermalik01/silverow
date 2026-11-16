@@ -31,7 +31,7 @@ const COSTING_OPTIONS: {
   label: string;
 }[] = [
   { value: "FIFO", label: "First In, First Out (FIFO)" },
-  { value: "LIFO", label: "last In, First Out (LIFO)" },
+  { value: "LIFO", label: "Last In, First Out (LIFO)" },
   { value: "WEIGHTED_AVERAGE", label: "Weighted Average" },
   { value: "STANDARD", label: "Standard Costing" },
 ];

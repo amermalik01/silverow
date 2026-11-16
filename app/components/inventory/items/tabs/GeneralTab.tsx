@@ -114,9 +114,9 @@ export default function GeneralTab({
                 items={categories}
                 placeholder="Select Category"
                 apiEndpoint="/api/setup/inventory/categories"
-                additionalFields={[
-                  { name: "code", label: "Category Code", type: "text" },
-                ]}
+                // additionalFields={[
+                //   { name: "code", label: "Category Code", type: "text" },
+                // ]}
                 onItemAdded={(newCat) =>
                   setCategories((prev) => [...prev, newCat])
                 }
@@ -170,9 +170,9 @@ export default function GeneralTab({
                 items={brands}
                 placeholder="Select Brand"
                 apiEndpoint="/api/setup/inventory/brands"
-                additionalFields={[
-                  { name: "code", label: "Brand Code", type: "text" },
-                ]}
+                // additionalFields={[
+                //   { name: "code", label: "Brand Code", type: "text" },
+                // ]}
                 onItemAdded={(newBrand) =>
                   setBrands((prev) => [...prev, newBrand])
                 }
@@ -261,13 +261,13 @@ export default function GeneralTab({
                 items={uoms}
                 placeholder="Select UOM"
                 apiEndpoint="/api/setup/inventory/uoms"
-                additionalFields={[
-                  {
-                    name: "code",
-                    label: "UOM Code (e.g., PCS, KG)",
-                    type: "text",
-                  },
-                ]}
+                // additionalFields={[
+                //   {
+                //     name: "code",
+                //     label: "UOM Code (e.g., PCS, KG)",
+                //     type: "text",
+                //   },
+                // ]}
                 onItemAdded={(newUom) => setUoms((prev) => [...prev, newUom])}
                 className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-xs"
               />
