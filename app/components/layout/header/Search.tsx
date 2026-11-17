@@ -297,7 +297,7 @@ const Search = () => {
           ref={inputRef}
           type="text"
           value={query}
-          placeholder="Search anything..."
+          placeholder="Search in modules (Orders, Invoices, Customer, Suppliers, Items... etc)"
           autoComplete="off"
           onFocus={() => setIsOpen(true)}
           onChange={(event) => {
