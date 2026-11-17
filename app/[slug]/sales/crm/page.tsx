@@ -11,7 +11,8 @@ export default async function CRMPage({
   return (
     <PartyList
       slug={slug}
-      title="CRM Prospects & Leads"
+      // title="CRM Prospects & Leads"
+      title="Prospects"
       moduleKey="crm_leads"
       roleFlag="is_crm_lead"
       basePath="sales/crm"
@@ -19,14 +20,3 @@ export default async function CRMPage({
   );
 }
 
-/* export default function CRMPage() {
-  return (
-    <div>
-      <PartyList
-        title="CRM Prospects & Leads"
-        roleFlag="is_crm_lead"
-        basePath="./crm"
-      />
-    </div>
-  );
-} */

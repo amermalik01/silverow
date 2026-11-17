@@ -884,12 +884,12 @@ export const SalesOrderForm: React.FC<Props> = ({
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-[11px] bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
 
   const inputStyle =
-    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const inputDateStyle =
-    "w-full border col-span-8 border-slate-300 dark:border-slate-700  rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700  rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
 
   const labelStyle =
-    "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
+    "block text-sm  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
 
   return (
     <div className="space-y-4">
@@ -919,7 +919,7 @@ export const SalesOrderForm: React.FC<Props> = ({
           {validationErrors.map((err, idx) => (
             <p
               key={idx}
-              className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1"
+              className="text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-1"
             >
               <Icon icon="tabler:alert-circle" className="inline w-3.5 h-3.5" />{" "}
               {err}
@@ -929,7 +929,7 @@ export const SalesOrderForm: React.FC<Props> = ({
       )}
 
       {isCompleted && (
-        <div className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+        <div className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Icon icon="tabler:lock" className="w-4 h-4 text-emerald-600" />
             This Sales Order is <strong>Completed / Fully Posted</strong> and
@@ -958,7 +958,7 @@ export const SalesOrderForm: React.FC<Props> = ({
                 type="button"
                 onClick={() => setActiveTab(tab)}
                 // onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-xs font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap ${
+                className={`px-4 py-2 text-sm font-bold capitalize tracking-wider border-b-2 transition whitespace-nowrap ${
                   activeTab === tab
                     ? "border-emerald-600 text-emerald-600"
                     : "border-transparent text-slate-400 hover:text-slate-600"
@@ -980,7 +980,7 @@ export const SalesOrderForm: React.FC<Props> = ({
               return (
                 <div className="flex justify-end ml-auto overflow-x-auto">
                   <div
-                    className={`flex items-center min-w-max text-xs font-bold select-none ${
+                    className={`flex items-center min-w-max text-sm font-bold select-none ${
                       isUpdatingStatus ? "opacity-60 pointer-events-none" : ""
                     }`}
                   >
@@ -1103,7 +1103,7 @@ export const SalesOrderForm: React.FC<Props> = ({
           <div className="space-y-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
               <div>
-                <span className="text-xs font-semibold text-slate-500">
+                <span className="text-sm font-semibold text-slate-500">
                   Conversion Rate
                 </span>
               </div>
@@ -1124,10 +1124,10 @@ export const SalesOrderForm: React.FC<Props> = ({
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 items-center">
-              <span className="text-xs font-semibold text-slate-500">
+              <span className="text-sm font-semibold text-slate-500">
                 Amount Incl. VAT (LCY: {baseCurrencyCode})
               </span>
-              <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
+              <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-sm font-bold max-w-[100px] rounded">
                 {financials.amountInclVatLCY.toFixed(2)}
               </div>
             </div>
@@ -1189,7 +1189,7 @@ export const SalesOrderForm: React.FC<Props> = ({
         </div>
 
         <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 p-2 rounded-lg">
-          <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-4 text-sm font-medium text-slate-600 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />{" "}
               Partially Reserved

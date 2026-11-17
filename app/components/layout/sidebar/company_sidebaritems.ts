@@ -96,8 +96,8 @@ export const getCompanySidebarItems = (slug: string): MenuItem[] => [
         // icon: "/images/side-bar/sales.svg",
         children: [
           {
-            id: "CRM",
-            name: "CRM",
+            id: "Prospects",// CRM
+            name: "Prospects",
             // icon: "solar:users-group-rounded-linear",
             url: `/${slug}/sales/crm`,
           },
