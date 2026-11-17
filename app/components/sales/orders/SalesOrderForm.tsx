@@ -884,9 +884,9 @@ export const SalesOrderForm: React.FC<Props> = ({
     "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-[11px] bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
 
   const inputStyle =
-    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700 p-1.5 rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
   const inputDateStyle =
-    "w-full border col-span-8 border-slate-300 dark:border-slate-700  rounded text-sm bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
+    "w-full border col-span-8 border-slate-300 dark:border-slate-700  rounded text-xs bg-white dark:bg-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-950 text-slate-800 dark:text-slate-200";
 
   const labelStyle =
     "block text-xs  text-slate-500 dark:text-slate-400 mb-0.5  col-span-4";
@@ -1127,7 +1127,7 @@ export const SalesOrderForm: React.FC<Props> = ({
               <span className="text-xs font-semibold text-slate-500">
                 Amount Incl. VAT (LCY: {baseCurrencyCode})
               </span>
-              <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-sm font-bold max-w-[100px] rounded">
+              <div className="p-1.5 bg-white dark:bg-slate-950 text-end border border-slate-200 dark:border-slate-800 font-mono text-xs font-bold max-w-[100px] rounded">
                 {financials.amountInclVatLCY.toFixed(2)}
               </div>
             </div>
@@ -1189,7 +1189,7 @@ export const SalesOrderForm: React.FC<Props> = ({
         </div>
 
         <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 p-2 rounded-lg">
-          <div className="flex items-center gap-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />{" "}
               Partially Reserved

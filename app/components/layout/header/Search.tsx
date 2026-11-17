@@ -355,8 +355,8 @@ const Search = () => {
               dark:border-slate-700 dark:bg-slate-800
             "
           >
-            <Icon icon="solar:command-linear" width={12} />
-            <span>K</span>
+            {/* <Icon icon="solar:command-linear" width={12} /> */}
+            <span>Ctrl + K</span>
           </div>
         )}
       </div>

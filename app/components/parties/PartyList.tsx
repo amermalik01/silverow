@@ -91,7 +91,8 @@ export default function PartyList({
         <div>
           <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
           <p className="text-xs text-slate-500">
-            Manage directory records and system visibility configurations.
+            {title == "Prospects"?'Leads being consider for sales.':'Manage directory records and system visibility configurations.'}
+            
           </p>
         </div>
 
