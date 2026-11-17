@@ -76,7 +76,8 @@ export const Login = () => {
   const modules = [
     {
       // icon: "streamline:money-graph-analytics-business-product-graph-data-chart-analysis",
-      icon: "solar:wallet-money-linear",
+      // icon: "solar:wallet-money-linear",
+      icon:"iconmind:data-warehouse-outline-thin",
       title: "Finance",
     },
     {
@@ -87,7 +88,8 @@ export const Login = () => {
     },
     {
       // icon: "bx:purchase-tag-alt",
-      icon: "solar:shield-keyhole-minimalistic-linear",
+      // icon: "solar:shield-keyhole-minimalistic-linear",
+      icon: "ant-design:shopping-cart-outlined", 
       title: "Purchases",
     },
     {
@@ -97,7 +99,8 @@ export const Login = () => {
     },
     {
       // icon: "material-symbols:mail-outline-rounded",
-      icon: "solar:users-group-two-rounded-linear",
+      // icon: "solar:users-group-two-rounded-linear",
+      icon: "bi:people",
       // title: "Human Resources",
       title: "HR",
       // title: "Mail",
@@ -189,7 +192,7 @@ export const Login = () => {
                 {/* <h2 className=" text-center text-2xl font-semibold text-slate-800">
                   Business Made Simple
                 </h2> */}
-                <p className="text-lg sm:text-lg text-slate-500 mt-1">
+                <p className="text-[16px] text-slate-500 mt-1">
                   Sign in to your workspace
                 </p>{/* to continue */}
               </div>
@@ -302,7 +305,7 @@ export const Login = () => {
                     w-full
                     h-12
                     mt-2
-                    text-lg
+                    text-[16px]
                     rounded-md
                     bg-emerald-700
                     hover:bg-emerald-800
