@@ -159,7 +159,7 @@ export const Login = () => {
                 */}
 
                 <Image
-                  src="/images/logos/login-logo.png"
+                  src="/images/logos/silvin_login_logo.png"
                   alt="logo"
                   width={320}
                   height={36}
@@ -186,9 +186,9 @@ export const Login = () => {
                 {/* <span className="text-xs font-bold tracking-widest text-emerald-800 uppercase block mb-1">
                    Go Beyond With Silvin  ALL-IN-ONE BUSINESS MANAGEMENT
                 </span> */}
-                <h2 className=" text-center text-2xl font-semibold text-slate-800">
+                {/* <h2 className=" text-center text-2xl font-semibold text-slate-800">
                   Business Made Simple
-                </h2>
+                </h2> */}
                 <p className="text-lg sm:text-lg text-slate-500 mt-1">
                   Sign in to your workspace
                 </p>{/* to continue */}

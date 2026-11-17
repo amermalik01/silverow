@@ -298,8 +298,8 @@ const CompanyHeader = () => {
                     rounded-full transition
                     ${
                       managementOpen
-                        ? "bg-white/15 text-black"
-                        : "text-black/80 hover:bg-white/10 hover:text-white"
+                        ? "bg-black/15 text-black"
+                        : "text-black/80 hover:bg-black/10 hover:text-black"
                     }
                   `}
                   title="Management"
