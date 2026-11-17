@@ -72,15 +72,12 @@ export class SupportTicketService {
     return result.rows;
   }
 
-    static async listPaginated(
+  static async listPaginated(
     companyId: string,
     params: FetchParams,
   ): Promise<FetchResponse<SupportTicketListRecord>> {
     const page = Math.max(1, Number(params.page) || 1);
-    const pageSize = Math.min(
-      100,
-      Math.max(1, Number(params.pageSize) || 20),
-    );
+    const pageSize = Math.min(100, Math.max(1, Number(params.pageSize) || 20));
     const offset = (page - 1) * pageSize;
 
     const filters = params.filters ?? {};
@@ -142,8 +139,7 @@ export class SupportTicketService {
 
       const filterableFields: Record<string, string> = {
         ticket_no: "st.ticket_no",
-        customer_name:
-          "COALESCE(NULLIF(st.customer_name, ''), p.name, '')",
+        customer_name: "COALESCE(NULLIF(st.customer_name, ''), p.name, '')",
         status: "st.status::text",
         apply_to_si: "st.apply_to_si",
         apply_to_item: "st.apply_to_item",
@@ -162,10 +158,7 @@ export class SupportTicketService {
         }
       }
 
-      if (
-        columnKey === "open_date" ||
-        columnKey === "close_date"
-      ) {
+      if (columnKey === "open_date" || columnKey === "close_date") {
         const dateColumn =
           columnKey === "open_date" ? "st.open_date" : "st.close_date";
 
@@ -450,12 +443,12 @@ export class SupportTicketService {
         status: SupportTicketStage;
       }>(
         `
-        SELECT status
-        FROM support_tickets
-        WHERE id = $1
-          AND company_id = $2
-        FOR UPDATE
-        `,
+      SELECT status
+      FROM support_tickets
+      WHERE id = $1
+        AND company_id = $2
+      FOR UPDATE
+      `,
         [id, companyId],
       );
 
@@ -465,55 +458,65 @@ export class SupportTicketService {
         throw new Error("Support ticket not found.");
       }
 
+      // No update or history entry is needed when the stage is unchanged.
       if (existing.status === stage) {
         const unchangedResult = await client.query<SupportTicketRecord>(
           `
-          SELECT *
-          FROM support_tickets
-          WHERE id = $1 AND company_id = $2
-          `,
+        SELECT *
+        FROM support_tickets
+        WHERE id = $1
+          AND company_id = $2
+        `,
           [id, companyId],
         );
 
         await client.query("COMMIT");
+
         return unchangedResult.rows[0];
       }
 
       const updateResult = await client.query<SupportTicketRecord>(
         `
-        UPDATE support_tickets
-        SET
-          status = $1,
-          updated_by = $2,
-          updated_at = NOW(),
-          close_date = CASE
-            WHEN $1 = 'Closed' THEN COALESCE(close_date, CURRENT_DATE)
-            ELSE close_date
-          END
-        WHERE id = $3
-          AND company_id = $4
-        RETURNING *
-        `,
+      UPDATE support_tickets
+      SET
+        status = $1::VARCHAR(30),
+        updated_by = $2,
+        updated_at = NOW(),
+        close_date = CASE
+          WHEN $1::VARCHAR(30) = 'Closed'
+            THEN COALESCE(close_date, CURRENT_DATE)
+          ELSE close_date
+        END
+      WHERE id = $3
+        AND company_id = $4
+      RETURNING *
+      `,
         [stage, userId, id, companyId],
       );
 
+      const updatedTicket = updateResult.rows[0];
+
+      if (!updatedTicket) {
+        throw new Error("Support ticket not found.");
+      }
+
       await client.query(
         `
-        INSERT INTO support_ticket_status_history (
-          company_id,
-          support_ticket_id,
-          previous_status,
-          new_status,
-          changed_by
-        )
-        VALUES ($1, $2, $3, $4, $5)
-        `,
+      INSERT INTO support_ticket_status_history (
+        company_id,
+        support_ticket_id,
+        previous_status,
+        new_status,
+        changed_by
+      )
+      VALUES ($1, $2, $3, $4, $5)
+      `,
         [companyId, id, existing.status, stage, userId],
       );
 
       await client.query("COMMIT");
 
-      return updateResult.rows[0];
+      return updatedTicket;
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;

@@ -541,9 +541,9 @@ export default function SupportTicketFormView({
             noteCount={notes.length}
           />
 
-          <span className="pb-3 text-[10px] text-slate-400">
+          {/* <span className="pb-3 text-[10px] text-slate-400">
             {isUpdateMode ? "Existing ticket" : "New record"}
-          </span>
+          </span> */}
 
           {isUpdateMode && (
           <SupportTicketStatusFlow

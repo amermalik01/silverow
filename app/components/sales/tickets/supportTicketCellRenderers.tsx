@@ -70,7 +70,7 @@ export function supportTicketCellRenderer({
     case "ticket_no":
       return (
         <Link
-          href={`/${slug}/sales/support-ticket/${ticket.ticket_no}`}
+          href={`/${slug}/sales/support-ticket/${ticket.id}`}
           className="font-semibold text-emerald-700 hover:text-emerald-800 hover:underline dark:text-emerald-400 dark:hover:text-emerald-300"
           onClick={(event) => event.stopPropagation()}
         >

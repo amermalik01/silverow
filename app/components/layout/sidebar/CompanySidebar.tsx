@@ -127,9 +127,9 @@ const CompanySidebar = ({
       const isOpen = item.id != null && openMenus.includes(item.id);
 
       const rowClassName = ` relative flex w-full items-center rounded-md transition-all duration-150 group ${collapsed ? "justify-center px-0 py-2.5" : "gap-2.5 px-2 py-2"}
-          ${isSelected ? "bg-slate-900/50 font-semibold text-emerald-400" : isActive ? "bg-slate-800/40 text-white" : "text-slate-300"} hover:bg-slate-800/60 hover:text-white `;
+          ${isSelected ? "bg-emerald-600 font-semibold text-white" : isActive ? "bg-slate-800/40 text-white" : "text-slate-300"} hover:bg-slate-800/60 hover:text-white `;
 
-      // const iconName = item.icon || "solar:widget-2-linear";
+      // const iconName = item.icon || "solar:widget-2-linear"; bg-slate-900/50 font-semibold text-emerald-400
       /* const icon =
         level === 0 && item.icon ? (
           <SidebarSvgIcon
@@ -172,7 +172,8 @@ const CompanySidebar = ({
           height={level === 0 ? 18 : 16}
           // width={18}
           // height={18}
-          className={` shrink-0 ${isSelected ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200"}`}
+          className={` shrink-0 ${isSelected ? "text-white" : "text-white group-hover:text-white-200"}`}
+          // className={` shrink-0 ${isSelected ? "text-emerald-400" : "text-white group-hover:text-white-200"}`}
         />
       );
 
