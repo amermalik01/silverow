@@ -18,6 +18,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 import { getCompanySidebarItems } from "../sidebar/company_sidebaritems";
+import Search from "./Search";
 
 // interface CompanyHeaderProps {
 //   sidebarCollapsed?: boolean;
@@ -250,7 +251,35 @@ const CompanyHeader = () => {
           {/* =================================================
                   Mobile Actions
               ================================================= */}
-          <div
+
+          {/* Mobile Header */}
+
+          <div className="flex w-full items-center gap-2 xl:hidden">
+            <div className="flex shrink-0 items-center">
+              <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+                className="rounded-full p-2 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                aria-label="Open sidebar"
+              >
+                <Icon
+                  icon="tabler:menu-2"
+                  height={20}
+                  width={20}
+                  className="text-slate-700 dark:text-slate-200"
+                />
+              </button>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <Search />
+            </div>
+
+            <div className="flex shrink-0 items-center">
+              <Profile />
+            </div>
+          </div>
+          {/* <div
             className="
               flex
               xl:hidden
@@ -258,37 +287,181 @@ const CompanyHeader = () => {
               gap-1
             "
           >
-            {/* Theme */}
-            {/* <button
-              type="button"
-              onClick={toggleMode}
-              className="
-            p-2
-            rounded-full
-            hover:bg-white/10
-            transition
-          "
-              aria-label="Toggle theme"
-            >
-              <Icon
-                icon={
-                  theme === "light" ? "tabler:moon" : "solar:sun-bold-duotone"
-                }
-                width={20}
-              />
-            </button> */}
 
             <Profile />
-          </div>
+          </div> */}
 
           {/* ===============================================
+              Desktop Header
+          ================================================= */}
+
+          <div
+            className="
+              hidden xl:grid
+              w-full
+              grid-cols-[minmax(0,1fr)_minmax(360px,460px)_minmax(0,1fr)]
+              items-center
+              gap-4
+            "
+          >
+            {/* Left Spacer */}
+
+            <div />
+
+            {/* Center Search */}
+
+            <div className="flex w-full justify-center">
+              <Search />
+            </div>
+
+            {/* Right Side Actions */}
+
+            <div className="flex items-center justify-end gap-3">
+              <Notifications />
+
+              {/* Management Settings */}
+
+              <div ref={managementRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setManagementOpen((prev) => !prev)}
+                  className={`
+                    flex h-9 w-9 items-center justify-center
+                    rounded-full transition-colors
+                    ${
+                      managementOpen
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-emerald-600"
+                    }
+                    dark:text-slate-300
+                    dark:hover:bg-slate-800
+                    dark:hover:text-emerald-400
+                  `}
+                  title="Management"
+                  aria-label="Management"
+                  aria-expanded={managementOpen}
+                >
+                  <Icon icon="solar:settings-linear" width={20} height={20} />
+                </button>
+
+                {/* Management Dropdown */}
+
+                {managementOpen && (
+                  <div
+                    className="
+                      absolute right-0 top-full z-[100]
+                      mt-2 w-[300px]
+                      max-w-[calc(100vw-2rem)]
+                      overflow-hidden rounded-xl
+                      border border-slate-200
+                      bg-white shadow-2xl
+                      dark:border-slate-700
+                      dark:bg-[#11161D]
+                    "
+                  >
+                    <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="
+                            flex h-9 w-9 shrink-0 items-center
+                            justify-center rounded-lg
+                            bg-emerald-500/10 text-emerald-500
+                          "
+                        >
+                          <Icon
+                            icon="solar:settings-linear"
+                            width={19}
+                            height={19}
+                          />
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                            Management
+                          </div>
+
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            System configuration
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="max-h-[70vh] overflow-y-auto p-2">
+                      {managementItems.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {managementItems.map((item) => (
+                            <ManagementMenuItem
+                              key={item.id ?? item.name}
+                              item={item}
+                              pathname={pathname}
+                              defaultOpen={item.id === "Settings"}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-3 py-5 text-center text-xs text-slate-500">
+                          No management options available.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Separator */}
+
+              <div className="mx-1 h-8 w-px bg-slate-200 dark:bg-slate-700" />
+
+              {/* Profile */}
+
+              <Profile />
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      {/* =====================================================
+              Mobile Sidebar
+          ===================================================== */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent
+          side="left"
+          className="
+              w-64
+              p-0
+              bg-slate-950
+              border-r
+              border-slate-800
+              text-white
+            "
+        >
+          <VisuallyHidden>
+            <SheetTitle>Sidebar</SheetTitle>
+          </VisuallyHidden>
+
+          <SidebarLayout onClose={() => setIsOpen(false)} />
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+};
+
+export default CompanyHeader;
+
+{
+  /* ===============================================
                   Desktop Header - Right Side Actions
-              ================================================= */}
-          <div className=" hidden xl:flex items-center justify-end w-full">
+              ================================================= */
+}
+{
+  /* <div className=" hidden xl:flex items-center justify-end w-full">
             <div className="flex items-center gap-2">
-              {/* =============================================
-                      Management Settings
-                  ============================================= */}
+              <div className="relative">
+                <Search />
+              </div>
+
+              <Notifications />
               <div ref={managementRef} className="relative">
                 <button
                   type="button"
@@ -308,8 +481,6 @@ const CompanyHeader = () => {
                 >
                   <Icon icon="solar:settings-linear" width={20} height={20} />
                 </button>
-
-                {/* Management Dropdown */}
                 {managementOpen && (
                   <div
                     className="
@@ -370,44 +541,14 @@ const CompanyHeader = () => {
                 )}
               </div>
 
-              {/* Separator */}
+            
               <div className="mx-1 h-8 w-px bg-black/20" />
 
-              {/* Profile */}
+            
               <Profile />
             </div>
-          </div>
-        </nav>
-      </header>
-
-      {/* =====================================================
-              Mobile Sidebar
-          ===================================================== */}
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent
-          side="left"
-          className="
-              w-64
-              p-0
-              bg-slate-950
-              border-r
-              border-slate-800
-              text-white
-            "
-        >
-          <VisuallyHidden>
-            <SheetTitle>Sidebar</SheetTitle>
-          </VisuallyHidden>
-
-          <SidebarLayout onClose={() => setIsOpen(false)} />
-        </SheetContent>
-      </Sheet>
-    </>
-  );
-};
-
-export default CompanyHeader;
-
+          </div> */
+}
 /* 
           <div
             className="

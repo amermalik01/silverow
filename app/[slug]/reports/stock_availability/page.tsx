@@ -4,13 +4,17 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
+
 import {
   Search,
   RotateCcw,
   FileText,
   Download,
   FileSpreadsheet,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+
 import { Icon } from "@iconify/react";
 
 import ItemLookupModal, {
@@ -97,6 +101,8 @@ export default function StockAvailabilityReport() {
     "detailed",
   );
   const [byValue, setByValue] = useState<boolean>(false);
+
+  const [showAdditionalFilters, setShowAdditionalFilters] = useState(true);
 
   // Modal States
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -249,168 +255,237 @@ export default function StockAvailabilityReport() {
       />
 
       {/* Filter Board Container */}
-      <div className="bg-[#0b3310] text-white p-5 rounded-lg shadow-md space-y-4">
-        {validationError && (
-          <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-3 py-1.5 rounded text-xs font-medium">
-            ⚠️ {validationError}
-          </div>
-        )}
+      <div className="w-full flex justify-center">
+        <div className="w-full max-w-[1180px] bg-[#0b3310] text-white p-5 rounded-md shadow-md space-y-4">
+          {/* Validation Error */}
+          {validationError && (
+            <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-3 py-2 rounded text-xs font-medium">
+              ⚠️ {validationError}
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs items-center">
-          {/* Date */}
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">
-              Date <span className="text-red-400">*</span>
-            </label>
-            <DatePicker
-              value={asOfDate}
-              onChange={(d) => {
-                setAsOfDate(d);
-                if (d) setValidationError(null);
-              }}
-              className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none"
-            />
-          </div>
+          {/* Top Row */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            {/* Date */}
+            <div className="flex items-center gap-2 w-full sm:w-[285px]">
+              <label className="w-[115px] shrink-0 text-xs font-semibold">
+                Date <span className="text-red-400">*</span>
+              </label>
 
-          {/* Select Item(s) */}
-          <div className="flex flex-col gap-1 md:col-span-2">
-            <label className="font-semibold text-slate-200">
-              Select Item(s)
-            </label>
-            <div
-              className="relative cursor-pointer"
-              onClick={() => setIsItemModalOpen(true)}
+              <DatePicker
+                value={asOfDate}
+                onChange={(d) => {
+                  setAsOfDate(d);
+                  if (d) setValidationError(null);
+                }}
+                className="w-full bg-white text-slate-900 border border-slate-300 px-2 py-1 rounded text-xs"
+              />
+            </div>
+
+            {/* Additional Filters Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowAdditionalFilters((prev) => !prev)}
+              className="flex items-center gap-1 text-[11px] font-semibold text-white hover:text-emerald-300 whitespace-nowrap"
             >
-              <input
-                readOnly
-                placeholder="All Items Selected"
-                value={selectedItemsText}
-                className="w-full bg-white text-slate-800 rounded px-2.5 py-1.5 pr-8 focus:outline-none cursor-pointer text-xs"
-              />
-              <Icon
-                icon="tabler:external-link"
-                className="absolute right-2.5 top-2 w-4 h-4 text-slate-400 pointer-events-none"
-              />
+              Add Filter(s)
+              {showAdditionalFilters ? (
+                <ChevronUp className="h-3 w-3" />
+              ) : (
+                <ChevronDown className="h-3 w-3" />
+              )}
+            </button>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-1.5 ml-auto">
+              <Button
+                onClick={handleGenerateReport}
+                disabled={loading}
+                variant="save"
+                className="h-7 px-2.5 text-[11px]"
+              >
+                <Search className="h-3 w-3" />
+                {loading ? "Generating..." : "Generate Report"}
+              </Button>
+
+              <Button
+                onClick={handleClearFilters}
+                variant="cancel"
+                className="h-7 px-2.5 text-[11px]"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Clear Filter
+              </Button>
+
+              {/* Export Menu */}
+              {/* <div className="relative">
+                <button
+                  type="button"
+                  disabled={reportData.length === 0}
+                  onClick={() => setExportMenuOpen((prev) => !prev)}
+                  className="h-7 px-2.5 flex items-center gap-1 text-[11px] font-semibold text-white hover:text-emerald-300 disabled:opacity-40"
+                >
+                  Export As
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+
+                {exportMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-slate-200 rounded-md shadow-lg z-30 py-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={exportToExcel}
+                      className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                    >
+                      <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                      Excel (.xlsx)
+                    </button>
+                  </div>
+                )}
+              </div> */}
             </div>
           </div>
 
-          {/* Select Warehouse */}
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">
-              Select Warehouse
-            </label>
-            <div
-              className="relative cursor-pointer"
-              onClick={() => setIsWarehouseModalOpen(true)}
-            >
-              <input
-                readOnly
-                placeholder="All Warehouses"
-                value={selectedWarehousesText}
-                className="w-full bg-white text-slate-800 rounded px-2.5 py-1.5 pr-8 focus:outline-none cursor-pointer text-xs"
-              />
-              <Icon
-                icon="tabler:external-link"
-                className="absolute right-2.5 top-2 w-4 h-4 text-slate-400 pointer-events-none"
-              />
+          {/* Additional Filters */}
+          {showAdditionalFilters && (
+            <div className="space-y-2.5 pt-1">
+              {/* Select Items */}
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="w-[115px] shrink-0 text-xs font-semibold">
+                  Select Item(s)
+                </label>
+
+                <div
+                  className="relative w-full sm:w-[335px] cursor-pointer"
+                  onClick={() => setIsItemModalOpen(true)}
+                >
+                  <input
+                    readOnly
+                    placeholder="All Items Selected"
+                    value={selectedItemsText}
+                    className="h-[29px] w-full bg-white text-slate-800 rounded border border-slate-300 px-2.5 pr-8 text-xs cursor-pointer focus:outline-none"
+                  />
+
+                  <Icon
+                    icon="tabler:external-link"
+                    className="absolute right-2 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+                  />
+                </div>
+              </div>
+
+              {/* Select Warehouse */}
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="w-[115px] shrink-0 text-xs font-semibold">
+                  Select Warehouse
+                </label>
+
+                <div
+                  className="relative w-full sm:w-[335px] cursor-pointer"
+                  onClick={() => setIsWarehouseModalOpen(true)}
+                >
+                  <input
+                    readOnly
+                    placeholder="All Warehouses"
+                    value={selectedWarehousesText}
+                    className="h-[29px] w-full bg-white text-slate-800 rounded border border-slate-300 px-2.5 pr-8 text-xs cursor-pointer focus:outline-none"
+                  />
+
+                  <Icon
+                    icon="tabler:external-link"
+                    className="absolute right-2 top-1.5 w-4 h-4 text-slate-400 pointer-events-none"
+                  />
+                </div>
+              </div>
+
+              {/* Purchases and Sales */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <label className="w-[115px] shrink-0 text-xs font-semibold">
+                    Purchases
+                  </label>
+
+                  <select
+                    value={purchasesDateType}
+                    onChange={(e) => setPurchasesDateType(e.target.value)}
+                    className="h-[29px] w-[165px] bg-white text-slate-900 border border-slate-300 px-2 rounded text-xs focus:outline-none"
+                  >
+                    <option value="Invoice Date">Invoice Date</option>
+                    <option value="Receipt Date">Receipt Date</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-semibold">Sales</label>
+
+                  <select
+                    value={salesDateType}
+                    onChange={(e) => setSalesDateType(e.target.value)}
+                    className="h-[29px] w-[165px] bg-white text-slate-900 border border-slate-300 px-2 rounded text-xs focus:outline-none"
+                  >
+                    <option value="Invoice Date">Invoice Date</option>
+                    <option value="Delivery Date">Delivery Date</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Show Results By */}
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="w-[115px] shrink-0 text-xs font-semibold">
+                  Show Results By
+                </label>
+
+                <select
+                  value={showResultsBy}
+                  onChange={(e) => setShowResultsBy(e.target.value)}
+                  className="h-[29px] w-full sm:w-[165px] bg-white text-slate-900 border border-slate-300 px-2 rounded text-xs focus:outline-none"
+                >
+                  <option value="By Item">By Item</option>
+                  <option value="By Warehouse">By Warehouse</option>
+                </select>
+              </div>
+
+              {/* Report Mode */}
+              <div className="flex flex-wrap items-center gap-4 pt-1">
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold">
+                  <input
+                    type="radio"
+                    name="reportMode"
+                    checked={reportMode === "summary"}
+                    onChange={() => setReportMode("summary")}
+                    className="h-3.5 w-3.5 accent-emerald-500"
+                  />
+                  Summary
+                </label>
+
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold">
+                  <input
+                    type="radio"
+                    name="reportMode"
+                    checked={reportMode === "detailed"}
+                    onChange={() => setReportMode("detailed")}
+                    className="h-3.5 w-3.5 accent-emerald-500"
+                  />
+                  Detailed
+                </label>
+              </div>
+
+              {/* Stock Availability By Value */}
+              <div className="flex items-center pt-1">
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold">
+                  <input
+                    type="checkbox"
+                    checked={byValue}
+                    onChange={(e) => setByValue(e.target.checked)}
+                    className="h-3.5 w-3.5 rounded accent-emerald-500"
+                  />
+                  Stock Availability By Value
+                </label>
+              </div>
             </div>
-          </div>
-
-          {/* Purchases Date Type Dropdown */}
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">Purchases</label>
-            <select
-              value={purchasesDateType}
-              onChange={(e) => setPurchasesDateType(e.target.value)}
-              className="w-full bg-white text-slate-900 border border-emerald-800 px-2.5 py-1.5 rounded focus:outline-none text-xs"
-            >
-              <option value="Invoice Date">Invoice Date</option>
-              <option value="Receipt Date">Receipt Date</option>
-            </select>
-          </div>
-
-          {/* Sales Date Type Dropdown */}
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">Sales</label>
-            <select
-              value={salesDateType}
-              onChange={(e) => setSalesDateType(e.target.value)}
-              className="w-full bg-white text-slate-900 border border-emerald-800 px-2.5 py-1.5 rounded focus:outline-none text-xs"
-            >
-              <option value="Invoice Date">Invoice Date</option>
-              <option value="Delivery Date">Delivery Date</option>
-            </select>
-          </div>
-
-          {/* Show Results By */}
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-200">
-              Show Results By
-            </label>
-            <select
-              value={showResultsBy}
-              onChange={(e) => setShowResultsBy(e.target.value)}
-              className="w-full bg-white text-slate-900 border border-emerald-800 px-2.5 py-1.5 rounded focus:outline-none text-xs"
-            >
-              <option value="By Item">By Item</option>
-              <option value="By Warehouse">By Warehouse</option>
-            </select>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 justify-end items-end pt-2 md:col-span-1">
-            <Button
-              onClick={handleGenerateReport}
-              disabled={loading}
-              variant="save"
-            >
-              <Search className="h-3.5 w-3.5" />{" "}
-              {loading ? "Generating..." : "Generate Report"}
-            </Button>
-            <Button onClick={handleClearFilters} variant="cancel">
-              <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
-            </Button>
-          </div>
-        </div>
-
-        {/* Toggles Row */}
-        <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-emerald-900/60 text-xs">
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-1.5 cursor-pointer font-medium">
-              <input
-                type="radio"
-                name="reportMode"
-                checked={reportMode === "summary"}
-                onChange={() => setReportMode("summary")}
-                className="text-emerald-600 focus:ring-emerald-500"
-              />
-              Summary
-            </label>
-            <label className="flex items-center gap-1.5 cursor-pointer font-medium">
-              <input
-                type="radio"
-                name="reportMode"
-                checked={reportMode === "detailed"}
-                onChange={() => setReportMode("detailed")}
-                className="text-emerald-600 focus:ring-emerald-500"
-              />
-              Detailed
-            </label>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label className="flex items-center gap-1.5 cursor-pointer font-medium">
-              <input
-                type="checkbox"
-                checked={byValue}
-                onChange={(e) => setByValue(e.target.checked)}
-                className="rounded text-emerald-600 focus:ring-emerald-500"
-              />
-              Stock Availability By Value
-            </label>
-          </div>
+          )}
         </div>
       </div>
+
+      
 
       {/* Presentation Shell */}
       <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden flex flex-col">
@@ -698,3 +773,166 @@ export default function StockAvailabilityReport() {
     </div>
   );
 }
+{/* Filter Board Container */}
+      {/* <div className="bg-[#0b3310] text-white p-5 rounded-lg shadow-md space-y-4">
+        {validationError && (
+          <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-3 py-1.5 rounded text-xs font-medium">
+            ⚠️ {validationError}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs items-center">
+       
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-slate-200">
+              Date <span className="text-red-400">*</span>
+            </label>
+            <DatePicker
+              value={asOfDate}
+              onChange={(d) => {
+                setAsOfDate(d);
+                if (d) setValidationError(null);
+              }}
+              className="w-full bg-white text-slate-900 border border-emerald-800 px-3 py-1.5 rounded focus:outline-none"
+            />
+          </div>
+
+ 
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-slate-200">
+              Select Item(s)
+            </label>
+            <div
+              className="relative cursor-pointer"
+              onClick={() => setIsItemModalOpen(true)}
+            >
+              <input
+                readOnly
+                placeholder="All Items Selected"
+                value={selectedItemsText}
+                className="w-full bg-white text-slate-800 rounded px-2.5 py-1.5 pr-8 focus:outline-none cursor-pointer text-xs"
+              />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-2 w-4 h-4 text-slate-400 pointer-events-none"
+              />
+            </div>
+          </div>
+
+   
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-slate-200">
+              Select Warehouse
+            </label>
+            <div
+              className="relative cursor-pointer"
+              onClick={() => setIsWarehouseModalOpen(true)}
+            >
+              <input
+                readOnly
+                placeholder="All Warehouses"
+                value={selectedWarehousesText}
+                className="w-full bg-white text-slate-800 rounded px-2.5 py-1.5 pr-8 focus:outline-none cursor-pointer text-xs"
+              />
+              <Icon
+                icon="tabler:external-link"
+                className="absolute right-2.5 top-2 w-4 h-4 text-slate-400 pointer-events-none"
+              />
+            </div>
+          </div>
+
+ 
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-slate-200">Purchases</label>
+            <select
+              value={purchasesDateType}
+              onChange={(e) => setPurchasesDateType(e.target.value)}
+              className="w-full bg-white text-slate-900 border border-emerald-800 px-2.5 py-1.5 rounded focus:outline-none text-xs"
+            >
+              <option value="Invoice Date">Invoice Date</option>
+              <option value="Receipt Date">Receipt Date</option>
+            </select>
+          </div>
+
+   
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-slate-200">Sales</label>
+            <select
+              value={salesDateType}
+              onChange={(e) => setSalesDateType(e.target.value)}
+              className="w-full bg-white text-slate-900 border border-emerald-800 px-2.5 py-1.5 rounded focus:outline-none text-xs"
+            >
+              <option value="Invoice Date">Invoice Date</option>
+              <option value="Delivery Date">Delivery Date</option>
+            </select>
+          </div>
+
+
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-slate-200">
+              Show Results By
+            </label>
+            <select
+              value={showResultsBy}
+              onChange={(e) => setShowResultsBy(e.target.value)}
+              className="w-full bg-white text-slate-900 border border-emerald-800 px-2.5 py-1.5 rounded focus:outline-none text-xs"
+            >
+              <option value="By Item">By Item</option>
+              <option value="By Warehouse">By Warehouse</option>
+            </select>
+          </div>
+
+
+          <div className="flex gap-2 justify-end items-end pt-2 md:col-span-1">
+            <Button
+              onClick={handleGenerateReport}
+              disabled={loading}
+              variant="save"
+            >
+              <Search className="h-3.5 w-3.5" />{" "}
+              {loading ? "Generating..." : "Generate Report"}
+            </Button>
+            <Button onClick={handleClearFilters} variant="cancel">
+              <RotateCcw className="h-3.5 w-3.5" /> Clear Filter
+            </Button>
+          </div>
+        </div>
+
+
+        <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-emerald-900/60 text-xs">
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-1.5 cursor-pointer font-medium">
+              <input
+                type="radio"
+                name="reportMode"
+                checked={reportMode === "summary"}
+                onChange={() => setReportMode("summary")}
+                className="text-emerald-600 focus:ring-emerald-500"
+              />
+              Summary
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer font-medium">
+              <input
+                type="radio"
+                name="reportMode"
+                checked={reportMode === "detailed"}
+                onChange={() => setReportMode("detailed")}
+                className="text-emerald-600 focus:ring-emerald-500"
+              />
+              Detailed
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 cursor-pointer font-medium">
+              <input
+                type="checkbox"
+                checked={byValue}
+                onChange={(e) => setByValue(e.target.checked)}
+                className="rounded text-emerald-600 focus:ring-emerald-500"
+              />
+              Stock Availability By Value
+            </label>
+          </div>
+        </div>
+      </div> */}

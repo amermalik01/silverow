@@ -460,7 +460,7 @@ export default function SupportTicketFormView({
   // Render
   // -------------------------------------------------------------------------
 
-  if (loading) {
+  /* if (loading) {
     return (
       <div className="flex min-h-[260px] items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -469,7 +469,7 @@ export default function SupportTicketFormView({
         </div>
       </div>
     );
-  }
+  } */
 
   return (
     <div className="space-y-4">
