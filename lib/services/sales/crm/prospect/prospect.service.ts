@@ -865,22 +865,21 @@ export class ProspectService {
         `
         UPDATE prospects
         SET
-          status = $1,
-          lost_reason = CASE
-            WHEN $1 = 'Lost' THEN $2
-            ELSE NULL
-          END,
-          updated_by = $3,
-          updated_at = NOW()
+            status = $1::VARCHAR(30),
+            lost_reason = CASE
+            WHEN $1::VARCHAR(30) = 'Lost'
+                THEN $2::TEXT
+            ELSE NULL::TEXT
+            END,
+            updated_by = $3,
+            updated_at = NOW()
         WHERE id = $4
-          AND company_id = $5
+            AND company_id = $5
         RETURNING *
         `,
         [
           status,
-          status === "Lost"
-            ? normalizeText(options.lostReason)
-            : null,
+          status === "Lost" ? normalizeText(options.lostReason) : null,
           userId,
           id,
           companyId,
