@@ -168,8 +168,8 @@ export const Login = () => {
                   height={36}
                   // width={240}
                   // height={24}
-                  className="block dark:hidden rtl:scale-x-[-1]"
-                />
+                  className=" rtl:scale-x-[-1]"
+                />{/* block dark:hidden */}
 
                 {/* <div
                   className="

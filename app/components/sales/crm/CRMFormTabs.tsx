@@ -99,7 +99,7 @@ export default function CRMList() {
           href="./crm/new"
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          + New CRM
+          + New Prospects
         </Link>
       </div>
       <div className="flex gap-2">

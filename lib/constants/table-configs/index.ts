@@ -13,6 +13,8 @@ import { partyColumnsConfig } from "./parties";
 import { SRM_VendorsConfig } from "./srm_vendors";
 import { suppliersConfig } from "./suppliers";
 
+import { crmProspectsConfig } from "./crm-prospects";
+
 import { CRM_LeadConfig } from "./crm_leads";
 import { customersConfig } from "./customers";
 
@@ -57,11 +59,13 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
   stock_transfer_orders: stockTransferColumnsConfig,
 
   parties: partyColumnsConfig,
-  support_tickets: supportTicketsColumnsConfig,  
+  support_tickets: supportTicketsColumnsConfig,
 
   srm_vendors: SRM_VendorsConfig,
   suppliers: suppliersConfig,
+
   crm_leads: CRM_LeadConfig,
+  crm_prospects: crmProspectsConfig,
   customers: customersConfig,
 
   inventory_items: itemColumnsConfig,
@@ -71,6 +75,7 @@ export const DEFAULT_CONFIGS: Record<string, ColumnConfig[]> = {
 
   posted_ledger_entries: postedLedgerEntriesConfig,
   party_ledger_activity: partyLedgerActivityColumnsConfig,
+  
 };
 
 export function getDefaultTableConfig(moduleKey: string): ColumnConfig[] {
