@@ -1,6 +1,5 @@
 // components/parties/tabs/GeneralTab.tsx
 
-// components/parties/tabs/GeneralTab.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -310,6 +309,88 @@ export default function GeneralTab({
 
   return (
     <div className="space-y-4">
+
+      {/* BOTTOM SUMMARY STRIP */}
+      <section className={`${cardClass} grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 divide-y sm:divide-y-0 lg:divide-x divide-slate-200/80 dark:divide-slate-800`}>
+        <div className="lg:px-3 first:lg:pl-0">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <Icon
+              icon="tabler:calendar"
+              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+            />
+            <span>Customer Since</span>
+          </div>
+          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+            {metrics.customerSince}
+          </p>
+        </div>
+
+        <div className="lg:px-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <Icon
+              icon="tabler:coins"
+              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+            />
+            <span>Credit Limit</span>
+          </div>
+          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+            {metrics.creditLimitFormatted}
+          </p>
+        </div>
+
+        <div className="lg:px-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <Icon
+              icon="tabler:shopping-cart"
+              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+            />
+            <span>Total Orders (This Year)</span>
+          </div>
+          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+            {metrics.totalOrdersThisYear}
+          </p>
+        </div>
+
+        <div className="lg:px-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <Icon
+              icon="tabler:stack-2"
+              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+            />
+            <span>Total Spend (This Year)</span>
+          </div>
+          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+            {metrics.totalSpendThisYearFormatted}
+          </p>
+        </div>
+
+        <div className="lg:px-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <Icon
+              icon="tabler:clock"
+              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+            />
+            <span>Last Activity</span>
+          </div>
+          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+            {metrics.lastActivityDate}
+          </p>
+        </div>
+
+        <div className="lg:px-3 last:lg:pr-0">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <Icon
+              icon="tabler:file-dollar"
+              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+            />
+            <span>Open Outstanding</span>
+          </div>
+          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+            {metrics.openOutstandingFormatted}
+          </p>
+        </div>
+      </section>
+      
       {/* Editable Business Name Banner when not readonly */}
       {!isReadonly && (
         <div className={cardClass}>
@@ -1115,86 +1196,7 @@ export default function GeneralTab({
         </section>
       </div>
 
-      {/* BOTTOM SUMMARY STRIP */}
-      <section className={`${cardClass} grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 divide-y sm:divide-y-0 lg:divide-x divide-slate-200/80 dark:divide-slate-800`}>
-        <div className="lg:px-3 first:lg:pl-0">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            <Icon
-              icon="tabler:calendar"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
-            />
-            <span>Customer Since</span>
-          </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-            {metrics.customerSince}
-          </p>
-        </div>
-
-        <div className="lg:px-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            <Icon
-              icon="tabler:coins"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
-            />
-            <span>Credit Limit</span>
-          </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-            {metrics.creditLimitFormatted}
-          </p>
-        </div>
-
-        <div className="lg:px-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            <Icon
-              icon="tabler:shopping-cart"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
-            />
-            <span>Total Orders (This Year)</span>
-          </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-            {metrics.totalOrdersThisYear}
-          </p>
-        </div>
-
-        <div className="lg:px-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            <Icon
-              icon="tabler:stack-2"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
-            />
-            <span>Total Spend (This Year)</span>
-          </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-            {metrics.totalSpendThisYearFormatted}
-          </p>
-        </div>
-
-        <div className="lg:px-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            <Icon
-              icon="tabler:clock"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
-            />
-            <span>Last Activity</span>
-          </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-            {metrics.lastActivityDate}
-          </p>
-        </div>
-
-        <div className="lg:px-3 last:lg:pr-0">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            <Icon
-              icon="tabler:file-dollar"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
-            />
-            <span>Open Outstanding</span>
-          </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-            {metrics.openOutstandingFormatted}
-          </p>
-        </div>
-      </section>
+      
 
       <SalespersonLookupModal
         open={salespersonModalOpen}
