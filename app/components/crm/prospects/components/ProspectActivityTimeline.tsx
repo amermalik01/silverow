@@ -158,7 +158,7 @@ export default function ProspectActivityTimeline({
             ) : (
               <div className="relative">
                 <div className="absolute bottom-4 left-[11px] top-3 w-px bg-emerald-200" />
-                <div className="space-y-0">
+                <div className="space-y-0 overflow-auto h-90">
                   {activities.map((activity) => (
                     <div
                       key={activity.id}

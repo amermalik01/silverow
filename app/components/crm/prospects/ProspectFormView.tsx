@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type {
   Prospect,
   ProspectContact,
@@ -32,6 +33,7 @@ import { useLoader } from "@/app/context/LoaderContext";
 import { Icon } from "@iconify/react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO, startOfDay } from "date-fns";
+import NumericTextInput from "@/components/ui/NumericTextInput";
 
 type Props = {
   prospectId?: string;
@@ -107,11 +109,51 @@ function makeEmptyAddress(): ProspectAddress {
   };
 }
 
+interface SwitchPillProps {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+}
+
+function SwitchPill({ checked, disabled, onChange, label }: SwitchPillProps) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => !disabled && onChange(!checked)}
+      className={`inline-flex items-center gap-2 text-xs font-medium transition-colors ${
+        disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+      }`}
+    >
+      <span
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors ${
+          checked
+            ? "bg-emerald-600 border-emerald-600"
+            : "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+        }`}
+      >
+        <span
+          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-2xs transition-transform ${
+            checked ? "translate-x-4.5" : "translate-x-0.5"
+          }`}
+        />
+      </span>
+      <span className="text-slate-700 dark:text-slate-200">{label}</span>
+    </button>
+  );
+}
+
 export default function ProspectFormView({ prospectId, slug }: Props) {
   const router = useRouter();
   //   const params = useParams<{ slug: string }>();
   //   const slug = params.slug;
   const isEdit = Boolean(prospectId);
+  const { data: session } = useSession();
+
+  const baseCurrencyCode = session?.user?.base_currency_code || "GBP";
 
   const { show, hide } = useLoader();
 
@@ -402,7 +444,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
           </span>
 
           {header.prospect_no && (
-            <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
+            <div className="bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
               {header.prospect_no}
             </div>
           )}
@@ -446,7 +488,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                     event.target.value as Prospect["status"],
                   )
                 }
-                className="mt-1 h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800"
+                className="mt-1 h-8 w-full rounded-md border border-slate-300 bg-emerald-100 text-emerald-700 px-2 text-sm"
               >
                 {[
                   "New",
@@ -457,7 +499,11 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                   "Negotiation",
                   "Lost",
                 ].map((status) => (
-                  <option key={status} value={status}>
+                  <option
+                    key={status}
+                    value={status}
+                    className="bg-emerald-100 text-emerald-700"
+                  >
                     {status}
                   </option>
                 ))}
@@ -527,26 +573,28 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                   </div>
                 </>
               ) : ( */}
-                <div className="flex items-center gap-1 mt-1">
-                  <input
-                    type="text"
-                    readOnly
-                    value={header.assigned_to_name || "Select Person..."}
-                    className="mt-1 h-8 w-full rounded-md border border-slate-300 px-3 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setSalespersonModalOpen(true)}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
-                    title="Lookup Person"
-                  >
-                    <Icon icon="tabler:external-link" className="w-4 h-4" />
-                  </button>
-                </div>
+              <div className="flex items-center gap-1 mt-1">
+                <input
+                  type="text"
+                  readOnly
+                  value={header.assigned_to_name || "Select Person..."}
+                  className="mt-1 h-8 w-full rounded-md border border-slate-300 px-3 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setSalespersonModalOpen(true)}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                  title="Lookup Person"
+                >
+                  <Icon icon="tabler:external-link" className="w-4 h-4" />
+                </button>
+              </div>
               {/* )} */}
 
-              <label className="text-sm text-black">Estimated Deal Value</label>
-              <input
+              <label className="text-sm text-black">
+                Estimated Deal Value ({baseCurrencyCode})
+              </label>
+              {/* <input
                 type="number"
                 min="0"
                 step="0.01"
@@ -555,6 +603,15 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                   updateHeader("estimated_deal_value", event.target.value)
                 }
                 className="mt-1 h-8 w-full rounded-md border border-slate-300 px-3 text-sm"
+              /> */}
+              <NumericTextInput
+                value={Number(header.estimated_deal_value) || 0}
+                allowDecimals={true}
+                decimalScale={2}
+                className="mt-1 h-8 w-full rounded-md border border-slate-300 px-3 text-sm"
+                onChange={(val) =>
+                  updateHeader("estimated_deal_value", String(val))
+                }
               />
 
               {header.status === "Lost" && (
@@ -573,7 +630,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
             </div>
           </div>
 
-          <ProspectFormTabs activeTab={activeTab} onChange={setActiveTab} />
+          {/* <ProspectFormTabs activeTab={activeTab} onChange={setActiveTab} />
           {activeTab === "contacts" && (
             <ProspectContactsTab contacts={contacts} onChange={setContacts} />
           )}
@@ -586,7 +643,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
           {activeTab === "notes" && (
             <ProspectNotesTab notes={notes} onChange={setNotes} />
           )}
-          {activeTab === "attachments" && <ProspectAttachmentsTab />}
+          {activeTab === "attachments" && <ProspectAttachmentsTab />} */}
         </div>
 
         <div className="space-y-4 xl:col-span-7">
@@ -655,7 +712,16 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                   className="mt-2 h-8 w-full rounded-md border border-slate-300 px-2 text-sm"
                 /> */}
               </label>
+
               <label className="flex items-center gap-2 self-end pb-2 text-sm text-black">
+
+              <SwitchPill
+                label="Set Reminder"
+                checked={header.reminder_enabled}
+                onChange={(val) => updateHeader("reminder_enabled", val)}
+              />
+              </label>
+              {/* <label className="flex items-center gap-2 self-end pb-2 text-sm text-black">
                 <input
                   type="checkbox"
                   checked={header.reminder_enabled}
@@ -665,7 +731,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                   className="h-4 w-4 accent-emerald-800"
                 />
                 Set Reminder
-              </label>
+              </label> */}
             </div>
           </div>
 
