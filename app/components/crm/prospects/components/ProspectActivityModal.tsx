@@ -4,6 +4,8 @@
 
 import { useState } from "react";
 import type { ProspectActivity, ProspectContact } from "@/types/prospect";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parseISO, startOfDay } from "date-fns";
 
 type Props = {
   prospectId: string;
@@ -208,11 +210,19 @@ export default function ProspectActivityModal({
 
             <label className="text-sm text-slate-600">
               Next Follow-up
-              <input
+              {/* <input
                 type="date"
                 value={nextFollowUp}
                 onChange={(event) => setNextFollowUp(event.target.value)}
                 className="mt-1 h-9 w-full rounded-md border border-slate-300 px-2"
+              /> */}
+              <DatePicker
+                value={nextFollowUp ? parseISO(nextFollowUp) : undefined}
+                containerClassName="mt-1 text-sm"
+                maxDate={new Date()}
+                onChange={(date) =>
+                  setNextFollowUp(date ? format(date, "yyyy-MM-dd") : "")
+                }
               />
             </label>
 

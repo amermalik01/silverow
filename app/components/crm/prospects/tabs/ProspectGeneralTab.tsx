@@ -25,7 +25,7 @@ type Props = {
 };
 
 const inputClass =
-  "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100";
+  "h-8 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100";
 
 export default function ProspectGeneralTab({
   value,
@@ -100,16 +100,25 @@ export default function ProspectGeneralTab({
     }
   };
 
+  const normalizeWebsite = (value: string): string => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    return trimmed.includes("://") ? trimmed : `https://${trimmed}`;
+  };
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
+      <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-slate-900">
         {/* <span className="text-emerald-800">♙</span> */}
-        <Icon icon="iconamoon:profile-light" className="text-emerald-800" />
+        <Icon
+          icon="iconamoon:profile-light"
+          className="text-emerald-800 text-3xl"
+        />
         Basic Information
       </h2>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[135px_minmax(0,1fr)] sm:items-center">
-        <label className="text-sm text-slate-700">
+        <label className="text-sm text-black">
           Contact Name <span className="text-rose-600">*</span>
         </label>
         <input
@@ -119,7 +128,7 @@ export default function ProspectGeneralTab({
           placeholder="Contact name"
         />
 
-        <label className="text-sm text-slate-700">
+        <label className="text-sm text-black">
           Company Name <span className="text-rose-600">*</span>
         </label>
         <input
@@ -129,7 +138,7 @@ export default function ProspectGeneralTab({
           placeholder="Company name"
         />
 
-        <label className="text-sm text-slate-700">Email</label>
+        <label className="text-sm text-black">Email</label>
         <input
           type="email"
           value={primaryContact?.email || ""}
@@ -140,7 +149,7 @@ export default function ProspectGeneralTab({
           placeholder="contact@example.com"
         />
 
-        <label className="text-sm text-slate-700">Phone</label>
+        <label className="text-sm text-black">Phone</label>
         <input
           value={primaryContact?.phone || ""}
           onChange={(event) =>
@@ -150,7 +159,7 @@ export default function ProspectGeneralTab({
           placeholder="Phone number"
         />
 
-        {/* <label className="text-sm text-slate-700">Mobile</label>
+        {/* <label className="text-sm text-black">Mobile</label>
         <input
           value={primaryContact?.mobile || ""}
           onChange={(event) =>
@@ -160,7 +169,7 @@ export default function ProspectGeneralTab({
           placeholder="Mobile number"
         /> */}
 
-        <label className="text-sm text-slate-700">Location</label>
+        <label className="text-sm text-black">Location</label>
         <input
           value={[primaryAddress?.city, primaryAddress?.country]
             .filter(Boolean)
@@ -170,17 +179,20 @@ export default function ProspectGeneralTab({
           placeholder="City"
         />
 
-        <label className="text-sm text-slate-700">Website</label>
+        <label className="text-sm text-black">Website</label>
+
         <input
-          value={value.website}
-          onChange={(event) => onChange("website", event.target.value)}
+          type="text"
+          value={value.website || ""}
+          onChange={(e) => onChange("website", e.target.value)}
+          onBlur={(e) => onChange("website", normalizeWebsite(e.target.value))}
           className={inputClass}
-          placeholder="https://example.com"
+          placeholder="https://..."
         />
       </div>
 
       {/* <div className="mt-4">
-        <label className="mb-1 block text-sm text-slate-700">Description</label>
+        <label className="mb-1 block text-sm text-black">Description</label>
         <textarea
           rows={3}
           value={value.description}

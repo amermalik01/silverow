@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import type { ProspectListRecord } from "@/types/prospect";
 
 const statusStyles: Record<string, string> = {
-  New: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  New: "bg-slate-100 text-black dark:bg-slate-800 dark:text-slate-300",
   Contacted: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
   Interested:
     "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
@@ -90,7 +90,7 @@ export function renderProspectCell(
 
     case "primary_contact_name":
       return (
-        <span className="text-slate-700 dark:text-slate-300">
+        <span className="text-black dark:text-slate-300">
           {row.primary_contact_name || "—"}
         </span>
       );
@@ -141,7 +141,7 @@ export function renderProspectCell(
 
     case "assigned_to_name":
       return (
-        <span className="text-slate-700 dark:text-slate-300">
+        <span className="text-black dark:text-slate-300">
           {row.assigned_to_name || "—"}
         </span>
       );
@@ -161,7 +161,7 @@ export function renderProspectCell(
 /* import type { ProspectListRecord } from "@/types/prospect";
 
 const statusStyles: Record<string, string> = {
-  New: "bg-slate-100 text-slate-700",
+  New: "bg-slate-100 text-black",
   Contacted: "bg-blue-50 text-blue-700",
   Interested: "bg-emerald-100 text-emerald-800",
   Qualified: "bg-teal-50 text-teal-800",
@@ -219,7 +219,7 @@ export function renderProspectCell(
 
     case "primary_contact_name":
       return (
-        <span className="text-slate-700">
+        <span className="text-black">
           {row.primary_contact_name || "—"}
         </span>
       );
@@ -264,7 +264,7 @@ export function renderProspectCell(
 
     case "assigned_to_name":
       return (
-        <span className="text-slate-700">{row.assigned_to_name || "—"}</span>
+        <span className="text-black">{row.assigned_to_name || "—"}</span>
       );
 
     case "next_follow_up_at":

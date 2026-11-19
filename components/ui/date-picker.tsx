@@ -79,12 +79,12 @@ export function DatePicker({
             >
               {value ? format(value, "dd/MM/yyyy") : placeholder}
               {/* {value ? value.toLocaleDateString(undefined, { dateStyle: 'medium' }) : placeholder} */}
-            </span>
+            </span>{/* text-slate-500  */}
             <Icon
-              icon="solar:calendar-minimalistic-linear"
-              className="text-slate-500 shrink-0"
-              width={16}
-              height={16}
+              icon="akar-icons:calendar"
+              className="text-emerald-800 shrink-0 font-bold"
+              width={18}
+              height={18}
             />
           </Button>
         </PopoverTrigger>
@@ -101,8 +101,8 @@ export function DatePicker({
               (maxDate ? maxDate < date : false)
             }
             // disabled={disabled} // Prevents interaction inside the calendar if open
-            captionLayout="dropdown"
-            className="bg-white text-slate-900 rounded-md p-3 dark:bg-white dark:text-slate-900"
+            captionLayout="dropdown"/* text-slate-900 */
+            className="bg-white  text-emerald-800 rounded-md p-3 dark:bg-white dark:text-slate-900"
             onSelect={(date) => {
               onChange(date);
               setOpen(false);

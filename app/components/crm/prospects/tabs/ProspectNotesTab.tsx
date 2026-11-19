@@ -47,7 +47,7 @@ export default function ProspectNotesTab({ notes, onChange }: Props) {
             className="rounded-lg border border-slate-200 p-3"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-700">
+              <span className="text-sm font-semibold text-black">
                 Note {index + 1}
               </span>
               <button

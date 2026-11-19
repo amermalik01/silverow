@@ -124,7 +124,7 @@ export const ProspectInputSchema = z.object({
   //   last_contacted_at: optionalDateTime,
   last_contacted_at: optionalDate,
 
-  next_follow_up_at: optionalDateTime,
+  next_follow_up_at: optionalDate,
   reminder_enabled: z.boolean().default(false),
 
   description: optionalText(10000),
@@ -147,7 +147,7 @@ export const ProspectActivitySchema = z.object({
 
   // These fields update prospects.next_follow_up_at and
   // prospects.reminder_enabled. They are not activity-table columns.
-  next_follow_up_at: optionalDateTime,
+  next_follow_up_at: optionalDate,
   reminder_enabled: z.boolean().default(false),
 });
 

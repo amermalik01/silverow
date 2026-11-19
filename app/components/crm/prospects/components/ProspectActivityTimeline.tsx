@@ -13,12 +13,21 @@ type Props = {
   onRefresh: () => Promise<void>;
 };
 
+// const activityIcons: Record<string, string> = {
+//   Email: "✉",
+//   Call: "☎",
+//   Meeting: "▣",
+//   Task: "✓",
+//   Note: "▤",
+//   Other: "•",
+// };
+
 const activityIcons: Record<string, string> = {
-  Email: "✉",
-  Call: "☎",
-  Meeting: "▣",
-  Task: "✓",
-  Note: "▤",
+  Email: "arcticons:huawei-email",
+  Call: "doodle-icons:call",
+  Meeting: "andrsrxn:calendar-clock",
+  Task: "carbon:task",
+  Note: "andrsrxn:notes",
   Other: "•",
 };
 
@@ -101,7 +110,7 @@ export default function ProspectActivityTimeline({
             }`}
           >
             {/* <span>{icon}</span> */}
-            <Icon icon={icon} className="text-emerald-800" />
+            <Icon icon={icon} className="text-emerald-800 text-3xl" />
             {label}
           </button>
         ))}
@@ -156,7 +165,8 @@ export default function ProspectActivityTimeline({
                       className="relative flex gap-4 border-b border-slate-100 py-4 last:border-0"
                     >
                       <div className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs text-emerald-800 ring-4 ring-white">
-                        {activityIcons[activity.activity_type] || "•"}
+                        {/* {activityIcons[activity.activity_type] || "•"} */}
+                        <Icon icon={activityIcons[activity.activity_type] || "•"} className="text-emerald-800 text-3xl" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-start justify-between gap-2">
