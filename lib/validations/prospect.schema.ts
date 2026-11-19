@@ -1,4 +1,3 @@
-
 // lib/validations/prospect.schema.ts
 
 import { z } from "zod";
@@ -61,6 +60,13 @@ const optionalEmail = z
   .optional()
   .or(z.literal("").transform(() => null));
 
+const optionalDate = z
+  .string()
+  .date()
+  .nullable()
+  .optional()
+  .transform((value) => value || null);
+
 const optionalDateTime = z
   .string()
   .datetime({ offset: true })
@@ -96,11 +102,7 @@ export const ProspectAddressSchema = z.object({
 });
 
 export const ProspectInputSchema = z.object({
-  company_name: z
-    .string()
-    .trim()
-    .min(1, "Company name is required.")
-    .max(255),
+  company_name: z.string().trim().min(1, "Company name is required.").max(255),
 
   website: optionalText(255),
 
@@ -119,7 +121,9 @@ export const ProspectInputSchema = z.object({
 
   currency_id: optionalUuid,
 
-  last_contacted_at: optionalDateTime,
+  //   last_contacted_at: optionalDateTime,
+  last_contacted_at: optionalDate,
+
   next_follow_up_at: optionalDateTime,
   reminder_enabled: z.boolean().default(false),
 
@@ -129,25 +133,13 @@ export const ProspectInputSchema = z.object({
 
 export const ProspectNoteSchema = z.object({
   id: optionalUuid,
-  title: z
-    .string()
-    .trim()
-    .max(255)
-    .default("General Note Entry"),
-  content: z
-    .string()
-    .trim()
-    .min(1, "Note content is required.")
-    .max(20000),
+  title: z.string().trim().max(255).default("General Note Entry"),
+  content: z.string().trim().min(1, "Note content is required.").max(20000),
 });
 
 export const ProspectActivitySchema = z.object({
   activity_type: z.enum(PROSPECT_ACTIVITY_TYPES),
-  subject: z
-    .string()
-    .trim()
-    .min(1, "Activity subject is required.")
-    .max(255),
+  subject: z.string().trim().min(1, "Activity subject is required.").max(255),
   description: optionalText(10000),
   activity_at: z.string().datetime({ offset: true }).optional(),
   contact_id: optionalUuid,
@@ -235,22 +227,26 @@ export const ProspectPayloadSchema = z
     }
   });
 
-export const ProspectStatusChangeSchema = z.object({
-  status: z.enum(PROSPECT_STATUSES).refine(
-    (status) => status !== "Converted",
-    "Use the Convert to Customer action to convert a prospect.",
-  ),
-  remarks: optionalText(2000),
-  lost_reason: optionalText(5000),
-}).superRefine((payload, context) => {
-  if (payload.status === "Lost" && !payload.lost_reason) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["lost_reason"],
-      message: "Please provide a reason for marking this prospect as lost.",
-    });
-  }
-});
+export const ProspectStatusChangeSchema = z
+  .object({
+    status: z
+      .enum(PROSPECT_STATUSES)
+      .refine(
+        (status) => status !== "Converted",
+        "Use the Convert to Customer action to convert a prospect.",
+      ),
+    remarks: optionalText(2000),
+    lost_reason: optionalText(5000),
+  })
+  .superRefine((payload, context) => {
+    if (payload.status === "Lost" && !payload.lost_reason) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["lost_reason"],
+        message: "Please provide a reason for marking this prospect as lost.",
+      });
+    }
+  });
 
 export const ProspectConversionSchema = z.object({
   customerName: z.string().trim().min(1).max(255).optional(),
@@ -260,8 +256,7 @@ export const ProspectConversionSchema = z.object({
 export type ProspectStatus = (typeof PROSPECT_STATUSES)[number];
 export type ProspectSource = (typeof PROSPECT_SOURCES)[number];
 export type ProspectPriority = (typeof PROSPECT_PRIORITIES)[number];
-export type ProspectActivityType =
-  (typeof PROSPECT_ACTIVITY_TYPES)[number];
+export type ProspectActivityType = (typeof PROSPECT_ACTIVITY_TYPES)[number];
 
 export type ProspectInput = z.infer<typeof ProspectInputSchema>;
 export type ProspectContactInput = z.infer<typeof ProspectContactSchema>;
@@ -269,7 +264,7 @@ export type ProspectAddressInput = z.infer<typeof ProspectAddressSchema>;
 export type ProspectNoteInput = z.infer<typeof ProspectNoteSchema>;
 export type ProspectActivityInput = z.infer<typeof ProspectActivitySchema>;
 export type ProspectPayload = z.infer<typeof ProspectPayloadSchema>;
-export type ProspectStatusChangeInput =
-  z.infer<typeof ProspectStatusChangeSchema>;
-export type ProspectConversionInput =
-  z.infer<typeof ProspectConversionSchema>;
+export type ProspectStatusChangeInput = z.infer<
+  typeof ProspectStatusChangeSchema
+>;
+export type ProspectConversionInput = z.infer<typeof ProspectConversionSchema>;

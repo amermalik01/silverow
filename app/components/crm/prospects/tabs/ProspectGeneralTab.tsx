@@ -7,6 +7,7 @@ import type {
   ProspectContact,
   ProspectAddress,
 } from "@/types/prospect";
+import { Icon } from "@iconify/react";
 
 type Header = {
   company_name: string;
@@ -101,10 +102,11 @@ export default function ProspectGeneralTab({
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
-        <span className="text-emerald-800">♙</span>
+      <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
+        {/* <span className="text-emerald-800">♙</span> */}
+        <Icon icon="iconamoon:profile-light" className="text-emerald-800" />
         Basic Information
-      </h3>
+      </h2>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[135px_minmax(0,1fr)] sm:items-center">
         <label className="text-sm text-slate-700">
@@ -148,7 +150,7 @@ export default function ProspectGeneralTab({
           placeholder="Phone number"
         />
 
-        <label className="text-sm text-slate-700">Mobile</label>
+        {/* <label className="text-sm text-slate-700">Mobile</label>
         <input
           value={primaryContact?.mobile || ""}
           onChange={(event) =>
@@ -156,7 +158,7 @@ export default function ProspectGeneralTab({
           }
           className={inputClass}
           placeholder="Mobile number"
-        />
+        /> */}
 
         <label className="text-sm text-slate-700">Location</label>
         <input
@@ -177,7 +179,7 @@ export default function ProspectGeneralTab({
         />
       </div>
 
-      <div className="mt-4">
+      {/* <div className="mt-4">
         <label className="mb-1 block text-sm text-slate-700">Description</label>
         <textarea
           rows={3}
@@ -186,7 +188,7 @@ export default function ProspectGeneralTab({
           className="w-full rounded-md border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
           placeholder="Additional information about this prospect..."
         />
-      </div>
+      </div> */}
     </div>
   );
 }

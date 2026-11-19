@@ -23,6 +23,20 @@ const activityTypes: ActivityType[] = [
   "Other",
 ];
 
+function toISOStringOrUndefined(
+  value: string | null | undefined,
+): string | undefined {
+  if (!value?.trim()) return undefined;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return undefined;
+  }
+
+  return date.toISOString();
+}
+
 export default function ProspectActivityModal({
   prospectId,
   contacts,
@@ -63,7 +77,8 @@ export default function ProspectActivityModal({
             activity_type: activityType,
             subject: subject.trim(),
             description: description.trim() || null,
-            activity_at: activityAt,
+            // activity_at: activityAt,
+            activity_at: toISOStringOrUndefined(activityAt),
             contact_id: contactId || null,
             outcome: outcome.trim() || null,
             next_follow_up_at: nextFollowUp || null,

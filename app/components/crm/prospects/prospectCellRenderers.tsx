@@ -82,9 +82,9 @@ export function renderProspectCell(
           >
             {row.company_name}
           </Link>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          {/* <p className="text-xs text-slate-500 dark:text-slate-400">
             {row.prospect_no}
-          </p>
+          </p> */}
         </div>
       );
 

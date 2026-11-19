@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import type { ProspectActivity } from "@/types/prospect";
+import { Icon } from "@iconify/react";
 
 type Props = {
   prospectId: string;
@@ -84,22 +85,23 @@ export default function ProspectActivityTimeline({
       <div className="flex border-b border-slate-200">
         {(
           [
-            ["activity", "Activity", "⌁"],
-            ["notes", "Notes", "▤"],
-            ["attachments", "Attachments", "↥"],
+            ["activity", "Activity", "bytesize:activity"],
+            ["notes", "Notes", "arcticons:google-docs-alt"],
+            ["attachments", "Attachments", "clarity:attachment-line"],
           ] as const
         ).map(([key, label, icon]) => (
           <button
             key={key}
             type="button"
             onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-2 border-b-2 px-5 py-4 text-sm font-medium ${
+            className={`flex items-center gap-2 border-b-2 px-5 py-4 text-lg font-bold ${
               activeTab === key
                 ? "border-emerald-800 text-emerald-800"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <span>{icon}</span>
+            {/* <span>{icon}</span> */}
+            <Icon icon={icon} className="text-emerald-800" />
             {label}
           </button>
         ))}
@@ -109,7 +111,7 @@ export default function ProspectActivityTimeline({
             onClick={onAddActivity}
             className="ml-auto my-2 mr-3 rounded-md bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-900"
           >
-            + Log Activity
+            Log Activity
           </button>
         )}
       </div>

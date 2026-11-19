@@ -23,6 +23,8 @@ import ProspectActivityModal from "./components/ProspectActivityModal";
 import ProspectConvertModal from "./components/ProspectConvertModal";
 import ProspectStatusFlow from "./components/ProspectStatusFlow";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
+import { useLoader } from "@/app/context/LoaderContext";
+import { Icon } from "@iconify/react";
 
 type Props = {
   prospectId?: string;
@@ -31,6 +33,7 @@ type Props = {
 
 type ProspectFormHeader = {
   company_name: string;
+  prospect_no?: string;
   website: string;
   status: Prospect["status"];
   source: NonNullable<Prospect["source"]>;
@@ -46,25 +49,9 @@ type ProspectFormHeader = {
   lost_reason: string;
 };
 
-// type ProspectFormHeader = {
-//   company_name: string;
-//   website: string;
-//   status: Prospect["status"];
-//   source: Prospect["source"];
-//   priority: Prospect["priority"];
-//   assigned_to: string;
-//   assigned_to_name: string;
-//   estimated_deal_value: string;
-//   currency_id: string;
-//   last_contacted_at: string;
-//   next_follow_up_at: string;
-//   reminder_enabled: boolean;
-//   description: string;
-//   lost_reason: string;
-// };
-
 const emptyHeader: ProspectFormHeader = {
   company_name: "",
+  prospect_no: "",
   website: "",
   status: "New",
   source: "Other",
@@ -119,6 +106,8 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
   //   const slug = params.slug;
   const isEdit = Boolean(prospectId);
 
+  const { show, hide } = useLoader();
+
   const [header, setHeader] = useState<ProspectFormHeader>(emptyHeader);
   const [contacts, setContacts] = useState<ProspectContact[]>([
     makeEmptyContact(),
@@ -131,7 +120,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
   >([]);
   const [details, setDetails] = useState<ProspectDetails | null>(null);
   const [activeTab, setActiveTab] = useState<ProspectTab>("general");
-  const [loading, setLoading] = useState(isEdit);
+  //   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [activityOpen, setActivityOpen] = useState(false);
@@ -149,9 +138,8 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
 
   const loadProspect = useCallback(async () => {
     if (!prospectId) return;
-
-    setLoading(true);
     setError("");
+    show("Fetching Prospect...");
 
     try {
       const response = await fetch(`/api/sales/crm/prospects/${prospectId}`, {
@@ -173,6 +161,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
 
       setHeader({
         company_name: prospect.company_name || "",
+        prospect_no: prospect.prospect_no || "",
         website: prospect.website || "",
         status: prospect.status,
         source: prospect.source ?? "Other",
@@ -190,7 +179,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load prospect.");
     } finally {
-      setLoading(false);
+      hide();
     }
   }, [prospectId]);
 
@@ -208,28 +197,9 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
   const saveProspect = async () => {
     setSaving(true);
     setError("");
+    show("Saving Prospect...");
 
     try {
-      //   const payload: ProspectPayload = {
-      //     prospect: {
-      //       ...header,
-      //       estimated_deal_value: Number(header.estimated_deal_value || 0),
-      //       assigned_to: header.assigned_to || null,
-      //       currency_id: header.currency_id || null,
-      //       last_contacted_at: header.last_contacted_at || null,
-      //       next_follow_up_at: header.next_follow_up_at || null,
-      //     },
-      //     contacts: contacts.filter((contact) => contact.name.trim()),
-      //     addresses: addresses.filter(
-      //       (address) =>
-      //         address.address_1 ||
-      //         address.city ||
-      //         address.postcode ||
-      //         address.email,
-      //     ),
-      //     notes: notes.filter((note) => note.content.trim()),
-      //   };
-
       const payload: ProspectPayload = {
         prospect: {
           ...header,
@@ -324,6 +294,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
       setError(err instanceof Error ? err.message : "Unable to save prospect.");
     } finally {
       setSaving(false);
+      hide();
     }
   };
 
@@ -355,14 +326,6 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
     await loadProspect();
   };
 
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
-        Loading prospect...
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <Breadcrumbs
@@ -371,33 +334,22 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
             label: "Prospects",
             href: `/${slug}/sales/prospects`,
           },
-          //   {
-          //     label: ticket.ticket_no || "",
-          //   },
+          {
+            label: header.prospect_no || "",
+          },
         ]}
       />
-      {/* <div className="-mx-4 -mt-4 flex items-center gap-3 bg-emerald-900 px-5 py-3 text-white sm:-mx-6">
-    
-        <h1 className="text-base font-semibold">
-          {isEdit ? "Prospect Details" : "New Prospect"}
-        </h1>
-      </div> */}
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
+      {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
         <h1 className="text-2xl font-bold px-4">
           {isEdit ? "Edit Prospect" : "New Prospect"}
         </h1>
-        {/* {ticket.ticket_no && ticket.ticket_no !== "[Auto-Generated]" && (
-                <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
-                  {ticket.ticket_no}
-                </div>
-              )} */}
-      </div>
+      </div> */}
 
       {error.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
           {error}
-          {/* {validationErrors.map((err, idx) => (
+          {/* {error.map((err, idx) => (
                   <p
                     key={idx}
                     className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1"
@@ -412,7 +364,10 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-800">
-            <span className="text-2xl">▦</span>
+            <Icon
+              icon="heroicons:building-office"
+              className="text-emerald-800 text-xl"
+            />
           </div>
           <div className="min-w-0">
             <h2 className="truncate text-xl font-bold text-slate-950">
@@ -426,60 +381,21 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
           <span className="ml-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
             {header.status}
           </span>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {isEdit && (
-            <>
-              <button
-                type="button"
-                onClick={() => setActivityOpen(true)}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                + Log Activity
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("general")}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Edit
-              </button>
-              {header.status !== "Converted" && (
-                <button
-                  type="button"
-                  onClick={() => setConvertOpen(true)}
-                  className="rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
-                >
-                  Convert to Customer
-                </button>
-              )}
-            </>
+          {header.prospect_no && (
+            <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
+              {header.prospect_no}
+            </div>
           )}
-          <button
-            type="button"
-            onClick={() => void saveProspect()}
-            disabled={saving}
-            className="rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push(`/${slug}/sales/prospects`)}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Close
-          </button>
+
+          {isEdit && (
+            <ProspectStatusFlow
+              status={header.status}
+              onChange={(status) => void changeStatus(status)}
+            />
+          )}
         </div>
       </div>
-
-      {isEdit && (
-        <ProspectStatusFlow
-          status={header.status}
-          onChange={(status) => void changeStatus(status)}
-        />
-      )}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="space-y-4 xl:col-span-5">
@@ -493,117 +409,115 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
           />
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
-              <span className="text-emerald-800">◆</span>
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
+              <Icon
+                icon="iconmind:sale-tag-outline-thin"
+                className="text-emerald-800"
+              />
               Sales Information
-            </h3>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="text-sm text-slate-600">
-                Status
-                <select
-                  value={header.status}
-                  onChange={(event) =>
-                    updateHeader(
-                      "status",
-                      event.target.value as Prospect["status"],
-                    )
-                  }
-                  className="mt-1 h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800"
-                >
-                  {[
-                    "New",
-                    "Contacted",
-                    "Interested",
-                    "Qualified",
-                    "Proposal",
-                    "Negotiation",
-                    "Lost",
-                  ].map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[135px_minmax(0,1fr)] sm:items-center">
+              <label className="text-sm text-slate-700">Status</label>
 
-              <label className="text-sm text-slate-600">
-                Source
-                <select
-                  value={header.source}
-                  onChange={(event) =>
-                    updateHeader(
-                      "source",
-                      event.target.value as NonNullable<Prospect["source"]>,
-                    )
-                  }
-                  className="mt-1 h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800"
-                >
-                  {[
-                    "Website",
-                    "Referral",
-                    "Social Media",
-                    "Email Campaign",
-                    "Cold Call",
-                    "Trade Show",
-                    "Advertisement",
-                    "Other",
-                  ].map((source) => (
-                    <option key={source} value={source}>
-                      {source}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <select
+                value={header.status}
+                onChange={(event) =>
+                  updateHeader(
+                    "status",
+                    event.target.value as Prospect["status"],
+                  )
+                }
+                className="mt-1 h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800"
+              >
+                {[
+                  "New",
+                  "Contacted",
+                  "Interested",
+                  "Qualified",
+                  "Proposal",
+                  "Negotiation",
+                  "Lost",
+                ].map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
 
-              <label className="text-sm text-slate-600">
-                Priority
-                <select
-                  value={header.priority}
-                  onChange={(event) =>
-                    updateHeader(
-                      "priority",
-                      event.target.value as Prospect["priority"],
-                    )
-                  }
-                  className="mt-1 h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800"
-                >
-                  {["Low", "Medium", "High"].map((priority) => (
-                    <option key={priority} value={priority}>
-                      {priority}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <label className="text-sm text-slate-700">Source</label>
+              <select
+                value={header.source}
+                onChange={(event) =>
+                  updateHeader(
+                    "source",
+                    event.target.value as NonNullable<Prospect["source"]>,
+                  )
+                }
+                className="mt-1 h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800"
+              >
+                {[
+                  "Website",
+                  "Referral",
+                  "Social Media",
+                  "Email Campaign",
+                  "Cold Call",
+                  "Trade Show",
+                  "Advertisement",
+                  "Other",
+                ].map((source) => (
+                  <option key={source} value={source}>
+                    {source}
+                  </option>
+                ))}
+              </select>
 
-              <label className="text-sm text-slate-600">
-                Assigned To
-                <input
-                  value={header.assigned_to_name}
-                  onChange={(event) =>
-                    updateHeader("assigned_to_name", event.target.value)
-                  }
-                  className="mt-1 h-9 w-full rounded-md border border-slate-300 px-3 text-sm"
-                  placeholder="Assigned employee"
-                />
-              </label>
+              <label className="text-sm text-slate-700">Priority</label>
+              <select
+                value={header.priority}
+                onChange={(event) =>
+                  updateHeader(
+                    "priority",
+                    event.target.value as Prospect["priority"],
+                  )
+                }
+                className="mt-1 h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800"
+              >
+                {["Low", "Medium", "High"].map((priority) => (
+                  <option key={priority} value={priority}>
+                    {priority}
+                  </option>
+                ))}
+              </select>
 
-              <label className="text-sm text-slate-600 sm:col-span-2">
+              <label className="text-sm text-slate-700">Assigned To</label>
+              <input
+                value={header.assigned_to_name}
+                onChange={(event) =>
+                  updateHeader("assigned_to_name", event.target.value)
+                }
+                className="mt-1 h-9 w-full rounded-md border border-slate-300 px-3 text-sm"
+                placeholder="Assigned employee"
+              />
+
+              <label className="text-sm text-slate-700">
                 Estimated Deal Value
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={header.estimated_deal_value}
-                  onChange={(event) =>
-                    updateHeader("estimated_deal_value", event.target.value)
-                  }
-                  className="mt-1 h-9 w-full rounded-md border border-slate-300 px-3 text-sm"
-                />
               </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={header.estimated_deal_value}
+                onChange={(event) =>
+                  updateHeader("estimated_deal_value", event.target.value)
+                }
+                className="mt-1 h-9 w-full rounded-md border border-slate-300 px-3 text-sm"
+              />
 
               {header.status === "Lost" && (
-                <label className="text-sm text-slate-600 sm:col-span-2">
-                  Lost Reason *
+                <>
+                  <label className="text-sm text-slate-700">
+                    Lost Reason *
+                  </label>
                   <textarea
                     value={header.lost_reason}
                     onChange={(event) =>
@@ -612,7 +526,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                     rows={2}
                     className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm"
                   />
-                </label>
+                </>
               )}
             </div>
           </div>
@@ -636,7 +550,10 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
         <div className="space-y-4 xl:col-span-7">
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
-              <h3 className="font-semibold text-slate-900">Follow-up</h3>
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
+                <Icon icon="andrsrxn:calendar" className="text-emerald-800" />
+                Follow-up
+              </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-3">
               <label className="text-sm text-slate-600">
@@ -684,6 +601,52 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
             />
           )}
         </div>
+      </div>
+
+      <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+        {isEdit && (
+          <>
+            <button
+              type="button"
+              onClick={() => setActivityOpen(true)}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              {/* <Icon icon="hugeicons:contact-02" className="text-emerald-800" /> */}{" "}
+              Log Activity
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("general")}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Edit
+            </button>
+            {header.status !== "Converted" && (
+              <button
+                type="button"
+                onClick={() => setConvertOpen(true)}
+                className="rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
+              >
+                Convert to Customer
+              </button>
+            )}
+          </>
+        )}
+        <button
+          type="button"
+          onClick={() => void saveProspect()}
+          disabled={saving}
+          className="rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push(`/${slug}/sales/prospects`)}
+          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Close
+        </button>
       </div>
 
       {activityOpen && prospectId && (
