@@ -431,12 +431,12 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
             />
           </div>
           <div className="min-w-0">
-            <h2 className="truncate text-xl font-bold text-slate-950">
+            <h2 className="truncate text-2xl font-bold text-slate-950">
               {header.company_name || "New Prospect"}
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">
               {primaryContact?.name || "No primary contact"}
-              {primaryAddress?.city ? ` · ${primaryAddress.city}` : ""}
+              {/* {primaryAddress?.city ? ` · ${primaryAddress.city}` : ""} */}
             </p>
           </div>
           <span className="ml-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
@@ -448,6 +448,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               {header.prospect_no}
             </div>
           )}
+          </div>
 
           {/* {isEdit && (
             <ProspectStatusFlow
@@ -455,8 +456,55 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               onChange={(status) => void changeStatus(status)}
             />
           )} */}
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/*   pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end items-end gap-3*/}
+              {isEdit && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setActivityOpen(true)}
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-black hover:bg-slate-50"
+                  >
+                    {/* <Icon icon="hugeicons:contact-02" className="text-emerald-800" /> */}{" "}
+                    Log Activity
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("general")}
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-black hover:bg-slate-50"
+                  >
+                    Edit
+                  </button>
+                  {header.status !== "Converted" && (
+                    <button
+                      type="button"
+                      onClick={() => setConvertOpen(true)}
+                      className="rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
+                    >
+                      Convert to Customer
+                    </button>
+                  )}
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => void saveProspect()}
+                disabled={saving}
+                className="rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push(`/${slug}/sales/prospects`)}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-black hover:bg-slate-50"
+              >
+                Close
+              </button>
+          </div>
         </div>
-      </div>
+      {/* </div> */}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="space-y-4 xl:col-span-5">
@@ -714,12 +762,11 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               </label>
 
               <label className="flex items-center gap-2 self-end pb-2 text-sm text-black">
-
-              <SwitchPill
-                label="Set Reminder"
-                checked={header.reminder_enabled}
-                onChange={(val) => updateHeader("reminder_enabled", val)}
-              />
+                <SwitchPill
+                  label="Set Reminder"
+                  checked={header.reminder_enabled}
+                  onChange={(val) => updateHeader("reminder_enabled", val)}
+                />
               </label>
               {/* <label className="flex items-center gap-2 self-end pb-2 text-sm text-black">
                 <input
@@ -744,52 +791,6 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
             />
           )}
         </div>
-      </div>
-
-      <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-        {isEdit && (
-          <>
-            <button
-              type="button"
-              onClick={() => setActivityOpen(true)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-black hover:bg-slate-50"
-            >
-              {/* <Icon icon="hugeicons:contact-02" className="text-emerald-800" /> */}{" "}
-              Log Activity
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("general")}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-black hover:bg-slate-50"
-            >
-              Edit
-            </button>
-            {header.status !== "Converted" && (
-              <button
-                type="button"
-                onClick={() => setConvertOpen(true)}
-                className="rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
-              >
-                Convert to Customer
-              </button>
-            )}
-          </>
-        )}
-        <button
-          type="button"
-          onClick={() => void saveProspect()}
-          disabled={saving}
-          className="rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save"}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push(`/${slug}/sales/prospects`)}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-black hover:bg-slate-50"
-        >
-          Close
-        </button>
       </div>
 
       {activityOpen && prospectId && (

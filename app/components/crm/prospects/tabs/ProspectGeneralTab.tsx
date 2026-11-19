@@ -186,7 +186,7 @@ export default function ProspectGeneralTab({
           value={value.website || ""}
           onChange={(e) => onChange("website", e.target.value)}
           onBlur={(e) => onChange("website", normalizeWebsite(e.target.value))}
-          className="h-8 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-emerald-800 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+          className="h-8 w-full rounded-md underline border border-slate-300 bg-white px-3 text-sm text-emerald-800 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
           placeholder="https://..."
         />
       </div>
