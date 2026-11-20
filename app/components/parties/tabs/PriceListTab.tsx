@@ -108,7 +108,7 @@ function getListStatus(list: PriceListDraft): {
     return {
       label: "Expired",
       badgeClass:
-        "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+        "bg-slate-100 text-black border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
     };
   }
   if (start && start > now) {
@@ -448,12 +448,12 @@ export default function PriceListTab({
       "w-full border px-2.5 py-1.5 rounded-lg text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
-      return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed select-none`;
+      return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-black dark:text-slate-300 cursor-not-allowed select-none`;
     }
 
     const stateClasses = errors[errorKey]
-      ? "border-red-500 bg-red-50/20 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
-      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500";
+      ? "border-red-500 bg-red-50/20 text-black dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-black dark:text-slate-100 focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500";
 
     return `${baseClasses} ${stateClasses}`;
   };
@@ -549,7 +549,7 @@ export default function PriceListTab({
               className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
                 selectedListIdx === idx
                   ? "bg-emerald-700 text-white dark:bg-emerald-600"
-                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/70"
+                  : "text-black hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/70"
               }`}
             >
               {list.name || `Price List ${idx + 1}`}
@@ -563,7 +563,7 @@ export default function PriceListTab({
           variant="add_line"
           className="rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold px-3 py-1.5 inline-flex items-center gap-1.5"
         >
-          <Icon icon="tabler:plus" className="w-3.5 h-3.5" />
+          <Icon icon="tabler:plus" className="text-emerald-800 text-xl" />
           <span>Add Price List</span>
         </Button>
       </div>
@@ -581,10 +581,10 @@ export default function PriceListTab({
               className={`${cardClass} lg:col-span-5 p-4 flex flex-col justify-between gap-3`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                <div className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100">
                   <Icon
                     icon="tabler:tag"
-                    className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+                    className="text-emerald-800 text-xl"
                   />
                   <span>
                     {partyType === "supplier"
@@ -596,15 +596,15 @@ export default function PriceListTab({
                 <button
                   type="button"
                   onClick={() => setShowHeaderSettings((prev) => !prev)}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-black hover:text-black dark:text-slate-400 dark:hover:text-slate-100"
                 >
-                  <Icon icon="tabler:adjustments" className="w-3.5 h-3.5" />
+                  <Icon icon="tabler:adjustments" className="text-emerald-800 text-xl" />
                   <span>{showHeaderSettings ? "Hide Terms" : "Terms"}</span>
                 </button>
               </div>
 
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+                <label className="block text-[11px] text-black dark:text-slate-400 mb-1.5">
                   Assigned Price List
                 </label>
                 <div className="flex items-center gap-2.5">
@@ -615,7 +615,7 @@ export default function PriceListTab({
                       setSelectedListIdx(Number(e.target.value));
                       setActiveItemIdx(null);
                     }}
-                    className="flex-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-semibold text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
+                    className="flex-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-semibold text-black dark:text-slate-100 rounded-lg px-3 py-2 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
                   >
                     {priceLists.map((list, idx) => (
                       <option key={list.id || idx} value={idx}>
@@ -634,7 +634,7 @@ export default function PriceListTab({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-black dark:text-slate-400">
                 <span>
                   Currency:{" "}
                   <strong className="text-slate-800 dark:text-slate-200">
@@ -656,10 +656,10 @@ export default function PriceListTab({
               <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-sm">
                 %
               </div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-medium text-black dark:text-slate-400">
                 Default Discount
               </p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+              <p className="text-2xl font-bold text-black dark:text-slate-100 tabular-nums">
                 {defaultDiscountDisplay}
               </p>
             </section>
@@ -668,10 +668,10 @@ export default function PriceListTab({
             <section
               className={`${cardClass} lg:col-span-4 p-4 flex flex-col justify-between`}
             >
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100 mb-2">
                 <Icon
                   icon="tabler:stack-2"
-                  className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+                  className="text-emerald-800 text-3xl"
                 />
                 <span>Quantity Discount (Additional)</span>
               </div>
@@ -679,7 +679,7 @@ export default function PriceListTab({
               {quantityDiscountSourceItem &&
               quantityDiscountSourceItem.volume_discounts.length > 0 ? (
                 <div className="space-y-1.5 text-sm">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400 pb-1 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-black dark:text-slate-400 pb-1 border-b border-slate-100 dark:border-slate-800">
                     <span>Order Quantity</span>
                     <span>Additional Discount</span>
                   </div>
@@ -703,15 +703,15 @@ export default function PriceListTab({
                 </div>
               ) : (
                 <div className="space-y-1.5 text-sm">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400 pb-1 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-black dark:text-slate-400 pb-1 border-b border-slate-100 dark:border-slate-800">
                     <span>Order Quantity</span>
                     <span>Additional Discount</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-600 dark:text-slate-400">
+                    <span className="text-black dark:text-slate-400">
                       Standard Tier
                     </span>
-                    <span className="text-slate-500 dark:text-slate-400">
+                    <span className="text-black dark:text-slate-400">
                       — (Standard price)
                     </span>
                   </div>
@@ -730,7 +730,7 @@ export default function PriceListTab({
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <div className="grid grid-cols-12 gap-2 items-center">
-                    <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       Name <span className="text-red-500">*</span>
                     </label>
                     <div className="col-span-8">
@@ -749,7 +749,7 @@ export default function PriceListTab({
                   </div>
 
                   <div className="grid grid-cols-12 gap-2 items-center">
-                    <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       {partyType === "customer"
                         ? "Salesperson"
                         : partyType === "supplier"
@@ -783,7 +783,7 @@ export default function PriceListTab({
                   </div>
 
                   <div className="grid grid-cols-12 gap-2 items-center">
-                    <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       Offer Method
                     </label>
                     <div className="col-span-8">
@@ -806,7 +806,7 @@ export default function PriceListTab({
 
                 <div className="space-y-3">
                   <div className="grid grid-cols-12 gap-2 items-center">
-                    <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       Start Date <span className="text-red-500">*</span>
                     </label>
                     <div className="col-span-8">
@@ -826,7 +826,7 @@ export default function PriceListTab({
                   </div>
 
                   <div className="grid grid-cols-12 gap-2 items-center">
-                    <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       End Date <span className="text-red-500">*</span>
                     </label>
                     <div className="col-span-8">
@@ -846,7 +846,7 @@ export default function PriceListTab({
                   </div>
 
                   <div className="grid grid-cols-12 gap-2 items-center">
-                    <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       Currency <span className="text-red-500">*</span>
                     </label>
                     <div className="col-span-8">
@@ -876,13 +876,13 @@ export default function PriceListTab({
                 <div className="flex items-center gap-2">
                   <Icon
                     icon="tabler:discount-2"
-                    className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+                    className="text-emerald-800 text-3xl"
                   />
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <h4 className="text-sm font-semibold text-black dark:text-slate-100">
                     Special Prices
                   </h4>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-[11px] text-black dark:text-slate-400 mt-0.5">
                   Customer-specific prices or discounts (override standard
                   discount)
                 </p>
@@ -892,14 +892,14 @@ export default function PriceListTab({
                 <div className="relative flex-1 sm:w-48">
                   <Icon
                     icon="tabler:search"
-                    className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    className="w-3.5 h-3.5 text-emerald-800 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
                   />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search product..."
-                    className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
+                    className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
                   />
                 </div>
 
@@ -977,7 +977,7 @@ export default function PriceListTab({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
+                  <tr className="border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-black dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
                     <th className="py-2.5 pl-4 pr-2 w-8">
                       <input
                         type="checkbox"
@@ -1074,11 +1074,11 @@ export default function PriceListTab({
                           {/* Product */}
                           <td className="py-3 px-3">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
+                              <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center text-black dark:text-slate-300 shrink-0">
                                 <Icon icon="tabler:box" className="w-4 h-4" />
                               </div>
                               <div className="min-w-0">
-                                <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                <p className="font-semibold text-black dark:text-slate-100 truncate">
                                   {item.name}
                                 </p>
                                 <p className="text-[11px] text-slate-400">
@@ -1091,7 +1091,7 @@ export default function PriceListTab({
                           </td>
 
                           {/* SKU */}
-                          <td className="py-3 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                          <td className="py-3 px-3 font-mono text-[11px] text-black dark:text-slate-300 whitespace-nowrap">
                             {item.item_code || "—"}
                           </td>
 
@@ -1108,7 +1108,7 @@ export default function PriceListTab({
                           </td>
 
                           {/* Customer Price */}
-                          <td className="py-3 px-3 text-right font-semibold tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                          <td className="py-3 px-3 text-right font-semibold tabular-nums text-black dark:text-slate-100 whitespace-nowrap">
                             {formatMoney(item.offered_price)}
                           </td>
 
@@ -1203,7 +1203,7 @@ export default function PriceListTab({
                                   onClick={() =>
                                     fetchHistory(item.id!, item.name)
                                   }
-                                  className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                  className="p-1.5 rounded-lg text-black hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                                   title="Price History"
                                 >
                                   <Icon
@@ -1237,7 +1237,7 @@ export default function PriceListTab({
             </div>
 
             {/* Footer count */}
-            <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800/80 text-sm text-slate-500 dark:text-slate-400 tabular-nums">
+            <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800/80 text-sm text-black dark:text-slate-400 tabular-nums">
               Showing {filteredItems.length} of {activeList.items.length}{" "}
               products
             </div>
@@ -1247,7 +1247,7 @@ export default function PriceListTab({
           {activeItemIdx !== null && activeList.items[activeItemIdx] && (
             <div className={`${cardClass} p-4 space-y-3`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h5 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h5 className="text-sm font-bold text-black dark:text-slate-100">
                   Volume Discount Tiers for{" "}
                   <span className="text-emerald-700 dark:text-emerald-400">
                     {activeList.items[activeItemIdx].name || "Selected Item"}
@@ -1270,7 +1270,7 @@ export default function PriceListTab({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-900/50">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-black dark:text-slate-400 bg-slate-50/70 dark:bg-slate-900/50">
                       <th className="p-2.5">Min Order Qty</th>
                       <th className="p-2.5">Discount Type</th>
                       <th className="p-2.5">Discount By</th>
@@ -1451,10 +1451,10 @@ export default function PriceListTab({
           <div className="bg-white dark:bg-[#11161D] rounded-2xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 p-4">
               <div>
-                <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                <h4 className="font-bold text-sm text-black dark:text-slate-100">
                   Complete Price List History
                 </h4>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-sm text-black dark:text-slate-400 mt-0.5">
                   {historyModalItem.itemName}
                 </p>
               </div>
@@ -1479,7 +1479,7 @@ export default function PriceListTab({
               ) : (
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] text-black">
                       <th className="py-2 px-3">Date</th>
                       <th className="py-2 px-3">Old Price</th>
                       <th className="py-2 px-3">New Price</th>
@@ -1957,12 +1957,12 @@ export default function PriceListTab({
       "w-full border p-2 py-1 h-7 rounded text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
-      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none`;
+      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-black dark:text-slate-400 cursor-not-allowed select-none`;
     }
 
     const stateClasses = errors[errorKey]
-      ? "border-red-500 bg-red-50/10 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
-      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+      ? "border-red-500 bg-red-50/10 text-black dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-black dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
 
     return `${baseClasses} ${stateClasses}`;
   };
@@ -1982,7 +1982,7 @@ export default function PriceListTab({
               className={`px-3 py-1.5 text-sm font-semibold rounded-t transition-colors ${
                 selectedListIdx === idx
                   ? "bg-blue-50 text-blue-700 border-b-2 border-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                  : "text-black hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
               }`}
             >
               {list.name || `Price List ${idx + 1}`}
@@ -2046,7 +2046,7 @@ export default function PriceListTab({
                         type="button"
                         disabled={isReadonly}
                         onClick={() => setIsSalespersonModalOpen(true)}
-                        className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                        className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-black"
                       >
                         <Icon icon="tabler:external-link" className="w-4 h-4" />
                       </button>
@@ -2167,7 +2167,7 @@ export default function PriceListTab({
 
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 font-semibold bg-slate-50/50 dark:bg-slate-800/20">
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-black font-semibold bg-slate-50/50 dark:bg-slate-800/20">
                   <th className="p-3">Item No.</th>
                   <th className="p-3">Description</th>
                   <th className="p-3">Category</th>
@@ -2204,7 +2204,7 @@ export default function PriceListTab({
                     >
                       <td className="p-3 font-medium">{item.item_code}</td>
                       <td className="p-3">{item.name}</td>
-                      <td className="p-3 text-slate-500">
+                      <td className="p-3 text-black">
                         {item.category_name || "Spare Parts"}
                       </td>
                       <td className="p-3">{item.uom_name || "Pcs"}</td>
@@ -2262,7 +2262,7 @@ export default function PriceListTab({
                             item.has_volume_discount &&
                             item.volume_discounts.length > 0
                               ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                              : "bg-slate-100 text-slate-600 border-slate-300"
+                              : "bg-slate-100 text-black border-slate-300"
                           }`}
                         >
                           {item.has_volume_discount &&
@@ -2326,7 +2326,7 @@ export default function PriceListTab({
 
               <table className="w-full text-left border-collapse text-sm bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/40">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-black bg-slate-50 dark:bg-slate-800/40">
                     <th className="p-2.5">Min Order Qty</th>
                     <th className="p-2.5">Discount Type</th>
                     <th className="p-2.5">Discount By</th>
@@ -2447,7 +2447,7 @@ export default function PriceListTab({
                 <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
                   Complete Price List History
                 </h4>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-black mt-1">
                   {historyModalItem.itemName}
                 </p>
               </div>
@@ -2455,7 +2455,7 @@ export default function PriceListTab({
               <button
                 type="button"
                 onClick={() => setHistoryModalItem(null)}
-                className="text-slate-500 hover:text-red-500 font-bold"
+                className="text-black hover:text-red-500 font-bold"
               >
                 ✕
               </button>
@@ -2488,13 +2488,13 @@ export default function PriceListTab({
                           <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                             {log.changed_by_name || "System User"}
                           </p>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-black">
                             {formatHistoryDate(log.changed_at)}
                           </p>
                         </div>
                       </div>
 
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-[11px] text-black">
                         {log.changed_fields.length} changed section(s)
                       </span>
                     </div>

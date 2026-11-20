@@ -131,7 +131,7 @@ export default function ContactsTab({
         <div className="flex items-center gap-2.5">
           <Icon
             icon="tabler:users"
-            className="w-4 h-4 text-black dark:text-slate-400"
+            className="text-emerald-800 text-3xl"
           />
           <h3 className="text-sm font-semibold text-black dark:text-slate-100">
             Contacts
@@ -145,7 +145,7 @@ export default function ContactsTab({
           <div className="relative flex-1 sm:w-56">
             <Icon
               icon="tabler:search"
-              className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              className="w-3.5 h-3.5 text-emerald-800 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
             />
             <input
               type="text"
@@ -162,7 +162,7 @@ export default function ContactsTab({
             variant="add_line"
             className="rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold px-3 py-1.5 inline-flex items-center gap-1.5 shrink-0"
           >
-            <Icon icon="tabler:plus" className="w-3.5 h-3.5" />
+            <Icon icon="tabler:plus" className="text-emerald-800 text-3xl" />
             <span>Add Contact</span>
           </Button>
         </div>

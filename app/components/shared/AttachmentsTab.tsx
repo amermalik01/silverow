@@ -252,7 +252,7 @@ export default function AttachmentsTab({
           <div className="flex items-center gap-2">
             <Icon
               icon="tabler:paperclip"
-              className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+              className="text-emerald-800 text-3xl"
             />
             <h3 className="text-sm font-semibold text-black dark:text-slate-100">
               Attachments
@@ -268,7 +268,7 @@ export default function AttachmentsTab({
               onClick={() => setActiveFolderFilter(null)}
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
             >
-              <Icon icon="tabler:arrow-left" className="w-3.5 h-3.5" />
+              <Icon icon="tabler:arrow-left" className="text-emerald-800 text-xl" />
               <span>Show All Folders</span>
             </button>
           )}
@@ -298,7 +298,7 @@ export default function AttachmentsTab({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 shrink-0 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
-                    <Icon icon="tabler:folder" className="w-4 h-4" />
+                    <Icon icon="tabler:folder" className="text-emerald-800 text-xl" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-black dark:text-slate-100 truncate">
@@ -377,7 +377,7 @@ export default function AttachmentsTab({
               content={{
                 uploadIcon: (
                   <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
-                    <Icon icon="tabler:cloud-upload" className="w-5 h-5" />
+                    <Icon icon="tabler:cloud-upload" className="text-emerald-800 text-xl" />
                   </div>
                 ),
                 label: uploading
@@ -400,7 +400,7 @@ export default function AttachmentsTab({
                 <div className="relative flex-1">
                   <Icon
                     icon="tabler:folder"
-                    className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    className="text-emerald-800 text-xl"
                   />
                   <select
                     value={selectedFolder}
@@ -420,7 +420,7 @@ export default function AttachmentsTab({
               <div className="flex items-center gap-2 text-[11px] text-black dark:text-slate-400">
                 <Icon
                   icon="tabler:folder-check"
-                  className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+                  className="text-emerald-800 text-xl"
                 />
                 <span>
                   Target folder:{" "}
@@ -522,7 +522,7 @@ export default function AttachmentsTab({
                           disabled={deletingId === item.id}
                           className="inline-flex items-center gap-1 text-sm font-semibold text-red-600 hover:text-red-700 dark:text-red-400 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950 border border-red-200/70 dark:border-red-900/60 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Icon icon="tabler:trash" className="w-3.5 h-3.5" />
+                          <Icon icon="tabler:trash" className="text-emerald-800 text-xl" />
                           <span>
                             {deletingId === item.id ? "Deleting..." : "Delete"}
                           </span>
@@ -535,7 +535,7 @@ export default function AttachmentsTab({
                     <div className="flex items-center gap-1.5">
                       <Icon
                         icon="tabler:user"
-                        className="w-3.5 h-3.5 text-slate-400"
+                        className="text-emerald-800 text-xl"
                       />
                       <span>
                         Created by:{" "}
@@ -551,7 +551,7 @@ export default function AttachmentsTab({
                     <div className="flex items-center gap-1.5 tabular-nums">
                       <Icon
                         icon="tabler:calendar-clock"
-                        className="w-3.5 h-3.5 text-slate-400"
+                        className="text-emerald-800 text-xl"
                       />
                       <span>
                         Created on:{" "}
@@ -586,7 +586,7 @@ export default function AttachmentsTab({
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/50">
                   <Icon
                     icon="tabler:trash"
-                    className="h-5 w-5 text-red-600 dark:text-red-400"
+                    className="text-emerald-800 text-xl"
                   />
                 </div>
 

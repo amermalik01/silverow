@@ -449,7 +449,7 @@ export default function NotesTab({
         <div className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100">
           <Icon
             icon="tabler:note-plus"
-            className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+            className="text-emerald-800 text-3xl"
           />
           <span>New Note</span>
         </div>
@@ -559,7 +559,7 @@ export default function NotesTab({
           <div className="flex items-center gap-2.5">
             <Icon
               icon="tabler:notes"
-              className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+              className="text-emerald-800 text-3xl"
             />
             <h3 className="text-sm font-semibold text-black dark:text-slate-100">
               Notes

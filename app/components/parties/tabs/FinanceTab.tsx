@@ -283,7 +283,7 @@ export default function FinanceTab({
         <div className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100 shrink-0 px-1">
           <Icon
             icon="tabler:wallet"
-            className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+            className="text-emerald-800 text-3xl"
           />
           <span>Finance Overview</span>
         </div>
@@ -293,7 +293,7 @@ export default function FinanceTab({
             <div className="w-8 h-8 rounded-lg bg-emerald-600/15 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
               <Icon
                 icon="tabler:id-badge-2"
-                className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+                className="text-emerald-800 text-3xl"
               />
             </div>
             <div className="min-w-0">
@@ -310,7 +310,7 @@ export default function FinanceTab({
             <div className="w-8 h-8 rounded-lg bg-sky-600/15 dark:bg-sky-500/20 flex items-center justify-center shrink-0">
               <Icon
                 icon="tabler:file-invoice"
-                className="w-4 h-4 text-sky-700 dark:text-sky-400"
+                className="text-emerald-800 text-3xl"
               />
             </div>
             <div className="min-w-0">
@@ -327,7 +327,7 @@ export default function FinanceTab({
             <div className="w-8 h-8 rounded-lg bg-teal-600/15 dark:bg-teal-500/20 flex items-center justify-center shrink-0">
               <Icon
                 icon="tabler:clock-dollar"
-                className="w-4 h-4 text-teal-700 dark:text-teal-400"
+                className="text-emerald-800 text-3xl"
               />
             </div>
             <div className="min-w-0">
@@ -344,7 +344,7 @@ export default function FinanceTab({
             <div className="w-8 h-8 rounded-lg bg-violet-600/15 dark:bg-violet-500/20 flex items-center justify-center shrink-0">
               <Icon
                 icon="tabler:calendar-stats"
-                className="w-4 h-4 text-violet-700 dark:text-violet-400"
+                className="text-emerald-800 text-3xl"
               />
             </div>
             <div className="min-w-0">
@@ -366,7 +366,7 @@ export default function FinanceTab({
           <div className={sectionHeaderClass}>
             <Icon
               icon="tabler:receipt-2"
-              className="w-4 h-4 text-black dark:text-slate-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>Tax &amp; Registration</span>
           </div>
@@ -477,7 +477,7 @@ export default function FinanceTab({
           <div className={sectionHeaderClass}>
             <Icon
               icon="tabler:credit-card"
-              className="w-4 h-4 text-black dark:text-slate-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>Payment Configuration</span>
           </div>
@@ -591,7 +591,7 @@ export default function FinanceTab({
           <div className={sectionHeaderClass}>
             <Icon
               icon="tabler:send"
-              className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>E-Invoicing &amp; Notifications</span>
           </div>
@@ -649,7 +649,7 @@ export default function FinanceTab({
           <div className={sectionHeaderClass}>
             <Icon
               icon="tabler:shield-check"
-              className="w-4 h-4 text-black dark:text-slate-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>Credit Control</span>
           </div>
@@ -723,7 +723,7 @@ export default function FinanceTab({
           <div className={sectionHeaderClass}>
             <Icon
               icon="tabler:building-bank"
-              className="w-4 h-4 text-black dark:text-slate-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>
               {isCustomer
@@ -880,7 +880,7 @@ export default function FinanceTab({
             <div className={sectionHeaderClass}>
               <Icon
                 icon="tabler:chart-bar"
-                className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+                className="text-emerald-800 text-3xl"
               />
               <span>Financial Activity</span>
             </div>
@@ -890,7 +890,7 @@ export default function FinanceTab({
                 <dt className="flex items-center gap-2 text-black dark:text-slate-400">
                   <Icon
                     icon="tabler:coins"
-                    className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0"
+                    className="text-emerald-800 text-3xl"
                   />
                   <span>Last Payment</span>
                 </dt>
@@ -909,7 +909,7 @@ export default function FinanceTab({
                 <dt className="flex items-center gap-2 text-black dark:text-slate-400">
                   <Icon
                     icon="tabler:file-text"
-                    className="w-3.5 h-3.5 text-slate-400 shrink-0"
+                    className="text-emerald-800 text-3xl"
                   />
                   <span>Last Invoice</span>
                 </dt>
@@ -928,7 +928,7 @@ export default function FinanceTab({
                 <dt className="flex items-center gap-2 text-black dark:text-slate-400">
                   <Icon
                     icon="tabler:folder-open"
-                    className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0"
+                    className="text-emerald-800 text-3xl"
                   />
                   <span>Outstanding Invoices</span>
                 </dt>
@@ -941,7 +941,7 @@ export default function FinanceTab({
                 <dt className="flex items-center gap-2 text-black dark:text-slate-400">
                   <Icon
                     icon="tabler:alert-circle"
-                    className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0"
+                    className="text-emerald-800 text-3xl"
                   />
                   <span>Overdue Invoices</span>
                 </dt>
