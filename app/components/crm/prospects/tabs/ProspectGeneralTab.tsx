@@ -190,6 +190,10 @@ export default function ProspectGeneralTab({
           placeholder="https://..."
         />
       </div>
+    </div>
+  );
+}
+
 
       {/* <div className="mt-4">
         <label className="mb-1 block text-sm text-black">Description</label>
@@ -201,6 +205,3 @@ export default function ProspectGeneralTab({
           placeholder="Additional information about this prospect..."
         />
       </div> */}
-    </div>
-  );
-}

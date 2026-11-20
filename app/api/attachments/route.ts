@@ -2,8 +2,70 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+export async function GET(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.company_id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = req.nextUrl;
+    const current_module = searchParams.get("module");
+    const recordId = searchParams.get("record_id");
+
+    if (!current_module || !recordId) {
+      return NextResponse.json(
+        { error: "Missing module or record_id." },
+        { status: 400 },
+      );
+    }
+
+    const result = await pool.query(
+      `
+      SELECT
+        att.id,
+        att.module,
+        att.record_id,
+        att.folder,
+        att.file_name,
+        att.file_key,
+        att.file_path,
+        att.file_size,
+        att.mime_type,
+        att.uploaded_by AS created_by,
+        att.created_at,
+        u.name AS created_by_name
+      FROM attachments att
+      LEFT JOIN users u
+        ON u.id = att.uploaded_by
+       AND u.company_id = att.company_id
+      WHERE att.company_id = $1
+        AND att.module = $2
+        AND att.record_id = $3
+      ORDER BY att.created_at DESC
+      `,
+      [session.user.company_id, current_module, recordId],
+    );
+
+    return NextResponse.json({
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error("GET Attachments Error:", error);
+
+    return NextResponse.json(
+      { error: "Failed to fetch attachments." },
+      { status: 500 },
+    );
+  }
+}
+
+/* import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -48,67 +110,6 @@ export async function GET(req: NextRequest) {
     console.error("GET Attachments Error:", err);
     return NextResponse.json(
       { error: "Failed to fetch attachments" },
-      { status: 500 },
-    );
-  }
-}
-
-/* export async function POST(req: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.company_id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const current_module = formData.get("module") as string | null;
-    const recordId = formData.get("record_id") as string | null;
-
-    if (!file || !current_module || !recordId) {
-      return NextResponse.json(
-        { error: "Missing required form data fields" },
-        { status: 400 },
-      );
-    }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Sanitize and secure filenames
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-    const fileName = `${Date.now()}-${sanitizedName}`;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-
-    // Ensure nested folder paths exist securely
-    await mkdir(uploadDir, { recursive: true });
-
-    const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-
-    const dbPath = `/uploads/${fileName}`;
-
-    const result = await pool.query(
-      `INSERT INTO attachments (company_id, module, record_id, file_name, file_path, file_size, mime_type, uploaded_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, file_name, file_path`,
-      [
-        session.user.company_id,
-        current_module,
-        recordId,
-        file.name,
-        dbPath,
-        file.size,
-        file.type,
-        session.user.id,
-      ],
-    );
-
-    return NextResponse.json({ data: result.rows[0] });
-  } catch (err) {
-    console.error("POST Attachment Error:", err);
-    return NextResponse.json(
-      { error: "Upload execution failure" },
       { status: 500 },
     );
   }

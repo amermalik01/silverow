@@ -156,7 +156,7 @@ export const ProspectPayloadSchema = z
     prospect: ProspectInputSchema,
     contacts: z.array(ProspectContactSchema).default([]),
     addresses: z.array(ProspectAddressSchema).default([]),
-    notes: z.array(ProspectNoteSchema).default([]),
+    // notes: z.array(ProspectNoteSchema).default([]),
   })
   .superRefine((payload, context) => {
     const primaryContacts = payload.contacts.filter(

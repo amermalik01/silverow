@@ -18,16 +18,16 @@ import SalespersonLookupModal, {
   Employee,
 } from "@/app/components/shared/modals/SalespersonLookupModal";
 
-import ProspectFormTabs from "./tabs/ProspectFormTabs";
+// import ProspectFormTabs from "./tabs/ProspectFormTabs";
 import ProspectGeneralTab from "./tabs/ProspectGeneralTab";
-import ProspectContactsTab from "./tabs/ProspectContactsTab";
-import ProspectAddressesTab from "./tabs/ProspectAddressesTab";
-import ProspectNotesTab from "./tabs/ProspectNotesTab";
-import ProspectAttachmentsTab from "./tabs/ProspectAttachmentsTab";
+// import ProspectContactsTab from "./tabs/ProspectContactsTab";
+// import ProspectAddressesTab from "./tabs/ProspectAddressesTab";
+// import ProspectNotesTab from "./tabs/ProspectNotesTab";
+// import ProspectAttachmentsTab from "./tabs/ProspectAttachmentsTab";
 import ProspectActivityTimeline from "./components/ProspectActivityTimeline";
 import ProspectActivityModal from "./components/ProspectActivityModal";
 import ProspectConvertModal from "./components/ProspectConvertModal";
-import ProspectStatusFlow from "./components/ProspectStatusFlow";
+// import ProspectStatusFlow from "./components/ProspectStatusFlow";
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 import { useLoader } from "@/app/context/LoaderContext";
 import { Icon } from "@iconify/react";
@@ -308,13 +308,13 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
             is_shipping: address.is_shipping,
           })),
 
-        notes: notes
-          .filter((note) => note.content.trim().length > 0)
-          .map((note) => ({
-            id: note.id ?? null,
-            title: note.title || "General Note Entry",
-            content: note.content.trim(),
-          })),
+        // notes: notes
+        //   .filter((note) => note.content.trim().length > 0)
+        //   .map((note) => ({
+        //     id: note.id ?? null,
+        //     title: note.title || "General Note Entry",
+        //     content: note.content.trim(),
+        //   })),
       };
 
       const response = await fetch(
@@ -401,24 +401,9 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
         ]}
       />
 
-      {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <h1 className="text-2xl font-bold px-4">
-          {isEdit ? "Edit Prospect" : "New Prospect"}
-        </h1>
-      </div> */}
-
       {error.length > 0 && (
         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg space-y-1">
           {error}
-          {/* {error.map((err, idx) => (
-                  <p
-                    key={idx}
-                    className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1"
-                  >
-                    <Icon icon="tabler:alert-circle" className="inline w-3.5 h-3.5" />{" "}
-                    {err}
-                  </p>
-                ))} */}
         </div>
       )}
 
@@ -458,7 +443,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
           )} */}
 
           <div className="flex flex-wrap items-center gap-2">
-            {/*   pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end items-end gap-3*/}
+
               {isEdit && (
                 <>
                   <button
@@ -466,7 +451,6 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                     onClick={() => setActivityOpen(true)}
                     className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-black hover:bg-slate-50"
                   >
-                    {/* <Icon icon="hugeicons:contact-02" className="text-emerald-800" /> */}{" "}
                     Log Activity
                   </button>
                   <button
@@ -504,7 +488,6 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               </button>
           </div>
         </div>
-      {/* </div> */}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="space-y-4 xl:col-span-5">
@@ -603,24 +586,6 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               </select>
 
               <label className="text-sm text-black">Assigned To</label>
-              {/* <input
-                value={header.assigned_to_name}
-                onChange={(event) =>
-                  updateHeader("assigned_to_name", event.target.value)
-                }
-                className="mt-1 h-8 w-full rounded-md border border-slate-300 px-3 text-sm"
-                placeholder="Assigned employee"
-              /> */}
-
-              {/* {isEdit ? (
-                <>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 truncate">
-                      {header.assigned_to_name}
-                    </span>
-                  </div>
-                </>
-              ) : ( */}
               <div className="flex items-center gap-1 mt-1">
                 <input
                   type="text"
@@ -637,21 +602,10 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                   <Icon icon="tabler:external-link" className="w-4 h-4" />
                 </button>
               </div>
-              {/* )} */}
 
               <label className="text-sm text-black">
                 Estimated Deal Value ({baseCurrencyCode})
               </label>
-              {/* <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={header.estimated_deal_value}
-                onChange={(event) =>
-                  updateHeader("estimated_deal_value", event.target.value)
-                }
-                className="mt-1 h-8 w-full rounded-md border border-slate-300 px-3 text-sm"
-              /> */}
               <NumericTextInput
                 value={Number(header.estimated_deal_value) || 0}
                 allowDecimals={true}
@@ -710,14 +664,6 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
             <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-3">
               <label className="text-sm text-black">
                 Last Contacted
-                {/* <input
-                  type="date"
-                  value={header.last_contacted_at}
-                  onChange={(event) =>
-                    updateHeader("last_contacted_at", event.target.value)
-                  }
-                  className="mt-2 h-8 w-full rounded-md border border-slate-300 px-2 text-sm"
-                /> */}
                 <DatePicker
                   value={
                     header.last_contacted_at
@@ -751,14 +697,6 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                     )
                   }
                 />
-                {/* <input
-                  type="date"
-                  value={header.next_follow_up_at}
-                  onChange={(event) =>
-                    updateHeader("next_follow_up_at", event.target.value)
-                  }
-                  className="mt-2 h-8 w-full rounded-md border border-slate-300 px-2 text-sm"
-                /> */}
               </label>
 
               <label className="flex items-center gap-2 self-end pb-2 text-sm text-black">
@@ -768,17 +706,6 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
                   onChange={(val) => updateHeader("reminder_enabled", val)}
                 />
               </label>
-              {/* <label className="flex items-center gap-2 self-end pb-2 text-sm text-black">
-                <input
-                  type="checkbox"
-                  checked={header.reminder_enabled}
-                  onChange={(event) =>
-                    updateHeader("reminder_enabled", event.target.checked)
-                  }
-                  className="h-4 w-4 accent-emerald-800"
-                />
-                Set Reminder
-              </label> */}
             </div>
           </div>
 
@@ -788,6 +715,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               initialActivities={details.activities}
               onAddActivity={() => setActivityOpen(true)}
               onRefresh={loadProspect}
+              readOnly={false}
             />
           )}
         </div>

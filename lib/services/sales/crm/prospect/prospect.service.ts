@@ -1,4 +1,3 @@
-
 // lib/services/sales/crm/prospect/prospect.service.ts
 
 import { pool } from "@/lib/db";
@@ -157,9 +156,7 @@ type ConversionInput = ProspectConversionPayload;
    HELPERS
 ============================================================ */
 
-function normalizeText(
-  value: string | null | undefined,
-): string | null {
+function normalizeText(value: string | null | undefined): string | null {
   const normalized = value?.trim();
   return normalized || null;
 }
@@ -167,9 +164,7 @@ function normalizeText(
 function normalizePage(value: unknown, fallback: number): number {
   const parsed = Number(value);
 
-  return Number.isInteger(parsed) && parsed > 0
-    ? parsed
-    : fallback;
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function getNotePayload(rawPayload: unknown): NotePayload {
@@ -183,10 +178,7 @@ function getNotePayload(rawPayload: unknown): NotePayload {
 
   const payload = rawPayload as Record<string, unknown>;
 
-  if (
-    typeof payload.content !== "string" ||
-    !payload.content.trim()
-  ) {
+  if (typeof payload.content !== "string" || !payload.content.trim()) {
     throw new Error("Note content is required.");
   }
 
@@ -216,9 +208,7 @@ function getConversionPayload(rawPayload: unknown): ConversionInput {
       : undefined;
 
   const customerStatus =
-    payload.customerStatus === "inactive"
-      ? "inactive"
-      : "active";
+    payload.customerStatus === "inactive" ? "inactive" : "active";
 
   return {
     customerName: customerName || undefined,
@@ -236,14 +226,8 @@ function getRecord<T>(rows: T[], message: string): T {
   return record;
 }
 
-function isPlainObject(
-  value: unknown,
-): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  );
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /* ============================================================
@@ -255,9 +239,7 @@ export class ProspectService {
      LIST
   ========================================================== */
 
-  static async list(
-    companyId: string,
-  ): Promise<ProspectRecord[]> {
+  static async list(companyId: string): Promise<ProspectRecord[]> {
     const result = await pool.query<ProspectRecord>(
       `
       SELECT p.*
@@ -297,9 +279,7 @@ export class ProspectService {
     };
 
     const search =
-      typeof params.search === "string"
-        ? params.search.trim()
-        : "";
+      typeof params.search === "string" ? params.search.trim() : "";
 
     if (search) {
       const index = addValue(`%${search}%`);
@@ -363,25 +343,19 @@ export class ProspectService {
       ) {
         const index = addValue(`%${String(filterValue).trim()}%`);
 
-        whereClauses.push(
-          `${filterableFields[key]} ILIKE $${index}`,
-        );
+        whereClauses.push(`${filterableFields[key]} ILIKE $${index}`);
       }
 
       if (key === "created_at" || key === "next_follow_up_at") {
         const dateColumn =
-          key === "created_at"
-            ? "p.created_at"
-            : "p.next_follow_up_at";
+          key === "created_at" ? "p.created_at" : "p.next_follow_up_at";
 
         const from = filter.from;
         const to = filter.to;
 
         if (typeof from === "string" && from.trim()) {
           const index = addValue(from);
-          whereClauses.push(
-            `${dateColumn} >= $${index}::date`,
-          );
+          whereClauses.push(`${dateColumn} >= $${index}::date`);
         }
 
         if (typeof to === "string" && to.trim()) {
@@ -417,9 +391,7 @@ export class ProspectService {
         : "p.created_at";
 
     const sortDirection =
-      params.sortOrder?.toUpperCase() === "ASC"
-        ? "ASC"
-        : "DESC";
+      params.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     const fromSql = `
       FROM prospects p
@@ -629,11 +601,7 @@ export class ProspectService {
     try {
       await client.query("BEGIN");
 
-      await this.validateReferences(
-        client,
-        companyId,
-        payload.prospect,
-      );
+      await this.validateReferences(client, companyId, payload.prospect);
 
       const sequenceResult = await client.query<SequenceRecord>(
         `
@@ -656,12 +624,7 @@ export class ProspectService {
         payload.prospect,
       );
 
-      await this.syncContacts(
-        client,
-        companyId,
-        prospect.id,
-        payload.contacts,
-      );
+      await this.syncContacts(client, companyId, prospect.id, payload.contacts);
 
       await this.syncAddresses(
         client,
@@ -670,13 +633,13 @@ export class ProspectService {
         payload.addresses,
       );
 
-      await this.insertNewNotes(
-        client,
-        companyId,
-        prospect.id,
-        userId,
-        payload.notes,
-      );
+      //   await this.insertNewNotes(
+      //     client,
+      //     companyId,
+      //     prospect.id,
+      //     userId,
+      //     payload.notes,
+      //   );
 
       await this.insertStatusHistory(
         client,
@@ -733,20 +696,13 @@ export class ProspectService {
         throw new Error("Prospect not found.");
       }
 
-      if (
-        existing.converted_party_id ||
-        existing.status === "Converted"
-      ) {
+      if (existing.converted_party_id || existing.status === "Converted") {
         throw new Error(
           "A converted prospect cannot be edited. Open the customer record instead.",
         );
       }
 
-      await this.validateReferences(
-        client,
-        companyId,
-        payload.prospect,
-      );
+      await this.validateReferences(client, companyId, payload.prospect);
 
       const prospect = await this.updateProspect(
         client,
@@ -756,27 +712,11 @@ export class ProspectService {
         payload.prospect,
       );
 
-      await this.syncContacts(
-        client,
-        companyId,
-        id,
-        payload.contacts,
-      );
+      await this.syncContacts(client, companyId, id, payload.contacts);
 
-      await this.syncAddresses(
-        client,
-        companyId,
-        id,
-        payload.addresses,
-      );
+      await this.syncAddresses(client, companyId, id, payload.addresses);
 
-      await this.insertNewNotes(
-        client,
-        companyId,
-        id,
-        userId,
-        payload.notes,
-      );
+      //   await this.insertNewNotes(client, companyId, id, userId, payload.notes);
 
       if (existing.status !== prospect.status) {
         await this.insertStatusHistory(
@@ -818,13 +758,8 @@ export class ProspectService {
       );
     }
 
-    if (
-      status === "Lost" &&
-      !normalizeText(options.lostReason)
-    ) {
-      throw new Error(
-        "Please provide a reason for losing this prospect.",
-      );
+    if (status === "Lost" && !normalizeText(options.lostReason)) {
+      throw new Error("Please provide a reason for losing this prospect.");
     }
 
     const client = await pool.connect();
@@ -849,10 +784,7 @@ export class ProspectService {
         throw new Error("Prospect not found.");
       }
 
-      if (
-        existing.converted_party_id ||
-        existing.status === "Converted"
-      ) {
+      if (existing.converted_party_id || existing.status === "Converted") {
         throw new Error("This prospect has already been converted.");
       }
 
@@ -886,10 +818,7 @@ export class ProspectService {
         ],
       );
 
-      const updated = getRecord(
-        updateResult.rows,
-        "Prospect not found.",
-      );
+      const updated = getRecord(updateResult.rows, "Prospect not found.");
 
       await this.insertStatusHistory(
         client,
@@ -950,17 +879,11 @@ export class ProspectService {
 
     const nextFollowUpProvided =
       isPlainObject(rawPayload) &&
-      Object.prototype.hasOwnProperty.call(
-        rawPayload,
-        "next_follow_up_at",
-      );
+      Object.prototype.hasOwnProperty.call(rawPayload, "next_follow_up_at");
 
     const reminderProvided =
       isPlainObject(rawPayload) &&
-      Object.prototype.hasOwnProperty.call(
-        rawPayload,
-        "reminder_enabled",
-      );
+      Object.prototype.hasOwnProperty.call(rawPayload, "reminder_enabled");
 
     const client = await pool.connect();
 
@@ -984,10 +907,7 @@ export class ProspectService {
         throw new Error("Prospect not found.");
       }
 
-      if (
-        prospect.converted_party_id ||
-        prospect.status === "Converted"
-      ) {
+      if (prospect.converted_party_id || prospect.status === "Converted") {
         throw new Error(
           "This prospect has been converted. Record future activity against the customer.",
         );
@@ -1007,9 +927,7 @@ export class ProspectService {
         );
 
         if (!contactResult.rows.length) {
-          throw new Error(
-            "Selected prospect contact was not found.",
-          );
+          throw new Error("Selected prospect contact was not found.");
         }
       }
 
@@ -1138,10 +1056,7 @@ export class ProspectService {
         throw new Error("Prospect not found.");
       }
 
-      if (
-        prospect.converted_party_id ||
-        prospect.status === "Converted"
-      ) {
+      if (prospect.converted_party_id || prospect.status === "Converted") {
         throw new Error(
           "This prospect has been converted. Add notes to the customer record.",
         );
@@ -1170,10 +1085,7 @@ export class ProspectService {
         ],
       );
 
-      const note = getRecord(
-        result.rows,
-        "Failed to create prospect note.",
-      );
+      const note = getRecord(result.rows, "Failed to create prospect note.");
 
       await client.query("COMMIT");
 
@@ -1223,10 +1135,7 @@ export class ProspectService {
         throw new Error("Prospect not found.");
       }
 
-      if (
-        prospect.converted_party_id ||
-        prospect.status === "Converted"
-      ) {
+      if (prospect.converted_party_id || prospect.status === "Converted") {
         throw new Error("Prospect has already been converted.");
       }
 
@@ -1258,9 +1167,7 @@ export class ProspectService {
       const addresses = addressesResult.rows;
 
       const primaryContact =
-        contacts.find((contact) => contact.is_primary) ??
-        contacts[0] ??
-        null;
+        contacts.find((contact) => contact.is_primary) ?? contacts[0] ?? null;
 
       const customerName =
         normalizeText(payload.customerName) ??
@@ -1460,10 +1367,7 @@ export class ProspectService {
      DELETE
   ========================================================== */
 
-  static async delete(
-    companyId: string,
-    id: string,
-  ): Promise<void> {
+  static async delete(companyId: string, id: string): Promise<void> {
     const client = await pool.connect();
 
     try {
@@ -1617,9 +1521,7 @@ export class ProspectService {
         prospect.next_follow_up_at,
         prospect.reminder_enabled,
         prospect.description,
-        prospect.status === "Lost"
-          ? prospect.lost_reason
-          : null,
+        prospect.status === "Lost" ? prospect.lost_reason : null,
         userId,
         userId,
       ],
@@ -1677,9 +1579,7 @@ export class ProspectService {
         prospect.next_follow_up_at,
         prospect.reminder_enabled,
         prospect.description,
-        prospect.status === "Lost"
-          ? prospect.lost_reason
-          : null,
+        prospect.status === "Lost" ? prospect.lost_reason : null,
         userId,
         id,
         companyId,
@@ -1711,9 +1611,7 @@ export class ProspectService {
       [companyId, prospectId],
     );
 
-    const existingIds = new Set(
-      existingResult.rows.map((row) => row.id),
-    );
+    const existingIds = new Set(existingResult.rows.map((row) => row.id));
 
     /*
      * First clear primary flags to avoid partial unique-index
@@ -1810,9 +1708,7 @@ export class ProspectService {
       }
     }
 
-    const idsToDelete = [...existingIds].filter(
-      (id) => !retainedIds.has(id),
-    );
+    const idsToDelete = [...existingIds].filter((id) => !retainedIds.has(id));
 
     if (idsToDelete.length) {
       await client.query(
@@ -1849,9 +1745,7 @@ export class ProspectService {
       [companyId, prospectId],
     );
 
-    const existingIds = new Set(
-      existingResult.rows.map((row) => row.id),
-    );
+    const existingIds = new Set(existingResult.rows.map((row) => row.id));
 
     /*
      * Clear primary flags before assigning the new primary.
@@ -1970,9 +1864,7 @@ export class ProspectService {
       }
     }
 
-    const idsToDelete = [...existingIds].filter(
-      (id) => !retainedIds.has(id),
-    );
+    const idsToDelete = [...existingIds].filter((id) => !retainedIds.has(id));
 
     if (idsToDelete.length) {
       await client.query(
@@ -1991,7 +1883,7 @@ export class ProspectService {
      INSERT NEW NOTES
   ========================================================== */
 
-  private static async insertNewNotes(
+  /* private static async insertNewNotes(
     client: PoolClient,
     companyId: string,
     prospectId: string,
@@ -2038,6 +1930,173 @@ export class ProspectService {
           note.content.trim(),
         ],
       );
+    }
+  } */
+
+  /* ==========================================================
+   LIST NOTES
+========================================================== */
+
+  static async listNotes(
+    companyId: string,
+    prospectId: string,
+  ): Promise<ProspectNoteRecord[]> {
+    const result = await pool.query<ProspectNoteRecord>(
+      `
+    SELECT *
+    FROM prospect_notes
+    WHERE company_id = $1
+      AND prospect_id = $2
+    ORDER BY created_at DESC
+    `,
+      [companyId, prospectId],
+    );
+
+    return result.rows;
+  }
+
+  /* ==========================================================
+    UPDATE NOTE
+    ========================================================== */
+
+  static async updateNote(
+    companyId: string,
+    prospectId: string,
+    noteId: string,
+    rawPayload: unknown,
+  ): Promise<ProspectNoteRecord> {
+    const payload = getNotePayload(rawPayload);
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const prospectResult = await client.query<{
+        id: string;
+        status: ProspectStatus;
+        converted_party_id: string | null;
+      }>(
+        `
+        SELECT id, status, converted_party_id
+        FROM prospects
+        WHERE id = $1
+            AND company_id = $2
+        FOR UPDATE
+        `,
+        [prospectId, companyId],
+      );
+
+      const prospect = prospectResult.rows[0];
+
+      if (!prospect) {
+        throw new Error("Prospect not found.");
+      }
+
+      if (prospect.converted_party_id || prospect.status === "Converted") {
+        throw new Error(
+          "This prospect has been converted. Update notes on the customer record.",
+        );
+      }
+
+      const result = await client.query<ProspectNoteRecord>(
+        `
+        UPDATE prospect_notes
+        SET
+            title = $1,
+            content = $2
+        WHERE id = $3
+            AND company_id = $4
+            AND prospect_id = $5
+        RETURNING *
+      `,
+        [
+          normalizeText(payload.title) ?? "General Note Entry",
+          payload.content,
+          noteId,
+          companyId,
+          prospectId,
+        ],
+      );
+
+      const note = result.rows[0];
+
+      if (!note) {
+        throw new Error("Prospect note not found.");
+      }
+
+      await client.query("COMMIT");
+
+      return note;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /* ==========================================================
+   DELETE NOTE
+========================================================== */
+
+  static async deleteNote(
+    companyId: string,
+    prospectId: string,
+    noteId: string,
+  ): Promise<void> {
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const prospectResult = await client.query<{
+        id: string;
+        status: ProspectStatus;
+        converted_party_id: string | null;
+      }>(
+        `
+      SELECT id, status, converted_party_id
+      FROM prospects
+      WHERE id = $1
+        AND company_id = $2
+      FOR UPDATE
+      `,
+        [prospectId, companyId],
+      );
+
+      const prospect = prospectResult.rows[0];
+
+      if (!prospect) {
+        throw new Error("Prospect not found.");
+      }
+
+      if (prospect.converted_party_id || prospect.status === "Converted") {
+        throw new Error(
+          "This prospect has been converted. Manage notes on the customer record.",
+        );
+      }
+
+      const result = await client.query(
+        `
+      DELETE FROM prospect_notes
+      WHERE id = $1
+        AND company_id = $2
+        AND prospect_id = $3
+      RETURNING id
+      `,
+        [noteId, companyId, prospectId],
+      );
+
+      if (result.rowCount === 0) {
+        throw new Error("Prospect note not found.");
+      }
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
     }
   }
 

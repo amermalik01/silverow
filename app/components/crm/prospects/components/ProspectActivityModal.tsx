@@ -169,34 +169,6 @@ export default function ProspectActivityModal({
               />
             </label>
 
-            <label className="text-sm text-slate-600">
-              Contact
-              <select
-                value={contactId}
-                onChange={(event) => setContactId(event.target.value)}
-                className="mt-1 h-9 w-full rounded-md border border-slate-300 px-2"
-              >
-                <option value="">No contact selected</option>
-                {contacts
-                  .filter((contact) => contact.id)
-                  .map((contact) => (
-                    <option key={contact.id} value={contact.id || ""}>
-                      {contact.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
-
-            <label className="text-sm text-slate-600">
-              Outcome
-              <input
-                value={outcome}
-                onChange={(event) => setOutcome(event.target.value)}
-                className="mt-1 h-9 w-full rounded-md border border-slate-300 px-3"
-                placeholder="Call outcome"
-              />
-            </label>
-
             <label className="text-sm text-slate-600 sm:col-span-2">
               Description
               <textarea
@@ -206,34 +178,6 @@ export default function ProspectActivityModal({
                 className="mt-1 w-full rounded-md border border-slate-300 p-3"
                 placeholder="Activity details..."
               />
-            </label>
-
-            <label className="text-sm text-slate-600">
-              Next Follow-up
-              {/* <input
-                type="date"
-                value={nextFollowUp}
-                onChange={(event) => setNextFollowUp(event.target.value)}
-                className="mt-1 h-9 w-full rounded-md border border-slate-300 px-2"
-              /> */}
-              <DatePicker
-                value={nextFollowUp ? parseISO(nextFollowUp) : undefined}
-                containerClassName="mt-1 text-sm"
-                maxDate={new Date()}
-                onChange={(date) =>
-                  setNextFollowUp(date ? format(date, "yyyy-MM-dd") : "")
-                }
-              />
-            </label>
-
-            <label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={reminderEnabled}
-                onChange={(event) => setReminderEnabled(event.target.checked)}
-                className="accent-emerald-800"
-              />
-              Set Reminder
             </label>
           </div>
         </div>
@@ -259,3 +203,56 @@ export default function ProspectActivityModal({
     </div>
   );
 }
+
+/* 
+
+<label className="text-sm text-slate-600">
+  Contact
+  <select
+    value={contactId}
+    onChange={(event) => setContactId(event.target.value)}
+    className="mt-1 h-9 w-full rounded-md border border-slate-300 px-2"
+  >
+    <option value="">No contact selected</option>
+    {contacts
+      .filter((contact) => contact.id)
+      .map((contact) => (
+        <option key={contact.id} value={contact.id || ""}>
+          {contact.name}
+        </option>
+      ))}
+  </select>
+</label>
+
+<label className="text-sm text-slate-600">
+  Outcome
+  <input
+    value={outcome}
+    onChange={(event) => setOutcome(event.target.value)}
+    className="mt-1 h-9 w-full rounded-md border border-slate-300 px-3"
+    placeholder="Call outcome"
+  />
+</label> */
+
+/* 
+<label className="text-sm text-slate-600">
+  Next Follow-up
+  <DatePicker
+    value={nextFollowUp ? parseISO(nextFollowUp) : undefined}
+    containerClassName="mt-1 text-sm"
+    maxDate={new Date()}
+    onChange={(date) =>
+      setNextFollowUp(date ? format(date, "yyyy-MM-dd") : "")
+    }
+  />
+</label>
+
+<label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-700">
+  <input
+    type="checkbox"
+    checked={reminderEnabled}
+    onChange={(event) => setReminderEnabled(event.target.checked)}
+    className="accent-emerald-800"
+  />
+  Set Reminder
+</label> */

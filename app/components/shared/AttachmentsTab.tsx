@@ -46,10 +46,18 @@ function inferFolderFromFile(file?: Attachment): AttachmentFolder {
   if (file?.folder) return file.folder;
   const name = (file?.file_name || "").toLowerCase();
   const mime = (file?.mime_type || "").toLowerCase();
-  if (name.includes("contract") || name.includes("agreement") || name.includes("nda")) {
+  if (
+    name.includes("contract") ||
+    name.includes("agreement") ||
+    name.includes("nda")
+  ) {
     return "Contracts";
   }
-  if (name.includes("price") || name.includes("rebate") || name.includes("quote")) {
+  if (
+    name.includes("price") ||
+    name.includes("rebate") ||
+    name.includes("quote")
+  ) {
     return "Pricing & Rebates";
   }
   if (
@@ -141,7 +149,9 @@ export default function AttachmentsTab({
   const visibleFiles = useMemo(() => {
     if (!activeFolderFilter) return files;
     return files.filter(
-      (f) => inferFolderFromFile(f).toLowerCase() === activeFolderFilter.toLowerCase(),
+      (f) =>
+        inferFolderFromFile(f).toLowerCase() ===
+        activeFolderFilter.toLowerCase(),
     );
   }, [files, activeFolderFilter]);
 
@@ -159,7 +169,16 @@ export default function AttachmentsTab({
     try {
       setDeletingId(id);
 
-      const res = await fetch(`/api/attachments/${id}`, {
+      // const res = await fetch(`/api/attachments/${id}`, {
+      //   method: "DELETE",
+      // });
+
+      const params = new URLSearchParams({
+        module,
+        record_id: recordId,
+      });
+
+      const res = await fetch(`/api/attachments/${id}?${params.toString()}`, {
         method: "DELETE",
       });
 
@@ -350,9 +369,7 @@ export default function AttachmentsTab({
                     ? "bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
                     : "",
                   uploading ? "bg-slate-400 cursor-not-allowed" : "",
-                  uploadComplete
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "",
+                  uploadComplete ? "bg-emerald-600 hover:bg-emerald-700" : "",
                 ]
                   .filter(Boolean)
                   .join(" "),
@@ -488,7 +505,9 @@ export default function AttachmentsTab({
                         >
                           <Icon
                             icon={
-                              previewable ? "tabler:eye" : "tabler:external-link"
+                              previewable
+                                ? "tabler:eye"
+                                : "tabler:external-link"
                             }
                             className="w-3.5 h-3.5"
                           />
