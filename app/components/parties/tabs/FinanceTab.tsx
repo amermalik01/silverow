@@ -1,6 +1,5 @@
 // app/components/parties/tabs/FinanceTab.tsx
 
-// app/components/parties/tabs/FinanceTab.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -170,12 +169,12 @@ export default function FinanceTab({
       "w-full border px-2.5 py-1.5 rounded-lg text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
-      return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed select-none`;
+      return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-black dark:text-slate-300 cursor-not-allowed select-none`;
     }
 
     const stateClasses = errors[errorKey]
-      ? "border-red-500 bg-red-50/20 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
-      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500";
+      ? "border-red-500 bg-red-50/20 text-black dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-black dark:text-slate-100 focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500";
 
     return `${baseClasses} ${stateClasses}`;
   };
@@ -267,7 +266,7 @@ export default function FinanceTab({
     "rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#11161D] p-4 shadow-2xs transition-colors";
 
   const sectionHeaderClass =
-    "flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3.5";
+    "flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100 mb-3.5";
 
   const creditHoldValue = Boolean(
     (account as Partial<Party> & { credit_hold?: boolean }).credit_hold,
@@ -281,7 +280,7 @@ export default function FinanceTab({
     <div className="space-y-4">
       {/* TOP KPI STRIP */}
       <div className="flex flex-col xl:flex-row xl:items-center gap-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100 shrink-0 px-1">
+        <div className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100 shrink-0 px-1">
           <Icon
             icon="tabler:wallet"
             className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
@@ -298,7 +297,7 @@ export default function FinanceTab({
               />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-black dark:text-slate-400">
                 Credit Limit
               </p>
               <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 tabular-nums truncate">
@@ -315,10 +314,10 @@ export default function FinanceTab({
               />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-black dark:text-slate-400">
                 Outstanding
               </p>
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums truncate">
+              <p className="text-sm font-bold text-black dark:text-slate-100 tabular-nums truncate">
                 {metrics.outstandingFormatted}
               </p>
             </div>
@@ -332,10 +331,10 @@ export default function FinanceTab({
               />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-black dark:text-slate-400">
                 Available Credit
               </p>
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums truncate">
+              <p className="text-sm font-bold text-black dark:text-slate-100 tabular-nums truncate">
                 {metrics.availableCreditFormatted}
               </p>
             </div>
@@ -349,10 +348,10 @@ export default function FinanceTab({
               />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-black dark:text-slate-400">
                 Payment Terms
               </p>
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+              <p className="text-sm font-bold text-black dark:text-slate-100 truncate">
                 {metrics.paymentTermsLabel}
               </p>
             </div>
@@ -367,14 +366,14 @@ export default function FinanceTab({
           <div className={sectionHeaderClass}>
             <Icon
               icon="tabler:receipt-2"
-              className="w-4 h-4 text-slate-500 dark:text-slate-400"
+              className="w-4 h-4 text-black dark:text-slate-400"
             />
             <span>Tax &amp; Registration</span>
           </div>
 
           <div className="space-y-3">
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Posting Group <span className="text-red-500">*</span>
               </label>
               <div className="col-span-8">
@@ -400,7 +399,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 {isCustomer ? "VAT Number" : "Supplier VAT No."}
               </label>
               <div className="col-span-8">
@@ -428,7 +427,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Company Reg. No.
               </label>
               <div className="col-span-8">
@@ -445,7 +444,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Currency <span className="text-red-500">*</span>
               </label>
               <div className="col-span-8">
@@ -463,7 +462,7 @@ export default function FinanceTab({
                   ))}
                 </select>
                 {selectedCurrency && !isReadonly && (
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
+                  <p className="text-[11px] text-black dark:text-slate-400 mt-0.5 tabular-nums">
                     Rate: {selectedCurrency.exchange_rate}
                     {selectedCurrency.is_base ? " (Base)" : ""}
                   </p>
@@ -478,14 +477,14 @@ export default function FinanceTab({
           <div className={sectionHeaderClass}>
             <Icon
               icon="tabler:credit-card"
-              className="w-4 h-4 text-slate-500 dark:text-slate-400"
+              className="w-4 h-4 text-black dark:text-slate-400"
             />
             <span>Payment Configuration</span>
           </div>
 
           <div className="space-y-3">
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Payable Bank
               </label>
               <div className="col-span-8">
@@ -506,7 +505,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 {isCustomer
                   ? "Default G/L Account Receivable"
                   : "Default G/L Account Payable"}
@@ -538,7 +537,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Payment Terms
               </label>
               <div className="col-span-8">
@@ -559,7 +558,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Payment Method
               </label>
               <div className="col-span-8">
@@ -650,14 +649,14 @@ export default function FinanceTab({
           <div className={sectionHeaderClass}>
             <Icon
               icon="tabler:shield-check"
-              className="w-4 h-4 text-slate-500 dark:text-slate-400"
+              className="w-4 h-4 text-black dark:text-slate-400"
             />
             <span>Credit Control</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
-              <label className="text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+              <label className="text-sm font-medium text-black dark:text-slate-400 whitespace-nowrap">
                 Credit Limit
               </label>
               <div className="w-36">
@@ -687,7 +686,7 @@ export default function FinanceTab({
                 />
 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                  <label className="text-sm font-medium text-black dark:text-slate-400 whitespace-nowrap">
                     Review Date
                   </label>
                   <input
@@ -724,7 +723,7 @@ export default function FinanceTab({
           <div className={sectionHeaderClass}>
             <Icon
               icon="tabler:building-bank"
-              className="w-4 h-4 text-slate-500 dark:text-slate-400"
+              className="w-4 h-4 text-black dark:text-slate-400"
             />
             <span>
               {isCustomer
@@ -735,7 +734,7 @@ export default function FinanceTab({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Account Name
               </label>
               <div className="col-span-8">
@@ -752,7 +751,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Bank Name
               </label>
               <div className="col-span-8">
@@ -767,7 +766,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Sort Code
               </label>
               <div className="col-span-8">
@@ -785,7 +784,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 Account Number
               </label>
               <div className="col-span-8">
@@ -803,7 +802,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 SWIFT/BIC
               </label>
               <div className="col-span-8">
@@ -820,7 +819,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                 IBAN
               </label>
               <div className="col-span-8">
@@ -837,7 +836,7 @@ export default function FinanceTab({
             {!isReadonly && (
               <>
                 <div className="grid grid-cols-12 gap-2 items-center">
-                  <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                     Bank Address 1
                   </label>
                   <div className="col-span-8">
@@ -854,7 +853,7 @@ export default function FinanceTab({
                 </div>
 
                 <div className="grid grid-cols-12 gap-2 items-center">
-                  <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                     Bank Address 2
                   </label>
                   <div className="col-span-8">
@@ -888,14 +887,14 @@ export default function FinanceTab({
 
             <dl className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-2">
-                <dt className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                <dt className="flex items-center gap-2 text-black dark:text-slate-400">
                   <Icon
                     icon="tabler:coins"
                     className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0"
                   />
                   <span>Last Payment</span>
                 </dt>
-                <dd className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums text-right">
+                <dd className="font-semibold text-black dark:text-slate-100 tabular-nums text-right">
                   {metrics.lastPaymentFormatted}
                   {metrics.lastPaymentDate ? (
                     <span className="text-slate-400 font-normal">
@@ -907,14 +906,14 @@ export default function FinanceTab({
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <dt className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                <dt className="flex items-center gap-2 text-black dark:text-slate-400">
                   <Icon
                     icon="tabler:file-text"
                     className="w-3.5 h-3.5 text-slate-400 shrink-0"
                   />
                   <span>Last Invoice</span>
                 </dt>
-                <dd className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums text-right">
+                <dd className="font-semibold text-black dark:text-slate-100 tabular-nums text-right">
                   {metrics.lastInvoiceFormatted}
                   {metrics.lastInvoiceDate ? (
                     <span className="text-slate-400 font-normal">
@@ -926,27 +925,27 @@ export default function FinanceTab({
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <dt className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                <dt className="flex items-center gap-2 text-black dark:text-slate-400">
                   <Icon
                     icon="tabler:folder-open"
                     className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0"
                   />
                   <span>Outstanding Invoices</span>
                 </dt>
-                <dd className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                <dd className="font-bold text-black dark:text-slate-100 tabular-nums">
                   {metrics.outstandingInvoicesCount}
                 </dd>
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <dt className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                <dt className="flex items-center gap-2 text-black dark:text-slate-400">
                   <Icon
                     icon="tabler:alert-circle"
                     className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0"
                   />
                   <span>Overdue Invoices</span>
                 </dt>
-                <dd className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                <dd className="font-bold text-black dark:text-slate-100 tabular-nums">
                   {metrics.overdueInvoicesCount}
                 </dd>
               </div>
@@ -1085,7 +1084,7 @@ export default function FinanceTab({
       "w-full border p-2 rounded text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
-      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none`;
+      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-black dark:text-slate-400 cursor-not-allowed select-none`;
     }
 
     const stateClasses = errors[errorKey]
@@ -1552,7 +1551,7 @@ export default function FinanceTab({
                   className={getInputClass("finance.bank_sort_code")}
                 />
                 <div className="flex items-center gap-1">
-                  <span className="text-sm text-slate-500 whitespace-nowrap">
+                  <span className="text-sm text-black whitespace-nowrap">
                     Account No.
                   </span>
                   <input

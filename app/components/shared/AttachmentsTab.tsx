@@ -238,7 +238,7 @@ export default function AttachmentsTab({
     if (mimeType?.includes("word") || mimeType?.includes("document")) {
       return "text-sky-700 bg-sky-50 border-sky-200/70 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/60";
     }
-    return "text-slate-600 bg-slate-100 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800";
+    return "text-black bg-slate-100 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800";
   };
 
   const cardClass =
@@ -254,7 +254,7 @@ export default function AttachmentsTab({
               icon="tabler:paperclip"
               className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
             />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="text-sm font-semibold text-black dark:text-slate-100">
               Attachments
             </h3>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60 tabular-nums">
@@ -301,10 +301,10 @@ export default function AttachmentsTab({
                     <Icon icon="tabler:folder" className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    <p className="text-sm font-semibold text-black dark:text-slate-100 truncate">
                       {folderName}
                     </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                    <p className="text-[11px] text-black dark:text-slate-400 tabular-nums">
                       {count} {count === 1 ? "file" : "files"}
                     </p>
                   </div>
@@ -323,7 +323,7 @@ export default function AttachmentsTab({
         {!readonly && (
           <div className="rounded-xl border border-dashed border-emerald-400/80 dark:border-emerald-800/80 bg-emerald-50/15 dark:bg-[#11161D] p-5 transition-colors">
             <UploadDropzone
-              className="custom-attachment ut-button:bg-emerald-700 ut-button:hover:bg-emerald-800 ut-button:dark:bg-emerald-600 ut-button:dark:hover:bg-emerald-500 ut-button:text-white ut-button:text-sm ut-button:font-semibold ut-button:rounded-lg ut-button:px-4 ut-button:py-2 ut-label:text-emerald-700 ut-label:dark:text-emerald-400 ut-allowed-content:text-slate-500 ut-allowed-content:dark:text-slate-400"
+              className="custom-attachment ut-button:bg-emerald-700 ut-button:hover:bg-emerald-800 ut-button:dark:bg-emerald-600 ut-button:dark:hover:bg-emerald-500 ut-button:text-white ut-button:text-sm ut-button:font-semibold ut-button:rounded-lg ut-button:px-4 ut-button:py-2 ut-label:text-emerald-700 ut-label:dark:text-emerald-400 ut-allowed-content:text-black ut-allowed-content:dark:text-slate-400"
               endpoint="attachmentUploader"
               input={{
                 module,
@@ -352,10 +352,10 @@ export default function AttachmentsTab({
               appearance={{
                 container: "w-full border-0 bg-transparent p-0 gap-2",
                 label:
-                  "text-sm font-bold text-slate-900 dark:text-slate-100 cursor-pointer",
+                  "text-sm font-bold text-black dark:text-slate-100 cursor-pointer",
                 uploadIcon: "h-9 w-9 text-emerald-700 dark:text-emerald-400",
                 allowedContent:
-                  "text-[11px] text-slate-500 dark:text-slate-400",
+                  "text-[11px] text-black dark:text-slate-400",
                 button: [
                   "h-9",
                   "px-4",
@@ -406,7 +406,7 @@ export default function AttachmentsTab({
                     value={selectedFolder}
                     disabled={uploading}
                     onChange={(e) => setSelectedFolder(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-medium text-black dark:text-slate-100 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
                   >
                     {DEFAULT_FOLDERS.map((folder) => (
                       <option key={folder} value={folder}>
@@ -417,7 +417,7 @@ export default function AttachmentsTab({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2 text-[11px] text-black dark:text-slate-400">
                 <Icon
                   icon="tabler:folder-check"
                   className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
@@ -435,7 +435,7 @@ export default function AttachmentsTab({
 
         {/* Files List */}
         <div className="space-y-2.5">
-          <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 px-1">
+          <div className="flex items-center justify-between text-sm text-black dark:text-slate-400 px-1">
             <span>
               {activeFolderFilter
                 ? `Folder: ${activeFolderFilter} (${visibleFiles.length})`
@@ -476,17 +476,17 @@ export default function AttachmentsTab({
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p
-                            className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate"
+                            className="text-sm font-semibold text-black dark:text-slate-100 truncate"
                             title={item.file_name}
                           >
                             {item.file_name}
                           </p>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-black dark:text-slate-300 border border-slate-200/70 dark:border-slate-700">
                             {folderLabel}
                           </span>
                         </div>
 
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 tabular-nums">
+                        <p className="text-[11px] text-black dark:text-slate-400 truncate mt-0.5 tabular-nums">
                           {item.mime_type || "Document"}
                           {item.file_size
                             ? ` • ${formatFileSize(item.file_size)}`
@@ -531,7 +531,7 @@ export default function AttachmentsTab({
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[11px] text-black dark:text-slate-400">
                     <div className="flex items-center gap-1.5">
                       <Icon
                         icon="tabler:user"
@@ -593,12 +593,12 @@ export default function AttachmentsTab({
                 <div className="min-w-0">
                   <h2
                     id="delete-attachment-title"
-                    className="text-base font-semibold text-slate-900 dark:text-slate-100"
+                    className="text-base font-semibold text-black dark:text-slate-100"
                   >
                     Delete attachment?
                   </h2>
 
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 leading-5">
+                  <p className="mt-1 text-sm text-black dark:text-slate-400 leading-5">
                     Are you sure you want to delete this attachment? This action
                     cannot be undone.
                   </p>
@@ -612,7 +612,7 @@ export default function AttachmentsTab({
                   </p>
 
                   {deleteTarget.mime_type && (
-                    <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500 truncate">
+                    <p className="mt-0.5 text-[11px] text-slate-400 dark:text-black truncate">
                       {deleteTarget.mime_type}
                     </p>
                   )}

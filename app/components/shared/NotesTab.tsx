@@ -1,6 +1,5 @@
 // app/components/shared/NotesTab.tsx
 
-// app/components/shared/NotesTab.tsx
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
@@ -441,13 +440,13 @@ export default function NotesTab({
     "rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#11161D] shadow-2xs transition-colors";
 
   const fieldClass =
-    "w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 px-3 py-2 rounded-lg text-sm outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 disabled:opacity-60 transition-colors";
+    "w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-black dark:text-slate-100 px-3 py-2 rounded-lg text-sm outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 disabled:opacity-60 transition-colors";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
       {/* LEFT PANEL: New Note Composer */}
       <section className={`${cardClass} lg:col-span-4 p-4 space-y-3.5`}>
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <div className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100">
           <Icon
             icon="tabler:note-plus"
             className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
@@ -516,7 +515,7 @@ export default function NotesTab({
               className={`w-4 h-4 ${
                 pinThisNote
                   ? "text-amber-500"
-                  : "text-slate-400 dark:text-slate-500"
+                  : "text-slate-400 dark:text-black"
               }`}
             />
             <span>Pin this note</span>
@@ -562,7 +561,7 @@ export default function NotesTab({
               icon="tabler:notes"
               className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
             />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="text-sm font-semibold text-black dark:text-slate-100">
               Notes
             </h3>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60 tabular-nums">
@@ -585,7 +584,7 @@ export default function NotesTab({
                   setCurrentPage(1);
                 }}
                 placeholder="Search notes..."
-                className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
               />
             </div>
 
@@ -664,7 +663,7 @@ export default function NotesTab({
                           <div className="space-y-3">
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                               <div className="sm:col-span-2">
-                                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                <label className="block text-[11px] font-medium text-black dark:text-slate-400 mb-1">
                                   Subject
                                 </label>
                                 <input
@@ -681,7 +680,7 @@ export default function NotesTab({
                               </div>
 
                               <div>
-                                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                <label className="block text-[11px] font-medium text-black dark:text-slate-400 mb-1">
                                   Category
                                 </label>
                                 <select
@@ -702,7 +701,7 @@ export default function NotesTab({
                             </div>
 
                             <div>
-                              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                              <label className="block text-[11px] font-medium text-black dark:text-slate-400 mb-1">
                                 Description
                               </label>
                               <NotesRichEditor
@@ -737,7 +736,7 @@ export default function NotesTab({
                         ) : (
                           <>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                              <h4 className="text-sm font-bold text-black dark:text-slate-100 truncate">
                                 {item.subject}
                               </h4>
                               {item.is_pinned && (
@@ -748,7 +747,7 @@ export default function NotesTab({
                               )}
                             </div>
 
-                            <div className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-300">
+                            <div className="mt-1 text-sm leading-5 text-black dark:text-slate-300">
                               <div
                                 className="prose prose-xs max-w-none dark:prose-invert line-clamp-2 inline"
                                 dangerouslySetInnerHTML={{
@@ -767,7 +766,7 @@ export default function NotesTab({
                             </div>
 
                             {/* Footer Meta: Initials + Author + Timestamp */}
-                            <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                            <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] text-black dark:text-slate-400">
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-200">
                                 {getInitials(
                                   item.created_by_name || item.created_by,
@@ -830,7 +829,7 @@ export default function NotesTab({
                               onClick={() => startEditing(item)}
                               disabled={saving}
                               title="Edit note"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-black dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             >
                               <Icon icon="tabler:pencil" className="w-3.5 h-3.5" />
                             </button>
@@ -844,7 +843,7 @@ export default function NotesTab({
                               }
                               disabled={saving}
                               title="More actions"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-black dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             >
                               <Icon icon="tabler:dots" className="w-3.5 h-3.5" />
                             </button>
@@ -915,7 +914,7 @@ export default function NotesTab({
 
         {/* Footer Pagination */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-200/80 dark:border-slate-800 pt-3">
-          <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
+          <p className="text-sm text-black dark:text-slate-400 tabular-nums">
             Showing{" "}
             {processedNotes.length === 0
               ? 0
@@ -926,7 +925,7 @@ export default function NotesTab({
           </p>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-1.5 text-sm text-black dark:text-slate-400">
               <span>Rows per page</span>
               <select
                 value={rowsPerPage}
@@ -984,10 +983,10 @@ export default function NotesTab({
                   />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-sm font-bold text-black dark:text-slate-100">
                     {viewingNote.subject}
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-black dark:text-slate-400">
                     Created on {formatDate(viewingNote.created_at)} by{" "}
                     {viewingNote.created_by_name || "Unknown"}
                   </p>

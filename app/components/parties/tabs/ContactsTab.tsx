@@ -93,12 +93,12 @@ export default function ContactsTab({
       "w-full border px-2.5 py-1.5 rounded-lg text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
-      return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed select-none`;
+      return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-black dark:text-slate-300 cursor-not-allowed select-none`;
     }
 
     const stateClasses = errors[errorKey]
-      ? "border-red-500 bg-red-50/20 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
-      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500";
+      ? "border-red-500 bg-red-50/20 text-black dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-black dark:text-slate-100 focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500";
 
     return `${baseClasses} ${stateClasses}`;
   };
@@ -131,9 +131,9 @@ export default function ContactsTab({
         <div className="flex items-center gap-2.5">
           <Icon
             icon="tabler:users"
-            className="w-4 h-4 text-slate-500 dark:text-slate-400"
+            className="w-4 h-4 text-black dark:text-slate-400"
           />
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="text-sm font-semibold text-black dark:text-slate-100">
             Contacts
           </h3>
           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60 tabular-nums">
@@ -152,7 +152,7 @@ export default function ContactsTab({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search contacts..."
-              className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#11161D] text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 transition-colors"
+              className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#11161D] text-sm text-black dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 transition-colors"
             />
           </div>
 
@@ -173,7 +173,7 @@ export default function ContactsTab({
         <div className="rounded-xl border border-emerald-300/80 dark:border-emerald-800/80 bg-white dark:bg-[#11161D] p-4 shadow-2xs space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <span className="text-sm font-semibold text-black dark:text-slate-100">
                 {activeEditContact.name
                   ? `Editing: ${activeEditContact.name}`
                   : `New Contact #${editingIndex + 1}`}
@@ -196,7 +196,7 @@ export default function ContactsTab({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-black dark:text-slate-400 mb-1">
                 Contact Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -217,7 +217,7 @@ export default function ContactsTab({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-black dark:text-slate-400 mb-1">
                 Job Title
               </label>
               <input
@@ -233,7 +233,7 @@ export default function ContactsTab({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-black dark:text-slate-400 mb-1">
                 Email
               </label>
               <input
@@ -254,7 +254,7 @@ export default function ContactsTab({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-black dark:text-slate-400 mb-1">
                 Phone
               </label>
               <input
@@ -270,7 +270,7 @@ export default function ContactsTab({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-black dark:text-slate-400 mb-1">
                 Mobile
               </label>
               <input
@@ -317,7 +317,7 @@ export default function ContactsTab({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
+                <tr className="border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-black dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
                   <th className="py-2.5 px-4">Contact Name</th>
                   <th className="py-2.5 px-4">Job Title</th>
                   <th className="py-2.5 px-4">Email</th>
@@ -350,7 +350,7 @@ export default function ContactsTab({
                             {getInitials(c.name)}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                            <p className="font-semibold text-black dark:text-slate-100 truncate">
                               {c.name || (
                                 <span className="italic text-slate-400 font-normal">
                                   Unnamed Contact
@@ -367,7 +367,7 @@ export default function ContactsTab({
                       </td>
 
                       {/* Job Title */}
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                      <td className="py-3 px-4 text-black dark:text-slate-300 whitespace-nowrap">
                         {c.job_title || "—"}
                       </td>
 
@@ -435,7 +435,7 @@ export default function ContactsTab({
                                 editingIndex === idx ? null : idx,
                               );
                             }}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            className="p-1.5 rounded-lg text-black hover:text-black dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             title="Edit Contact"
                           >
                             <Icon icon="tabler:pencil" className="w-4 h-4" />
@@ -445,7 +445,7 @@ export default function ContactsTab({
                             <button
                               type="button"
                               onClick={() => handleDeleteContact(idx)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                              className="p-1.5 rounded-lg text-black hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                               title="Delete Contact"
                             >
                               <Icon icon="tabler:trash" className="w-4 h-4" />
@@ -518,7 +518,7 @@ export default function ContactsTab({
       "w-full border p-2 rounded text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
-      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none ${extraClasses}`;
+      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-black dark:text-slate-400 cursor-not-allowed select-none ${extraClasses}`;
     }
 
     const stateClasses = errors[errorKey]

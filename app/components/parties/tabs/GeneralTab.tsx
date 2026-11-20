@@ -208,12 +208,12 @@ export default function GeneralTab({
       "w-full border px-2.5 py-1.5 rounded-lg text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
-      return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed select-none`;
+      return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-black dark:text-slate-300 cursor-not-allowed select-none`;
     }
 
     const stateClasses = errors[errorKey]
-      ? "border-red-500 bg-red-50/20 text-slate-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
-      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500";
+      ? "border-red-500 bg-red-50/20 text-black dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+      : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-black dark:text-slate-100 focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500";
 
     return `${baseClasses} ${stateClasses}`;
   };
@@ -267,7 +267,7 @@ export default function GeneralTab({
     "rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#11161D] p-4 shadow-2xs transition-colors";
 
   const sectionHeaderClass =
-    "flex items-center justify-between gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3.5";
+    "flex items-center justify-between gap-2 text-sm font-semibold text-black dark:text-slate-100 mb-3.5";
 
   const assignedPersonParts = useMemo(() => {
     const raw = account.assign_person || "";
@@ -313,79 +313,79 @@ export default function GeneralTab({
       {/* BOTTOM SUMMARY STRIP */}
       <section className={`${cardClass} grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 divide-y sm:divide-y-0 lg:divide-x divide-slate-200/80 dark:divide-slate-800`}>
         <div className="lg:px-3 first:lg:pl-0">
-          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-black dark:text-slate-400">
             <Icon
               icon="tabler:calendar"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>Customer Since</span>
           </div>
-          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
             {metrics.customerSince}
           </p>
         </div>
 
         <div className="lg:px-3">
-          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-black dark:text-slate-400">
             <Icon
               icon="tabler:coins"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>Credit Limit</span>
           </div>
-          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
             {metrics.creditLimitFormatted}
           </p>
         </div>
 
         <div className="lg:px-3">
-          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-black dark:text-slate-400">
             <Icon
               icon="tabler:shopping-cart"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>Total Orders (This Year)</span>
           </div>
-          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
             {metrics.totalOrdersThisYear}
           </p>
         </div>
 
         <div className="lg:px-3">
-          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-black dark:text-slate-400">
             <Icon
               icon="tabler:stack-2"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>Total Spend (This Year)</span>
           </div>
-          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
             {metrics.totalSpendThisYearFormatted}
           </p>
         </div>
 
         <div className="lg:px-3">
-          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-black dark:text-slate-400">
             <Icon
               icon="tabler:clock"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>Last Activity</span>
           </div>
-          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
             {metrics.lastActivityDate}
           </p>
         </div>
 
         <div className="lg:px-3 last:lg:pr-0">
-          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-black dark:text-slate-400">
             <Icon
               icon="tabler:file-dollar"
-              className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
+              className="text-emerald-800 text-3xl"
             />
             <span>Open Outstanding</span>
           </div>
-          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
             {metrics.openOutstandingFormatted}
           </p>
         </div>
@@ -425,7 +425,7 @@ export default function GeneralTab({
               <span className="flex items-center gap-2">
                 <Icon
                   icon="tabler:building"
-                  className="w-4 h-4 text-slate-500 dark:text-slate-400"
+                  className="text-emerald-800 text-3xl"
                 />
                 Company Details
               </span>
@@ -434,7 +434,7 @@ export default function GeneralTab({
             {isReadonly ? (
               <dl className="space-y-2.5 text-sm">
                 <div className="grid grid-cols-3 gap-2 items-center">
-                  <dt className="text-slate-500 dark:text-slate-400">Email</dt>
+                  <dt className="text-black dark:text-slate-400">Email</dt>
                   <dd className="col-span-2 truncate">
                     {account.email ? (
                       <a
@@ -450,7 +450,7 @@ export default function GeneralTab({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 items-center">
-                  <dt className="text-slate-500 dark:text-slate-400">Phone</dt>
+                  <dt className="text-black dark:text-slate-400">Phone</dt>
                   <dd className="col-span-2">
                     {account.phone ? (
                       <a
@@ -466,7 +466,7 @@ export default function GeneralTab({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 items-center">
-                  <dt className="text-slate-500 dark:text-slate-400">Website</dt>
+                  <dt className="text-black dark:text-slate-400">Website</dt>
                   <dd className="col-span-2 truncate">
                     {account.website ? (
                       <a
@@ -486,7 +486,7 @@ export default function GeneralTab({
             ) : (
               <div className="space-y-2.5">
                 <div className="grid grid-cols-3 gap-2 items-center">
-                  <label className="text-sm text-slate-600 dark:text-slate-400">
+                  <label className="text-sm text-black dark:text-slate-400">
                     Email
                   </label>
                   <div className="col-span-2">
@@ -501,7 +501,7 @@ export default function GeneralTab({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 items-center">
-                  <label className="text-sm text-slate-600 dark:text-slate-400">
+                  <label className="text-sm text-black dark:text-slate-400">
                     Phone
                   </label>
                   <div className="col-span-2">
@@ -516,7 +516,7 @@ export default function GeneralTab({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 items-center">
-                  <label className="text-sm text-slate-600 dark:text-slate-400">
+                  <label className="text-sm text-black dark:text-slate-400">
                     Website
                   </label>
                   <div className="col-span-2">
@@ -544,7 +544,7 @@ export default function GeneralTab({
               <span className="flex items-center gap-2">
                 <Icon
                   icon="tabler:map-pin"
-                  className="w-4 h-4 text-slate-500 dark:text-slate-400"
+                  className="text-emerald-800 text-3xl"
                 />
                 Address
               </span>
@@ -554,7 +554,7 @@ export default function GeneralTab({
               <div className="flex items-start justify-between gap-3">
                 <div className="text-sm leading-5 text-slate-700 dark:text-slate-300 space-y-0.5 min-w-0">
                   {primaryAddress.address_1 && (
-                    <p className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                    <p className="font-medium text-black dark:text-slate-100 truncate">
                       {primaryAddress.address_1}
                     </p>
                   )}
@@ -569,11 +569,11 @@ export default function GeneralTab({
                     </p>
                   )}
                   {primaryAddress.state && (
-                    <p className="text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-black dark:text-slate-400 truncate">
                       {primaryAddress.state}
                     </p>
                   )}
-                  <p className="text-slate-600 dark:text-slate-400">
+                  <p className="text-black dark:text-slate-400">
                     {primaryAddress.country || account.country || "United Kingdom"}
                   </p>
                   {!primaryAddress.address_1 &&
@@ -583,11 +583,11 @@ export default function GeneralTab({
                     )}
                 </div>
 
-                <div className="w-24 h-20 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+                <div className="w-24 h-20 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center text-black dark:text-slate-400">
                   <div className="w-7 h-7 rounded-full bg-emerald-600/15 dark:bg-emerald-500/20 flex items-center justify-center mb-1">
                     <Icon
                       icon="tabler:map-pin-filled"
-                      className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+                      className="text-emerald-800 text-3xl"
                     />
                   </div>
                   <span className="text-[10px] font-medium">Map View</span>
@@ -673,7 +673,7 @@ export default function GeneralTab({
             >
               <Icon
                 icon="tabler:calendar-event"
-                className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+                className="text-emerald-800 text-3xl"
               />
               <span>Activities</span>
               <Icon
@@ -689,7 +689,7 @@ export default function GeneralTab({
             >
               <Icon
                 icon="tabler:file-invoice"
-                className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
+                className="text-emerald-800 text-3xl"
               />
               <span>Statement</span>
               <Icon
@@ -706,7 +706,7 @@ export default function GeneralTab({
               </div>
 
               <div className="min-w-0">
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-black dark:text-slate-400">
                   {account.is_customer
                     ? "Assigned Salesperson"
                     : account.is_supplier
@@ -726,7 +726,7 @@ export default function GeneralTab({
                           onClick={() =>
                             onOpenSalespersonDetail(account.assign_person_id)
                           }
-                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          className="text-slate-400 hover:text-black dark:hover:text-slate-200"
                           title="View Salesperson"
                         >
                           <Icon
@@ -736,7 +736,7 @@ export default function GeneralTab({
                         </button>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-[11px] text-black dark:text-slate-400 truncate">
                       {assignedPersonParts.role}
                     </p>
                   </>
@@ -773,7 +773,7 @@ export default function GeneralTab({
               <span className="flex items-center gap-2">
                 <Icon
                   icon="tabler:users"
-                  className="w-4 h-4 text-slate-500 dark:text-slate-400"
+                  className="text-emerald-800 text-3xl"
                 />
                 Contacts
               </span>
@@ -787,7 +787,7 @@ export default function GeneralTab({
                 className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                   activeContactTab === "primary"
                     ? "bg-emerald-700 text-white dark:bg-emerald-600"
-                    : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                    : "bg-slate-100 dark:bg-slate-800/80 text-black dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
                 }`}
               >
                 Primary Contact
@@ -802,7 +802,7 @@ export default function GeneralTab({
                 className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                   activeContactTab === "secondary"
                     ? "bg-emerald-700 text-white dark:bg-emerald-600"
-                    : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                    : "bg-slate-100 dark:bg-slate-800/80 text-black dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
                 }`}
               >
                 Secondary Contacts ({secondaryContacts.length})
@@ -819,7 +819,7 @@ export default function GeneralTab({
                     className={`px-2 py-0.5 rounded text-[11px] border ${
                       selectedSecondaryIdx === idx
                         ? "border-emerald-600 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium"
-                        : "border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400"
+                        : "border-slate-200 dark:border-slate-800 text-black dark:text-slate-400"
                     }`}
                   >
                     {c.name || `Contact ${idx + 1}`}
@@ -835,10 +835,10 @@ export default function GeneralTab({
                     {getInitials(activeContact.name)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    <p className="text-sm font-semibold text-black dark:text-slate-100 truncate">
                       {activeContact.name || "No contact name"}
                     </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-[11px] text-black dark:text-slate-400 truncate">
                       {activeContact.job_title || "—"}
                     </p>
                   </div>
@@ -848,7 +848,7 @@ export default function GeneralTab({
                   <div className="flex items-center gap-2 truncate">
                     <Icon
                       icon="tabler:mail"
-                      className="w-3.5 h-3.5 text-slate-400 shrink-0"
+                      className="text-emerald-800 text-xl"
                     />
                     <span className="truncate">
                       {activeContact.email || "—"}
@@ -857,7 +857,7 @@ export default function GeneralTab({
                   <div className="flex items-center gap-2 tabular-nums">
                     <Icon
                       icon="tabler:phone"
-                      className="w-3.5 h-3.5 text-slate-400 shrink-0"
+                      className="text-emerald-800 text-xl"
                     />
                     <span>
                       {activeContact.mobile || activeContact.phone || "—"}
@@ -868,7 +868,7 @@ export default function GeneralTab({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                  <label className="block text-[11px] text-black dark:text-slate-400 mb-1">
                     Contact Name
                   </label>
                   <input
@@ -881,7 +881,7 @@ export default function GeneralTab({
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                  <label className="block text-[11px] text-black dark:text-slate-400 mb-1">
                     Job Title
                   </label>
                   <input
@@ -898,7 +898,7 @@ export default function GeneralTab({
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                  <label className="block text-[11px] text-black dark:text-slate-400 mb-1">
                     Email
                   </label>
                   <input
@@ -911,7 +911,7 @@ export default function GeneralTab({
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                  <label className="block text-[11px] text-black dark:text-slate-400 mb-1">
                     Mobile
                   </label>
                   <input
@@ -939,7 +939,7 @@ export default function GeneralTab({
               <span className="flex items-center gap-2">
                 <Icon
                   icon="tabler:briefcase"
-                  className="w-4 h-4 text-slate-500 dark:text-slate-400"
+                  className="text-emerald-800 text-3xl"
                 />
                 Business Profile
               </span>
@@ -951,14 +951,14 @@ export default function GeneralTab({
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <Icon
                     icon="tabler:mail-opened"
-                    className="w-4 h-4 text-slate-400 shrink-0"
+                    className="text-emerald-800 text-xl"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] text-black dark:text-slate-400">
                       Segment
                     </p>
                     {isReadonly ? (
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      <p className="text-sm font-semibold text-black dark:text-slate-100 truncate">
                         {segments.find((s) => s.id === account.segment_id)
                           ?.name || "—"}
                       </p>
@@ -986,14 +986,14 @@ export default function GeneralTab({
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <Icon
                     icon="tabler:map"
-                    className="w-4 h-4 text-slate-400 shrink-0"
+                    className="text-emerald-800 text-xl"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] text-black dark:text-slate-400">
                       Territory
                     </p>
                     {isReadonly ? (
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      <p className="text-sm font-semibold text-black dark:text-slate-100 truncate">
                         {territories.find((t) => t.id === account.territory_id)
                           ?.name || "—"}
                       </p>
@@ -1022,16 +1022,16 @@ export default function GeneralTab({
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <Icon
                       icon="tabler:users-group"
-                      className="w-4 h-4 text-slate-400 shrink-0"
+                      className="text-emerald-800 text-xl"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <p className="text-[11px] text-black dark:text-slate-400">
                         {account.is_supplier
                           ? "Purchasing Group"
                           : "Buying Group"}
                       </p>
                       {isReadonly ? (
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        <p className="text-sm font-semibold text-black dark:text-slate-100 truncate">
                           {buyingGroups.find(
                             (b) => b.id === account.buying_group_id,
                           )?.name || "—"}
@@ -1063,14 +1063,14 @@ export default function GeneralTab({
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <Icon
                       icon="tabler:building-skyscraper"
-                      className="w-4 h-4 text-slate-400 shrink-0"
+                      className="text-emerald-800 text-xl"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <p className="text-[11px] text-black dark:text-slate-400">
                         Ownership Type
                       </p>
                       {isReadonly ? (
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        <p className="text-sm font-semibold text-black dark:text-slate-100 truncate">
                           {ownershipType.find(
                             (o) => o.id === account.ownership_type_id,
                           )?.name || "—"}
@@ -1100,8 +1100,8 @@ export default function GeneralTab({
             {/* Location Type Pills + Optional Anonymous Flag */}
             <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mr-1">
-                  <Icon icon="tabler:user-pin" className="w-4 h-4" />
+                <span className="flex items-center gap-1.5 text-sm text-black dark:text-slate-400 mr-1">
+                  <Icon icon="tabler:user-pin" className="text-emerald-800 text-3xl" />
                   Location Type
                 </span>
 
@@ -1117,7 +1117,7 @@ export default function GeneralTab({
                   className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                     primaryAddress.is_billing
                       ? "bg-emerald-700 text-white dark:bg-emerald-600"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      : "bg-slate-100 dark:bg-slate-800 text-black dark:text-slate-300"
                   } ${isReadonly ? "cursor-default" : "cursor-pointer"}`}
                 >
                   Billing
@@ -1135,7 +1135,7 @@ export default function GeneralTab({
                   className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                     primaryAddress.is_shipping
                       ? "bg-emerald-700 text-white dark:bg-emerald-600"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      : "bg-slate-100 dark:bg-slate-800 text-black dark:text-slate-300"
                   } ${isReadonly ? "cursor-default" : "cursor-pointer"}`}
                 >
                   Shipping
@@ -1154,7 +1154,7 @@ export default function GeneralTab({
                     className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                       primaryAddress.is_collection
                         ? "bg-emerald-700 text-white dark:bg-emerald-600"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                        : "bg-slate-100 dark:bg-slate-800 text-black dark:text-slate-300"
                     } ${isReadonly ? "cursor-default" : "cursor-pointer"}`}
                   >
                     Collection
@@ -1163,7 +1163,7 @@ export default function GeneralTab({
               </div>
 
               {account.is_customer && (
-                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
+                <label className="flex items-center gap-2 text-sm text-black dark:text-slate-400 cursor-pointer">
                   <input
                     type="checkbox"
                     disabled={isReadonly}
@@ -1178,7 +1178,7 @@ export default function GeneralTab({
               )}
 
               {account.is_supplier && (
-                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
+                <label className="flex items-center gap-2 text-sm text-black dark:text-slate-400 cursor-pointer">
                   <input
                     type="checkbox"
                     disabled={isReadonly}
@@ -1380,7 +1380,7 @@ export default function GeneralTab({
       "w-full border p-2 rounded text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
-      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none`;
+      return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-black dark:text-slate-400 cursor-not-allowed select-none`;
     }
 
     const stateClasses = errors[errorKey]
@@ -1807,7 +1807,7 @@ export default function GeneralTab({
                 type="button"
                 disabled={isReadonly}
                 onClick={() => setSalespersonModalOpen(true)}
-                className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-slate-600"
+                className="px-2 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 rounded text-black"
               >
                 <Icon icon="tabler:external-link" className="w-4 h-4" />
               </button>
