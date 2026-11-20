@@ -441,7 +441,7 @@ export default function NotesTab({
     "rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#11161D] shadow-2xs transition-colors";
 
   const fieldClass =
-    "w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 px-3 py-2 rounded-lg text-xs outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 disabled:opacity-60 transition-colors";
+    "w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 px-3 py-2 rounded-lg text-sm outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 disabled:opacity-60 transition-colors";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
@@ -456,7 +456,7 @@ export default function NotesTab({
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Subject <span className="text-red-500">*</span>
           </label>
           <input
@@ -474,7 +474,7 @@ export default function NotesTab({
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Category <span className="text-red-500">*</span>
           </label>
           <select
@@ -492,7 +492,7 @@ export default function NotesTab({
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Description <span className="text-red-500">*</span>
           </label>
           <NotesRichEditor
@@ -509,7 +509,7 @@ export default function NotesTab({
             type="button"
             disabled={readonly || saving}
             onClick={() => setPinThisNote((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer disabled:opacity-60"
           >
             <Icon
               icon={pinThisNote ? "tabler:star-filled" : "tabler:star"}
@@ -547,7 +547,7 @@ export default function NotesTab({
           onClick={handleSave}
           disabled={readonly || saving}
           variant="add_line"
-          className="w-full rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-semibold py-2"
+          className="w-full rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold py-2"
         >
           {saving ? "Processing..." : "Add Note"}
         </Button>
@@ -585,7 +585,7 @@ export default function NotesTab({
                   setCurrentPage(1);
                 }}
                 placeholder="Search notes..."
-                className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
               />
             </div>
 
@@ -596,7 +596,7 @@ export default function NotesTab({
                 setCategoryFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-600"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-600"
             >
               <option value="all">Filter</option>
               {NOTE_CATEGORIES.map((cat) => (
@@ -612,7 +612,7 @@ export default function NotesTab({
               onChange={(e) =>
                 setSortOrder(e.target.value as "newest" | "oldest" | "pinned")
               }
-              className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-600"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-600"
             >
               <option value="newest">Sort: Newest</option>
               <option value="pinned">Sort: Pinned First</option>
@@ -624,11 +624,11 @@ export default function NotesTab({
         {/* Notes List */}
         <div className="space-y-3">
           {loading ? (
-            <p className="text-xs text-slate-400 text-center py-8 animate-pulse">
+            <p className="text-sm text-slate-400 text-center py-8 animate-pulse">
               Loading notes...
             </p>
           ) : paginatedNotes.length === 0 ? (
-            <div className="text-center py-12 border border-dashed rounded-xl border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
+            <div className="text-center py-12 border border-dashed rounded-xl border-slate-200 dark:border-slate-800 text-slate-400 text-sm">
               <Icon
                 icon="tabler:notebook"
                 className="w-8 h-8 mx-auto mb-2 opacity-50"
@@ -737,7 +737,7 @@ export default function NotesTab({
                         ) : (
                           <>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
                                 {item.subject}
                               </h4>
                               {item.is_pinned && (
@@ -748,7 +748,7 @@ export default function NotesTab({
                               )}
                             </div>
 
-                            <div className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                            <div className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-300">
                               <div
                                 className="prose prose-xs max-w-none dark:prose-invert line-clamp-2 inline"
                                 dangerouslySetInnerHTML={{
@@ -850,7 +850,7 @@ export default function NotesTab({
                             </button>
 
                             {openMenuId === item.id && (
-                              <div className="absolute right-0 top-8 z-20 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#11161D] shadow-lg py-1 text-xs">
+                              <div className="absolute right-0 top-8 z-20 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#11161D] shadow-lg py-1 text-sm">
                                 <button
                                   type="button"
                                   onClick={() => handleTogglePin(item)}
@@ -915,7 +915,7 @@ export default function NotesTab({
 
         {/* Footer Pagination */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-200/80 dark:border-slate-800 pt-3">
-          <p className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+          <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
             Showing{" "}
             {processedNotes.length === 0
               ? 0
@@ -926,7 +926,7 @@ export default function NotesTab({
           </p>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
               <span>Rows per page</span>
               <select
                 value={rowsPerPage}
@@ -934,7 +934,7 @@ export default function NotesTab({
                   setRowsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
+                className="px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none"
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
@@ -953,7 +953,7 @@ export default function NotesTab({
                 <Icon icon="tabler:chevron-left" className="w-3.5 h-3.5" />
               </Button>
 
-              <span className="px-2.5 py-1 rounded-lg bg-emerald-700 dark:bg-emerald-600 text-white text-xs font-semibold tabular-nums">
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-700 dark:bg-emerald-600 text-white text-sm font-semibold tabular-nums">
                 {currentPage}
               </span>
 
@@ -1005,7 +1005,7 @@ export default function NotesTab({
 
             <div className="p-6 overflow-y-auto space-y-4">
               <div
-                className="text-xs leading-6 text-slate-700 dark:text-slate-300 prose prose-sm max-w-none dark:prose-invert"
+                className="text-sm leading-6 text-slate-700 dark:text-slate-300 prose prose-sm max-w-none dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: viewingNote.description }}
               />
             </div>

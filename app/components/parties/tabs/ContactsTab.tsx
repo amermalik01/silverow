@@ -90,7 +90,7 @@ export default function ContactsTab({
 
   const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
     const baseClasses =
-      "w-full border px-2.5 py-1.5 rounded-lg text-xs outline-none transition-colors duration-150";
+      "w-full border px-2.5 py-1.5 rounded-lg text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
       return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed select-none`;
@@ -152,7 +152,7 @@ export default function ContactsTab({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search contacts..."
-              className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#11161D] text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 transition-colors"
+              className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#11161D] text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 transition-colors"
             />
           </div>
 
@@ -160,7 +160,7 @@ export default function ContactsTab({
             type="button"
             onClick={addContactRow}
             variant="add_line"
-            className="rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 inline-flex items-center gap-1.5 shrink-0"
+            className="rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold px-3 py-1.5 inline-flex items-center gap-1.5 shrink-0"
           >
             <Icon icon="tabler:plus" className="w-3.5 h-3.5" />
             <span>Add Contact</span>
@@ -173,7 +173,7 @@ export default function ContactsTab({
         <div className="rounded-xl border border-emerald-300/80 dark:border-emerald-800/80 bg-white dark:bg-[#11161D] p-4 shadow-2xs space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {activeEditContact.name
                   ? `Editing: ${activeEditContact.name}`
                   : `New Contact #${editingIndex + 1}`}
@@ -188,7 +188,7 @@ export default function ContactsTab({
             <button
               type="button"
               onClick={() => setEditingIndex(null)}
-              className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline"
+              className="text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:underline"
             >
               Done
             </button>
@@ -286,7 +286,7 @@ export default function ContactsTab({
             </div>
 
             <div className="flex items-end pb-1">
-              <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                 <input
                   type="radio"
                   name="primaryContactRadio"
@@ -304,11 +304,11 @@ export default function ContactsTab({
 
       {/* Empty State */}
       {contacts.length === 0 ? (
-        <div className="p-8 text-center text-xs rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-[#11161D]/50 text-slate-400">
+        <div className="p-8 text-center text-sm rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-[#11161D]/50 text-slate-400">
           No personnel assignments appended yet.
         </div>
       ) : filteredContacts.length === 0 ? (
-        <div className="p-8 text-center text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#11161D] text-slate-400">
+        <div className="p-8 text-center text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#11161D] text-slate-400">
           No contacts match &ldquo;{searchQuery}&rdquo;.
         </div>
       ) : (
@@ -326,7 +326,7 @@ export default function ContactsTab({
                   <th className="py-2.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm">
                 {filteredContacts.map(({ contact: c, originalIndex: idx }) => {
                   const displayPhone = c.mobile || c.phone || "—";
                   const hasRowError = Boolean(
@@ -515,7 +515,7 @@ export default function ContactsTab({
     disabled: boolean = isReadonly,
   ) => {
     const baseClasses =
-      "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
+      "w-full border p-2 rounded text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
       return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none ${extraClasses}`;
@@ -531,7 +531,7 @@ export default function ContactsTab({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider">
+        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-wider">
           Contacts
         </h3>
      
@@ -542,7 +542,7 @@ export default function ContactsTab({
       </div>
 
       {contacts.length === 0 && (
-        <div className="p-8 text-center text-xs border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
+        <div className="p-8 text-center text-sm border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
           No personnel assignments appended yet.
         </div>
       )}
@@ -554,7 +554,7 @@ export default function ContactsTab({
    
           <div className="flex items-center justify-between font-medium px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold">Contact {idx + 1}</span>
+              <span className="text-sm font-semibold">Contact {idx + 1}</span>
 
               {c.is_primary && (
                 <span className="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
@@ -577,7 +577,7 @@ export default function ContactsTab({
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-3 p-4">
             <div className="grid grid-cols-3 gap-3 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Contact Name *
               </label>
               <input
@@ -595,7 +595,7 @@ export default function ContactsTab({
             </div>
 
             <div className="grid grid-cols-3 gap-3 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Job Title
               </label>
               <input
@@ -613,7 +613,7 @@ export default function ContactsTab({
             </div>
 
             <div className="grid grid-cols-3 gap-3 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Email
               </label>
               <input
@@ -631,7 +631,7 @@ export default function ContactsTab({
             </div>
 
             <div className="grid grid-cols-3 gap-3 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Phone
               </label>
               <input
@@ -644,7 +644,7 @@ export default function ContactsTab({
             </div>
 
             <div className="grid grid-cols-3 gap-3 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Mobile
               </label>
               <input
@@ -662,11 +662,11 @@ export default function ContactsTab({
             </div>
 
             <div className="grid grid-cols-3 gap-3 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Mark as Primary
               </label>
               <div className="col-span-2">
-                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
+                <div className="flex flex-wrap gap-4 text-sm font-medium p-2 w-8">
                   <input
                     type="checkbox"
                     checked={!!c.is_primary}
@@ -697,7 +697,7 @@ export default function ContactsTab({
 
 {
   /* <div className="xl:col-span-2 grid grid-cols-6 gap-3 items-start">
-              <label className="text-xs font-medium col-span-1 pt-2">
+              <label className="text-sm font-medium col-span-1 pt-2">
                 Notes
               </label>
 

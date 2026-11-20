@@ -266,7 +266,7 @@ export default function AttachmentsTab({
             <button
               type="button"
               onClick={() => setActiveFolderFilter(null)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
             >
               <Icon icon="tabler:arrow-left" className="w-3.5 h-3.5" />
               <span>Show All Folders</span>
@@ -301,7 +301,7 @@ export default function AttachmentsTab({
                     <Icon icon="tabler:folder" className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {folderName}
                     </p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
@@ -323,7 +323,7 @@ export default function AttachmentsTab({
         {!readonly && (
           <div className="rounded-xl border border-dashed border-emerald-400/80 dark:border-emerald-800/80 bg-emerald-50/15 dark:bg-[#11161D] p-5 transition-colors">
             <UploadDropzone
-              className="custom-attachment ut-button:bg-emerald-700 ut-button:hover:bg-emerald-800 ut-button:dark:bg-emerald-600 ut-button:dark:hover:bg-emerald-500 ut-button:text-white ut-button:text-xs ut-button:font-semibold ut-button:rounded-lg ut-button:px-4 ut-button:py-2 ut-label:text-emerald-700 ut-label:dark:text-emerald-400 ut-allowed-content:text-slate-500 ut-allowed-content:dark:text-slate-400"
+              className="custom-attachment ut-button:bg-emerald-700 ut-button:hover:bg-emerald-800 ut-button:dark:bg-emerald-600 ut-button:dark:hover:bg-emerald-500 ut-button:text-white ut-button:text-sm ut-button:font-semibold ut-button:rounded-lg ut-button:px-4 ut-button:py-2 ut-label:text-emerald-700 ut-label:dark:text-emerald-400 ut-allowed-content:text-slate-500 ut-allowed-content:dark:text-slate-400"
               endpoint="attachmentUploader"
               input={{
                 module,
@@ -352,7 +352,7 @@ export default function AttachmentsTab({
               appearance={{
                 container: "w-full border-0 bg-transparent p-0 gap-2",
                 label:
-                  "text-xs font-bold text-slate-900 dark:text-slate-100 cursor-pointer",
+                  "text-sm font-bold text-slate-900 dark:text-slate-100 cursor-pointer",
                 uploadIcon: "h-9 w-9 text-emerald-700 dark:text-emerald-400",
                 allowedContent:
                   "text-[11px] text-slate-500 dark:text-slate-400",
@@ -360,7 +360,7 @@ export default function AttachmentsTab({
                   "h-9",
                   "px-4",
                   "rounded-lg",
-                  "text-xs",
+                  "text-sm",
                   "font-semibold",
                   "text-white",
                   "shadow-2xs",
@@ -394,7 +394,7 @@ export default function AttachmentsTab({
             {/* Save to Folder Selector Bar */}
             <div className="mt-4 pt-3.5 border-t border-slate-200/70 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 flex-1 max-w-sm">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                   Save to Folder <span className="text-red-500">*</span>
                 </label>
                 <div className="relative flex-1">
@@ -406,7 +406,7 @@ export default function AttachmentsTab({
                     value={selectedFolder}
                     disabled={uploading}
                     onChange={(e) => setSelectedFolder(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
                   >
                     {DEFAULT_FOLDERS.map((folder) => (
                       <option key={folder} value={folder}>
@@ -435,7 +435,7 @@ export default function AttachmentsTab({
 
         {/* Files List */}
         <div className="space-y-2.5">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+          <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 px-1">
             <span>
               {activeFolderFilter
                 ? `Folder: ${activeFolderFilter} (${visibleFiles.length})`
@@ -444,11 +444,11 @@ export default function AttachmentsTab({
           </div>
 
           {loading ? (
-            <p className="text-xs text-slate-400 text-center py-8 animate-pulse">
+            <p className="text-sm text-slate-400 text-center py-8 animate-pulse">
               Scanning file directories...
             </p>
           ) : visibleFiles.length === 0 ? (
-            <div className="text-center py-10 border border-dashed rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-[#11161D]/50 text-slate-400 text-xs">
+            <div className="text-center py-10 border border-dashed rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-[#11161D]/50 text-slate-400 text-sm">
               {activeFolderFilter
                 ? `No attachments found in "${activeFolderFilter}".`
                 : "No active asset attachments verified for this record link."}
@@ -476,7 +476,7 @@ export default function AttachmentsTab({
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p
-                            className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate"
+                            className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate"
                             title={item.file_name}
                           >
                             {item.file_name}
@@ -501,7 +501,7 @@ export default function AttachmentsTab({
                           href={item.file_path}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-950 border border-emerald-200/70 dark:border-emerald-800/60 px-3 py-1.5 rounded-lg transition-colors"
+                          className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-950 border border-emerald-200/70 dark:border-emerald-800/60 px-3 py-1.5 rounded-lg transition-colors"
                         >
                           <Icon
                             icon={
@@ -520,7 +520,7 @@ export default function AttachmentsTab({
                           type="button"
                           onClick={() => handleDeleteClick(item)}
                           disabled={deletingId === item.id}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950 border border-red-200/70 dark:border-red-900/60 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-1 text-sm font-semibold text-red-600 hover:text-red-700 dark:text-red-400 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950 border border-red-200/70 dark:border-red-900/60 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Icon icon="tabler:trash" className="w-3.5 h-3.5" />
                           <span>
@@ -598,7 +598,7 @@ export default function AttachmentsTab({
                     Delete attachment?
                   </h2>
 
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-5">
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 leading-5">
                     Are you sure you want to delete this attachment? This action
                     cannot be undone.
                   </p>
@@ -607,7 +607,7 @@ export default function AttachmentsTab({
 
               {deleteTarget.file_name && (
                 <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2.5">
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
                     {deleteTarget.file_name}
                   </p>
 
@@ -625,7 +625,7 @@ export default function AttachmentsTab({
                 type="button"
                 onClick={handleCancelDelete}
                 disabled={!!deletingId}
-                className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
@@ -634,7 +634,7 @@ export default function AttachmentsTab({
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={!!deletingId}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {deletingId ? "Deleting..." : "Delete Attachment"}
               </button>

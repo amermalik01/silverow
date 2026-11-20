@@ -73,7 +73,7 @@ function SwitchPill({ checked, disabled, onChange, label }: SwitchPillProps) {
       aria-checked={checked}
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
-      className={`inline-flex items-center gap-2 text-xs font-medium transition-colors ${
+      className={`inline-flex items-center gap-2 text-sm font-medium transition-colors ${
         disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
       }`}
     >
@@ -167,7 +167,7 @@ export default function FinanceTab({
 
   const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
     const baseClasses =
-      "w-full border px-2.5 py-1.5 rounded-lg text-xs outline-none transition-colors duration-150";
+      "w-full border px-2.5 py-1.5 rounded-lg text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
       return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed select-none`;
@@ -267,7 +267,7 @@ export default function FinanceTab({
     "rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#11161D] p-4 shadow-2xs transition-colors";
 
   const sectionHeaderClass =
-    "flex items-center gap-2 text-xs font-semibold text-slate-900 dark:text-slate-100 mb-3.5";
+    "flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3.5";
 
   const creditHoldValue = Boolean(
     (account as Partial<Party> & { credit_hold?: boolean }).credit_hold,
@@ -281,7 +281,7 @@ export default function FinanceTab({
     <div className="space-y-4">
       {/* TOP KPI STRIP */}
       <div className="flex flex-col xl:flex-row xl:items-center gap-3">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-900 dark:text-slate-100 shrink-0 px-1">
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100 shrink-0 px-1">
           <Icon
             icon="tabler:wallet"
             className="w-4 h-4 text-emerald-700 dark:text-emerald-400"
@@ -374,7 +374,7 @@ export default function FinanceTab({
 
           <div className="space-y-3">
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Posting Group <span className="text-red-500">*</span>
               </label>
               <div className="col-span-8">
@@ -400,7 +400,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 {isCustomer ? "VAT Number" : "Supplier VAT No."}
               </label>
               <div className="col-span-8">
@@ -428,7 +428,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Company Reg. No.
               </label>
               <div className="col-span-8">
@@ -445,7 +445,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Currency <span className="text-red-500">*</span>
               </label>
               <div className="col-span-8">
@@ -485,7 +485,7 @@ export default function FinanceTab({
 
           <div className="space-y-3">
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Payable Bank
               </label>
               <div className="col-span-8">
@@ -506,7 +506,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 {isCustomer
                   ? "Default G/L Account Receivable"
                   : "Default G/L Account Payable"}
@@ -538,7 +538,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Payment Terms
               </label>
               <div className="col-span-8">
@@ -559,7 +559,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Payment Method
               </label>
               <div className="col-span-8">
@@ -657,7 +657,7 @@ export default function FinanceTab({
 
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+              <label className="text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
                 Credit Limit
               </label>
               <div className="w-36">
@@ -687,7 +687,7 @@ export default function FinanceTab({
                 />
 
                 <div className="flex items-center gap-2">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                  <label className="text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     Review Date
                   </label>
                   <input
@@ -735,7 +735,7 @@ export default function FinanceTab({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Account Name
               </label>
               <div className="col-span-8">
@@ -752,7 +752,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Bank Name
               </label>
               <div className="col-span-8">
@@ -767,7 +767,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Sort Code
               </label>
               <div className="col-span-8">
@@ -785,7 +785,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 Account Number
               </label>
               <div className="col-span-8">
@@ -803,7 +803,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 SWIFT/BIC
               </label>
               <div className="col-span-8">
@@ -820,7 +820,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-12 gap-2 items-center">
-              <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                 IBAN
               </label>
               <div className="col-span-8">
@@ -837,7 +837,7 @@ export default function FinanceTab({
             {!isReadonly && (
               <>
                 <div className="grid grid-cols-12 gap-2 items-center">
-                  <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                  <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                     Bank Address 1
                   </label>
                   <div className="col-span-8">
@@ -854,7 +854,7 @@ export default function FinanceTab({
                 </div>
 
                 <div className="grid grid-cols-12 gap-2 items-center">
-                  <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                  <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                     Bank Address 2
                   </label>
                   <div className="col-span-8">
@@ -886,7 +886,7 @@ export default function FinanceTab({
               <span>Financial Activity</span>
             </div>
 
-            <dl className="space-y-3 text-xs">
+            <dl className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <dt className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                   <Icon
@@ -1082,7 +1082,7 @@ export default function FinanceTab({
 
   const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
     const baseClasses =
-      "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
+      "w-full border p-2 rounded text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
       return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none`;
@@ -1138,7 +1138,7 @@ export default function FinanceTab({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Posting Group <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2">
@@ -1161,7 +1161,7 @@ export default function FinanceTab({
           {account.is_customer && (
             <>
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   VAT No.
                 </label>
                 <div className="col-span-2">
@@ -1180,7 +1180,7 @@ export default function FinanceTab({
           {!isCustomer && (
             <>
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Supplier VAT No.
                 </label>
                 <div className="col-span-2">
@@ -1198,7 +1198,7 @@ export default function FinanceTab({
             </>
           )}
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Company Reg. No.
             </label>
             <div className="col-span-2">
@@ -1213,10 +1213,10 @@ export default function FinanceTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center pt-2">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               E-Generate
             </label>
-            <div className="col-span-2 flex flex-wrap gap-4 text-xs">
+            <div className="col-span-2 flex flex-wrap gap-4 text-sm">
               {isCustomer ? (
                 <>
                   <label className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
@@ -1302,7 +1302,7 @@ export default function FinanceTab({
 
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Payable Bank
             </label>
             <div className="col-span-2">
@@ -1323,7 +1323,7 @@ export default function FinanceTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               {isCustomer
                 ? "Default G/L Account Receivable"
                 : "Default G/L Account Payable"}
@@ -1355,7 +1355,7 @@ export default function FinanceTab({
           {!isCustomer && (
             <>
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Payment Terms
                 </label>
                 <div className="col-span-2">
@@ -1378,7 +1378,7 @@ export default function FinanceTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Payment Method
                 </label>
                 <div className="col-span-2">
@@ -1405,7 +1405,7 @@ export default function FinanceTab({
           {isCustomer && (
             <>
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Payment Terms
                 </label>
                 <div className="col-span-2 ">
@@ -1428,7 +1428,7 @@ export default function FinanceTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Payment Method
                 </label>
                 <div className="col-span-2">
@@ -1451,7 +1451,7 @@ export default function FinanceTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Credit Limit
                 </label>
                 <div className="col-span-2">
@@ -1467,7 +1467,7 @@ export default function FinanceTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Currency <span className="text-red-500">*</span>
                 </label>
                 <div className="col-span-2">
@@ -1491,7 +1491,7 @@ export default function FinanceTab({
 
           {!isCustomer && (
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Exclude From Creditors Aging Report
               </label>
               <div className="col-span-2">
@@ -1520,7 +1520,7 @@ export default function FinanceTab({
 
           <div className="pt-4 space-y-3">
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Account Name
               </label>
               <div className="col-span-2">
@@ -1537,7 +1537,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Sort Code / Account No.
               </label>
               <div className="col-span-2 grid grid-cols-2 gap-2 items-center">
@@ -1552,7 +1552,7 @@ export default function FinanceTab({
                   className={getInputClass("finance.bank_sort_code")}
                 />
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-slate-500 whitespace-nowrap">
+                  <span className="text-sm text-slate-500 whitespace-nowrap">
                     Account No.
                   </span>
                   <input
@@ -1570,7 +1570,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Swift/BIC
               </label>
               <div className="col-span-2">
@@ -1587,7 +1587,7 @@ export default function FinanceTab({
             </div>
 
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 IBAN
               </label>
               <div className="col-span-2">
@@ -1608,7 +1608,7 @@ export default function FinanceTab({
             &nbsp;
           </h3>
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Bank Name
             </label>
             <div className="col-span-2">
@@ -1623,7 +1623,7 @@ export default function FinanceTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Address Lines
             </label>
             <div className="col-span-2">
@@ -1638,7 +1638,7 @@ export default function FinanceTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Bank Address Line 2
             </label>
             <div className="col-span-2">
@@ -1683,7 +1683,7 @@ export default function FinanceTab({
 
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Finance Charge
                 </label>
                 <div className="col-span-2 flex items-center gap-2">
@@ -1709,7 +1709,7 @@ export default function FinanceTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Insurance Charge
                 </label>
                 <div className="col-span-2 flex items-center gap-2">
@@ -1749,7 +1749,7 @@ export default function FinanceTab({
                     ))}
                   </select> */
   /* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Contact Person
             </label>
             <div className="col-span-2">
@@ -1766,7 +1766,7 @@ export default function FinanceTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Email
             </label>
             <div className="col-span-2">
@@ -1782,7 +1782,7 @@ export default function FinanceTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Telephone
             </label>
             <div className="col-span-2">
@@ -1797,7 +1797,7 @@ export default function FinanceTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Fax
             </label>
             <div className="col-span-2">
@@ -1812,7 +1812,7 @@ export default function FinanceTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Alt. Contact Person
             </label>
             <div className="col-span-2">
@@ -1829,7 +1829,7 @@ export default function FinanceTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Alt. Contact Email
             </label>
             <div className="col-span-2">
@@ -1848,7 +1848,7 @@ export default function FinanceTab({
 
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Company Reg. No.
             </label>
             <div className="col-span-2">

@@ -163,7 +163,7 @@ export default function AddressesTab({
 
   const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
     const baseClasses =
-      "w-full border px-2.5 py-1.5 rounded-lg text-xs outline-none transition-colors duration-150";
+      "w-full border px-2.5 py-1.5 rounded-lg text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
       return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed select-none`;
@@ -229,7 +229,7 @@ export default function AddressesTab({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search locations..."
-              className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#11161D] text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 transition-colors"
+              className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#11161D] text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-600 dark:focus:ring-emerald-500 transition-colors"
             />
           </div>
 
@@ -237,7 +237,7 @@ export default function AddressesTab({
             type="button"
             onClick={addAddressRow}
             variant="add_line"
-            className="rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 inline-flex items-center gap-1.5 shrink-0"
+            className="rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold px-3 py-1.5 inline-flex items-center gap-1.5 shrink-0"
           >
             <Icon icon="tabler:plus" className="w-3.5 h-3.5" />
             <span>Add Location</span>
@@ -250,7 +250,7 @@ export default function AddressesTab({
         <div className="rounded-xl border border-emerald-300/80 dark:border-emerald-800/80 bg-white dark:bg-[#11161D] p-4 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {activeEditAddress.label
                   ? `Editing: ${activeEditAddress.label}`
                   : `New Location #${editingIndex + 1}`}
@@ -265,7 +265,7 @@ export default function AddressesTab({
             <button
               type="button"
               onClick={() => setEditingIndex(null)}
-              className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline"
+              className="text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:underline"
             >
               Done
             </button>
@@ -274,7 +274,7 @@ export default function AddressesTab({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="grid grid-cols-12 gap-2 items-center">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   Name <span className="text-red-500">*</span>
                 </label>
                 <div className="col-span-8">
@@ -297,7 +297,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-center">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   Address Line 1
                 </label>
                 <div className="col-span-8">
@@ -325,7 +325,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-center">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   Address Line 2
                 </label>
                 <div className="col-span-8">
@@ -348,7 +348,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-center">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   City
                 </label>
                 <div className="col-span-8">
@@ -370,7 +370,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-center">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   County
                 </label>
                 <div className="col-span-8">
@@ -389,7 +389,7 @@ export default function AddressesTab({
 
             <div className="space-y-3">
               <div className="grid grid-cols-12 gap-2 items-center">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   Postcode
                 </label>
                 <div className="col-span-8">
@@ -417,7 +417,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-center">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   Country
                 </label>
                 <div className="col-span-8">
@@ -443,7 +443,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-center">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   Telephone
                 </label>
                 <div className="col-span-8">
@@ -462,7 +462,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-center">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   Email
                 </label>
                 <div className="col-span-8">
@@ -484,10 +484,10 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-center pt-1">
-                <label className="col-span-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label className="col-span-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   Location Type
                 </label>
-                <div className="col-span-8 flex flex-wrap gap-3 text-xs font-medium text-slate-700 dark:text-slate-300">
+                <div className="col-span-8 flex flex-wrap gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
                   <label className="inline-flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
@@ -564,11 +564,11 @@ export default function AddressesTab({
 
       {/* Empty / Filter States */}
       {addresses.length === 0 ? (
-        <div className="p-8 text-center text-xs rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-[#11161D]/50 text-slate-400">
+        <div className="p-8 text-center text-sm rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-[#11161D]/50 text-slate-400">
           No location profiles registered.
         </div>
       ) : filteredAddresses.length === 0 ? (
-        <div className="p-8 text-center text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#11161D] text-slate-400">
+        <div className="p-8 text-center text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#11161D] text-slate-400">
           No locations match &ldquo;{searchQuery}&rdquo;.
         </div>
       ) : (
@@ -586,7 +586,7 @@ export default function AddressesTab({
                   <th className="py-2.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm">
                 {filteredAddresses.map(({ addr: a, originalIndex: idx }) => {
                   const badge = getLocationTypeBadge(a);
                   const cityPostcode = [a.city, a.postcode]
@@ -778,7 +778,7 @@ export default function AddressesTab({
             <button
               type="button"
               onClick={onRequestEdit}
-              className="px-4 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#11161D] hover:bg-slate-50 dark:hover:bg-slate-800/70 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors"
+              className="px-4 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#11161D] hover:bg-slate-50 dark:hover:bg-slate-800/70 text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors"
             >
               Edit
             </button>
@@ -787,7 +787,7 @@ export default function AddressesTab({
             <button
               type="button"
               onClick={onSave}
-              className="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-xs font-semibold text-white transition-colors"
+              className="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-sm font-semibold text-white transition-colors"
             >
               Save
             </button>
@@ -858,7 +858,7 @@ export default function AddressesTab({
     disabled: boolean = isReadonly,
   ) => {
     const baseClasses =
-      "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
+      "w-full border p-2 rounded text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
       return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none ${extraClasses}`;
@@ -874,7 +874,7 @@ export default function AddressesTab({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider">
+        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-wider">
           Locations
         </h3>
 
@@ -886,7 +886,7 @@ export default function AddressesTab({
       </div>
 
       {addresses.length === 0 && (
-        <div className="p-8 text-center text-xs border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
+        <div className="p-8 text-center text-sm border border-dashed rounded-xl border-slate-300 dark:border-slate-700 text-slate-400">
           No location profiles registered.
         </div>
       )}
@@ -898,7 +898,7 @@ export default function AddressesTab({
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-xs">Location {idx + 1}</span>
+              <span className="font-semibold text-sm">Location {idx + 1}</span>
 
               {a.is_primary && (
                 <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
@@ -941,7 +941,7 @@ export default function AddressesTab({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-4">
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">
+                <label className="text-sm font-medium">
                   Name <span className="text-red-500">*</span>
                 </label>
                 <div className="col-span-2">
@@ -963,7 +963,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">Address Line 1</label>
+                <label className="text-sm font-medium">Address Line 1</label>
                 <div className="col-span-2">
                   <input
                     type="text"
@@ -983,7 +983,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">Address Line 2</label>
+                <label className="text-sm font-medium">Address Line 2</label>
 
                 <input
                   type="text"
@@ -1000,7 +1000,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">City</label>
+                <label className="text-sm font-medium">City</label>
                 <div className="col-span-2">
                   <input
                     type="text"
@@ -1020,7 +1020,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">County</label>
+                <label className="text-sm font-medium">County</label>
                 <div className="col-span-2">
                   <input
                     type="text"
@@ -1039,7 +1039,7 @@ export default function AddressesTab({
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">Postcode</label>
+                <label className="text-sm font-medium">Postcode</label>
 
                 <div className="col-span-2">
                   <input
@@ -1060,7 +1060,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Country
                 </label>
 
@@ -1087,7 +1087,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">Telephone</label>
+                <label className="text-sm font-medium">Telephone</label>
 
                 <input
                   type="text"
@@ -1104,7 +1104,7 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium">Email</label>
+                <label className="text-sm font-medium">Email</label>
 
                 <input
                   type="email"
@@ -1124,12 +1124,12 @@ export default function AddressesTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Location Type
                 </label>
                 <div className="col-span-2">
-                  <div className="flex flex-wrap gap-4 text-xs font-medium p-2 mb-1">
-                    <label className="flex items-center gap-2 text-xs">
+                  <div className="flex flex-wrap gap-4 text-sm font-medium p-2 mb-1">
+                    <label className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
                         checked={!!a.is_primary}
@@ -1146,7 +1146,7 @@ export default function AddressesTab({
                       Primary
                     </label>
 
-                    <label className="flex items-center gap-2 text-xs">
+                    <label className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
                         checked={!!a.is_billing}
@@ -1163,7 +1163,7 @@ export default function AddressesTab({
                       Billing
                     </label>
 
-                    <label className="flex items-center gap-2 text-xs">
+                    <label className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
                         checked={!!a.is_shipping}
@@ -1180,7 +1180,7 @@ export default function AddressesTab({
                       Shipping
                     </label>
 
-                    <label className="flex items-center gap-2 text-xs">
+                    <label className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
                         checked={!!a.is_collection}

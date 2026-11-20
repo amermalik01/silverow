@@ -205,7 +205,7 @@ export default function GeneralTab({
 
   const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
     const baseClasses =
-      "w-full border px-2.5 py-1.5 rounded-lg text-xs outline-none transition-colors duration-150";
+      "w-full border px-2.5 py-1.5 rounded-lg text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
       return `${baseClasses} bg-slate-100/80 dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed select-none`;
@@ -267,7 +267,7 @@ export default function GeneralTab({
     "rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#11161D] p-4 shadow-2xs transition-colors";
 
   const sectionHeaderClass =
-    "flex items-center justify-between gap-2 text-xs font-semibold text-slate-900 dark:text-slate-100 mb-3.5";
+    "flex items-center justify-between gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3.5";
 
   const assignedPersonParts = useMemo(() => {
     const raw = account.assign_person || "";
@@ -313,89 +313,89 @@ export default function GeneralTab({
       {/* BOTTOM SUMMARY STRIP */}
       <section className={`${cardClass} grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 divide-y sm:divide-y-0 lg:divide-x divide-slate-200/80 dark:divide-slate-800`}>
         <div className="lg:px-3 first:lg:pl-0">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
             <Icon
               icon="tabler:calendar"
               className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
             />
             <span>Customer Since</span>
           </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
             {metrics.customerSince}
           </p>
         </div>
 
         <div className="lg:px-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
             <Icon
               icon="tabler:coins"
               className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
             />
             <span>Credit Limit</span>
           </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
             {metrics.creditLimitFormatted}
           </p>
         </div>
 
         <div className="lg:px-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
             <Icon
               icon="tabler:shopping-cart"
               className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
             />
             <span>Total Orders (This Year)</span>
           </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
             {metrics.totalOrdersThisYear}
           </p>
         </div>
 
         <div className="lg:px-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
             <Icon
               icon="tabler:stack-2"
               className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
             />
             <span>Total Spend (This Year)</span>
           </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
             {metrics.totalSpendThisYearFormatted}
           </p>
         </div>
 
         <div className="lg:px-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
             <Icon
               icon="tabler:clock"
               className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
             />
             <span>Last Activity</span>
           </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
             {metrics.lastActivityDate}
           </p>
         </div>
 
         <div className="lg:px-3 last:lg:pr-0">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5  text-sm text-slate-500 dark:text-slate-400">
             <Icon
               icon="tabler:file-dollar"
               className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400"
             />
             <span>Open Outstanding</span>
           </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+          <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
             {metrics.openOutstandingFormatted}
           </p>
         </div>
       </section>
-      
+
       {/* Editable Business Name Banner when not readonly */}
       {!isReadonly && (
         <div className={cardClass}>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-            <label className="md:col-span-3 text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="md:col-span-3 text-sm font-medium text-slate-700 dark:text-slate-300">
               Business Name <span className="text-red-500">*</span>
             </label>
             <div className="md:col-span-9">
@@ -407,7 +407,7 @@ export default function GeneralTab({
                 placeholder="Business Name"
               />
               {errors["general.name"] && (
-                <p className="text-red-500 text-[11px] mt-1">
+                <p className="text-red-500 text-sm mt-1">
                   {errors["general.name"]}
                 </p>
               )}
@@ -432,7 +432,7 @@ export default function GeneralTab({
             </div>
 
             {isReadonly ? (
-              <dl className="space-y-2.5 text-xs">
+              <dl className="space-y-2.5 text-sm">
                 <div className="grid grid-cols-3 gap-2 items-center">
                   <dt className="text-slate-500 dark:text-slate-400">Email</dt>
                   <dd className="col-span-2 truncate">
@@ -486,7 +486,7 @@ export default function GeneralTab({
             ) : (
               <div className="space-y-2.5">
                 <div className="grid grid-cols-3 gap-2 items-center">
-                  <label className="text-xs text-slate-600 dark:text-slate-400">
+                  <label className="text-sm text-slate-600 dark:text-slate-400">
                     Email
                   </label>
                   <div className="col-span-2">
@@ -501,7 +501,7 @@ export default function GeneralTab({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 items-center">
-                  <label className="text-xs text-slate-600 dark:text-slate-400">
+                  <label className="text-sm text-slate-600 dark:text-slate-400">
                     Phone
                   </label>
                   <div className="col-span-2">
@@ -516,7 +516,7 @@ export default function GeneralTab({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 items-center">
-                  <label className="text-xs text-slate-600 dark:text-slate-400">
+                  <label className="text-sm text-slate-600 dark:text-slate-400">
                     Website
                   </label>
                   <div className="col-span-2">
@@ -552,7 +552,7 @@ export default function GeneralTab({
 
             {isReadonly ? (
               <div className="flex items-start justify-between gap-3">
-                <div className="text-xs leading-5 text-slate-700 dark:text-slate-300 space-y-0.5 min-w-0">
+                <div className="text-sm leading-5 text-slate-700 dark:text-slate-300 space-y-0.5 min-w-0">
                   {primaryAddress.address_1 && (
                     <p className="font-medium text-slate-900 dark:text-slate-100 truncate">
                       {primaryAddress.address_1}
@@ -669,7 +669,7 @@ export default function GeneralTab({
             <button
               type="button"
               onClick={onOpenActivities}
-              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#11161D] hover:bg-slate-50 dark:hover:bg-slate-800/70 px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#11161D] hover:bg-slate-50 dark:hover:bg-slate-800/70 px-3 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 transition-colors"
             >
               <Icon
                 icon="tabler:calendar-event"
@@ -685,7 +685,7 @@ export default function GeneralTab({
             <button
               type="button"
               onClick={onOpenStatement}
-              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#11161D] hover:bg-slate-50 dark:hover:bg-slate-800/70 px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#11161D] hover:bg-slate-50 dark:hover:bg-slate-800/70 px-3 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 transition-colors"
             >
               <Icon
                 icon="tabler:file-invoice"
@@ -701,7 +701,7 @@ export default function GeneralTab({
 
           <section className={`${cardClass} flex-1 flex items-center justify-between gap-3`}>
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 shrink-0 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400">
+              <div className="w-10 h-10 shrink-0 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-center text-sm font-bold text-emerald-700 dark:text-emerald-400">
                 {getInitials(assignedPersonParts.name)}
               </div>
 
@@ -717,7 +717,7 @@ export default function GeneralTab({
                 {isReadonly ? (
                   <>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 truncate">
+                      <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 truncate">
                         {assignedPersonParts.name}
                       </span>
                       {onOpenSalespersonDetail && (
@@ -784,7 +784,7 @@ export default function GeneralTab({
               <button
                 type="button"
                 onClick={() => setActiveContactTab("primary")}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                   activeContactTab === "primary"
                     ? "bg-emerald-700 text-white dark:bg-emerald-600"
                     : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
@@ -799,7 +799,7 @@ export default function GeneralTab({
                   setActiveContactTab("secondary");
                   setSelectedSecondaryIdx(0);
                 }}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                   activeContactTab === "secondary"
                     ? "bg-emerald-700 text-white dark:bg-emerald-600"
                     : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
@@ -831,11 +831,11 @@ export default function GeneralTab({
             {isReadonly ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-200">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm font-bold text-slate-700 dark:text-slate-200">
                     {getInitials(activeContact.name)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {activeContact.name || "No contact name"}
                     </p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
@@ -844,7 +844,7 @@ export default function GeneralTab({
                   </div>
                 </div>
 
-                <div className="space-y-1 text-xs text-slate-700 dark:text-slate-300">
+                <div className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
                   <div className="flex items-center gap-2 truncate">
                     <Icon
                       icon="tabler:mail"
@@ -958,7 +958,7 @@ export default function GeneralTab({
                       Segment
                     </p>
                     {isReadonly ? (
-                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                         {segments.find((s) => s.id === account.segment_id)
                           ?.name || "—"}
                       </p>
@@ -993,7 +993,7 @@ export default function GeneralTab({
                       Territory
                     </p>
                     {isReadonly ? (
-                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                         {territories.find((t) => t.id === account.territory_id)
                           ?.name || "—"}
                       </p>
@@ -1031,7 +1031,7 @@ export default function GeneralTab({
                           : "Buying Group"}
                       </p>
                       {isReadonly ? (
-                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                           {buyingGroups.find(
                             (b) => b.id === account.buying_group_id,
                           )?.name || "—"}
@@ -1070,7 +1070,7 @@ export default function GeneralTab({
                         Ownership Type
                       </p>
                       {isReadonly ? (
-                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                           {ownershipType.find(
                             (o) => o.id === account.ownership_type_id,
                           )?.name || "—"}
@@ -1100,7 +1100,7 @@ export default function GeneralTab({
             {/* Location Type Pills + Optional Anonymous Flag */}
             <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mr-1">
+                <span className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mr-1">
                   <Icon icon="tabler:user-pin" className="w-4 h-4" />
                   Location Type
                 </span>
@@ -1114,7 +1114,7 @@ export default function GeneralTab({
                       !primaryAddress.is_billing,
                     )
                   }
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                  className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                     primaryAddress.is_billing
                       ? "bg-emerald-700 text-white dark:bg-emerald-600"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
@@ -1132,7 +1132,7 @@ export default function GeneralTab({
                       !primaryAddress.is_shipping,
                     )
                   }
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                  className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                     primaryAddress.is_shipping
                       ? "bg-emerald-700 text-white dark:bg-emerald-600"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
@@ -1151,7 +1151,7 @@ export default function GeneralTab({
                         !primaryAddress.is_collection,
                       )
                     }
-                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                    className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
                       primaryAddress.is_collection
                         ? "bg-emerald-700 text-white dark:bg-emerald-600"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
@@ -1163,7 +1163,7 @@ export default function GeneralTab({
               </div>
 
               {account.is_customer && (
-                <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
                   <input
                     type="checkbox"
                     disabled={isReadonly}
@@ -1178,7 +1178,7 @@ export default function GeneralTab({
               )}
 
               {account.is_supplier && (
-                <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
                   <input
                     type="checkbox"
                     disabled={isReadonly}
@@ -1377,7 +1377,7 @@ export default function GeneralTab({
 
   const getInputClass = (errorKey: string, disabled: boolean = isReadonly) => {
     const baseClasses =
-      "w-full border p-2 rounded text-xs outline-none transition-colors duration-150";
+      "w-full border p-2 rounded text-sm outline-none transition-colors duration-150";
 
     if (disabled) {
       return `${baseClasses} bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none`;
@@ -1449,7 +1449,7 @@ export default function GeneralTab({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
         <div className="space-y-2">
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Name <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2">
@@ -1462,7 +1462,7 @@ export default function GeneralTab({
                 disabled={isReadonly}
               />
               {errors["general.name"] && (
-                <p className="text-red-500 text-xs mt-0.5">
+                <p className="text-red-500 text-sm mt-0.5">
                   {errors["general.name"]}
                 </p>
               )}
@@ -1470,7 +1470,7 @@ export default function GeneralTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-start">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 pt-1">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 pt-1">
               Address Lines
             </label>
             <div className="col-span-2 space-y-2">
@@ -1548,7 +1548,7 @@ export default function GeneralTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Telephone
             </label>
             <div className="col-span-2">
@@ -1564,7 +1564,7 @@ export default function GeneralTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Company Email
             </label>
             <div className="col-span-2">
@@ -1580,7 +1580,7 @@ export default function GeneralTab({
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Web
             </label>
             <div className="col-span-2">
@@ -1601,11 +1601,11 @@ export default function GeneralTab({
 
         <div className="space-y-2">
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Location Type
             </label>
             <div className="col-span-2">
-              <div className="flex flex-wrap gap-4 text-xs font-medium p-2 mb-1">
+              <div className="flex flex-wrap gap-4 text-sm font-medium p-2 mb-1">
                 <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                   <input
                     type="checkbox"
@@ -1651,14 +1651,14 @@ export default function GeneralTab({
           {account.is_customer && (
             <div className="grid grid-cols-3 gap-2 items-center">
               <label
-                className="text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="text-sm font-medium text-slate-700 dark:text-slate-300"
                 title="Used for editable settings in Orders"
               >
                 Anonymous Customer
               </label>
 
               <div className="col-span-2">
-                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
+                <div className="flex flex-wrap gap-4 text-sm font-medium p-2 w-8">
                   <input
                     type="checkbox"
                     disabled={isReadonly}
@@ -1675,12 +1675,12 @@ export default function GeneralTab({
 
           {account.is_supplier && (
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Anonymous Supplier
               </label>
 
               <div className="col-span-2">
-                <div className="flex flex-wrap gap-4 text-xs font-medium p-2 w-8">
+                <div className="flex flex-wrap gap-4 text-sm font-medium p-2 w-8">
                   <input
                     type="checkbox"
                     disabled={isReadonly}
@@ -1696,7 +1696,7 @@ export default function GeneralTab({
           )}
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Segment
             </label>
             <div className="col-span-2">
@@ -1715,14 +1715,14 @@ export default function GeneralTab({
               />
 
               {errors["general.segment_id"] && (
-                <p className="text-red-500 text-xs mt-0.5">
+                <p className="text-red-500 text-sm mt-0.5">
                   {errors["general.segment_id"]}
                 </p>
               )}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Territory
             </label>
             <div className="col-span-2">
@@ -1745,7 +1745,7 @@ export default function GeneralTab({
           {(account.is_customer || account.is_crm_lead) && (
             <>
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Ownership Type
                 </label>
                 <div className="col-span-2">
@@ -1765,7 +1765,7 @@ export default function GeneralTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   {account.is_crm_lead || account.is_customer
                     ? "Buying Group"
                     : "Purchasing Group"}
@@ -1789,7 +1789,7 @@ export default function GeneralTab({
           )}
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               {account.is_customer
                 ? "Salesperson"
                 : account.is_supplier
@@ -1823,13 +1823,13 @@ export default function GeneralTab({
       />
 
       <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
-        <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-4">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
           Primary Contact
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Contact Name
               </label>
               <div className="col-span-2">
@@ -1843,7 +1843,7 @@ export default function GeneralTab({
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Job Title
               </label>
               <div className="col-span-2">
@@ -1861,7 +1861,7 @@ export default function GeneralTab({
           </div>
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Email
               </label>
               <div className="col-span-2">
@@ -1877,7 +1877,7 @@ export default function GeneralTab({
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Mobile
               </label>
               <div className="col-span-2">
@@ -1901,7 +1901,7 @@ export default function GeneralTab({
 
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Status <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2">
@@ -1924,7 +1924,7 @@ export default function GeneralTab({
 
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               VAT Reg No.
             </label>
             <div className="col-span-2">
@@ -1942,7 +1942,7 @@ export default function GeneralTab({
 {
   /* {(account.is_customer || account.is_crm_lead) && (
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Credit Rating
               </label>
               <div className="col-span-2">
@@ -1968,7 +1968,7 @@ export default function GeneralTab({
 {
   /* {account.is_customer && (
             <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Credit Limit
               </label>
               <div className="col-span-2">
@@ -1986,7 +1986,7 @@ export default function GeneralTab({
 }
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Currency <span className="text-red-500">*</span>
             </label>
             <div className="col-span-2">
@@ -2009,7 +2009,7 @@ export default function GeneralTab({
 
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   No. Of Employee(s)
                 </label>
                 <div className="grid grid-cols-3 gap-2 col-span-2">
@@ -2024,7 +2024,7 @@ export default function GeneralTab({
                     className={getInputClass("general.no_of_emp")}
                   />
 
-                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Turnover
                   </label>
                   <div>
@@ -2044,7 +2044,7 @@ export default function GeneralTab({
 }
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Company Reg. No.
                 </label>
                 <div className="grid grid-cols-3 gap-2 col-span-2">
@@ -2057,7 +2057,7 @@ export default function GeneralTab({
                     className={getInputClass("general.comp_reg_no")}
                   />
 
-                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 align-middle">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 align-middle">
                     Date Of Inc.
                   </label>
 
@@ -2077,7 +2077,7 @@ export default function GeneralTab({
 }
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Sales Status
                 </label>
                 <div className="col-span-2">
@@ -2098,7 +2098,7 @@ export default function GeneralTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Source Of CRM
                 </label>
                 <div className="col-span-2">
@@ -2121,7 +2121,7 @@ export default function GeneralTab({
               </div>
 
               <div className="grid grid-cols-3 gap-2 items-center">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Type
                 </label>
                 <div className="col-span-2">
@@ -2145,7 +2145,7 @@ export default function GeneralTab({
   /* 
 
           <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Classification
             </label>
             <div className="col-span-2">
@@ -2170,7 +2170,7 @@ export default function GeneralTab({
 
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Additional Information
             </label>
             <div className=" col-span-2">
@@ -2190,7 +2190,7 @@ export default function GeneralTab({
 
 {
   /* <div className="grid grid-cols-3 gap-2 items-center">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Direct Line
               </label>
               <div className="col-span-2">
