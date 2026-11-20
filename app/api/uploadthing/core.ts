@@ -29,6 +29,7 @@ export const OurFileRouter = {
       z.object({
         module: z.string().min(1).max(100),
         recordId: z.string().min(1).max(200),
+        folder: z.string().max(100).optional().default("General"),
       }),
     )
     .middleware(async ({ input }) => {
@@ -42,6 +43,7 @@ export const OurFileRouter = {
         userId: session.user.id,
         module: input.module,
         recordId: input.recordId,
+        folder: input.folder,
       };
     })
     .onUploadComplete(async ({ metadata, file }) => {
@@ -50,13 +52,14 @@ export const OurFileRouter = {
 
       try {
         const result = await pool.query(
-          `INSERT INTO attachments (company_id, module, record_id, file_name, file_key, file_path, file_size, mime_type, uploaded_by)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id, file_name, file_key, file_path, file_size, mime_type, created_at`,
+          `INSERT INTO attachments (company_id, module, record_id, folder, file_name, file_key, file_path, file_size, mime_type, uploaded_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id, folder, file_name, file_key, file_path, file_size, mime_type, created_at`,
           [
             metadata.companyId,
             metadata.module,
             metadata.recordId,
+            metadata.folder || "General",
             file.name,
             file.key,
             fileUrl,
