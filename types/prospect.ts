@@ -271,12 +271,25 @@ export interface ProspectOffer {
   is_primary: boolean;
   notes: string | null;
 
+  /** Joined from currencies for display. */
+  currency_code?: string | null;
+
   lines: ProspectOfferLine[];
 
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Defaults returned with the offer list so the UI can start a new offer.
+ */
+export interface ProspectOfferDefaults {
+  currency_id: string | null;
+  currency_code: string | null;
+  exchange_rate: number;
+  vat_business_group_id: string | null;
 }
 
 // -----------------------------------------------------------------------------

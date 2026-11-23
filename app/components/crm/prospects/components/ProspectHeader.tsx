@@ -10,13 +10,20 @@ type Props = {
   prospectNo?: string;
   status: string;
   contactName?: string;
+  /** True for an existing (saved) prospect. */
   isEdit: boolean;
+  /** True while the form is in edit mode (always true for a new prospect). */
+  isEditing: boolean;
+  /** True when the prospect has been converted to a customer. */
+  isConverted?: boolean;
   saving: boolean;
   onCompanyNameChange: (value: string) => void;
   onBack: () => void;
   onEdit: () => void;
+  onCancelEdit: () => void;
   onLogActivity: () => void;
   onConvert: () => void;
+  onViewCustomer?: () => void;
   onSave: () => void;
   onClose: () => void;
 };
@@ -27,16 +34,21 @@ export default function ProspectHeader({
   status,
   contactName,
   isEdit,
+  isEditing,
+  isConverted = false,
   saving,
   onCompanyNameChange,
   onBack,
   onEdit,
+  onCancelEdit,
   onLogActivity,
   onConvert,
+  onViewCustomer,
   onSave,
   onClose,
 }: Props) {
-  const [editingName, setEditingName] = useState(false);
+  const [editingNameState, setEditingName] = useState(false);
+  const editingName = isEditing && editingNameState;
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -95,14 +107,16 @@ export default function ProspectHeader({
                   {companyName || "New Prospect"}
                 </h1>
 
-                <button
-                  type="button"
-                  onClick={() => setEditingName(true)}
-                  title="Edit prospect name"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
-                >
-                  <Icon icon="lucide:pencil" />
-                </button>
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingName(true)}
+                    title="Edit prospect name"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
+                  >
+                    <Icon icon="lucide:pencil" />
+                  </button>
+                )}
               </div>
             )}
 
@@ -125,7 +139,29 @@ export default function ProspectHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {isEdit && (
+          {/* CONVERTED: read-only, link to customer */}
+          {isConverted ? (
+            <>
+              {onViewCustomer && (
+                <button
+                  type="button"
+                  onClick={onViewCustomer}
+                  className="flex h-9 items-center gap-2 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900"
+                >
+                  <Icon icon="lucide:user-check" />
+                  View Customer
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-9 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </>
+          ) : isEdit && !isEditing ? (
+            /* VIEW MODE */
             <>
               <button
                 type="button"
@@ -144,34 +180,44 @@ export default function ProspectHeader({
                 <Icon icon="lucide:activity" className="text-emerald-600" />
                 Log Activity
               </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-9 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
+              >
+                Close
+              </button>
+
+              <button
+                type="button"
+                onClick={onConvert}
+                className="h-9 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900"
+              >
+                Convert to Customer
+              </button>
             </>
-          )}
+          ) : (
+            /* EDIT MODE (existing) or NEW */
+            <>
+              <button
+                type="button"
+                onClick={onSave}
+                disabled={saving}
+                className="h-9 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save"}
+              </button>
 
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving}
-            className="h-9 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-9 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
-          >
-            Close
-          </button>
-
-          {isEdit && status !== "Converted" && (
-            <button
-              type="button"
-              onClick={onConvert}
-              className="h-9 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900"
-            >
-              Convert to Customer
-            </button>
+              <button
+                type="button"
+                onClick={isEdit ? onCancelEdit : onClose}
+                disabled={saving}
+                className="h-9 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {isEdit ? "Cancel" : "Close"}
+              </button>
+            </>
           )}
         </div>
       </div>

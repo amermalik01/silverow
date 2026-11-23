@@ -21,10 +21,18 @@ type Props = {
   onAssignedToClick: () => void;
   onDealValueChange: (value: string) => void;
   onLostReasonChange: (value: string) => void;
+  /** Item names from the primary price offer. */
+  interestedProducts?: string[];
+  /** False until the prospect has been saved. */
+  productsEnabled?: boolean;
+  /** Opens the item picker in the Pricing tab. */
+  onManageProducts?: () => void;
+  /** View mode: all fields disabled. */
+  readOnly?: boolean;
 };
 
 const selectClass =
-  "h-8 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
+  "h-8 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50";
 
 const labelClass = "text-sm text-slate-800";
 
@@ -42,6 +50,10 @@ export default function ProspectSalesInformation({
   onAssignedToClick,
   onDealValueChange,
   onLostReasonChange,
+  interestedProducts = [],
+  productsEnabled = false,
+  onManageProducts,
+  readOnly = false,
 }: Props) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -55,7 +67,10 @@ export default function ProspectSalesInformation({
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 items-center gap-x-3 gap-y-2 p-5 sm:grid-cols-[135px_minmax(0,1fr)]">
+      <fieldset
+        disabled={readOnly}
+        className="grid min-w-0 grid-cols-1 items-center gap-x-3 gap-y-2 p-5 sm:grid-cols-[135px_minmax(0,1fr)]"
+      >
         <label className={labelClass}>
           Status <span className="text-rose-600">*</span>
         </label>
@@ -159,6 +174,40 @@ export default function ProspectSalesInformation({
           onChange={(value) => onDealValueChange(String(value))}
         />
 
+        <label className={`${labelClass} self-start pt-1.5`}>
+          Interested Products
+        </label>
+
+        <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2 py-1">
+          {interestedProducts.map((name) => (
+            <span
+              key={name}
+              className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800"
+            >
+              {name}
+            </span>
+          ))}
+
+          {readOnly ? (
+            interestedProducts.length === 0 && (
+              <span className="text-xs text-slate-400">—</span>
+            )
+          ) : productsEnabled ? (
+            <button
+              type="button"
+              onClick={onManageProducts}
+              className="ml-auto flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50"
+            >
+              <Icon icon="lucide:plus" />
+              {interestedProducts.length ? "Add" : "Select products"}
+            </button>
+          ) : (
+            <span className="text-xs text-slate-400">
+              Save the prospect to add products
+            </span>
+          )}
+        </div>
+
         {status === "Lost" && (
           <>
             <label className={labelClass}>
@@ -176,7 +225,7 @@ export default function ProspectSalesInformation({
             />
           </>
         )}
-      </div>
+      </fieldset>
     </div>
   );
 }

@@ -1,0 +1,976 @@
+// app/components/crm/prospects/components/ProspectPricingTab.tsx
+
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@iconify/react";
+import { addDays, format, parseISO, isValid } from "date-fns";
+
+import NumericTextInput from "@/components/ui/NumericTextInput";
+import ItemLookupModal, {
+  type ItemLookupRecord,
+} from "@/app/components/shared/modals/ItemLookupModal";
+
+import type {
+  ProspectOffer,
+  ProspectOfferDiscountType,
+  ProspectOfferStatus,
+} from "@/types/prospect";
+import type { ProspectOffersState } from "../hooks/useProspectOffers";
+
+type Props = {
+  offersState: ProspectOffersState;
+  /** Set by the parent to ask this tab to open the item picker. */
+  addItemsRequested?: boolean;
+  /** Called once the request above has been handled. */
+  onAddItemsHandled?: () => void;
+  /** View mode: pricing can be viewed but not changed. */
+  readOnly?: boolean;
+};
+
+type DraftLine = {
+  key: string;
+  item_id: string;
+  item_code: string | null;
+  item_name: string;
+  uom_name: string | null;
+  description: string | null;
+  quantity: number;
+  unit_price: number;
+  discount_type: ProspectOfferDiscountType;
+  discount_value: number;
+  vat_rate: number;
+};
+
+type Draft = {
+  offerId?: string;
+  offer_date: string;
+  valid_until: string;
+  notes: string;
+  lines: DraftLine[];
+};
+
+/* ============================================================
+   CONSTANTS / HELPERS
+============================================================ */
+
+const OFFER_STATUSES: ProspectOfferStatus[] = [
+  "DRAFT",
+  "SENT",
+  "ACCEPTED",
+  "REJECTED",
+  "EXPIRED",
+  "CANCELLED",
+];
+
+const EDITABLE_STATUSES: ProspectOfferStatus[] = ["DRAFT", "SENT"];
+
+const STATUS_BADGE: Record<ProspectOfferStatus, string> = {
+  DRAFT: "bg-slate-100 text-slate-700",
+  SENT: "bg-sky-50 text-sky-700",
+  ACCEPTED: "bg-emerald-50 text-emerald-700",
+  REJECTED: "bg-rose-50 text-rose-700",
+  EXPIRED: "bg-amber-50 text-amber-700",
+  CANCELLED: "bg-slate-100 text-slate-500 line-through",
+};
+
+const cellInputClass =
+  "h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-right text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100";
+
+const outlineButton =
+  "flex h-9 items-center gap-1.5 rounded-lg border border-emerald-700 bg-white px-3 text-sm font-medium text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50";
+
+const solidButton =
+  "flex h-9 items-center gap-1.5 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50";
+
+function round2(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function toDateInput(value: string | null | undefined): string {
+  if (!value) return "";
+  const date = parseISO(value);
+  return isValid(date) ? format(date, "yyyy-MM-dd") : value.slice(0, 10);
+}
+
+function displayDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = parseISO(value);
+  return isValid(date) ? format(date, "dd/MM/yyyy") : value;
+}
+
+function makeFormatter(currencyCode: string) {
+  try {
+    const formatter = new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: currencyCode,
+    });
+    return (value: number) => formatter.format(value);
+  } catch {
+    return (value: number) => `${currencyCode} ${value.toFixed(2)}`;
+  }
+}
+
+function formatQty(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function calculateLine(line: DraftLine) {
+  const gross = round2(line.quantity * line.unit_price);
+  const discount = round2(
+    Math.min(
+      gross,
+      line.discount_type === "PERCENTAGE"
+        ? (gross * line.discount_value) / 100
+        : line.discount_value,
+    ),
+  );
+  const net = round2(gross - discount);
+  const vat = round2((net * line.vat_rate) / 100);
+  return { gross, discount, net, vat };
+}
+
+function calculateTotals(lines: DraftLine[]) {
+  return lines.reduce(
+    (totals, line) => {
+      const result = calculateLine(line);
+      return {
+        subtotal: round2(totals.subtotal + result.gross),
+        discount: round2(totals.discount + result.discount),
+        taxable: round2(totals.taxable + result.net),
+        vat: round2(totals.vat + result.vat),
+      };
+    },
+    { subtotal: 0, discount: 0, taxable: 0, vat: 0 },
+  );
+}
+
+function offerToDraftLines(offer: ProspectOffer): DraftLine[] {
+  return offer.lines.map((line) => ({
+    key: line.id,
+    item_id: line.item_id ?? "",
+    item_code: line.item_code,
+    item_name: line.item_name,
+    uom_name: line.uom_name,
+    description: line.description,
+    quantity: Number(line.quantity),
+    unit_price: Number(line.unit_price),
+    discount_type: line.discount_type,
+    discount_value: Number(line.discount_value),
+    vat_rate: Number(line.vat_rate),
+  }));
+}
+
+/** VAT label: "VAT (20%)" when all lines share one rate. */
+function vatLabel(rates: number[]): string {
+  const unique = [...new Set(rates)];
+  return unique.length === 1 ? `VAT (${unique[0]}%)` : "VAT";
+}
+
+/* ============================================================
+   COMPONENT
+============================================================ */
+
+export default function ProspectPricingTab({
+  offersState,
+  addItemsRequested = false,
+  onAddItemsHandled,
+  readOnly = false,
+}: Props) {
+  const {
+    offers,
+    defaults,
+    primaryOffer,
+    loading,
+    error: loadError,
+    saveOffer,
+    setStatus,
+    setPrimary,
+    deleteOffer,
+  } = offersState;
+
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const vatCache = useRef(new Map<string, number>());
+
+  /* Keep the selected offer valid as the list changes. */
+  useEffect(() => {
+    if (!offers.length) {
+      setSelectedOfferId(null);
+      return;
+    }
+    if (!selectedOfferId || !offers.some((o) => o.id === selectedOfferId)) {
+      setSelectedOfferId(primaryOffer?.id ?? offers[0].id);
+    }
+  }, [offers, primaryOffer, selectedOfferId]);
+
+  const offer = useMemo(
+    () => offers.find((o) => o.id === selectedOfferId) ?? null,
+    [offers, selectedOfferId],
+  );
+
+  const editing = draft !== null;
+  const canEdit = !offer || EDITABLE_STATUSES.includes(offer.status);
+
+  const currencyCode =
+    offer?.currency_code || defaults?.currency_code || "GBP";
+
+  const money = useMemo(() => makeFormatter(currencyCode), [currencyCode]);
+
+  /* ---------------- Edit lifecycle ---------------- */
+
+  const startEdit = (target: ProspectOffer | null) => {
+    const today = new Date();
+
+    setDraft(
+      target
+        ? {
+            offerId: target.id,
+            offer_date: toDateInput(target.offer_date),
+            valid_until: toDateInput(target.valid_until),
+            notes: target.notes ?? "",
+            lines: offerToDraftLines(target),
+          }
+        : {
+            offer_date: format(today, "yyyy-MM-dd"),
+            valid_until: format(addDays(today, 30), "yyyy-MM-dd"),
+            notes: "",
+            lines: [],
+          },
+    );
+    setActionError("");
+    setNotice("");
+    setConfirmDelete(false);
+  };
+
+  const cancelEdit = () => {
+    setDraft(null);
+    setActionError("");
+    setNotice("");
+  };
+
+  /* Form switched to view mode: discard an unsaved offer edit. */
+  useEffect(() => {
+    if (!readOnly) return;
+    setDraft(null);
+    setItemModalOpen(false);
+    setConfirmDelete(false);
+    setNotice("");
+  }, [readOnly]);
+
+  /*
+   * Parent asked us to open the item picker (Interested Products "+ Add").
+   * Waits for offers to load so we edit the existing offer, not a new one.
+   */
+  useEffect(() => {
+    if (!addItemsRequested || loading) return;
+
+    if (readOnly) {
+      onAddItemsHandled?.();
+      return;
+    }
+
+    if (!draft) {
+      const target = offer ?? primaryOffer;
+      const editable = target && EDITABLE_STATUSES.includes(target.status);
+      startEdit(editable ? target : null);
+    }
+    setItemModalOpen(true);
+    onAddItemsHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addItemsRequested, loading]);
+
+  const updateLine = <K extends keyof DraftLine>(
+    key: string,
+    field: K,
+    value: DraftLine[K],
+  ) => {
+    setDraft((current) =>
+      current
+        ? {
+            ...current,
+            lines: current.lines.map((line) =>
+              line.key === key ? { ...line, [field]: value } : line,
+            ),
+          }
+        : current,
+    );
+  };
+
+  const removeLine = (key: string) => {
+    setDraft((current) =>
+      current
+        ? { ...current, lines: current.lines.filter((l) => l.key !== key) }
+        : current,
+    );
+  };
+
+  /* ---------------- Item selection ---------------- */
+
+  const resolveVatRate = async (
+    vatProductGroupId?: string,
+  ): Promise<number> => {
+    const businessGroupId = defaults?.vat_business_group_id;
+    if (!businessGroupId || !vatProductGroupId) return 0;
+
+    const cached = vatCache.current.get(vatProductGroupId);
+    if (cached !== undefined) return cached;
+
+    try {
+      const params = new URLSearchParams({
+        vat_business_group_id: businessGroupId,
+        vat_product_group_id: vatProductGroupId,
+      });
+      const response = await fetch(`/api/lookups/vat-posting-setup?${params}`);
+      const result = (await response.json()) as {
+        data: { vat_rate: number | string } | null;
+      };
+      const rate = Number(result.data?.vat_rate ?? 0);
+      vatCache.current.set(vatProductGroupId, rate);
+      return rate;
+    } catch {
+      return 0;
+    }
+  };
+
+  const handleItemsSelected = async (items: ItemLookupRecord[]) => {
+    setItemModalOpen(false);
+    if (!items.length || !draft) return;
+
+    const existing = new Set(draft.lines.map((line) => line.item_id));
+    const fresh = items.filter((item) => !existing.has(item.id));
+    const skipped = items.length - fresh.length;
+
+    const newLines: DraftLine[] = await Promise.all(
+      fresh.map(async (item) => ({
+        key: `new-${item.id}`,
+        item_id: item.id,
+        item_code: item.item_code || null,
+        item_name: item.name,
+        uom_name: item.base_uom_name || null,
+        description: null,
+        quantity: 1,
+        unit_price: Number(item.standard_sales_price ?? 0),
+        discount_type: "PERCENTAGE" as const,
+        discount_value: 0,
+        vat_rate: await resolveVatRate(item.vat_product_group_id),
+      })),
+    );
+
+    setDraft((current) =>
+      current ? { ...current, lines: [...current.lines, ...newLines] } : current,
+    );
+
+    setNotice(
+      skipped
+        ? `${skipped} item${skipped > 1 ? "s were" : " was"} already in the list and skipped — change the quantity instead.`
+        : "",
+    );
+  };
+
+  /* ---------------- Save / actions ---------------- */
+
+  const handleSave = async () => {
+    if (!draft) return;
+
+    const currencyId = offer?.currency_id ?? defaults?.currency_id;
+
+    if (!draft.lines.length) {
+      setActionError("Add at least one item.");
+      return;
+    }
+    if (!currencyId) {
+      setActionError(
+        "No currency is set for this prospect and no base currency is configured for the company.",
+      );
+      return;
+    }
+    if (draft.lines.some((line) => !(line.quantity > 0))) {
+      setActionError("Every item needs a quantity greater than zero.");
+      return;
+    }
+
+    setBusy(true);
+    setActionError("");
+
+    try {
+      const saved = await saveOffer(
+        {
+          offer_date: draft.offer_date,
+          valid_until: draft.valid_until || null,
+          currency_id: currencyId,
+          exchange_rate: Number(
+            offer?.exchange_rate ?? defaults?.exchange_rate ?? 1,
+          ),
+          is_primary: offer?.is_primary ?? false,
+          notes: draft.notes.trim() || null,
+          lines: draft.lines.map((line) => ({
+            item_id: line.item_id,
+            description: line.description,
+            quantity: line.quantity,
+            unit_price: line.unit_price,
+            discount_type: line.discount_type,
+            discount_value: line.discount_value,
+          })),
+        },
+        draft.offerId,
+      );
+
+      if (saved) setSelectedOfferId(saved.id);
+      setDraft(null);
+      setNotice("");
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Unable to save.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const runAction = async (action: () => Promise<unknown>) => {
+    setBusy(true);
+    setActionError("");
+    try {
+      await action();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Action failed.");
+    } finally {
+      setBusy(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  /* ---------------- Derived view data ---------------- */
+
+  const viewLines = useMemo(
+    () => (offer ? offerToDraftLines(offer) : []),
+    [offer],
+  );
+
+  const lines = draft ? draft.lines : viewLines;
+
+  const totals = draft
+    ? calculateTotals(draft.lines)
+    : {
+        subtotal: Number(offer?.subtotal ?? 0),
+        discount: Number(offer?.discount_total ?? 0),
+        taxable: Number(offer?.taxable_amount ?? 0),
+        vat: Number(offer?.vat_total ?? 0),
+      };
+
+  const grandTotal = round2(totals.taxable + totals.vat);
+
+  const showDiscountColumn =
+    editing || lines.some((line) => line.discount_value > 0);
+
+  const columnCount = showDiscountColumn ? 5 : 4;
+
+  /* ============================================================
+     RENDER
+  ============================================================ */
+
+  return (
+    <div className="space-y-4">
+      {/* HEADER */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <Icon icon="lucide:layers" className="text-2xl text-emerald-700" />
+            Pricing
+          </h3>
+
+          {editing && !draft?.offerId && (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+              New offer
+            </span>
+          )}
+
+          {offer && !(editing && !draft?.offerId) && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {offers.length > 1 && !editing ? (
+                <select
+                  value={offer.id}
+                  onChange={(event) => setSelectedOfferId(event.target.value)}
+                  className="h-7 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-700"
+                >
+                  {offers.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.offer_no}
+                      {o.is_primary ? " · Primary" : ""}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="font-medium text-slate-600">
+                  {offer.offer_no}
+                </span>
+              )}
+
+              <span
+                className={`rounded-full px-2 py-0.5 font-semibold ${STATUS_BADGE[offer.status]}`}
+              >
+                {offer.status.charAt(0) + offer.status.slice(1).toLowerCase()}
+              </span>
+
+              {offer.is_primary && offers.length > 1 && (
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-800">
+                  Primary
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {editing ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setItemModalOpen(true)}
+                disabled={busy}
+                className={outlineButton}
+              >
+                <Icon icon="lucide:plus" />
+                Add item
+              </button>
+              <button
+                type="button"
+                onClick={cancelEdit}
+                disabled={busy}
+                className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={busy}
+                className={solidButton}
+              >
+                <Icon icon={busy ? "lucide:loader-2" : "lucide:check"} className={busy ? "animate-spin" : ""} />
+                Save
+              </button>
+            </>
+          ) : readOnly ? null : (
+            <>
+              {offer && (
+                <button
+                  type="button"
+                  onClick={() => startEdit(offer)}
+                  disabled={!canEdit || busy}
+                  title={
+                    canEdit
+                      ? "Edit quote"
+                      : `A ${offer.status.toLowerCase()} offer cannot be edited`
+                  }
+                  className={outlineButton}
+                >
+                  <Icon icon="lucide:pencil" />
+                  Edit quote
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  startEdit(offer && canEdit ? offer : null);
+                  setItemModalOpen(true);
+                }}
+                disabled={busy || loading}
+                className={outlineButton}
+              >
+                <Icon icon="lucide:plus" />
+                Add item
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {(loadError || actionError) && (
+        <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {actionError || loadError}
+        </div>
+      )}
+
+      {notice && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {notice}
+        </div>
+      )}
+
+      {/* EMPTY STATE */}
+      {!loading && !offer && !editing ? (
+        <div className="rounded-lg border border-dashed border-slate-300 py-12 text-center">
+          <Icon
+            icon="lucide:tag"
+            className="mx-auto text-4xl text-emerald-600"
+          />
+          <p className="mt-2 font-semibold text-slate-800">No price offer yet</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {readOnly
+              ? "Click Edit to add products and prices."
+              : "Add the products this prospect is interested in to build a quote."}
+          </p>
+          {!readOnly && (
+          <button
+            type="button"
+            onClick={() => {
+              startEdit(null);
+              setItemModalOpen(true);
+            }}
+            className={`${solidButton} mx-auto mt-4`}
+          >
+            <Icon icon="lucide:plus" />
+            Add items
+          </button>
+          )}
+        </div>
+      ) : loading && !offer && !editing ? (
+        <div className="py-12 text-center text-sm text-slate-500">
+          Loading pricing...
+        </div>
+      ) : (
+        <>
+          {/* OFFER DATES (edit) */}
+          {editing && draft && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <label className="space-y-1 text-xs font-medium text-slate-600">
+                Offer date
+                <input
+                  type="date"
+                  value={draft.offer_date}
+                  onChange={(event) =>
+                    setDraft({ ...draft, offer_date: event.target.value })
+                  }
+                  className="h-9 w-full rounded-md border border-slate-300 px-2 text-sm text-slate-800"
+                />
+              </label>
+              <label className="space-y-1 text-xs font-medium text-slate-600">
+                Valid until
+                <input
+                  type="date"
+                  value={draft.valid_until}
+                  min={draft.offer_date}
+                  onChange={(event) =>
+                    setDraft({ ...draft, valid_until: event.target.value })
+                  }
+                  className="h-9 w-full rounded-md border border-slate-300 px-2 text-sm text-slate-800"
+                />
+              </label>
+              <label className="space-y-1 text-xs font-medium text-slate-600">
+                Notes
+                <input
+                  value={draft.notes}
+                  onChange={(event) =>
+                    setDraft({ ...draft, notes: event.target.value })
+                  }
+                  placeholder="Optional"
+                  className="h-9 w-full rounded-md border border-slate-300 px-2 text-sm text-slate-800"
+                />
+              </label>
+            </div>
+          )}
+
+          {/* LINES TABLE */}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="bg-emerald-50 text-emerald-800">
+                  <th className="px-4 py-2 text-left font-semibold">Product</th>
+                  <th className="w-24 px-3 py-2 text-right font-semibold">
+                    Qty
+                  </th>
+                  <th className="w-32 px-3 py-2 text-right font-semibold">
+                    Unit price
+                  </th>
+                  {showDiscountColumn && (
+                    <th className="w-36 px-3 py-2 text-right font-semibold">
+                      Discount
+                    </th>
+                  )}
+                  <th className="w-32 px-4 py-2 text-right font-semibold">
+                    Line total
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {lines.map((line) => {
+                  const { net } = calculateLine(line);
+
+                  return (
+                    <tr key={line.key} className="align-middle">
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          {editing && (
+                            <button
+                              type="button"
+                              onClick={() => removeLine(line.key)}
+                              title="Remove item"
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                            >
+                              <Icon icon="lucide:trash-2" />
+                            </button>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-slate-900">{line.item_name}</p>
+                            {(line.item_code || line.uom_name) && (
+                              <p className="text-[11px] text-slate-500">
+                                {[line.item_code, line.uom_name]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {editing ? (
+                          <NumericTextInput
+                            value={line.quantity}
+                            allowDecimals
+                            decimalScale={2}
+                            onChange={(value) =>
+                              updateLine(line.key, "quantity", value)
+                            }
+                            className={cellInputClass}
+                          />
+                        ) : (
+                          formatQty(line.quantity)
+                        )}
+                      </td>
+
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {editing ? (
+                          <NumericTextInput
+                            value={line.unit_price}
+                            allowDecimals
+                            decimalScale={2}
+                            onChange={(value) =>
+                              updateLine(line.key, "unit_price", value)
+                            }
+                            className={cellInputClass}
+                          />
+                        ) : (
+                          money(line.unit_price)
+                        )}
+                      </td>
+
+                      {showDiscountColumn && (
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {editing ? (
+                            <div className="flex gap-1">
+                              <NumericTextInput
+                                value={line.discount_value}
+                                allowDecimals
+                                decimalScale={2}
+                                onChange={(value) =>
+                                  updateLine(line.key, "discount_value", value)
+                                }
+                                className={cellInputClass}
+                              />
+                              <select
+                                value={line.discount_type}
+                                onChange={(event) =>
+                                  updateLine(
+                                    line.key,
+                                    "discount_type",
+                                    event.target
+                                      .value as ProspectOfferDiscountType,
+                                  )
+                                }
+                                className="h-8 rounded-md border border-slate-300 bg-white px-1 text-xs"
+                              >
+                                <option value="PERCENTAGE">%</option>
+                                <option value="AMOUNT">Amt</option>
+                              </select>
+                            </div>
+                          ) : line.discount_value > 0 ? (
+                            line.discount_type === "PERCENTAGE" ? (
+                              `${line.discount_value}%`
+                            ) : (
+                              money(line.discount_value)
+                            )
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                      )}
+
+                      <td className="px-4 py-2 text-right font-medium tabular-nums text-slate-900">
+                        {money(net)}
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {lines.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={columnCount}
+                      className="px-4 py-8 text-center text-sm text-slate-500"
+                    >
+                      No items yet — use{" "}
+                      <span className="font-medium">Add item</span> to pick
+                      products.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* TOTALS */}
+          {lines.length > 0 && (
+            <div className="flex justify-end border-t border-slate-200 pt-3">
+              <dl className="grid w-full max-w-sm grid-cols-[1fr_auto] gap-x-8 gap-y-1.5 text-sm">
+                <dt className="text-right text-slate-700">Subtotal</dt>
+                <dd className="text-right tabular-nums">
+                  {money(totals.subtotal)}
+                </dd>
+
+                {totals.discount > 0 && (
+                  <>
+                    <dt className="text-right text-slate-700">Discount</dt>
+                    <dd className="text-right tabular-nums">
+                      −{money(totals.discount)}
+                    </dd>
+                  </>
+                )}
+
+                <dt className="text-right text-slate-700">Total ex VAT</dt>
+                <dd className="text-right tabular-nums">
+                  {money(totals.taxable)}
+                </dd>
+
+                <dt className="text-right text-slate-700">
+                  {vatLabel(lines.map((line) => line.vat_rate))}
+                </dt>
+                <dd className="text-right tabular-nums">{money(totals.vat)}</dd>
+
+                <dt className="pt-1 text-right text-base font-bold text-emerald-700">
+                  Total incl VAT
+                </dt>
+                <dd className="pt-1 text-right text-lg font-bold tabular-nums text-emerald-700">
+                  {money(grandTotal)}
+                </dd>
+              </dl>
+            </div>
+          )}
+
+          {editing && !defaults?.vat_business_group_id && (
+            <p className="text-xs text-amber-700">
+              No VAT business posting group is set on this prospect, so VAT is
+              calculated as 0%.
+            </p>
+          )}
+
+          {/* OFFER FOOTER (view) */}
+          {!editing && offer && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs text-slate-600">
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <span>Offer date: {displayDate(offer.offer_date)}</span>
+                <span>Valid until: {displayDate(offer.valid_until)}</span>
+                {offer.notes && <span>Notes: {offer.notes}</span>}
+              </div>
+
+              {!readOnly && (
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1">
+                  Status
+                  <select
+                    value={offer.status}
+                    disabled={busy}
+                    onChange={(event) =>
+                      void runAction(() =>
+                        setStatus(
+                          offer.id,
+                          event.target.value as ProspectOfferStatus,
+                        ),
+                      )
+                    }
+                    className="h-7 rounded-md border border-slate-300 bg-white px-1.5 text-xs"
+                  >
+                    {OFFER_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status.charAt(0) + status.slice(1).toLowerCase()}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {!offer.is_primary && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void runAction(() => setPrimary(offer.id))}
+                    className="rounded-md px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-50"
+                  >
+                    Set as primary
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => startEdit(null)}
+                  className="rounded-md px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-50"
+                >
+                  + New offer
+                </button>
+
+                {offer.status === "DRAFT" &&
+                  (confirmDelete ? (
+                    <span className="flex items-center gap-1">
+                      Delete offer?
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void runAction(() => deleteOffer(offer.id))
+                        }
+                        className="rounded px-1.5 py-0.5 font-semibold text-rose-600 hover:bg-rose-50"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(false)}
+                        className="rounded px-1.5 py-0.5 hover:bg-slate-100"
+                      >
+                        No
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setConfirmDelete(true)}
+                      className="rounded-md px-2 py-1 font-medium text-rose-600 hover:bg-rose-50"
+                    >
+                      Delete
+                    </button>
+                  ))}
+              </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {itemModalOpen && (
+        <ItemLookupModal
+          open={itemModalOpen}
+          onClose={() => setItemModalOpen(false)}
+          multiple
+          onSelect={(item) => void handleItemsSelected([item])}
+          onSelectMultiple={(items) => void handleItemsSelected(items)}
+        />
+      )}
+    </div>
+  );
+}

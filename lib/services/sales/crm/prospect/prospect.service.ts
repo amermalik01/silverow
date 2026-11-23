@@ -254,12 +254,7 @@ export class ProspectService {
             p.*,
             c.code AS currency_code
         FROM public.prospects p
-        LEFT JOIN public.currencies c
-            ON c.id = p.currency_id
-        AND (
-            c.company_id = p.company_id
-            OR c.company_id IS NULL
-        )
+        LEFT JOIN public.currencies c ON c.id = p.currency_id
         WHERE p.id = $1
             AND p.company_id = $2
         LIMIT 1
@@ -1212,13 +1207,14 @@ export class ProspectService {
     if (prospect.currency_id) {
       const currencyResult = await client.query<{ id: string }>(
         `
-      SELECT id
-      FROM currencies
-      WHERE id = $1
-        AND (
-          company_id = $2
-          OR company_id IS NULL
-        )
+      SELECT c.id
+      FROM public.currencies c
+      INNER JOIN public.company_currencies cc
+        ON cc.currency_id = c.id
+       AND cc.company_id = $2
+       AND cc.status = 1
+      WHERE c.id = $1
+        AND c.status = 1
       LIMIT 1
       `,
         [prospect.currency_id, companyId],
@@ -1907,6 +1903,8 @@ export class ProspectService {
       SELECT p.*
       FROM prospects p
       WHERE p.company_id = $1
+        AND p.converted_party_id IS NULL
+        AND p.status <> 'Converted'
       ORDER BY p.created_at DESC
       `,
       [companyId],
@@ -1933,7 +1931,15 @@ export class ProspectService {
     const offset = (page - 1) * pageSize;
 
     const values: (string | number)[] = [companyId];
-    const whereClauses = ["p.company_id = $1"];
+    /*
+     * Converted prospects live on as customers (parties module) and are
+     * excluded from the prospect listing.
+     */
+    const whereClauses = [
+      "p.company_id = $1",
+      "p.converted_party_id IS NULL",
+      "p.status <> 'Converted'",
+    ];
 
     const addValue = (value: string | number): number => {
       values.push(value);

@@ -32,6 +32,10 @@ import ProspectWorkspaceTabs, {
 import ProspectActivityTimeline from "./components/ProspectActivityTimeline";
 import ProspectActivityModal from "./components/ProspectActivityModal";
 import ProspectConvertModal from "./components/ProspectConvertModal";
+import ProspectNotesList from "./components/ProspectNotesList";
+import AttachmentsTab from "@/app/components/shared/AttachmentsTab";
+import ProspectPricingTab from "./components/ProspectPricingTab";
+import { useProspectOffers } from "./hooks/useProspectOffers";
 
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 import { useLoader } from "@/app/context/LoaderContext";
@@ -40,6 +44,11 @@ import { DatePicker } from "@/components/ui/date-picker";
 type Props = {
   prospectId?: string;
   slug: string;
+  /**
+   * Existing prospects open in "view" mode (all fields disabled) unless
+   * "edit" is passed, e.g. from the /[id]/edit route.
+   */
+  initialMode?: "view" | "edit";
 };
 
 type ProspectFormHeader = {
@@ -121,7 +130,11 @@ function formatDate(value: string): string {
   return Number.isNaN(date.getTime()) ? value : format(date, "dd/MM/yyyy");
 }
 
-export default function ProspectFormView({ prospectId, slug }: Props) {
+export default function ProspectFormView({
+  prospectId,
+  slug,
+  initialMode = "view",
+}: Props) {
   const router = useRouter();
   const isEdit = Boolean(prospectId);
 
@@ -146,12 +159,46 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
     useState<ProspectWorkspaceTab>("activity");
 
   const [saving, setSaving] = useState(false);
+
+  /* View / edit mode (new prospects are always in edit mode). */
+  const [isEditing, setIsEditing] = useState(
+    !prospectId || initialMode === "edit",
+  );
   const [error, setError] = useState("");
 
   const [activityOpen, setActivityOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
 
   const [salespersonModalOpen, setSalespersonModalOpen] = useState(false);
+
+  /* Price offers (Pricing tab + Interested Products) */
+  const offersState = useProspectOffers(prospectId);
+  const [addItemsRequested, setAddItemsRequested] = useState(false);
+
+  const interestedProducts = useMemo(
+    () =>
+      offersState.primaryOffer?.lines.map((line) => line.item_name) ?? [],
+    [offersState.primaryOffer],
+  );
+
+  const isConverted =
+    header.status === "Converted" ||
+    Boolean(details?.prospect.converted_party_id);
+
+  /* Fields are locked in view mode and always once converted. */
+  const readOnly = isConverted || !isEditing;
+
+  const handleCancelEdit = async () => {
+    setError("");
+    setIsEditing(false);
+    await loadProspect(); // discard unsaved changes
+  };
+
+  const openProductPicker = () => {
+    if (readOnly) return;
+    setActiveWorkspaceTab("pricing");
+    setAddItemsRequested(true);
+  };
 
   const primaryContact = useMemo(
     () => contacts.find((contact) => contact.is_primary) || contacts[0],
@@ -335,19 +382,30 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
         throw new Error(message);
       }
 
-      const savedId =
+      if (isEdit) {
+        /* Existing record: reload saved data and return to view mode. */
+        setIsEditing(false);
+        await loadProspect();
+        return;
+      }
+
+      /* New record: open it (in view mode). POST returns { prospect }. */
+      const createdId =
         typeof result === "object" &&
         result !== null &&
-        "id" in result &&
-        typeof result.id === "string"
-          ? result.id
-          : prospectId;
+        "prospect" in result &&
+        typeof result.prospect === "object" &&
+        result.prospect !== null &&
+        "id" in result.prospect &&
+        typeof result.prospect.id === "string"
+          ? result.prospect.id
+          : null;
 
-      if (savedId) {
-        router.push(`/${slug}/sales/prospects/${savedId}`);
-      } else {
-        router.push(`/${slug}/sales/prospects`);
-      }
+      router.push(
+        createdId
+          ? `/${slug}/sales/prospects/${createdId}`
+          : `/${slug}/sales/prospects`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save prospect.");
     } finally {
@@ -365,7 +423,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
             initialActivities={details.activities}
             onAddActivity={() => setActivityOpen(true)}
             onRefresh={loadProspect}
-            readOnly={false}
+            readOnly={isConverted}
           />
         ) : (
           <div className="py-12 text-center">
@@ -381,7 +439,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
 
       case "follow-up":
         return (
-          <div className="space-y-4">
+          <fieldset disabled={readOnly} className="min-w-0 space-y-4">
             <h3 className="flex items-center gap-2 font-bold text-slate-900">
               <Icon
                 icon="lucide:calendar-days"
@@ -394,6 +452,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               <label className="space-y-2 text-sm text-slate-700">
                 Last Contacted
                 <DatePicker
+                  disabled={readOnly}
                   value={
                     header.last_contacted_at
                       ? parseISO(header.last_contacted_at)
@@ -413,6 +472,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               <label className="space-y-2 text-sm text-slate-700">
                 Next Follow-up
                 <DatePicker
+                  disabled={readOnly}
                   value={
                     header.next_follow_up_at
                       ? parseISO(header.next_follow_up_at)
@@ -446,55 +506,65 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               <div className="mt-1">{formatDate(header.next_follow_up_at)}</div>
             </div>
 
-            <p className="text-xs text-slate-500">
-              Remember to save the prospect after updating follow-up details.
-            </p>
-          </div>
+            {!readOnly && (
+              <p className="text-xs text-slate-500">
+                Remember to save the prospect after updating follow-up details.
+              </p>
+            )}
+          </fieldset>
         );
 
       case "notes":
-        return (
-          <div className="py-10 text-center">
+        return prospectId ? (
+          <ProspectNotesList prospectId={prospectId} readonly={readOnly} />
+        ) : (
+          <div className="py-12 text-center">
             <Icon
               icon="lucide:file-text"
               className="mx-auto text-4xl text-emerald-600"
             />
-            <p className="mt-2 font-semibold text-slate-800">Prospect Notes</p>
-            <p className="mt-1 text-sm text-slate-500">
-              Your existing notes component will be integrated here.
+            <p className="mt-2 text-sm text-slate-500">
+              Notes can be added after creating the prospect.
             </p>
           </div>
         );
 
       case "attachments":
-        return (
-          <div className="py-10 text-center">
+        return prospectId ? (
+          <AttachmentsTab
+            module="prospect"
+            recordId={prospectId}
+            readonly={readOnly}
+            onRequestEdit={isConverted ? undefined : () => setIsEditing(true)}
+          />
+        ) : (
+          <div className="py-12 text-center">
             <Icon
               icon="lucide:paperclip"
               className="mx-auto text-4xl text-emerald-600"
             />
-            <p className="mt-2 font-semibold text-slate-800">
-              Prospect Attachments
-            </p>
-            <p className="mt-1 text-sm text-slate-500">
-              Your existing attachments component will be integrated here.
+            <p className="mt-2 text-sm text-slate-500">
+              Attachments can be uploaded after creating the prospect.
             </p>
           </div>
         );
 
       case "pricing":
-        return (
-          <div className="py-10 text-center">
+        return prospectId ? (
+          <ProspectPricingTab
+            offersState={offersState}
+            addItemsRequested={addItemsRequested}
+            onAddItemsHandled={() => setAddItemsRequested(false)}
+            readOnly={readOnly}
+          />
+        ) : (
+          <div className="py-12 text-center">
             <Icon
               icon="lucide:tag"
               className="mx-auto text-4xl text-emerald-600"
             />
-            <p className="mt-2 font-semibold text-slate-800">
-              Prospect Pricing
-            </p>
-            <p className="mt-1 text-sm text-slate-500">
-              Product selections and price offers will be implemented with the
-              pricing database and API integration.
+            <p className="mt-2 text-sm text-slate-500">
+              Pricing can be added after creating the prospect.
             </p>
           </div>
         );
@@ -524,16 +594,35 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
         </div>
       )}
 
+      {isConverted && (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          <Icon icon="lucide:info" className="shrink-0 text-lg" />
+          This prospect has been converted to a customer and is read-only.
+          Continue working on the customer record.
+        </div>
+      )}
+
       <ProspectHeader
         companyName={header.company_name}
         prospectNo={header.prospect_no}
         status={header.status}
         contactName={primaryContact?.name}
         isEdit={isEdit}
+        isEditing={!readOnly}
+        isConverted={isConverted}
         saving={saving}
         onCompanyNameChange={(value) => updateHeader("company_name", value)}
         onBack={() => router.push(`/${slug}/sales/prospects`)}
-        onEdit={() => setActiveWorkspaceTab("activity")}
+        onEdit={() => setIsEditing(true)}
+        onCancelEdit={() => void handleCancelEdit()}
+        onViewCustomer={
+          details?.prospect.converted_party_id
+            ? () =>
+                router.push(
+                  `/${slug}/sales/customer/${details.prospect.converted_party_id}`,
+                )
+            : undefined
+        }
         onLogActivity={() => setActivityOpen(true)}
         onConvert={() => setConvertOpen(true)}
         onSave={() => void saveProspect()}
@@ -550,6 +639,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
             onChange={updateHeader}
             onContactChange={setContacts}
             onAddressChange={setAddresses}
+            readOnly={readOnly}
           />
 
           <ProspectSalesInformation
@@ -568,6 +658,10 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
               updateHeader("estimated_deal_value", value)
             }
             onLostReasonChange={(value) => updateHeader("lost_reason", value)}
+            interestedProducts={interestedProducts}
+            productsEnabled={Boolean(prospectId)}
+            onManageProducts={openProductPicker}
+            readOnly={readOnly}
           />
         </div>
 
@@ -576,6 +670,7 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
           <ProspectAddressLocations
             addresses={addresses}
             onChange={setAddresses}
+            readOnly={readOnly}
           />
 
           <ProspectWorkspaceTabs
@@ -607,9 +702,14 @@ export default function ProspectFormView({ prospectId, slug }: Props) {
           prospectId={prospectId}
           companyName={header.company_name}
           onClose={() => setConvertOpen(false)}
-          onConverted={async () => {
+          onConverted={(customerId) => {
             setConvertOpen(false);
-            await loadProspect();
+            /* Converted prospects leave the prospect list; open the customer. */
+            router.push(
+              customerId
+                ? `/${slug}/sales/customer/${customerId}`
+                : `/${slug}/sales/prospects`,
+            );
           }}
         />
       )}

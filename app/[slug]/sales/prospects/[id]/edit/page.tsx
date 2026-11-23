@@ -8,5 +8,5 @@ export default async function EditProspectsPage({
   params: Promise<{ slug: string; id: string }>;
 }) {
   const { id, slug } = await params;
-  return <ProspectFormView slug={slug} prospectId={id} />;
+  return <ProspectFormView slug={slug} prospectId={id} initialMode="edit" />;
 }

@@ -19,16 +19,19 @@ type Props = {
   onChange: <K extends keyof Header>(field: K, value: Header[K]) => void;
   onContactChange: (contacts: ProspectContact[]) => void;
   onAddressChange: (addresses: ProspectAddress[]) => void;
+  /** View mode: all fields disabled. */
+  readOnly?: boolean;
 };
 
 const inputClass =
-  "h-8 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
+  "h-8 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-default disabled:border-slate-200 disabled:bg-slate-50";
 
 export default function ProspectGeneralTab({
   value,
   contacts,
   onChange,
   onContactChange,
+  readOnly = false,
 }: Props) {
   const [activeContact, setActiveContact] = useState(0);
 
@@ -111,7 +114,7 @@ export default function ProspectGeneralTab({
             </button>
           ))}
 
-          {contacts.length < 2 && (
+          {contacts.length < 2 && !readOnly && (
             <button
               type="button"
               onClick={addSecondaryContact}
@@ -135,7 +138,7 @@ export default function ProspectGeneralTab({
                   : "Secondary Contact Details"}
               </span>
 
-              {activeContact === 1 && (
+              {activeContact === 1 && !readOnly && (
                 <button
                   type="button"
                   onClick={removeSecondaryContact}
@@ -147,7 +150,10 @@ export default function ProspectGeneralTab({
               )}
             </div>
 
-            <div className="grid grid-cols-1 items-center gap-x-3 gap-y-2 sm:grid-cols-[125px_minmax(0,1fr)]">
+            <fieldset
+              disabled={readOnly}
+              className="grid min-w-0 grid-cols-1 items-center gap-x-3 gap-y-2 sm:grid-cols-[125px_minmax(0,1fr)]"
+            >
               <label className="text-sm text-slate-800">Contact Name</label>
 
               <input
@@ -216,7 +222,7 @@ export default function ProspectGeneralTab({
                 className={`${inputClass} text-emerald-800 underline`}
                 placeholder="https://example.com"
               />
-            </div>
+            </fieldset>
           </>
         ) : (
           <div className="py-6 text-center text-sm text-slate-500">

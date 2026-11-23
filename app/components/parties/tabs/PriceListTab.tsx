@@ -1,5 +1,6 @@
 // app/components/parties/tabs/PriceListTab.tsx
 
+
 "use client";
 
 import React, { useMemo, useState } from "react";

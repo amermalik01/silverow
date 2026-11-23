@@ -8,7 +8,8 @@ type Props = {
   prospectId: string;
   companyName: string;
   onClose: () => void;
-  onConverted: () => Promise<void>;
+  /** Receives the new customer's id when the API returns it. */
+  onConverted: (customerId?: string) => Promise<void> | void;
 };
 
 export default function ProspectConvertModal({
@@ -54,7 +55,18 @@ export default function ProspectConvertModal({
         throw new Error(message);
       }
 
-      await onConverted();
+      const customerId =
+        typeof result === "object" &&
+        result !== null &&
+        "customer" in result &&
+        typeof result.customer === "object" &&
+        result.customer !== null &&
+        "id" in result.customer &&
+        typeof result.customer.id === "string"
+          ? result.customer.id
+          : undefined;
+
+      await onConverted(customerId);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Unable to convert prospect.",
