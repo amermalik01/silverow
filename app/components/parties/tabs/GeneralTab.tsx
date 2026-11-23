@@ -602,15 +602,62 @@ export default function GeneralTab({
                     )}
                 </div>
 
-                <div className="w-24 h-20 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center text-black dark:text-slate-400">
-                  <div className="w-7 h-7 rounded-full bg-emerald-600/15 dark:bg-emerald-500/20 flex items-center justify-center mb-1">
-                    <Icon
-                      icon="tabler:map-pin-filled"
-                      className="text-emerald-800 text-3xl"
-                    />
-                  </div>
-                  <span className="text-[10px] font-medium">Map View</span>
-                </div>
+                {(() => {
+                  /* Opens the primary address in Google Maps (same as Locations tab). */
+                  const mapQuery = [
+                    primaryAddress.address_1,
+                    primaryAddress.address_2,
+                    primaryAddress.city,
+                    primaryAddress.state,
+                    primaryAddress.postcode,
+                    primaryAddress.country || account.country,
+                  ]
+                    .map((part) => (part || "").trim())
+                    .filter(Boolean)
+                    .join(", ");
+
+                  const hasMapData = Boolean(
+                    primaryAddress.address_1 ||
+                      primaryAddress.city ||
+                      primaryAddress.postcode,
+                  );
+
+                  const tileContent = (
+                    <>
+                      <div className="w-7 h-7 rounded-full bg-emerald-600/15 dark:bg-emerald-500/20 flex items-center justify-center mb-1">
+                        <Icon
+                          icon="tabler:map-pin-filled"
+                          className="text-emerald-800 text-3xl"
+                        />
+                      </div>
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium">
+                        Map View
+                        {hasMapData && (
+                          <Icon icon="tabler:external-link" className="w-3 h-3" />
+                        )}
+                      </span>
+                    </>
+                  );
+
+                  return hasMapData ? (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`Open ${mapQuery} in Google Maps`}
+                      className="w-24 h-20 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center text-black dark:text-slate-400 transition-colors hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-800 dark:hover:bg-emerald-950/40"
+                    >
+                      {tileContent}
+                    </a>
+                  ) : (
+                    <div
+                      title="No address to show on the map"
+                      className="w-24 h-20 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center text-black dark:text-slate-400 opacity-60 cursor-not-allowed"
+                    >
+                      {tileContent}
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               <div className="space-y-2">
