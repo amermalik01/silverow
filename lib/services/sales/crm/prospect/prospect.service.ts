@@ -42,6 +42,10 @@ interface ProspectRecord extends QueryResultRow {
   assigned_to_name: string | null;
   estimated_deal_value: string | number;
   currency_id: string | null;
+  currency_code: string | null;
+
+  vat_business_group_id: string | null;
+
   last_contacted_at: string | null;
   next_follow_up_at: string | null;
   reminder_enabled: boolean;
@@ -137,6 +141,7 @@ interface PartyRecord extends QueryResultRow {
   name: string;
   customer_code: string;
   status: string;
+  vat_business_group_id: string | null;
 }
 
 interface CountRecord extends QueryResultRow {
@@ -236,249 +241,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 export class ProspectService {
   /* ==========================================================
-     LIST
-  ========================================================== */
-
-  static async list(companyId: string): Promise<ProspectRecord[]> {
-    const result = await pool.query<ProspectRecord>(
-      `
-      SELECT p.*
-      FROM prospects p
-      WHERE p.company_id = $1
-      ORDER BY p.created_at DESC
-      `,
-      [companyId],
-    );
-
-    return result.rows;
-  }
-
-  /* ==========================================================
-     PAGINATED LIST
-  ========================================================== */
-
-  static async listPaginated(
-    companyId: string,
-    params: FetchParams,
-  ): Promise<FetchResponse<ProspectListRecord>> {
-    const page = normalizePage(params.page, 1);
-
-    const pageSize = Math.min(
-      100,
-      Math.max(1, normalizePage(params.pageSize, 20)),
-    );
-
-    const offset = (page - 1) * pageSize;
-
-    const values: (string | number)[] = [companyId];
-    const whereClauses = ["p.company_id = $1"];
-
-    const addValue = (value: string | number): number => {
-      values.push(value);
-      return values.length;
-    };
-
-    const search =
-      typeof params.search === "string" ? params.search.trim() : "";
-
-    if (search) {
-      const index = addValue(`%${search}%`);
-
-      whereClauses.push(`
-        (
-          p.prospect_no ILIKE $${index}
-          OR p.company_name ILIKE $${index}
-          OR COALESCE(p.status, '') ILIKE $${index}
-          OR COALESCE(p.source, '') ILIKE $${index}
-          OR COALESCE(p.priority, '') ILIKE $${index}
-          OR COALESCE(p.assigned_to_name, '') ILIKE $${index}
-          OR EXISTS (
-            SELECT 1
-            FROM prospect_contacts pc_search
-            WHERE pc_search.company_id = p.company_id
-              AND pc_search.prospect_id = p.id
-              AND (
-                pc_search.name ILIKE $${index}
-                OR COALESCE(pc_search.email, '') ILIKE $${index}
-                OR COALESCE(pc_search.phone, '') ILIKE $${index}
-                OR COALESCE(pc_search.mobile, '') ILIKE $${index}
-              )
-          )
-          OR EXISTS (
-            SELECT 1
-            FROM prospect_addresses pa_search
-            WHERE pa_search.company_id = p.company_id
-              AND pa_search.prospect_id = p.id
-              AND (
-                COALESCE(pa_search.city, '') ILIKE $${index}
-                OR COALESCE(pa_search.country, '') ILIKE $${index}
-                OR COALESCE(pa_search.postcode, '') ILIKE $${index}
-              )
-          )
-        )
-      `);
-    }
-
-    const filters = params.filters ?? {};
-
-    const filterableFields: Record<string, string> = {
-      prospect_no: "p.prospect_no",
-      company_name: "p.company_name",
-      status: "p.status",
-      source: "p.source",
-      priority: "p.priority",
-      assigned_to_name: "p.assigned_to_name",
-    };
-
-    for (const [key, filter] of Object.entries(filters)) {
-      if (!isPlainObject(filter)) continue;
-
-      const filterValue = filter.value;
-
-      if (
-        filterableFields[key] &&
-        filterValue !== undefined &&
-        filterValue !== null &&
-        String(filterValue).trim()
-      ) {
-        const index = addValue(`%${String(filterValue).trim()}%`);
-
-        whereClauses.push(`${filterableFields[key]} ILIKE $${index}`);
-      }
-
-      if (key === "created_at" || key === "next_follow_up_at") {
-        const dateColumn =
-          key === "created_at" ? "p.created_at" : "p.next_follow_up_at";
-
-        const from = filter.from;
-        const to = filter.to;
-
-        if (typeof from === "string" && from.trim()) {
-          const index = addValue(from);
-          whereClauses.push(`${dateColumn} >= $${index}::date`);
-        }
-
-        if (typeof to === "string" && to.trim()) {
-          const index = addValue(to);
-
-          whereClauses.push(
-            `${dateColumn} < ($${index}::date + INTERVAL '1 day')`,
-          );
-        }
-      }
-    }
-
-    const sortFields: Record<string, string> = {
-      prospect_no: "p.prospect_no",
-      company_name: "p.company_name",
-      status: "p.status",
-      source: "p.source",
-      priority: "p.priority",
-      estimated_deal_value: "p.estimated_deal_value",
-      assigned_to_name: "p.assigned_to_name",
-      last_contacted_at: "p.last_contacted_at",
-      next_follow_up_at: "p.next_follow_up_at",
-      created_at: "p.created_at",
-      primary_contact_name: "pc.name",
-      primary_email: "pc.email",
-      primary_phone: "COALESCE(pc.phone, pc.mobile)",
-      primary_city: "pa.city",
-    };
-
-    const sortColumn =
-      params.sortBy && sortFields[params.sortBy]
-        ? sortFields[params.sortBy]
-        : "p.created_at";
-
-    const sortDirection =
-      params.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
-
-    const fromSql = `
-      FROM prospects p
-
-      LEFT JOIN LATERAL (
-        SELECT
-          c.name,
-          c.email,
-          c.phone,
-          c.mobile
-        FROM prospect_contacts c
-        WHERE c.company_id = p.company_id
-          AND c.prospect_id = p.id
-        ORDER BY c.is_primary DESC, c.created_at ASC
-        LIMIT 1
-      ) pc ON TRUE
-
-      LEFT JOIN LATERAL (
-        SELECT a.city
-        FROM prospect_addresses a
-        WHERE a.company_id = p.company_id
-          AND a.prospect_id = p.id
-        ORDER BY a.is_primary DESC, a.created_at ASC
-        LIMIT 1
-      ) pa ON TRUE
-
-      WHERE ${whereClauses.join(" AND ")}
-    `;
-
-    const countResult = await pool.query<CountRecord>(
-      `
-      SELECT COUNT(*)::int AS total
-      ${fromSql}
-      `,
-      values,
-    );
-
-    const dataResult = await pool.query<ProspectListRecord>(
-      `
-      SELECT
-        p.id,
-        p.prospect_no,
-        p.company_name,
-        p.website,
-        p.status,
-        p.source,
-        p.priority,
-        p.estimated_deal_value,
-        p.currency_id,
-        NULL::varchar AS currency_code,
-        p.assigned_to,
-        p.assigned_to_name,
-        p.last_contacted_at,
-        p.next_follow_up_at,
-        p.reminder_enabled,
-        p.created_at,
-
-        pc.name AS primary_contact_name,
-        pc.email AS primary_email,
-        COALESCE(pc.phone, pc.mobile) AS primary_phone,
-        pa.city AS primary_city,
-
-        (
-          SELECT COUNT(*)::int
-          FROM prospect_activities act
-          WHERE act.company_id = p.company_id
-            AND act.prospect_id = p.id
-        ) AS activities_count
-
-      ${fromSql}
-
-      ORDER BY ${sortColumn} ${sortDirection} NULLS LAST,
-               p.created_at DESC
-
-      LIMIT $${values.length + 1}
-      OFFSET $${values.length + 2}
-      `,
-      [...values, pageSize, offset],
-    );
-
-    return {
-      data: dataResult.rows,
-      totalRecords: countResult.rows[0]?.total ?? 0,
-    };
-  }
-
-  /* ==========================================================
      GET BY ID
   ========================================================== */
 
@@ -488,12 +250,20 @@ export class ProspectService {
   ): Promise<ProspectDetails | null> {
     const prospectResult = await pool.query<ProspectRecord>(
       `
-      SELECT *
-      FROM prospects
-      WHERE id = $1
-        AND company_id = $2
-      LIMIT 1
-      `,
+        SELECT
+            p.*,
+            c.code AS currency_code
+        FROM public.prospects p
+        LEFT JOIN public.currencies c
+            ON c.id = p.currency_id
+        AND (
+            c.company_id = p.company_id
+            OR c.company_id IS NULL
+        )
+        WHERE p.id = $1
+            AND p.company_id = $2
+        LIMIT 1
+        `,
       [id, companyId],
     );
 
@@ -569,7 +339,7 @@ export class ProspectService {
     const prospect: Prospect = {
       ...prospectRecord,
       source: prospectRecord.source as Prospect["source"],
-      currency_code: null,
+      currency_code: prospectRecord.currency_code ?? null,
     };
 
     return {
@@ -733,106 +503,6 @@ export class ProspectService {
       await client.query("COMMIT");
 
       return prospect;
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  /* ==========================================================
-     CHANGE STATUS
-  ========================================================== */
-
-  static async changeStatus(
-    companyId: string,
-    userId: string,
-    id: string,
-    status: ProspectStatus,
-    options: ProspectStatusChangeOptions = {},
-  ): Promise<ProspectRecord> {
-    if (status === "Converted") {
-      throw new Error(
-        "Use the Convert to Customer action to convert a prospect.",
-      );
-    }
-
-    if (status === "Lost" && !normalizeText(options.lostReason)) {
-      throw new Error("Please provide a reason for losing this prospect.");
-    }
-
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      const existingResult = await client.query<ProspectRecord>(
-        `
-        SELECT *
-        FROM prospects
-        WHERE id = $1
-          AND company_id = $2
-        FOR UPDATE
-        `,
-        [id, companyId],
-      );
-
-      const existing = existingResult.rows[0];
-
-      if (!existing) {
-        throw new Error("Prospect not found.");
-      }
-
-      if (existing.converted_party_id || existing.status === "Converted") {
-        throw new Error("This prospect has already been converted.");
-      }
-
-      if (existing.status === status) {
-        await client.query("COMMIT");
-        return existing;
-      }
-
-      const updateResult = await client.query<ProspectRecord>(
-        `
-        UPDATE prospects
-        SET
-            status = $1::VARCHAR(30),
-            lost_reason = CASE
-            WHEN $1::VARCHAR(30) = 'Lost'
-                THEN $2::TEXT
-            ELSE NULL::TEXT
-            END,
-            updated_by = $3,
-            updated_at = NOW()
-        WHERE id = $4
-            AND company_id = $5
-        RETURNING *
-        `,
-        [
-          status,
-          status === "Lost" ? normalizeText(options.lostReason) : null,
-          userId,
-          id,
-          companyId,
-        ],
-      );
-
-      const updated = getRecord(updateResult.rows, "Prospect not found.");
-
-      await this.insertStatusHistory(
-        client,
-        companyId,
-        id,
-        existing.status,
-        status,
-        userId,
-        options.remarks ?? null,
-      );
-
-      await client.query("COMMIT");
-
-      return updated;
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -1102,6 +772,10 @@ export class ProspectService {
      CONVERT TO CUSTOMER
   ========================================================== */
 
+  /* ============================================================
+     CONVERT TO CUSTOMER
+  ============================================================ */
+
   static async convertToCustomer(
     companyId: string,
     userId: string,
@@ -1118,10 +792,13 @@ export class ProspectService {
     try {
       await client.query("BEGIN");
 
+      /*
+       * 1. Lock and retrieve the prospect.
+       */
       const prospectResult = await client.query<ProspectRecord>(
         `
         SELECT *
-        FROM prospects
+        FROM public.prospects
         WHERE id = $1
           AND company_id = $2
         FOR UPDATE
@@ -1139,11 +816,42 @@ export class ProspectService {
         throw new Error("Prospect has already been converted.");
       }
 
+      /*
+       * 2. Validate VAT business posting group.
+       *
+       * A group may have been deactivated since the prospect
+       * was originally created or updated.
+       */
+      if (prospect.vat_business_group_id) {
+        const vatBusinessGroupResult = await client.query<{
+          id: string;
+        }>(
+          `
+          SELECT id
+          FROM public.vat_business_posting_groups
+          WHERE id = $1
+            AND company_id = $2
+            AND is_active = TRUE
+          LIMIT 1
+          `,
+          [prospect.vat_business_group_id, companyId],
+        );
+
+        if (!vatBusinessGroupResult.rows.length) {
+          throw new Error(
+            "The prospect's VAT business posting group is no longer active or available. Please update the prospect before converting it.",
+          );
+        }
+      }
+
+      /*
+       * 3. Retrieve contacts and addresses.
+       */
       const [contactsResult, addressesResult] = await Promise.all([
         client.query<ProspectContactRecord>(
           `
           SELECT *
-          FROM prospect_contacts
+          FROM public.prospect_contacts
           WHERE company_id = $1
             AND prospect_id = $2
           ORDER BY is_primary DESC, created_at ASC
@@ -1154,7 +862,7 @@ export class ProspectService {
         client.query<ProspectAddressRecord>(
           `
           SELECT *
-          FROM prospect_addresses
+          FROM public.prospect_addresses
           WHERE company_id = $1
             AND prospect_id = $2
           ORDER BY is_primary DESC, created_at ASC
@@ -1177,6 +885,9 @@ export class ProspectService {
         throw new Error("A customer name is required.");
       }
 
+      /*
+       * 4. Generate customer code.
+       */
       const sequenceResult = await client.query<SequenceRecord>(
         `
         SELECT get_next_sequence($1, $2) AS code
@@ -1190,43 +901,89 @@ export class ProspectService {
         throw new Error("Unable to generate customer number.");
       }
 
+      /*
+       * 5. Create customer party.
+       *
+       * VAT business group is copied from the prospect.
+       *
+       * sales_posting_group_id remains independent because
+       * it represents a different accounting configuration.
+       */
       const partyResult = await client.query<PartyRecord>(
         `
-        INSERT INTO parties (
+        INSERT INTO public.parties (
           company_id,
           name,
           type,
           status,
+
           is_crm_lead,
           is_srm_vendor,
           is_customer,
           is_supplier,
+
           customer_code,
+
           email,
           phone,
           mobile,
           website,
+
           currency_id,
+          vat_business_group_id,
+
           assign_person_id,
-          assign_person
+          assign_person,
+
+          created_at,
+          updated_at
         )
         VALUES (
           $1, $2, 'customer', $3,
-          false, false, true, false,
-          $4, $5, $6, $7, $8, $9, $10, $11
+
+          FALSE,
+          FALSE,
+          TRUE,
+          FALSE,
+
+          $4,
+
+          $5,
+          $6,
+          $7,
+          $8,
+
+          $9,
+          $10,
+
+          $11,
+          $12,
+
+          NOW(),
+          NOW()
         )
-        RETURNING id, name, customer_code, status
+        RETURNING
+          id,
+          name,
+          customer_code,
+          status,
+          vat_business_group_id
         `,
         [
           companyId,
           customerName,
           payload.customerStatus ?? "active",
+
           customerCode,
+
           primaryContact?.email ?? null,
           primaryContact?.phone ?? null,
           primaryContact?.mobile ?? null,
           prospect.website,
+
           prospect.currency_id,
+          prospect.vat_business_group_id,
+
           prospect.assigned_to,
           prospect.assigned_to_name,
         ],
@@ -1238,12 +995,12 @@ export class ProspectService {
       );
 
       /*
-       * Copy all contacts to the new customer.
+       * 6. Copy all contacts to the new customer.
        */
       for (const contact of contacts) {
         await client.query(
           `
-          INSERT INTO party_contacts (
+          INSERT INTO public.party_contacts (
             party_id,
             name,
             job_title,
@@ -1269,12 +1026,14 @@ export class ProspectService {
       }
 
       /*
-       * Copy all addresses, preserving billing/shipping flags.
+       * 7. Copy all addresses.
+       *
+       * Preserve billing and shipping flags.
        */
       for (const address of addresses) {
         await client.query(
           `
-          INSERT INTO party_addresses (
+          INSERT INTO public.party_addresses (
             party_id,
             label,
             address_1,
@@ -1313,11 +1072,11 @@ export class ProspectService {
       }
 
       /*
-       * Preserve the prospect and mark it as converted.
+       * 8. Update prospect conversion details.
        */
       const convertedResult = await client.query<ProspectRecord>(
         `
-        UPDATE prospects
+        UPDATE public.prospects
         SET
           status = 'Converted',
           converted_party_id = $1,
@@ -1339,6 +1098,9 @@ export class ProspectService {
         "The prospect could not be converted. It may have been converted by another user.",
       );
 
+      /*
+       * 9. Insert status history.
+       */
       await this.insertStatusHistory(
         client,
         companyId,
@@ -1349,6 +1111,9 @@ export class ProspectService {
         `Converted to customer ${customerCode}.`,
       );
 
+      /*
+       * 10. Commit.
+       */
       await client.query("COMMIT");
 
       return {
@@ -1419,8 +1184,8 @@ export class ProspectService {
   }
 
   /* ==========================================================
-     VALIDATE REFERENCES
-  ========================================================== */
+   VALIDATE REFERENCES
+========================================================== */
 
   private static async validateReferences(
     client: PoolClient,
@@ -1430,12 +1195,12 @@ export class ProspectService {
     if (prospect.assigned_to) {
       const employeeResult = await client.query<{ id: string }>(
         `
-        SELECT id
-        FROM employees
-        WHERE id = $1
-          AND company_id = $2
-        LIMIT 1
-        `,
+      SELECT id
+      FROM employees
+      WHERE id = $1
+        AND company_id = $2
+      LIMIT 1
+      `,
         [prospect.assigned_to, companyId],
       );
 
@@ -1447,15 +1212,15 @@ export class ProspectService {
     if (prospect.currency_id) {
       const currencyResult = await client.query<{ id: string }>(
         `
-        SELECT id
-        FROM currencies
-        WHERE id = $1
-          AND (
-            company_id = $2
-            OR company_id IS NULL
-          )
-        LIMIT 1
-        `,
+      SELECT id
+      FROM currencies
+      WHERE id = $1
+        AND (
+          company_id = $2
+          OR company_id IS NULL
+        )
+      LIMIT 1
+      `,
         [prospect.currency_id, companyId],
       );
 
@@ -1463,11 +1228,39 @@ export class ProspectService {
         throw new Error("Selected currency was not found.");
       }
     }
+
+    /*
+     * VAT business posting group validation.
+     *
+     * Only active groups belonging to the current company
+     * can be assigned to a prospect.
+     */
+    if (prospect.vat_business_group_id) {
+      const vatBusinessGroupResult = await client.query<{
+        id: string;
+      }>(
+        `
+      SELECT id
+      FROM public.vat_business_posting_groups
+      WHERE id = $1
+        AND company_id = $2
+        AND is_active = TRUE
+      LIMIT 1
+      `,
+        [prospect.vat_business_group_id, companyId],
+      );
+
+      if (!vatBusinessGroupResult.rows.length) {
+        throw new Error(
+          "Selected VAT business posting group was not found, is inactive, or does not belong to this company.",
+        );
+      }
+    }
   }
 
   /* ==========================================================
-     INSERT PROSPECT
-  ========================================================== */
+   INSERT PROSPECT
+========================================================== */
 
   private static async insertProspect(
     client: PoolClient,
@@ -1478,33 +1271,34 @@ export class ProspectService {
   ): Promise<ProspectRecord> {
     const result = await client.query<ProspectRecord>(
       `
-      INSERT INTO prospects (
-        company_id,
-        prospect_no,
-        company_name,
-        website,
-        status,
-        source,
-        priority,
-        assigned_to,
-        assigned_to_name,
-        estimated_deal_value,
-        currency_id,
-        last_contacted_at,
-        next_follow_up_at,
-        reminder_enabled,
-        description,
-        lost_reason,
-        created_by,
-        updated_by
-      )
-      VALUES (
-        $1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10, $11, $12,
-        $13, $14, $15, $16, $17, $18
-      )
-      RETURNING *
-      `,
+    INSERT INTO public.prospects (
+      company_id,
+      prospect_no,
+      company_name,
+      website,
+      status,
+      source,
+      priority,
+      assigned_to,
+      assigned_to_name,
+      estimated_deal_value,
+      currency_id,
+      vat_business_group_id,
+      last_contacted_at,
+      next_follow_up_at,
+      reminder_enabled,
+      description,
+      lost_reason,
+      created_by,
+      updated_by
+    )
+    VALUES (
+      $1, $2, $3, $4, $5, $6,
+      $7, $8, $9, $10, $11, $12,
+      $13, $14, $15, $16, $17, $18, $19
+    )
+    RETURNING *
+    `,
       [
         companyId,
         prospectNo,
@@ -1517,6 +1311,7 @@ export class ProspectService {
         prospect.assigned_to_name,
         prospect.estimated_deal_value,
         prospect.currency_id,
+        prospect.vat_business_group_id,
         prospect.last_contacted_at,
         prospect.next_follow_up_at,
         prospect.reminder_enabled,
@@ -1531,8 +1326,8 @@ export class ProspectService {
   }
 
   /* ==========================================================
-     UPDATE PROSPECT
-  ========================================================== */
+   UPDATE PROSPECT
+========================================================== */
 
   private static async updateProspect(
     client: PoolClient,
@@ -1543,28 +1338,29 @@ export class ProspectService {
   ): Promise<ProspectRecord> {
     const result = await client.query<ProspectRecord>(
       `
-      UPDATE prospects
-      SET
-        company_name = $1,
-        website = $2,
-        status = $3,
-        source = $4,
-        priority = $5,
-        assigned_to = $6,
-        assigned_to_name = $7,
-        estimated_deal_value = $8,
-        currency_id = $9,
-        last_contacted_at = $10,
-        next_follow_up_at = $11,
-        reminder_enabled = $12,
-        description = $13,
-        lost_reason = $14,
-        updated_by = $15,
-        updated_at = NOW()
-      WHERE id = $16
-        AND company_id = $17
-      RETURNING *
-      `,
+    UPDATE public.prospects
+    SET
+      company_name = $1,
+      website = $2,
+      status = $3,
+      source = $4,
+      priority = $5,
+      assigned_to = $6,
+      assigned_to_name = $7,
+      estimated_deal_value = $8,
+      currency_id = $9,
+      vat_business_group_id = $10,
+      last_contacted_at = $11,
+      next_follow_up_at = $12,
+      reminder_enabled = $13,
+      description = $14,
+      lost_reason = $15,
+      updated_by = $16,
+      updated_at = NOW()
+    WHERE id = $17
+      AND company_id = $18
+    RETURNING *
+    `,
       [
         prospect.company_name,
         prospect.website,
@@ -1575,6 +1371,7 @@ export class ProspectService {
         prospect.assigned_to_name,
         prospect.estimated_deal_value,
         prospect.currency_id,
+        prospect.vat_business_group_id,
         prospect.last_contacted_at,
         prospect.next_follow_up_at,
         prospect.reminder_enabled,
@@ -2101,6 +1898,249 @@ export class ProspectService {
   }
 
   /* ==========================================================
+     LIST
+  ========================================================== */
+
+  static async list(companyId: string): Promise<ProspectRecord[]> {
+    const result = await pool.query<ProspectRecord>(
+      `
+      SELECT p.*
+      FROM prospects p
+      WHERE p.company_id = $1
+      ORDER BY p.created_at DESC
+      `,
+      [companyId],
+    );
+
+    return result.rows;
+  }
+
+  /* ==========================================================
+     PAGINATED LIST
+  ========================================================== */
+
+  static async listPaginated(
+    companyId: string,
+    params: FetchParams,
+  ): Promise<FetchResponse<ProspectListRecord>> {
+    const page = normalizePage(params.page, 1);
+
+    const pageSize = Math.min(
+      100,
+      Math.max(1, normalizePage(params.pageSize, 20)),
+    );
+
+    const offset = (page - 1) * pageSize;
+
+    const values: (string | number)[] = [companyId];
+    const whereClauses = ["p.company_id = $1"];
+
+    const addValue = (value: string | number): number => {
+      values.push(value);
+      return values.length;
+    };
+
+    const search =
+      typeof params.search === "string" ? params.search.trim() : "";
+
+    if (search) {
+      const index = addValue(`%${search}%`);
+
+      whereClauses.push(`
+        (
+          p.prospect_no ILIKE $${index}
+          OR p.company_name ILIKE $${index}
+          OR COALESCE(p.status, '') ILIKE $${index}
+          OR COALESCE(p.source, '') ILIKE $${index}
+          OR COALESCE(p.priority, '') ILIKE $${index}
+          OR COALESCE(p.assigned_to_name, '') ILIKE $${index}
+          OR EXISTS (
+            SELECT 1
+            FROM prospect_contacts pc_search
+            WHERE pc_search.company_id = p.company_id
+              AND pc_search.prospect_id = p.id
+              AND (
+                pc_search.name ILIKE $${index}
+                OR COALESCE(pc_search.email, '') ILIKE $${index}
+                OR COALESCE(pc_search.phone, '') ILIKE $${index}
+                OR COALESCE(pc_search.mobile, '') ILIKE $${index}
+              )
+          )
+          OR EXISTS (
+            SELECT 1
+            FROM prospect_addresses pa_search
+            WHERE pa_search.company_id = p.company_id
+              AND pa_search.prospect_id = p.id
+              AND (
+                COALESCE(pa_search.city, '') ILIKE $${index}
+                OR COALESCE(pa_search.country, '') ILIKE $${index}
+                OR COALESCE(pa_search.postcode, '') ILIKE $${index}
+              )
+          )
+        )
+      `);
+    }
+
+    const filters = params.filters ?? {};
+
+    const filterableFields: Record<string, string> = {
+      prospect_no: "p.prospect_no",
+      company_name: "p.company_name",
+      status: "p.status",
+      source: "p.source",
+      priority: "p.priority",
+      assigned_to_name: "p.assigned_to_name",
+    };
+
+    for (const [key, filter] of Object.entries(filters)) {
+      if (!isPlainObject(filter)) continue;
+
+      const filterValue = filter.value;
+
+      if (
+        filterableFields[key] &&
+        filterValue !== undefined &&
+        filterValue !== null &&
+        String(filterValue).trim()
+      ) {
+        const index = addValue(`%${String(filterValue).trim()}%`);
+
+        whereClauses.push(`${filterableFields[key]} ILIKE $${index}`);
+      }
+
+      if (key === "created_at" || key === "next_follow_up_at") {
+        const dateColumn =
+          key === "created_at" ? "p.created_at" : "p.next_follow_up_at";
+
+        const from = filter.from;
+        const to = filter.to;
+
+        if (typeof from === "string" && from.trim()) {
+          const index = addValue(from);
+          whereClauses.push(`${dateColumn} >= $${index}::date`);
+        }
+
+        if (typeof to === "string" && to.trim()) {
+          const index = addValue(to);
+
+          whereClauses.push(
+            `${dateColumn} < ($${index}::date + INTERVAL '1 day')`,
+          );
+        }
+      }
+    }
+
+    const sortFields: Record<string, string> = {
+      prospect_no: "p.prospect_no",
+      company_name: "p.company_name",
+      status: "p.status",
+      source: "p.source",
+      priority: "p.priority",
+      estimated_deal_value: "p.estimated_deal_value",
+      assigned_to_name: "p.assigned_to_name",
+      last_contacted_at: "p.last_contacted_at",
+      next_follow_up_at: "p.next_follow_up_at",
+      created_at: "p.created_at",
+      primary_contact_name: "pc.name",
+      primary_email: "pc.email",
+      primary_phone: "COALESCE(pc.phone, pc.mobile)",
+      primary_city: "pa.city",
+    };
+
+    const sortColumn =
+      params.sortBy && sortFields[params.sortBy]
+        ? sortFields[params.sortBy]
+        : "p.created_at";
+
+    const sortDirection =
+      params.sortOrder?.toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+    const fromSql = `
+      FROM prospects p
+
+      LEFT JOIN LATERAL (
+        SELECT
+          c.name,
+          c.email,
+          c.phone,
+          c.mobile
+        FROM prospect_contacts c
+        WHERE c.company_id = p.company_id
+          AND c.prospect_id = p.id
+        ORDER BY c.is_primary DESC, c.created_at ASC
+        LIMIT 1
+      ) pc ON TRUE
+
+      LEFT JOIN LATERAL (
+        SELECT a.city
+        FROM prospect_addresses a
+        WHERE a.company_id = p.company_id
+          AND a.prospect_id = p.id
+        ORDER BY a.is_primary DESC, a.created_at ASC
+        LIMIT 1
+      ) pa ON TRUE
+
+      WHERE ${whereClauses.join(" AND ")}
+    `;
+
+    const countResult = await pool.query<CountRecord>(
+      `
+      SELECT COUNT(*)::int AS total
+      ${fromSql}
+      `,
+      values,
+    );
+
+    const dataResult = await pool.query<ProspectListRecord>(
+      `
+      SELECT
+        p.id,
+        p.prospect_no,
+        p.company_name,
+        p.website,
+        p.status,
+        p.source,
+        p.priority,
+        p.estimated_deal_value,
+        p.currency_id,
+        NULL::varchar AS currency_code,
+        p.assigned_to,
+        p.assigned_to_name,
+        p.last_contacted_at,
+        p.next_follow_up_at,
+        p.reminder_enabled,
+        p.created_at,
+
+        pc.name AS primary_contact_name,
+        pc.email AS primary_email,
+        COALESCE(pc.phone, pc.mobile) AS primary_phone,
+        pa.city AS primary_city,
+
+        (
+          SELECT COUNT(*)::int
+          FROM prospect_activities act
+          WHERE act.company_id = p.company_id
+            AND act.prospect_id = p.id
+        ) AS activities_count
+
+      ${fromSql}
+
+      ORDER BY ${sortColumn} ${sortDirection} NULLS LAST,
+               p.created_at DESC
+
+      LIMIT $${values.length + 1}
+      OFFSET $${values.length + 2}
+      `,
+      [...values, pageSize, offset],
+    );
+
+    return {
+      data: dataResult.rows,
+      totalRecords: countResult.rows[0]?.total ?? 0,
+    };
+  }
+
+  /* ==========================================================
      INSERT STATUS HISTORY
   ========================================================== */
 
@@ -2134,5 +2174,105 @@ export class ProspectService {
         normalizeText(remarks),
       ],
     );
+  }
+
+  /* ==========================================================
+     CHANGE STATUS
+  ========================================================== */
+
+  static async changeStatus(
+    companyId: string,
+    userId: string,
+    id: string,
+    status: ProspectStatus,
+    options: ProspectStatusChangeOptions = {},
+  ): Promise<ProspectRecord> {
+    if (status === "Converted") {
+      throw new Error(
+        "Use the Convert to Customer action to convert a prospect.",
+      );
+    }
+
+    if (status === "Lost" && !normalizeText(options.lostReason)) {
+      throw new Error("Please provide a reason for losing this prospect.");
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const existingResult = await client.query<ProspectRecord>(
+        `
+        SELECT *
+        FROM prospects
+        WHERE id = $1
+          AND company_id = $2
+        FOR UPDATE
+        `,
+        [id, companyId],
+      );
+
+      const existing = existingResult.rows[0];
+
+      if (!existing) {
+        throw new Error("Prospect not found.");
+      }
+
+      if (existing.converted_party_id || existing.status === "Converted") {
+        throw new Error("This prospect has already been converted.");
+      }
+
+      if (existing.status === status) {
+        await client.query("COMMIT");
+        return existing;
+      }
+
+      const updateResult = await client.query<ProspectRecord>(
+        `
+        UPDATE prospects
+        SET
+            status = $1::VARCHAR(30),
+            lost_reason = CASE
+            WHEN $1::VARCHAR(30) = 'Lost'
+                THEN $2::TEXT
+            ELSE NULL::TEXT
+            END,
+            updated_by = $3,
+            updated_at = NOW()
+        WHERE id = $4
+            AND company_id = $5
+        RETURNING *
+        `,
+        [
+          status,
+          status === "Lost" ? normalizeText(options.lostReason) : null,
+          userId,
+          id,
+          companyId,
+        ],
+      );
+
+      const updated = getRecord(updateResult.rows, "Prospect not found.");
+
+      await this.insertStatusHistory(
+        client,
+        companyId,
+        id,
+        existing.status,
+        status,
+        userId,
+        options.remarks ?? null,
+      );
+
+      await client.query("COMMIT");
+
+      return updated;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }

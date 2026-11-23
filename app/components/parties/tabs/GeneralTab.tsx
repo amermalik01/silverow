@@ -307,6 +307,24 @@ export default function GeneralTab({
     openOutstandingFormatted: "—",
   };
 
+  const formatFCY = (val: number, code: string) => {
+    const validCode =
+      code?.trim().length === 3 ? code.trim().toUpperCase() : "GBP";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: validCode,
+      currencyDisplay: "narrowSymbol",
+      minimumFractionDigits: 2,
+    }).format(val || 0);
+  };
+
+  const lcyFormatter = new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    currencyDisplay: "narrowSymbol",
+    minimumFractionDigits: 2,
+  });
+
   return (
     <div className="space-y-4">
 
@@ -334,7 +352,8 @@ export default function GeneralTab({
             <span>Credit Limit</span>
           </div>
           <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
-            {metrics.creditLimitFormatted}
+            {/* {metrics.creditLimitFormatted} */}
+            {/* {formatFCY(Number(party.credit_limit) || 0, currencyCode)} */}
           </p>
         </div>
 
