@@ -52,7 +52,7 @@ export default function ProspectHeader({
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex h-12 items-center gap-3 bg-emerald-800 px-5 text-white">
+      {/* <div className="flex h-12 items-center gap-3 bg-emerald-800 px-5 text-white">
         <button
           type="button"
           onClick={onBack}
@@ -61,7 +61,7 @@ export default function ProspectHeader({
           <Icon icon="lucide:arrow-left" className="text-xl" />
           Prospect Details
         </button>
-      </div>
+      </div> */}
 
       <div className="flex flex-col justify-between gap-4 px-5 py-3 lg:flex-row lg:items-center">
         <div className="flex min-w-0 items-center gap-3">
@@ -127,9 +127,9 @@ export default function ProspectHeader({
                 </span>
               )}
 
-              {contactName && (
+              {/* {contactName && (
                 <span className="text-xs text-slate-500">{contactName}</span>
-              )}
+              )} */}
             </div>
           </div>
 
@@ -172,14 +172,14 @@ export default function ProspectHeader({
                 Edit
               </button>
 
-              <button
+              {/* <button
                 type="button"
                 onClick={onLogActivity}
                 className="flex h-9 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
               >
                 <Icon icon="lucide:activity" className="text-emerald-600" />
                 Log Activity
-              </button>
+              </button> */}
 
               <button
                 type="button"

@@ -147,8 +147,8 @@ export default function ProspectNotesList({
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
-              <Icon icon="tabler:notes" className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
+              <Icon icon="tabler:notes" className="text-2xl text-emerald-600" />
             </div>
 
             <div>
@@ -161,7 +161,7 @@ export default function ProspectNotesList({
               </p>
             </div>
 
-            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-emerald-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
               {notes.length}
             </span>
           </div>
@@ -248,8 +248,8 @@ export default function ProspectNotesList({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-                      <Icon icon="tabler:note" className="h-4 w-4" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+                      <Icon icon="tabler:note" className="text-xl text-emerald-600" />
                     </div>
 
                     <div className="min-w-0">
