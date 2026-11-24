@@ -735,13 +735,43 @@ export class ProspectOfferService {
       );
     }
 
+    /* Line override wins over the item's own VAT product group. */
+    const lineProductGroup = (input: ProspectOfferPayload["lines"][number]) =>
+      input.vat_product_group_id ??
+      items.get(input.item_id)?.vat_product_group_id ??
+      null;
+
+    const overrideIds = [
+      ...new Set(
+        payload.lines
+          .map((line) => line.vat_product_group_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+
+    if (overrideIds.length) {
+      const groupsResult = await client.query<{ id: string }>(
+        `
+        SELECT id
+        FROM public.vat_product_posting_groups
+        WHERE company_id = $1
+          AND id = ANY($2::uuid[])
+        `,
+        [companyId, overrideIds],
+      );
+
+      if (groupsResult.rows.length !== overrideIds.length) {
+        throw new ProspectOfferError("One or more VAT rates are not valid.");
+      }
+    }
+
     /* VAT posting setup per product group for the prospect's business group. */
     const vatByProductGroup = new Map<string, VatSetupRow>();
 
     const productGroupIds = [
       ...new Set(
-        itemsResult.rows
-          .map((item) => item.vat_product_group_id)
+        payload.lines
+          .map(lineProductGroup)
           .filter((id): id is string => Boolean(id)),
       ),
     ];
@@ -773,9 +803,10 @@ export class ProspectOfferService {
 
     const lines: CalculatedLine[] = payload.lines.map((input, index) => {
       const item = items.get(input.item_id)!;
+      const vatProductGroupId = lineProductGroup(input);
 
-      const vat = item.vat_product_group_id
-        ? vatByProductGroup.get(item.vat_product_group_id)
+      const vat = vatProductGroupId
+        ? vatByProductGroup.get(vatProductGroupId)
         : undefined;
 
       const quantity = Number(input.quantity);
@@ -823,7 +854,7 @@ export class ProspectOfferService {
         discount_value: discountValue,
         discount_amount: discountAmount,
 
-        vat_product_group_id: item.vat_product_group_id,
+        vat_product_group_id: vatProductGroupId,
         vat_posting_setup_id: vat?.id ?? null,
         sales_vat_account_id: vat?.sales_vat_account_id ?? null,
 

@@ -28,6 +28,13 @@ type Props = {
   readOnly?: boolean;
 };
 
+type VatOption = {
+  id: string;
+  code: string;
+  vat_percent: number;
+  vat_product_group_id?: string;
+};
+
 type DraftLine = {
   key: string;
   item_id: string;
@@ -39,6 +46,7 @@ type DraftLine = {
   unit_price: number;
   discount_type: ProspectOfferDiscountType;
   discount_value: number;
+  vat_product_group_id: string | null;
   vat_rate: number;
 };
 
@@ -157,6 +165,7 @@ function offerToDraftLines(offer: ProspectOffer): DraftLine[] {
     unit_price: Number(line.unit_price),
     discount_type: line.discount_type,
     discount_value: Number(line.discount_value),
+    vat_product_group_id: line.vat_product_group_id,
     vat_rate: Number(line.vat_rate),
   }));
 }
@@ -198,6 +207,72 @@ export default function ProspectPricingTab({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const vatCache = useRef(new Map<string, number>());
+
+  /* VAT rate options for the prospect's VAT business group (as in sales orders). */
+  const [vatOptions, setVatOptions] = useState<VatOption[]>([]);
+  const vatBusinessGroupId = defaults?.vat_business_group_id ?? null;
+
+  useEffect(() => {
+    if (!vatBusinessGroupId) {
+      setVatOptions([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch(
+          `/api/lookups/vat-rates?vat_business_group_id=${encodeURIComponent(vatBusinessGroupId)}`,
+        );
+        const json = (await response.json()) as { data?: VatOption[] };
+        if (!cancelled) setVatOptions(response.ok ? (json.data ?? []) : []);
+      } catch {
+        if (!cancelled) setVatOptions([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [vatBusinessGroupId]);
+
+  const findVatOption = (groupId: string | null) =>
+    groupId
+      ? vatOptions.find(
+          (option) =>
+            option.vat_product_group_id === groupId || option.id === groupId,
+        )
+      : undefined;
+
+  const vatRateLabel = (line: DraftLine) => {
+    const option = findVatOption(line.vat_product_group_id);
+    return option
+      ? `${option.code} (${Number(option.vat_percent)}%)`
+      : `${line.vat_rate}%`;
+  };
+
+  const changeLineVat = (key: string, optionId: string) => {
+    const option = vatOptions.find((o) => o.id === optionId);
+    setDraft((current) =>
+      current
+        ? {
+            ...current,
+            lines: current.lines.map((line) =>
+              line.key === key
+                ? {
+                    ...line,
+                    vat_product_group_id: option
+                      ? (option.vat_product_group_id ?? option.id)
+                      : null,
+                    vat_rate: option ? Number(option.vat_percent) : 0,
+                  }
+                : line,
+            ),
+          }
+        : current,
+    );
+  };
 
   /* Keep the selected offer valid as the list changes. */
   useEffect(() => {
@@ -359,7 +434,12 @@ export default function ProspectPricingTab({
         unit_price: Number(item.standard_sales_price ?? 0),
         discount_type: "PERCENTAGE" as const,
         discount_value: 0,
-        vat_rate: await resolveVatRate(item.vat_product_group_id),
+        vat_product_group_id: item.vat_product_group_id ?? null,
+        vat_rate:
+          findVatOption(item.vat_product_group_id ?? null)?.vat_percent !==
+          undefined
+            ? Number(findVatOption(item.vat_product_group_id ?? null)!.vat_percent)
+            : await resolveVatRate(item.vat_product_group_id),
       })),
     );
 
@@ -417,6 +497,7 @@ export default function ProspectPricingTab({
             unit_price: line.unit_price,
             discount_type: line.discount_type,
             discount_value: line.discount_value,
+            vat_product_group_id: line.vat_product_group_id,
           })),
         },
         draft.offerId,
@@ -468,7 +549,7 @@ export default function ProspectPricingTab({
   const showDiscountColumn =
     editing || lines.some((line) => line.discount_value > 0);
 
-  const columnCount = showDiscountColumn ? 5 : 4;
+  const columnCount = showDiscountColumn ? 7 : 6;
 
   /* ============================================================
      RENDER
@@ -678,7 +759,7 @@ export default function ProspectPricingTab({
 
           {/* LINES TABLE */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-sm">
+            <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="bg-emerald-50 text-emerald-800">
                   <th className="px-4 py-2 text-left font-semibold">Product</th>
@@ -693,14 +774,20 @@ export default function ProspectPricingTab({
                       Discount
                     </th>
                   )}
-                  <th className="w-32 px-4 py-2 text-right font-semibold">
+                  <th className="w-40 px-3 py-2 text-left font-semibold">
+                    VAT Rate
+                  </th>
+                  <th className="w-32 px-3 py-2 text-right font-semibold">
                     Line total
+                  </th>
+                  <th className="w-28 px-4 py-2 text-right font-semibold">
+                    VAT
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {lines.map((line) => {
-                  const { net } = calculateLine(line);
+                  const { net, vat } = calculateLine(line);
 
                   return (
                     <tr key={line.key} className="align-middle">
@@ -802,8 +889,43 @@ export default function ProspectPricingTab({
                         </td>
                       )}
 
-                      <td className="px-4 py-2 text-right font-medium tabular-nums text-slate-900">
+                      <td className="px-3 py-2">
+                        {editing ? (
+                          <select
+                            value={
+                              findVatOption(line.vat_product_group_id)?.id ?? ""
+                            }
+                            onChange={(event) =>
+                              changeLineVat(line.key, event.target.value)
+                            }
+                            disabled={!vatBusinessGroupId}
+                            title={
+                              vatBusinessGroupId
+                                ? undefined
+                                : "Set a VAT business posting group on the prospect first"
+                            }
+                            className="h-8 w-full rounded-md border border-slate-300 bg-white px-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <option value="">0% (Exempt/Zero)</option>
+                            {vatOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.code} ({Number(option.vat_percent)}%)
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="text-xs text-slate-700">
+                            {vatRateLabel(line)}
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="px-3 py-2 text-right font-medium tabular-nums text-slate-900">
                         {money(net)}
+                      </td>
+
+                      <td className="px-4 py-2 text-right tabular-nums text-slate-700">
+                        {money(vat)}
                       </td>
                     </tr>
                   );

@@ -165,6 +165,14 @@ export default function ProspectHeader({
             <>
               <button
                 type="button"
+                onClick={onConvert}
+                className="h-9 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900"
+              >
+                Convert to Customer
+              </button>
+
+              <button
+                type="button"
                 onClick={onEdit}
                 className="flex h-9 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
               >
@@ -187,14 +195,6 @@ export default function ProspectHeader({
                 className="h-9 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
               >
                 Close
-              </button>
-
-              <button
-                type="button"
-                onClick={onConvert}
-                className="h-9 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900"
-              >
-                Convert to Customer
               </button>
             </>
           ) : (

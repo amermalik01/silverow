@@ -456,9 +456,9 @@ export default function ProspectAddressLocations({
               </th>
               <th className="w-[34%] px-3 py-2.5 font-semibold">Address</th>
               <th className="w-[26%] px-3 py-2.5 font-semibold">Contact</th>
-              <th className="px-3 py-2.5 text-center font-semibold">Primary</th>
+              <th className="px-1 py-2.5 text-center font-semibold w-4">Primary</th>
               {!readOnly && (
-                <th className="px-4 py-2.5 text-center font-semibold">
+                <th className="px-1 py-2.5 text-center font-semibold w-6">
                   Actions
                 </th>
               )}
@@ -590,7 +590,7 @@ export default function ProspectAddressLocations({
                     </td>
 
                     {/* PRIMARY */}
-                    <td className="px-3 py-3 text-center">
+                    <td className="px-1 py-3 text-center w-4">
                       <input
                         type="checkbox"
                         checked={address.is_primary}
@@ -603,8 +603,8 @@ export default function ProspectAddressLocations({
                     </td>
 
                     {/* SAVE / CANCEL */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
+                    <td className="px-1 py-3 w-6">
+                      <div className="flex items-center justify-center">
                         <button
                           type="button"
                           onClick={saveRow}
@@ -711,7 +711,7 @@ export default function ProspectAddressLocations({
                   </td>
 
                   {/* PRIMARY */}
-                  <td className="px-3 py-3 text-center">
+                  <td className="px-1 py-3 text-center w-4">
                     <input
                       type="radio"
                       name="prospect-primary-location"
@@ -725,9 +725,9 @@ export default function ProspectAddressLocations({
 
                   {/* ACTIONS */}
                   {!readOnly && (
-                  <td className="px-4 py-3">
+                  <td className="px-1 py-3 w-6">
                     {confirmDeleteIndex === index ? (
-                      <div className="flex items-center justify-center gap-1 text-xs">
+                      <div className="flex items-center justify-center text-xs">
                         <span className="text-slate-600">Delete?</span>
                         <button
                           type="button"
@@ -745,7 +745,7 @@ export default function ProspectAddressLocations({
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center gap-1">
+                      <div className="flex items-center justify-center ">
                         <button
                           type="button"
                           onClick={() => startEdit(index)}

@@ -138,87 +138,58 @@ export default function ProspectNotesList({
     });
   };
 
-  const cardClass =
-    "rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#11161D]";
-
   return (
     <>
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
-              <Icon icon="tabler:notes" className="text-2xl text-emerald-600" />
-            </div>
+      <section>
+        {/* Toolbar — same pattern as the Activity tab */}
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => void loadNotes()}
+            disabled={loading}
+            className="flex items-center gap-1 text-xs font-medium text-emerald-800 hover:underline disabled:opacity-50 dark:text-emerald-400"
+          >
+            <Icon
+              icon="lucide:refresh-cw"
+              className={loading ? "animate-spin" : ""}
+            />
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
 
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Prospect Notes
-              </h3>
-
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Internal notes and important information
-              </p>
-            </div>
-
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-emerald-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
-              {notes.length}
-            </span>
-          </div>
-
-          {!readonly && (
+          {!readonly && notes.length > 0 && (
             <button
               type="button"
               onClick={handleAdd}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              className="rounded-md bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-900"
             >
-              <Icon icon="tabler:plus" className="h-4 w-4" />
               Add Note
             </button>
           )}
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className={`${cardClass} py-10 text-center`}>
-            <Icon
-              icon="tabler:loader-2"
-              className="mx-auto h-6 w-6 animate-spin text-emerald-600"
-            />
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              Loading prospect notes...
-            </p>
-          </div>
-        )}
-
         {/* Error */}
         {!loading && loadError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/60 dark:bg-red-950/30">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-red-700 dark:text-red-400">
-                {loadError}
-              </p>
-
-              <button
-                type="button"
-                onClick={() => void loadNotes()}
-                className="text-xs font-semibold text-red-700 underline dark:text-red-400"
-              >
-                Retry
-              </button>
-            </div>
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900/60 dark:bg-red-950/30">
+            <p className="text-xs text-red-700 dark:text-red-400">{loadError}</p>
+            <button
+              type="button"
+              onClick={() => void loadNotes()}
+              className="text-xs font-semibold text-red-700 underline dark:text-red-400"
+            >
+              Retry
+            </button>
           </div>
         )}
 
-        {/* Empty */}
-        {!loading && !loadError && notes.length === 0 && (
-          <div className={`${cardClass} border-dashed px-4 py-12 text-center`}>
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
-              <Icon icon="tabler:notes-off" className="h-6 w-6" />
-            </div>
-
-            <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
-              No notes added yet
+        {loading && notes.length === 0 ? (
+          <div className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+            Loading notes...
+          </div>
+        ) : !loadError && notes.length === 0 ? (
+          /* Empty — same as the Activity tab */
+          <div className="py-12 text-center">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              No notes yet
             </p>
 
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -229,84 +200,77 @@ export default function ProspectNotesList({
               <button
                 type="button"
                 onClick={handleAdd}
-                className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+                className="mt-4 rounded-md bg-emerald-800 px-4 py-2 text-sm font-medium text-white"
               >
-                <Icon icon="tabler:plus" className="h-4 w-4" />
-                Create your first note
+                Add Note
               </button>
             )}
           </div>
-        )}
+        ) : notes.length > 0 ? (
+          /* Timeline */
+          <div className="relative">
+            <div className="absolute bottom-4 left-[11px] top-3 w-px bg-emerald-200 dark:bg-emerald-900" />
 
-        {/* Notes */}
-        {!loading && !loadError && notes.length > 0 && (
-          <div className="space-y-3">
-            {notes.map((note) => (
-              <article
-                key={note.id}
-                className={`${cardClass} p-4 transition-colors hover:border-slate-300 dark:hover:border-slate-700`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-                      <Icon icon="tabler:note" className="text-xl text-emerald-600" />
-                    </div>
+            <div className="h-90 space-y-0 overflow-auto">
+              {notes.map((note) => (
+                <div
+                  key={note.id}
+                  className="group relative flex gap-4 border-b border-slate-100 py-4 last:border-0 dark:border-slate-800"
+                >
+                  <div className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs text-emerald-800 ring-4 ring-white dark:bg-emerald-950 dark:text-emerald-400 dark:ring-[#11161D]">
+                    <Icon icon="andrsrxn:notes" className="text-lg" />
+                  </div>
 
-                    <div className="min-w-0">
-                      <h4 className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {note.title || "General Note Entry"}
                       </h4>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
-                        <span className="inline-flex items-center gap-1">
-                          <Icon icon="tabler:user" className="h-3.5 w-3.5" />
-                          {note.author || "Unknown"}
-                        </span>
-
-                        <span className="inline-flex items-center gap-1">
-                          <Icon
-                            icon="tabler:calendar"
-                            className="h-3.5 w-3.5"
-                          />
+                      <div className="flex items-center gap-1">
+                        <span className="whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
                           {formatDate(note.created_at)}
                         </span>
+
+                        {!readonly && (
+                          <span className="ml-1 flex items-center gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(note)}
+                              title="Edit note"
+                              className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-emerald-700 dark:hover:bg-slate-800 dark:hover:text-emerald-400"
+                            >
+                              <Icon icon="tabler:edit" className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(note)}
+                              title="Delete note"
+                              className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                            >
+                              <Icon icon="tabler:trash" className="h-3.5 w-3.5" />
+                            </button>
+                          </span>
+                        )}
                       </div>
                     </div>
+
+                    {note.content && (
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-600 dark:text-slate-300">
+                        {note.content}
+                      </p>
+                    )}
+
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      By: {note.author || "Unknown"}
+                    </p>
                   </div>
-
-                  {!readonly && (
-                    <div className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(note)}
-                        title="Edit note"
-                        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-emerald-700 dark:hover:bg-slate-800 dark:hover:text-emerald-400"
-                      >
-                        <Icon icon="tabler:edit" className="h-4 w-4" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTarget(note)}
-                        title="Delete note"
-                        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
-                      >
-                        <Icon icon="tabler:trash" className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
                 </div>
-
-                <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-                  <p className="whitespace-pre-wrap break-words text-xs leading-6 text-slate-700 dark:text-slate-300">
-                    {note.content}
-                  </p>
-                </div>
-              </article>
-            ))}
+              ))}
+            </div>
           </div>
-        )}
-      </div>
+        ) : null}
+      </section>
 
       {/* Add / Edit Modal */}
       {modalOpen && (

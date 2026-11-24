@@ -426,6 +426,16 @@ export const ProspectOfferLineInputSchema = z
     discount_value: nonNegativeNumber(
       "Discount value cannot be negative.",
     ).default(0),
+
+    /**
+     * Optional VAT product posting group override (like sales order lines).
+     * When omitted the item's own VAT product group is used.
+     */
+    vat_product_group_id: z
+      .string()
+      .uuid("Select a valid VAT rate.")
+      .nullable()
+      .optional(),
   })
   .superRefine((line, context) => {
     if (

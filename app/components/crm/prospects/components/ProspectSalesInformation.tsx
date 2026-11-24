@@ -174,7 +174,7 @@ export default function ProspectSalesInformation({
           onChange={(value) => onDealValueChange(String(value))}
         />
 
-        <label className={`${labelClass} self-start pt-1.5`}>
+        {/* <label className={`${labelClass} self-start pt-1.5`}>
           Interested Products
         </label>
 
@@ -206,7 +206,7 @@ export default function ProspectSalesInformation({
               Save the prospect to add products
             </span>
           )}
-        </div>
+        </div> */}
 
         {status === "Lost" && (
           <>

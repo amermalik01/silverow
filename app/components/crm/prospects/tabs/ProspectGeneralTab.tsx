@@ -132,11 +132,11 @@ export default function ProspectGeneralTab({
         {selectedContact ? (
           <>
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {/* <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {activeContact === 0
                   ? "Primary Contact Details"
                   : "Secondary Contact Details"}
-              </span>
+              </span> */}
 
               {activeContact === 1 && !readOnly && (
                 <button

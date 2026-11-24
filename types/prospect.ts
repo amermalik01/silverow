@@ -312,6 +312,9 @@ export interface ProspectOfferLineInput {
 
   discount_type: ProspectOfferDiscountType;
   discount_value: ProspectNumeric;
+
+  /** Optional VAT product group override; defaults to the item's group. */
+  vat_product_group_id?: string | null;
 }
 
 export interface ProspectOfferPayload {
