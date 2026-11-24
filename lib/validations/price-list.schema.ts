@@ -26,6 +26,13 @@ const requiredNumber = z.preprocess(
 
 const uuid = z.string().uuid();
 
+/** Required text where a null from the database means "empty". */
+const requiredText = (message: string) =>
+  z.preprocess(
+    (value) => (value === null || value === undefined ? "" : value),
+    z.string().trim().min(1, message),
+  );
+
 const volumeDiscountSchema = z
   .object({
     id: uuid.optional(),
@@ -54,10 +61,11 @@ const priceListItemSchema = z
   .object({
     id: uuid.optional(),
     item_id: uuid,
-    item_code: z.string().optional(),
-    name: z.string().optional(),
+    /* Display-only snapshots: the database returns null when empty. */
+    item_code: z.string().nullable().optional(),
+    name: z.string().nullable().optional(),
     uom_id: uuid,
-    uom_name: z.string().optional(),
+    uom_name: z.string().nullable().optional(),
     standard_price: numericInput.min(0),
     offered_price: numericInput.min(0),
     min_order_qty: numericInput.min(0),
@@ -133,14 +141,14 @@ export const priceListSchema = z
   .object({
     id: uuid.optional(),
     party_id: uuid.optional(),
-    name: z.string().trim().min(1, "Price list name is required"),
+    name: requiredText("Price list name is required"),
     list_type: z.enum(["SALES", "PURCHASE"]),
     start_date: z.iso.date("Invalid start date"),
     end_date: z.iso.date("Invalid end date"),
     currency_id: uuid,
-    offer_method: z.string().trim().min(1, "Offer method is required"),
+    offer_method: requiredText("Offer method is required"),
     salesperson_id: uuid.nullable().optional(),
-    salesperson_name: z.string().optional(),
+    salesperson_name: z.string().nullable().optional(),
     items: z.array(priceListItemSchema),
   })
   .superRefine((list, ctx) => {

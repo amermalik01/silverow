@@ -352,8 +352,7 @@ export default function GeneralTab({
             <span>Credit Limit</span>
           </div>
           <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
-            {/* {metrics.creditLimitFormatted} */}
-            {/* {formatFCY(Number(party.credit_limit) || 0, currencyCode)} */}
+            {metrics.creditLimitFormatted}
           </p>
         </div>
 
@@ -391,9 +390,20 @@ export default function GeneralTab({
             />
             <span>Last Activity</span>
           </div>
-          <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
-            {metrics.lastActivityDate}
-          </p>
+          {onOpenActivities && metrics.lastActivityDate !== "—" ? (
+            <button
+              type="button"
+              onClick={onOpenActivities}
+              title="Open the Activities tab"
+              className="mt-1 text-sm font-bold text-black underline-offset-2 hover:text-emerald-700 hover:underline dark:text-slate-100 tabular-nums"
+            >
+              {metrics.lastActivityDate}
+            </button>
+          ) : (
+            <p className="mt-1 text-sm font-bold text-black dark:text-slate-100 tabular-nums">
+              {metrics.lastActivityDate}
+            </p>
+          )}
         </div>
 
         <div className="lg:px-3 last:lg:pr-0">

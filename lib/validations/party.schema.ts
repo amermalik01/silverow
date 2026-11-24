@@ -49,6 +49,24 @@ const looseDate = z.preprocess(
   z.string().optional()
 );
 
+/**
+ * Required text: null/undefined from the database count as empty, so the
+ * user sees `message` instead of "expected string, received null".
+ */
+const requiredText = (message: string) =>
+  z.preprocess(
+    (val) => (val === null || val === undefined ? "" : String(val)),
+    z.string().trim().min(1, message),
+  );
+
+/** Text with a default: null/empty from the database falls back to it. */
+const textWithDefault = (message: string, fallback: string) =>
+  z.preprocess(
+    (val) =>
+      val === null || val === undefined || val === "" ? undefined : String(val),
+    z.string().min(1, message).default(fallback),
+  );
+
 const requiredSelect = (message: string) =>
   z.preprocess(
     (val) => (val === "" || val === null || val === undefined ? "" : String(val)),
@@ -58,7 +76,7 @@ const requiredSelect = (message: string) =>
 export const PartyContactSchema = z.object({
   id: looseString,
   party_id: looseString,
-  name: z.string().min(1, "Contact name is required"),
+  name: requiredText("Contact name is required"),
   job_title: looseString,
   email: looseEmail,
   phone: looseString,
@@ -70,19 +88,16 @@ export const PartyContactSchema = z.object({
 export const PartyAddressSchema = z.object({
   id: looseString,
   party_id: looseString,
-  label: z
-    .string()
-    .min(1, "Address label required (e.g. Head Office)")
-    .default("Primary Location"),
-  address_1: z.string().min(1, "Street address location details are required"),
+  label: textWithDefault(
+    "Address label required (e.g. Head Office)",
+    "Primary Location",
+  ),
+  address_1: requiredText("Street address location details are required"),
   address_2: looseString,
-  city: z.string().min(1, "Target city is required"),
+  city: requiredText("Target city is required"),
   state: looseString,
-  postcode: z.string().min(1, "Postal code required"),
-  country: z
-    .string()
-    .min(1, "Country designation code required")
-    .default("United Kingdom"),
+  postcode: requiredText("Postal code required"),
+  country: textWithDefault("Country designation code required", "United Kingdom"),
   phone: looseString,
   email: looseEmail,
   is_primary: z.boolean().default(false),
@@ -94,7 +109,7 @@ export const PartyAddressSchema = z.object({
 export const PartySchema = z.object({
   id: looseString,
   company_id: looseString,
-  name: z.string().min(1, "Legal company identifier name is required"),
+  name: requiredText("Legal company identifier name is required"),
 
   status: z
     .enum(["active", "inactive", "prospect", "suspended"])
