@@ -1100,6 +1100,27 @@ export class ProspectService {
       );
 
       /*
+       * 8b. Sales quotes created from this prospect's offers now get the
+       *     new customer, so they can be converted to sales orders.
+       */
+      await client.query(
+        `
+        UPDATE public.sales_quotes
+        SET
+          customer_id = $1,
+          customer_no = $2,
+          customer_name = $3,
+          bill_to_customer_id = $1,
+          bill_to_customer_no = $2,
+          bill_to_customer_name = $3
+        WHERE company_id = $4
+          AND prospect_id = $5
+          AND customer_id IS NULL
+        `,
+        [customer.id, customer.customer_code, customer.name, companyId, prospectId],
+      );
+
+      /*
        * 9. Insert status history.
        */
       await this.insertStatusHistory(

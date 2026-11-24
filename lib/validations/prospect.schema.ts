@@ -484,6 +484,16 @@ export const ProspectOfferPayloadSchema = z
 
     is_primary: z.boolean().default(false),
 
+    /**
+     * Posting group currently selected on the prospect form (may not be
+     * saved yet). Falls back to the prospect's saved group when omitted.
+     */
+    vat_business_group_id: z
+      .string()
+      .uuid("Select a valid posting group.")
+      .nullable()
+      .optional(),
+
     notes: optionalText(10000),
 
     lines: z

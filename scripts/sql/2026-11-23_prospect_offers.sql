@@ -92,11 +92,11 @@ CREATE INDEX IF NOT EXISTS prospect_offer_lines_offer_idx
 
 -- Template for companies created in future (used by lib/bootstrap/sequences.ts)
 INSERT INTO public.ref_modules (name, display_name, default_prefix, default_start, default_padding, status)
-SELECT 'prospect_offer', 'Prospect Offer', 'OFR-', 1, 5, true
+SELECT 'prospect_offer', 'Prospect Offer', 'OFR', 1, 4, true
 WHERE NOT EXISTS (SELECT 1 FROM public.ref_modules WHERE name = 'prospect_offer');
 
 -- Existing companies
 INSERT INTO public.sequences (company_id, module, display_name, prefix, current_value, padding)
-SELECT c.company_id, 'prospect_offer', 'Prospect Offer', 'OFR-', 0, 5
+SELECT c.company_id, 'prospect_offer', 'Prospect Offer', 'OFR', 0, 4
 FROM (SELECT DISTINCT company_id FROM public.sequences) c
 ON CONFLICT (company_id, module) DO NOTHING;

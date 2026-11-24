@@ -731,25 +731,6 @@ export default function ProspectAddressLocations({
                   {/* ACTIONS */}
                   {!readOnly && (
                   <td className="px-1 py-3 w-6">
-                    {confirmDeleteIndex === index ? (
-                      <div className="flex items-center justify-center text-xs">
-                        <span className="text-slate-600">Delete?</span>
-                        <button
-                          type="button"
-                          onClick={() => removeAddress(index)}
-                          className="rounded px-1.5 py-0.5 font-semibold text-rose-600 hover:bg-rose-50"
-                        >
-                          Yes
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteIndex(null)}
-                          className="rounded px-1.5 py-0.5 font-medium text-slate-600 hover:bg-slate-100"
-                        >
-                          No
-                        </button>
-                      </div>
-                    ) : (
                       <div className="flex items-center justify-center ">
                         <button
                           type="button"
@@ -770,7 +751,6 @@ export default function ProspectAddressLocations({
                           <Icon icon="tabler:trash" className="text-lg" />
                         </button>
                       </div>
-                    )}
                   </td>
                   )}
                 </tr>
@@ -792,6 +772,84 @@ export default function ProspectAddressLocations({
           </tbody>
         </table>
       </div>
+
+      {/* DELETE CONFIRMATION — same style as notes / attachments */}
+      {confirmDeleteIndex !== null && addresses[confirmDeleteIndex] && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 px-4 backdrop-blur-xs"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setConfirmDeleteIndex(null);
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-[#11161D]"
+          >
+            <div className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400">
+                  <Icon icon="tabler:trash" className="h-5 w-5" />
+                </div>
+
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    Delete this location?
+                  </h3>
+
+                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    The location will be removed from this prospect when you
+                    save.
+                    {addresses[confirmDeleteIndex].is_primary &&
+                      addresses.length > 1 &&
+                      " The next location will become the primary location."}
+                  </p>
+
+                  <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs dark:bg-slate-900">
+                    <p className="break-words font-semibold text-slate-700 dark:text-slate-300">
+                      {addresses[confirmDeleteIndex].label ||
+                        `Location ${confirmDeleteIndex + 1}`}
+                    </p>
+                    {(addresses[confirmDeleteIndex].address_1 ||
+                      addresses[confirmDeleteIndex].city) && (
+                      <p className="mt-0.5 break-words text-slate-500">
+                        {[
+                          addresses[confirmDeleteIndex].address_1,
+                          addresses[confirmDeleteIndex].city,
+                          addresses[confirmDeleteIndex].postcode,
+                        ]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-3 dark:border-slate-800 dark:bg-slate-950/40">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setConfirmDeleteIndex(null)}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => removeAddress(confirmDeleteIndex)}
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700"
+              >
+                Delete Location
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ADDRESS MODAL */}
       {addressModalOpen && addressDraft && (

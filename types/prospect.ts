@@ -328,6 +328,11 @@ export interface ProspectOffer {
   /** Joined from currencies for display. */
   currency_code?: string | null;
 
+  /** Set once the offer has been converted to a sales quote. */
+  sales_quote_id?: string | null;
+  sales_quote_no?: string | null;
+  converted_to_quote_at?: string | null;
+
   lines: ProspectOfferLine[];
 
   created_by: string | null;
@@ -380,6 +385,9 @@ export interface ProspectOfferPayload {
 
   is_primary?: boolean;
   notes?: string | null;
+
+  /** Posting group selected on the form; defaults to the saved one. */
+  vat_business_group_id?: string | null;
 
   lines: ProspectOfferLineInput[];
 }

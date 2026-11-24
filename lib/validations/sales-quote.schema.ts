@@ -260,7 +260,9 @@ export const SalesQuoteSchema = z
     company_id: looseUuid,
     quote_no: looseString,
 
-    customer_id: requiredUuid,
+    /* Optional for quotes created from a prospect (see prospect_id). */
+    customer_id: looseUuid,
+    prospect_id: looseUuid,
     customer_no: looseString,
     customer_name: looseString,
 
@@ -421,6 +423,14 @@ export const SalesQuoteSchema = z
           path: ["valid_until"],
         });
       }
+    }
+
+    if (!quote.customer_id && !quote.prospect_id) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A valid selection is required",
+        path: ["customer_id"],
+      });
     }
 
     if (quote.status === "accepted" && quote.is_rejected) {

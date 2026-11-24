@@ -410,6 +410,12 @@ export class SalesQuoteService {
         throw new Error("Quote has already been fully converted.");
       }
 
+      if (!quote.customer_id) {
+        throw new Error(
+          "This quote belongs to a prospect. Convert the prospect to a customer (or select a customer on the quote) before creating a sales order.",
+        );
+      }
+
       // 2. Fetch Active Quote Lines
       const linesRes = await client.query(
         `SELECT * FROM sales_quote_lines WHERE sales_quote_id = $1 AND is_deleted = false ORDER BY line_no`,

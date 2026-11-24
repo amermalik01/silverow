@@ -17,6 +17,12 @@ export class SalesQuoteConversionService {
     if (!quoteRes.rows.length) throw new Error("Sales quote not found");
 
     const quote = quoteRes.rows[0];
+
+    if (!quote.customer_id) {
+      throw new Error(
+        "This quote belongs to a prospect. Convert the prospect to a customer (or select a customer on the quote) before creating a sales order.",
+      );
+    }
     
     if (quote.status === "CONVERTED")
       throw new Error("Quote already converted");
@@ -127,6 +133,12 @@ export class SalesQuoteConversionService {
     }
 
     const quote = quoteResult.rows[0];
+
+    if (!quote.customer_id) {
+      throw new Error(
+        "This quote belongs to a prospect. Convert the prospect to a customer (or select a customer on the quote) before creating a sales order.",
+      );
+    }
 
     // *
     //  * ============================================

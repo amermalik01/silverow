@@ -27,6 +27,15 @@ type Props = {
   onAddItemsHandled?: () => void;
   /** View mode: pricing can be viewed but not changed. */
   readOnly?: boolean;
+  /**
+   * Posting group currently selected on the prospect form (live, may be
+   * unsaved). VAT rates follow it, like customer -> sales order.
+   */
+  vatBusinessGroupId?: string | null;
+  /** Used for the link to a converted sales quote. */
+  slug?: string;
+  /** Converting to a sales quote is allowed (prospect not converted). */
+  canConvertToQuote?: boolean;
   /** Currency selected on the prospect (Sales Information). */
   prospectCurrency?: {
     id: string | null;
@@ -194,6 +203,9 @@ export default function ProspectPricingTab({
   onAddItemsHandled,
   readOnly = false,
   prospectCurrency,
+  vatBusinessGroupId: liveVatBusinessGroupId,
+  slug,
+  canConvertToQuote = true,
 }: Props) {
   const {
     offers,
@@ -205,6 +217,7 @@ export default function ProspectPricingTab({
     setStatus,
     setPrimary,
     deleteOffer,
+    convertToQuote,
   } = offersState;
 
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
@@ -219,7 +232,14 @@ export default function ProspectPricingTab({
 
   /* VAT rate options for the prospect's VAT business group (as in sales orders). */
   const [vatOptions, setVatOptions] = useState<VatOption[]>([]);
-  const vatBusinessGroupId = defaults?.vat_business_group_id ?? null;
+  const vatBusinessGroupId =
+    liveVatBusinessGroupId !== undefined
+      ? liveVatBusinessGroupId || null
+      : (defaults?.vat_business_group_id ?? null);
+
+  /* Convert-to-quote confirmation */
+  const [quoteConfirmOpen, setQuoteConfirmOpen] = useState(false);
+  const [convertingQuote, setConvertingQuote] = useState(false);
 
   useEffect(() => {
     if (!vatBusinessGroupId) {
@@ -253,6 +273,32 @@ export default function ProspectPricingTab({
             option.vat_product_group_id === groupId || option.id === groupId,
         )
       : undefined;
+
+  /*
+   * Posting group changed (or its rates loaded): re-apply each draft line's
+   * VAT rate from the new group's posting setup, keeping its VAT product group.
+   */
+  useEffect(() => {
+    setDraft((current) => {
+      if (!current) return current;
+
+      const lines = current.lines.map((line) => {
+        const option = vatBusinessGroupId
+          ? vatOptions.find(
+              (o) =>
+                o.vat_product_group_id === line.vat_product_group_id ||
+                o.id === line.vat_product_group_id,
+            )
+          : undefined;
+        const rate = option ? Number(option.vat_percent) : 0;
+        return rate === line.vat_rate ? line : { ...line, vat_rate: rate };
+      });
+
+      return lines.some((line, index) => line !== current.lines[index])
+        ? { ...current, lines }
+        : current;
+    });
+  }, [vatOptions, vatBusinessGroupId]);
 
   const vatRateLabel = (line: DraftLine) => {
     const option = findVatOption(line.vat_product_group_id);
@@ -300,7 +346,9 @@ export default function ProspectPricingTab({
   );
 
   const editing = draft !== null;
-  const canEdit = !offer || EDITABLE_STATUSES.includes(offer.status);
+  const canEdit =
+    !offer ||
+    (EDITABLE_STATUSES.includes(offer.status) && !offer.sales_quote_id);
 
   /*
    * While editing (or before any offer exists) prices are in the prospect's
@@ -412,7 +460,7 @@ export default function ProspectPricingTab({
   const resolveVatRate = async (
     vatProductGroupId?: string,
   ): Promise<number> => {
-    const businessGroupId = defaults?.vat_business_group_id;
+    const businessGroupId = vatBusinessGroupId;
     if (!businessGroupId || !vatProductGroupId) return 0;
 
     const cached = vatCache.current.get(vatProductGroupId);
@@ -525,6 +573,7 @@ export default function ProspectPricingTab({
             discount_value: line.discount_value,
             vat_product_group_id: line.vat_product_group_id,
           })),
+          vat_business_group_id: vatBusinessGroupId,
         },
         draft.offerId,
       );
@@ -623,6 +672,17 @@ export default function ProspectPricingTab({
               >
                 {offer.status.charAt(0) + offer.status.slice(1).toLowerCase()}
               </span>
+
+              {offer.sales_quote_id && (
+                <a
+                  href={`/${slug ?? ""}/sales/quotes/${offer.sales_quote_id}`}
+                  className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 font-semibold text-sky-700 hover:underline"
+                  title="Open the sales quote created from this offer"
+                >
+                  <Icon icon="lucide:file-check-2" />
+                  Quote {offer.sales_quote_no ?? ""}
+                </a>
+              )}
 
               {offer.is_primary && offers.length > 1 && (
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-800">
@@ -1052,7 +1112,7 @@ export default function ProspectPricingTab({
             </div>
           )}
 
-          {editing && !defaults?.vat_business_group_id && (
+          {editing && !vatBusinessGroupId && (
             <p className="text-xs text-amber-700">
               No VAT business posting group is set on this prospect, so VAT is
               calculated as 0%.
@@ -1067,6 +1127,32 @@ export default function ProspectPricingTab({
                 <span>Valid until: {displayDate(offer.valid_until)}</span>
                 {offer.notes && <span>Notes: {offer.notes}</span>}
               </div>
+
+              {offer.sales_quote_id ? (
+                <a
+                  href={`/${slug ?? ""}/sales/quotes/${offer.sales_quote_id}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 font-semibold text-sky-800 hover:bg-sky-100"
+                >
+                  <Icon icon="lucide:file-check-2" />
+                  View Sales Quote {offer.sales_quote_no ?? ""}
+                  <Icon icon="lucide:external-link" className="h-3 w-3" />
+                </a>
+              ) : (
+                canConvertToQuote &&
+                !editing &&
+                offer.lines.length > 0 &&
+                !["CANCELLED", "REJECTED", "EXPIRED"].includes(offer.status) && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setQuoteConfirmOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-800 px-3 py-1.5 font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"
+                  >
+                    <Icon icon="lucide:file-output" />
+                    Convert to Sales Quote
+                  </button>
+                )
+              )}
 
               {!readOnly && (
                 <div className="flex flex-wrap items-center gap-2">
@@ -1149,6 +1235,79 @@ export default function ProspectPricingTab({
             </div>
           )}
         </>
+      )}
+
+      {quoteConfirmOpen && offer && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 px-4 backdrop-blur-xs"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !convertingQuote) {
+              setQuoteConfirmOpen(false);
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl"
+          >
+            <div className="flex items-start gap-3 p-5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <Icon icon="lucide:file-output" className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Convert to a sales quote?
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  A draft sales quote will be created from offer{" "}
+                  <span className="font-semibold">{offer.offer_no}</span> (
+                  {offer.lines.length} item{offer.lines.length === 1 ? "" : "s"},{" "}
+                  {money(Number(offer.grand_total))} incl. VAT). It will appear in
+                  the Sales Quotes module and this offer will be locked.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-3">
+              <button
+                type="button"
+                disabled={convertingQuote}
+                onClick={() => setQuoteConfirmOpen(false)}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={convertingQuote}
+                onClick={async () => {
+                  setConvertingQuote(true);
+                  setActionError("");
+                  try {
+                    const created = await convertToQuote(offer.id);
+                    setNotice(`Sales quote ${created.quoteNo} created.`);
+                    setQuoteConfirmOpen(false);
+                  } catch (err) {
+                    setActionError(
+                      err instanceof Error
+                        ? err.message
+                        : "Unable to convert to a sales quote.",
+                    );
+                    setQuoteConfirmOpen(false);
+                  } finally {
+                    setConvertingQuote(false);
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-800 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"
+              >
+                {convertingQuote && (
+                  <Icon icon="lucide:loader-2" className="h-4 w-4 animate-spin" />
+                )}
+                {convertingQuote ? "Converting..." : "Convert"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {itemModalOpen && (

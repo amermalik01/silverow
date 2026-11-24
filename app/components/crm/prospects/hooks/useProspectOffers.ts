@@ -119,6 +119,29 @@ export function useProspectOffers(prospectId?: string) {
     [baseUrl, send],
   );
 
+  /** Creates a draft sales quote from the offer; returns its id and number. */
+  const convertToQuote = useCallback(
+    async (offerId: string) => {
+      const response = await fetch(`${baseUrl}/${offerId}/convert-to-quote`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await readError(response, "Unable to convert to a sales quote."),
+        );
+      }
+
+      const result = (await response.json()) as {
+        data: { salesQuoteId: string; quoteNo: string };
+      };
+
+      await reload();
+      return result.data;
+    },
+    [baseUrl, reload],
+  );
+
   const deleteOffer = useCallback(
     (offerId: string) => send(`${baseUrl}/${offerId}`, "DELETE"),
     [baseUrl, send],
@@ -141,5 +164,6 @@ export function useProspectOffers(prospectId?: string) {
     setStatus,
     setPrimary,
     deleteOffer,
+    convertToQuote,
   };
 }

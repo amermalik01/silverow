@@ -40,8 +40,12 @@ export class ProspectOfferError extends Error {
 
 interface ProspectRow extends QueryResultRow {
   id: string;
+  prospect_no: string;
+  company_name: string;
   currency_id: string | null;
   vat_business_group_id: string | null;
+  assigned_to_name: string | null;
+  converted_party_id: string | null;
 }
 
 interface ItemRow extends QueryResultRow {
@@ -94,9 +98,11 @@ export class ProspectOfferService {
       `
       SELECT
         o.*,
-        c.code AS currency_code
+        c.code AS currency_code,
+        sq.quote_no AS sales_quote_no
       FROM public.prospect_offers o
       LEFT JOIN public.currencies c ON c.id = o.currency_id
+      LEFT JOIN public.sales_quotes sq ON sq.id = o.sales_quote_id
       WHERE o.company_id = $1
         AND o.prospect_id = $2
       ORDER BY o.is_primary DESC, o.offer_date DESC, o.created_at DESC
@@ -147,9 +153,11 @@ export class ProspectOfferService {
       `
       SELECT
         o.*,
-        c.code AS currency_code
+        c.code AS currency_code,
+        sq.quote_no AS sales_quote_no
       FROM public.prospect_offers o
       LEFT JOIN public.currencies c ON c.id = o.currency_id
+      LEFT JOIN public.sales_quotes sq ON sq.id = o.sales_quote_id
       WHERE o.id = $1
         AND o.company_id = $2
         AND o.prospect_id = $3
@@ -323,6 +331,12 @@ export class ProspectOfferService {
         prospectId,
         offerId,
       );
+
+      if (current.sales_quote_id) {
+        throw new ProspectOfferError(
+          "This offer has been converted to a sales quote and can no longer be edited. Edit the sales quote instead.",
+        );
+      }
 
       if (!EDITABLE_STATUSES.includes(current.status)) {
         throw new ProspectOfferError(
@@ -507,6 +521,12 @@ export class ProspectOfferService {
         offerId,
       );
 
+      if (current.sales_quote_id) {
+        throw new ProspectOfferError(
+          "This offer has been converted to a sales quote and cannot be deleted.",
+        );
+      }
+
       if (current.status !== "DRAFT") {
         throw new ProspectOfferError(
           "Only draft offers can be deleted. Cancel the offer instead.",
@@ -546,6 +566,291 @@ export class ProspectOfferService {
     }
   }
 
+  /* ----------------------------------------------------------
+     CONVERT TO SALES QUOTE
+  ---------------------------------------------------------- */
+
+  /**
+   * Creates a draft sales quote from an offer. The quote belongs to the
+   * prospect (no customer yet) and appears in the Sales Quotes module.
+   * When the prospect is later converted, its quotes get the customer.
+   */
+  static async convertToSalesQuote(
+    companyId: string,
+    userId: string,
+    prospectId: string,
+    offerId: string,
+  ): Promise<{ salesQuoteId: string; quoteNo: string }> {
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const prospect = await this.getProspect(
+        client,
+        companyId,
+        prospectId,
+        true,
+      );
+
+      if (prospect.converted_party_id) {
+        throw new ProspectOfferError(
+          "This prospect has been converted to a customer. Create the quote from the customer instead.",
+        );
+      }
+
+      const current = await this.lockOffer(
+        client,
+        companyId,
+        prospectId,
+        offerId,
+      );
+
+      if (current.sales_quote_id) {
+        throw new ProspectOfferError(
+          "This offer has already been converted to a sales quote.",
+        );
+      }
+
+      if (["CANCELLED", "REJECTED", "EXPIRED"].includes(current.status)) {
+        throw new ProspectOfferError(
+          `A ${current.status.toLowerCase()} offer cannot be converted to a sales quote.`,
+        );
+      }
+
+      const offer = await this.getById(companyId, prospectId, offerId, client);
+
+      if (!offer || !offer.lines.length) {
+        throw new ProspectOfferError("The offer has no items to convert.");
+      }
+
+      /* Primary contact + address for the quote header */
+      const contactResult = await client.query<{
+        name: string | null;
+        email: string | null;
+        phone: string | null;
+        mobile: string | null;
+      }>(
+        `
+        SELECT name, email, phone, mobile
+        FROM public.prospect_contacts
+        WHERE company_id = $1
+          AND prospect_id = $2
+        ORDER BY is_primary DESC, created_at ASC
+        LIMIT 1
+        `,
+        [companyId, prospectId],
+      );
+
+      const contact = contactResult.rows[0];
+
+      const addressResult = await client.query<{
+        address_1: string | null;
+        address_2: string | null;
+        city: string | null;
+        state: string | null;
+        postcode: string | null;
+        country: string | null;
+        phone: string | null;
+        email: string | null;
+      }>(
+        `
+        SELECT address_1, address_2, city, state, postcode, country, phone, email
+        FROM public.prospect_addresses
+        WHERE company_id = $1
+          AND prospect_id = $2
+        ORDER BY is_primary DESC, created_at ASC
+        LIMIT 1
+        `,
+        [companyId, prospectId],
+      );
+
+      const address = addressResult.rows[0];
+
+      const sequenceResult = await client.query<{ code: string | null }>(
+        `SELECT get_next_sequence($1, $2) AS code`,
+        [companyId, "sales_quotation"],
+      );
+
+      const quoteNo = sequenceResult.rows[0]?.code;
+
+      if (!quoteNo) {
+        throw new ProspectOfferError(
+          "Sales quote numbering is not set up for this company.",
+        );
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      const toDate = (value: string | null) =>
+        value ? new Date(value).toISOString().slice(0, 10) : null;
+
+      const quoteResult = await client.query<{ id: string }>(
+        `
+        INSERT INTO public.sales_quotes (
+          company_id, quote_no,
+          customer_id, customer_no, customer_name,
+          prospect_id,
+          vat_business_posting_group_id,
+          currency_id, exchange_rate,
+          order_date, posting_date, valid_from, valid_until,
+          salesperson, reference, source_of_quote,
+          subtotal, discount_amount, vat_amount, total_amount,
+          status, anonymous_customer,
+          email, contact, phone,
+          notes, created_by
+        )
+        VALUES (
+          $1, $2,
+          NULL, $3, $4,
+          $5,
+          $6,
+          $7, $8,
+          $9, $9, $10, $11,
+          $12, $13, 'Prospect',
+          $14, $15, $16, $17,
+          'draft', FALSE,
+          $18, $19, $20,
+          $21, $22
+        )
+        RETURNING id
+        `,
+        [
+          companyId,
+          quoteNo,
+          prospect.prospect_no,
+          prospect.company_name,
+          prospectId,
+          prospect.vat_business_group_id,
+          offer.currency_id,
+          Number(offer.exchange_rate) || 1,
+          today,
+          toDate(offer.offer_date) ?? today,
+          toDate(offer.valid_until),
+          prospect.assigned_to_name,
+          offer.offer_no,
+          Number(offer.subtotal),
+          Number(offer.discount_total),
+          Number(offer.vat_total),
+          Number(offer.grand_total),
+          contact?.email ?? address?.email ?? null,
+          contact?.name ?? null,
+          contact?.phone ?? contact?.mobile ?? address?.phone ?? null,
+          offer.notes,
+          userId,
+        ],
+      );
+
+      const salesQuoteId = quoteResult.rows[0].id;
+
+      /* Lines — amounts follow the quote module: line/net after discount,
+         gross incl. VAT, discount stored as an absolute amount. */
+      let lineNo = 10000;
+
+      for (const line of offer.lines) {
+        const net = Number(line.line_subtotal);
+        const vat = Number(line.vat_amount);
+
+        await client.query(
+          `
+          INSERT INTO public.sales_quote_lines (
+            company_id, sales_quote_id, line_no, line_type,
+            item_id, item_code, item_name,
+            uom_id, uom_name, description,
+            quantity, quantity_converted, quantity_remaining,
+            unit_price, discount_value, discount_amount,
+            vat_business_posting_group_id, vat_product_posting_group_id,
+            vat_percent, vat_amount,
+            line_amount, net_amount, gross_amount, line_status
+          )
+          VALUES (
+            $1, $2, $3, 'ITEM',
+            $4, $5, $6,
+            $7, $8, $9,
+            $10, 0, $10,
+            $11, $12, $12,
+            $13, $14,
+            $15, $16,
+            $17, $17, $18, 'OPEN'
+          )
+          `,
+          [
+            companyId,
+            salesQuoteId,
+            lineNo,
+            line.item_id,
+            line.item_code,
+            line.item_name,
+            line.uom_id,
+            line.uom_name,
+            line.description ?? line.item_name,
+            Number(line.quantity),
+            Number(line.unit_price),
+            Number(line.discount_amount),
+            prospect.vat_business_group_id,
+            line.vat_product_group_id,
+            Number(line.vat_rate),
+            vat,
+            net,
+            Math.round((net + vat) * 100) / 100,
+          ],
+        );
+
+        lineNo += 10000;
+      }
+
+      if (address) {
+        await client.query(
+          `
+          INSERT INTO public.sales_quote_addresses (
+            sales_quote_id, company_id, address_type, name, phone, email,
+            address_1, address_2, city, state, county, postcode, country,
+            contact_name
+          )
+          VALUES ($1, $2, 'primary', $3, $4, $5, $6, $7, $8, $9, $9, $10, $11, $12)
+          `,
+          [
+            salesQuoteId,
+            companyId,
+            prospect.company_name,
+            address.phone ?? contact?.phone ?? null,
+            address.email ?? contact?.email ?? null,
+            address.address_1,
+            address.address_2,
+            address.city,
+            address.state,
+            address.postcode,
+            address.country,
+            contact?.name ?? null,
+          ],
+        );
+      }
+
+      await client.query(
+        `
+        UPDATE public.prospect_offers
+        SET
+          sales_quote_id = $1,
+          converted_to_quote_at = NOW(),
+          status = CASE WHEN status = 'DRAFT' THEN 'SENT' ELSE status END,
+          updated_by = $2,
+          updated_at = NOW()
+        WHERE id = $3
+          AND company_id = $4
+        `,
+        [salesQuoteId, userId, offerId, companyId],
+      );
+
+      await client.query("COMMIT");
+
+      return { salesQuoteId, quoteNo };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   /* ============================================================
      INTERNALS
   ============================================================ */
@@ -558,7 +863,14 @@ export class ProspectOfferService {
   ): Promise<ProspectRow> {
     const result = await client.query<ProspectRow>(
       `
-      SELECT id, currency_id, vat_business_group_id
+      SELECT
+        id,
+        prospect_no,
+        company_name,
+        currency_id,
+        vat_business_group_id,
+        assigned_to_name,
+        converted_party_id
       FROM public.prospects
       WHERE id = $1
         AND company_id = $2
@@ -582,13 +894,18 @@ export class ProspectOfferService {
     companyId: string,
     prospectId: string,
     offerId: string,
-  ): Promise<{ status: ProspectOfferStatus; is_primary: boolean }> {
+  ): Promise<{
+    status: ProspectOfferStatus;
+    is_primary: boolean;
+    sales_quote_id: string | null;
+  }> {
     const result = await client.query<{
       status: ProspectOfferStatus;
       is_primary: boolean;
+      sales_quote_id: string | null;
     }>(
       `
-      SELECT status, is_primary
+      SELECT status, is_primary, sales_quote_id
       FROM public.prospect_offers
       WHERE id = $1
         AND company_id = $2
@@ -776,16 +1093,55 @@ export class ProspectOfferService {
       ),
     ];
 
-    if (prospect.vat_business_group_id && productGroupIds.length) {
+    /*
+     * Posting group selected on the form wins over the saved one, so VAT
+     * follows the dropdown immediately (like customer -> sales order).
+     */
+    const businessGroupId =
+      payload.vat_business_group_id !== undefined
+        ? payload.vat_business_group_id
+        : prospect.vat_business_group_id;
+
+    if (payload.vat_business_group_id) {
+      const groupResult = await client.query(
+        `
+        SELECT id
+        FROM public.vat_business_posting_groups
+        WHERE id = $1
+          AND company_id = $2
+          AND is_active = TRUE
+        LIMIT 1
+        `,
+        [payload.vat_business_group_id, companyId],
+      );
+
+      if (!groupResult.rows.length) {
+        throw new ProspectOfferError(
+          "Selected posting group was not found or is inactive.",
+        );
+      }
+    }
+
+    if (businessGroupId && productGroupIds.length) {
       const vatResult = await client.query<VatSetupRow>(
         `
-        SELECT id, vat_product_group_id, vat_rate, sales_vat_account_id
-        FROM public.vat_posting_setup
-        WHERE company_id = $1
-          AND vat_business_group_id = $2
-          AND vat_product_group_id = ANY($3::uuid[])
+        SELECT
+          vps.id,
+          vps.vat_product_group_id,
+          vps.vat_rate,
+          /*
+           * Only keep the VAT account if it still exists in the chart of
+           * accounts (a stale id would break the line's foreign key).
+           */
+          coa.id AS sales_vat_account_id
+        FROM public.vat_posting_setup vps
+        LEFT JOIN public.chart_of_accounts coa
+          ON coa.id = vps.sales_vat_account_id
+        WHERE vps.company_id = $1
+          AND vps.vat_business_group_id = $2
+          AND vps.vat_product_group_id = ANY($3::uuid[])
         `,
-        [companyId, prospect.vat_business_group_id, productGroupIds],
+        [companyId, businessGroupId, productGroupIds],
       );
 
       for (const row of vatResult.rows) {

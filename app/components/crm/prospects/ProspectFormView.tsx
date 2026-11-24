@@ -623,6 +623,9 @@ export default function ProspectFormView({
             addItemsRequested={addItemsRequested}
             onAddItemsHandled={() => setAddItemsRequested(false)}
             readOnly={readOnly}
+            vatBusinessGroupId={header.vat_business_group_id || null}
+            slug={slug}
+            canConvertToQuote={!isConverted}
             prospectCurrency={{
               id: header.currency_id || null,
               code: selectedCurrencyCode,
