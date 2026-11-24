@@ -230,6 +230,7 @@ export default function ProspectFormView({
   const [isEditing, setIsEditing] = useState(
     !prospectId || initialMode === "edit",
   );
+  
   const [error, setError] = useState("");
 
   const [activityOpen, setActivityOpen] = useState(false);

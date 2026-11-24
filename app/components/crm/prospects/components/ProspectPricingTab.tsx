@@ -17,6 +17,7 @@ import type {
   ProspectOfferStatus,
 } from "@/types/prospect";
 import type { ProspectOffersState } from "../hooks/useProspectOffers";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Props = {
   offersState: ProspectOffersState;
@@ -313,9 +314,7 @@ export default function ProspectPricingTab({
     "GBP";
 
   const currencyMismatch = Boolean(
-    offer &&
-      prospectCurrency?.id &&
-      offer.currency_id !== prospectCurrency.id,
+    offer && prospectCurrency?.id && offer.currency_id !== prospectCurrency.id,
   );
 
   const money = useMemo(() => makeFormatter(currencyCode), [currencyCode]);
@@ -460,13 +459,17 @@ export default function ProspectPricingTab({
         vat_rate:
           findVatOption(item.vat_product_group_id ?? null)?.vat_percent !==
           undefined
-            ? Number(findVatOption(item.vat_product_group_id ?? null)!.vat_percent)
+            ? Number(
+                findVatOption(item.vat_product_group_id ?? null)!.vat_percent,
+              )
             : await resolveVatRate(item.vat_product_group_id),
       })),
     );
 
     setDraft((current) =>
-      current ? { ...current, lines: [...current.lines, ...newLines] } : current,
+      current
+        ? { ...current, lines: [...current.lines, ...newLines] }
+        : current,
     );
 
     setNotice(
@@ -656,7 +659,10 @@ export default function ProspectPricingTab({
                 disabled={busy}
                 className={solidButton}
               >
-                <Icon icon={busy ? "lucide:loader-2" : "lucide:check"} className={busy ? "animate-spin" : ""} />
+                <Icon
+                  icon={busy ? "lucide:loader-2" : "lucide:check"}
+                  className={busy ? "animate-spin" : ""}
+                />
                 Save
               </button>
             </>
@@ -703,8 +709,8 @@ export default function ProspectPricingTab({
 
       {currencyMismatch && !editing && offer && (
         <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
-          This offer was saved in {offer.currency_code}. The prospect currency is
-          now {prospectCurrency?.code} — editing the offer will save it in{" "}
+          This offer was saved in {offer.currency_code}. The prospect currency
+          is now {prospectCurrency?.code} — editing the offer will save it in{" "}
           {prospectCurrency?.code}.
         </div>
       )}
@@ -722,24 +728,26 @@ export default function ProspectPricingTab({
             icon="lucide:tag"
             className="mx-auto text-4xl text-emerald-600"
           />
-          <p className="mt-2 font-semibold text-slate-800">No price offer yet</p>
+          <p className="mt-2 font-semibold text-slate-800">
+            No price offer yet
+          </p>
           <p className="mt-1 text-sm text-slate-500">
             {readOnly
               ? "Click Edit to add products and prices."
               : "Add the products this prospect is interested in to build a quote."}
           </p>
           {!readOnly && (
-          <button
-            type="button"
-            onClick={() => {
-              startEdit(null);
-              setItemModalOpen(true);
-            }}
-            className={`${solidButton} mx-auto mt-4`}
-          >
-            <Icon icon="lucide:plus" />
-            Add items
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                startEdit(null);
+                setItemModalOpen(true);
+              }}
+              className={`${solidButton} mx-auto mt-4`}
+            >
+              <Icon icon="lucide:plus" />
+              Add items
+            </button>
           )}
         </div>
       ) : loading && !offer && !editing ? (
@@ -753,18 +761,46 @@ export default function ProspectPricingTab({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <label className="space-y-1 text-xs font-medium text-slate-600">
                 Offer date
-                <input
+                <DatePicker
+                  value={
+                    draft.offer_date ? parseISO(draft.offer_date) : undefined
+                  }
+                  containerClassName="text-sm"
+                  maxDate={new Date()}
+                  onChange={(date) =>
+                    setDraft({
+                      ...draft,
+                      offer_date: date ? format(date, "yyyy-MM-dd") : "",
+                    })
+                  }
+                />
+                {/* <input
                   type="date"
                   value={draft.offer_date}
                   onChange={(event) =>
                     setDraft({ ...draft, offer_date: event.target.value })
                   }
                   className="h-9 w-full rounded-md border border-slate-300 px-2 text-sm text-slate-800"
-                />
+                /> */}
               </label>
               <label className="space-y-1 text-xs font-medium text-slate-600">
                 Valid until
-                <input
+                <DatePicker
+                  value={
+                    draft.valid_until ? parseISO(draft.valid_until) : undefined
+                  }
+                  minDate={
+                    draft.offer_date ? parseISO(draft.offer_date) : undefined
+                  }
+                  containerClassName="text-sm"
+                  onChange={(date) =>
+                    setDraft({
+                      ...draft,
+                      valid_until: date ? format(date, "yyyy-MM-dd") : "",
+                    })
+                  }
+                />
+                {/* <input
                   type="date"
                   value={draft.valid_until}
                   min={draft.offer_date}
@@ -772,7 +808,7 @@ export default function ProspectPricingTab({
                     setDraft({ ...draft, valid_until: event.target.value })
                   }
                   className="h-9 w-full rounded-md border border-slate-300 px-2 text-sm text-slate-800"
-                />
+                /> */}
               </label>
               <label className="space-y-1 text-xs font-medium text-slate-600">
                 Notes
@@ -782,7 +818,7 @@ export default function ProspectPricingTab({
                     setDraft({ ...draft, notes: event.target.value })
                   }
                   placeholder="Optional"
-                  className="h-9 w-full rounded-md border border-slate-300 px-2 text-sm text-slate-800"
+                  className="h-7 w-full rounded-md border border-slate-300 px-2 text-sm text-slate-800"
                 />
               </label>
             </div>
@@ -1033,82 +1069,82 @@ export default function ProspectPricingTab({
               </div>
 
               {!readOnly && (
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="flex items-center gap-1">
-                  Status
-                  <select
-                    value={offer.status}
-                    disabled={busy}
-                    onChange={(event) =>
-                      void runAction(() =>
-                        setStatus(
-                          offer.id,
-                          event.target.value as ProspectOfferStatus,
-                        ),
-                      )
-                    }
-                    className="h-7 rounded-md border border-slate-300 bg-white px-1.5 text-xs"
-                  >
-                    {OFFER_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {status.charAt(0) + status.slice(1).toLowerCase()}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-1">
+                    Status
+                    <select
+                      value={offer.status}
+                      disabled={busy}
+                      onChange={(event) =>
+                        void runAction(() =>
+                          setStatus(
+                            offer.id,
+                            event.target.value as ProspectOfferStatus,
+                          ),
+                        )
+                      }
+                      className="h-7 rounded-md border border-slate-300 bg-white px-1.5 text-xs"
+                    >
+                      {OFFER_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {status.charAt(0) + status.slice(1).toLowerCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-                {!offer.is_primary && (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void runAction(() => setPrimary(offer.id))}
-                    className="rounded-md px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-50"
-                  >
-                    Set as primary
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => startEdit(null)}
-                  className="rounded-md px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-50"
-                >
-                  + New offer
-                </button>
-
-                {offer.status === "DRAFT" &&
-                  (confirmDelete ? (
-                    <span className="flex items-center gap-1">
-                      Delete offer?
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void runAction(() => deleteOffer(offer.id))
-                        }
-                        className="rounded px-1.5 py-0.5 font-semibold text-rose-600 hover:bg-rose-50"
-                      >
-                        Yes
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDelete(false)}
-                        className="rounded px-1.5 py-0.5 hover:bg-slate-100"
-                      >
-                        No
-                      </button>
-                    </span>
-                  ) : (
+                  {!offer.is_primary && (
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() => setConfirmDelete(true)}
-                      className="rounded-md px-2 py-1 font-medium text-rose-600 hover:bg-rose-50"
+                      onClick={() => void runAction(() => setPrimary(offer.id))}
+                      className="rounded-md px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-50"
                     >
-                      Delete
+                      Set as primary
                     </button>
-                  ))}
-              </div>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => startEdit(null)}
+                    className="rounded-md px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-50"
+                  >
+                    + New offer
+                  </button>
+
+                  {offer.status === "DRAFT" &&
+                    (confirmDelete ? (
+                      <span className="flex items-center gap-1">
+                        Delete offer?
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void runAction(() => deleteOffer(offer.id))
+                          }
+                          className="rounded px-1.5 py-0.5 font-semibold text-rose-600 hover:bg-rose-50"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDelete(false)}
+                          className="rounded px-1.5 py-0.5 hover:bg-slate-100"
+                        >
+                          No
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setConfirmDelete(true)}
+                        className="rounded-md px-2 py-1 font-medium text-rose-600 hover:bg-rose-50"
+                      >
+                        Delete
+                      </button>
+                    ))}
+                </div>
               )}
             </div>
           )}

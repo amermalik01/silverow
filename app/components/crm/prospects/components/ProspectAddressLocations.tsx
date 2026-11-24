@@ -408,14 +408,19 @@ export default function ProspectAddressLocations({
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
         <div className="flex items-center gap-3">
           <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-            <Icon icon="tabler:map-pin" className="text-xl text-slate-800" />
+            <Icon icon="tabler:map-pin" className="text-emerald-600 text-2xl" />
             Locations
           </h2>
 
-          <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
+          {addresses.length > 1 && (
+            <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
             {addresses.length}{" "}
             {addresses.length === 1 ? "Location" : "Locations"}
           </span>
+
+          )}
+
+          
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -561,7 +566,7 @@ export default function ProspectAddressLocations({
                       <div className="relative">
                         <Icon
                           icon="tabler:phone"
-                          className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
+                          className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-emerald-600"                          
                         />
                         <input
                           value={address.phone || ""}
@@ -575,7 +580,7 @@ export default function ProspectAddressLocations({
                       <div className="relative">
                         <Icon
                           icon="tabler:mail"
-                          className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
+                          className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-emerald-600"
                         />
                         <input
                           type="email"
@@ -638,7 +643,7 @@ export default function ProspectAddressLocations({
                     <div className="flex items-center gap-2 font-semibold text-slate-900">
                       <Icon
                         icon={getLocationIcon(address.label)}
-                        className="h-4 w-4 shrink-0 text-black"
+                        className="h-4 w-4 shrink-0 text-emerald-600"                        
                       />
                       <span>
                         {address.label || (
@@ -690,7 +695,7 @@ export default function ProspectAddressLocations({
                         <div className="flex items-center gap-1.5 tabular-nums">
                           <Icon
                             icon="tabler:phone"
-                            className="h-3.5 w-3.5 shrink-0 text-slate-500"
+                            className="h-3.5 w-3.5 shrink-0 text-emerald-600"
                           />
                           {address.phone}
                         </div>
@@ -699,7 +704,7 @@ export default function ProspectAddressLocations({
                         <div className="flex items-center gap-1.5">
                           <Icon
                             icon="tabler:mail"
-                            className="h-3.5 w-3.5 shrink-0 text-slate-500"
+                            className="h-3.5 w-3.5 shrink-0 text-emerald-600"
                           />
                           <span className="break-all">{address.email}</span>
                         </div>

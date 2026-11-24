@@ -104,8 +104,8 @@ export default function ProspectNoteModal({
         <form onSubmit={handleSubmit}>
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
-                <Icon icon="tabler:notes" className="h-5 w-5" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
+                <Icon icon="tabler:notes" className="text-emerald-600 text-2xl" />
               </div>
 
               <div>

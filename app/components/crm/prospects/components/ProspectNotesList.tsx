@@ -156,7 +156,7 @@ export default function ProspectNotesList({
             {loading ? "Refreshing..." : "Refresh"}
           </button>
 
-          {!readonly && notes.length > 0 && (
+          {/* {!readonly && notes.length > 0 && ( */}
             <button
               type="button"
               onClick={handleAdd}
@@ -164,7 +164,7 @@ export default function ProspectNotesList({
             >
               Add Note
             </button>
-          )}
+          {/* )} */}
         </div>
 
         {/* Error */}

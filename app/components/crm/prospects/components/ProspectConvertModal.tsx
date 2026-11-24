@@ -103,7 +103,7 @@ export default function ProspectConvertModal({
             />
           </label>
 
-          <label className="block text-sm text-slate-600">
+          {/* <label className="block text-sm text-slate-600">
             Customer Code
             <input
               value={customerCode}
@@ -111,7 +111,7 @@ export default function ProspectConvertModal({
               className="mt-1 h-10 w-full rounded-md border border-slate-300 px-3 text-sm"
               placeholder="Leave blank to use automatic numbering"
             />
-          </label>
+          </label> */}
 
           <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-xs leading-5 text-emerald-900">
             Contacts and addresses will be copied to the customer record. The

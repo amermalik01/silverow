@@ -384,7 +384,7 @@ export default function ContactsTab({
                             className={`${cellInputClass} pl-7 tabular-nums`}
                           />
                         </div>
-                        <div className="relative">
+                        {/* <div className="relative">
                           <Icon
                             icon="tabler:device-mobile"
                             className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
@@ -396,7 +396,7 @@ export default function ContactsTab({
                             placeholder="Mobile"
                             className={`${cellInputClass} pl-7 tabular-nums`}
                           />
-                        </div>
+                        </div> */}
                       </td>
 
                       {/* Primary */}
