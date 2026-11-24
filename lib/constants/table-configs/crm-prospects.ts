@@ -22,12 +22,21 @@ export const crmProspectsConfig: ColumnConfig[] = [
     columnWidth: 220,
   },
   {
+    columnKey: "source",
+    label: "Source",
+    dataType: "text",
+    isVisible: true,
+    isPinned: false,
+    columnOrder: 3,
+    columnWidth: 110,
+  },
+  {
     columnKey: "primary_contact_name",
     label: "Contact",
     dataType: "text",
     isVisible: true,
     isPinned: false,
-    columnOrder: 3,
+    columnOrder: 4,
     columnWidth: 170,
   },
   {
@@ -36,7 +45,7 @@ export const crmProspectsConfig: ColumnConfig[] = [
     dataType: "text",
     isVisible: true,
     isPinned: false,
-    columnOrder: 4,
+    columnOrder: 5,
     columnWidth: 210,
   },
   {
@@ -45,7 +54,7 @@ export const crmProspectsConfig: ColumnConfig[] = [
     dataType: "text",
     isVisible: true,
     isPinned: false,
-    columnOrder: 5,
+    columnOrder: 6,
     columnWidth: 140,
   },
   {
@@ -54,7 +63,7 @@ export const crmProspectsConfig: ColumnConfig[] = [
     dataType: "text",
     isVisible: true,
     isPinned: false,
-    columnOrder: 6,
+    columnOrder: 7,
     columnWidth: 125,
   },
   {
@@ -63,7 +72,7 @@ export const crmProspectsConfig: ColumnConfig[] = [
     dataType: "text",
     isVisible: true,
     isPinned: false,
-    columnOrder: 7,
+    columnOrder: 8,
     columnWidth: 100,
   },
   {
@@ -72,7 +81,7 @@ export const crmProspectsConfig: ColumnConfig[] = [
     dataType: "number",
     isVisible: true,
     isPinned: false,
-    columnOrder: 8,
+    columnOrder: 9,
     columnWidth: 140,
   },
   {
@@ -81,8 +90,17 @@ export const crmProspectsConfig: ColumnConfig[] = [
     dataType: "text",
     isVisible: true,
     isPinned: false,
-    columnOrder: 9,
+    columnOrder: 10,
     columnWidth: 160,
+  },
+  {
+    columnKey: "last_activity_at",
+    label: "Last Activity",
+    dataType: "date",
+    isVisible: true,
+    isPinned: false,
+    columnOrder: 11,
+    columnWidth: 170,
   },
   {
     columnKey: "next_follow_up_at",
@@ -90,7 +108,7 @@ export const crmProspectsConfig: ColumnConfig[] = [
     dataType: "date",
     isVisible: true,
     isPinned: false,
-    columnOrder: 10,
+    columnOrder: 12,
     columnWidth: 145,
   },
 ];

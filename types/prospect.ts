@@ -187,6 +187,60 @@ export type ProspectListRecord = {
   primary_city: string | null;
 
   activities_count: number;
+
+  /** Most recent activity (listing / dashboard). */
+  last_activity_type?: ProspectActivityType | null;
+  last_activity_at?: string | null;
+};
+
+// -----------------------------------------------------------------------------
+// Prospect dashboard
+// -----------------------------------------------------------------------------
+
+/** Extra listing filters sent by the dashboard alongside FetchParams. */
+export type ProspectListingFilters = {
+  status?: ProspectStatus | null;
+  priority?: ProspectPriority | null;
+  source?: ProspectSource | null;
+  /** created_at range, yyyy-MM-dd (inclusive). */
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  /** Only prospects whose next follow-up is before this ISO instant. */
+  followUpDueBefore?: string | null;
+};
+
+export type ProspectDashboardFollowUp = {
+  id: string;
+  prospect_no: string;
+  company_name: string;
+  contact_name: string | null;
+  priority: ProspectPriority;
+  status: ProspectStatus;
+  next_follow_up_at: string;
+};
+
+export type ProspectDashboardActivity = {
+  id: string;
+  prospect_id: string;
+  company_name: string;
+  activity_type: ProspectActivityType;
+  subject: string;
+  description: string | null;
+  activity_at: string;
+  created_by_name: string | null;
+};
+
+export type ProspectDashboardData = {
+  range: { from: string | null; to: string | null };
+  /** Prospects created in the range, per status (converted excluded). */
+  current: { total: number; byStatus: Partial<Record<ProspectStatus, number>> };
+  /** Same-length period immediately before the range (null for all time). */
+  previous: {
+    total: number;
+    byStatus: Partial<Record<ProspectStatus, number>>;
+  } | null;
+  followUps: ProspectDashboardFollowUp[];
+  recentActivity: ProspectDashboardActivity[];
 };
 
 // -----------------------------------------------------------------------------

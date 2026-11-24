@@ -23,6 +23,8 @@ import type {
   ProspectStatusHistory,
   ProspectStatusChangeOptions,
   ProspectConversionPayload,
+  ProspectDashboardData,
+  ProspectListingFilters,
 } from "@/types/prospect";
 
 /* ============================================================
@@ -229,6 +231,10 @@ function getRecord<T>(rows: T[], message: string): T {
   }
 
   return record;
+}
+
+function isDateOnly(value: unknown): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -1917,6 +1923,146 @@ export class ProspectService {
      PAGINATED LIST
   ========================================================== */
 
+  /* ============================================================
+     DASHBOARD
+  ============================================================ */
+
+  /**
+   * Figures for the prospect dashboard. Converted prospects are excluded,
+   * like the listing. `from`/`to` (yyyy-MM-dd, inclusive) filter on
+   * created_at; when both are set the previous period of equal length is
+   * returned for trend arrows. `dueBefore` is the end of the user's day.
+   */
+  static async getDashboard(
+    companyId: string,
+    options: { from?: string | null; to?: string | null; dueBefore?: string | null },
+  ): Promise<ProspectDashboardData> {
+    const from = isDateOnly(options.from) ? options.from : null;
+    const to = isDateOnly(options.to) ? options.to : null;
+
+    const dueBefore =
+      typeof options.dueBefore === "string" &&
+      !Number.isNaN(Date.parse(options.dueBefore))
+        ? options.dueBefore
+        : new Date(new Date().setHours(23, 59, 59, 999)).toISOString();
+
+    const countByStatus = async (
+      rangeFrom: string | null,
+      rangeTo: string | null,
+    ) => {
+      const result = await pool.query<{ status: ProspectStatus; total: number }>(
+        `
+        SELECT p.status, COUNT(*)::int AS total
+        FROM prospects p
+        WHERE p.company_id = $1
+          AND p.converted_party_id IS NULL
+          AND p.status <> 'Converted'
+          AND ($2::date IS NULL OR p.created_at >= $2::date)
+          AND ($3::date IS NULL OR p.created_at < ($3::date + INTERVAL '1 day'))
+        GROUP BY p.status
+        `,
+        [companyId, rangeFrom, rangeTo],
+      );
+
+      const byStatus: Partial<Record<ProspectStatus, number>> = {};
+      let total = 0;
+
+      for (const row of result.rows) {
+        byStatus[row.status] = row.total;
+        total += row.total;
+      }
+
+      return { total, byStatus };
+    };
+
+    /* Previous period of equal length, ending the day before `from`. */
+    let previousRange: [string, string] | null = null;
+
+    if (from && to) {
+      const start = new Date(`${from}T00:00:00Z`);
+      const end = new Date(`${to}T00:00:00Z`);
+      const days = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+
+      if (days > 0) {
+        const prevEnd = new Date(start.getTime() - 86_400_000);
+        const prevStart = new Date(prevEnd.getTime() - (days - 1) * 86_400_000);
+        previousRange = [
+          prevStart.toISOString().slice(0, 10),
+          prevEnd.toISOString().slice(0, 10),
+        ];
+      }
+    }
+
+    const [current, previous, followUpsResult, activityResult] =
+      await Promise.all([
+        countByStatus(from, to),
+        previousRange
+          ? countByStatus(previousRange[0], previousRange[1])
+          : Promise.resolve(null),
+
+        pool.query<ProspectDashboardData["followUps"][number]>(
+          `
+          SELECT
+            p.id,
+            p.prospect_no,
+            p.company_name,
+            pc.name AS contact_name,
+            p.priority,
+            p.status,
+            p.next_follow_up_at
+          FROM prospects p
+          LEFT JOIN LATERAL (
+            SELECT c.name
+            FROM prospect_contacts c
+            WHERE c.company_id = p.company_id
+              AND c.prospect_id = p.id
+            ORDER BY c.is_primary DESC, c.created_at ASC
+            LIMIT 1
+          ) pc ON TRUE
+          WHERE p.company_id = $1
+            AND p.converted_party_id IS NULL
+            AND p.status NOT IN ('Converted', 'Lost')
+            AND p.next_follow_up_at IS NOT NULL
+            AND p.next_follow_up_at < $2::timestamptz
+          ORDER BY p.next_follow_up_at ASC
+          LIMIT 6
+          `,
+          [companyId, dueBefore],
+        ),
+
+        pool.query<ProspectDashboardData["recentActivity"][number]>(
+          `
+          SELECT
+            a.id,
+            a.prospect_id,
+            p.company_name,
+            a.activity_type,
+            a.subject,
+            a.description,
+            a.activity_at,
+            a.created_by_name
+          FROM prospect_activities a
+          INNER JOIN prospects p
+            ON p.id = a.prospect_id
+           AND p.company_id = a.company_id
+          WHERE a.company_id = $1
+            AND p.converted_party_id IS NULL
+          ORDER BY a.activity_at DESC, a.created_at DESC
+          LIMIT 5
+          `,
+          [companyId],
+        ),
+      ]);
+
+    return {
+      range: { from, to },
+      current,
+      previous,
+      followUps: followUpsResult.rows,
+      recentActivity: activityResult.rows,
+    };
+  }
+
   static async listPaginated(
     companyId: string,
     params: FetchParams,
@@ -2036,7 +2182,54 @@ export class ProspectService {
       }
     }
 
+    /*
+     * Dashboard filters (status card, filter menu, date range, follow-ups).
+     * Sent as `dashboard` next to the regular DataTable params.
+     */
+    const rawDashboard = (params as FetchParams & {
+      dashboard?: unknown;
+    }).dashboard;
+
+    const dashboard: ProspectListingFilters = isPlainObject(rawDashboard)
+      ? (rawDashboard as ProspectListingFilters)
+      : {};
+
+    const exactFilters: Array<[keyof ProspectListingFilters, string]> = [
+      ["status", "p.status"],
+      ["priority", "p.priority"],
+      ["source", "p.source"],
+    ];
+
+    for (const [key, column] of exactFilters) {
+      const value = dashboard[key];
+      if (typeof value === "string" && value.trim()) {
+        const index = addValue(value.trim());
+        whereClauses.push(`${column} = $${index}`);
+      }
+    }
+
+    if (isDateOnly(dashboard.dateFrom)) {
+      const index = addValue(dashboard.dateFrom);
+      whereClauses.push(`p.created_at >= $${index}::date`);
+    }
+
+    if (isDateOnly(dashboard.dateTo)) {
+      const index = addValue(dashboard.dateTo);
+      whereClauses.push(`p.created_at < ($${index}::date + INTERVAL '1 day')`);
+    }
+
+    if (
+      typeof dashboard.followUpDueBefore === "string" &&
+      !Number.isNaN(Date.parse(dashboard.followUpDueBefore))
+    ) {
+      const index = addValue(dashboard.followUpDueBefore);
+      whereClauses.push(
+        `p.next_follow_up_at IS NOT NULL AND p.next_follow_up_at < $${index}::timestamptz AND p.status <> 'Lost'`,
+      );
+    }
+
     const sortFields: Record<string, string> = {
+      last_activity_at: "la.activity_at",
       prospect_no: "p.prospect_no",
       company_name: "p.company_name",
       status: "p.status",
@@ -2086,6 +2279,18 @@ export class ProspectService {
         LIMIT 1
       ) pa ON TRUE
 
+      LEFT JOIN LATERAL (
+        SELECT act.activity_type, act.activity_at
+        FROM prospect_activities act
+        WHERE act.company_id = p.company_id
+          AND act.prospect_id = p.id
+        ORDER BY act.activity_at DESC, act.created_at DESC
+        LIMIT 1
+      ) la ON TRUE
+
+      LEFT JOIN public.currencies cur
+        ON cur.id = p.currency_id
+
       WHERE ${whereClauses.join(" AND ")}
     `;
 
@@ -2109,7 +2314,7 @@ export class ProspectService {
         p.priority,
         p.estimated_deal_value,
         p.currency_id,
-        NULL::varchar AS currency_code,
+        cur.code AS currency_code,
         p.assigned_to,
         p.assigned_to_name,
         p.last_contacted_at,
@@ -2121,6 +2326,9 @@ export class ProspectService {
         pc.email AS primary_email,
         COALESCE(pc.phone, pc.mobile) AS primary_phone,
         pa.city AS primary_city,
+
+        la.activity_type AS last_activity_type,
+        la.activity_at AS last_activity_at,
 
         (
           SELECT COUNT(*)::int
