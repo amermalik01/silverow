@@ -26,6 +26,12 @@ type Props = {
   onAddItemsHandled?: () => void;
   /** View mode: pricing can be viewed but not changed. */
   readOnly?: boolean;
+  /** Currency selected on the prospect (Sales Information). */
+  prospectCurrency?: {
+    id: string | null;
+    code: string;
+    exchange_rate: number;
+  };
 };
 
 type VatOption = {
@@ -112,6 +118,7 @@ function makeFormatter(currencyCode: string) {
     const formatter = new Intl.NumberFormat("en-GB", {
       style: "currency",
       currency: currencyCode,
+      currencyDisplay: "narrowSymbol",
     });
     return (value: number) => formatter.format(value);
   } catch {
@@ -185,6 +192,7 @@ export default function ProspectPricingTab({
   addItemsRequested = false,
   onAddItemsHandled,
   readOnly = false,
+  prospectCurrency,
 }: Props) {
   const {
     offers,
@@ -293,8 +301,22 @@ export default function ProspectPricingTab({
   const editing = draft !== null;
   const canEdit = !offer || EDITABLE_STATUSES.includes(offer.status);
 
+  /*
+   * While editing (or before any offer exists) prices are in the prospect's
+   * currency; a saved offer is shown in the currency it was saved in.
+   */
   const currencyCode =
-    offer?.currency_code || defaults?.currency_code || "GBP";
+    (editing || !offer
+      ? prospectCurrency?.code
+      : offer.currency_code || prospectCurrency?.code) ||
+    defaults?.currency_code ||
+    "GBP";
+
+  const currencyMismatch = Boolean(
+    offer &&
+      prospectCurrency?.id &&
+      offer.currency_id !== prospectCurrency.id,
+  );
 
   const money = useMemo(() => makeFormatter(currencyCode), [currencyCode]);
 
@@ -459,7 +481,8 @@ export default function ProspectPricingTab({
   const handleSave = async () => {
     if (!draft) return;
 
-    const currencyId = offer?.currency_id ?? defaults?.currency_id;
+    const currencyId =
+      prospectCurrency?.id ?? offer?.currency_id ?? defaults?.currency_id;
 
     if (!draft.lines.length) {
       setActionError("Add at least one item.");
@@ -485,9 +508,9 @@ export default function ProspectPricingTab({
           offer_date: draft.offer_date,
           valid_until: draft.valid_until || null,
           currency_id: currencyId,
-          exchange_rate: Number(
-            offer?.exchange_rate ?? defaults?.exchange_rate ?? 1,
-          ),
+          exchange_rate: prospectCurrency?.id
+            ? prospectCurrency.exchange_rate || 1
+            : Number(offer?.exchange_rate ?? defaults?.exchange_rate ?? 1),
           is_primary: offer?.is_primary ?? false,
           notes: draft.notes.trim() || null,
           lines: draft.lines.map((line) => ({
@@ -675,6 +698,14 @@ export default function ProspectPricingTab({
       {(loadError || actionError) && (
         <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
           {actionError || loadError}
+        </div>
+      )}
+
+      {currencyMismatch && !editing && offer && (
+        <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+          This offer was saved in {offer.currency_code}. The prospect currency is
+          now {prospectCurrency?.code} — editing the offer will save it in{" "}
+          {prospectCurrency?.code}.
         </div>
       )}
 

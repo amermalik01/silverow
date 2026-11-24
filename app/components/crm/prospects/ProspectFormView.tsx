@@ -41,6 +41,19 @@ import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 import { useLoader } from "@/app/context/LoaderContext";
 import { DatePicker } from "@/components/ui/date-picker";
 
+type CurrencyOption = {
+  id: string;
+  code: string;
+  name: string;
+  exchange_rate: string | number;
+  is_base: boolean;
+};
+
+type PostingGroupOption = {
+  id: string;
+  name: string;
+};
+
 type Props = {
   prospectId?: string;
   slug: string;
@@ -144,6 +157,59 @@ export default function ProspectFormView({
   const { show, hide } = useLoader();
 
   const [header, setHeader] = useState<ProspectFormHeader>(emptyHeader);
+
+  /* Currency + VAT business posting group options (same sources as parties Finance tab). */
+  const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
+  const [postingGroups, setPostingGroups] = useState<PostingGroupOption[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [currencyRes, masterRes] = await Promise.all([
+          fetch("/api/parties/currencies"),
+          fetch("/api/parties/finance-master-data?moduleType=sales"),
+        ]);
+
+        if (!cancelled && currencyRes.ok) {
+          setCurrencies((await currencyRes.json()) as CurrencyOption[]);
+        }
+
+        if (!cancelled && masterRes.ok) {
+          const master = (await masterRes.json()) as {
+            postingGroups?: PostingGroupOption[];
+          };
+          setPostingGroups(master.postingGroups ?? []);
+        }
+      } catch (err) {
+        console.error("Failed to load currency / posting group options:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /* Default to the company base currency when none is set. */
+  useEffect(() => {
+    if (header.currency_id || !currencies.length) return;
+
+    const base =
+      currencies.find((currency) => currency.is_base) ??
+      currencies.find((currency) => currency.code === baseCurrencyCode);
+
+    if (base) {
+      setHeader((current) =>
+        current.currency_id ? current : { ...current, currency_id: base.id },
+      );
+    }
+  }, [currencies, header.currency_id, baseCurrencyCode]);
+
+  const selectedCurrencyCode =
+    currencies.find((currency) => currency.id === header.currency_id)?.code ||
+    baseCurrencyCode;
 
   const [contacts, setContacts] = useState<ProspectContact[]>([
     makeEmptyContact(),
@@ -385,7 +451,7 @@ export default function ProspectFormView({
       if (isEdit) {
         /* Existing record: reload saved data and return to view mode. */
         setIsEditing(false);
-        await loadProspect();
+        await Promise.all([loadProspect(), offersState.reload()]);
         return;
       }
 
@@ -556,6 +622,14 @@ export default function ProspectFormView({
             addItemsRequested={addItemsRequested}
             onAddItemsHandled={() => setAddItemsRequested(false)}
             readOnly={readOnly}
+            prospectCurrency={{
+              id: header.currency_id || null,
+              code: selectedCurrencyCode,
+              exchange_rate: Number(
+                currencies.find((c) => c.id === header.currency_id)
+                  ?.exchange_rate ?? 1,
+              ),
+            }}
           />
         ) : (
           <div className="py-12 text-center">
@@ -648,7 +722,15 @@ export default function ProspectFormView({
             priority={header.priority}
             assignedToName={header.assigned_to_name}
             estimatedDealValue={header.estimated_deal_value}
-            currencyCode={baseCurrencyCode}
+            currencyCode={selectedCurrencyCode}
+            currencies={currencies}
+            currencyId={header.currency_id}
+            onCurrencyChange={(value) => updateHeader("currency_id", value)}
+            postingGroups={postingGroups}
+            vatBusinessGroupId={header.vat_business_group_id}
+            onPostingGroupChange={(value) =>
+              updateHeader("vat_business_group_id", value)
+            }
             lostReason={header.lost_reason}
             onStatusChange={(value) => updateHeader("status", value)}
             onSourceChange={(value) => updateHeader("source", value)}
