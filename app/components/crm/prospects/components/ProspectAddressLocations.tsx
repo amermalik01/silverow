@@ -508,8 +508,8 @@ export default function ProspectAddressLocations({
                         <label
                           className={`flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition ${
                             address.is_primary
-                              ? "border-amber-300 bg-amber-50 text-amber-800"
-                              : "border-slate-200 text-slate-600 hover:border-amber-300"
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                              : "border-slate-200 text-slate-600 hover:border-emerald-300"
                           }`}
                           title="Primary location"
                         >
@@ -529,7 +529,7 @@ export default function ProspectAddressLocations({
                             }
                             className={
                               address.is_primary
-                                ? "h-3.5 w-3.5 text-amber-500"
+                                ? "h-3.5 w-3.5 text-emerald-500"
                                 : "h-3.5 w-3.5 text-slate-400"
                             }
                           />
@@ -678,12 +678,12 @@ export default function ProspectAddressLocations({
                       {/* Primary marker / one-click "set as primary" */}
                       {address.is_primary ? (
                         <span
-                          className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                          className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800"
                           title="Primary location"
                         >
                           <Icon
                             icon="tabler:star-filled"
-                            className="h-3 w-3 text-amber-500"
+                            className="h-3 w-3 text-emerald-500"
                           />
                           Primary
                         </span>
@@ -695,7 +695,7 @@ export default function ProspectAddressLocations({
                             disabled={isEditing}
                             title="Set as primary location"
                             aria-label={`Set ${address.label || `Location ${index + 1}`} as primary`}
-                            className="shrink-0 rounded p-0.5 text-slate-300 transition hover:bg-amber-50 hover:text-amber-500 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="shrink-0 rounded p-0.5 text-emerald-300 transition hover:bg-emerald-50 hover:text-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             <Icon icon="tabler:star" className="h-3.5 w-3.5" />
                           </button>

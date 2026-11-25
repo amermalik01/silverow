@@ -306,8 +306,8 @@ export default function FinanceTab({
             </div>
           </div>
 
-          <div className="rounded-xl border border-sky-200/80 dark:border-sky-900/60 bg-sky-50/40 dark:bg-sky-950/20 px-3.5 py-2.5 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-sky-600/15 dark:bg-sky-500/20 flex items-center justify-center shrink-0">
+          <div className="rounded-xl border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 px-3.5 py-2.5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600/15 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
               <Icon
                 icon="tabler:file-invoice"
                 className="text-emerald-800 text-3xl"
@@ -323,8 +323,8 @@ export default function FinanceTab({
             </div>
           </div>
 
-          <div className="rounded-xl border border-teal-200/80 dark:border-teal-900/60 bg-teal-50/40 dark:bg-teal-950/20 px-3.5 py-2.5 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-teal-600/15 dark:bg-teal-500/20 flex items-center justify-center shrink-0">
+          <div className="rounded-xl border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 px-3.5 py-2.5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600/15 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
               <Icon
                 icon="tabler:clock-dollar"
                 className="text-emerald-800 text-3xl"
@@ -340,8 +340,8 @@ export default function FinanceTab({
             </div>
           </div>
 
-          <div className="rounded-xl border border-violet-200/80 dark:border-violet-900/60 bg-violet-50/40 dark:bg-violet-950/20 px-3.5 py-2.5 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-violet-600/15 dark:bg-violet-500/20 flex items-center justify-center shrink-0">
+          <div className="rounded-xl border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 px-3.5 py-2.5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600/15 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
               <Icon
                 icon="tabler:calendar-stats"
                 className="text-emerald-800 text-3xl"
