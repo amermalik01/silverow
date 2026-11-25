@@ -23,23 +23,19 @@ export default function RebateScopeFields({
 }: Props) {
   if (value.scope === "UNIVERSAL") return null;
 
-  return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/20">
-      {value.scope === "CATEGORY" ? (
-        <RebateCategorySelector
-          value={value.categories}
-          onChange={(categories) => onChange({ categories })}
-          readonly={readonly}
-          lookupUrl={categoryLookupUrl}
-        />
-      ) : (
-        <RebateItemSelector
-          value={value.items}
-          onChange={(items) => onChange({ items })}
-          readonly={readonly}
-          lookupUrl={itemLookupUrl}
-        />
-      )}
-    </div>
+  return value.scope === "CATEGORY" ? (
+    <RebateCategorySelector
+      value={value.categories}
+      onChange={(categories) => onChange({ categories })}
+      readonly={readonly}
+      lookupUrl={categoryLookupUrl}
+    />
+  ) : (
+    <RebateItemSelector
+      value={value.items}
+      onChange={(items) => onChange({ items })}
+      readonly={readonly}
+      lookupUrl={itemLookupUrl}
+    />
   );
 }
