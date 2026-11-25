@@ -13,9 +13,7 @@ import type {
   ProspectListRecord,
   ProspectListingFilters,
 } from "@/types/prospect";
-import type {
-  ProspectStatus,
-} from "@/lib/validations/prospect.schema";
+import type { ProspectStatus } from "@/lib/validations/prospect.schema";
 
 import { renderProspectCell } from "./prospectCellRenderers";
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
@@ -454,26 +452,12 @@ export default function ProspectListView({ slug }: Props) {
       />
 
       {/* PIPELINE + FOLLOW-UPS */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-7">
-          <ProspectPipelineCard
-            data={dashboard}
-            loading={dashboardLoading}
-            onSelectStatus={selectStatus}
-          />
-        </div>
+      {/* <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        
         <div className="xl:col-span-5">
-          <ProspectFollowUpsCard
-            slug={slug}
-            data={dashboard}
-            loading={dashboardLoading}
-            onViewAll={() => {
-              setFollowUpsOnly(true);
-              scrollToTable();
-            }}
-          />
+          
         </div>
-      </div>
+      </div> */}
 
       {/* PROSPECTS TABLE + RECENT ACTIVITY */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
@@ -534,12 +518,32 @@ export default function ProspectListView({ slug }: Props) {
         </section>
 
         <div className="xl:col-span-4">
+          <div className="grid grid-cols-1 gap-4">
+            <ProspectPipelineCard
+              data={dashboard}
+              loading={dashboardLoading}
+              onSelectStatus={selectStatus}
+            />
+
+            <ProspectFollowUpsCard
+              slug={slug}
+              data={dashboard}
+              loading={dashboardLoading}
+              onViewAll={() => {
+                setFollowUpsOnly(true);
+                scrollToTable();
+              }}
+            />
+          </div>
+        </div>
+
+        {/* <div className="xl:col-span-4">
           <ProspectRecentActivityCard
             slug={slug}
             data={dashboard}
             loading={dashboardLoading}
           />
-        </div>
+        </div> */}
       </div>
     </div>
   );

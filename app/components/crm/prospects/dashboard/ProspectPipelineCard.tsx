@@ -97,7 +97,7 @@ export default function ProspectPipelineCard({
                       width: `${width}%`,
                       clipPath: "polygon(0 0, 100% 0, 96% 100%, 4% 100%)",
                     }}
-                    className={`flex h-8 items-center justify-center text-sm font-bold tabular-nums transition hover:brightness-110 ${colors.bar} ${colors.text}`}
+                    className={`flex h-8 items-center justify-center rounded-sm text-sm font-bold tabular-nums transition hover:brightness-110 ${colors.bar} ${colors.text}`}
                   >
                     {row.count.toLocaleString("en-GB")}
                   </button>

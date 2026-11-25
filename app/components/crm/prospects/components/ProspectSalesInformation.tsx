@@ -361,7 +361,7 @@ function DealValueInput({
           onChange(cleaned === "" || cleaned === "." ? "0" : cleaned);
         }}
         onBlur={() => setFocused(false)}
-        className="h-8 w-full rounded-md border border-slate-300 bg-white pl-9 pr-3 text-right text-sm tabular-nums text-slate-800 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-default disabled:bg-slate-50"
+        className="h-8 w-full rounded-md border border-slate-300 bg-white pl-6 pr-3 text-left text-sm tabular-nums text-slate-800 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-default disabled:bg-slate-50"
       />
     </div>
   );

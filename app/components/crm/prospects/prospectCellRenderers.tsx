@@ -185,10 +185,10 @@ export function renderProspectCell(
 
     case "assigned_to_name":
       return row.assigned_to_name ? (
-        <span className="inline-flex items-center gap-2 text-black dark:text-slate-300">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+        <span className="inline-flex items-center gap-2 text-black dark:text-slate-300 truncate">
+          {/* <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
             {initials(row.assigned_to_name)}
-          </span>
+          </span> */}
           <span className="truncate">{row.assigned_to_name}</span>
         </span>
       ) : (

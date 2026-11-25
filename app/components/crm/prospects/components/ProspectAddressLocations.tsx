@@ -456,12 +456,11 @@ export default function ProspectAddressLocations({
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead>
             <tr className="bg-emerald-50/60 text-slate-900">
-              <th className="w-[22%] px-4 py-2.5 font-semibold">
+              <th className="w-[26%] px-4 py-2.5 font-semibold">
                 Location Name
               </th>
-              <th className="w-[34%] px-3 py-2.5 font-semibold">Address</th>
-              <th className="w-[26%] px-3 py-2.5 font-semibold">Contact</th>
-              <th className="px-1 py-2.5 text-center font-semibold w-4">Primary</th>
+              <th className="w-[40%] px-3 py-2.5 font-semibold">Address</th>
+              <th className="w-[30%] px-3 py-2.5 font-semibold">Contact</th>
               {!readOnly && (
                 <th className="px-1 py-2.5 text-center font-semibold w-6">
                   Actions
@@ -501,6 +500,37 @@ export default function ProspectAddressLocations({
                       />
 
                       <div className="mt-2 flex flex-wrap gap-3">
+                        <label
+                          className={`flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition ${
+                            address.is_primary
+                              ? "border-amber-300 bg-amber-50 text-amber-800"
+                              : "border-slate-200 text-slate-600 hover:border-amber-300"
+                          }`}
+                          title="Primary location"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={address.is_primary}
+                            onChange={(event) =>
+                              updateRowDraft("is_primary", event.target.checked)
+                            }
+                            className="sr-only"
+                          />
+                          <Icon
+                            icon={
+                              address.is_primary
+                                ? "tabler:star-filled"
+                                : "tabler:star"
+                            }
+                            className={
+                              address.is_primary
+                                ? "h-3.5 w-3.5 text-amber-500"
+                                : "h-3.5 w-3.5 text-slate-400"
+                            }
+                          />
+                          Primary
+                        </label>
+
                         {[
                           { field: "is_billing" as const, label: "Billing" },
                           { field: "is_shipping" as const, label: "Shipping" },
@@ -594,19 +624,6 @@ export default function ProspectAddressLocations({
                       </div>
                     </td>
 
-                    {/* PRIMARY */}
-                    <td className="px-1 py-3 text-center w-4">
-                      <input
-                        type="checkbox"
-                        checked={address.is_primary}
-                        onChange={(event) =>
-                          updateRowDraft("is_primary", event.target.checked)
-                        }
-                        title="Primary location"
-                        className="mt-2 h-4 w-4 cursor-pointer accent-emerald-700"
-                      />
-                    </td>
-
                     {/* SAVE / CANCEL */}
                     <td className="px-1 py-3 w-6">
                       <div className="flex items-center justify-center">
@@ -643,15 +660,42 @@ export default function ProspectAddressLocations({
                     <div className="flex items-center gap-2 font-semibold text-slate-900">
                       <Icon
                         icon={getLocationIcon(address.label)}
-                        className="h-4 w-4 shrink-0 text-emerald-600"                        
+                        className="h-4 w-4 shrink-0 text-emerald-600"
                       />
-                      <span>
+                      <span className="min-w-0 break-words">
                         {address.label || (
                           <span className="font-normal italic text-slate-400">
                             Location {index + 1}
                           </span>
                         )}
                       </span>
+
+                      {/* Primary marker / one-click "set as primary" */}
+                      {address.is_primary ? (
+                        <span
+                          className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                          title="Primary location"
+                        >
+                          <Icon
+                            icon="tabler:star-filled"
+                            className="h-3 w-3 text-amber-500"
+                          />
+                          Primary
+                        </span>
+                      ) : (
+                        !readOnly && (
+                          <button
+                            type="button"
+                            onClick={() => setPrimary(index)}
+                            disabled={isEditing}
+                            title="Set as primary location"
+                            aria-label={`Set ${address.label || `Location ${index + 1}`} as primary`}
+                            className="shrink-0 rounded p-0.5 text-slate-300 transition hover:bg-amber-50 hover:text-amber-500 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Icon icon="tabler:star" className="h-3.5 w-3.5" />
+                          </button>
+                        )
+                      )}
                     </div>
                     {(address.is_billing || address.is_shipping) && (
                       <div className="mt-1 flex gap-1 pl-6 text-[11px] text-slate-500">
@@ -715,19 +759,6 @@ export default function ProspectAddressLocations({
                     </div>
                   </td>
 
-                  {/* PRIMARY */}
-                  <td className="px-1 py-3 text-center w-4">
-                    <input
-                      type="radio"
-                      name="prospect-primary-location"
-                      checked={address.is_primary}
-                      onChange={() => setPrimary(index)}
-                      disabled={isEditing || readOnly}
-                      title="Set as primary location"
-                      className="h-4 w-4 cursor-pointer accent-emerald-700 disabled:cursor-not-allowed"
-                    />
-                  </td>
-
                   {/* ACTIONS */}
                   {!readOnly && (
                   <td className="px-1 py-3 w-6">
@@ -760,7 +791,7 @@ export default function ProspectAddressLocations({
             {filteredRows.length === 0 && (
               <tr>
                 <td
-                  colSpan={readOnly ? 4 : 5}
+                  colSpan={readOnly ? 3 : 4}
                   className="px-4 py-8 text-center text-sm text-slate-500"
                 >
                   {addresses.length === 0

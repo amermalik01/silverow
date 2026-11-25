@@ -3,12 +3,8 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import type {
-  ProspectDashboardData,
-} from "@/types/prospect";
-import type {
-  ProspectStatus,
-} from "@/lib/validations/prospect.schema";
+import type { ProspectDashboardData } from "@/types/prospect";
+import type { ProspectStatus } from "@/lib/validations/prospect.schema";
 import { percentChange } from "./dashboardUtils";
 
 type Props = {
@@ -25,12 +21,42 @@ const CARDS: {
   icon: string;
   iconClass: string;
 }[] = [
-  { key: "Total", label: "Total Prospects", icon: "tabler:users", iconClass: "bg-emerald-50 text-emerald-700" },
-  { key: "New", label: "New", icon: "tabler:circle-plus", iconClass: "bg-emerald-50 text-emerald-700" },
-  { key: "Contacted", label: "Contacted", icon: "tabler:mail", iconClass: "bg-emerald-50 text-emerald-700" },
-  { key: "Proposal", label: "Proposal Sent", icon: "tabler:file-text", iconClass: "bg-emerald-50 text-emerald-700" },
-  { key: "Negotiation", label: "Negotiation", icon: "tabler:heart-handshake", iconClass: "bg-emerald-50 text-emerald-700" },
-  { key: "Lost", label: "Lost", icon: "tabler:circle-x", iconClass: "bg-rose-50 text-rose-600" },
+  {
+    key: "Total",
+    label: "Total Prospects",
+    icon: "tabler:users",
+    iconClass: "bg-emerald-50 text-emerald-700",
+  },
+  {
+    key: "New",
+    label: "New",
+    icon: "tabler:circle-plus",
+    iconClass: "bg-emerald-50 text-emerald-700",
+  },
+  {
+    key: "Contacted",
+    label: "Contacted",
+    icon: "tabler:mail",
+    iconClass: "bg-emerald-50 text-emerald-700",
+  },
+  {
+    key: "Proposal",
+    label: "Proposal Sent",
+    icon: "tabler:file-text",
+    iconClass: "bg-emerald-50 text-emerald-700",
+  },
+  {
+    key: "Negotiation",
+    label: "Negotiation",
+    icon: "tabler:heart-handshake",
+    iconClass: "bg-emerald-50 text-emerald-700",
+  },
+  {
+    key: "Lost",
+    label: "Lost",
+    icon: "tabler:circle-x",
+    iconClass: "bg-rose-50 text-rose-600",
+  },
 ];
 
 export default function ProspectKpiCards({
@@ -55,7 +81,9 @@ export default function ProspectKpiCards({
 
         const change = percentChange(current, previous);
         const isActive =
-          card.key === "Total" ? activeStatus === null : activeStatus === card.key;
+          card.key === "Total"
+            ? activeStatus === null
+            : activeStatus === card.key;
 
         return (
           <button
@@ -68,26 +96,30 @@ export default function ProspectKpiCards({
                 : "border-slate-200 dark:border-slate-800"
             }`}
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-row items-center gap-2.5">
               <span
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${card.iconClass}`}
               >
-                <Icon icon={card.icon} className="text-lg" />
+                <Icon icon={card.icon} className="text-xl text-emerald-600" />
               </span>
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                {card.label}
+                {card.label} =
+              </span>
+
+              <span className="text-sm font-semibold text-emerald-600">
+                {loading && !data ? (
+                  <span className="inline-block h-4 w-8 animate-pulse rounded bg-slate-100  dark:bg-slate-800" />
+                ) : (
+                  current.toLocaleString("en-GB")
+                )}
               </span>
             </div>
 
-            <p className="mt-3 text-3xl font-bold tabular-nums text-slate-900 dark:text-slate-100">
-              {loading && !data ? (
-                <span className="inline-block h-8 w-16 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
-              ) : (
-                current.toLocaleString("en-GB")
-              )}
-            </p>
+            {/* <p className="mt-1 text-3xl font-bold tabular-nums text-slate-900 dark:text-slate-100">
+              
+            </p> */}
 
-            <p className="mt-2 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+            {/* <p className="mt-2 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
               {change === null ? (
                 <span>
                   {data?.previous ? "No data in previous period" : "All time"}
@@ -119,7 +151,7 @@ export default function ProspectKpiCards({
                   <span>vs. previous period</span>
                 </>
               )}
-            </p>
+            </p> */}
           </button>
         );
       })}
