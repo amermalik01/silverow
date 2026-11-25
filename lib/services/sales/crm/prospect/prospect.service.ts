@@ -2616,6 +2616,81 @@ export class ProspectService {
      CHANGE STATUS
   ========================================================== */
 
+  /**
+   * Update only the follow-up fields, without saving the whole prospect form.
+   * Used by the Follow-up tab while the record is in view mode.
+   */
+  static async updateFollowUp(
+    companyId: string,
+    userId: string,
+    id: string,
+    payload: {
+      last_contacted_at: string | null;
+      next_follow_up_at: string | null;
+      reminder_enabled: boolean;
+    },
+  ): Promise<ProspectRecord> {
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const existingResult = await client.query<ProspectRecord>(
+        `
+        SELECT *
+        FROM prospects
+        WHERE id = $1
+          AND company_id = $2
+        FOR UPDATE
+        `,
+        [id, companyId],
+      );
+
+      const existing = existingResult.rows[0];
+
+      if (!existing) {
+        throw new Error("Prospect not found.");
+      }
+
+      if (existing.converted_party_id || existing.status === "Converted") {
+        throw new Error("This prospect has already been converted.");
+      }
+
+      const updateResult = await client.query<ProspectRecord>(
+        `
+        UPDATE prospects
+        SET
+          last_contacted_at = $1,
+          next_follow_up_at = $2,
+          reminder_enabled = $3,
+          updated_by = $4,
+          updated_at = NOW()
+        WHERE id = $5
+          AND company_id = $6
+        RETURNING *
+        `,
+        [
+          payload.last_contacted_at || null,
+          payload.next_follow_up_at || null,
+          Boolean(payload.reminder_enabled),
+          userId,
+          id,
+          companyId,
+        ],
+      );
+
+      const updated = getRecord(updateResult.rows, "Prospect not found.");
+
+      await client.query("COMMIT");
+      return updated;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   static async changeStatus(
     companyId: string,
     userId: string,

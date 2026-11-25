@@ -36,6 +36,7 @@ import ProspectConvertModal from "./components/ProspectConvertModal";
 import ProspectNotesList from "./components/ProspectNotesList";
 import AttachmentsTab from "@/app/components/shared/AttachmentsTab";
 import ProspectPricingTab from "./components/ProspectPricingTab";
+import ProspectFollowUpPanel from "./components/ProspectFollowUpPanel";
 import { useProspectOffers } from "./hooks/useProspectOffers";
 import ItemLookupModal, {
   type ItemLookupRecord,
@@ -537,6 +538,33 @@ export default function ProspectFormView({
         );
 
       case "follow-up":
+        /*
+         * Existing prospects: the follow-up is saved on its own, so it can be
+         * updated in view mode like activities and notes. New prospects keep
+         * the fields in the main form until the first save.
+         */
+        if (prospectId) {
+          return (
+            <ProspectFollowUpPanel
+              prospectId={prospectId}
+              readOnly={isConverted}
+              values={{
+                last_contacted_at: header.last_contacted_at,
+                next_follow_up_at: header.next_follow_up_at,
+                reminder_enabled: header.reminder_enabled,
+              }}
+              onSaved={(saved) =>
+                setHeader((current) => ({
+                  ...current,
+                  last_contacted_at: saved.last_contacted_at,
+                  next_follow_up_at: saved.next_follow_up_at,
+                  reminder_enabled: saved.reminder_enabled,
+                }))
+              }
+            />
+          );
+        }
+
         return (
           <fieldset disabled={readOnly} className="min-w-0 space-y-4">
             <h3 className="flex items-center gap-2 font-bold text-slate-900">
@@ -615,7 +643,7 @@ export default function ProspectFormView({
 
       case "notes":
         return prospectId ? (
-          <ProspectNotesList prospectId={prospectId} readonly={readOnly} />
+          <ProspectNotesList prospectId={prospectId} readonly={isConverted} />
         ) : (
           <div className="py-12 text-center">
             <Icon
@@ -633,8 +661,7 @@ export default function ProspectFormView({
           <AttachmentsTab
             module="prospect"
             recordId={prospectId}
-            readonly={readOnly}
-            onRequestEdit={isConverted ? undefined : () => setIsEditing(true)}
+            readonly={isConverted}
           />
         ) : (
           <div className="py-12 text-center">
@@ -654,7 +681,7 @@ export default function ProspectFormView({
             offersState={offersState}
             addItemsRequested={addItemsRequested}
             onAddItemsHandled={() => setAddItemsRequested(false)}
-            readOnly={readOnly}
+            readOnly={isConverted}
             vatBusinessGroupId={header.vat_business_group_id || null}
             slug={slug}
             canConvertToQuote={!isConverted}
