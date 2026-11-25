@@ -661,7 +661,7 @@ export default function PartyRecord({
                 onClick={() => setActiveTab(tab)}
                 className={`capitalize px-4 py-2.5 text-xs font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
                   activeTab === tab
-                    ? "border-blue-600 text-blue-600 font-semibold"
+                    ? "border-emerald-600 text-emerald-600 font-semibold"
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
               >
@@ -800,7 +800,8 @@ export default function PartyRecord({
                   <Button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    variant="edit"
+                    // variant="edit"
+                    variant="save"
                   >
                     Edit
                   </Button>
