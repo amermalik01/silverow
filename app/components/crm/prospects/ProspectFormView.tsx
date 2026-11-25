@@ -13,6 +13,7 @@ import type {
   ProspectContact,
   ProspectAddress,
   ProspectDetails,
+  ProspectInterestedProduct,
   ProspectPayload,
   ProspectTab,
 } from "@/types/prospect";
@@ -36,6 +37,9 @@ import ProspectNotesList from "./components/ProspectNotesList";
 import AttachmentsTab from "@/app/components/shared/AttachmentsTab";
 import ProspectPricingTab from "./components/ProspectPricingTab";
 import { useProspectOffers } from "./hooks/useProspectOffers";
+import ItemLookupModal, {
+  type ItemLookupRecord,
+} from "@/app/components/shared/modals/ItemLookupModal";
 
 import Breadcrumbs from "../../layout/shared/breadcrumb/BreadcrumbComp";
 import { useLoader } from "@/app/context/LoaderContext";
@@ -238,15 +242,38 @@ export default function ProspectFormView({
 
   const [salespersonModalOpen, setSalespersonModalOpen] = useState(false);
 
-  /* Price offers (Pricing tab + Interested Products) */
+  /* Price offers (Pricing tab) */
   const offersState = useProspectOffers(prospectId);
   const [addItemsRequested, setAddItemsRequested] = useState(false);
 
-  const interestedProducts = useMemo(
-    () =>
-      offersState.primaryOffer?.lines.map((line) => line.item_name) ?? [],
-    [offersState.primaryOffer],
-  );
+  /* Interested Products (Sales Information) — separate from pricing */
+  const [interestedProducts, setInterestedProducts] = useState<
+    ProspectInterestedProduct[]
+  >([]);
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
+
+  const addInterestedProducts = (items: ItemLookupRecord[]) => {
+    setProductPickerOpen(false);
+    setInterestedProducts((current) => {
+      const existing = new Set(current.map((product) => product.item_id));
+      const added = items
+        .filter((item) => !existing.has(item.id))
+        .map((item) => ({
+          item_id: item.id,
+          item_code: item.item_code || null,
+          item_name: item.name,
+        }));
+      return [...current, ...added];
+    });
+  };
+
+  const removeInterestedProduct = (itemId: string | null, index: number) => {
+    setInterestedProducts((current) =>
+      current.filter((product, i) =>
+        itemId ? product.item_id !== itemId : i !== index,
+      ),
+    );
+  };
 
   const isConverted =
     header.status === "Converted" ||
@@ -263,8 +290,7 @@ export default function ProspectFormView({
 
   const openProductPicker = () => {
     if (readOnly) return;
-    setActiveWorkspaceTab("pricing");
-    setAddItemsRequested(true);
+    setProductPickerOpen(true);
   };
 
   const primaryContact = useMemo(
@@ -310,6 +336,8 @@ export default function ProspectFormView({
       setAddresses(
         result.addresses.length ? result.addresses : [makeEmptyAddress()],
       );
+
+      setInterestedProducts(result.interested_products ?? []);
 
       const prospect = result.prospect;
 
@@ -420,6 +448,10 @@ export default function ProspectFormView({
             is_billing: address.is_billing,
             is_shipping: address.is_shipping,
           })),
+
+        interested_products: interestedProducts
+          .filter((product) => Boolean(product.item_id))
+          .map((product) => ({ item_id: product.item_id as string })),
       };
 
       const response = await fetch(
@@ -707,9 +739,12 @@ export default function ProspectFormView({
         onClose={() => router.push(`/${slug}/sales/prospects`)}
       />
 
-      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-12">
-        {/* LEFT COLUMN */}
-        <div className="space-y-4 xl:col-span-5">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        {/*
+         * Row 1: Basic Information sets the height; Locations fills the
+         * same height (absolute on xl) and scrolls its rows.
+         */}
+        <div className="xl:col-span-5">
           <ProspectGeneralTab
             value={header}
             contacts={contacts}
@@ -719,7 +754,20 @@ export default function ProspectFormView({
             onAddressChange={setAddresses}
             readOnly={readOnly}
           />
+        </div>
 
+        <div className="relative min-h-[260px] xl:col-span-7">
+          <div className="h-full xl:absolute xl:inset-0">
+            <ProspectAddressLocations
+              addresses={addresses}
+              onChange={setAddresses}
+              readOnly={readOnly}
+            />
+          </div>
+        </div>
+
+        {/* Row 2: Sales Information | Activity / Notes / Pricing tabs */}
+        <div className="self-start xl:col-span-5">
           <ProspectSalesInformation
             status={header.status}
             source={header.source}
@@ -745,20 +793,14 @@ export default function ProspectFormView({
             }
             onLostReasonChange={(value) => updateHeader("lost_reason", value)}
             interestedProducts={interestedProducts}
-            productsEnabled={Boolean(prospectId)}
+            productsEnabled
             onManageProducts={openProductPicker}
+            onRemoveProduct={removeInterestedProduct}
             readOnly={readOnly}
           />
         </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="space-y-4 xl:col-span-7">
-          <ProspectAddressLocations
-            addresses={addresses}
-            onChange={setAddresses}
-            readOnly={readOnly}
-          />
-
+        <div className="min-w-0 self-start xl:col-span-7">
           <ProspectWorkspaceTabs
             activeTab={activeWorkspaceTab}
             onChange={setActiveWorkspaceTab}
@@ -768,6 +810,17 @@ export default function ProspectFormView({
           </ProspectWorkspaceTabs>
         </div>
       </div>
+
+      {/* INTERESTED PRODUCTS PICKER */}
+      {productPickerOpen && (
+        <ItemLookupModal
+          open={productPickerOpen}
+          onClose={() => setProductPickerOpen(false)}
+          multiple
+          onSelect={(item) => addInterestedProducts([item])}
+          onSelectMultiple={(items) => addInterestedProducts(items)}
+        />
+      )}
 
       {/* ACTIVITY MODAL */}
       {activityOpen && prospectId && (

@@ -400,10 +400,19 @@ export interface ProspectOfferStatusPayload {
 // Prospect details
 // -----------------------------------------------------------------------------
 
+export type ProspectInterestedProduct = {
+  id?: string;
+  item_id: string | null;
+  item_code: string | null;
+  item_name: string;
+};
+
 export type ProspectDetails = {
   prospect: Prospect;
   contacts: ProspectContact[];
   addresses: ProspectAddress[];
+  /** Sales Information "Interested Products" (separate from offers). */
+  interested_products?: ProspectInterestedProduct[];
   activities: ProspectActivity[];
   notes: ProspectNote[];
   statusHistory: ProspectStatusHistory[];

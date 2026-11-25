@@ -652,12 +652,12 @@ export default function ProspectPricingTab({
                 <select
                   value={offer.id}
                   onChange={(event) => setSelectedOfferId(event.target.value)}
-                  className="h-7 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-700"
+                  className="h-7 rounded-md border border-slate-300 bg-white pl-2 pr-6 text-xs text-slate-700"
                 >
                   {offers.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.offer_no}
-                      {o.is_primary ? " · Primary" : ""}
+                      {/* {o.is_primary ? " · Primary" : ""} */}
                     </option>
                   ))}
                 </select>
@@ -673,7 +673,7 @@ export default function ProspectPricingTab({
                 {offer.status.charAt(0) + offer.status.slice(1).toLowerCase()}
               </span>
 
-              {offer.sales_quote_id && (
+              {/* {offer.sales_quote_id && (
                 <a
                   href={`/${slug ?? ""}/sales/quotes/${offer.sales_quote_id}`}
                   className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 font-semibold text-sky-700 hover:underline"
@@ -682,7 +682,7 @@ export default function ProspectPricingTab({
                   <Icon icon="lucide:file-check-2" />
                   Quote {offer.sales_quote_no ?? ""}
                 </a>
-              )}
+              )} */}
 
               {offer.is_primary && offers.length > 1 && (
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-800">
@@ -694,6 +694,36 @@ export default function ProspectPricingTab({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+
+          {!editing &&
+            offer &&
+            (offer.sales_quote_id ? (
+              <a
+                href={`/${slug ?? ""}/sales/quotes/${offer.sales_quote_id}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 font-semibold text-sky-800 hover:bg-sky-100"
+              >
+                <Icon icon="lucide:file-check-2" />
+                View Sales Quote {offer.sales_quote_no ?? ""}
+                <Icon icon="lucide:external-link" className="h-3 w-3" />
+              </a>
+            ) : (
+              canConvertToQuote &&
+              !editing &&
+              offer.lines.length > 0 &&
+              !["CANCELLED", "REJECTED", "EXPIRED"].includes(offer.status) && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setQuoteConfirmOpen(true)}
+                  className="h-9 inline-flex items-center gap-1.5 rounded-lg bg-emerald-800 px-3 py-1.5 font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"
+                >
+                  <Icon icon="lucide:file-output" />
+                  Convert to Sales Quote
+                </button>
+              )
+            ))}
+
+
           {editing ? (
             <>
               <button
@@ -758,6 +788,7 @@ export default function ProspectPricingTab({
               </button>
             </>
           )}
+          
         </div>
       </div>
 
@@ -1128,32 +1159,6 @@ export default function ProspectPricingTab({
                 {offer.notes && <span>Notes: {offer.notes}</span>}
               </div>
 
-              {offer.sales_quote_id ? (
-                <a
-                  href={`/${slug ?? ""}/sales/quotes/${offer.sales_quote_id}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 font-semibold text-sky-800 hover:bg-sky-100"
-                >
-                  <Icon icon="lucide:file-check-2" />
-                  View Sales Quote {offer.sales_quote_no ?? ""}
-                  <Icon icon="lucide:external-link" className="h-3 w-3" />
-                </a>
-              ) : (
-                canConvertToQuote &&
-                !editing &&
-                offer.lines.length > 0 &&
-                !["CANCELLED", "REJECTED", "EXPIRED"].includes(offer.status) && (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => setQuoteConfirmOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-800 px-3 py-1.5 font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"
-                  >
-                    <Icon icon="lucide:file-output" />
-                    Convert to Sales Quote
-                  </button>
-                )
-              )}
-
               {!readOnly && (
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="flex items-center gap-1">
@@ -1262,9 +1267,10 @@ export default function ProspectPricingTab({
                 <p className="mt-1 text-xs leading-5 text-slate-500">
                   A draft sales quote will be created from offer{" "}
                   <span className="font-semibold">{offer.offer_no}</span> (
-                  {offer.lines.length} item{offer.lines.length === 1 ? "" : "s"},{" "}
-                  {money(Number(offer.grand_total))} incl. VAT). It will appear in
-                  the Sales Quotes module and this offer will be locked.
+                  {offer.lines.length} item{offer.lines.length === 1 ? "" : "s"}
+                  , {money(Number(offer.grand_total))} incl. VAT). It will
+                  appear in the Sales Quotes module and this offer will be
+                  locked.
                 </p>
               </div>
             </div>
@@ -1301,7 +1307,10 @@ export default function ProspectPricingTab({
                 className="inline-flex items-center gap-2 rounded-lg bg-emerald-800 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"
               >
                 {convertingQuote && (
-                  <Icon icon="lucide:loader-2" className="h-4 w-4 animate-spin" />
+                  <Icon
+                    icon="lucide:loader-2"
+                    className="h-4 w-4 animate-spin"
+                  />
                 )}
                 {convertingQuote ? "Converting..." : "Convert"}
               </button>

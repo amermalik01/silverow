@@ -337,6 +337,22 @@ export class ProspectService {
       ),
     ]);
 
+    const interestedResult = await pool.query<{
+      id: string;
+      item_id: string | null;
+      item_code: string | null;
+      item_name: string;
+    }>(
+      `
+      SELECT id, item_id, item_code, item_name
+      FROM prospect_interested_products
+      WHERE company_id = $1
+        AND prospect_id = $2
+      ORDER BY sort_order ASC, created_at ASC
+      `,
+      [companyId, id],
+    );
+
     const prospect: Prospect = {
       ...prospectRecord,
       source: prospectRecord.source as Prospect["source"],
@@ -350,6 +366,7 @@ export class ProspectService {
         ...address,
         label: address.label ?? "Head Office",
       })),
+      interested_products: interestedResult.rows,
       activities: activitiesResult.rows as ProspectActivity[],
       notes: notesResult.rows,
       statusHistory: historyResult.rows as ProspectStatusHistory[],
@@ -402,6 +419,13 @@ export class ProspectService {
         companyId,
         prospect.id,
         payload.addresses,
+      );
+
+      await this.syncInterestedProducts(
+        client,
+        companyId,
+        prospect.id,
+        payload.interested_products,
       );
 
       //   await this.insertNewNotes(
@@ -486,6 +510,13 @@ export class ProspectService {
       await this.syncContacts(client, companyId, id, payload.contacts);
 
       await this.syncAddresses(client, companyId, id, payload.addresses);
+
+      await this.syncInterestedProducts(
+        client,
+        companyId,
+        id,
+        payload.interested_products,
+      );
 
       //   await this.insertNewNotes(client, companyId, id, userId, payload.notes);
 
@@ -1413,6 +1444,69 @@ export class ProspectService {
      SYNC CONTACTS
      Payload is treated as the complete current contact list.
   ========================================================== */
+
+  /**
+   * Replaces the interested-products list. Code and name are snapshotted
+   * from the items table. `undefined` leaves the saved list untouched.
+   */
+  private static async syncInterestedProducts(
+    client: PoolClient,
+    companyId: string,
+    prospectId: string,
+    products: { item_id: string }[] | undefined,
+  ): Promise<void> {
+    if (products === undefined) return;
+
+    const itemIds = [...new Set(products.map((product) => product.item_id))];
+
+    await client.query(
+      `
+      DELETE FROM prospect_interested_products
+      WHERE company_id = $1
+        AND prospect_id = $2
+      `,
+      [companyId, prospectId],
+    );
+
+    if (!itemIds.length) return;
+
+    const itemsResult = await client.query<{
+      id: string;
+      item_code: string | null;
+      name: string;
+    }>(
+      `
+      SELECT id, item_code, name
+      FROM items
+      WHERE company_id = $1
+        AND id = ANY($2::uuid[])
+        AND deleted_at IS NULL
+      `,
+      [companyId, itemIds],
+    );
+
+    const items = new Map(itemsResult.rows.map((item) => [item.id, item]));
+
+    if (items.size !== itemIds.length) {
+      throw new Error(
+        "One or more interested products were not found or have been deleted.",
+      );
+    }
+
+    for (const [index, itemId] of itemIds.entries()) {
+      const item = items.get(itemId)!;
+
+      await client.query(
+        `
+        INSERT INTO prospect_interested_products (
+          company_id, prospect_id, item_id, item_code, item_name, sort_order
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        `,
+        [companyId, prospectId, item.id, item.item_code, item.name, index],
+      );
+    }
+  }
 
   private static async syncContacts(
     client: PoolClient,

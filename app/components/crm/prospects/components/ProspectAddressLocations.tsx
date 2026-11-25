@@ -403,7 +403,7 @@ export default function ProspectAddressLocations({
   ============================================================ */
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="flex h-full min-h-0 flex-col rounded-xl border border-slate-200 bg-white shadow-sm">
       {/* HEADER */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
         <div className="flex items-center gap-3">
@@ -452,10 +452,15 @@ export default function ProspectAddressLocations({
       </div>
 
       {/* TABLE */}
-      <div className="overflow-x-auto">
+      {/*
+       * Height follows the Basic Information card (see ProspectFormView);
+       * on smaller screens it is capped at about two locations. Rows
+       * scroll under a sticky header.
+       */}
+      <div className="max-h-[300px] min-h-0 flex-1 overflow-auto rounded-b-xl xl:max-h-none">
         <table className="w-full min-w-[760px] text-left text-sm">
-          <thead>
-            <tr className="bg-emerald-50/60 text-slate-900">
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-emerald-50 text-slate-900 shadow-[0_1px_0_0_rgb(226_232_240)]">
               <th className="w-[26%] px-4 py-2.5 font-semibold">
                 Location Name
               </th>

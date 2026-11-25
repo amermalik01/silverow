@@ -264,6 +264,14 @@ export const ProspectActivitySchema = z.object({
 // Prospect payload
 // -----------------------------------------------------------------------------
 
+/**
+ * Interested products (Sales Information). Code and name are taken from
+ * the item on the server. Omit the array to leave the saved list untouched.
+ */
+export const ProspectInterestedProductSchema = z.object({
+  item_id: z.string().uuid("Select a valid product."),
+});
+
 export const ProspectPayloadSchema = z
   .object({
     prospect: ProspectInputSchema,
@@ -271,6 +279,11 @@ export const ProspectPayloadSchema = z
     contacts: z.array(ProspectContactSchema).default([]),
 
     addresses: z.array(ProspectAddressSchema).default([]),
+
+    interested_products: z
+      .array(ProspectInterestedProductSchema)
+      .max(100, "A maximum of 100 interested products is allowed.")
+      .optional(),
   })
   .superRefine((payload, context) => {
     const primaryContacts = payload.contacts.filter(

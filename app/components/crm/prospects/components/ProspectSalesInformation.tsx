@@ -1,11 +1,16 @@
 // app/components/crm/prospects/components/ProspectSalesInformation.tsx
 
-
 "use client";
 
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 import type { Prospect } from "@/types/prospect";
+
+type InterestedProductChip = {
+  item_id: string | null;
+  item_code: string | null;
+  item_name: string;
+};
 
 type CurrencyOption = {
   id: string;
@@ -42,12 +47,14 @@ type Props = {
   onAssignedToClick: () => void;
   onDealValueChange: (value: string) => void;
   onLostReasonChange: (value: string) => void;
-  /** Item names from the primary price offer. */
-  interestedProducts?: string[];
-  /** False until the prospect has been saved. */
+  /** Interested products — separate from pricing offers. */
+  interestedProducts?: InterestedProductChip[];
+  /** Kept for compatibility; products can be added before the first save. */
   productsEnabled?: boolean;
-  /** Opens the item picker in the Pricing tab. */
+  /** Opens the product picker. */
   onManageProducts?: () => void;
+  /** Removes a product from the list (edit mode). */
+  onRemoveProduct?: (itemId: string | null, index: number) => void;
   /** View mode: all fields disabled. */
   readOnly?: boolean;
 };
@@ -78,8 +85,8 @@ export default function ProspectSalesInformation({
   onDealValueChange,
   onLostReasonChange,
   interestedProducts = [],
-  productsEnabled = false,
   onManageProducts,
+  onRemoveProduct,
   readOnly = false,
 }: Props) {
   return (
@@ -156,9 +163,7 @@ export default function ProspectSalesInformation({
         <select
           value={priority}
           onChange={(event) =>
-            onPriorityChange(
-              event.target.value as Prospect["priority"],
-            )
+            onPriorityChange(event.target.value as Prospect["priority"])
           }
           className={selectClass}
         >
@@ -231,9 +236,7 @@ export default function ProspectSalesInformation({
           ))}
         </select>
 
-        <label className={labelClass}>
-          Estimated Deal Value
-        </label>
+        <label className={labelClass}>Estimated Deal Value</label>
 
         <DealValueInput
           value={estimatedDealValue}
@@ -241,17 +244,38 @@ export default function ProspectSalesInformation({
           onChange={onDealValueChange}
         />
 
-        {/* <label className={`${labelClass} self-start pt-1.5`}>
+        <label className={`${labelClass} self-start pt-1.5`}>
           Interested Products
         </label>
 
         <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2 py-1">
-          {interestedProducts.map((name) => (
+          {interestedProducts.map((product, index) => (
             <span
-              key={name}
-              className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800"
+              key={product.item_id ?? `${product.item_name}-${index}`}
+              title={[product.item_code, product.item_name]
+                .filter(Boolean)
+                .join(" · ")}
+              className="inline-flex max-w-full items-center gap-1 rounded-md bg-emerald-50 py-0.5 pl-2 pr-1 text-xs font-medium text-emerald-800"
             >
-              {name}
+              {product.item_code && (
+                <span className="font-semibold text-emerald-900">
+                  {product.item_code}
+                </span>
+              )}
+              {product.item_code && <span className="text-emerald-400">·</span>}
+              <span className="truncate">{product.item_name}</span>
+
+              {!readOnly && onRemoveProduct && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveProduct(product.item_id, index)}
+                  title="Remove product"
+                  aria-label={`Remove ${product.item_name}`}
+                  className="rounded p-0.5 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-900"
+                >
+                  <Icon icon="lucide:x" className="h-3 w-3" />
+                </button>
+              )}
             </span>
           ))}
 
@@ -259,7 +283,7 @@ export default function ProspectSalesInformation({
             interestedProducts.length === 0 && (
               <span className="text-xs text-slate-400">—</span>
             )
-          ) : productsEnabled ? (
+          ) : (
             <button
               type="button"
               onClick={onManageProducts}
@@ -268,12 +292,8 @@ export default function ProspectSalesInformation({
               <Icon icon="lucide:plus" />
               {interestedProducts.length ? "Add" : "Select products"}
             </button>
-          ) : (
-            <span className="text-xs text-slate-400">
-              Save the prospect to add products
-            </span>
           )}
-        </div> */}
+        </div>
 
         {status === "Lost" && (
           <>
@@ -283,9 +303,7 @@ export default function ProspectSalesInformation({
 
             <textarea
               value={lostReason}
-              onChange={(event) =>
-                onLostReasonChange(event.target.value)
-              }
+              onChange={(event) => onLostReasonChange(event.target.value)}
               rows={2}
               className="w-full rounded-md border border-slate-300 p-2 text-sm outline-none focus:border-emerald-600"
               placeholder="Enter reason..."
