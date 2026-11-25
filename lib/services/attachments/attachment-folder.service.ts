@@ -87,11 +87,11 @@ export class AttachmentFolderService {
     await pool.query(
       `
       INSERT INTO attachment_folders (company_id, scope, name, sort_order)
-      SELECT $1, $2, d.name, d.ord * 10
+      SELECT $1::uuid, $2::varchar, d.name, d.ord * 10
       FROM unnest($3::text[]) WITH ORDINALITY AS d(name, ord)
       WHERE NOT EXISTS (
         SELECT 1 FROM attachment_folders
-        WHERE company_id = $1 AND scope = $2
+        WHERE company_id = $1::uuid AND scope = $2::varchar
       )
       ON CONFLICT DO NOTHING
       `,
@@ -138,10 +138,10 @@ export class AttachmentFolderService {
       `
       INSERT INTO attachment_folders (company_id, scope, name, sort_order, created_by)
       VALUES (
-        $1, $2, $3,
+        $1::uuid, $2::varchar, $3::varchar,
         COALESCE((SELECT MAX(sort_order) FROM attachment_folders
-                  WHERE company_id = $1 AND scope = $2), 0) + 10,
-        $4
+                  WHERE company_id = $1::uuid AND scope = $2::varchar), 0) + 10,
+        $4::uuid
       )
       RETURNING id, scope, name, sort_order, 0 AS file_count
       `,
