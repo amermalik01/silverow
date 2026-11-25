@@ -476,7 +476,9 @@ export async function PUT(req: Request, { params }: Props) {
         string,
         { priceListItemId: string; priceListId: string }
       >();
+      const existingItemIds = new Set<string>();
       for (const row of existingPlItemsRes.rows) {
+        existingItemIds.add(String(row.price_list_item_id));
         // Key format: itemId_priceListId (or just itemId if unique per list)
         const key = `${row.item_id}_${row.price_list_id}`;
         existingItemsMap.set(key, {
@@ -551,39 +553,90 @@ export async function PUT(req: Request, { params }: Props) {
         }
       }
 
-      // Clear old price lists for this party before re-syncing
-      await client.query("DELETE FROM price_lists WHERE party_id = $1", [id]);
+      // Sync price lists by id (update in place, insert new, delete removed).
+      // Deleting every list up-front cascades to price_list_items, which left
+      // preserved item ids dangling and broke the volume-discount FK.
+      const existingListsRes = await client.query(
+        `SELECT id FROM price_lists WHERE party_id = $1 AND company_id = $2`,
+        [id, companyId],
+      );
+      const existingListIds = new Set<string>(
+        existingListsRes.rows.map((r: { id: string }) => String(r.id)),
+      );
+      const keptListIds: string[] = [];
+      const keptItemIds: string[] = [];
 
       for (const pl of rawPriceLists) {
-        const plResult = await client.query(
-          `
-        INSERT INTO price_lists (
-          company_id, name, list_type, party_id, salesperson_id, offer_method, start_date, end_date, currency_id, status, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-        RETURNING id;
-        `,
-          [
-            companyId,
-            pl.name || "Price List",
-            pl.list_type,
-            id,
-            toCleanOrNull(pl.salesperson_id),
-            pl.offer_method || "Phone",
-            pl.start_date,
-            pl.end_date,
-            pl.currency_id,
-            1,
-          ],
-        );
+        const incomingListId = pl.id ? String(pl.id) : "";
+        let priceListId: string;
 
-        const priceListId = plResult.rows[0].id;
+        if (incomingListId && existingListIds.has(incomingListId)) {
+          await client.query(
+            `
+          UPDATE price_lists SET
+            name = $1,
+            list_type = $2,
+            salesperson_id = $3,
+            offer_method = $4,
+            start_date = $5,
+            end_date = $6,
+            currency_id = $7,
+            updated_at = NOW()
+          WHERE id = $8 AND party_id = $9 AND company_id = $10
+          `,
+            [
+              pl.name || "Price List",
+              pl.list_type,
+              toCleanOrNull(pl.salesperson_id),
+              pl.offer_method || "Phone",
+              pl.start_date,
+              pl.end_date,
+              pl.currency_id,
+              incomingListId,
+              id,
+              companyId,
+            ],
+          );
+          priceListId = incomingListId;
+        } else {
+          const plResult = await client.query(
+            `
+          INSERT INTO price_lists (
+            company_id, name, list_type, party_id, salesperson_id, offer_method, start_date, end_date, currency_id, status, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+          RETURNING id;
+          `,
+            [
+              companyId,
+              pl.name || "Price List",
+              pl.list_type,
+              id,
+              toCleanOrNull(pl.salesperson_id),
+              pl.offer_method || "Phone",
+              pl.start_date,
+              pl.end_date,
+              pl.currency_id,
+              1,
+            ],
+          );
+          priceListId = plResult.rows[0].id;
+        }
+
+        keptListIds.push(priceListId);
         const items = Array.isArray(pl.items) ? pl.items : [];
 
         for (const item of items) {
           const itemId = item.item_id;
           const lookupKey = `${itemId}_${pl.id}`;
-          let priceListItemId =
-            item.id || existingItemsMap.get(lookupKey)?.priceListItemId;
+          const incomingItemId = item.id ? String(item.id) : "";
+          let priceListItemId: string | undefined =
+            incomingItemId && existingItemIds.has(incomingItemId)
+              ? incomingItemId
+              : existingItemsMap.get(lookupKey)?.priceListItemId;
+          // Never reuse the same row twice within one save
+          if (priceListItemId && keptItemIds.includes(priceListItemId)) {
+            priceListItemId = undefined;
+          }
 
           const newOfferedPrice = toNumberOrDefault(item.offered_price, 0);
           const newMinQty = toNumberOrDefault(item.min_order_qty, 1);
@@ -686,6 +739,8 @@ export async function PUT(req: Request, { params }: Props) {
             );
           }
 
+          keptItemIds.push(priceListItemId as string);
+
           // Sync Volume Discount Tiers
           await client.query(
             `DELETE FROM price_list_volume_discounts WHERE price_list_item_id = $1`,
@@ -715,6 +770,28 @@ export async function PUT(req: Request, { params }: Props) {
           }
         }
       }
+
+      // Remove items and lists that were dropped from the form
+      await client.query(
+        `
+      DELETE FROM price_list_items pli
+      USING price_lists pl
+      WHERE pli.price_list_id = pl.id
+        AND pl.party_id = $1
+        AND pl.company_id = $2
+        AND NOT (pli.id = ANY($3::uuid[]))
+      `,
+        [id, companyId, keptItemIds],
+      );
+      await client.query(
+        `
+      DELETE FROM price_lists
+      WHERE party_id = $1
+        AND company_id = $2
+        AND NOT (id = ANY($3::uuid[]))
+      `,
+        [id, companyId, keptListIds],
+      );
 
       await client.query("COMMIT");
       return NextResponse.json(partyResult.rows[0], { status: 200 });

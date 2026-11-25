@@ -137,10 +137,18 @@ export default function PartyDetailHeader({
 
   return (
     <>
-      <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl p-2 mb-6">
+      {/* <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl p-2 mb-6"> */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
+          {/* <div> */}
+          <div className="flex flex-col justify-between gap-4 px-5 py-3 lg:flex-row lg:items-center">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-50">
+                <Icon
+                  icon="heroicons:building-office"
+                  className="text-3xl text-emerald-700"
+                />
+              </div>
               <div>
                 {/* <h1 className="text-2xl font-bold capitalize">Customer</h1> */}
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -211,8 +219,7 @@ export default function PartyDetailHeader({
               </button>
             </div>
 
-            {/* <div className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30"> */}
-            <button
+            {/* <button
               type="button"
               onClick={onOpenActivities}
               title="View Activities"
@@ -231,10 +238,6 @@ export default function PartyDetailHeader({
                     {formatFCY(outstandingBalance, currencyCode)} / LCY{" "}
                     {lcyFormatter.format(lcyBalance || 0)}
                   </div>
-
-                  {/* <div className="mt-0.5 text-[10px] font-medium text-amber-700/70 dark:text-amber-300/70">
-                    LCY {lcyFormatter.format(lcyBalance || 0)}
-                  </div> */}
                 </div>
 
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-amber-600 shadow-sm dark:bg-amber-900/40 dark:text-amber-400">
@@ -243,7 +246,6 @@ export default function PartyDetailHeader({
               </div>
             </button>
 
-            {/* <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-fuchsia-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-violet-900/50 dark:from-violet-950/40 dark:to-fuchsia-950/30"> */}
             <button
               type="button"
               onClick={onOpenFinance}
@@ -268,8 +270,7 @@ export default function PartyDetailHeader({
                   <Icon icon="lucide:credit-card" className="w-4 h-4" />
                 </div>
               </div>
-            </button>
-              {/* </div> */}
+            </button> */}
 
             <div className="flex items-center gap-2">
               {party.is_crm_lead && !party.is_customer && (
@@ -544,159 +545,4 @@ export default function PartyDetailHeader({
       )}
     </>
   );
-}
-
-{
-  /* Sequence Codes */
-}
-{
-  /* <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-slate-500">
-              {party.crm_code && (
-                <span className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded font-mono">
-                  CRM: {party.crm_code}
-                </span>
-              )}
-              {party.srm_code && (
-                <span className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded font-mono">
-                  SRM: {party.srm_code}
-                </span>
-              )}
-              {party.customer_code && (
-                <span className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded font-mono font-semibold border border-emerald-200 dark:border-emerald-900">
-                  Cust Code: {party.customer_code}
-                </span>
-              )}
-              {party.supplier_code && (
-                <span className="bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded font-mono font-semibold border border-indigo-200 dark:border-indigo-900">
-                  Supp Code: {party.supplier_code}
-                </span>
-              )}
-            </div> */
-}
-
-{
-  /* <div className="flex items-center gap-3 flex-wrap">
-            <div className="px-3.5 py-2 bg-amber-50/80 dark:bg-amber-950/30 rounded-xl border border-amber-200/60 dark:border-amber-900/40 shadow-sm">
-              <span className="text-[12px] text-amber-700 dark:text-amber-400 block tracking-wider capitalize">
-                Open Outstanding
-              </span>
-              <div className="text-[10px] text-amber-900 dark:text-amber-300">
-                FCY: {formatFCY(outstandingBalance, currencyCode)} / LCY:{" "}
-                {lcyFormatter.format(lcyBalance || 0)}
-              </div>
-            </div>
-
-            <div className="px-3.5 py-2 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-900/40 shadow-sm">
-              <span className="text-[12px] text-blue-700 dark:text-blue-400 block tracking-wider capitalize">
-                Open Entries
-              </span>
-              <div className="text-[10px] font-mono text-blue-900 dark:text-blue-300">
-                {openEntriesCount} Entries
-              </div>
-            </div>
-
-            <div className="px-3.5 py-2 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-900/40 shadow-sm">
-              <span className="text-[12px] text-blue-700 dark:text-blue-400 block tracking-wider capitalize">
-                Credit Limits
-              </span>
-              <div className="text-[10px] font-mono text-blue-900 dark:text-blue-300">
-                {party.credit_limit}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {party.is_crm_lead && !party.is_customer && (
-                <Button
-                  type="button"
-                  onClick={() => openConfirmModal("to_customer")}
-                  disabled={loading !== null}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
-                >
-                  {loading === "to_customer" ? (
-                    <>
-                      <Icon
-                        icon="svg-spinners:180-ring-with-bg"
-                        className="w-3.5 h-3.5"
-                      />
-                      <span>Converting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon="lucide:user-check" className="w-3.5 h-3.5" />
-                      <span>Convert to Customer</span>
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {party.is_srm_vendor && !party.is_supplier && (
-                <Button
-                  type="button"
-                  onClick={() => openConfirmModal("to_supplier")}
-                  disabled={loading !== null}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
-                >
-                  {loading === "to_supplier" ? (
-                    <>
-                      <Icon
-                        icon="svg-spinners:180-ring-with-bg"
-                        className="w-3.5 h-3.5"
-                      />
-                      <span>Converting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon="lucide:truck" className="w-3.5 h-3.5" />
-                      <span>Convert to Supplier</span>
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div> */
-}
-{
-  /* Open Entries */
-}
-
-{
-  /* <span
-                className={`px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize ${
-                  party.status === "active"
-                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
-                    : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                }`}
-              >
-                {party.status || "active"}
-              </span> */
-}
-{
-  /* <div className="group relative overflow-hidden min-w-[160px] px-4 py-3 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-blue-900/50 dark:from-blue-950/40 dark:to-indigo-950/30">
-              <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-blue-400/10 group-hover:bg-blue-400/20 transition-colors" />
-
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-blue-700 dark:text-blue-400">
-                    <Icon icon="lucide:files" className="w-3.5 h-3.5" />
-                    Open Entries
-                  </div>
-
-                  <div className="mt-1.5 text-xl font-bold tracking-tight text-blue-950 dark:text-blue-100">
-                    {openEntriesCount}
-                  </div>
-
-                  <div className="mt-0.5 text-[10px] font-medium text-blue-700/70 dark:text-blue-300/70">
-                    Outstanding entries
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-blue-600 shadow-sm dark:bg-blue-900/40 dark:text-blue-400">
-                  <Icon icon="lucide:layers-3" className="w-4 h-4" />
-                </div>
-              </div>
-            </div> */
-}
-
-{
-  /* Credit Limit */
 }

@@ -617,7 +617,7 @@ export default function PartyRecord({
           },
         ]}
       />
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
+      {/* <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6"> */}
         <PartyDetailHeader
           party={account}
           currencyCode={activeCurrencyCode}
@@ -631,6 +631,7 @@ export default function PartyRecord({
             setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
           }}
         />
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
         {Object.keys(formErrors).length > 0 && (
           <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
             <p className="font-semibold mb-1">
@@ -673,7 +674,7 @@ export default function PartyRecord({
           })}
         </div>
 
-        <div className="py-2">
+        <div className="py-2 pt-6">
           {activeTab === "general" && (
             <GeneralTab
               account={account}
@@ -813,7 +814,6 @@ export default function PartyRecord({
                   </Button>
                 </>
               ) : (
-                /* EDIT MODE BUTTONS */
                 <>
                   <Button
                     type="button"
