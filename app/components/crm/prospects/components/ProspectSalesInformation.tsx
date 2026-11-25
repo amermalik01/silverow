@@ -2,9 +2,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import type { Prospect } from "@/types/prospect";
+import SelectWithAddModal from "@/app/components/common/SelectWithAddModal";
 
 type InterestedProductChip = {
   item_id: string | null;
@@ -133,30 +134,12 @@ export default function ProspectSalesInformation({
 
         <label className={labelClass}>Source</label>
 
-        <select
+        <SourceSelect
           value={source}
-          onChange={(event) =>
-            onSourceChange(
-              event.target.value as NonNullable<Prospect["source"]>,
-            )
+          onChange={(value) =>
+            onSourceChange(value as NonNullable<Prospect["source"]>)
           }
-          className={selectClass}
-        >
-          {[
-            "Website",
-            "Referral",
-            "Social Media",
-            "Email Campaign",
-            "Cold Call",
-            "Trade Show",
-            "Advertisement",
-            "Other",
-          ].map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
+        />
 
         <label className={labelClass}>Priority</label>
 
@@ -382,5 +365,79 @@ function DealValueInput({
         className="h-8 w-full rounded-md border border-slate-300 bg-white pl-6 pr-3 text-left text-sm tabular-nums text-slate-800 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-default disabled:bg-slate-50"
       />
     </div>
+  );
+}
+
+/* ============================================================
+   SOURCE — crm_sources with "+ Add New..." (like item brands)
+============================================================ */
+
+type CrmSource = { id: string; name: string };
+
+const SOURCES_ENDPOINT = "/api/setup/sales/sources";
+
+/**
+ * Prospects store the source *name*; SelectWithAddModal works with ids.
+ * Options use the name as their id, and a newly added row (which the modal
+ * selects by its database id) is mapped back to its name.
+ */
+function SourceSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [sources, setSources] = useState<CrmSource[]>([]);
+  const addedIds = useRef(new Map<string, string>());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch(SOURCES_ENDPOINT, { cache: "no-store" });
+        if (!response.ok) return;
+        const rows = (await response.json()) as CrmSource[];
+        if (!cancelled && Array.isArray(rows)) setSources(rows);
+      } catch (error) {
+        console.error("Failed to load sources:", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const names = sources.map((item) => item.name);
+
+  /* Keep an older value visible even if it is not in crm_sources. */
+  const options = [
+    ...(value && !names.some((n) => n.toLowerCase() === value.toLowerCase())
+      ? [{ id: value, name: value }]
+      : []),
+    ...sources.map((item) => ({ id: item.name, name: item.name })),
+  ];
+
+  return (
+    <SelectWithAddModal
+      value={value}
+      onChange={(selected) =>
+        onChange(addedIds.current.get(selected) ?? selected)
+      }
+      items={options}
+      placeholder="Select Source"
+      apiEndpoint={SOURCES_ENDPOINT}
+      onItemAdded={(created) => {
+        addedIds.current.set(created.id, created.name);
+        setSources((current) =>
+          [...current, { id: created.id, name: created.name }].sort((a, b) =>
+            a.name.localeCompare(b.name),
+          ),
+        );
+      }}
+      className={selectClass}
+    />
   );
 }

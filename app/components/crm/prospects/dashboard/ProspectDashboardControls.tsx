@@ -6,7 +6,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@iconify/react";
 import {
   PROSPECT_PRIORITIES,
-  PROSPECT_SOURCES,
   PROSPECT_STATUSES,
 } from "@/lib/validations/prospect.schema";
 import type {
@@ -200,6 +199,21 @@ export function FilterMenu({
   onChange: (filters: ProspectQuickFilters) => void;
 }) {
   const [open, setOpen] = useState(false);
+
+  /* Sources come from crm_sources (same list as the prospect form). */
+  const [sources, setSources] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open || sources.length) return;
+
+    fetch("/api/setup/sales/sources", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((rows: { name: string }[]) => {
+        if (Array.isArray(rows)) setSources(rows.map((row) => row.name));
+      })
+      .catch(() => undefined);
+  }, [open, sources.length]);
+
   const activeCount = [value.status, value.priority, value.source].filter(
     Boolean,
   ).length;
@@ -282,7 +296,7 @@ export function FilterMenu({
             className={fieldClass}
           >
             <option value="">All sources</option>
-            {PROSPECT_SOURCES.map((source) => (
+            {sources.map((source) => (
               <option key={source} value={source}>
                 {source}
               </option>

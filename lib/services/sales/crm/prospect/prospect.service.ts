@@ -391,6 +391,8 @@ export class ProspectService {
 
       await this.validateReferences(client, companyId, payload.prospect);
 
+      await this.validateSource(client, companyId, payload.prospect.source);
+
       const sequenceResult = await client.query<SequenceRecord>(
         `
         SELECT get_next_sequence($1, $2) AS code
@@ -498,6 +500,13 @@ export class ProspectService {
       }
 
       await this.validateReferences(client, companyId, payload.prospect);
+
+      await this.validateSource(
+        client,
+        companyId,
+        payload.prospect.source,
+        existing.source,
+      );
 
       const prospect = await this.updateProspect(
         client,
@@ -1449,6 +1458,38 @@ export class ProspectService {
    * Replaces the interested-products list. Code and name are snapshotted
    * from the items table. `undefined` leaves the saved list untouched.
    */
+  /**
+   * Source must exist in crm_sources (Setup › Sales › Sources). An
+   * unchanged legacy value is accepted so older prospects still save.
+   */
+  private static async validateSource(
+    client: PoolClient,
+    companyId: string,
+    source: string | null | undefined,
+    existingSource?: string | null,
+  ): Promise<void> {
+    const name = source?.trim();
+    if (!name) return;
+    if (existingSource && existingSource.trim() === name) return;
+
+    const result = await client.query(
+      `
+      SELECT 1
+      FROM crm_sources
+      WHERE company_id = $1
+        AND LOWER(name) = LOWER($2)
+      LIMIT 1
+      `,
+      [companyId, name],
+    );
+
+    if (!result.rows.length) {
+      throw new Error(
+        `Source "${name}" was not found. Select a source from the list or add it first.`,
+      );
+    }
+  }
+
   private static async syncInterestedProducts(
     client: PoolClient,
     companyId: string,
