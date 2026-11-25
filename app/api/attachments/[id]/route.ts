@@ -71,7 +71,29 @@ export async function DELETE(
       );
     }
 
+    /*
+     * The same stored file can be referenced by several attachment rows
+     * (e.g. copied from a prospect to its customer on conversion). Only
+     * remove it from storage when this is the last reference.
+     */
+    let fileStillUsed = false;
+
     if (attachment.file_key) {
+      const references = await pool.query(
+        `
+        SELECT 1
+        FROM attachments
+        WHERE company_id = $1
+          AND file_key = $2
+          AND id <> $3
+        LIMIT 1
+        `,
+        [session.user.company_id, attachment.file_key, id],
+      );
+      fileStillUsed = references.rows.length > 0;
+    }
+
+    if (attachment.file_key && !fileStillUsed) {
       try {
         await utapi.deleteFiles(attachment.file_key);
       } catch (error) {

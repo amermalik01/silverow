@@ -1161,6 +1161,69 @@ export class ProspectService {
       );
 
       /*
+       * 8c. Copy notes to the customer (shared notes table, module
+       *     "customer"), keeping title, text, author and date.
+       */
+      const copiedNotes = await client.query(
+        `
+        INSERT INTO notes (
+          company_id, module, record_id, note,
+          subject, description, created_by, created_at
+        )
+        SELECT
+          pn.company_id,
+          'customer',
+          $3,
+          pn.title,
+          LEFT(pn.title, 255),
+          pn.content,
+          pn.author_id,
+          pn.created_at
+        FROM prospect_notes pn
+        WHERE pn.company_id = $1
+          AND pn.prospect_id = $2
+        ORDER BY pn.created_at ASC
+        `,
+        [companyId, prospectId, customer.id],
+      );
+
+      /*
+       * 8d. Copy attachments to the customer. The copies point at the same
+       *     stored file; the delete route only removes a file from storage
+       *     once no attachment row references it.
+       */
+      const copiedAttachments = await client.query(
+        `
+        INSERT INTO attachments (
+          company_id, module, record_id, folder,
+          file_name, file_key, file_path, file_size, mime_type,
+          uploaded_by, created_at
+        )
+        SELECT
+          a.company_id,
+          'customer',
+          $3,
+          COALESCE(a.folder, 'General'),
+          a.file_name,
+          a.file_key,
+          a.file_path,
+          a.file_size,
+          a.mime_type,
+          a.uploaded_by,
+          a.created_at
+        FROM attachments a
+        WHERE a.company_id = $1
+          AND a.module = 'prospect'
+          AND a.record_id = $2
+        ORDER BY a.created_at ASC
+        `,
+        [companyId, prospectId, customer.id],
+      );
+
+      const copiedNotesCount = copiedNotes.rowCount ?? 0;
+      const copiedAttachmentsCount = copiedAttachments.rowCount ?? 0;
+
+      /*
        * 9. Insert status history.
        */
       await this.insertStatusHistory(
@@ -1170,7 +1233,10 @@ export class ProspectService {
         prospect.status,
         "Converted",
         userId,
-        `Converted to customer ${customerCode}.`,
+        `Converted to customer ${customerCode}.` +
+          (copiedNotesCount || copiedAttachmentsCount
+            ? ` Copied ${copiedNotesCount} note${copiedNotesCount === 1 ? "" : "s"} and ${copiedAttachmentsCount} attachment${copiedAttachmentsCount === 1 ? "" : "s"}.`
+            : ""),
       );
 
       /*
