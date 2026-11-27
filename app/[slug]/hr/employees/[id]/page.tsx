@@ -7,13 +7,7 @@ export default async function EmployeeRecordPage({
 }: {
   params: Promise<{ slug: string; id: string }>;
 }) {
-  const { id,slug } = await params;
+  const { id, slug } = await params;
 
-  return (
-    <div className="space-y-6 ">
-
-      <EmployeeRecord id={id} slug={slug} />
-    </div>
-  );
+  return <EmployeeRecord id={id} slug={slug} />;
 }
-

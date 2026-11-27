@@ -2,96 +2,131 @@
 
 "use client";
 
-type Props = {
-  access: {
-    enable_login: boolean;
-    email: string;
-    password: string;
-    role: string;
-  };
-  setAccess: React.Dispatch<
-    React.SetStateAction<{
-      enable_login: boolean;
-      email: string;
-      password: string;
-      role: string;
-    }>
-  >;
+import { Icon } from "@iconify/react";
+
+import {
+  SwitchPill,
+  cardClass,
+  fieldRowClass,
+  inputClass,
+  labelClass,
+} from "./employeeFormKit";
+
+type AccessState = {
+  enable_login: boolean;
+  email: string;
+  password: string;
+  role: string;
 };
 
-export default function EmployeeAccessTab({ access, setAccess }: Props) {
-  const inputClass =
-    "w-full border border-slate-300 rounded px-3 py-2 text-xs text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all";
-  const labelClass =
-    "block text-xs font-semibold text-slate-600 capitalize tracking-wider mb-1.5";
+type Props = {
+  access: AccessState;
+  setAccess: React.Dispatch<React.SetStateAction<AccessState>>;
+  isReadonly?: boolean;
+};
+
+/** System login for a new employee (sent with the create request). */
+export default function EmployeeAccessTab({
+  access,
+  setAccess,
+  isReadonly = false,
+}: Props) {
+  const update = (patch: Partial<AccessState>) =>
+    setAccess((current) => ({ ...current, ...patch }));
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div className="p-4 bg-slate-50 border border-slate-200 rounded flex items-start gap-3">
-        <div className="pt-0.5">
-          <input
-            id="enable-login-toggle"
-            type="checkbox"
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      <section className={cardClass}>
+        <div className="mb-3.5 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Icon
+              icon="tabler:lock-access"
+              className="shrink-0 text-2xl text-emerald-800 dark:text-emerald-400"
+            />
+            <div>
+              <h3 className="text-sm font-semibold text-black dark:text-slate-100">
+                System Login
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Create a user account so this employee can sign in.
+              </p>
+            </div>
+          </div>
+          <SwitchPill
             checked={access.enable_login}
-            onChange={(e) =>
-              setAccess({ ...access, enable_login: e.target.checked })
-            }
-            className="rounded text-blue-600 focus:ring-blue-500 border-slate-300 h-4 w-4 cursor-pointer"
+            disabled={isReadonly}
+            onChange={(next) => update({ enable_login: next })}
+            label={access.enable_login ? "Enabled" : "Disabled"}
           />
         </div>
-        <label
-          htmlFor="enable-login-toggle"
-          className="cursor-pointer select-none"
-        >
-          <span className="block text-xs font-semibold text-slate-800">
-            Grant Corporate Dashboard Access
-          </span>
-          <span className="block text-xs text-slate-500 mt-0.5">
-            Provision an active IAM session token allowing this user to sign
-            into the system architecture grid.
-          </span>
-        </label>
-      </div>
 
-      {access.enable_login && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border border-slate-200 bg-white shadow-sm rounded animate-fadeIn">
-          <div className="md:col-span-2">
-            <label className={labelClass}>IAM Identity Email Address</label>
-            <input
-              type="email"
-              value={access.email}
-              onChange={(e) => setAccess({ ...access, email: e.target.value })}
-              className={inputClass}
-              placeholder="sso.identity@domain.com"
-            />
-          </div>
+        {access.enable_login ? (
+          <div className="grid grid-cols-1 items-start gap-y-3">
+            <div className={fieldRowClass}>
+              <label className={labelClass}>
+                Login Email <span className="ml-1 text-red-500">*</span>
+              </label>
+              <div className="sm:col-span-2">
+                <input
+                  type="email"
+                  value={access.email}
+                  disabled={isReadonly}
+                  onChange={(e) => update({ email: e.target.value })}
+                  className={inputClass}
+                  placeholder="employee@company.com"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
 
-          <div>
-            <label className={labelClass}>Ephemeral Temporary Password</label>
-            <input
-              type="password"
-              value={access.password}
-              onChange={(e) =>
-                setAccess({ ...access, password: e.target.value })
-              }
-              className={inputClass}
-              placeholder="••••••••"
-            />
-          </div>
+            <div className={fieldRowClass}>
+              <label className={labelClass}>
+                Temporary Password <span className="ml-1 text-red-500">*</span>
+              </label>
+              <div className="sm:col-span-2">
+                <input
+                  type="password"
+                  value={access.password}
+                  disabled={isReadonly}
+                  onChange={(e) => update({ password: e.target.value })}
+                  className={inputClass}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
 
-          <div>
-            <label className={labelClass}>
-              Security Clearance Assignment (Role)
-            </label>
-            <input
-              value={access.role}
-              onChange={(e) => setAccess({ ...access, role: e.target.value })}
-              className={inputClass}
-              placeholder="e.g. hr_analyst_l2"
-            />
+            <div className={fieldRowClass}>
+              <label className={labelClass}>Role</label>
+              <div className="sm:col-span-2">
+                <input
+                  value={access.role}
+                  disabled={isReadonly}
+                  onChange={(e) => update({ role: e.target.value })}
+                  className={inputClass}
+                  placeholder="e.g. hr_analyst"
+                />
+              </div>
+            </div>
           </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/60 px-3 py-4 text-center text-[12px] text-slate-500 dark:border-slate-700 dark:bg-slate-900/40">
+            Login is off. Switch it on to create a sign-in for this employee.
+          </div>
+        )}
+      </section>
+
+      <section className={`${cardClass} text-[12px] text-slate-600 dark:text-slate-400`}>
+        <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100">
+          <Icon icon="tabler:info-circle" className="text-2xl text-emerald-800 dark:text-emerald-400" />
+          About employee login
         </div>
-      )}
+        <ul className="list-disc space-y-1 pl-5">
+          <li>The employee signs in with the login email and temporary password.</li>
+          <li>Ask them to change the password after their first sign-in.</li>
+          <li>Login details can be reviewed later in the General tab under Login &amp; Access.</li>
+        </ul>
+      </section>
     </div>
   );
 }

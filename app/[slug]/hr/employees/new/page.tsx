@@ -1,7 +1,6 @@
 // app/[slug]/hr/employees/new/page.tsx
 
-import EmployeeForm from "@/app/components/hr/employees/EmployeeForm";
-// import EmployeeRecord from "@/app/components/hr/employees/EmployeeRecord";
+import EmployeeRecord from "@/app/components/hr/employees/EmployeeRecord";
 
 export default async function NewEmployeePage({
   params,
@@ -10,20 +9,6 @@ export default async function NewEmployeePage({
 }) {
   const { slug } = await params;
 
-  return (
-    <div className="space-y-6 ">
-      <EmployeeForm slug={slug} />
-    </div>
-  );
+  /* Same record component as view / edit — an empty id opens create mode */
+  return <EmployeeRecord id="" slug={slug} />;
 }
-
-/* 
-import EmployeeForm from "@/app/components/hr/employees/EmployeeForm";
-
-export default function NewEmployeePage() {
-  return (
-    <div className="p-6">
-      <EmployeeForm />
-    </div>
-  );
-} */

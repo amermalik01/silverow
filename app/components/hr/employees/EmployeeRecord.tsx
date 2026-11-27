@@ -5,16 +5,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Icon } from "@iconify/react";
 
-import { Button } from "@/components/ui/button";
 import type {
   Employee,
   EmployeeAddress,
   EmployeeContact,
+  EmployeePayload,
 } from "@/types/hr/employee";
-
-// import EmployeeExpensesTab from "./tabs/EmployeeExpensesTab";
-// import EmployeeHolidaysTab from "./tabs/EmployeeHolidaysTab";
 
 import Breadcrumbs from "@/app/components/layout/shared/breadcrumb/BreadcrumbComp";
 import EmployeeDetailHeader from "./EmployeeDetailHeader";
@@ -24,11 +22,15 @@ import EmployeeContactTab from "./tabs/EmployeeContactsTab";
 import EmployeePersonalTab from "./tabs/EmployeePersonalTab";
 import EmployeeSalaryTab from "./tabs/EmployeeSalaryTab";
 import EmployeeBenefitsTab from "./tabs/EmployeeBenefitsTab";
+import EmployeeAccessTab from "./tabs/EmployeeAccessTab";
 
 type Props = {
+  /** Empty string ("") opens the record in create mode. */
   id: string;
   slug: string;
   isReadonly?: boolean;
+  /** Open an existing record straight in edit mode (the /edit route). */
+  initialMode?: "view" | "edit";
 };
 
 type EmployeeRecordResponse = {
@@ -37,32 +39,61 @@ type EmployeeRecordResponse = {
   addresses?: EmployeeAddress[];
 };
 
-const tabs = [
-  { id: "general", label: "General" },
-  { id: "contact", label: "Contact" },
-  { id: "personal", label: "Personal" },
-  { id: "salary", label: "Salary, Holidays & Pensions" },
-  { id: "benefits", label: "Benefits" },
-  // { id: "expenses", label: "Expenses" },
-  // { id: "holidays", label: "Holidays" },
+type AccessState = {
+  enable_login: boolean;
+  email: string;
+  password: string;
+  role: string;
+};
+
+const ALL_TABS = [
+  { id: "general", label: "General", icon: "tabler:id-badge-2" },
+  { id: "contact", label: "Contact", icon: "tabler:address-book" },
+  { id: "personal", label: "Personal", icon: "tabler:user" },
+  { id: "salary", label: "Salary, Holidays & Pensions", icon: "tabler:cash" },
+  { id: "benefits", label: "Benefits", icon: "tabler:gift" },
+  { id: "access", label: "Login Access", icon: "tabler:lock-access" },
 ] as const;
 
-type TabId = (typeof tabs)[number]["id"];
+type TabId = (typeof ALL_TABS)[number]["id"];
+
+/** Which tab a validation key belongs to. */
+const ERROR_TAB: Record<string, TabId> = {
+  first_name: "general",
+  last_name: "general",
+  start_date: "general",
+  access_email: "access",
+  access_password: "access",
+};
+
+const NEW_EMPLOYEE: Partial<Employee> = { status: "active" };
 
 export default function EmployeeRecord({
   id,
   slug,
   isReadonly: isReadonlyProp = false,
+  initialMode = "view",
 }: Props) {
   const router = useRouter();
+  const isNew = !id;
 
   const [activeTab, setActiveTab] = useState<TabId>("general");
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(
+    isNew || (initialMode === "edit" && !isReadonlyProp),
+  );
   const effectiveReadonly = isReadonlyProp || !isEditing;
 
-  const [employee, setEmployee] = useState<Partial<Employee>>({});
+  const [employee, setEmployee] = useState<Partial<Employee>>(
+    isNew ? { ...NEW_EMPLOYEE } : {},
+  );
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
   const [addresses, setAddresses] = useState<EmployeeAddress[]>([]);
+  const [access, setAccess] = useState<AccessState>({
+    enable_login: false,
+    email: "",
+    password: "",
+    role: "",
+  });
 
   // Saved snapshots for Cancel.
   const [initialEmployee, setInitialEmployee] = useState<Partial<Employee>>({});
@@ -73,10 +104,15 @@ export default function EmployeeRecord({
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
 
+  /* The Login Access tab is only for creating a new employee */
+  const tabs = ALL_TABS.filter((tab) => tab.id !== "access" || isNew);
+
   useEffect(() => {
+    if (!id) return;
+
     let cancelled = false;
 
     async function loadEmployee() {
@@ -122,12 +158,72 @@ export default function EmployeeRecord({
     };
   }, [id]);
 
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!employee.first_name?.trim()) {
+      errors.first_name = "First name is required.";
+    }
+    if (!employee.last_name?.trim()) {
+      errors.last_name = "Last name is required.";
+    }
+    if (isNew && access.enable_login) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(access.email.trim())) {
+        errors.access_email = "Enter a valid login email.";
+      }
+      if (access.password.length < 8) {
+        errors.access_password = "Temporary password must be at least 8 characters.";
+      }
+    }
+
+    setFormErrors(errors);
+
+    const first = Object.keys(errors)[0];
+    if (first) {
+      setActiveTab(ERROR_TAB[first] ?? "general");
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = async () => {
     if (effectiveReadonly || saving) return;
+    if (!validate()) return;
 
     try {
       setSaving(true);
 
+      /* ---------- Create ---------- */
+      if (isNew) {
+        const payload: EmployeePayload = {
+          employee: employee as Employee,
+          contacts,
+          addresses,
+          access,
+        };
+
+        const res = await fetch("/api/hr/employees", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(result.error || "Failed to create employee.");
+        }
+
+        toast.success("Employee created successfully.");
+
+        const newId = result?.id || result?.employee?.id || result?.data?.id;
+        router.replace(
+          newId ? `/${slug}/hr/employees/${newId}` : `/${slug}/hr/employees`,
+        );
+        return;
+      }
+
+      /* ---------- Update ---------- */
       const res = await fetch(`/api/hr/employees/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -157,20 +253,27 @@ export default function EmployeeRecord({
       setInitialContacts(savedContacts);
       setInitialAddresses(savedAddresses);
 
+      setFormErrors({});
       setIsEditing(false);
       toast.success("Employee record saved successfully.");
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to save employee record.",
-      );
+      const message =
+        error instanceof Error ? error.message : "Failed to save employee record.";
+      setFormErrors({ global: message });
+      toast.error(message);
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
+    setFormErrors({});
+
+    if (isNew) {
+      router.back();
+      return;
+    }
+
     setEmployee({ ...initialEmployee });
     setContacts([...initialContacts]);
     setAddresses([...initialAddresses]);
@@ -180,120 +283,106 @@ export default function EmployeeRecord({
   if (loading) {
     return (
       <div className="animate-pulse space-y-4 p-6">
-        <div className="h-8 w-1/4 rounded bg-slate-200" />
-        <div className="h-12 rounded bg-slate-200" />
-        <div className="h-64 rounded bg-slate-100" />
+        <div className="h-8 w-1/4 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="h-20 rounded-xl bg-slate-200 dark:bg-slate-800" />
+        <div className="h-64 rounded-xl bg-slate-100 dark:bg-slate-900" />
       </div>
     );
   }
 
-  if (!employee.id) {
+  if (!isNew && !employee.id) {
     return (
-      <div className="rounded-xl border bg-white p-8 text-center">
+      <div className="rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-[#11161D]">
+        <Icon icon="tabler:user-off" className="mx-auto mb-2 text-4xl text-slate-300" />
         <h2 className="font-semibold">Employee not found</h2>
         <p className="mt-1 text-sm text-slate-500">
           This employee record is unavailable.
         </p>
+        <button
+          type="button"
+          onClick={() => router.push(`/${slug}/hr/employees`)}
+          className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+        >
+          <Icon icon="lucide:arrow-left" />
+          Back to employees
+        </button>
       </div>
     );
   }
 
-  const fullName = [
-    employee.first_name,
-    employee.middle_name,
-    employee.last_name,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Breadcrumbs
         items={[
           { label: "Employees", href: `/${slug}/hr/employees` },
           {
-            label: employee.employee_code || employee.id || "",
+            label: isNew
+              ? "New Employee"
+              : employee.employee_code || employee.id || "",
           },
         ]}
       />
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {/* Employee header */}
-        {/* <div className="mb-5 flex flex-col justify-between gap-3 border-b pb-5 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-medium text-slate-500">
-              HUMAN RESOURCES / EMPLOYEE
-            </p>
+      <EmployeeDetailHeader
+        employee={employee}
+        onEmployeeUpdated={(updatedEmployee) => {
+          setEmployee((prev) => ({ ...prev, ...updatedEmployee }));
+          setInitialEmployee((prev) => ({ ...prev, ...updatedEmployee }));
+        }}
+        canEdit={!isReadonlyProp}
+        isEditing={!isReadonlyProp && isEditing}
+        saving={saving}
+        onEdit={() => setIsEditing(true)}
+        onSave={() => void handleSave()}
+        onCancelEdit={handleCancel}
+        onClose={() => router.push(`/${slug}/hr/employees`)}
+      />
 
-            <h1 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
-              {fullName || "Employee"}
-            </h1>
-
-            <p className="mt-1 text-xs text-slate-500">
-              Employee No. {employee.employee_code || "Not assigned"}
-              {" · "}
-              {employee.job_title || "No job title"}
-            </p>
-          </div>
-
-          <span className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium capitalize text-emerald-700">
-            {employee.status || "active"}
-          </span>
-        </div> */}
-
-        <EmployeeDetailHeader
-          employee={employee}
-          onEmployeeUpdated={(updatedEmployee) => {
-            setEmployee((prev) => ({
-              ...prev,
-              ...updatedEmployee,
-            }));
-
-            setInitialEmployee((prev) => ({
-              ...prev,
-              ...updatedEmployee,
-            }));
-          }}
-        />
-
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         {Object.keys(formErrors).length > 0 && (
-          <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
+          <div className="mb-4 p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
             <p className="font-semibold mb-1">
-              Please fix the following validation errors:
+              Please fix the following before saving:
             </p>
-
             <ul className="list-disc pl-5 space-y-0.5 text-xs">
-              {formErrors.global && <li>{formErrors.global}</li>}
-
-              {Object.entries(formErrors)
-                .filter(([key]) => key !== "global")
-                .map(([key, message]) => (
-                  <li key={key}>{message}</li>
-                ))}
+              {Object.entries(formErrors).map(([key, message]) => (
+                <li key={key}>{message}</li>
+              ))}
             </ul>
           </div>
         )}
 
-        {/* Legacy tabs */}
-        <div className="flex gap-1  border-b border-slate-200 dark:border-slate-800">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`-mb-px shrink-0 border-b-2 px-3 py-3 text-xs transition-colors ${
-                activeTab === tab.id
-                  ? "border-emerald-700 font-semibold text-emerald-800"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-1 border-b border-slate-200 pb-px dark:border-slate-800">
+          {tabs.map((tab) => {
+            const active = activeTab === tab.id;
+            const hasError = Object.keys(formErrors).some(
+              (key) => ERROR_TAB[key] === tab.id,
+            );
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`-mb-px flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-medium transition-all ${
+                  active
+                    ? "border-emerald-600 font-semibold text-emerald-600"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                <Icon
+                  icon={tab.icon}
+                  className={`h-4 w-4 ${active ? "text-emerald-600" : "text-slate-400"}`}
+                />
+                {tab.label}
+                {hasError && (
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Tab content */}
-        <div className="min-h-[350px] py-5">
+        <div className="min-h-[350px] py-2 pt-6">
           {activeTab === "general" && (
             <EmployeeGeneralTab
               employee={employee}
@@ -334,67 +423,14 @@ export default function EmployeeRecord({
             />
           )}
 
-
-          {/* 
-          {activeTab === "expenses" && (
-            <EmployeeExpensesTab
-              employeeId={id}
+          {activeTab === "access" && isNew && (
+            <EmployeeAccessTab
+              access={access}
+              setAccess={setAccess}
               isReadonly={effectiveReadonly}
             />
           )}
-
-          {activeTab === "holidays" && (
-            <EmployeeHolidaysTab
-              employeeId={id}
-              isReadonly={effectiveReadonly}
-            />
-          )} */}
         </div>
-
-        {/* Footer actions: same behavior as PartyRecord */}
-        {!isReadonlyProp && (
-          <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
-            {!isEditing ? (
-              <>
-                <Button
-                  type="button"
-                  variant="edit"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="cancel"
-                  onClick={() => router.back()}
-                >
-                  Close
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="save"
-                  onClick={handleSave}
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : "Save"}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="cancel"
-                  onClick={handleCancel}
-                  disabled={saving}
-                >
-                  Cancel
-                </Button>
-              </>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

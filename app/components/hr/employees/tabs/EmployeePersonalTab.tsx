@@ -6,140 +6,19 @@ import { type Dispatch, type SetStateAction } from "react";
 import type { Employee } from "@/types/hr/employee";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import {
+  FormField,
+  SelectField,
+  Section,
+  inputClass,
+  labelClass,
+} from "./employeeFormKit";
 
 type Props = {
   employee: Partial<Employee>;
   setEmployee: Dispatch<SetStateAction<Partial<Employee>>>;
   isReadonly?: boolean;
 };
-
-type FieldProps = {
-  label: string;
-  value: string | number | undefined;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  type?: "text" | "email" | "date" | "number"| "tel";
-  placeholder?: string;
-  required?: boolean;
-};
-
-const inputClass =
-  "w-full rounded border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:disabled:bg-slate-800/60 dark:disabled:text-slate-400";
-
-const labelClass = "text-xs font-medium text-slate-700 dark:text-slate-300";
-
-function FormField({
-  label,
-  value,
-  onChange,
-  disabled,
-  type = "text",
-  placeholder,
-  required = false,
-}: FieldProps) {
-  return (
-    <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
-      <label className={labelClass}>
-        {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
-      </label>
-
-      {type === "date" ? (
-        <div className="sm:col-span-2">
-          <DatePicker
-            value={value ? parseISO(String(value)) : undefined}
-            onChange={(date) =>
-              onChange(date ? format(date, "yyyy-MM-dd") : "")
-            }
-            containerClassName="w-full"
-          />
-        </div>
-      ) : (
-        <div className="sm:col-span-2">
-          <input
-            type={type}
-            value={value ?? ""}
-            onChange={(event) => onChange(event.target.value)}
-            disabled={disabled}
-            required={required}
-            placeholder={placeholder}
-            className={inputClass}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-type SelectOption = {
-  value: string;
-  label: string;
-};
-
-function SelectField({
-  label,
-  value,
-  onChange,
-  disabled,
-  options,
-  placeholder = "Select...",
-}: {
-  label: string;
-  value: string | undefined;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  options: SelectOption[];
-  placeholder?: string;
-}) {
-  return (
-    <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
-      <label className={labelClass}>{label}</label>
-      <div className="sm:col-span-2">
-        <select
-          value={value ?? ""}
-          onChange={(event) => onChange(event.target.value)}
-          disabled={disabled}
-          className={inputClass}
-        >
-          <option value="">{placeholder}</option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
-
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-4">
-      <div className="border-b border-slate-200 pb-2 dark:border-slate-800">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-          {title}
-        </h3>
-        {/* {description && (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {description}
-          </p>
-        )} */}
-      </div>
-      <div className="grid grid-cols-1 items-start gap-x-8 gap-y-4 lg:grid-cols-1">
-        {children}
-      </div>
-    </section>
-  );
-}
 
 export default function EmployeePersonalTab({
   employee,
@@ -162,9 +41,9 @@ export default function EmployeePersonalTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left Column: Personal Information & Bank Details */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Section title="Personal Details">
             <FormField
               label="Date of Birth"
@@ -209,7 +88,7 @@ export default function EmployeePersonalTab({
               disabled={isReadonly}
               placeholder="Name on bank account"
             />
-            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
               <label className={labelClass}>Sort Code & Acc No.</label>
               <div className="sm:col-span-2 grid grid-cols-2 gap-2">
                 <input
@@ -264,9 +143,9 @@ export default function EmployeePersonalTab({
         </div>
 
         {/* Right Column: Identity, Licences, & Emergency Contacts */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Section title="Identity & Identification">
-            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
               <label className={labelClass}>Gender & Marital</label>
               <div className="sm:col-span-2 grid grid-cols-2 gap-2">
                 <select

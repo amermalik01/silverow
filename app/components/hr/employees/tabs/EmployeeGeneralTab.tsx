@@ -6,6 +6,15 @@ import { useState, useEffect, type Dispatch, type SetStateAction } from "react";
 import type { Employee } from "@/types/hr/employee";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import {
+  FormField,
+  SelectField,
+  Section,
+  inputClass,
+  labelClass,
+  checkboxClass,
+  type SelectOption,
+} from "./employeeFormKit";
 
 type Option = { id: string; name: string };
 type EmployeeOption = {
@@ -30,143 +39,6 @@ type Props = {
   >;
   isReadonly?: boolean;
 };
-
-type FieldProps = {
-  label: string;
-  value: string | number | undefined;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  type?: "text" | "email" | "date" | "number";
-  placeholder?: string;
-  required?: boolean;
-  min?: number;
-  max?: number;
-  step?: number;
-};
-
-const inputClass =
-  "w-full rounded border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:disabled:bg-slate-800/60 dark:disabled:text-slate-400";
-
-const labelClass = "text-xs font-medium text-slate-700 dark:text-slate-300";
-
-function FormField({
-  label,
-  value,
-  onChange,
-  disabled,
-  type = "text",
-  placeholder,
-  required = false,
-  min,
-  max,
-  step,
-}: FieldProps) {
-  return (
-    <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
-      <label className={labelClass}>
-        {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
-      </label>
-
-      {type === "date" ? (
-        <div className="sm:col-span-2">
-          <DatePicker
-            value={value ? parseISO(String(value)) : undefined}
-            onChange={(date) =>
-              onChange(date ? format(date, "yyyy-MM-dd") : "")
-            }
-            containerClassName="w-full"
-          />
-        </div>
-      ) : (
-        <div className="sm:col-span-2">
-          <input
-            type={type}
-            value={value ?? ""}
-            onChange={(event) => onChange(event.target.value)}
-            disabled={disabled}
-            required={required}
-            placeholder={placeholder}
-            min={min}
-            max={max}
-            step={step}
-            className={inputClass}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-type SelectOption = {
-  value: string;
-  label: string;
-};
-
-function SelectField({
-  label,
-  value,
-  onChange,
-  disabled,
-  options,
-  placeholder = "Select...",
-}: {
-  label: string;
-  value: string | undefined;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  options: SelectOption[];
-  placeholder?: string;
-}) {
-  return (
-    <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
-      <label className={labelClass}>{label}</label>
-      <div className="sm:col-span-2">
-        <select
-          value={value ?? ""}
-          onChange={(event) => onChange(event.target.value)}
-          disabled={disabled}
-          className={inputClass}
-        >
-          <option value="">{placeholder}</option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
-
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-4">
-      <div className="border-b border-slate-200 pb-2 dark:border-slate-800">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-          {title}
-        </h3>
-        {/* {description && (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {description}
-          </p>
-        )} */}
-      </div>
-      <div className="grid grid-cols-1 items-start gap-x-8 gap-y-4 lg:grid-cols-1">
-        {children}
-      </div>
-    </section>
-  );
-}
 
 export default function EmployeeGeneralTab({
   employee,
@@ -258,8 +130,8 @@ export default function EmployeeGeneralTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <div className="space-y-4">
           {/* Employee information */}
           <Section
             title="Employee Information"
@@ -305,14 +177,14 @@ export default function EmployeeGeneralTab({
           </Section>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-4">
           {/* Organisation and reporting */}
           <Section
             title="Organisation & Reporting"
             description="Department, designation, manager, and employment classification."
           >
             {/* Multi-select Department Modal Trigger */}
-            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
               <label className={labelClass}>Department(s)</label>
               <div className="sm:col-span-2">
                 <button
@@ -329,13 +201,13 @@ export default function EmployeeGeneralTab({
                           .join(", ")
                       : "Select Departments..."}
                   </span>
-                  <span className="text-slate-400 text-xs">▼</span>
+                  <span className="text-slate-400 text-xs">▾</span>
                 </button>
               </div>
             </div>
 
             {/* Multi-select Designation Modal Trigger */}
-            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
               <label className={labelClass}>Designation(s)</label>
               <div className="sm:col-span-2">
                 <button
@@ -352,7 +224,7 @@ export default function EmployeeGeneralTab({
                           .join(", ")
                       : "Select Designations..."}
                   </span>
-                  <span className="text-slate-400 text-xs">▼</span>
+                  <span className="text-slate-400 text-xs">▾</span>
                 </button>
               </div>
             </div>
@@ -378,8 +250,8 @@ export default function EmployeeGeneralTab({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <div className="space-y-4">
           {/* Employment details */}
           <Section
             title="Employment Details"
@@ -438,7 +310,7 @@ export default function EmployeeGeneralTab({
           </Section>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-4">
           {/* Login and access */}
           <Section
             title="Login & Access"
@@ -469,7 +341,7 @@ export default function EmployeeGeneralTab({
               placeholder="Enter login role"
             />
 
-            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
               <label className={labelClass}>Allow Login</label>
               <div className="sm:col-span-2">
                 <label className="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
@@ -480,7 +352,7 @@ export default function EmployeeGeneralTab({
                       updateBoolean("allow_login", event.target.checked)
                     }
                     disabled={isReadonly}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed"
+                    className="h-4 w-4 rounded border-slate-300 accent-emerald-700 focus:ring-emerald-500 disabled:cursor-not-allowed"
                   />
                   Allow this employee to log in
                 </label>
@@ -493,7 +365,7 @@ export default function EmployeeGeneralTab({
       {/* DEPARTMENT MULTI-SELECT MODAL */}
       {isDeptModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded bg-white p-6 shadow-xl dark:bg-slate-900">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-[#11161D]">
             <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
               Select Departments
             </h3>
@@ -503,13 +375,13 @@ export default function EmployeeGeneralTab({
                 return (
                   <label
                     key={dept.id}
-                    className="flex items-center gap-3 rounded p-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                    className="flex items-center gap-3 rounded-lg p-2 hover:bg-emerald-50/60 dark:hover:bg-slate-800 cursor-pointer"
                   >
                     <input
                       type="checkbox"
                       checked={isSelected || false}
                       onChange={() => toggleMultiSelect("department_ids", dept.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded border-slate-300 accent-emerald-700 focus:ring-emerald-500"
                     />
                     <span className="text-xs text-slate-700 dark:text-slate-300">
                       {dept.name}
@@ -522,7 +394,7 @@ export default function EmployeeGeneralTab({
               <button
                 type="button"
                 onClick={() => setIsDeptModalOpen(false)}
-                className="rounded bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700"
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
                 Done
               </button>
@@ -534,7 +406,7 @@ export default function EmployeeGeneralTab({
       {/* DESIGNATION MULTI-SELECT MODAL */}
       {isDesigModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded bg-white p-6 shadow-xl dark:bg-slate-900">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-[#11161D]">
             <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
               Select Designations
             </h3>
@@ -544,13 +416,13 @@ export default function EmployeeGeneralTab({
                 return (
                   <label
                     key={desig.id}
-                    className="flex items-center gap-3 rounded p-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                    className="flex items-center gap-3 rounded-lg p-2 hover:bg-emerald-50/60 dark:hover:bg-slate-800 cursor-pointer"
                   >
                     <input
                       type="checkbox"
                       checked={isSelected || false}
                       onChange={() => toggleMultiSelect("designation_ids", desig.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded border-slate-300 accent-emerald-700 focus:ring-emerald-500"
                     />
                     <span className="text-xs text-slate-700 dark:text-slate-300">
                       {desig.name}
@@ -563,7 +435,7 @@ export default function EmployeeGeneralTab({
               <button
                 type="button"
                 onClick={() => setIsDesigModalOpen(false)}
-                className="rounded bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700"
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
                 Done
               </button>

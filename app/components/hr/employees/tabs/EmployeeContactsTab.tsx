@@ -4,85 +4,18 @@
 
 import { type Dispatch, type SetStateAction } from "react";
 import type { Employee } from "@/types/hr/employee";
+import {
+  FormField,
+  Section,
+  inputClass,
+  labelClass,
+} from "./employeeFormKit";
 
 type Props = {
   employee: Partial<Employee>;
   setEmployee: Dispatch<SetStateAction<Partial<Employee>>>;
   isReadonly?: boolean;
 };
-
-type FieldProps = {
-  label: string;
-  value: string | number | undefined;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  type?: "text" | "email" | "tel";
-  placeholder?: string;
-  required?: boolean;
-};
-
-const inputClass =
-  "w-full rounded border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:disabled:bg-slate-800/60 dark:disabled:text-slate-400";
-
-const labelClass = "text-xs font-medium text-slate-700 dark:text-slate-300";
-
-function FormField({
-  label,
-  value,
-  onChange,
-  disabled,
-  type = "text",
-  placeholder,
-  required = false,
-}: FieldProps) {
-  return (
-    <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
-      <label className={labelClass}>
-        {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
-      </label>
-      <div className="sm:col-span-2">
-        <input
-          type={type}
-          value={value ?? ""}
-          onChange={(event) => onChange(event.target.value)}
-          disabled={disabled}
-          required={required}
-          placeholder={placeholder}
-          className={inputClass}
-        />
-      </div>
-    </div>
-  );
-}
-
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-4">
-      <div className="border-b border-slate-200 pb-2 dark:border-slate-800">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-          {title}
-        </h3>
-        {/* {description && (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {description}
-          </p>
-        )} */}
-      </div>
-      <div className="grid grid-cols-1 items-start gap-x-8 gap-y-4 lg:grid-cols-1">
-        {children}
-      </div>
-    </section>
-  );
-}
 
 export default function EmployeeContactTab({
   employee,
@@ -98,9 +31,9 @@ export default function EmployeeContactTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left Column: Postal Address & Telephones */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Section
             title="Address Details"
             description="Primary residential or mailing address."
@@ -119,7 +52,7 @@ export default function EmployeeContactTab({
               disabled={isReadonly}
               placeholder="Apartment, suite, unit, building"
             />
-            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
               <label className={labelClass}>City & County</label>
               <div className="sm:col-span-2 grid grid-cols-2 gap-2">
                 <input
@@ -140,7 +73,7 @@ export default function EmployeeContactTab({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
               <label className={labelClass}>Postal & Country</label>
               <div className="sm:col-span-2 grid grid-cols-2 gap-2">
                 <input
@@ -187,7 +120,7 @@ export default function EmployeeContactTab({
         </div>
 
         {/* Right Column: Direct Contact Info & Socials */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Section
             title="Communication Channels"
             description="Direct mobile, emails, and professional networks."
@@ -216,7 +149,7 @@ export default function EmployeeContactTab({
               disabled={isReadonly}
               placeholder="employee@company.com"
             />
-            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+            <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
               <label className={labelClass}>Social Media</label>
               <div className="sm:col-span-2 grid grid-cols-2 gap-2">
                 <div className="flex items-center">

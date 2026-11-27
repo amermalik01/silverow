@@ -6,70 +6,21 @@ import { type Dispatch, type SetStateAction } from "react";
 import type { Employee } from "@/types/hr/employee";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import { Icon } from "@iconify/react";
+import {
+  FormField,
+  SwitchPill,
+  cardClass,
+  inputClass,
+  labelClass,
+  sectionIcon,
+} from "./employeeFormKit";
 
 type Props = {
   employee: Partial<Employee>;
   setEmployee: Dispatch<SetStateAction<Partial<Employee>>>;
   isReadonly?: boolean;
 };
-
-type FieldProps = {
-  label: string;
-  value: string | number | undefined;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  type?: "text" | "number" | "date";
-  placeholder?: string;
-  required?: boolean;
-};
-
-const inputClass =
-  "w-full rounded border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:disabled:bg-slate-800/60 dark:disabled:text-slate-400";
-
-const labelClass = "text-xs font-medium text-slate-700 dark:text-slate-300";
-
-function FormField({
-  label,
-  value,
-  onChange,
-  disabled,
-  type = "text",
-  placeholder,
-  required = false,
-}: FieldProps) {
-  return (
-    <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
-      <label className={labelClass}>
-        {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
-      </label>
-
-      {type === "date" ? (
-        <div className="sm:col-span-2">
-          <DatePicker
-            value={value ? parseISO(String(value)) : undefined}
-            onChange={(date) =>
-              onChange(date ? format(date, "yyyy-MM-dd") : "")
-            }
-            containerClassName="w-full"
-          />
-        </div>
-      ) : (
-        <div className="sm:col-span-2">
-          <input
-            type={type}
-            value={value ?? ""}
-            onChange={(event) => onChange(event.target.value)}
-            disabled={disabled}
-            required={required}
-            placeholder={placeholder}
-            className={inputClass}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
 
 function BenefitSectionHeader({
   title,
@@ -83,32 +34,22 @@ function BenefitSectionHeader({
   disabled: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-200 pb-2 dark:border-slate-800">
-      <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-        {title}
-      </h3>
-      <div className="flex items-center gap-3">
-        <label className="inline-flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(e) => onToggle(e.target.checked)}
-            disabled={disabled}
-            className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:cursor-not-allowed"
-          />
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-            Active
-          </span>
-        </label>
-        <button
-          type="button"
-          disabled={disabled}
-          className="flex h-5 w-5 items-center justify-center rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 text-xs"
-          title="Add entry"
-        >
-          +
-        </button>
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <Icon
+          icon={sectionIcon(title)}
+          className="text-2xl text-emerald-800 dark:text-emerald-400"
+        />
+        <h3 className="text-sm font-semibold text-black dark:text-slate-100">
+          {title}
+        </h3>
       </div>
+      <SwitchPill
+        checked={enabled}
+        onChange={onToggle}
+        disabled={disabled}
+        label={enabled ? "Active" : "Not provided"}
+      />
     </div>
   );
 }
@@ -134,11 +75,11 @@ export default function EmployeeBenefitsTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left Column: Company Car, Fuel Card, Company Laptop */}
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* Company Car */}
-          <div className="space-y-4">
+          <div className={`${cardClass} space-y-4`}>
             <BenefitSectionHeader
               title="Company Car"
               enabled={employee.has_company_car ?? false}
@@ -188,7 +129,7 @@ export default function EmployeeBenefitsTab({
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+                <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
                   <label className={labelClass}>
                     Fuel Type <span className="ml-1 text-red-500">*</span>
                   </label>
@@ -209,7 +150,7 @@ export default function EmployeeBenefitsTab({
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+                <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
                   <label className={labelClass}>
                     Engine Size <span className="ml-1 text-red-500">*</span>
                   </label>
@@ -227,7 +168,7 @@ export default function EmployeeBenefitsTab({
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+              <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
                 <label className={labelClass}>
                   Date <span className="ml-1 text-red-500">*</span>
                 </label>
@@ -266,7 +207,7 @@ export default function EmployeeBenefitsTab({
                 <button
                   type="button"
                   disabled={isReadonly}
-                  className="rounded border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 >
                   History
                 </button>
@@ -275,7 +216,7 @@ export default function EmployeeBenefitsTab({
           </div>
 
           {/* Fuel Card */}
-          <div className="space-y-4">
+          <div className={`${cardClass} space-y-4`}>
             <BenefitSectionHeader
               title="Fuel Card"
               enabled={employee.has_fuel_card ?? false}
@@ -299,7 +240,7 @@ export default function EmployeeBenefitsTab({
                       updateBoolean("fuel_cost_deductions", e.target.checked)
                     }
                     disabled={isReadonly}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-slate-300 accent-emerald-700 focus:ring-emerald-500"
                   />
                   <span className="text-xs text-slate-700 dark:text-slate-300">
                     Fuel Cost Deductions for Personal Mileage
@@ -308,7 +249,7 @@ export default function EmployeeBenefitsTab({
                 <button
                   type="button"
                   disabled={isReadonly}
-                  className="rounded border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 >
                   History
                 </button>
@@ -317,7 +258,7 @@ export default function EmployeeBenefitsTab({
           </div>
 
           {/* Company Laptop */}
-          <div className="space-y-4">
+          <div className={`${cardClass} space-y-4`}>
             <BenefitSectionHeader
               title="Company Laptop"
               enabled={employee.has_company_laptop ?? false}
@@ -350,7 +291,7 @@ export default function EmployeeBenefitsTab({
                 disabled={isReadonly}
                 required
               />
-              <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+              <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
                 <label className={labelClass}>
                   Date <span className="ml-1 text-red-500">*</span>
                 </label>
@@ -389,7 +330,7 @@ export default function EmployeeBenefitsTab({
                 <button
                   type="button"
                   disabled={isReadonly}
-                  className="rounded border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 >
                   History
                 </button>
@@ -399,9 +340,9 @@ export default function EmployeeBenefitsTab({
         </div>
 
         {/* Right Column: Tablet, Mobile, Other Benefits & P11D */}
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* Company Tablet / Ipad */}
-          <div className="space-y-4">
+          <div className={`${cardClass} space-y-4`}>
             <BenefitSectionHeader
               title="Company Tablet / Ipad"
               enabled={employee.has_company_tablet ?? false}
@@ -434,7 +375,7 @@ export default function EmployeeBenefitsTab({
                 disabled={isReadonly}
                 required
               />
-              <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+              <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
                 <label className={labelClass}>
                   Date <span className="ml-1 text-red-500">*</span>
                 </label>
@@ -473,7 +414,7 @@ export default function EmployeeBenefitsTab({
                 <button
                   type="button"
                   disabled={isReadonly}
-                  className="rounded border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 >
                   History
                 </button>
@@ -482,7 +423,7 @@ export default function EmployeeBenefitsTab({
           </div>
 
           {/* Company Mobile */}
-          <div className="space-y-4">
+          <div className={`${cardClass} space-y-4`}>
             <BenefitSectionHeader
               title="Company Mobile"
               enabled={employee.has_company_mobile ?? false}
@@ -515,7 +456,7 @@ export default function EmployeeBenefitsTab({
                 disabled={isReadonly}
                 required
               />
-              <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3">
+              <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-3 sm:items-center sm:gap-3 max-w-[520px]">
                 <label className={labelClass}>
                   Date <span className="ml-1 text-red-500">*</span>
                 </label>
@@ -554,7 +495,7 @@ export default function EmployeeBenefitsTab({
                 <button
                   type="button"
                   disabled={isReadonly}
-                  className="rounded border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 >
                   History
                 </button>
@@ -563,21 +504,24 @@ export default function EmployeeBenefitsTab({
           </div>
 
           {/* Other Benefits & P11D */}
-          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <div className={`${cardClass} space-y-4`}>
             <div className="flex items-center justify-between">
-              <span className={labelClass}>Other Benefits</span>
+              <span className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100">
+                <Icon icon={sectionIcon("Other Benefits")} className="text-2xl text-emerald-800 dark:text-emerald-400" />
+                Other Benefits
+              </span>
               <div className="flex gap-2">
                 <button
                   type="button"
                   disabled={isReadonly}
-                  className="rounded border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 >
                   ☰ Benefits
                 </button>
                 <button
                   type="button"
                   disabled={isReadonly}
-                  className="rounded border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 >
                   History
                 </button>
