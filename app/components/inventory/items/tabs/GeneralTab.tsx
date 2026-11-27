@@ -2,9 +2,25 @@
 
 "use client";
 
+import { Icon } from "@iconify/react";
+
 import SelectWithAddModal from "@/app/components/common/SelectWithAddModal";
 import NumericTextInput from "@/components/ui/NumericTextInput";
 import { ItemFormData, ItemLookupOption } from "@/types/inventory";
+import {
+  cardClass,
+  errorTextClass,
+  fieldInputClass,
+  fieldLabelClass,
+  fieldRowClass,
+  getInputClass,
+  getSuffixWrapClass,
+  pillClass,
+  sectionHeaderClass,
+  sectionIconClass,
+  suffixInputClass,
+  suffixUnitClass,
+} from "./itemStyles";
 
 type Props = {
   item: ItemFormData;
@@ -23,6 +39,9 @@ type Props = {
   effectiveReadonly?: boolean;
 };
 
+const nameOf = (list: ItemLookupOption[], id?: string | null) =>
+  list.find((x) => x.id === id)?.name || "—";
+
 export default function GeneralTab({
   item,
   setItem,
@@ -36,31 +55,70 @@ export default function GeneralTab({
   autoCode,
   setAutoCode,
   errors,
-  isReadonly = false,
   effectiveReadonly = false,
 }: Props) {
+  const ro = effectiveReadonly;
+
+  const volume =
+    Number(item.height) > 0 && Number(item.width) > 0 && Number(item.length) > 0
+      ? Number(item.height) * Number(item.width) * Number(item.length)
+      : 0;
+
+  const typeLabel = Number(item.item_type) === 2 ? "Service" : "Inventory";
+
+  const suffixField = (
+    key: "net_weight" | "gross_weight" | "height" | "width" | "length",
+    unit: string,
+    placeholder = "0",
+  ) => (
+    <div className={getSuffixWrapClass(ro)}>
+      <NumericTextInput
+        placeholder={placeholder}
+        min="0"
+        allowDecimals
+        decimalScale={2}
+        disabled={ro}
+        value={Number(item[key])}
+        onChange={(val) => setItem((prev) => ({ ...prev, [key]: String(val) }))}
+        className={suffixInputClass}
+      />
+      <span className={suffixUnitClass}>{unit}</span>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start pt-2">
-        <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Item Code
-            </label>
-            <div className="col-span-2">
-              <div className="grid grid-cols-2 gap-2">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        {/* 1. Item details */}
+        <section className={`${cardClass} lg:col-span-7`}>
+          <div className={`${sectionHeaderClass} justify-between`}>
+            <span className="flex items-center gap-2">
+              <Icon icon="tabler:box" className={sectionIconClass} />
+              Item Details
+            </span>
+            <span className={pillClass}>{typeLabel}</span>
+          </div>
+
+          <div className="space-y-3">
+            {/* Item code + auto */}
+            <div className={fieldRowClass}>
+              <label className={fieldLabelClass}>Item Code</label>
+              <div className={`${fieldInputClass} flex items-center gap-2`}>
                 <input
                   type="text"
-                  disabled={autoCode || effectiveReadonly}
+                  disabled={autoCode || ro}
                   value={item.item_code}
                   onChange={(e) =>
                     setItem((prev) => ({ ...prev, item_code: e.target.value }))
                   }
                   placeholder={autoCode ? "Auto-generated" : "Enter item code"}
-                  className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 dark:disabled:bg-slate-800/50"
+                  className={`${getInputClass(
+                    Boolean(errors["general.item_code"]),
+                    autoCode || ro,
+                  )} font-mono`}
                 />
-                {!effectiveReadonly && (
-                  <label className="flex items-center gap-1.5 text-slate-500 cursor-pointer">
+                {!ro && (
+                  <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">
                     <input
                       type="checkbox"
                       checked={autoCode}
@@ -69,389 +127,228 @@ export default function GeneralTab({
                         if (e.target.checked)
                           setItem((prev) => ({ ...prev, item_code: "" }));
                       }}
-                      className="rounded border-slate-300 text-blue-600"
+                      className="h-4 w-4 rounded border-slate-300 accent-emerald-700"
                     />
-                    Auto Generate
+                    Auto
                   </label>
                 )}
               </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Name <span className="text-red-500">*</span>
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                disabled={effectiveReadonly}
-                value={item.name}
-                onChange={(e) =>
-                  setItem((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
-              />
-              {errors["general.name"] && (
-                <p className="text-red-500 text-[10px] mt-1">
-                  {errors["general.name"]}
+              {errors["general.item_code"] && (
+                <p className={`col-span-8 col-start-5 ${errorTextClass}`}>
+                  {errors["general.item_code"]}
                 </p>
               )}
             </div>
+
+            <div className={fieldRowClass}>
+              <label className={fieldLabelClass}>Category</label>
+              <div className={fieldInputClass}>
+                <SelectWithAddModal
+                  disabled={ro}
+                  value={item.category_id}
+                  onChange={(val) =>
+                    setItem((prev) => ({ ...prev, category_id: val }))
+                  }
+                  items={categories}
+                  placeholder="Select Category"
+                  apiEndpoint="/api/setup/inventory/categories"
+                  onItemAdded={(newCat) =>
+                    setCategories((prev) => [...prev, newCat])
+                  }
+                  className={getInputClass(false, ro)}
+                />
+              </div>
+            </div>
+
+            <div className={fieldRowClass}>
+              <label className={fieldLabelClass}>Brand</label>
+              <div className={fieldInputClass}>
+                <SelectWithAddModal
+                  disabled={ro}
+                  value={item.brand_id}
+                  onChange={(val) =>
+                    setItem((prev) => ({ ...prev, brand_id: val }))
+                  }
+                  items={brands}
+                  placeholder="Select Brand"
+                  apiEndpoint="/api/setup/inventory/brands"
+                  onItemAdded={(newBrand) =>
+                    setBrands((prev) => [...prev, newBrand])
+                  }
+                  className={getInputClass(false, ro)}
+                />
+              </div>
+            </div>
+
+            <div className={fieldRowClass}>
+              <label className={fieldLabelClass}>Item Type</label>
+              <div className={fieldInputClass}>
+                <select
+                  disabled={ro}
+                  value={item.item_type}
+                  onChange={(e) =>
+                    setItem((prev) => ({
+                      ...prev,
+                      item_type: Number(e.target.value),
+                    }))
+                  }
+                  className={getInputClass(false, ro)}
+                >
+                  <option value={1}>Inventory</option>
+                  <option value={2}>Service</option>
+                </select>
+              </div>
+            </div>
+
+            <div className={fieldRowClass}>
+              <label className={fieldLabelClass}>VAT Rate</label>
+              <div className={fieldInputClass}>
+                <select
+                  disabled={ro}
+                  value={item.vat_product_group_id || ""}
+                  onChange={(e) =>
+                    setItem((prev) => ({
+                      ...prev,
+                      vat_product_group_id: e.target.value,
+                    }))
+                  }
+                  className={getInputClass(false, ro)}
+                >
+                  <option value="">Select VAT Group</option>
+                  {vatProductGroups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 2. Units & stock */}
+        <section className={`${cardClass} lg:col-span-5 flex flex-col`}>
+          <div className={sectionHeaderClass}>
+            <Icon icon="tabler:ruler-measure" className={sectionIconClass} />
+            <span>Units &amp; Stock</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Category
-            </label>
-            <div className="col-span-2">
-              <SelectWithAddModal
-                disabled={effectiveReadonly}
-                value={item.category_id}
-                onChange={(val) =>
-                  setItem((prev) => ({ ...prev, category_id: val }))
-                }
-                items={categories}
-                placeholder="Select Category"
-                apiEndpoint="/api/setup/inventory/categories"
-                // additionalFields={[
-                //   { name: "code", label: "Category Code", type: "text" },
-                // ]}
-                onItemAdded={(newCat) =>
-                  setCategories((prev) => [...prev, newCat])
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-xs"
-              />
-              {/* <select
-                disabled={isReadonly}
-                value={item.category_id}
-                onChange={(e) =>
-                  setItem((prev) => ({ ...prev, category_id: e.target.value }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select> */}
+          <div className="space-y-3">
+            <div className={fieldRowClass}>
+              <label className={fieldLabelClass}>
+                Base UOM <span className="text-red-500">*</span>
+              </label>
+              <div className={fieldInputClass}>
+                <SelectWithAddModal
+                  disabled={ro}
+                  value={item.base_uom_id}
+                  onChange={(val) =>
+                    setItem((prev) => ({ ...prev, base_uom_id: val }))
+                  }
+                  items={uoms}
+                  placeholder="Select UOM"
+                  apiEndpoint="/api/setup/inventory/uoms"
+                  onItemAdded={(newUom) => setUoms((prev) => [...prev, newUom])}
+                  className={getInputClass(
+                    Boolean(errors["general.base_uom_id"]),
+                    ro,
+                  )}
+                />
+                {errors["general.base_uom_id"] && (
+                  <p className={errorTextClass}>
+                    {errors["general.base_uom_id"]}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className={fieldRowClass}>
+              <label className={fieldLabelClass}>Reorder Point</label>
+              <div className={fieldInputClass}>
+                <NumericTextInput
+                  placeholder="0"
+                  min="0"
+                  disabled={ro}
+                  value={Number(item.reorder_qty)}
+                  onChange={(val) =>
+                    setItem((prev) => ({ ...prev, reorder_qty: String(val) }))
+                  }
+                  className={`${getInputClass(false, ro)} tabular-nums`}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Brand
-            </label>
-            <div className="col-span-2">
-              {/* <select
-                disabled={isReadonly}
-                value={item.brand_id}
-                onChange={(e) =>
-                  setItem((prev) => ({ ...prev, brand_id: e.target.value }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
+          {/* Quick unit summary */}
+          <div className="mt-auto pt-4 grid grid-cols-3 gap-2">
+            {[
+              { label: "Base", value: nameOf(uoms, item.base_uom_id) },
+              {
+                label: "Purchase",
+                value: nameOf(uoms, item.purchase_uom_id || item.base_uom_id),
+              },
+              {
+                label: "Sales",
+                value: nameOf(uoms, item.sales_uom_id || item.base_uom_id),
+              },
+            ].map((u) => (
+              <div
+                key={u.label}
+                className="rounded-lg border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 px-2.5 py-2"
               >
-                <option value="">Select Brand</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select> */}
-
-              <SelectWithAddModal
-                disabled={effectiveReadonly}
-                value={item.brand_id}
-                onChange={(val) =>
-                  setItem((prev) => ({ ...prev, brand_id: val }))
-                }
-                items={brands}
-                placeholder="Select Brand"
-                apiEndpoint="/api/setup/inventory/brands"
-                // additionalFields={[
-                //   { name: "code", label: "Brand Code", type: "text" },
-                // ]}
-                onItemAdded={(newBrand) =>
-                  setBrands((prev) => [...prev, newBrand])
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Item Type
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={effectiveReadonly}
-                value={item.item_type}
-                onChange={(e) =>
-                  setItem((prev) => ({
-                    ...prev,
-                    item_type: Number(e.target.value),
-                  }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
-              >
-                <option value={1}>Inventory</option>
-                <option value={2}>Service</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              {/* VAT Product Posting Group */}VAT Rate
-            </label>
-            <div className="col-span-2">
-              <select
-                disabled={effectiveReadonly}
-                value={item.vat_product_group_id || ""}
-                onChange={(e) =>
-                  setItem((prev) => ({
-                    ...prev,
-                    vat_product_group_id: e.target.value,
-                  }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900"
-              >
-                <option value="">Select VAT Group</option>
-                {vatProductGroups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Base Unit of Measure <span className="text-red-500">*</span>
-            </label>
-            <div className="col-span-2">
-              {/* <select
-                disabled={isReadonly}
-                value={item.base_uom_id}
-                onChange={(e) =>
-                  setItem((prev) => ({ ...prev, base_uom_id: e.target.value }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5"
-              >
-                <option value="">Select UOM</option>
-                {uoms.map((uom) => (
-                  <option key={uom.id} value={uom.id}>
-                    {uom.name}
-                  </option>
-                ))}
-              </select> */}
-
-              <SelectWithAddModal
-                disabled={effectiveReadonly}
-                value={item.base_uom_id}
-                onChange={(val) =>
-                  setItem((prev) => ({ ...prev, base_uom_id: val }))
-                }
-                items={uoms}
-                placeholder="Select UOM"
-                apiEndpoint="/api/setup/inventory/uoms"
-                // additionalFields={[
-                //   {
-                //     name: "code",
-                //     label: "UOM Code (e.g., PCS, KG)",
-                //     type: "text",
-                //   },
-                // ]}
-                onItemAdded={(newUom) => setUoms((prev) => [...prev, newUom])}
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 bg-white dark:bg-slate-900 text-xs"
-              />
-              {errors["general.base_uom_id"] && (
-                <p className="text-red-500 text-[10px] mt-1">
-                  {errors["general.base_uom_id"]}
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                  {u.label} UOM
                 </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Reorder Point Quantity
-            </label>
-            <div className="col-span-2">
-              <NumericTextInput
-                placeholder="0"
-                min="0"
-                disabled={effectiveReadonly}
-                value={Number(item.reorder_qty)}
-                onChange={(val) =>
-                  setItem((prev) => ({ ...prev, reorder_qty: String(val) }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Net Weight
-            </label>
-
-            <div className="col-span-2 flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
-              <NumericTextInput
-                placeholder="0"
-                min="0"
-                allowDecimals
-                decimalScale={2}
-                disabled={effectiveReadonly}
-                value={Number(item.net_weight)}
-                onChange={(val) =>
-                  setItem((prev) => ({ ...prev, net_weight: String(val) }))
-                }
-                className="w-full p-2.5 border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
-              />
-              <span className="px-3 text-slate-500 dark:text-slate-400 text-xs font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
-                kg
-              </span>
-            </div>
-            {/* <div className="col-span-2">
-              <NumericTextInput
-                placeholder="0"
-                min="0"
-                allowDecimals
-                decimalScale={2}
-                disabled={effectiveReadonly}
-                value={Number(item.net_weight)}
-                onChange={(val) =>
-                  setItem((prev) => ({ ...prev, net_weight: String(val) }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
-              />
-            </div> */}
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Gross Weight
-            </label>
-            <div className="col-span-2 flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
-              <NumericTextInput
-                placeholder="0"
-                min="0"
-                allowDecimals
-                decimalScale={2}
-                disabled={effectiveReadonly}
-                value={Number(item.gross_weight)}
-                onChange={(val) =>
-                  setItem((prev) => ({ ...prev, gross_weight: String(val) }))
-                }
-                className="w-full p-2.5 border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
-              />
-              <span className="px-3 text-slate-500 dark:text-slate-400 text-xs font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
-                kg
-              </span>
-            </div>
-          </div>
-
-
-          {/* Dimensions (Height, Width, Length in a single row) */}
-          <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Dimensions (H × W × L)
-            </label>
-            <div className="col-span-2 grid grid-cols-3 gap-1.5">
-              {/* Height */}
-              <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
-                <NumericTextInput
-                  placeholder="H"
-                  min="0"
-                  allowDecimals
-                  decimalScale={2}
-                  disabled={effectiveReadonly}
-                  value={Number(item.height)}
-                  onChange={(val) =>
-                    setItem((prev) => ({ ...prev, height: String(val) }))
-                  }
-                  className="w-full p-2.5 text-xs border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
-                />
-                <span className="px-1.5 text-slate-500 dark:text-slate-400 text-[10px] font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
-                  cm
-                </span>
+                <p className="truncate text-sm font-semibold text-black dark:text-slate-100">
+                  {u.value}
+                </p>
               </div>
-
-              {/* Width */}
-              <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
-                <NumericTextInput
-                  placeholder="W"
-                  min="0"
-                  allowDecimals
-                  decimalScale={2}
-                  disabled={effectiveReadonly}
-                  value={Number(item.width)}
-                  onChange={(val) =>
-                    setItem((prev) => ({ ...prev, width: String(val) }))
-                  }
-                  className="w-full p-2.5 text-xs border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
-                />
-                <span className="px-1.5  text-slate-500 dark:text-slate-400 text-[10px] font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
-                  cm
-                </span>
-              </div>
-
-              {/* Length */}
-              <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 overflow-hidden">
-                <NumericTextInput
-                  placeholder="L"
-                  min="0"
-                  allowDecimals
-                  decimalScale={2}
-                  disabled={effectiveReadonly}
-                  value={Number(item.length)}
-                  onChange={(val) =>
-                    setItem((prev) => ({ ...prev, length: String(val) }))
-                  }
-                  className="w-full p-2.5 text-xs border-none focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed bg-transparent"
-                />
-                <span className="px-1.5 text-slate-500 dark:text-slate-400 text-[10px] font-medium border-l border-slate-200 dark:border-slate-800 self-stretch flex items-center">
-                  cm
-                </span>
-              </div>
-            </div>
+            ))}
           </div>
-
-          
-        </div>
+        </section>
       </div>
+
+      {/* 3. Weights & dimensions */}
+      <section className={cardClass}>
+        <div className={`${sectionHeaderClass} justify-between`}>
+          <span className="flex items-center gap-2">
+            <Icon icon="tabler:dimensions" className={sectionIconClass} />
+            Weights &amp; Dimensions
+          </span>
+          {volume > 0 && (
+            <span className={`${pillClass} tabular-nums`}>
+              Volume {volume.toLocaleString(undefined, { maximumFractionDigits: 2 })} cm³
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-3">
+          <div className="space-y-3">
+            <div className={fieldRowClass}>
+              <label className={fieldLabelClass}>Net Weight</label>
+              <div className={fieldInputClass}>{suffixField("net_weight", "kg")}</div>
+            </div>
+            <div className={fieldRowClass}>
+              <label className={fieldLabelClass}>Gross Weight</label>
+              <div className={fieldInputClass}>{suffixField("gross_weight", "kg")}</div>
+            </div>
+          </div>
+
+          <div className={`${fieldRowClass} self-start`}>
+            <label className={fieldLabelClass}>
+              Dimensions
+              <span className="block text-[10px] font-normal text-slate-400">
+                H × W × L
+              </span>
+            </label>
+            <div className={`${fieldInputClass} grid grid-cols-3 gap-1.5`}>
+              {suffixField("height", "cm", "H")}
+              {suffixField("width", "cm", "W")}
+              {suffixField("length", "cm", "L")}
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
-}
-
-{
-  /* <div className="grid grid-cols-3 gap-2 items-center">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Barcode
-            </label>
-            <div className="col-span-2">
-              <input
-                type="text"
-                disabled={isReadonly}
-                value={item.barcode}
-                onChange={(e) =>
-                  setItem((prev) => ({ ...prev, barcode: e.target.value }))
-                }
-                className="w-full border border-slate-200 dark:border-slate-800 rounded p-2.5 disabled:bg-slate-50 disabled:cursor-not-allowed"
-              />
-            </div>
-          </div> */
-}
-{
-  /* <option value={3}>Non Inventory</option>
-                <option value={4}>Raw Material</option>
-                <option value={5}>Finished Goods</option>
-                <option value={6}>Asset</option> */
 }

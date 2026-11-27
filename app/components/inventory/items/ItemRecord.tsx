@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
 import { useLoader } from "@/app/context/LoaderContext";
 
 import ItemDetailHeader from "./ItemDetailHeader";
@@ -114,6 +114,25 @@ export default function ItemRecord({
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  /* Snapshot taken when editing starts, restored on Cancel */
+  const [snapshot, setSnapshot] = useState<{
+    item: ItemFormData;
+    warehouses: ItemWarehouseDraft[];
+    priceOffers: ItemPriceOfferDraft[];
+    autoCode: boolean;
+  } | null>(null);
+
+  const startEditing = () => {
+    if (isEditing || isReadonlyProp) return;
+    setSnapshot({
+      item: structuredClone(item),
+      warehouses: structuredClone(warehouses),
+      priceOffers: structuredClone(priceOffers),
+      autoCode,
+    });
+    setIsEditing(true);
+  };
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -366,6 +385,14 @@ export default function ItemRecord({
       router.back();
       return;
     }
+
+    if (snapshot) {
+      setItem(snapshot.item);
+      setWarehouses(snapshot.warehouses);
+      setPriceOffers(snapshot.priceOffers);
+      setAutoCode(snapshot.autoCode);
+      setSnapshot(null);
+    }
     setIsEditing(false);
   };
 
@@ -416,65 +443,85 @@ export default function ItemRecord({
         body: JSON.stringify(payload),
       });
 
+      const result = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to save item details.");
+        throw new Error(result.error || "Failed to save item details.");
+      }
+
+      /* New item: open its record page */
+      const newId = result?.id || result?.item?.id;
+      if (!id && newId) {
+        toast.success("Item created successfully! ✅");
+        router.replace(`/${slug}/inventory/items/${newId}`);
+        return;
       }
 
       // router.push(`/${slug}/inventory/items`);
       // Clear errors, exit edit mode & notify user
       setFormErrors({});
+      setSnapshot(null);
       setIsEditing(false);
       toast.success("Record saved successfully! ✅");
     } catch (err) {
       if (err instanceof Error) {
         setFormErrors({ global: err.message });
+        toast.error(err.message);
       }
     } finally {
       setSaving(false);
     }
   };
 
+  /* "activities" is opened from the header Activity link, not the tab bar */
   const tabs = [
-    { key: "general", label: "General" },
-    { key: "purchase", label: "Purchase Information" },
-    { key: "sales", label: "Sales Information" },
-    { key: "price_offers", label: "Price Offers" },
-    // { key: "margin", label: "Item Margin Analysis" },
-    { key: "warehouse", label: "Warehouse Location & Cost" },
-    // { key: "warehouse_activities", label: "Warehouse Activity" },
-    { key: "activities", label: "Activities" },
+    { key: "general", label: "General", icon: "tabler:box" },
+    { key: "purchase", label: "Purchase", icon: "tabler:shopping-cart" },
+    { key: "sales", label: "Sales", icon: "tabler:receipt" },
+    { key: "price_offers", label: "Price Offers", icon: "tabler:tags" },
+    { key: "warehouse", label: "Warehouse & Cost", icon: "tabler:building-warehouse" },
   ];
 
+  const errorKeyTab = (key: string) =>
+    key.startsWith("warehouses.") ? "warehouse" : key.split(".")[0];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Breadcrumbs
         items={[
           {
             label: "Items",
             href: `/${slug}/inventory/items`,
           },
-          { label: item.item_code || "" },
+          { label: item.item_code || (id ? "" : "New Item") },
         ]}
       />
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
-        <ItemDetailHeader
-          item={item}
-          metrics={stockMetrics}
-          onItemUpdated={(updatedAccount) => {
-            setItem((prev) => ({
-              ...prev,
-              ...updatedAccount,
-            }));
-            // setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
-          }}
-        />
+      <ItemDetailHeader
+        item={item}
+        metrics={stockMetrics}
+        onItemUpdated={(updated) => {
+          setItem((prev) => ({ ...prev, ...updated }));
+        }}
+        categoryName={categories.find((c) => c.id === item.category_id)?.name}
+        canEdit={!isReadonlyProp}
+        isEditing={!isReadonlyProp && isEditing}
+        saving={saving}
+        onEdit={startEditing}
+        onSave={() => void handleSave()}
+        onCancelEdit={handleCancelEdit}
+        onClose={() => router.back()}
+        onNameChange={(value) => setItem((prev) => ({ ...prev, name: value }))}
+        nameError={formErrors["general.name"]}
+        onOpenActivities={id ? () => setActiveTab("activities") : undefined}
+        activityActive={activeTab === "activities"}
+      />
 
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
         {Object.keys(formErrors).length > 0 && (
-          <div className="p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
+          <div className="mb-4 p-4 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg dark:bg-red-950/30 dark:text-red-400 dark:border-red-900">
             <p className="font-semibold mb-1">
-              Please resolve errors before saving:
+              Please fix the following before saving:
             </p>
             <ul className="list-disc pl-5 space-y-0.5">
               {Object.entries(formErrors).map(([key, msg]) => (
@@ -486,20 +533,25 @@ export default function ItemRecord({
 
         <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-px flex-wrap">
           {tabs.map((tab) => {
-            const hasError = Object.keys(formErrors).some((k) =>
-              k.startsWith(`${tab.key}.`),
+            const hasError = Object.keys(formErrors).some(
+              (k) => errorKeyTab(k) === tab.key,
             );
+            const active = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2.5 text-xs font-medium transition-all border-b-2 -mb-px flex items-center gap-2 ${
-                  activeTab === tab.key
-                    ? "border-blue-600 text-blue-600 font-semibold"
+                className={`px-4 py-2.5 text-xs font-medium transition-all border-b-2 -mb-px flex items-center gap-1.5 ${
+                  active
+                    ? "border-emerald-600 text-emerald-600 font-semibold"
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
               >
+                <Icon
+                  icon={tab.icon}
+                  className={`h-4 w-4 ${active ? "text-emerald-600" : "text-slate-400"}`}
+                />
                 {tab.label}
                 {hasError && (
                   <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
@@ -509,22 +561,7 @@ export default function ItemRecord({
           })}
         </div>
 
-        <div className="py-2">
-          {/* {activeTab === "general" && (
-            <GeneralTab
-              item={item}
-              setItem={setItem}
-              categories={categories}
-              brands={brands}
-              uoms={uoms}
-              vatProductGroups={vatProductGroups}
-              autoCode={autoCode}
-              setAutoCode={setAutoCode}
-              errors={formErrors}
-              isReadonly={effectiveReadonly}
-            />
-          )} */}
-
+        <div className="py-2 pt-6">
           {activeTab === "general" && (
             <GeneralTab
               item={item}
@@ -568,13 +605,9 @@ export default function ItemRecord({
               isReadonly={effectiveReadonly}
               priceOffers={priceOffers}
               setPriceOffers={setPriceOffers}
-              onRequestEdit={() => !isEditing && setIsEditing(true)}
+              onRequestEdit={startEditing}
             />
           )}
-
-          {/* {activeTab === "margin" && (
-            <MarginAnalysisTab itemId={id} isReadonly={effectiveReadonly} />
-          )} */}
 
           {activeTab === "warehouse" && (
             <WarehouseTab
@@ -586,65 +619,13 @@ export default function ItemRecord({
           )}
 
           {activeTab === "warehouse_activities" && <WarehouseStockTab itemId={id} />}
-          {activeTab === "activities" && <ItemActivityTab itemId={id} />}
-        </div>
-
-        <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
-          {!isReadonlyProp && (
-            <>
-              {!isEditing ? (
-                <>
-                  <Button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    variant="edit"
-                  >
-                    Edit
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="cancel"
-                    onClick={() => router.back()}
-                  >
-                    Close
-                  </Button>
-                </>
-              ) : (
-                /* EDIT MODE BUTTONS */
-                <>
-                  <Button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saving}
-                    variant="save"
-                  >
-                    {saving ? (
-                      <>
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>Save</>
-                    )}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="cancel"
-                    onClick={handleCancelEdit}
-                    disabled={saving}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              )}
-            </>
-          )}
+          {activeTab === "activities" && id && <ItemActivityTab itemId={id} />}
         </div>
       </div>
     </div>
   );
 }
+
 /*
 { key: "accounting", label: "Accounting GL" },
 { key: "attributes", label: "Attributes" },

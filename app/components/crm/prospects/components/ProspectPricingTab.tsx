@@ -725,6 +725,18 @@ export default function ProspectPricingTab({
               )
             ))}
 
+            
+
+                  <Button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => startEdit(null)}
+                    // className="rounded-md px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-50"
+                    variant="save"
+                  >
+                    + New offer
+                  </Button>
+
 
           {editing ? (
             <>
@@ -1181,7 +1193,8 @@ export default function ProspectPricingTab({
                           ),
                         )
                       }
-                      className="h-7 rounded-md border border-slate-300 bg-white px-1.5 text-xs"
+                      // className="h-7 rounded-md border border-slate-300 bg-white pl-1.5 pr-6  text-xs"
+                      className="h-7 rounded-md border border-emerald-800 bg-emerald-100 pl-2 pr-6 text-xs text-emerald-800"
                     >
                       {OFFER_STATUSES.map((status) => (
                         <option key={status} value={status}>
@@ -1201,15 +1214,6 @@ export default function ProspectPricingTab({
                       Set as primary
                     </button>
                   )} */}
-
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => startEdit(null)}
-                    className="rounded-md px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-50"
-                  >
-                    + New offer
-                  </button>
 
                   {offer.status && //  === "DRAFT"
                     (confirmDelete ? (

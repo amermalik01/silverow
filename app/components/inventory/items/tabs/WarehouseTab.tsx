@@ -11,8 +11,18 @@ import type {
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
 import NumericTextInput from "@/components/ui/NumericTextInput";
+import {
+  cardClass,
+  fieldInputClass,
+  fieldLabelClass,
+  fieldRowClass,
+  getInputClass,
+  pillClass,
+  primaryButtonClass,
+  sectionIconClass,
+} from "./itemStyles";
 
 type Props = {
   warehouses?: ItemWarehouseDraft[]; // Made optional to prevent runtime crashes
@@ -134,294 +144,282 @@ export default function WarehouseTab({
 
   // Safe reference for rendering
   const activeWarehouses = warehouses || [];
+  const ro = isReadonly;
 
   return (
-    <div className="space-y-6">
-      {/* Top Header Summary Bar */}
-      <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between text-xs gap-4">
-        {/* <div className="flex items-center gap-6 text-slate-600 dark:text-slate-300 font-medium">
-          <span>
-            On Route Stock:{" "}
-            <strong className="text-slate-900 dark:text-white">0</strong>
+    <div className="space-y-4">
+      {/* Header bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-2.5">
+        <div className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100">
+          <Icon icon="tabler:building-warehouse" className={sectionIconClass} />
+          <span>Warehouse Locations &amp; Cost</span>
+          <span className={pillClass}>
+            {activeWarehouses.length}{" "}
+            {activeWarehouses.length === 1 ? "location" : "locations"}
           </span>
-          <span>
-            Total Stock:{" "}
-            <strong className="text-slate-900 dark:text-white">0</strong>
-          </span>
-          <span>
-            Available Stock:{" "}
-            <strong className="text-slate-900 dark:text-white">0</strong>
-          </span>
-          <span>
-            Allocated Stock:{" "}
-            <strong className="text-slate-900 dark:text-white">0</strong>
-          </span>
-        </div> */}
+        </div>
 
-        {!isReadonly && (
-          <Button
+        {!ro && (
+          <button
             type="button"
             onClick={addWarehouseRow}
             disabled={loadingLookups}
-            variant="add_line"
-            // className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-sm disabled:opacity-50"
+            className={primaryButtonClass}
           >
+            <Icon icon="tabler:plus" className="text-base" />
             Add Warehouse
-          </Button>
+          </button>
         )}
       </div>
 
       {activeWarehouses.length === 0 && (
-        <div className="p-8 text-center text-xs border border-dashed rounded border-slate-300 dark:border-slate-700 text-slate-400">
+        <div className="p-8 text-center text-sm border border-dashed rounded-xl border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-[#11161D]/50 text-slate-400">
+          <Icon
+            icon="tabler:building-warehouse"
+            className="mx-auto mb-2 text-3xl text-slate-300 dark:text-slate-600"
+          />
           No warehouse assignments established for this item.
         </div>
       )}
 
-      {/* Warehouse Cards List */}
       {activeWarehouses.map((w, idx) => {
         const filteredLocations = locationList.filter(
           (loc) => loc.warehouse_id === w.warehouse_id,
         );
+        const warehouse = warehouseList.find((x) => x.id === w.warehouse_id);
+        const isActive = Number(w.status ?? 1) === 1;
 
         return (
-          <div
+          <section
             key={idx}
-            className="relative rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden text-xs shadow-sm"
+            className={`${cardClass} p-0 overflow-hidden ${
+              w.is_default ? "border-emerald-300 dark:border-emerald-800" : ""
+            }`}
           >
-            {/* Row Header */}
-            <div className="flex items-center justify-between font-medium px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-700 dark:text-slate-200">
-                  Location Assignment #{idx + 1}
+            {/* Card header */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-600/15 text-[11px] font-bold text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400">
+                  {idx + 1}
                 </span>
-
+                <span className="truncate text-sm font-semibold text-black dark:text-slate-100">
+                  {warehouse
+                    ? `${warehouse.code} - ${warehouse.name}`
+                    : "New location assignment"}
+                </span>
                 {w.is_default && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                    Default Warehouse
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
+                    <Icon icon="tabler:star-filled" className="h-3 w-3" />
+                    Default
                   </span>
                 )}
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                    isActive
+                      ? "border-emerald-200 bg-white text-emerald-700 dark:border-emerald-800 dark:bg-transparent dark:text-emerald-400"
+                      : "border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800"
+                  }`}
+                >
+                  {isActive ? "Active" : "Inactive"}
+                </span>
               </div>
 
-              {!isReadonly && (
-                <button
-                  type="button"
-                  onClick={() => removeRow(idx)}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 transition"
-                  title="Remove location assignment"
-                >
-                  ✕
-                </button>
+              {!ro && (
+                <div className="flex items-center gap-1">
+                  {!w.is_default && (
+                    <button
+                      type="button"
+                      onClick={() => handleSetDefault(idx)}
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40"
+                      title="Make this the default warehouse"
+                    >
+                      <Icon icon="tabler:star" className="h-3.5 w-3.5" />
+                      Set default
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeRow(idx)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                    title="Remove location assignment"
+                  >
+                    <Icon icon="tabler:trash" className="h-4 w-4" />
+                  </button>
+                </div>
               )}
             </div>
 
-            {/* Field Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-4">
-              {/* Left Column */}
+            {/* Fields */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-3 p-4">
               <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-3 items-center">
-                  <label className="font-medium text-slate-700 dark:text-slate-300">
+                <div className={fieldRowClass}>
+                  <label className={fieldLabelClass}>
                     Warehouse <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    disabled={isReadonly}
-                    value={w.warehouse_id || ""}
-                    onChange={(e) =>
-                      updateWarehouseRow(idx, "warehouse_id", e.target.value)
-                    }
-                    className={`col-span-2 p-2 rounded border ${
-                      errors[`warehouses.${idx}.warehouse_id`]
-                        ? "border-red-500"
-                        : "border-slate-300 dark:border-slate-700"
-                    } dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                  >
-                    <option value="">Select Warehouse...</option>
-                    {warehouseList.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.code} - {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 items-center">
-                  <label className="font-medium text-slate-700 dark:text-slate-300">
-                    Storage Location <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    disabled={isReadonly || !w.warehouse_id}
-                    value={w.storage_location_id || ""}
-                    onChange={(e) =>
-                      updateWarehouseRow(
-                        idx,
-                        "storage_location_id",
-                        e.target.value,
-                      )
-                    }
-                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900 disabled:opacity-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="">Select Location...</option>
-                    {filteredLocations.map((loc) => (
-                      <option key={loc.id} value={loc.id}>
-                        {loc.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 items-center">
-                  <label className="font-medium text-slate-700 dark:text-slate-300">
-                    Start Date
-                  </label>
-
-                  <DatePicker
-                    value={w.start_date ? parseISO(w.start_date) : undefined}
-                    onChange={(date) =>
-                      updateWarehouseRow(
-                        idx,
-                        "start_date",
-                        date ? format(date, "yyyy-MM-dd") : "",
-                      )
-                    }
-                    disabled={isReadonly}
-                    className="col-span-2 w-full bg-white text-slate-900 border border-slate-300 dark:border-slate-700 dark:bg-slate-900 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* <div className="grid grid-cols-3 gap-3 items-center">
-                  <label className="font-medium text-slate-700 dark:text-slate-300">
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    disabled={isReadonly}
-                    value={w.start_date || ""}
-                    onChange={(e) =>
-                      updateWarehouseRow(idx, "start_date", e.target.value)
-                    }
-                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                  />
-                </div> */}
-
-                <div className="grid grid-cols-3 gap-3 items-start">
-                  <label className="font-medium text-slate-700 dark:text-slate-300 pt-2">
-                    Comments
-                  </label>
-                  <textarea
-                    rows={2}
-                    disabled={isReadonly}
-                    value={w.comments || ""}
-                    onChange={(e) =>
-                      updateWarehouseRow(idx, "comments", e.target.value)
-                    }
-                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                  />
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-3 items-center">
-                  <label className="font-medium text-slate-700 dark:text-slate-300">
-                    Unit of Measure
-                  </label>
-                  <input
-                    type="text"
-                    disabled={isReadonly}
-                    value={w.unit_of_measure || ""}
-                    onChange={(e) =>
-                      updateWarehouseRow(idx, "unit_of_measure", e.target.value)
-                    }
-                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 items-center">
-                  <label className="font-medium text-slate-700 dark:text-slate-300">
-                    Cost Frequency
-                  </label>
-                  <select
-                    disabled={isReadonly}
-                    value={w.cost_frequency || "Weekly"}
-                    onChange={(e) =>
-                      updateWarehouseRow(idx, "cost_frequency", e.target.value)
-                    }
-                    className="col-span-2 p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                  >
-                    <option value="Daily">Daily</option>
-                    <option value="Weekly">Weekly</option>
-                    <option value="Monthly">Monthly</option>
-                    <option value="Yearly">Yearly</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 items-center">
-                  <label className="font-medium text-slate-700 dark:text-slate-300">
-                    Currency / Cost
-                  </label>
-                  <div className="col-span-2 grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      disabled={isReadonly}
-                      placeholder="GBP"
-                      value={w.currency || ""}
+                  <div className={fieldInputClass}>
+                    <select
+                      disabled={ro}
+                      value={w.warehouse_id || ""}
                       onChange={(e) =>
-                        updateWarehouseRow(idx, "currency", e.target.value)
+                        updateWarehouseRow(idx, "warehouse_id", e.target.value)
                       }
-                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900 capitalize"
-                    />
-
-                    <NumericTextInput
-                      allowDecimals
-                      decimalScale={2}
-                      disabled={isReadonly}
-                      value={Number(w.cost)}
-                      onChange={(val) =>
-                        updateWarehouseRow(idx, "cost", String(val))
-                      }
-                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                    />
-                    {/* <input
-                      type="number"
-                      step="0.0001"
-                      disabled={isReadonly}
-                      placeholder="0.00"
-                      value={w.cost ?? ""}
-                      onChange={(e) =>
-                        updateWarehouseRow(idx, "cost", e.target.value)
-                      }
-                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-                    /> */}
+                      className={getInputClass(
+                        Boolean(errors[`warehouses.${idx}.warehouse_id`]),
+                        ro,
+                      )}
+                    >
+                      <option value="">Select Warehouse...</option>
+                      {warehouseList.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.code} - {item.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 items-center">
-                  <label className="font-medium text-slate-700 dark:text-slate-300">
-                    Default / Status
+                <div className={fieldRowClass}>
+                  <label className={fieldLabelClass}>
+                    Storage Location <span className="text-red-500">*</span>
                   </label>
-                  <div className="col-span-2 flex items-center justify-between gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer font-medium">
-                      <input
-                        type="radio"
-                        name="default_warehouse_radio"
-                        disabled={isReadonly}
-                        checked={!!w.is_default}
-                        onChange={() => handleSetDefault(idx)}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      Default
-                    </label>
-
+                  <div className={fieldInputClass}>
                     <select
-                      disabled={isReadonly}
-                      value={w.status ?? 1}
+                      disabled={ro || !w.warehouse_id}
+                      value={w.storage_location_id || ""}
                       onChange={(e) =>
                         updateWarehouseRow(
                           idx,
-                          "status",
-                          Number(e.target.value),
+                          "storage_location_id",
+                          e.target.value,
                         )
                       }
-                      className="p-2 rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                      className={getInputClass(false, ro || !w.warehouse_id)}
+                    >
+                      <option value="">
+                        {w.warehouse_id ? "Select Location..." : "Select a warehouse first"}
+                      </option>
+                      {filteredLocations.map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className={fieldRowClass}>
+                  <label className={fieldLabelClass}>Start Date</label>
+                  <div className={fieldInputClass}>
+                    <DatePicker
+                      value={w.start_date ? parseISO(w.start_date) : undefined}
+                      onChange={(date) =>
+                        updateWarehouseRow(
+                          idx,
+                          "start_date",
+                          date ? format(date, "yyyy-MM-dd") : "",
+                        )
+                      }
+                      disabled={ro}
+                      className={getInputClass(false, ro)}
+                    />
+                  </div>
+                </div>
+
+                <div className={`${fieldRowClass} items-start`}>
+                  <label className={`${fieldLabelClass} pt-1.5`}>Comments</label>
+                  <div className={fieldInputClass}>
+                    <textarea
+                      rows={2}
+                      disabled={ro}
+                      value={w.comments || ""}
+                      onChange={(e) =>
+                        updateWarehouseRow(idx, "comments", e.target.value)
+                      }
+                      placeholder="Notes for this location..."
+                      className={`${getInputClass(false, ro)} resize-none`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className={fieldRowClass}>
+                  <label className={fieldLabelClass}>Unit of Measure</label>
+                  <div className={fieldInputClass}>
+                    <input
+                      type="text"
+                      disabled={ro}
+                      value={w.unit_of_measure || ""}
+                      onChange={(e) =>
+                        updateWarehouseRow(idx, "unit_of_measure", e.target.value)
+                      }
+                      className={getInputClass(false, ro)}
+                    />
+                  </div>
+                </div>
+
+                <div className={fieldRowClass}>
+                  <label className={fieldLabelClass}>Cost Frequency</label>
+                  <div className={fieldInputClass}>
+                    <select
+                      disabled={ro}
+                      value={w.cost_frequency || "Weekly"}
+                      onChange={(e) =>
+                        updateWarehouseRow(idx, "cost_frequency", e.target.value)
+                      }
+                      className={getInputClass(false, ro)}
+                    >
+                      <option value="Daily">Daily</option>
+                      <option value="Weekly">Weekly</option>
+                      <option value="Monthly">Monthly</option>
+                      <option value="Yearly">Yearly</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className={fieldRowClass}>
+                  <label className={fieldLabelClass}>Currency / Cost</label>
+                  <div className={`${fieldInputClass} grid grid-cols-5 gap-2`}>
+                    <input
+                      type="text"
+                      disabled={ro}
+                      placeholder="GBP"
+                      maxLength={3}
+                      value={w.currency || ""}
+                      onChange={(e) =>
+                        updateWarehouseRow(
+                          idx,
+                          "currency",
+                          e.target.value.toUpperCase(),
+                        )
+                      }
+                      className={`${getInputClass(false, ro)} col-span-2 uppercase`}
+                    />
+                    <div className="col-span-3">
+                      <NumericTextInput
+                        allowDecimals
+                        decimalScale={2}
+                        disabled={ro}
+                        value={Number(w.cost)}
+                        onChange={(val) =>
+                          updateWarehouseRow(idx, "cost", String(val))
+                        }
+                        className={`${getInputClass(false, ro)} tabular-nums font-semibold`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className={fieldRowClass}>
+                  <label className={fieldLabelClass}>Status</label>
+                  <div className={fieldInputClass}>
+                    <select
+                      disabled={ro}
+                      value={w.status ?? 1}
+                      onChange={(e) =>
+                        updateWarehouseRow(idx, "status", Number(e.target.value))
+                      }
+                      className={getInputClass(false, ro)}
                     >
                       <option value={1}>Active</option>
                       <option value={0}>Inactive</option>
@@ -430,7 +428,7 @@ export default function WarehouseTab({
                 </div>
               </div>
             </div>
-          </div>
+          </section>
         );
       })}
     </div>

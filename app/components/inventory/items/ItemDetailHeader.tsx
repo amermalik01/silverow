@@ -1,7 +1,7 @@
 // app/components/inventory/items/ItemDetailHeader.tsx
 
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ItemFormData } from "@/types/inventory";
 import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
@@ -31,13 +31,50 @@ type MetricProps = {
     allocatedStock: number;
   };
   onItemUpdated?: (updatedAccount: Partial<ItemFormData>) => void;
+
+  /* ---- Edit mode (buttons live in the header, like the parties form) ---- */
+  canEdit?: boolean;
+  isEditing?: boolean;
+  saving?: boolean;
+  onEdit?: () => void;
+  onSave?: () => void;
+  onCancelEdit?: () => void;
+  onClose?: () => void;
+  /** Item name changes (editable in the header while editing). */
+  onNameChange?: (value: string) => void;
+  nameError?: string;
+
+  /* ---- Activity link ---- */
+  onOpenActivities?: () => void;
+  activityActive?: boolean;
+  /** Small text under "Activity". */
+  activitySubtitle?: string;
+  /** Category name shown under the item name. */
+  categoryName?: string;
 };
 
 export default function ItemDetailHeader({
   item,
   metrics,
   onItemUpdated,
+  canEdit = false,
+  isEditing = false,
+  saving = false,
+  onEdit,
+  onSave,
+  onCancelEdit,
+  onClose,
+  onNameChange,
+  nameError,
+  onOpenActivities,
+  activityActive = false,
+  activitySubtitle,
+  categoryName,
 }: MetricProps) {
+  /* New items open with the name input ready */
+  const [editingNameState, setEditingName] = useState(() => !item.id);
+  const editingName =
+    isEditing && Boolean(onNameChange) && (editingNameState || Boolean(nameError));
   const [activityData, setActivityData] = useState<ItemActivityState>({
     warehouseStock: [],
     transactions: [],
@@ -259,105 +296,267 @@ export default function ItemDetailHeader({
     }
   };
 
+  const outlineButton =
+    "flex h-9 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800";
+  const solidButton =
+    "flex h-9 items-center gap-2 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-60";
+
   return (
     <>
-      <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl p-2 mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                {item.name || "Item"}
-              </h2>
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#11161D]">
+        <div className="flex flex-col gap-4 px-5 py-3 xl:flex-row xl:items-center xl:justify-between">
+          {/* LEFT: icon, editable name, item no, status, activity */}
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/50">
+              <Icon
+                icon={Number(item.item_type) === 2 ? "tabler:tool" : "tabler:package"}
+                className="text-3xl text-emerald-700 dark:text-emerald-400"
+              />
+            </div>
 
-              {item.item_code && (
-                <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
-                  Item No. &nbsp;{item.item_code}
+            <div className="min-w-0">
+              {editingName ? (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      value={item.name || ""}
+                      onChange={(event) => onNameChange?.(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (
+                          (event.key === "Enter" || event.key === "Escape") &&
+                          (item.name || "").trim()
+                        ) {
+                          setEditingName(false);
+                        }
+                      }}
+                      placeholder="Item name"
+                      aria-label="Item name"
+                      maxLength={255}
+                      className={`h-9 w-[min(28rem,70vw)] rounded-md border bg-white px-3 text-base font-semibold text-slate-900 outline-none focus:ring-2 dark:bg-slate-950 dark:text-slate-100 ${
+                        nameError
+                          ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                          : "border-emerald-300 focus:border-emerald-600 focus:ring-emerald-100"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditingName(false)}
+                      disabled={!(item.name || "").trim()}
+                      title="Finish editing"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-40"
+                    >
+                      <Icon icon="lucide:check" />
+                    </button>
+                  </div>
+                  {nameError && (
+                    <p className="mt-1 text-xs text-red-600">{nameError}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex min-w-0 items-center gap-2">
+                  <h1
+                    className="truncate text-xl font-bold text-slate-950 dark:text-white"
+                    title={item.name || ""}
+                  >
+                    {item.name || (item.id ? "Unnamed item" : "New Item")}
+                  </h1>
+                  {isEditing && onNameChange && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingName(true)}
+                      title="Edit item name"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
+                    >
+                      <Icon icon="lucide:pencil" />
+                    </button>
+                  )}
                 </div>
               )}
-            </div>
-          </div>
 
-          <div
-            className={`grid grid-cols-1 gap-3  ${
-              item.id ? "sm:grid-cols-4" : "sm:grid-cols-3"
-            }`}
-          >
-            {item.id && (
-              <div className="flex items-center justify-end pr-8">
-                <button
-                  type="button"
-                  onClick={() =>
-                    openStatusModal(
-                      currentStatus === "active" ? "inactive" : "active",
-                    )
-                  }
-                  disabled={statusLoading}
-                  title={
-                    currentStatus === "active"
-                      ? "Click to deactivate"
-                      : "Click to activate"
-                  }
-                  className={`group inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full capitalize border transition-all duration-200 hover:shadow-sm disabled:opacity-60 ${
-                    currentStatus === "active"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900 dark:hover:bg-emerald-950/70"
-                      : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      currentStatus === "active"
-                        ? "bg-emerald-500"
-                        : "bg-slate-400"
-                    }`}
-                  />
-
-                  <span>
-                    {currentStatus === "active" ? "Active" : "Inactive"}
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400">
+                  Item No. {item.item_code || (item.id ? "—" : "Auto")}
+                </span>
+                {categoryName && (
+                  <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                    <Icon icon="tabler:category" className="h-3.5 w-3.5" />
+                    {categoryName}
                   </span>
-
-                  <Icon
-                    icon="lucide:chevron-down"
-                    className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"
-                  />
-                </button>
+                )}
               </div>
+            </div>
+
+            {item.id && (
+              <button
+                type="button"
+                onClick={() =>
+                  openStatusModal(
+                    currentStatus === "active" ? "inactive" : "active",
+                  )
+                }
+                disabled={statusLoading}
+                title={
+                  currentStatus === "active"
+                    ? "Click to deactivate"
+                    : "Click to activate"
+                }
+                className={`group ml-1 inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full capitalize border transition-all duration-200 hover:shadow-sm disabled:opacity-60 ${
+                  currentStatus === "active"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900 dark:hover:bg-emerald-950/70"
+                    : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-700"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    currentStatus === "active" ? "bg-emerald-500" : "bg-slate-400"
+                  }`}
+                />
+                <span>{currentStatus === "active" ? "Active" : "Inactive"}</span>
+                <Icon
+                  icon="lucide:chevron-down"
+                  className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"
+                />
+              </button>
             )}
 
-            {stockCards.map((card) => (
-              <div
-                key={card.title}
-                onClick={() => handleStockCardClick(card.modalKey)}
-                // className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${card.container}`}
-                className={`group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md  text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${card.container}`}
+            {/* Activity link — opens the Activity view in the tab area */}
+            {item.id && onOpenActivities && (
+              <button
+                type="button"
+                onClick={onOpenActivities}
+                aria-pressed={activityActive}
+                title="Open item activity"
+                className={`group relative inline-flex shrink-0 items-center gap-2.5 overflow-hidden rounded-xl border py-1.5 pl-1.5 pr-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                  activityActive
+                    ? "border-emerald-600 bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-md"
+                    : "border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-900 dark:border-emerald-900/60 dark:from-emerald-950/40 dark:to-teal-950/30 dark:text-emerald-100"
+                }`}
               >
-                <div
-                  className={`absolute -right-5 -top-5 h-20 w-20 rounded-full transition-transform duration-300 group-hover:scale-125 ${card.decoration}`}
+                <span
+                  className={`pointer-events-none absolute -right-4 -top-4 h-12 w-12 rounded-full transition-colors ${
+                    activityActive ? "bg-white/10" : "bg-emerald-400/10 group-hover:bg-emerald-400/20"
+                  }`}
                 />
-
-                <div className="relative flex items-start justify-between gap-3">
-                  <div>
-                    <div
-                      className={`flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-amber-700 dark:text-amber-400 ${card.titleColor}`}
-                    >
-                      <Icon icon={card.icon} className="h-4 w-4 shrink-0" />
-                      {card.title}
-                    </div>
-
-                    <div className="mt-1.5 text-sm text-center font-semibold tracking-tight text-amber-950 dark:text-amber-100">
-                      {formatQuantity(card.value)}
-                    </div>
-                  </div>
-
-                  <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-amber-600 shadow-sm ${card.titleColor}`}
+                <span
+                  className={`relative flex h-8 w-8 items-center justify-center rounded-lg shadow-sm ${
+                    activityActive
+                      ? "bg-white/20 text-white"
+                      : "bg-white text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
+                  }`}
+                >
+                  <Icon icon="tabler:activity-heartbeat" className="h-4.5 w-4.5" />
+                </span>
+                <span className="relative leading-tight">
+                  <span className="block text-sm font-semibold">Activity</span>
+                  <span
+                    className={`block text-[10px] ${
+                      activityActive ? "text-emerald-100" : "text-emerald-700/80 dark:text-emerald-300/80"
+                    }`}
                   >
-                    <Icon icon="tabler:external-link" className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-            ))}
+                    {activitySubtitle || "Stock movements"}
+                  </span>
+                </span>
+                <Icon
+                  icon="lucide:arrow-up-right"
+                  className={`relative h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 ${
+                    activityActive ? "text-white" : "text-emerald-600"
+                  }`}
+                />
+              </button>
+            )}
+          </div>
+
+          {/* RIGHT: edit / save / cancel / close */}
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            {isEditing ? (
+              <>
+                <button
+                  type="button"
+                  onClick={onSave}
+                  disabled={saving}
+                  className={solidButton}
+                >
+                  <Icon
+                    icon={saving ? "svg-spinners:180-ring-with-bg" : "lucide:save"}
+                    className="h-4 w-4"
+                  />
+                  {saving ? "Saving..." : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingName(false);
+                    onCancelEdit?.();
+                  }}
+                  disabled={saving}
+                  className={outlineButton}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                {canEdit && onEdit && (
+                  <button type="button" onClick={onEdit} className={outlineButton}>
+                    <Icon icon="lucide:pencil" className="text-emerald-600" />
+                    Edit
+                  </button>
+                )}
+                {onClose && (
+                  <button type="button" onClick={onClose} className={outlineButton}>
+                    Close
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
+
+        {/* Stock KPI strip (existing items) */}
+        {item.id && (
+          <div className="grid grid-cols-1 gap-3 border-t border-slate-100 px-5 py-3 sm:grid-cols-3 dark:border-slate-800">
+            {stockCards.map((card) => (
+              <button
+                key={card.title}
+                type="button"
+                onClick={() => handleStockCardClick(card.modalKey)}
+                title={`View ${card.title.toLowerCase()} details`}
+                className={`group relative flex items-center gap-3 overflow-hidden rounded-xl border px-3.5 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${card.container}`}
+              >
+                <span
+                  className={`pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full transition-transform duration-300 group-hover:scale-125 ${card.decoration}`}
+                />
+                <span
+                  className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${card.iconContainer}`}
+                >
+                  <Icon icon={card.icon} className="h-5 w-5" />
+                </span>
+                <span className="relative min-w-0 flex-1">
+                  <span className={`block text-[11px] font-semibold ${card.titleColor}`}>
+                    {card.title}
+                  </span>
+                  <span className={`block text-lg font-bold leading-tight tabular-nums ${card.valueColor}`}>
+                    {formatQuantity(card.value)}
+                  </span>
+                  <span className="block text-[10px] text-slate-500 dark:text-slate-400">
+                    {card.subtitle}
+                  </span>
+                </span>
+                <Icon
+                  icon="tabler:external-link"
+                  className={`relative h-4 w-4 shrink-0 opacity-60 group-hover:opacity-100 ${card.titleColor}`}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="mx-5 mb-3 p-2.5 text-xs bg-red-50 text-red-700 border border-red-200 rounded-lg dark:bg-red-950/40 dark:text-red-400 dark:border-red-900">
+            <strong>Error:</strong> {errorMessage}
+          </div>
+        )}
       </div>
 
       {statusModal.isOpen && targetStatus && (

@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react";
 // import MasterDropdown from "@/app/components/shared/MasterDropdown";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parse, parseISO, isValid } from "date-fns";
@@ -592,11 +593,12 @@ export default function PriceOffersTab({
   };
 
   return (
-    <div className="space-y-8 text-xs">
+    <div className="space-y-4 text-sm">
       {/* ================= 1. CUSTOMER PRICE OFFERS (SALES) ================= */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
-          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+      <section className="rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#11161D] shadow-2xs overflow-hidden">
+        <div className="flex flex-wrap justify-between items-center gap-2 px-4 py-3 border-b border-slate-200/80 dark:border-slate-800">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100">
+            <Icon icon="tabler:users" className="text-emerald-800 dark:text-emerald-400 text-2xl" />
             Customer Price Offers (Sales)
           </h3>
           {/* {!isReadonly && ( */}
@@ -604,16 +606,17 @@ export default function PriceOffersTab({
             type="button"
             onClick={() => setIsCustomerModalOpen(true)}
             variant="add_line"
+            className="rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold px-3 py-1.5 inline-flex items-center gap-1.5"
           >
             Add Customer Offer
           </Button>
           {/* )} */}
         </div>
 
-        <div className="rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/40">
+              <tr className="border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-black dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
                 <th className="p-3">Customer</th>
                 <th className="p-3">Currency</th>
                 <th className="p-3">Offered Price</th>
@@ -630,7 +633,7 @@ export default function PriceOffersTab({
                 <tr>
                   <td
                     colSpan={9}
-                    className="p-6 text-center text-slate-400 italic"
+                    className="p-8 text-center text-sm text-slate-400"
                   >
                     No customer price offers configured.
                   </td>
@@ -639,7 +642,7 @@ export default function PriceOffersTab({
                 customerOffers.map(({ offer, originalIdx }) => (
                   <tr
                     key={originalIdx}
-                    className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50"
+                    className="border-b border-slate-100 dark:border-slate-800/70 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                   >
                     <td className="p-3 font-medium text-slate-800 dark:text-slate-200">
                       {offer.party_name || "General / Global List"}
@@ -653,7 +656,7 @@ export default function PriceOffersTab({
                         onChange={(val) =>
                           updateOfferRow(originalIdx, "currency_id", val ?? "")
                         }
-                        className="w-full border p-1 py-0.5 h-7 rounded text-xs outline-none bg-transparent"
+                        className="w-full h-8 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2"
                         disabled={isReadonly}
                       />
                     </td>
@@ -666,7 +669,7 @@ export default function PriceOffersTab({
                           updateOfferRow(originalIdx, "offered_price", val)
                         }
                         disabled={isReadonly}
-                        className="w-24 border rounded p-1.5 font-semibold text-right"
+                        className="w-24 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 font-semibold text-right"
                       />
                     </td>
                     <td className="p-3">
@@ -677,7 +680,7 @@ export default function PriceOffersTab({
                           updateOfferRow(originalIdx, "min_order_qty", val)
                         }
                         disabled={isReadonly}
-                        className="w-16 border rounded p-1.5 text-right"
+                        className="w-16 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 text-right"
                       />
                     </td>
                     <td className="p-3">
@@ -688,7 +691,7 @@ export default function PriceOffersTab({
                           updateOfferRow(originalIdx, "max_order_qty", val)
                         }
                         disabled={isReadonly}
-                        className="w-16 border rounded p-1.5 text-right"
+                        className="w-16 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 text-right"
                       />
                     </td>
                     <td className="p-3">
@@ -708,7 +711,7 @@ export default function PriceOffersTab({
                             );
                           }
                         }}
-                        className="border rounded p-1.5 bg-transparent"
+                        className="border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1"
                       />
                     </td>
                     <td className="p-3">
@@ -728,7 +731,7 @@ export default function PriceOffersTab({
                             );
                           }
                         }}
-                        className="border rounded p-1.5 bg-transparent"
+                        className="border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1"
                       />
                     </td>
                     <td className="p-3 text-center">
@@ -763,7 +766,7 @@ export default function PriceOffersTab({
                               offer.party_name || "General List",
                             )
                           }
-                          className="text-blue-600 hover:text-blue-800 underline font-medium"
+                          className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 font-semibold hover:underline"
                         >
                           History
                         </button>
@@ -795,12 +798,13 @@ export default function PriceOffersTab({
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       {/* ================= 2. SUPPLIER PRICE OFFERS (PURCHASE) ================= */}
-      <div className="space-y-3 pt-4">
-        <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
-          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+      <section className="rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#11161D] shadow-2xs overflow-hidden">
+        <div className="flex flex-wrap justify-between items-center gap-2 px-4 py-3 border-b border-slate-200/80 dark:border-slate-800">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-black dark:text-slate-100">
+            <Icon icon="tabler:truck" className="text-emerald-800 dark:text-emerald-400 text-2xl" />
             Supplier Price Offers (Purchase)
           </h3>
           {/* {!isReadonly && ( */}
@@ -808,16 +812,17 @@ export default function PriceOffersTab({
             type="button"
             onClick={() => setIsSupplierModalOpen(true)}
             variant="add_line"
+            className="rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold px-3 py-1.5 inline-flex items-center gap-1.5"
           >
             Add Supplier Offer
           </Button>
           {/* )} */}
         </div>
 
-        <div className="rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/40">
+              <tr className="border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-black dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
                 <th className="p-3">Supplier</th>
                 <th className="p-3">Currency</th>
                 <th className="p-3">Offered Cost</th>
@@ -834,7 +839,7 @@ export default function PriceOffersTab({
                 <tr>
                   <td
                     colSpan={9}
-                    className="p-6 text-center text-slate-400 italic"
+                    className="p-8 text-center text-sm text-slate-400"
                   >
                     No supplier price offers configured.
                   </td>
@@ -843,7 +848,7 @@ export default function PriceOffersTab({
                 supplierOffers.map(({ offer, originalIdx }) => (
                   <tr
                     key={originalIdx}
-                    className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50"
+                    className="border-b border-slate-100 dark:border-slate-800/70 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                   >
                     <td className="p-3 font-medium text-slate-800 dark:text-slate-200">
                       {offer.party_name || "General / Global List"}
@@ -857,7 +862,7 @@ export default function PriceOffersTab({
                         onChange={(val) =>
                           updateOfferRow(originalIdx, "currency_id", val ?? "")
                         }
-                        className="w-full border p-1 py-0.5 h-7 rounded text-xs outline-none bg-transparent"
+                        className="w-full h-8 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2"
                         disabled={isReadonly}
                       />
                     </td>
@@ -870,7 +875,7 @@ export default function PriceOffersTab({
                           updateOfferRow(originalIdx, "offered_price", val)
                         }
                         disabled={isReadonly}
-                        className="w-24 border rounded p-1.5 font-semibold text-right"
+                        className="w-24 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 font-semibold text-right"
                       />
                       {/* <input
                         type="number"
@@ -883,7 +888,7 @@ export default function PriceOffersTab({
                             e.target.value,
                           )
                         }
-                        className="w-24 border rounded p-1.5 bg-blue-50 font-semibold text-right"
+                        className="w-24 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 !bg-emerald-50/50 font-semibold text-right"
                       /> */}
                     </td>
                     <td className="p-3">
@@ -894,7 +899,7 @@ export default function PriceOffersTab({
                           updateOfferRow(originalIdx, "min_order_qty", val)
                         }
                         disabled={isReadonly}
-                        className="w-16 border rounded p-1.5 text-right"
+                        className="w-16 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 text-right"
                       />
                       {/* <input
                         type="number"
@@ -907,7 +912,7 @@ export default function PriceOffersTab({
                             e.target.value,
                           )
                         }
-                        className="w-16 border rounded p-1.5 text-right"
+                        className="w-16 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 text-right"
                       /> */}
                     </td>
                     <td className="p-3">
@@ -918,7 +923,7 @@ export default function PriceOffersTab({
                           updateOfferRow(originalIdx, "max_order_qty", val)
                         }
                         disabled={isReadonly}
-                        className="w-16 border rounded p-1.5 text-right"
+                        className="w-16 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 text-right"
                       />
                       {/* <input
                         type="number"
@@ -931,7 +936,7 @@ export default function PriceOffersTab({
                             e.target.value,
                           )
                         }
-                        className="w-16 border rounded p-1.5 text-right"
+                        className="w-16 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 text-right"
                       /> */}
                     </td>
                     <td className="p-3">
@@ -951,7 +956,7 @@ export default function PriceOffersTab({
                             );
                           }
                         }}
-                        className="border rounded p-1.5 bg-transparent"
+                        className="border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1"
                       />
                     </td>
                     <td className="p-3">
@@ -971,7 +976,7 @@ export default function PriceOffersTab({
                             );
                           }
                         }}
-                        className="border rounded p-1.5 bg-transparent"
+                        className="border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1"
                       />
                     </td>
                     <td className="p-3 text-center">
@@ -1005,7 +1010,7 @@ export default function PriceOffersTab({
                               offer.party_name || "General List",
                             )
                           }
-                          className="text-blue-600 hover:text-blue-800 underline font-medium"
+                          className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 font-semibold hover:underline"
                         >
                           History
                         </button>
@@ -1026,13 +1031,13 @@ export default function PriceOffersTab({
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       {/* ================= 3. VOLUME DISCOUNT TIERS DRAWER/SECTION ================= */}
       {activeTierOfferIdx !== null && validList[activeTierOfferIdx] && (
-        <div className="p-4 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/20 dark:bg-slate-900 space-y-3">
+        <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/10 space-y-3">
           <div className="flex justify-between items-center">
-            <h5 className="font-bold text-blue-800 dark:text-blue-300">
+            <h5 className="flex items-center gap-2 text-sm font-semibold text-emerald-800 dark:text-emerald-300">
               Volume Discount Tiers for &quot;
               {validList[activeTierOfferIdx].party_name || "General List"}&quot;
             </h5>
@@ -1047,9 +1052,9 @@ export default function PriceOffersTab({
             )}
           </div>
 
-          <table className="w-full text-left border-collapse bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+          <table className="w-full text-left border-collapse bg-white dark:bg-[#11161D] rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/40">
+              <tr className="border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-black dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
                 <th className="p-2.5">Min Order Qty</th>
                 <th className="p-2.5">Discount Type</th>
                 <th className="p-2.5">Discount Value</th>
@@ -1063,7 +1068,7 @@ export default function PriceOffersTab({
                 <tr>
                   <td
                     colSpan={5}
-                    className="p-4 text-center text-slate-400 italic"
+                    className="p-6 text-center text-sm text-slate-400"
                   >
                     No volume discount tiers specified.
                   </td>
@@ -1088,7 +1093,7 @@ export default function PriceOffersTab({
                               e.target.value,
                             )
                           }
-                          className="w-24 border rounded p-1 text-xs"
+                          className="w-24 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 text-xs"
                         />
                       </td>
                       <td className="p-2.5">
@@ -1103,7 +1108,7 @@ export default function PriceOffersTab({
                               e.target.value,
                             )
                           }
-                          className="border rounded p-1 w-full text-xs"
+                          className="border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 w-full text-xs"
                         >
                           <option value="PERCENTAGE">Percentage (%)</option>
                           <option value="FIXED_AMOUNT">Fixed Value</option>
@@ -1122,7 +1127,7 @@ export default function PriceOffersTab({
                               e.target.value,
                             )
                           }
-                          className="w-24 border rounded p-1 text-xs"
+                          className="w-24 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 text-xs"
                         />
                       </td>
                       <td className="p-2.5 font-semibold text-emerald-600">
@@ -1130,7 +1135,7 @@ export default function PriceOffersTab({
                           type="number"
                           value={tier.discounted_price}
                           readOnly
-                          className="w-24 border rounded p-1 text-xs bg-slate-50"
+                          className="w-24 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-sm text-black dark:text-slate-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:bg-slate-100/80 disabled:dark:bg-slate-900/70 disabled:border-slate-200 disabled:dark:border-slate-800 disabled:cursor-not-allowed px-2 py-1 text-xs !bg-slate-50"
                         />
                       </td>
                       <td className="p-2.5 text-right">
