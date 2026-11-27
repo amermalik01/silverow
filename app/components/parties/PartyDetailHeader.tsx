@@ -36,6 +36,8 @@ type Props = {
   activityActive?: boolean;
   /** Small text under "Activity", e.g. the last activity date. */
   activitySubtitle?: string;
+  /** New record (not saved yet): hides status / activity / convert controls. */
+  isNew?: boolean;
 };
 
 export default function PartyDetailHeader({
@@ -58,9 +60,11 @@ export default function PartyDetailHeader({
   nameError,
   activityActive = false,
   activitySubtitle,
+  isNew = false,
 }: Props) {
   const router = useRouter();
-  const [editingNameState, setEditingName] = useState(false);
+  /* A new record opens with the name input ready */
+  const [editingNameState, setEditingName] = useState(isNew);
   /* Name input shows while editing it, or while it has a validation error */
   const editingName =
     isEditing && Boolean(onNameChange) && (editingNameState || Boolean(nameError));
@@ -252,7 +256,7 @@ export default function PartyDetailHeader({
                     className="truncate text-xl font-bold text-slate-950 dark:text-white"
                     title={party.name || ""}
                   >
-                    {party.name || "Unnamed account"}
+                    {party.name || (isNew ? "New record" : "Unnamed account")}
                   </h1>
                   {isEditing && onNameChange && (
                     <button
@@ -270,13 +274,14 @@ export default function PartyDetailHeader({
               {codeLabel && (
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400">
-                    {codeLabel} {codeValue}
+                    {codeLabel} {codeValue || (isNew ? "Auto" : "")}
                   </span>
                 </div>
               )}
             </div>
 
             {/* Status */}
+            {!isNew && (
             <button
               type="button"
               onClick={() =>
@@ -307,9 +312,10 @@ export default function PartyDetailHeader({
                 className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"
               />
             </button>
+            )}
 
             {/* Activity link — opens the Activity view in the tab area */}
-            {onOpenActivities && (
+            {!isNew && onOpenActivities && (
               <button
                 type="button"
                 onClick={onOpenActivities}
@@ -361,7 +367,7 @@ export default function PartyDetailHeader({
 
           {/* RIGHT: conversions + edit / save / cancel / close */}
           <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-            {!isEditing && party.is_crm_lead && !party.is_customer && (
+            {!isNew && !isEditing && party.is_crm_lead && !party.is_customer && (
               <Button
                 type="button"
                 onClick={() => openConfirmModal("to_customer")}
@@ -382,7 +388,7 @@ export default function PartyDetailHeader({
               </Button>
             )}
 
-            {!isEditing && party.is_srm_vendor && !party.is_supplier && (
+            {!isNew && !isEditing && party.is_srm_vendor && !party.is_supplier && (
               <Button
                 type="button"
                 onClick={() => openConfirmModal("to_supplier")}
@@ -415,7 +421,7 @@ export default function PartyDetailHeader({
                     icon={saving ? "svg-spinners:180-ring-with-bg" : "lucide:save"}
                     className="h-4 w-4"
                   />
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? "Saving..." : isNew ? "Create" : "Save"}
                 </button>
                 <button
                   type="button"

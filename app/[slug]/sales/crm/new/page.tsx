@@ -1,33 +1,14 @@
 // app/[slug]/sales/crm/new/page.tsx
 
-import PartyForm from "@/app/components/parties/PartyForm";
+import PartyRecord from "@/app/components/parties/PartyRecord";
 
-export default function NewCRMPage() {
-  return (
-    <div className="space-y-6 ">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">New Prospect</h1>
-      </div>
-      <PartyForm
-        title="Create Prospect"
-        initialFlags={{ is_crm_lead: true }}
-        redirectPath="../crm"
-      />
-    </div>
-  );
+export default async function NewCRMPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  /* Same record component as view / edit — an empty id opens create mode */
+  return <PartyRecord id="" module="crm" slug={slug} />;
 }
-
-/* import CRMForm from "@/app/components/sales/crm/CRMForm";
-
-export default function NewCRMPage() {
-
-  return (
-    <div className="py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Create CRM Account</h1>
-      </div>
-
-      <CRMForm />
-    </div>
-  );
-} */

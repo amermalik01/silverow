@@ -145,10 +145,32 @@ function errorKeyTab(key: string): string {
 }
 
 type Props = {
+  /** Empty string ("") opens the record in create mode. */
   id: string;
   module: PartyModule | "customer" | "supplier" | "finance";
   slug: string;
   isReadonly?: boolean;
+};
+
+/** Module flags for a new party record. */
+function newPartyAccount(module: string): Partial<Party> {
+  return {
+    id: "",
+    name: "",
+    status: "active",
+    credit_limit: 0,
+    is_crm_lead: module === "crm",
+    is_srm_vendor: module === "srm",
+    is_customer: module === "customer",
+    is_supplier: module === "supplier",
+  };
+}
+
+const NEW_RECORD_LABELS: Record<string, string> = {
+  crm: "New CRM Lead",
+  customer: "New Customer",
+  srm: "New SRM Vendor",
+  supplier: "New Supplier",
 };
 
 export default function PartyRecord({
@@ -158,12 +180,16 @@ export default function PartyRecord({
   isReadonly: isReadonlyProp = false,
 }: Props) {
   const router = useRouter();
+  const isNew = !id;
 
   const [activeTab, setActiveTab] = useState("general");
-  const [isEditing, setIsEditing] = useState(false);
+  /* New records open straight in edit mode */
+  const [isEditing, setIsEditing] = useState(isNew);
 
   // Current working state
-  const [account, setAccount] = useState<Partial<Party>>({ id: "" });
+  const [account, setAccount] = useState<Partial<Party>>(() =>
+    isNew ? newPartyAccount(module) : { id: "" },
+  );
   const [contacts, setContacts] = useState<PartyContactDraft[]>([]);
   const [addresses, setAddresses] = useState<PartyAddressDraft[]>([]);
   const [currencies, setCurrencies] = useState<CompanyCurrency[]>([]);
@@ -199,6 +225,7 @@ export default function PartyRecord({
   const [partyMetrics, setPartyMetrics] = useState<PartyMetrics | null>(null);
 
   const loadMetrics = async () => {
+    if (!id) return;
     const partyType = module === "supplier" ? "supplier" : "customer";
     try {
       const res = await fetch(
@@ -217,6 +244,33 @@ export default function PartyRecord({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    /* Create mode: only the currency list is needed (default = base / GBP) */
+    const loadNew = async () => {
+      try {
+        const currencyRes = await fetch("/api/parties/currencies");
+        if (currencyRes.ok) {
+          const currencyData: CompanyCurrency[] = await currencyRes.json();
+          setCurrencies(currencyData);
+          setAccount((prev) => {
+            if (prev.currency_id) return prev;
+            const base = currencyData.find(
+              (c) => c.code?.toUpperCase() === "GBP" || c.is_base,
+            );
+            return base ? { ...prev, currency_id: base.id } : prev;
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching currencies:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!id) {
+      void loadNew();
+      return;
+    }
+
     const loadData = async () => {
       show("Fetching Record...");
 
@@ -415,8 +469,65 @@ export default function PartyRecord({
     return true;
   };
 
+  /** Create mode: POST the new party, then open its record. */
+  const handleCreate = async () => {
+    try {
+      setSaving(true);
+
+      const res = await fetch("/api/parties", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          account,
+          contacts: contacts.filter((c) => c.name && c.name.trim() !== ""),
+          addresses: addresses.map((a) => ({
+            ...a,
+            email: a.email?.trim() || account.email?.trim() || "",
+          })),
+        }),
+      });
+
+      const payload = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        if (payload.field) {
+          const field = String(payload.field);
+          setFormErrors({ [field]: payload.error });
+          setErrorSummary([]);
+          const tab = errorKeyTab(field);
+          setActiveTab(tabs.includes(tab) ? tab : "general");
+        } else {
+          setErrorSummary([]);
+          setFormErrors({
+            global: payload.error || "Failed to create record.",
+          });
+        }
+        toast.error(payload.error || "Failed to create record.");
+        return;
+      }
+
+      toast.success("Record created successfully! ✅");
+      router.replace(
+        payload.id ? `${redirectPath}/${payload.id}/edit` : redirectPath,
+      );
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      setErrorSummary([]);
+      setFormErrors({ global: message });
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!validateForm()) return;
+
+    if (isNew) {
+      await handleCreate();
+      return;
+    }
 
     try {
       setSaving(true);
@@ -460,6 +571,10 @@ export default function PartyRecord({
   };
 
   const handleCancelEdit = () => {
+    if (isNew) {
+      router.push(redirectPath);
+      return;
+    }
     // Revert state back to latest saved snapshot
     setAccount(initialAccount);
     setContacts(initialContacts);
@@ -571,8 +686,11 @@ export default function PartyRecord({
     account.is_crm_lead ||
     account.is_customer;
 
-  /* "activities" is opened from the header Activity link, not the tab bar */
-  tabs.push("price_list", "rebates", "notes", "attachments");
+  /* "activities" is opened from the header Activity link, not the tab bar.
+     Price lists, rebates, notes and attachments need a saved record. */
+  if (!isNew) {
+    tabs.push("price_list", "rebates", "notes", "attachments");
+  }
 
   // if (isFinanceEligible) {
   //   tabs.push("rebates");
@@ -604,8 +722,9 @@ export default function PartyRecord({
             href: `${redirectPath}`,
           },
           {
-            label:
-              (account.is_customer
+            label: isNew
+              ? NEW_RECORD_LABELS[module] || "New Record"
+              : (account.is_customer
                 ? `${account.customer_code}`
                 : account.is_supplier
                   ? `${account.supplier_code}`
@@ -624,7 +743,8 @@ export default function PartyRecord({
           outstandingBalance={ledgerSummary.totalRemainingFCY}
           openEntriesCount={ledgerSummary.openCount}
           lcyBalance={ledgerSummary.totalRemainingLCY}
-          onOpenActivities={() => setActiveTab("activities")}
+          isNew={isNew}
+          onOpenActivities={isNew ? undefined : () => setActiveTab("activities")}
           activityActive={activeTab === "activities"}
           activitySubtitle={
             partyMetrics?.lastActivityAt
@@ -642,7 +762,7 @@ export default function PartyRecord({
           onEdit={() => setIsEditing(true)}
           onSave={() => void handleSave()}
           onCancelEdit={handleCancelEdit}
-          onClose={() => router.back()}
+          onClose={() => (isNew ? router.push(redirectPath) : router.back())}
           onNameChange={(value) =>
             setAccount((prev) => ({ ...prev, name: value }))
           }
@@ -690,6 +810,14 @@ export default function PartyRecord({
             );
           })}
         </div>
+
+        {isNew && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-[12px] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+            <Icon icon="tabler:info-circle" className="shrink-0 text-base" />
+            Price lists, rebates, notes and attachments become available once
+            the record is created.
+          </div>
+        )}
 
         <div className="py-2 pt-6">
           {activeTab === "general" && (
