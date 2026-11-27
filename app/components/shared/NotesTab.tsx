@@ -472,7 +472,7 @@ export default function NotesTab({
           )}
         </div>
 
-        <div className="space-y-1">
+        {/* <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Category <span className="text-red-500">*</span>
           </label>
@@ -488,7 +488,7 @@ export default function NotesTab({
               </option>
             ))}
           </select>
-        </div>
+        </div> */}
 
         <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-300">

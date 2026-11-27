@@ -460,7 +460,7 @@ export default function ProspectAddressLocations({
       <div className="max-h-[300px] min-h-0 flex-1 overflow-auto rounded-b-xl xl:max-h-none">
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead className="sticky top-0 z-10">
-            <tr className="bg-emerald-50 text-slate-900 shadow-[0_1px_0_0_rgb(226_232_240)]">
+            <tr className="text-slate-900 shadow-[0_1px_0_0_rgb(226_232_240)]">
               <th className="w-[26%] px-4 py-2.5 font-semibold">
                 Location Name
               </th>

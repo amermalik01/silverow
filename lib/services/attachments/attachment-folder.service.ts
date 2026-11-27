@@ -26,6 +26,9 @@ const PARTY_DEFAULT_FOLDERS = [
 
 const MODULE_DEFAULT_FOLDERS = ["General"];
 
+/** Maximum folders a module (scope) may have. */
+export const MAX_ATTACHMENT_FOLDERS = 8;
+
 export function folderScopeOf(module: string): string {
   const key = module.trim().toLowerCase();
   return (PARTY_ATTACHMENT_MODULES as readonly string[]).includes(key)
@@ -134,21 +137,102 @@ export class AttachmentFolderService {
 
     await this.assertNameFree(companyId, scope, name);
 
+    /* Insert only while the scope is below the folder limit */
     const result = await pool.query<AttachmentFolderRow>(
       `
       INSERT INTO attachment_folders (company_id, scope, name, sort_order, created_by)
-      VALUES (
+      SELECT
         $1::uuid, $2::varchar, $3::varchar,
         COALESCE((SELECT MAX(sort_order) FROM attachment_folders
                   WHERE company_id = $1::uuid AND scope = $2::varchar), 0) + 10,
         $4::uuid
-      )
+      WHERE (
+        SELECT COUNT(*) FROM attachment_folders
+        WHERE company_id = $1::uuid AND scope = $2::varchar
+      ) < $5::int
       RETURNING id, scope, name, sort_order, 0 AS file_count
       `,
-      [companyId, scope, name, userId],
+      [companyId, scope, name, userId, MAX_ATTACHMENT_FOLDERS],
     );
 
+    if (!result.rows[0]) {
+      throw new AttachmentFolderError(
+        `A module can have at most ${MAX_ATTACHMENT_FOLDERS} folders.`,
+      );
+    }
+
     return result.rows[0];
+  }
+
+  /**
+   * Saves a new folder order for a module. `orderedIds` must list every
+   * folder of the scope exactly once.
+   */
+  static async reorder(
+    companyId: string,
+    module: string,
+    orderedIds: unknown,
+  ): Promise<AttachmentFolderRow[]> {
+    const scope = folderScopeOf(module);
+
+    if (
+      !Array.isArray(orderedIds) ||
+      !orderedIds.every((id) => typeof id === "string" && id)
+    ) {
+      throw new AttachmentFolderError("Folder order must be a list of folder ids.");
+    }
+
+    const ids = orderedIds as string[];
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const existing = await client.query<{ id: string }>(
+        `
+        SELECT id
+        FROM attachment_folders
+        WHERE company_id = $1::uuid AND scope = $2::varchar
+        FOR UPDATE
+        `,
+        [companyId, scope],
+      );
+
+      const known = new Set(existing.rows.map((row) => String(row.id)));
+      const unique = new Set(ids);
+
+      if (
+        unique.size !== ids.length ||
+        ids.length !== known.size ||
+        ids.some((id) => !known.has(id))
+      ) {
+        throw new AttachmentFolderError(
+          "The folder list has changed. Reload and try again.",
+          409,
+        );
+      }
+
+      await client.query(
+        `
+        UPDATE attachment_folders f
+        SET sort_order = o.ord * 10, updated_at = NOW()
+        FROM unnest($3::uuid[]) WITH ORDINALITY AS o(id, ord)
+        WHERE f.id = o.id
+          AND f.company_id = $1::uuid
+          AND f.scope = $2::varchar
+        `,
+        [companyId, scope, ids],
+      );
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    return (await this.list(companyId, module)).folders;
   }
 
   /** Renames a folder and moves its files (all records in the scope). */

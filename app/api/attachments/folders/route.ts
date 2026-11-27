@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import {
   AttachmentFolderError,
   AttachmentFolderService,
+  MAX_ATTACHMENT_FOLDERS,
 } from "@/lib/services/attachments/attachment-folder.service";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     const result = await AttachmentFolderService.list(companyId, module);
 
-    return NextResponse.json(result, {
+    return NextResponse.json({ ...result, max_folders: MAX_ATTACHMENT_FOLDERS }, {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {
@@ -67,5 +68,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ data: folder }, { status: 201 });
   } catch (error) {
     return errorResponse(error, "Failed to create folder.");
+  }
+}
+
+/** PUT /api/attachments/folders  { module, order: folderId[] } — re-position */
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    const companyId = session?.user?.company_id;
+    if (!companyId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = (await req.json()) as { module?: string; order?: unknown };
+    if (!body.module) {
+      return NextResponse.json({ error: "Missing module." }, { status: 400 });
+    }
+
+    const folders = await AttachmentFolderService.reorder(
+      companyId,
+      body.module,
+      body.order,
+    );
+
+    return NextResponse.json({ folders });
+  } catch (error) {
+    return errorResponse(error, "Failed to reorder folders.");
   }
 }

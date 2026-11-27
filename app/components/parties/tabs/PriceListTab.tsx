@@ -730,7 +730,7 @@ export default function PriceListTab({
             <div className={`${cardClass} p-4`}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  <div className="grid grid-cols-12 gap-2 items-center">
+                  <div className="grid grid-cols-12 gap-x-3 gap-y-1 items-center max-w-[520px]">
                     <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       Name <span className="text-red-500">*</span>
                     </label>
@@ -749,7 +749,7 @@ export default function PriceListTab({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-12 gap-2 items-center">
+                  <div className="grid grid-cols-12 gap-x-3 gap-y-1 items-center max-w-[520px]">
                     <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       {partyType === "customer"
                         ? "Salesperson"
@@ -783,7 +783,7 @@ export default function PriceListTab({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-12 gap-2 items-center">
+                  <div className="grid grid-cols-12 gap-x-3 gap-y-1 items-center max-w-[520px]">
                     <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       Offer Method
                     </label>
@@ -806,7 +806,7 @@ export default function PriceListTab({
                 </div>
 
                 <div className="space-y-3">
-                  <div className="grid grid-cols-12 gap-2 items-center">
+                  <div className="grid grid-cols-12 gap-x-3 gap-y-1 items-center max-w-[520px]">
                     <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       Start Date <span className="text-red-500">*</span>
                     </label>
@@ -826,7 +826,7 @@ export default function PriceListTab({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-12 gap-2 items-center">
+                  <div className="grid grid-cols-12 gap-x-3 gap-y-1 items-center max-w-[520px]">
                     <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       End Date <span className="text-red-500">*</span>
                     </label>
@@ -846,7 +846,7 @@ export default function PriceListTab({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-12 gap-2 items-center">
+                  <div className="grid grid-cols-12 gap-x-3 gap-y-1 items-center max-w-[520px]">
                     <label className="col-span-4 text-sm font-medium text-black dark:text-slate-400">
                       Currency <span className="text-red-500">*</span>
                     </label>

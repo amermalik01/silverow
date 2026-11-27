@@ -4,7 +4,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 
@@ -572,7 +571,8 @@ export default function PartyRecord({
     account.is_crm_lead ||
     account.is_customer;
 
-  tabs.push("price_list", "rebates", "activities", "notes", "attachments");
+  /* "activities" is opened from the header Activity link, not the tab bar */
+  tabs.push("price_list", "rebates", "notes", "attachments");
 
   // if (isFinanceEligible) {
   //   tabs.push("rebates");
@@ -625,11 +625,28 @@ export default function PartyRecord({
           openEntriesCount={ledgerSummary.openCount}
           lcyBalance={ledgerSummary.totalRemainingLCY}
           onOpenActivities={() => setActiveTab("activities")}
+          activityActive={activeTab === "activities"}
+          activitySubtitle={
+            partyMetrics?.lastActivityAt
+              ? `Last: ${formatDay(partyMetrics.lastActivityAt)}`
+              : undefined
+          }
           onOpenFinance={() => setActiveTab("finance")}
           onPartyUpdated={(updatedAccount) => {
             setAccount((prev) => ({ ...prev, ...updatedAccount }));
             setInitialAccount((prev) => ({ ...prev, ...updatedAccount }));
           }}
+          canEdit={!isReadonlyProp}
+          isEditing={!isReadonlyProp && isEditing}
+          saving={saving}
+          onEdit={() => setIsEditing(true)}
+          onSave={() => void handleSave()}
+          onCancelEdit={handleCancelEdit}
+          onClose={() => router.back()}
+          onNameChange={(value) =>
+            setAccount((prev) => ({ ...prev, name: value }))
+          }
+          nameError={formErrors["general.name"]}
         />
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-6">
         {Object.keys(formErrors).length > 0 && (
@@ -792,58 +809,6 @@ export default function PartyRecord({
           )}
         </div>
 
-        <div className="flex justify-end items-center gap-2 pt-5 border-t border-slate-100 dark:border-slate-800">
-          {!isReadonlyProp && (
-            <>
-              {!isEditing ? (
-                <>
-                  <Button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    // variant="edit"
-                    variant="save"
-                  >
-                    Edit
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="cancel"
-                    onClick={() => router.back()}
-                  >
-                    Close
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saving}
-                    variant="save"
-                  >
-                    {saving ? (
-                      <>
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>Save</>
-                    )}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="cancel"
-                    onClick={handleCancelEdit}
-                    disabled={saving}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              )}
-            </>
-          )}
-        </div>
       </div>
     </div>
   );

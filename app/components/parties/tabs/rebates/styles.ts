@@ -40,7 +40,8 @@ export const secondaryButtonClass =
 export const tableHeadRowClass =
   "border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-black dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40";
 
-export const fieldRowClass = "grid grid-cols-12 gap-2 items-center";
+export const fieldRowClass =
+  "grid grid-cols-12 gap-x-3 gap-y-1 items-center max-w-[520px]";
 export const fieldLabelColClass = "col-span-4 text-sm font-medium text-black dark:text-slate-400";
 export const fieldInputColClass = "col-span-8";
 

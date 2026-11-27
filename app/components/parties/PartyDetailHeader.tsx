@@ -17,6 +17,25 @@ type Props = {
   onOpenActivities?: () => void;
   onOpenFinance?: () => void;
   onPartyUpdated?: (updatedAccount: Partial<Party>) => void;
+
+  /* ---- Edit mode (buttons live in the header, like the prospect form) ---- */
+  /** False when the record is forced read-only (no Edit button). */
+  canEdit?: boolean;
+  isEditing?: boolean;
+  saving?: boolean;
+  onEdit?: () => void;
+  onSave?: () => void;
+  onCancelEdit?: () => void;
+  onClose?: () => void;
+  /** Business name changes (editable in the header while editing). */
+  onNameChange?: (value: string) => void;
+  nameError?: string;
+
+  /* ---- Activity link ---- */
+  /** True while the Activity view is open in the tab area. */
+  activityActive?: boolean;
+  /** Small text under "Activity", e.g. the last activity date. */
+  activitySubtitle?: string;
 };
 
 export default function PartyDetailHeader({
@@ -28,8 +47,23 @@ export default function PartyDetailHeader({
   onOpenActivities,
   onOpenFinance,
   onPartyUpdated,
+  canEdit = false,
+  isEditing = false,
+  saving = false,
+  onEdit,
+  onSave,
+  onCancelEdit,
+  onClose,
+  onNameChange,
+  nameError,
+  activityActive = false,
+  activitySubtitle,
 }: Props) {
   const router = useRouter();
+  const [editingNameState, setEditingName] = useState(false);
+  /* Name input shows while editing it, or while it has a validation error */
+  const editingName =
+    isEditing && Boolean(onNameChange) && (editingNameState || Boolean(nameError));
   const [loading, setLoading] = useState<"to_customer" | "to_supplier" | null>(
     null,
   );
@@ -135,198 +169,289 @@ export default function PartyDetailHeader({
     minimumFractionDigits: 2,
   });
 
+  const codeLabel = party.is_customer
+    ? "Customer No."
+    : party.is_supplier
+      ? "Supplier No."
+      : party.is_crm_lead
+        ? "CRM Lead No."
+        : party.is_srm_vendor
+          ? "SRM No."
+          : "";
+  const codeValue =
+    (party.is_customer
+      ? party.customer_code
+      : party.is_supplier
+        ? party.supplier_code
+        : party.is_crm_lead
+          ? party.crm_code
+          : party.is_srm_vendor
+            ? party.srm_code
+            : "") || "";
+
+  const outlineButton =
+    "flex h-9 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800";
+  const solidButton =
+    "flex h-9 items-center gap-2 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-60";
+
   return (
     <>
-      {/* <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl p-2 mb-6"> */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* <div> */}
-          <div className="flex flex-col justify-between gap-4 px-5 py-3 lg:flex-row lg:items-center">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-50">
-                <Icon
-                  icon="heroicons:building-office"
-                  className="text-3xl text-emerald-700"
-                />
-              </div>
-              <div>
-                {/* <h1 className="text-2xl font-bold capitalize">Customer</h1> */}
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                  {party.name || ""}
-                </h2>
-              </div>
-              <div>
-                <div className="bg-emerald-50  dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-md font-bold border border-emerald-200 dark:border-emerald-900">
-                  {party.is_customer
-                    ? "Customer No."
-                    : party.is_supplier
-                      ? "Supplier No."
-                      : party.is_crm_lead
-                        ? "CRM Lead No."
-                        : party.is_srm_vendor
-                          ? "SRM No."
-                          : ""}
-                  &nbsp;
-                  {(party.is_customer
-                    ? party.customer_code
-                    : party.is_supplier
-                      ? party.supplier_code
-                      : party.is_crm_lead
-                        ? party.crm_code
-                        : party.is_srm_vendor
-                          ? party.srm_code
-                          : "") || ""}
-                </div>
-              </div>
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#11161D]">
+        <div className="flex flex-col gap-4 px-5 py-3 xl:flex-row xl:items-center xl:justify-between">
+          {/* LEFT: avatar, editable business name, number, status, activity */}
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/50">
+              <Icon
+                icon="heroicons:building-office"
+                className="text-3xl text-emerald-700 dark:text-emerald-400"
+              />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3">
-            <div className="flex items-center justify-end pr-8">
+            <div className="min-w-0">
+              {editingName ? (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      value={party.name || ""}
+                      onChange={(event) => onNameChange?.(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (
+                          (event.key === "Enter" || event.key === "Escape") &&
+                          (party.name || "").trim()
+                        ) {
+                          setEditingName(false);
+                        }
+                      }}
+                      placeholder="Business name"
+                      aria-label="Business name"
+                      maxLength={255}
+                      className={`h-9 w-[min(28rem,70vw)] rounded-md border bg-white px-3 text-base font-semibold text-slate-900 outline-none focus:ring-2 dark:bg-slate-950 dark:text-slate-100 ${
+                        nameError
+                          ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                          : "border-emerald-300 focus:border-emerald-600 focus:ring-emerald-100"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditingName(false)}
+                      disabled={!(party.name || "").trim()}
+                      title="Finish editing"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-40"
+                    >
+                      <Icon icon="lucide:check" />
+                    </button>
+                  </div>
+                  {nameError && (
+                    <p className="mt-1 text-xs text-red-600">{nameError}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex min-w-0 items-center gap-2">
+                  <h1
+                    className="truncate text-xl font-bold text-slate-950 dark:text-white"
+                    title={party.name || ""}
+                  >
+                    {party.name || "Unnamed account"}
+                  </h1>
+                  {isEditing && onNameChange && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingName(true)}
+                      title="Edit business name"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
+                    >
+                      <Icon icon="lucide:pencil" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {codeLabel && (
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400">
+                    {codeLabel} {codeValue}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Status */}
+            <button
+              type="button"
+              onClick={() =>
+                openStatusModal(
+                  currentStatus === "active" ? "inactive" : "active",
+                )
+              }
+              disabled={statusLoading}
+              title={
+                currentStatus === "active"
+                  ? "Click to deactivate"
+                  : "Click to activate"
+              }
+              className={`group ml-1 inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full capitalize border transition-all duration-200 hover:shadow-sm disabled:opacity-60 ${
+                currentStatus === "active"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900 dark:hover:bg-emerald-950/70"
+                  : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-700"
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  currentStatus === "active" ? "bg-emerald-500" : "bg-slate-400"
+                }`}
+              />
+              <span>{currentStatus}</span>
+              <Icon
+                icon="lucide:chevron-down"
+                className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"
+              />
+            </button>
+
+            {/* Activity link — opens the Activity view in the tab area */}
+            {onOpenActivities && (
               <button
                 type="button"
-                onClick={() =>
-                  openStatusModal(
-                    currentStatus === "active" ? "inactive" : "active",
-                  )
-                }
-                disabled={statusLoading}
-                title={
-                  currentStatus === "active"
-                    ? "Click to deactivate"
-                    : "Click to activate"
-                }
-                className={`group inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full capitalize border transition-all duration-200 hover:shadow-sm disabled:opacity-60 ${
-                  currentStatus === "active"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900 dark:hover:bg-emerald-950/70"
-                    : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-700"
+                onClick={onOpenActivities}
+                aria-pressed={activityActive}
+                title="Open activity"
+                className={`group relative inline-flex shrink-0 items-center gap-2.5 overflow-hidden rounded-xl border py-1.5 pl-1.5 pr-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                  activityActive
+                    ? "border-emerald-600 bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-md"
+                    : "border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-900 dark:border-emerald-900/60 dark:from-emerald-950/40 dark:to-teal-950/30 dark:text-emerald-100"
                 }`}
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    currentStatus === "active"
-                      ? "bg-emerald-500"
-                      : "bg-slate-400"
+                  className={`pointer-events-none absolute -right-4 -top-4 h-12 w-12 rounded-full transition-colors ${
+                    activityActive
+                      ? "bg-white/10"
+                      : "bg-emerald-400/10 group-hover:bg-emerald-400/20"
                   }`}
                 />
-
-                <span>{currentStatus}</span>
-
+                <span
+                  className={`relative flex h-8 w-8 items-center justify-center rounded-lg shadow-sm ${
+                    activityActive
+                      ? "bg-white/20 text-white"
+                      : "bg-white text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
+                  }`}
+                >
+                  <Icon icon="tabler:activity-heartbeat" className="h-4.5 w-4.5" />
+                </span>
+                <span className="relative leading-tight">
+                  <span className="block text-sm font-semibold">Activity</span>
+                  <span
+                    className={`block text-[10px] ${
+                      activityActive
+                        ? "text-emerald-100"
+                        : "text-emerald-700/80 dark:text-emerald-300/80"
+                    }`}
+                  >
+                    {activitySubtitle || "Ledger & documents"}
+                  </span>
+                </span>
                 <Icon
-                  icon="lucide:chevron-down"
-                  className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"
+                  icon="lucide:arrow-up-right"
+                  className={`relative h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 ${
+                    activityActive ? "text-white" : "text-emerald-600"
+                  }`}
                 />
               </button>
-            </div>
+            )}
+          </div>
 
-            {/* <button
-              type="button"
-              onClick={onOpenActivities}
-              title="View Activities"
-              className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-            >
-              <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-amber-400/10 group-hover:bg-amber-400/20 transition-colors" />
+          {/* RIGHT: conversions + edit / save / cancel / close */}
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            {!isEditing && party.is_crm_lead && !party.is_customer && (
+              <Button
+                type="button"
+                onClick={() => openConfirmModal("to_customer")}
+                disabled={loading !== null}
+                className="inline-flex h-9 items-center gap-1.5 px-3.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
+              >
+                {loading === "to_customer" ? (
+                  <>
+                    <Icon icon="svg-spinners:180-ring-with-bg" className="w-3.5 h-3.5" />
+                    <span>Converting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon icon="lucide:user-check" className="w-3.5 h-3.5" />
+                    <span>Convert to Customer</span>
+                  </>
+                )}
+              </Button>
+            )}
 
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-amber-700 dark:text-amber-400">
-                    <Icon icon="lucide:wallet" className="w-3.5 h-3.5" />
-                    Open Outstanding
-                  </div>
+            {!isEditing && party.is_srm_vendor && !party.is_supplier && (
+              <Button
+                type="button"
+                onClick={() => openConfirmModal("to_supplier")}
+                disabled={loading !== null}
+                className="inline-flex h-9 items-center gap-1.5 px-3.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
+              >
+                {loading === "to_supplier" ? (
+                  <>
+                    <Icon icon="svg-spinners:180-ring-with-bg" className="w-3.5 h-3.5" />
+                    <span>Converting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon icon="lucide:truck" className="w-3.5 h-3.5" />
+                    <span>Convert to Supplier</span>
+                  </>
+                )}
+              </Button>
+            )}
 
-                  <div className="mt-1.5 text-sm font-semibold tracking-tight text-amber-950 dark:text-amber-100">
-                    {formatFCY(outstandingBalance, currencyCode)} / LCY{" "}
-                    {lcyFormatter.format(lcyBalance || 0)}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-amber-600 shadow-sm dark:bg-amber-900/40 dark:text-amber-400">
-                  <Icon icon="lucide:coins" className="w-4 h-4" />
-                </div>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={onOpenFinance}
-              title="View Finance"
-              className="group relative overflow-hidden min-w-[180px] px-4 py-3 rounded-xl mr-2 border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/30 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-            >
-              <div className="absolute -right-5 -top-5 w-16 h-16 rounded-full bg-violet-400/10 group-hover:bg-violet-400/20 transition-colors" />
-
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold capitalize tracking-wider text-violet-700 dark:text-violet-400">
-                    <Icon icon="lucide:gauge" className="w-3.5 h-3.5" />
-                    Credit Limit
-                  </div>
-
-                  <div className="mt-1.5 text-sm font-semibold tracking-tight text-violet-950 dark:text-violet-100">
-                    {formatFCY(Number(party.credit_limit) || 0, currencyCode)}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 text-violet-600 shadow-sm dark:bg-violet-900/40 dark:text-violet-400">
-                  <Icon icon="lucide:credit-card" className="w-4 h-4" />
-                </div>
-              </div>
-            </button> */}
-
-            <div className="flex items-center gap-2">
-              {party.is_crm_lead && !party.is_customer && (
-                <Button
+            {isEditing ? (
+              <>
+                <button
                   type="button"
-                  onClick={() => openConfirmModal("to_customer")}
-                  disabled={loading !== null}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
+                  onClick={onSave}
+                  disabled={saving}
+                  className={solidButton}
                 >
-                  {loading === "to_customer" ? (
-                    <>
-                      <Icon
-                        icon="svg-spinners:180-ring-with-bg"
-                        className="w-3.5 h-3.5"
-                      />
-                      <span>Converting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon="lucide:user-check" className="w-3.5 h-3.5" />
-                      <span>Convert to Customer</span>
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {party.is_srm_vendor && !party.is_supplier && (
-                <Button
+                  <Icon
+                    icon={saving ? "svg-spinners:180-ring-with-bg" : "lucide:save"}
+                    className="h-4 w-4"
+                  />
+                  {saving ? "Saving..." : "Save"}
+                </button>
+                <button
                   type="button"
-                  onClick={() => openConfirmModal("to_supplier")}
-                  disabled={loading !== null}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg shadow-sm transition-all"
+                  onClick={() => {
+                    setEditingName(false);
+                    onCancelEdit?.();
+                  }}
+                  disabled={saving}
+                  className={outlineButton}
                 >
-                  {loading === "to_supplier" ? (
-                    <>
-                      <Icon
-                        icon="svg-spinners:180-ring-with-bg"
-                        className="w-3.5 h-3.5"
-                      />
-                      <span>Converting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon="lucide:truck" className="w-3.5 h-3.5" />
-                      <span>Convert to Supplier</span>
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                {canEdit && onEdit && (
+                  <button type="button" onClick={onEdit} className={outlineButton}>
+                    <Icon icon="lucide:pencil" className="text-emerald-600" />
+                    Edit
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose ?? (() => router.back())}
+                  className={outlineButton}
+                >
+                  Close
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {errorMessage && (
-          <div className="mt-3 p-2.5 text-xs bg-red-50 text-red-700 border border-red-200 rounded-lg dark:bg-red-950/40 dark:text-red-400 dark:border-red-900">
-            <strong>Conversion Error:</strong> {errorMessage}
+          <div className="mx-5 mb-3 p-2.5 text-xs bg-red-50 text-red-700 border border-red-200 rounded-lg dark:bg-red-950/40 dark:text-red-400 dark:border-red-900">
+            <strong>Error:</strong> {errorMessage}
           </div>
         )}
       </div>

@@ -121,8 +121,11 @@ export default function AttachmentsTab({
 
   /* Folders: per module, configurable at runtime (Manage folders) */
   const isPartyModule = PARTY_MODULES.includes(module.toLowerCase());
+  /* Parties get the upload area and the listing side by side */
+  const sideBySide = isPartyModule && !readonly;
   const [folders, setFolders] = useState<AttachmentFolderOption[]>([]);
   const [manageOpen, setManageOpen] = useState(false);
+  const [maxFolders, setMaxFolders] = useState(8);
 
   const loadFolders = useCallback(async () => {
     try {
@@ -131,8 +134,12 @@ export default function AttachmentsTab({
         { cache: "no-store" },
       );
       if (!res.ok) throw new Error("Failed to load folders");
-      const data = (await res.json()) as { folders?: AttachmentFolderOption[] };
+      const data = (await res.json()) as {
+        folders?: AttachmentFolderOption[];
+        max_folders?: number;
+      };
       setFolders(data.folders ?? []);
+      if (typeof data.max_folders === "number") setMaxFolders(data.max_folders);
     } catch (err) {
       console.error(err);
       /* Keep the tab usable even if folders cannot load */
@@ -350,10 +357,13 @@ export default function AttachmentsTab({
               type="button"
               onClick={() => setManageOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-emerald-600 hover:text-emerald-700 dark:border-slate-700 dark:text-slate-300"
-              title="Add, rename or delete folders for this module"
+              title={`Add, rename, re-order or delete folders (max ${maxFolders})`}
             >
               <Icon icon="tabler:folder-cog" className="text-base" />
               Manage folders
+              <span className="tabular-nums text-[10px] font-medium text-slate-400">
+                {folders.length}/{maxFolders}
+              </span>
             </button>
           )}
 
@@ -371,7 +381,7 @@ export default function AttachmentsTab({
         </div>
 
         {/* Folder Cards Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 2xl:grid-cols-8 gap-2">
           {displayFolders.map((folderName) => {
             const count = folderCounts[folderName.toLowerCase()] || 0;
             const isSelectedFilter = activeFolderFilter === folderName;
@@ -386,159 +396,43 @@ export default function AttachmentsTab({
                     prev === folderName ? null : folderName,
                   );
                 }}
-                className={`${cardClass} p-3.5 flex items-center justify-between gap-3 text-left group hover:border-emerald-600/60 dark:hover:border-emerald-500/60 ${
+                title={`${folderName} (${count} ${count === 1 ? "file" : "files"})`}
+                className={`${cardClass} px-2.5 py-2 flex items-center gap-2 text-left group min-w-0 hover:border-emerald-600/60 dark:hover:border-emerald-500/60 ${
                   isSelectedFilter
                     ? "ring-1 ring-emerald-600 dark:ring-emerald-500 border-emerald-600/70 dark:border-emerald-500/70 bg-emerald-50/20 dark:bg-emerald-950/20"
                     : ""
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 shrink-0 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
-                    <Icon icon="tabler:folder" className="text-emerald-800 text-xl" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-black dark:text-slate-100 truncate">
-                      {folderName}
-                    </p>
-                    <p className="text-[11px] text-black dark:text-slate-400 tabular-nums">
-                      {count} {count === 1 ? "file" : "files"}
-                    </p>
-                  </div>
+                <div className="w-7 h-7 shrink-0 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center justify-center">
+                  <Icon
+                    icon={isSelectedFilter ? "tabler:folder-open" : "tabler:folder"}
+                    className="text-emerald-800 dark:text-emerald-400 text-base"
+                  />
                 </div>
-
-                <Icon
-                  icon="tabler:chevron-right"
-                  className="w-4 h-4 text-slate-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors shrink-0"
-                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold leading-4 text-black dark:text-slate-100 truncate">
+                    {folderName}
+                  </p>
+                  <p className="text-[10px] leading-4 text-slate-500 dark:text-slate-400 tabular-nums">
+                    {count} {count === 1 ? "file" : "files"}
+                  </p>
+                </div>
               </button>
             );
           })}
         </div>
 
-        {/* Upload Zone Card */}
-        {!readonly && (
-          <div className="rounded-xl border border-dashed border-emerald-400/80 dark:border-emerald-800/80 bg-emerald-50/15 dark:bg-[#11161D] p-5 transition-colors">
-            <UploadDropzone
-              className="custom-attachment ut-button:bg-emerald-700 ut-button:hover:bg-emerald-800 ut-button:dark:bg-emerald-600 ut-button:dark:hover:bg-emerald-500 ut-button:text-white ut-button:text-sm ut-button:font-semibold ut-button:rounded-lg ut-button:px-4 ut-button:py-2 ut-label:text-emerald-700 ut-label:dark:text-emerald-400 ut-allowed-content:text-black ut-allowed-content:dark:text-slate-400"
-              endpoint="attachmentUploader"
-              input={{
-                module,
-                recordId,
-                folder: selectedFolder,
-              }}
-              config={{ mode: "auto" }}
-              onUploadBegin={() => {
-                setUploading(true);
-                setUploadComplete(false);
-                onRequestEdit?.();
-              }}
-              onClientUploadComplete={() => {
-                setUploading(false);
-                setUploadComplete(true);
-                loadFiles();
-                window.setTimeout(() => {
-                  setUploadComplete(false);
-                }, 2500);
-              }}
-              onUploadError={(error: Error) => {
-                setUploading(false);
-                setUploadComplete(false);
-                console.error(`Upload error: ${error.message}`);
-              }}
-              appearance={{
-                container: "w-full border-0 bg-transparent p-0 gap-2",
-                label:
-                  "text-sm font-bold text-black dark:text-slate-100 cursor-pointer",
-                uploadIcon: "h-9 w-9 text-emerald-700 dark:text-emerald-400",
-                allowedContent:
-                  "text-[11px] text-black dark:text-slate-400",
-                button: [
-                  "h-9",
-                  "px-4",
-                  "rounded-lg",
-                  "text-sm",
-                  "font-semibold",
-                  "text-white",
-                  "shadow-2xs",
-                  "transition-colors",
-                  !uploading && !uploadComplete
-                    ? "bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-                    : "",
-                  uploading ? "bg-slate-400 cursor-not-allowed" : "",
-                  uploadComplete ? "bg-emerald-600 hover:bg-emerald-700" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" "),
-              }}
-              content={{
-                uploadIcon: (
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
-                    <Icon icon="tabler:cloud-upload" className="text-emerald-800 text-xl" />
-                  </div>
-                ),
-                label: uploading
-                  ? "Uploading..."
-                  : uploadComplete
-                    ? "Upload Complete"
-                    : "Upload Files",
-                allowedContent:
-                  "Drag & drop files here or click to browse • PDF, Excel, Word, Images (max 10 MB)",
-                button: uploading ? "Uploading..." : "Upload Files",
-              }}
-            />
-
-            {/* Save to Folder Selector Bar */}
-            <div className="mt-4 pt-3.5 border-t border-slate-200/70 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 flex-1 max-w-sm">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                  Save to Folder <span className="text-red-500">*</span>
-                </label>
-                <div className="relative flex-1">
-                  {/* <Icon
-                    icon="tabler:folder"
-                    className="text-emerald-800 text-xl"
-                  /> */}
-                  <select
-                    value={selectedFolder}
-                    disabled={uploading}
-                    onChange={(e) => setSelectedFolder(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-medium text-black dark:text-slate-100 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
-                  >
-                    {folderNames.map((folder) => (
-                      <option key={folder} value={folder}>
-                        {folder}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-[11px] text-black dark:text-slate-400">
-                <Icon
-                  icon="tabler:folder-check"
-                  className="text-emerald-800 text-xl"
-                />
-                <span>
-                  Target folder:{" "}
-                  <strong className="text-slate-800 dark:text-slate-200">
-                    {selectedFolder}
-                  </strong>
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Files List */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between text-sm text-black dark:text-slate-400 px-1">
+        {(() => {
+          const filesHeader = (
             <span>
               {activeFolderFilter
                 ? `Folder: ${activeFolderFilter} (${visibleFiles.length})`
                 : `All Files (${visibleFiles.length})`}
             </span>
-          </div>
+          );
 
+          const fileItems = (
+            <>
           {loading ? (
             <p className="text-sm text-slate-400 text-center py-8 animate-pulse">
               Scanning file directories...
@@ -665,7 +559,169 @@ export default function AttachmentsTab({
               );
             })
           )}
-        </div>
+            </>
+          );
+
+          const uploadCard = (
+          <div
+            className={`rounded-xl border border-dashed border-emerald-400/80 dark:border-emerald-800/80 bg-emerald-50/15 dark:bg-[#11161D] transition-colors ${
+              sideBySide ? "h-full flex flex-col p-4" : "p-5"
+            }`}
+          >
+            <div className={sideBySide ? "flex-1 min-h-0 flex items-center justify-center" : ""}>
+            <UploadDropzone
+              className="custom-attachment ut-button:bg-emerald-700 ut-button:hover:bg-emerald-800 ut-button:dark:bg-emerald-600 ut-button:dark:hover:bg-emerald-500 ut-button:text-white ut-button:text-sm ut-button:font-semibold ut-button:rounded-lg ut-button:px-4 ut-button:py-2 ut-label:text-emerald-700 ut-label:dark:text-emerald-400 ut-allowed-content:text-black ut-allowed-content:dark:text-slate-400"
+              endpoint="attachmentUploader"
+              input={{
+                module,
+                recordId,
+                folder: selectedFolder,
+              }}
+              config={{ mode: "auto" }}
+              onUploadBegin={() => {
+                setUploading(true);
+                setUploadComplete(false);
+                onRequestEdit?.();
+              }}
+              onClientUploadComplete={() => {
+                setUploading(false);
+                setUploadComplete(true);
+                loadFiles();
+                window.setTimeout(() => {
+                  setUploadComplete(false);
+                }, 2500);
+              }}
+              onUploadError={(error: Error) => {
+                setUploading(false);
+                setUploadComplete(false);
+                console.error(`Upload error: ${error.message}`);
+              }}
+              appearance={{
+                container: "w-full border-0 bg-transparent p-0 gap-2",
+                label:
+                  "text-sm font-bold text-black dark:text-slate-100 cursor-pointer",
+                uploadIcon: "h-9 w-9 text-emerald-700 dark:text-emerald-400",
+                allowedContent:
+                  "text-[11px] text-black dark:text-slate-400",
+                button: [
+                  "h-9",
+                  "px-4",
+                  "rounded-lg",
+                  "text-sm",
+                  "font-semibold",
+                  "text-white",
+                  "shadow-2xs",
+                  "transition-colors",
+                  !uploading && !uploadComplete
+                    ? "bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                    : "",
+                  uploading ? "bg-slate-400 cursor-not-allowed" : "",
+                  uploadComplete ? "bg-emerald-600 hover:bg-emerald-700" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" "),
+              }}
+              content={{
+                uploadIcon: (
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
+                    <Icon icon="tabler:cloud-upload" className="text-emerald-800 text-xl" />
+                  </div>
+                ),
+                label: uploading
+                  ? "Uploading..."
+                  : uploadComplete
+                    ? "Upload Complete"
+                    : "Upload Files",
+                allowedContent:
+                  "Drag & drop files here or click to browse • PDF, Excel, Word, Images (max 10 MB)",
+                button: uploading ? "Uploading..." : "Upload Files",
+              }}
+            />
+
+            </div>
+
+            {/* Save to Folder Selector Bar */}
+            <div className={`${sideBySide ? "mt-3" : "mt-4"} pt-3.5 border-t border-slate-200/70 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
+              <div className="flex items-center gap-2.5 flex-1 max-w-sm">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                  Save to Folder <span className="text-red-500">*</span>
+                </label>
+                <div className="relative flex-1">
+                  {/* <Icon
+                    icon="tabler:folder"
+                    className="text-emerald-800 text-xl"
+                  /> */}
+                  <select
+                    value={selectedFolder}
+                    disabled={uploading}
+                    onChange={(e) => setSelectedFolder(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-medium text-black dark:text-slate-100 outline-none focus:border-emerald-600 dark:focus:border-emerald-500"
+                  >
+                    {folderNames.map((folder) => (
+                      <option key={folder} value={folder}>
+                        {folder}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] text-black dark:text-slate-400">
+                <Icon
+                  icon="tabler:folder-check"
+                  className="text-emerald-800 text-xl"
+                />
+                <span>
+                  Target folder:{" "}
+                  <strong className="text-slate-800 dark:text-slate-200">
+                    {selectedFolder}
+                  </strong>
+                </span>
+              </div>
+            </div>
+          </div>
+          );
+
+          if (sideBySide) {
+            /* Parties: upload and listing side by side, same height, scrolling */
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[460px]">
+                <div className="min-h-0 lg:h-full">{uploadCard}</div>
+                <div
+                  className={`${cardClass} min-h-0 max-h-[460px] lg:max-h-none lg:h-full flex flex-col overflow-hidden`}
+                >
+                  <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-slate-200/80 dark:border-slate-800 text-sm font-semibold text-black dark:text-slate-200">
+                    <span className="flex items-center gap-2">
+                      <Icon icon="tabler:files" className="text-emerald-800 text-lg" />
+                      {filesHeader}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2.5">
+                    {fileItems}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <>
+              {!readonly && uploadCard}
+
+              {/* Files List */}
+              <div
+                className={`space-y-2.5 ${
+                  isPartyModule ? "max-h-[460px] overflow-y-auto pr-1" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between text-sm text-black dark:text-slate-400 px-1">
+                  {filesHeader}
+                </div>
+                {fileItems}
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -748,6 +804,7 @@ export default function AttachmentsTab({
           module={module}
           folders={folders}
           isPartyModule={isPartyModule}
+          maxFolders={maxFolders}
           onClose={() => setManageOpen(false)}
           onChanged={async () => {
             /* renames / deletes also move files between folders */
